@@ -1,142 +1,51 @@
 # Tourvaa Admin Frontend
 
-Next.js admin dashboard for the Tourvaa travel platform. The app supports role-based login, dynamic sidebar/header menus, admin approval flows, profile management, settings, email templates, users, roles, and permissions.
+Tourvaa Admin Frontend is a Next.js web dashboard for managing the Tourvaa travel platform. It includes login, registration, role-based dashboard views, users, roles, permissions, profile, settings, and email template screens.
 
 ## Tech Stack
 
-- Next.js 16
-- React 19
+- Next.js
+- React
 - TypeScript
-- Tailwind CSS 4
+- Tailwind CSS
 - Axios
-- Lucide React
 
-## Requirements
+## How To Run
 
-- Node.js 20 or newer
-- npm
-- Tourvaa backend API running locally or on a reachable server
+1. Install dependencies:
 
-## Environment
+```bash
+npm install
+```
 
-Create `frontend/.env`:
+2. Create `.env` in the `frontend` folder:
 
 ```env
 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
 ```
 
-## Setup
+3. Start the development server:
 
 ```bash
-npm install
 npm run dev
 ```
 
-Open:
+4. Open the app:
 
 ```txt
 http://localhost:3000
 ```
 
-## Scripts
+## Build
 
 ```bash
-npm run dev      # Start development server
-npm run build    # Build production app
-npm run start    # Start production server
-npm run lint     # Run ESLint
+npm run build
+npm run start
 ```
 
-## Main Features
-
-- Modern login, registration, forgot-password, and reset-password screens
-- Public registration with name, email, password, and confirm password
-- Admin user creation with name, email, password, and role
-- Role-based dashboard layouts for admin, supplier, agent/reseller, and customer
-- Dynamic sidebar and header based on backend menu permissions
-- Dashboard user approval queue for roles with user update access
-- User management, role assignment, and account approval/rejection
-- Role and permission management
-- Email template management
-- Settings management
-- Profile page with read-only email, optional image, and password visibility toggles
-
-## Routes
-
-- `/` redirects to `/login`
-- `/login`
-- `/register`
-- `/forgot-password`
-- `/reset-password`
-- `/dashboard`
-- `/users`
-- `/roles`
-- `/permissions`
-- `/profile`
-- `/settings`
-- `/email-templates`
-
-## Backend Integration
-
-API base URL is configured in `lib/api.ts` through `NEXT_PUBLIC_API_URL`.
-
-The frontend stores auth data in browser storage:
-
-- `tourvaa_token`
-- `tourvaa_user`
-
-Protected requests send:
-
-```http
-Authorization: Bearer <access_token>
-```
-
-Important backend endpoints used:
-
-- `POST /api/auth/login`
-- `POST /api/auth/register`
-- `POST /api/auth/forgot-password`
-- `POST /api/auth/reset-password`
-- `GET /api/auth/me`
-- `GET /api/dashboard/me`
-- `GET /api/users/`
-- `GET /api/roles/`
-- `GET /api/permissions/`
-- `GET /api/client/config`
-
-## Project Structure
-
-```txt
-frontend/
-|-- app/
-|   |-- dashboard/
-|   |-- email-templates/
-|   |-- forgot-password/
-|   |-- login/
-|   |-- permissions/
-|   |-- profile/
-|   |-- register/
-|   |-- reset-password/
-|   |-- roles/
-|   |-- settings/
-|   `-- users/
-|-- components/
-|   |-- auth/
-|   |-- common/
-|   |-- layout/
-|   `-- ui/
-|-- hooks/
-|-- lib/
-|-- types/
-|-- package.json
-`-- README.md
-```
-
-## Testing
+## Test / Check
 
 ```bash
 npm run lint
 npm run build
 ```
-
-Current lint status may include non-blocking warnings about using `<img>` instead of Next `<Image />` for dynamic image URLs.
