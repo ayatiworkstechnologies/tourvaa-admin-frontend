@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
+import { useForm } from "react-hook-form";
 import {
   Eye,
   EyeOff,
@@ -23,46 +24,48 @@ function getErrorMessage(error: unknown) {
   return "Registration failed.";
 }
 
-export default function RegisterPage() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+type RegisterFormValues = {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
 
-  const [loading, setLoading] = useState(false);
+export default function RegisterPage() {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormValues>({
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
-  const update = (key: string, value: string) => {
-    setForm({ ...form, [key]: value });
-  };
+  const password = watch("password");
 
-  const register = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const onSubmit = async (values: RegisterFormValues) => {
     setMessage("");
     setIsError(false);
 
-    if (form.password !== form.confirmPassword) {
-      setIsError(true);
-      setMessage("Password and confirm password do not match.");
-      setLoading(false);
-      return;
-    }
-
     try {
       await api.post("/auth/register", {
-        name: form.name,
-        email: form.email,
-        password: form.password,
+        name: values.name,
+        email: values.email,
+        password: values.password,
       });
 
       setMessage("Registered successfully. Please wait for admin approval.");
-      setForm({
+      reset({
         name: "",
         email: "",
         password: "",
@@ -71,8 +74,6 @@ export default function RegisterPage() {
     } catch (error: unknown) {
       setIsError(true);
       setMessage(getErrorMessage(error));
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -82,25 +83,39 @@ export default function RegisterPage() {
       subtitle="Create your Tourvaa account. Admin approval is required before login."
       badge="Registration"
     >
-      <form onSubmit={register} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <AuthInput
           label="Name"
           icon={User}
           placeholder="Your name"
-          value={form.name}
-          onChange={(e) => update("name", e.target.value)}
-          required
+          {...register("name", {
+            required: "Name is required.",
+          })}
         />
+        {errors.name && (
+          <p className="-mt-2 text-xs font-medium text-red-600">
+            {errors.name.message}
+          </p>
+        )}
 
         <AuthInput
           label="Email Id"
           icon={Mail}
           type="email"
-          placeholder="admin@tourvaa.com"
-          value={form.email}
-          onChange={(e) => update("email", e.target.value)}
-          required
+          placeholder="Enter email address"
+          {...register("email", {
+            required: "Email is required.",
+            pattern: {
+              value: /^\S+@\S+\.\S+$/,
+              message: "Enter a valid email address.",
+            },
+          })}
         />
+        {errors.email && (
+          <p className="-mt-2 text-xs font-medium text-red-600">
+            {errors.email.message}
+          </p>
+        )}
 
         <div className="relative">
           <AuthInput
@@ -108,9 +123,13 @@ export default function RegisterPage() {
             icon={Lock}
             type={showPassword ? "text" : "password"}
             placeholder="Minimum 8 characters"
-            value={form.password}
-            onChange={(e) => update("password", e.target.value)}
-            required
+            {...register("password", {
+              required: "Password is required.",
+              minLength: {
+                value: 8,
+                message: "Password must be at least 8 characters.",
+              },
+            })}
           />
           <button
             type="button"
@@ -121,6 +140,11 @@ export default function RegisterPage() {
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
+        {errors.password && (
+          <p className="-mt-2 text-xs font-medium text-red-600">
+            {errors.password.message}
+          </p>
+        )}
 
         <div className="relative">
           <AuthInput
@@ -128,9 +152,11 @@ export default function RegisterPage() {
             icon={Lock}
             type={showConfirmPassword ? "text" : "password"}
             placeholder="Re-enter password"
-            value={form.confirmPassword}
-            onChange={(e) => update("confirmPassword", e.target.value)}
-            required
+            {...register("confirmPassword", {
+              required: "Confirm password is required.",
+              validate: (value) =>
+                value === password || "Password and confirm password do not match.",
+            })}
           />
           <button
             type="button"
@@ -141,6 +167,11 @@ export default function RegisterPage() {
             {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
+        {errors.confirmPassword && (
+          <p className="-mt-2 text-xs font-medium text-red-600">
+            {errors.confirmPassword.message}
+          </p>
+        )}
 
         {message && (
           <p
@@ -154,11 +185,11 @@ export default function RegisterPage() {
 
         <div className="pt-2 text-center">
           <button
-            disabled={loading}
+            disabled={isSubmitting}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0284C7] px-12 py-3.5 text-xs font-bold text-white shadow-lg shadow-sky-200 transition hover:bg-[#0369A1] disabled:cursor-not-allowed disabled:opacity-70"
           >
             <UserPlus size={16} />
-            {loading ? "PLEASE WAIT..." : "REGISTER"}
+            {isSubmitting ? "PLEASE WAIT..." : "REGISTER"}
           </button>
         </div>
 

@@ -2,21 +2,33 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
 import { Eye, EyeOff, Lock, LogIn, Mail, ShieldCheck } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
 import { useAuth } from "@/hooks/useAuth";
 
+type LoginFormValues = {
+  email: string;
+  password: string;
+};
+
 export default function LoginPage() {
   const { login, loading, error } = useAuth();
-
-  const [email, setEmail] = useState("admin@tourvaa.com");
-  const [password, setPassword] = useState("Admin@123");
   const [showPassword, setShowPassword] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    login({ email, password });
+  const onSubmit = (values: LoginFormValues) => {
+    login(values);
   };
 
   return (
@@ -25,15 +37,26 @@ export default function LoginPage() {
       subtitle="Sign in to open the dashboard that matches your assigned backend role."
       badge="Secure login"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <AuthInput
           label="Email Id"
           icon={Mail}
           type="email"
-          placeholder="admin@tourvaa.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter email address"
+          autoComplete="off"
+          {...register("email", {
+            required: "Email is required.",
+            pattern: {
+              value: /^\S+@\S+\.\S+$/,
+              message: "Enter a valid email address.",
+            },
+          })}
         />
+        {errors.email && (
+          <p className="-mt-3 text-xs font-medium text-red-600">
+            {errors.email.message}
+          </p>
+        )}
 
         <div className="relative">
           <AuthInput
@@ -41,8 +64,10 @@ export default function LoginPage() {
             icon={Lock}
             type={showPassword ? "text" : "password"}
             placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            {...register("password", {
+              required: "Password is required.",
+            })}
           />
           <button
             type="button"
@@ -53,6 +78,11 @@ export default function LoginPage() {
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
+        {errors.password && (
+          <p className="-mt-3 text-xs font-medium text-red-600">
+            {errors.password.message}
+          </p>
+        )}
 
         <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 text-xs text-slate-600">
           <span className="flex items-center gap-2 font-semibold">

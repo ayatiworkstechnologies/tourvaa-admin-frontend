@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
+import { useForm } from "react-hook-form";
 import { Mail } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
@@ -16,25 +17,34 @@ function getErrorMessage(error: unknown) {
   return "Unable to send reset email.";
 }
 
+type ForgotPasswordFormValues = {
+  email: string;
+};
+
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ForgotPasswordFormValues>({
+    defaultValues: {
+      email: "",
+    },
+  });
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setLoading(true);
+  const submit = async (values: ForgotPasswordFormValues) => {
     setMessage("");
     setError("");
 
     try {
-      const response = await api.post("/auth/forgot-password", { email });
+      const response = await api.post("/auth/forgot-password", values);
       setMessage(response.data.message || "Reset link has been sent to your email.");
+      reset({ email: "" });
     } catch (err: unknown) {
       setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -44,16 +54,25 @@ export default function ForgotPasswordPage() {
       subtitle="Enter your email and we will send a secure reset link."
       badge="Password recovery"
     >
-      <form onSubmit={submit} className="space-y-5">
+      <form onSubmit={handleSubmit(submit)} className="space-y-5">
         <AuthInput
           label="Email Id"
           icon={Mail}
           type="email"
           placeholder="you@company.com"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
+          {...register("email", {
+            required: "Email is required.",
+            pattern: {
+              value: /^\S+@\S+\.\S+$/,
+              message: "Enter a valid email address.",
+            },
+          })}
         />
+        {errors.email && (
+          <p className="-mt-3 text-xs font-medium text-red-600">
+            {errors.email.message}
+          </p>
+        )}
 
         {message && (
           <p className="rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
@@ -67,10 +86,10 @@ export default function ForgotPasswordPage() {
         )}
 
         <button
-          disabled={loading}
+          disabled={isSubmitting}
           className="w-full rounded-lg bg-[#009FE3] px-12 py-3 text-xs font-bold text-white transition hover:bg-[#0086c2] disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {loading ? "SENDING..." : "SEND RESET LINK"}
+          {isSubmitting ? "SENDING..." : "SEND RESET LINK"}
         </button>
 
         <p className="text-center text-sm text-gray-700">
