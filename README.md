@@ -21,7 +21,15 @@ npm install
 2. Create `.env` in the `frontend` folder:
 
 ```env
-NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
+NEXT_PUBLIC_API_URL=/api
+API_PROXY_TARGET=http://127.0.0.1:8000
+```
+
+For Vercel production, use the same browser API path and point the server-side proxy at the live backend:
+
+```env
+NEXT_PUBLIC_API_URL=/api
+API_PROXY_TARGET=http://89.167.92.220:8011
 ```
 
 3. Start the development server:
