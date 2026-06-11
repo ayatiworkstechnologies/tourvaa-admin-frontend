@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import api from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { getToken, removeToken } from "@/lib/auth";
 import {
   DashboardStats,
   MenuItem,
@@ -40,14 +41,21 @@ export function useDashboard() {
       const token = getToken();
 
       if (!token) {
-        router.push("/login");
+        router.replace("/login");
         return;
       }
 
       const response = await api.get("/dashboard/me");
       setDashboard(response.data.data);
-    } catch {
-      router.push("/login");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        removeToken();
+        localStorage.removeItem("tourvaa_user");
+        router.replace("/login");
+        return;
+      }
+
+      setDashboard(null);
     } finally {
       setLoading(false);
     }

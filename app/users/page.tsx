@@ -36,6 +36,7 @@ const emptyForm: UserFormData = {
 
 export default function UsersPage() {
   const { dashboard, loading: dashboardLoading } = useDashboard();
+  const canLoadProtectedData = Boolean(dashboard);
   const {
     users,
     loading,
@@ -47,8 +48,8 @@ export default function UsersPage() {
     rejectUser,
     sendPasswordReset,
   } =
-    useUsers();
-  const { roles } = useRoles();
+    useUsers({ enabled: canLoadProtectedData });
+  const { roles } = useRoles({ enabled: canLoadProtectedData });
 
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);

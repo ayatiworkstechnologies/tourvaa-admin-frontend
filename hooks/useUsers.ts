@@ -4,12 +4,23 @@ import { useCallback, useEffect, useState } from "react";
 import api from "@/lib/api";
 import { User, UserFormData } from "@/types/user";
 
-export function useUsers() {
+type UseUsersOptions = {
+  enabled?: boolean;
+};
+
+export function useUsers({ enabled = true }: UseUsersOptions = {}) {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [saving, setSaving] = useState(false);
 
   const fetchUsers = useCallback(async () => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const response = await api.get("/users/");
       setUsers(response.data.data || []);
@@ -18,7 +29,7 @@ export function useUsers() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   const createUser = async (data: UserFormData) => {
     setSaving(true);

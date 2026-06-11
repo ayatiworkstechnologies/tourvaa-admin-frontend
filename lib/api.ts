@@ -1,25 +1,32 @@
 import axios from "axios";
 
-const getApiBaseUrl = () => {
-  const configuredUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
+const API_PATH_PREFIX = "/api";
 
-  if (
-    typeof window !== "undefined" &&
-    window.location.protocol === "https:" &&
-    configuredUrl.startsWith("http:")
-  ) {
-    return "/api";
+function normalizeApiUrl(url?: string) {
+  if (!url) return url;
+
+  try {
+    const parsedUrl = new URL(url);
+
+    if (parsedUrl.pathname.startsWith(API_PATH_PREFIX)) {
+      return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+    }
+  } catch {
+    return url;
   }
 
-  return configuredUrl;
-};
+  return url;
+}
 
 const api = axios.create({
-  baseURL: getApiBaseUrl(),
+  baseURL: API_PATH_PREFIX,
 });
 
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
+    config.baseURL = API_PATH_PREFIX;
+    config.url = normalizeApiUrl(config.url);
+
     const token = localStorage.getItem("tourvaa_token");
 
     if (token) {
