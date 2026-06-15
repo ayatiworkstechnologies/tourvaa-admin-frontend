@@ -21,6 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import StatCard from "@/components/ui/StatCard";
 import api from "@/lib/api";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -214,6 +215,7 @@ export default function DashboardPage() {
       : ["User approval queue checked", "Role access reviewed", "Dashboard modules synced"];
 
   return (
+    <ProtectedRoute requiredPermission="dashboard.view">
     <DashboardLayout menus={dashboard.menus} user={dashboard.user}>
       <div className="mx-auto max-w-[1440px] space-y-6">
         <section
@@ -435,5 +437,6 @@ export default function DashboardPage() {
         </section>
       </div>
     </DashboardLayout>
+    </ProtectedRoute>
   );
 }

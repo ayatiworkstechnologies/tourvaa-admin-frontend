@@ -10,9 +10,10 @@ type Field = {
   name: string;
   label: string;
   type?: "text" | "email" | "number" | "textarea" | "select";
+  valueType?: "string" | "number" | "boolean";
   options?: {
     label: string;
-    value: string | number;
+    value: string | number | boolean;
   }[];
 };
 
@@ -33,6 +34,28 @@ type FormValue = string | number | boolean;
 function formValueToString(value: FormValue | undefined) {
   if (value === undefined) return "";
   return String(value);
+}
+
+export function normalizeDynamicForm(fields: Field[], form: Record<string, FormValue>) {
+  return fields.reduce<Record<string, string | number | boolean>>((payload, field) => {
+    const rawValue = form[field.name];
+
+    if (rawValue === undefined || rawValue === "") return payload;
+
+    if (field.valueType === "boolean") {
+      payload[field.name] = rawValue === true || rawValue === "true";
+      return payload;
+    }
+
+    if (field.valueType === "number") {
+      const numberValue = Number(rawValue);
+      if (!Number.isNaN(numberValue)) payload[field.name] = numberValue;
+      return payload;
+    }
+
+    payload[field.name] = typeof rawValue === "string" ? rawValue.trim() : rawValue;
+    return payload;
+  }, {});
 }
 
 export default function DynamicModulePage({
@@ -109,9 +132,9 @@ export default function DynamicModulePage({
 
     try {
       if (editingItem) {
-        await api.put(`${endpoint}${editingItem.id}`, form);
+        await api.put(`${endpoint}${editingItem.id}`, normalizeDynamicForm(fields, form));
       } else {
-        await api.post(endpoint, form);
+        await api.post(endpoint, normalizeDynamicForm(fields, form));
       }
 
       await fetchItems();
@@ -274,7 +297,7 @@ export default function DynamicModulePage({
                     >
                       <option value="">Select</option>
                       {field.options?.map((option) => (
-                        <option key={option.value} value={option.value}>
+                        <option key={String(option.value)} value={String(option.value)}>
                           {option.label}
                         </option>
                       ))}

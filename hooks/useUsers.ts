@@ -6,10 +6,15 @@ import { User, UserFormData } from "@/types/user";
 
 type UseUsersOptions = {
   enabled?: boolean;
+  page?: number;
+  limit?: number;
+  search?: string;
 };
 
-export function useUsers({ enabled = true }: UseUsersOptions = {}) {
+export function useUsers({ enabled = true, page = 1, limit = 10, search = "" }: UseUsersOptions = {}) {
   const [users, setUsers] = useState<User[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(enabled);
   const [saving, setSaving] = useState(false);
 
@@ -22,14 +27,19 @@ export function useUsers({ enabled = true }: UseUsersOptions = {}) {
     setLoading(true);
 
     try {
-      const response = await api.get("/users/");
-      setUsers(response.data.data || []);
+      const response = await api.get("/users/", {
+        params: { page, limit, search },
+      });
+      const items = response.data.items || response.data.data || [];
+      setUsers(items);
+      setTotal(response.data.total ?? items.length);
+      setTotalPages(response.data.total_pages ?? 1);
     } catch {
       setUsers([]);
     } finally {
       setLoading(false);
     }
-  }, [enabled]);
+  }, [enabled, limit, page, search]);
 
   const createUser = async (data: UserFormData) => {
     setSaving(true);
@@ -157,6 +167,8 @@ export function useUsers({ enabled = true }: UseUsersOptions = {}) {
     loading,
     saving,
     fetchUsers,
+    total,
+    totalPages,
     createUser,
     updateUser,
     deleteUser,

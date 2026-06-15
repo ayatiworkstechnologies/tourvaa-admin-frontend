@@ -235,7 +235,7 @@ export default function RolesPage() {
   };
 
   return (
-    <ModuleWrapper title="Roles">
+    <ModuleWrapper title="Roles" requiredPermission="roles.view">
       <div className="rounded-lg border border-[#E6E8F0] bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between">
           <div>

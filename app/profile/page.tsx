@@ -4,10 +4,27 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
 import api from "@/lib/api";
 import Loader from "@/components/ui/Loader";
 import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
+import {
+  combinePhone,
+  digitsOnly,
+  mobileHelp,
+  passwordHelp,
+  splitPhone,
+  validateMobile,
+  validatePassword,
+} from "@/lib/validators";
+import {
+  countries,
+  getCities,
+  getStates,
+  phoneCountryCodes,
+  phoneCountryCodeValues,
+} from "@/lib/location-options";
 
 const emptyProfile = {
   name: "",
@@ -35,9 +52,12 @@ export default function ProfilePage() {
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
     new_password: "",
+    confirm_password: "",
   });
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [phoneCountryCode, setPhoneCountryCode] = useState("+91");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -52,6 +72,9 @@ export default function ProfilePage() {
           ...emptyProfile,
           ...response.data.data,
         });
+        const phoneParts = splitPhone(response.data.data?.phone || "", phoneCountryCodeValues);
+        setPhoneCountryCode(phoneParts.countryCode);
+        setPhoneNumber(phoneParts.number);
       } catch {
         setProfile({
           ...emptyProfile,
@@ -70,10 +93,18 @@ export default function ProfilePage() {
     setMessage("");
     setError("");
 
+    const phone = combinePhone(phoneCountryCode, phoneNumber);
+
+    if (!validateMobile(phone, true)) {
+      setError(mobileHelp);
+      setSaving(false);
+      return;
+    }
+
     try {
       await api.put("/profile/me", {
         name: profile.name,
-        phone: profile.phone,
+        phone,
         profile_image: profile.profile_image,
         address: profile.address,
         country: profile.country,
@@ -95,9 +126,30 @@ export default function ProfilePage() {
     setMessage("");
     setError("");
 
+    if (passwordForm.current_password === passwordForm.new_password) {
+      setError("New password must be different from current password.");
+      setSaving(false);
+      return;
+    }
+
+    if (!validatePassword(passwordForm.new_password)) {
+      setError(passwordHelp);
+      setSaving(false);
+      return;
+    }
+
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      setError("Confirm password must match new password.");
+      setSaving(false);
+      return;
+    }
+
     try {
-      await api.put("/profile/password", passwordForm);
-      setPasswordForm({ current_password: "", new_password: "" });
+      await api.put("/profile/password", {
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password,
+      });
+      setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
       setMessage("Password updated successfully.");
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Could not update password."));
@@ -110,6 +162,7 @@ export default function ProfilePage() {
   if (!dashboard) return null;
 
   return (
+    <ProtectedRoute requiredPermission="profile.view">
     <DashboardLayout title="Profile" menus={dashboard.menus} user={dashboard.user}>
       <div className="space-y-6">
         <section className="rounded-2xl border border-[#E7EAF0] bg-white p-6">
@@ -161,19 +214,38 @@ export default function ProfilePage() {
                   Email cannot be changed from profile.
                 </p>
               </label>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-[150px_1fr]">
                 <label className="block">
                   <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">
-                    Phone
+                    Code
+                  </span>
+                  <select
+                    value={phoneCountryCode}
+                    onChange={(event) => setPhoneCountryCode(event.target.value)}
+                    className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                    required
+                  >
+                    {phoneCountryCodes.map((item, index) => (
+                      <option key={`${item.value}-${index}`} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">
+                    Mobile Number
                   </span>
                   <input
-                    value={profile.phone}
-                    onChange={(event) =>
-                      setProfile((current) => ({ ...current, phone: event.target.value }))
-                    }
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={phoneNumber}
+                    onChange={(event) => setPhoneNumber(digitsOnly(event.target.value))}
                     className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
                     required
                   />
+                  <p className="mt-1 text-xs text-[#98A2B3]">{mobileHelp}</p>
                 </label>
               </div>
 
@@ -201,46 +273,77 @@ export default function ProfilePage() {
                   <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">
                     Country
                   </span>
-                  <input
+                  <select
                     value={profile.country}
-                    onChange={(event) =>
-                      setProfile((current) => ({ ...current, country: event.target.value }))
-                    }
+                    onChange={(event) => {
+                      const country = event.target.value;
+                      setProfile((current) => ({ ...current, country, state: "", city: "" }));
+                    }}
                     className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                  />
+                  >
+                    <option value="">Select Country</option>
+                    {countries.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="block">
                   <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">
                     State
                   </span>
-                  <input
+                  <select
                     value={profile.state}
-                    onChange={(event) =>
-                      setProfile((current) => ({ ...current, state: event.target.value }))
-                    }
+                    onChange={(event) => {
+                      const state = event.target.value;
+                      setProfile((current) => ({ ...current, state, city: "" }));
+                    }}
                     className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                  />
+                    disabled={!profile.country}
+                  >
+                    <option value="">Select State</option>
+                    {getStates(profile.country).map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="block">
                   <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">
                     City
                   </span>
-                  <input
+                  <select
                     value={profile.city}
                     onChange={(event) =>
                       setProfile((current) => ({ ...current, city: event.target.value }))
                     }
                     className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                  />
+                    disabled={!profile.state}
+                  >
+                    <option value="">Select City</option>
+                    {getCities(profile.state).map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="block">
                   <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">
                     Pincode
                   </span>
                   <input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={profile.pincode}
                     onChange={(event) =>
-                      setProfile((current) => ({ ...current, pincode: event.target.value }))
+                      setProfile((current) => ({
+                        ...current,
+                        pincode: digitsOnly(event.target.value),
+                      }))
                     }
                     className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
                   />
@@ -312,6 +415,25 @@ export default function ProfilePage() {
                     {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+                <p className="mt-1 text-xs text-[#98A2B3]">{passwordHelp}</p>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">
+                  Confirm New Password
+                </span>
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  value={passwordForm.confirm_password}
+                  onChange={(event) =>
+                    setPasswordForm((current) => ({
+                      ...current,
+                      confirm_password: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                  minLength={8}
+                  required
+                />
               </label>
             </div>
             <button
@@ -324,5 +446,6 @@ export default function ProfilePage() {
         </div>
       </div>
     </DashboardLayout>
+    </ProtectedRoute>
   );
 }

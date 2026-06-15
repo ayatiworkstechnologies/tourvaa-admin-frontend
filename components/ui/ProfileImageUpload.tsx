@@ -4,6 +4,7 @@ import { ChangeEvent, useState } from "react";
 import axios from "axios";
 import { ImageUp, Loader2, X } from "lucide-react";
 import api from "@/lib/api";
+import { mediaUrl } from "@/lib/media-url";
 
 type ProfileImageUploadProps = {
   value: string;
@@ -84,7 +85,7 @@ export default function ProfileImageUpload({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#E6E8F0] bg-[#F7F9FC]">
           {value ? (
-            <img src={value} alt="Profile preview" className="h-full w-full object-cover" />
+            <img src={mediaUrl(value)} alt="Profile preview" className="h-full w-full object-cover" />
           ) : (
             <ImageUp size={24} className="text-gray-400" />
           )}

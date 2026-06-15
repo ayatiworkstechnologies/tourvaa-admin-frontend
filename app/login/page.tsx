@@ -7,6 +7,7 @@ import { Eye, EyeOff, Lock, LogIn, Mail, ShieldCheck } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
 import { useAuth } from "@/hooks/useAuth";
+import { normalizeEmail, validateEmail } from "@/lib/validators";
 
 type LoginFormValues = {
   email: string;
@@ -14,7 +15,7 @@ type LoginFormValues = {
 };
 
 export default function LoginPage() {
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, isLoggedIn, sessionLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const {
     register,
@@ -28,8 +29,12 @@ export default function LoginPage() {
   });
 
   const onSubmit = (values: LoginFormValues) => {
-    login(values);
+    login({ ...values, email: normalizeEmail(values.email) });
   };
+
+  if (!sessionLoading && isLoggedIn) {
+    return null;
+  }
 
   return (
     <AuthLayout
@@ -43,13 +48,10 @@ export default function LoginPage() {
           icon={Mail}
           type="email"
           placeholder="Enter email address"
-          autoComplete="off"
+          autoComplete="email"
           {...register("email", {
             required: "Email is required.",
-            pattern: {
-              value: /^\S+@\S+\.\S+$/,
-              message: "Enter a valid email address.",
-            },
+            validate: (value) => validateEmail(value) || "Enter a valid email address.",
           })}
         />
         {errors.email && (
@@ -64,7 +66,7 @@ export default function LoginPage() {
             icon={Lock}
             type={showPassword ? "text" : "password"}
             placeholder="Password"
-            autoComplete="new-password"
+            autoComplete="current-password"
             {...register("password", {
               required: "Password is required.",
             })}

@@ -2,25 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import api from "@/lib/api";
-import { saveToken, saveUser, removeToken } from "@/lib/auth";
+import { getApiErrorMessage } from "@/lib/error-handler";
+import { normalizeEmail } from "@/lib/validators";
+import { useAuthContext } from "@/providers/AuthProvider";
+import { useToast } from "@/hooks/useToast";
 
 type LoginPayload = {
   email: string;
   password: string;
 };
 
-function getErrorMessage(error: unknown) {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data?.detail || "Invalid email or password";
-  }
-
-  return "Invalid email or password";
-}
-
 export function useAuth() {
   const router = useRouter();
+  const auth = useAuthContext();
+  const toast = useToast();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,24 +26,26 @@ export function useAuth() {
     setError("");
 
     try {
-      const response = await api.post("/auth/login", payload);
+      const response = await api.post("/auth/login", {
+        ...payload,
+        email: normalizeEmail(payload.email),
+      });
       const data = response.data.data;
 
-      saveToken(data.access_token);
-      saveUser(data.user);
+      await auth.loginWithToken(data.access_token);
 
       router.push("/dashboard");
     } catch (error: unknown) {
-      setError(getErrorMessage(error));
+      const message = getApiErrorMessage(error);
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
   const logout = () => {
-    removeToken();
-    localStorage.removeItem("tourvaa_user");
-    router.push("/login");
+    auth.logout();
   };
 
   return {
@@ -55,5 +53,10 @@ export function useAuth() {
     logout,
     loading,
     error,
+    user: auth.user,
+    dashboard: auth.dashboard,
+    isLoggedIn: auth.isLoggedIn,
+    sessionLoading: auth.loading,
+    refreshSession: auth.refreshSession,
   };
 }

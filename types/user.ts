@@ -3,6 +3,7 @@ export type Role = {
   name: string;
   slug: string;
   is_active: boolean;
+  is_system?: boolean;
 };
 
 export type User = {

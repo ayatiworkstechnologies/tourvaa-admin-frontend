@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { Edit, Plus, Trash2, X } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
 import api from "@/lib/api";
 import Loader from "@/components/ui/Loader";
@@ -134,6 +135,7 @@ export default function EmailTemplatesPage() {
   if (!dashboard) return null;
 
   return (
+    <ProtectedRoute requiredPermission="email_templates.view">
     <DashboardLayout title="Email Templates" menus={dashboard.menus} user={dashboard.user}>
       <div className="space-y-6">
         <section className="rounded-2xl border border-[#E7EAF0] bg-white p-6">
@@ -335,5 +337,6 @@ export default function EmailTemplatesPage() {
         </div>
       )}
     </DashboardLayout>
+    </ProtectedRoute>
   );
 }

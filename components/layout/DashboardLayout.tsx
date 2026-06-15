@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { MenuItem } from "@/types/auth";
@@ -25,6 +25,12 @@ export default function DashboardLayout({
   user,
 }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const close = () => setMobileOpen(false);
+    window.addEventListener("tourvaa:close-mobile-sidebar", close);
+    return () => window.removeEventListener("tourvaa:close-mobile-sidebar", close);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F7F9FC]">

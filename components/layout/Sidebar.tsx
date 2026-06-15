@@ -109,6 +109,11 @@ export default function Sidebar({ menus, mobile = false }: SidebarProps) {
               <Link
                 key={`${item.permission}-${item.label}`}
                 href={item.href}
+                onClick={() => {
+                  if (mobile) {
+                    window.dispatchEvent(new Event("tourvaa:close-mobile-sidebar"));
+                  }
+                }}
                 className={`flex h-11 items-center gap-3 rounded-xl px-4 text-sm font-semibold transition ${
                   active
                     ? "bg-[#43A9F6] text-white shadow-sm"
@@ -132,6 +137,7 @@ export default function Sidebar({ menus, mobile = false }: SidebarProps) {
             </p>
           </div>
           <button
+            type="button"
             onClick={logout}
             className="flex items-center gap-3 px-4 text-sm font-semibold text-[#667085] hover:text-[#238DD7]"
           >

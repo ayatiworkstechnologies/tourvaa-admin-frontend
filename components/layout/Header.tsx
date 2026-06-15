@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { MenuItem } from "@/types/auth";
+import { mediaUrl } from "@/lib/media-url";
 
 type HeaderProps = {
   title?: string;
@@ -63,6 +64,7 @@ export default function Header({
     <header className="flex h-[92px] items-center justify-between bg-[#F7F9FC] px-5 md:px-9">
       <div className="flex items-center gap-3">
         <button
+          type="button"
           onClick={onMenuClick}
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#E7EAF0] bg-white text-[#121826] lg:hidden"
           aria-label="Open menu"
@@ -82,6 +84,7 @@ export default function Header({
       <div className="flex items-center gap-3 md:gap-5">
         {canOpenSettings && (
           <button
+            type="button"
             onClick={() => router.push("/settings")}
             className="hidden h-11 w-11 items-center justify-center rounded-lg bg-white text-[#6B7280] hover:text-[#43A9F6] sm:flex"
             aria-label="Settings"
@@ -91,6 +94,7 @@ export default function Header({
         )}
 
         <button
+          type="button"
           className="relative flex h-11 w-11 items-center justify-center rounded-lg bg-white text-[#6B7280] hover:text-[#43A9F6]"
           aria-label="Notifications"
         >
@@ -99,12 +103,13 @@ export default function Header({
 
         <div className="relative">
           <button
+            type="button"
             onClick={() => setOpen(!open)}
             className="flex items-center gap-3 rounded-lg bg-white py-1 pl-1 pr-3"
           >
             {profileImage ? (
               <img
-                src={profileImage}
+                src={mediaUrl(profileImage)}
                 alt={name || "Profile"}
                 className="h-11 w-11 rounded-lg object-cover"
               />
@@ -126,6 +131,7 @@ export default function Header({
             <div className="absolute right-0 top-14 z-50 w-52 rounded-xl border border-[#E7EAF0] bg-white p-2 shadow-xl">
               {canOpenProfile && (
                 <button
+                  type="button"
                   onClick={() => router.push("/profile")}
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#5F6673] hover:bg-[#F3F8FC]"
                 >
@@ -136,6 +142,7 @@ export default function Header({
 
               {canOpenSettings && (
                 <button
+                  type="button"
                   onClick={() => router.push("/settings")}
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#5F6673] hover:bg-[#F3F8FC]"
                 >
@@ -145,6 +152,7 @@ export default function Header({
               )}
 
               <button
+                type="button"
                 onClick={logout}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
               >

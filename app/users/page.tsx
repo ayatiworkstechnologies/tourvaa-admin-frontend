@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CheckCircle2,
   Edit,
@@ -18,6 +18,23 @@ import { useRoles } from "@/hooks/useRoles";
 import { User, UserFormData } from "@/types/user";
 import Loader from "@/components/ui/Loader";
 import Pagination from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/usePagination";
+import { useToast } from "@/hooks/useToast";
+import {
+  combinePhone,
+  digitsOnly,
+  mobileHelp,
+  splitPhone,
+  validateMobile,
+} from "@/lib/validators";
+import {
+  countries,
+  getCities,
+  getStates,
+  phoneCountryCodes,
+  phoneCountryCodeValues,
+} from "@/lib/location-options";
+import { mediaUrl } from "@/lib/media-url";
 
 const emptyForm: UserFormData = {
   name: "",
@@ -36,9 +53,14 @@ const emptyForm: UserFormData = {
 
 export default function UsersPage() {
   const { dashboard, loading: dashboardLoading } = useDashboard();
+  const pagination = usePagination(10);
+  const { setTotal, setTotalPages } = pagination;
+  const toast = useToast();
   const canLoadProtectedData = Boolean(dashboard);
   const {
     users,
+    total,
+    totalPages: backendTotalPages,
     loading,
     saving,
     createUser,
@@ -48,24 +70,37 @@ export default function UsersPage() {
     rejectUser,
     sendPasswordReset,
   } =
-    useUsers({ enabled: canLoadProtectedData });
+    useUsers({
+      enabled: canLoadProtectedData,
+      page: pagination.page,
+      limit: pagination.limit,
+      search: pagination.debouncedSearch,
+    });
   const { roles } = useRoles({ enabled: canLoadProtectedData });
 
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form, setForm] = useState<UserFormData>(emptyForm);
+  const [phoneCountryCode, setPhoneCountryCode] = useState("+91");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [message, setMessage] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
+
+  useEffect(() => {
+    setTotal(total);
+    setTotalPages(backendTotalPages);
+  }, [backendTotalPages, setTotal, setTotalPages, total]);
 
   const openCreate = () => {
     setEditingUser(null);
     setForm(emptyForm);
+    setPhoneCountryCode("+91");
+    setPhoneNumber("");
     setMessage("");
     setOpen(true);
   };
 
   const openEdit = (user: User) => {
+    const phoneParts = splitPhone(user.phone || "", phoneCountryCodeValues);
     setEditingUser(user);
     setForm({
       name: user.name,
@@ -81,6 +116,8 @@ export default function UsersPage() {
       is_active: user.is_active,
       approval_status: user.approval_status,
     });
+    setPhoneCountryCode(phoneParts.countryCode);
+    setPhoneNumber(phoneParts.number);
     setMessage("");
     setOpen(true);
   };
@@ -89,6 +126,8 @@ export default function UsersPage() {
     setOpen(false);
     setEditingUser(null);
     setForm(emptyForm);
+    setPhoneCountryCode("+91");
+    setPhoneNumber("");
   };
 
   const updateForm = (
@@ -106,14 +145,23 @@ export default function UsersPage() {
     setMessage("");
 
     let success = false;
+    const phone = phoneNumber ? combinePhone(phoneCountryCode, phoneNumber) : "";
+
+    if (!validateMobile(phone)) {
+      setMessage(mobileHelp);
+      return;
+    }
+
+    const payload = { ...form, phone };
 
     if (editingUser) {
-      success = await updateUser(editingUser.id, form);
+      success = await updateUser(editingUser.id, payload);
     } else {
-      success = await createUser(form);
+      success = await createUser(payload);
     }
 
     if (success) {
+      toast.success(editingUser ? "User updated successfully." : "User created successfully.");
       closeModal();
     } else {
       setMessage("Something went wrong. Please check the form.");
@@ -132,8 +180,9 @@ export default function UsersPage() {
   const approvedUsers = users.filter(
     (user) => user.approval_status !== "pending"
   );
-  const totalPages = Math.max(1, Math.ceil(approvedUsers.length / pageSize));
-  const paginatedUsers = approvedUsers.slice((page - 1) * pageSize, page * pageSize);
+  const pageSize = pagination.limit;
+  const totalPages = pagination.totalPages;
+  const paginatedUsers = approvedUsers;
 
   const resolveRoleName = (user: User) =>
     user.role?.name ||
@@ -149,6 +198,7 @@ export default function UsersPage() {
   const handleSendReset = async (userId: number) => {
     const sent = await sendPasswordReset(userId);
     setMessage(sent ? "Password reset email sent." : "Could not send reset email.");
+    if (sent) toast.success("Password reset email sent.");
   };
 
   return (
@@ -209,6 +259,15 @@ export default function UsersPage() {
             {message}
           </p>
         )}
+        <label className="mt-5 block max-w-md">
+          <span className="sr-only">Search users</span>
+          <input
+            value={pagination.search}
+            onChange={(event) => pagination.setSearch(event.target.value)}
+            placeholder="Search users..."
+            className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+          />
+        </label>
       </section>
 
       {pendingUsers.length > 0 && (
@@ -299,13 +358,13 @@ export default function UsersPage() {
               {paginatedUsers.map((user, index) => (
                 <tr key={user.id} className="hover:bg-[#FAFBFC]">
                   <td className="px-5 py-4 font-bold text-[#667085]">
-                    {(page - 1) * pageSize + index + 1}
+                    {(pagination.page - 1) * pageSize + index + 1}
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       {user.profile_image ? (
                         <img
-                          src={user.profile_image}
+                          src={mediaUrl(user.profile_image)}
                           alt={user.name}
                           className="h-9 w-9 rounded-xl object-cover"
                         />
@@ -402,10 +461,10 @@ export default function UsersPage() {
           </table>
           {approvedUsers.length > 0 && (
             <Pagination
-              page={Math.min(page, totalPages)}
+              page={Math.min(pagination.page, totalPages)}
               pageSize={pageSize}
-              total={approvedUsers.length}
-              onPageChange={setPage}
+              total={total}
+              onPageChange={pagination.setPage}
             />
           )}
         </div>
@@ -468,6 +527,130 @@ export default function UsersPage() {
                   />
                 </label>
               )}
+
+              <div className="grid gap-4 sm:grid-cols-[170px_1fr]">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-gray-500">
+                    Country Code
+                  </span>
+                  <select
+                    value={phoneCountryCode}
+                    onChange={(e) => setPhoneCountryCode(e.target.value)}
+                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                  >
+                    {phoneCountryCodes.map((item, index) => (
+                      <option key={`${item.value}-${index}`} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-gray-500">
+                    Mobile Number
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
+                    placeholder="9876543210"
+                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                  />
+                  <p className="mt-1 text-xs text-[#98A2B3]">{mobileHelp}</p>
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-gray-500">
+                  Address
+                </span>
+                <input
+                  value={form.address}
+                  onChange={(e) => updateForm("address", e.target.value)}
+                  className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                />
+              </label>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-gray-500">
+                    Country
+                  </span>
+                  <select
+                    value={form.country}
+                    onChange={(e) => {
+                      updateForm("country", e.target.value);
+                      updateForm("state", "");
+                      updateForm("city", "");
+                    }}
+                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                  >
+                    <option value="">Select Country</option>
+                    {countries.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-gray-500">
+                    State
+                  </span>
+                  <select
+                    value={form.state}
+                    onChange={(e) => {
+                      updateForm("state", e.target.value);
+                      updateForm("city", "");
+                    }}
+                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                    disabled={!form.country}
+                  >
+                    <option value="">Select State</option>
+                    {getStates(form.country).map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-gray-500">
+                    City
+                  </span>
+                  <select
+                    value={form.city}
+                    onChange={(e) => updateForm("city", e.target.value)}
+                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                    disabled={!form.state}
+                  >
+                    <option value="">Select City</option>
+                    {getCities(form.state).map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-gray-500">
+                    Pincode
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={form.pincode}
+                    onChange={(e) => updateForm("pincode", digitsOnly(e.target.value))}
+                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                  />
+                </label>
+              </div>
 
               <label className="block">
                 <span className="mb-1 block text-xs font-semibold text-gray-500">

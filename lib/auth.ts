@@ -1,20 +1,24 @@
-export const saveToken = (token: string) => {
-  localStorage.setItem("tourvaa_token", token);
-};
+import {
+  clearSession,
+  getStoredTokenSafe,
+  getToken,
+  setToken,
+} from "@/lib/session";
 
-export const getToken = () => {
-  return localStorage.getItem("tourvaa_token");
+export const saveToken = (token: string) => {
+  setToken(token);
 };
 
 export const removeToken = () => {
-  localStorage.removeItem("tourvaa_token");
+  clearSession();
 };
 
 export const saveUser = (user: unknown) => {
-  localStorage.setItem("tourvaa_user", JSON.stringify(user));
+  void user;
 };
 
 export const getUser = () => {
-  const user = localStorage.getItem("tourvaa_user");
-  return user ? JSON.parse(user) : null;
+  return null;
 };
+
+export { clearSession, getStoredTokenSafe, getToken, setToken };

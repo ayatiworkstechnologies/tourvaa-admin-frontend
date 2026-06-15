@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
 import api from "@/lib/api";
 import Loader from "@/components/ui/Loader";
@@ -75,6 +76,7 @@ export default function SettingsPage() {
   if (!dashboard) return null;
 
   return (
+    <ProtectedRoute requiredPermission="settings.view">
     <DashboardLayout title="Settings" menus={dashboard.menus} user={dashboard.user}>
       <form onSubmit={saveSettings} className="space-y-6">
         <section className="rounded-2xl border border-[#E7EAF0] bg-white p-6">
@@ -142,5 +144,6 @@ export default function SettingsPage() {
         </div>
       </form>
     </DashboardLayout>
+    </ProtectedRoute>
   );
 }

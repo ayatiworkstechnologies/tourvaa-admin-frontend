@@ -5,7 +5,7 @@ import DynamicModulePage from "@/components/common/DynamicModulePage";
 
 export default function PermissionsPage() {
   return (
-    <ModuleWrapper title="Permissions">
+    <ModuleWrapper title="Permissions" requiredPermission="permissions.view">
       <DynamicModulePage
         title="Permissions"
         description="Create and manage module permissions."
@@ -30,9 +30,10 @@ export default function PermissionsPage() {
             label: "Status",
             type: "select",
             options: [
-              { label: "Active", value: "true" },
-              { label: "Inactive", value: "false" },
+              { label: "Active", value: true },
+              { label: "Inactive", value: false },
             ],
+            valueType: "boolean",
           },
         ]}
       />

@@ -8,6 +8,7 @@ import { Eye, EyeOff, Lock } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
 import api from "@/lib/api";
+import { passwordHelp, validatePassword } from "@/lib/validators";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
@@ -82,6 +83,12 @@ function ResetPasswordForm() {
       return;
     }
 
+    if (!validatePassword(password)) {
+      setError(passwordHelp);
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await api.post("/auth/reset-password", {
         token,
@@ -113,6 +120,7 @@ function ResetPasswordForm() {
             placeholder="Minimum 8 characters"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            autoComplete="new-password"
             required
           />
           <button
@@ -132,6 +140,7 @@ function ResetPasswordForm() {
           placeholder="Confirm password"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
+          autoComplete="new-password"
           required
         />
 

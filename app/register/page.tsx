@@ -9,12 +9,24 @@ import {
   EyeOff,
   Lock,
   Mail,
+  Phone,
   User,
   UserPlus,
 } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
 import api from "@/lib/api";
+import {
+  combinePhone,
+  digitsOnly,
+  mobileHelp,
+  normalizeEmail,
+  passwordHelp,
+  validateEmail,
+  validateMobile,
+  validatePassword,
+} from "@/lib/validators";
+import { phoneCountryCodes } from "@/lib/location-options";
 
 function getErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -27,6 +39,8 @@ function getErrorMessage(error: unknown) {
 type RegisterFormValues = {
   name: string;
   email: string;
+  phone_country_code: string;
+  phone_number: string;
   password: string;
   confirmPassword: string;
 };
@@ -40,18 +54,22 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     defaultValues: {
       name: "",
       email: "",
+      phone_country_code: "+91",
+      phone_number: "",
       password: "",
       confirmPassword: "",
     },
   });
 
   const password = watch("password");
+  const phoneCountryCode = watch("phone_country_code");
 
   const onSubmit = async (values: RegisterFormValues) => {
     setMessage("");
@@ -60,7 +78,8 @@ export default function RegisterPage() {
     try {
       await api.post("/auth/register", {
         name: values.name,
-        email: values.email,
+        email: normalizeEmail(values.email),
+        phone: values.phone_number ? combinePhone(values.phone_country_code, values.phone_number) : "",
         password: values.password,
       });
 
@@ -68,6 +87,8 @@ export default function RegisterPage() {
       reset({
         name: "",
         email: "",
+        phone_country_code: "+91",
+        phone_number: "",
         password: "",
         confirmPassword: "",
       });
@@ -105,15 +126,51 @@ export default function RegisterPage() {
           placeholder="Enter email address"
           {...register("email", {
             required: "Email is required.",
-            pattern: {
-              value: /^\S+@\S+\.\S+$/,
-              message: "Enter a valid email address.",
-            },
+            validate: (value) => validateEmail(value) || "Enter a valid email address.",
           })}
         />
         {errors.email && (
           <p className="-mt-2 text-xs font-medium text-red-600">
             {errors.email.message}
+          </p>
+        )}
+
+        <div className="grid gap-3 sm:grid-cols-[170px_1fr]">
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-gray-600">
+              Country Code
+            </span>
+            <select
+              {...register("phone_country_code")}
+              className="h-[46px] w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-[#009FE3] focus:ring-2 focus:ring-sky-100"
+            >
+              {phoneCountryCodes.map((item, index) => (
+                <option key={`${item.value}-${index}`} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <AuthInput
+            label="Mobile Number"
+            icon={Phone}
+            type="tel"
+            placeholder="9876543210"
+            autoComplete="tel-national"
+            inputMode="numeric"
+            {...register("phone_number", {
+              validate: (value) =>
+                !value || validateMobile(combinePhone(phoneCountryCode, value)) || mobileHelp,
+              onChange: (event) =>
+                setValue("phone_number", digitsOnly(event.target.value), {
+                  shouldValidate: true,
+                }),
+            })}
+          />
+        </div>
+        {errors.phone_number && (
+          <p className="-mt-2 text-xs font-medium text-red-600">
+            {errors.phone_number.message}
           </p>
         )}
 
@@ -129,7 +186,9 @@ export default function RegisterPage() {
                 value: 8,
                 message: "Password must be at least 8 characters.",
               },
+              validate: (value) => validatePassword(value) || passwordHelp,
             })}
+            autoComplete="new-password"
           />
           <button
             type="button"

@@ -6,9 +6,10 @@ import { Role } from "@/types/user";
 
 type UseRolesOptions = {
   enabled?: boolean;
+  publicOnly?: boolean;
 };
 
-export function useRoles({ enabled = true }: UseRolesOptions = {}) {
+export function useRoles({ enabled = true, publicOnly = false }: UseRolesOptions = {}) {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(enabled);
 
@@ -21,14 +22,14 @@ export function useRoles({ enabled = true }: UseRolesOptions = {}) {
     setLoading(true);
 
     try {
-      const response = await api.get("/roles/public/options");
+      const response = await api.get(publicOnly ? "/roles/public/options" : "/roles/");
       setRoles(response.data.data || []);
     } catch {
       setRoles([]);
     } finally {
       setLoading(false);
     }
-  }, [enabled]);
+  }, [enabled, publicOnly]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

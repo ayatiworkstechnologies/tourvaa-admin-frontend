@@ -8,6 +8,7 @@ import { Mail } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
 import api from "@/lib/api";
+import { normalizeEmail, validateEmail } from "@/lib/validators";
 
 function getErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -40,7 +41,10 @@ export default function ForgotPasswordPage() {
     setError("");
 
     try {
-      const response = await api.post("/auth/forgot-password", values);
+      const response = await api.post("/auth/forgot-password", {
+        ...values,
+        email: normalizeEmail(values.email),
+      });
       setMessage(response.data.message || "Reset link has been sent to your email.");
       reset({ email: "" });
     } catch (err: unknown) {
@@ -62,10 +66,7 @@ export default function ForgotPasswordPage() {
           placeholder="you@company.com"
           {...register("email", {
             required: "Email is required.",
-            pattern: {
-              value: /^\S+@\S+\.\S+$/,
-              message: "Enter a valid email address.",
-            },
+            validate: (value) => validateEmail(value) || "Enter a valid email address.",
           })}
         />
         {errors.email && (

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearSession, getStoredTokenSafe } from "@/lib/session";
 
 const API_PATH_PREFIX = "/api";
 
@@ -27,7 +28,7 @@ api.interceptors.request.use((config) => {
     config.baseURL = API_PATH_PREFIX;
     config.url = normalizeApiUrl(config.url);
 
-    const token = localStorage.getItem("tourvaa_token");
+    const token = getStoredTokenSafe();
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -36,5 +37,38 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (typeof window !== "undefined" && error?.response?.status === 401) {
+      clearSession();
+      if (!window.location.pathname.startsWith("/login")) {
+        window.dispatchEvent(
+          new CustomEvent("tourvaa:toast", {
+            detail: {
+              type: "warning",
+              message: "Your session has expired. Please log in again.",
+            },
+          })
+        );
+        window.location.assign("/login");
+      }
+    }
+
+    if (typeof window !== "undefined" && error?.response?.status === 403) {
+      window.dispatchEvent(
+        new CustomEvent("tourvaa:toast", {
+          detail: {
+            type: "error",
+            message: "Access denied. You do not have permission for this action.",
+          },
+        })
+      );
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default api;
