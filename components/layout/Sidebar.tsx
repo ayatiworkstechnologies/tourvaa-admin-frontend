@@ -13,6 +13,7 @@ import {
   Shield,
   UserRound,
   Users,
+  UsersRound,
 } from "lucide-react";
 import { MenuItem } from "@/types/auth";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +37,12 @@ const defaultMenus = [
     icon: Users,
   },
   {
+    label: "Customers",
+    permission: "view-customers",
+    href: "/customers",
+    icon: UsersRound,
+  },
+  {
     label: "Roles",
     permission: "view-roles",
     href: "/roles",
@@ -56,7 +63,7 @@ const defaultMenus = [
   {
     label: "Reports",
     permission: "view-reports",
-    href: "/dashboard",
+    href: "/reports",
     icon: FileText,
   },
   {

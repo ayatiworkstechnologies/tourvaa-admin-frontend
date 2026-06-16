@@ -126,7 +126,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasPermission = useCallback(
     (permission: string) => {
       const slug = normalizePermission(permission);
-      return Boolean(dashboard?.permissions?.some((item) => item.slug === slug));
+      return Boolean(
+        dashboard?.permissions?.some((item) => item.slug === permission || item.slug === slug)
+      );
     },
     [dashboard]
   );

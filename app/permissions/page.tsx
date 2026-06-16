@@ -2,8 +2,16 @@
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DynamicModulePage from "@/components/common/DynamicModulePage";
+import Loader from "@/components/ui/Loader";
+import { useAdminModules } from "@/hooks/useAdminModules";
 
 export default function PermissionsPage() {
+  const { modules, loading } = useAdminModules();
+
+  if (loading) {
+    return <Loader label="Loading permission modules..." fullScreen />;
+  }
+
   return (
     <ModuleWrapper title="Permissions" requiredPermission="permissions.view">
       <DynamicModulePage
@@ -13,7 +21,15 @@ export default function PermissionsPage() {
         fields={[
           { name: "name", label: "Permission Name" },
           { name: "slug", label: "Slug" },
-          { name: "module", label: "Module" },
+          {
+            name: "module",
+            label: "Module",
+            type: "select",
+            options: modules.map((module) => ({
+              label: module.name,
+              value: module.slug,
+            })),
+          },
           {
             name: "action",
             label: "Action",

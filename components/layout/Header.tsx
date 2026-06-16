@@ -26,9 +26,11 @@ type HeaderProps = {
 const menuHrefByPermission: Record<string, string> = {
   "view-dashboard": "/dashboard",
   "view-users": "/users",
+  "view-customers": "/customers",
   "view-roles": "/roles",
   "view-permissions": "/permissions",
   "view-email": "/email-templates",
+  "view-reports": "/reports",
   "view-settings": "/settings",
   "view-profile": "/profile",
 };
