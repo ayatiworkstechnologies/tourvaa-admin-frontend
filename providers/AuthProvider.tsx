@@ -31,19 +31,46 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password"];
 
-function normalizePermission(permission: string) {
-  const [module, action] = permission.split(".");
-  if (!module || !action) return permission;
+function permissionAliases(permission: string) {
+  const aliases = new Set([permission]);
   const moduleMap: Record<string, string> = {
     email_templates: "email",
+    email: "email_templates",
   };
-  const actionMap: Record<string, string> = {
+
+  const dottedToLegacyAction: Record<string, string> = {
     view: "view",
     create: "create",
-    update: "update",
+    edit: "update",
     delete: "delete",
   };
-  return `${actionMap[action] || action}-${moduleMap[module] || module}`;
+  const legacyToDottedAction: Record<string, string> = {
+    view: "view",
+    create: "create",
+    update: "edit",
+    delete: "delete",
+  };
+
+  if (permission.includes(".")) {
+    const [moduleName, action] = permission.split(".");
+    const legacyAction = dottedToLegacyAction[action];
+
+    if (moduleName && legacyAction) {
+      aliases.add(`${legacyAction}-${moduleMap[moduleName] || moduleName}`);
+    }
+  }
+
+  if (permission.includes("-")) {
+    const [action, ...moduleParts] = permission.split("-");
+    const moduleName = moduleParts.join("-");
+    const dottedAction = legacyToDottedAction[action];
+
+    if (moduleName && dottedAction) {
+      aliases.add(`${moduleMap[moduleName] || moduleName}.${dottedAction}`);
+    }
+  }
+
+  return aliases;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -125,9 +152,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasPermission = useCallback(
     (permission: string) => {
-      const slug = normalizePermission(permission);
+      const requestedPermissions = permissionAliases(permission);
       return Boolean(
-        dashboard?.permissions?.some((item) => item.slug === permission || item.slug === slug)
+        dashboard?.permissions?.some((item) =>
+          Array.from(permissionAliases(item.slug)).some((alias) => requestedPermissions.has(alias))
+        )
       );
     },
     [dashboard]

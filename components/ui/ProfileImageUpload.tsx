@@ -29,6 +29,7 @@ export default function ProfileImageUpload({
 }: ProfileImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [previewFailed, setPreviewFailed] = useState(false);
 
   const upload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -57,6 +58,7 @@ export default function ProfileImageUpload({
       const response = await api.post("/uploads/profile-image", payload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      setPreviewFailed(false);
       onChange(response.data.data.url);
     } catch (err: unknown) {
       setError(getErrorMessage(err));
@@ -84,8 +86,13 @@ export default function ProfileImageUpload({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#E6E8F0] bg-[#F7F9FC]">
-          {value ? (
-            <img src={mediaUrl(value)} alt="Profile preview" className="h-full w-full object-cover" />
+          {value && !previewFailed ? (
+            <img
+              src={mediaUrl(value)}
+              alt="Profile preview"
+              className="h-full w-full object-cover"
+              onError={() => setPreviewFailed(true)}
+            />
           ) : (
             <ImageUp size={24} className="text-gray-400" />
           )}

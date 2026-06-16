@@ -51,6 +51,7 @@ export default function Header({
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const allowedMenus = menus
     .map((menu) => ({
       ...menu,
@@ -109,11 +110,12 @@ export default function Header({
             onClick={() => setOpen(!open)}
             className="flex items-center gap-3 rounded-lg bg-white py-1 pl-1 pr-3"
           >
-            {profileImage ? (
+            {profileImage && !imageFailed ? (
               <img
                 src={mediaUrl(profileImage)}
                 alt={name || "Profile"}
                 className="h-11 w-11 rounded-lg object-cover"
+                onError={() => setImageFailed(true)}
               />
             ) : (
               <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg bg-[#DDF1FF] font-bold text-[#2F9FE9]">

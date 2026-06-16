@@ -11,12 +11,16 @@ import {
   MapPinned,
   Settings,
   Shield,
+  Tags,
+  Ticket,
   UserRound,
   Users,
   UsersRound,
+  Warehouse,
 } from "lucide-react";
 import { MenuItem } from "@/types/auth";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/providers/AuthProvider";
 
 type SidebarProps = {
   menus: MenuItem[];
@@ -41,6 +45,36 @@ const defaultMenus = [
     permission: "view-customers",
     href: "/customers",
     icon: UsersRound,
+  },
+  {
+    label: "Suppliers",
+    permission: "suppliers.view",
+    href: "/suppliers",
+    icon: Warehouse,
+  },
+  {
+    label: "Agents",
+    permission: "agents.view",
+    href: "/agents",
+    icon: UsersRound,
+  },
+  {
+    label: "Affiliates",
+    permission: "affiliates.view",
+    href: "/affiliates",
+    icon: Ticket,
+  },
+  {
+    label: "Tours",
+    permission: "tours.view",
+    href: "/tours",
+    icon: MapPinned,
+  },
+  {
+    label: "Categories",
+    permission: "categories.view",
+    href: "/tours/categories",
+    icon: Tags,
   },
   {
     label: "Roles",
@@ -73,6 +107,18 @@ const defaultMenus = [
     icon: Settings,
   },
   {
+    label: "Countries",
+    permission: "countries.view",
+    href: "/settings/countries",
+    icon: FileText,
+  },
+  {
+    label: "Cities",
+    permission: "cities.view",
+    href: "/settings/cities",
+    icon: FileText,
+  },
+  {
     label: "Profile",
     permission: "view-profile",
     href: "/profile",
@@ -83,9 +129,9 @@ const defaultMenus = [
 export default function Sidebar({ menus, mobile = false }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
-
+  const { hasPermission } = useAuthContext();
   const allowedMenus = defaultMenus.filter((item) =>
-    menus.some((menu) => menu.permission === item.permission)
+    menus.some((menu) => menu.permission === item.permission) || hasPermission(item.permission)
   );
 
   return (
