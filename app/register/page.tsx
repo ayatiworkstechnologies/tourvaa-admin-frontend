@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   Eye,
   EyeOff,
@@ -55,7 +55,7 @@ export default function RegisterPage() {
     handleSubmit,
     reset,
     setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     defaultValues: {
@@ -68,8 +68,8 @@ export default function RegisterPage() {
     },
   });
 
-  const password = watch("password");
-  const phoneCountryCode = watch("phone_country_code");
+  const password = useWatch({ control, name: "password" });
+  const phoneCountryCode = useWatch({ control, name: "phone_country_code" });
 
   const onSubmit = async (values: RegisterFormValues) => {
     setMessage("");

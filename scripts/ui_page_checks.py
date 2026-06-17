@@ -31,6 +31,8 @@ ROUTES = {
         "/settings",
         "/settings/countries",
         "/settings/cities",
+        "/settings/payment",
+        "/settings/api",
         "/suppliers",
         "/agents",
         "/affiliates",

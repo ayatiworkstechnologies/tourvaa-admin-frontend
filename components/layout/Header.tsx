@@ -27,6 +27,7 @@ const menuHrefByPermission: Record<string, string> = {
   "view-dashboard": "/dashboard",
   "view-users": "/users",
   "view-customers": "/customers",
+  "customers.view": "/customers",
   "view-roles": "/roles",
   "view-permissions": "/permissions",
   "view-email": "/email-templates",
@@ -111,6 +112,7 @@ export default function Header({
             className="flex items-center gap-3 rounded-lg bg-white py-1 pl-1 pr-3"
           >
             {profileImage && !imageFailed ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={mediaUrl(profileImage)}
                 alt={name || "Profile"}

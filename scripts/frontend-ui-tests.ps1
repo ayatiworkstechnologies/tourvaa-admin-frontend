@@ -1,7 +1,8 @@
 param(
-  [string]$BaseUrl = "http://127.0.0.1:3000",
+  [string]$BaseUrl = "",
   [ValidateSet("all", "public", "admin")]
-  [string]$Group = "all"
+  [string]$Group = "all",
+  [int]$Port = 3100
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,7 +11,13 @@ $frontend = Split-Path -Parent $PSScriptRoot
 $root = Split-Path -Parent $frontend
 $runner = Join-Path $root "scripts\frontend-ui-tests.ps1"
 
-& powershell -ExecutionPolicy Bypass -File $runner -BaseUrl $BaseUrl -Group $Group
+$argsList = @("-ExecutionPolicy", "Bypass", "-File", $runner, "-Group", $Group, "-Port", $Port)
+if ($BaseUrl) {
+  $argsList += "-BaseUrl"
+  $argsList += $BaseUrl
+}
+
+& powershell @argsList
 if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
 }

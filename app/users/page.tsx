@@ -363,6 +363,7 @@ export default function UsersPage() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       {user.profile_image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={mediaUrl(user.profile_image)}
                           alt={user.name}

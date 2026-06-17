@@ -9,7 +9,7 @@ const toneMap: Record<string, string> = {
   approved: "bg-emerald-50 text-emerald-700",
   published: "bg-emerald-50 text-emerald-700",
   pending: "bg-amber-50 text-amber-700",
-  partially_approved: "bg-sky-50 text-sky-700",
+  partial_approved: "bg-sky-50 text-sky-700",
   draft: "bg-slate-100 text-slate-700",
   inactive: "bg-slate-100 text-slate-700",
   unpublished: "bg-slate-100 text-slate-700",

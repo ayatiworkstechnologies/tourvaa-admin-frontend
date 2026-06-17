@@ -119,6 +119,13 @@ export async function getCustomerDetail(customerId: string | number) {
   return response.data.data;
 }
 
+export async function updateCustomerStatus(customerId: string | number, status: "active" | "inactive") {
+  const response = await api.patch<{ status: string; data: Customer }>(`/customers/${customerId}/status`, {
+    status,
+  });
+  return response.data.data;
+}
+
 export async function blockCustomer(customerId: string | number, reason: string) {
   const response = await api.patch<{ status: string; data: Customer }>(`/customers/${customerId}/block`, {
     reason,

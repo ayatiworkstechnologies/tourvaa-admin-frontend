@@ -42,7 +42,7 @@ const defaultMenus = [
   },
   {
     label: "Customers",
-    permission: "view-customers",
+    permission: "customers.view",
     href: "/customers",
     icon: UsersRound,
   },
