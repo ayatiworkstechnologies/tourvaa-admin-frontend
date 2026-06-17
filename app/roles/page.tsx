@@ -101,8 +101,23 @@ export default function RolesPage() {
   }, []);
 
   const fetchPermissions = useCallback(async () => {
-    const response = await api.get("/permissions/");
-    setPermissions(response.data.data || []);
+    try {
+      let allPerms: Permission[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      do {
+        const response = await api.get(`/permissions/?limit=100&page=${currentPage}`);
+        allPerms = [...allPerms, ...(response.data.data || [])];
+        totalPages = response.data.total_pages || 1;
+        currentPage++;
+      } while (currentPage <= totalPages);
+
+      setPermissions(allPerms);
+    } catch (error) {
+      console.error("Failed to fetch permissions", error);
+      setPermissions([]);
+    }
   }, []);
 
   const loadData = useCallback(async () => {
@@ -255,84 +270,86 @@ export default function RolesPage() {
         </div>
 
         <div className="overflow-hidden rounded-lg border border-[#E6E8F0]">
-          <table className="w-full border-collapse text-left text-sm">
-            <thead className="bg-[#F7F9FC] text-xs uppercase text-gray-500">
-              <tr>
-                <th className="w-20 px-5 py-4">No</th>
-                <th className="px-5 py-4">Role Name</th>
-                <th className="px-5 py-4">Slug</th>
-                <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4 text-right">Action</th>
-              </tr>
-            </thead>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px] border-collapse text-left text-sm">
+              <thead className="bg-[#F7F9FC] text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="w-20 px-5 py-4">No</th>
+                  <th className="px-5 py-4">Role Name</th>
+                  <th className="px-5 py-4">Slug</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4 text-right">Action</th>
+                </tr>
+              </thead>
 
-            <tbody className="divide-y divide-[#E6E8F0]">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-5 py-10 text-center">
-                    <Loader label="Loading roles..." />
-                  </td>
-                </tr>
-              ) : roles.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-5 py-10 text-center text-gray-400"
-                  >
-                    No roles found.
-                  </td>
-                </tr>
-              ) : (
-                paginatedRoles.map((role, index) => (
-                  <tr key={role.id} className="hover:bg-[#F9FAFB]">
-                    <td className="px-5 py-4 font-bold text-[#667085]">
-                      {(page - 1) * pageSize + index + 1}
-                    </td>
-                    <td className="px-5 py-4 font-semibold text-[#1F1B2D]">
-                      {role.name}
-                    </td>
-                    <td className="px-5 py-4 text-gray-600">{role.slug}</td>
-                    <td className="px-5 py-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          role.is_active
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-red-50 text-red-600"
-                        }`}
-                      >
-                        {role.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => openPermissions(role)}
-                          className="rounded-md border border-[#E6E8F0] p-2 text-gray-500 hover:bg-sky-50 hover:text-[#43A9F6]"
-                          title="Assign permissions"
-                        >
-                          <KeyRound size={15} />
-                        </button>
-                        <button
-                          onClick={() => openEdit(role)}
-                          className="rounded-md border border-[#E6E8F0] p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                          title="Edit role"
-                        >
-                          <Edit size={15} />
-                        </button>
-                        <button
-                          onClick={() => deleteRole(role)}
-                          className="rounded-md border border-[#E6E8F0] p-2 text-gray-500 hover:bg-red-50 hover:text-red-600"
-                          title="Delete role"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
+              <tbody className="divide-y divide-[#E6E8F0]">
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-10 text-center">
+                      <Loader label="Loading roles..." />
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : roles.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-5 py-10 text-center text-gray-400"
+                    >
+                      No roles found.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedRoles.map((role, index) => (
+                    <tr key={role.id} className="hover:bg-[#F9FAFB]">
+                      <td className="px-5 py-4 font-bold text-[#667085]">
+                        {(page - 1) * pageSize + index + 1}
+                      </td>
+                      <td className="px-5 py-4 font-semibold text-[#1F1B2D]">
+                        {role.name}
+                      </td>
+                      <td className="px-5 py-4 text-gray-600">{role.slug}</td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            role.is_active
+                              ? "bg-emerald-50 text-emerald-600"
+                              : "bg-red-50 text-red-600"
+                          }`}
+                        >
+                          {role.is_active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => openPermissions(role)}
+                            className="rounded-md border border-[#E6E8F0] p-2 text-gray-500 hover:bg-sky-50 hover:text-[#43A9F6]"
+                            title="Assign permissions"
+                          >
+                            <KeyRound size={15} />
+                          </button>
+                          <button
+                            onClick={() => openEdit(role)}
+                            className="rounded-md border border-[#E6E8F0] p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                            title="Edit role"
+                          >
+                            <Edit size={15} />
+                          </button>
+                          <button
+                            onClick={() => deleteRole(role)}
+                            className="rounded-md border border-[#E6E8F0] p-2 text-gray-500 hover:bg-red-50 hover:text-red-600"
+                            title="Delete role"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
           {!loading && roles.length > 0 && (
             <Pagination
               page={Math.min(page, totalPages)}
@@ -464,71 +481,126 @@ export default function RolesPage() {
 
             <div className="flex-1 overflow-y-auto pr-1">
               <div className="overflow-hidden rounded-xl border border-[#E6E8F0]">
-                <div className="grid grid-cols-[1.3fr_repeat(4,1fr)_0.8fr] bg-[#F7F9FC] px-4 py-3 text-xs font-bold uppercase text-gray-500">
-                  <span>Module</span>
-                  {actions.map((action) => (
-                    <span key={action.key} className="text-center">
-                      {action.label}
-                    </span>
-                  ))}
-                  <span className="text-right">All</span>
-                </div>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[900px]">
+                    <div className="grid grid-cols-[1.3fr_1fr_1fr_1fr_1fr_2fr_0.8fr] bg-[#F7F9FC] px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                      <span>Module</span>
+                      <span className="text-center">View</span>
+                      <span className="text-center">Create</span>
+                      <span className="text-center">Update</span>
+                      <span className="text-center">Delete</span>
+                      <span className="text-left pl-4">Others</span>
+                      <span className="text-right">All</span>
+                    </div>
 
-                <div className="divide-y divide-[#E6E8F0]">
-                  {permissionMatrix.map(({ module, items, byAction }) => {
-                    const moduleSelected = items.every((permission) =>
-                      selectedPermissionIds.includes(permission.id)
-                    );
+                    <div className="divide-y divide-[#E6E8F0]">
+                      {Object.entries(groupedPermissions)
+                        .sort(([left], [right]) => left.localeCompare(right))
+                        .map(([module, items]) => {
+                          const moduleSelected = items.every((permission) =>
+                            selectedPermissionIds.includes(permission.id)
+                          );
 
-                    return (
-                      <div
-                        key={module}
-                        className="grid grid-cols-[1.3fr_repeat(4,1fr)_0.8fr] items-center px-4 py-4"
-                      >
-                        <div>
-                          <p className="font-semibold capitalize text-[#1F1B2D]">
-                            {module.replace("-", " ")}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {items.length} permissions
-                          </p>
-                        </div>
+                          const getCoreAction = (p: Permission) => {
+                            const s = p.slug;
+                            const m = p.module;
+                            if (s === `view-${m}` || s === `${m}.view`) return "get";
+                            if (s === `create-${m}` || s === `${m}.create`) return "post";
+                            if (s === `update-${m}` || s === `${m}.edit` || s === `${m}.update`) return "put";
+                            if (s === `delete-${m}` || s === `${m}.delete`) return "delete";
+                            return "other";
+                          };
 
-                        {actions.map((action) => {
-                          const permission = byAction[action.key];
+                          const byAction: Record<string, Permission | undefined> = {};
+                          const others: Permission[] = [];
+
+                          items.forEach((p) => {
+                            const action = getCoreAction(p);
+                            if (action !== "other" && !byAction[action]) {
+                              byAction[action] = p;
+                            } else {
+                              others.push(p);
+                            }
+                          });
+
+                          const coreKeys = ["get", "post", "put", "delete"];
 
                           return (
-                            <label
-                              key={`${module}-${action.key}`}
-                              className="flex flex-col items-center gap-1 text-xs font-semibold text-gray-500"
-                              title={permission?.slug || "Not available"}
+                            <div
+                              key={module}
+                              className="grid grid-cols-[1.3fr_1fr_1fr_1fr_1fr_2fr_0.8fr] items-center px-4 py-4 hover:bg-[#F9FAFB]"
                             >
-                              <input
-                                type="checkbox"
-                                disabled={!permission}
-                                checked={
-                                  !!permission &&
-                                  selectedPermissionIds.includes(permission.id)
-                                }
-                                onChange={() =>
-                                  permission && togglePermission(permission.id)
-                                }
-                              />
-                              <span>{action.description}</span>
-                            </label>
+                              <div>
+                                <p className="font-semibold capitalize text-[#1F1B2D]">
+                                  {module.replace("-", " ")}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  {items.length} permissions
+                                </p>
+                              </div>
+
+                              {coreKeys.map((key) => {
+                                const permission = byAction[key];
+                                const labelMap: Record<string, string> = { get: "View", post: "Create", put: "Update", delete: "Delete" };
+                                return (
+                                  <div key={key} className="flex justify-center">
+                                    <label
+                                      className="flex flex-col items-center gap-1 text-xs font-semibold text-gray-500 cursor-pointer"
+                                      title={permission?.name || "Not available"}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        disabled={!permission}
+                                        className="cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                        checked={
+                                          !!permission &&
+                                          selectedPermissionIds.includes(permission.id)
+                                        }
+                                        onChange={() =>
+                                          permission && togglePermission(permission.id)
+                                        }
+                                      />
+                                      <span>{labelMap[key]}</span>
+                                    </label>
+                                  </div>
+                                );
+                              })}
+
+                              <div className="flex flex-col gap-2 pl-4 justify-center">
+                                {others.length > 0 ? (
+                                  others.map((p) => (
+                                    <label
+                                      key={p.id}
+                                      className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-600 cursor-pointer leading-tight"
+                                      title={p.slug}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        className="cursor-pointer"
+                                        checked={selectedPermissionIds.includes(p.id)}
+                                        onChange={() => togglePermission(p.id)}
+                                      />
+                                      <span>{p.name.replace(new RegExp(`^.*${module.replace('-', ' ')}$`, 'i'), '').trim() || p.name}</span>
+                                    </label>
+                                  ))
+                                ) : (
+                                  <span className="text-[11px] text-gray-400 italic">None</span>
+                                )}
+                              </div>
+
+                              <div className="flex justify-end pr-2">
+                                <input
+                                  type="checkbox"
+                                  className="cursor-pointer"
+                                  checked={moduleSelected}
+                                  onChange={() => toggleModulePermissions(items)}
+                                />
+                              </div>
+                            </div>
                           );
                         })}
-
-                        <div className="flex justify-end">
-                          <input
-                            type="checkbox"
-                            checked={moduleSelected}
-                            onChange={() => toggleModulePermissions(items)}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

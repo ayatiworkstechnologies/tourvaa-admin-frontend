@@ -164,59 +164,61 @@ export default function EmailTemplatesPage() {
 
         <section className="rounded-2xl border border-[#E7EAF0] bg-white p-6">
           <div className="overflow-hidden rounded-2xl border border-[#E7EAF0]">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="bg-[#F7F9FC] text-xs uppercase text-[#667085]">
-                <tr>
-                  <th className="w-20 px-5 py-4">No</th>
-                  <th className="px-5 py-4">Template</th>
-                  <th className="px-5 py-4">Key</th>
-                  <th className="px-5 py-4">Subject</th>
-                  <th className="px-5 py-4">Status</th>
-                  <th className="px-5 py-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EEF2F6]">
-                {paginatedTemplates.map((template, index) => (
-                  <tr key={template.id} className="hover:bg-[#FAFBFC]">
-                    <td className="px-5 py-4 font-bold text-[#667085]">
-                      {(page - 1) * pageSize + index + 1}
-                    </td>
-                    <td className="px-5 py-4 font-bold text-[#121826]">
-                      {template.name}
-                    </td>
-                    <td className="px-5 py-4 text-[#667085]">{template.key}</td>
-                    <td className="px-5 py-4 text-[#344054]">{template.subject}</td>
-                    <td className="px-5 py-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-bold ${
-                          template.is_active
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-red-50 text-red-600"
-                        }`}
-                      >
-                        {template.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => openEdit(template)}
-                          className="rounded-lg border border-[#E7EAF0] p-2 text-[#667085] hover:bg-sky-50 hover:text-[#238DD7]"
-                        >
-                          <Edit size={15} />
-                        </button>
-                        <button
-                          onClick={() => remove(template)}
-                          className="rounded-lg border border-[#E7EAF0] p-2 text-[#667085] hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead className="bg-[#F7F9FC] text-xs uppercase text-[#667085]">
+                  <tr>
+                    <th className="w-20 px-5 py-4">No</th>
+                    <th className="px-5 py-4">Template</th>
+                    <th className="px-5 py-4">Key</th>
+                    <th className="px-5 py-4">Subject</th>
+                    <th className="px-5 py-4">Status</th>
+                    <th className="px-5 py-4 text-right">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#EEF2F6]">
+                  {paginatedTemplates.map((template, index) => (
+                    <tr key={template.id} className="hover:bg-[#FAFBFC]">
+                      <td className="px-5 py-4 font-bold text-[#667085]">
+                        {(page - 1) * pageSize + index + 1}
+                      </td>
+                      <td className="px-5 py-4 font-bold text-[#121826]">
+                        {template.name}
+                      </td>
+                      <td className="px-5 py-4 text-[#667085]">{template.key}</td>
+                      <td className="px-5 py-4 text-[#344054]">{template.subject}</td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-bold ${
+                            template.is_active
+                              ? "bg-emerald-50 text-emerald-600"
+                              : "bg-red-50 text-red-600"
+                          }`}
+                        >
+                          {template.is_active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => openEdit(template)}
+                            className="rounded-lg border border-[#E7EAF0] p-2 text-[#667085] hover:bg-sky-50 hover:text-[#238DD7]"
+                          >
+                            <Edit size={15} />
+                          </button>
+                          <button
+                            onClick={() => remove(template)}
+                            className="rounded-lg border border-[#E7EAF0] p-2 text-[#667085] hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {templates.length > 0 && (
               <Pagination
                 page={Math.min(page, totalPages)}

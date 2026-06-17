@@ -341,125 +341,127 @@ export default function UsersPage() {
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-[#E7EAF0]">
-          <table className="w-full border-collapse text-left text-sm">
-            <thead className="bg-[#F7F9FC] text-xs uppercase text-[#667085]">
-              <tr>
-                <th className="w-20 px-5 py-4">No</th>
-                <th className="px-5 py-4">User</th>
-                <th className="px-5 py-4">Email</th>
-                <th className="px-5 py-4">Role</th>
-                <th className="px-5 py-4">Approval</th>
-                <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4 text-right">Action</th>
-              </tr>
-            </thead>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px] border-collapse text-left text-sm">
+              <thead className="bg-[#F7F9FC] text-xs uppercase text-[#667085]">
+                <tr>
+                  <th className="w-20 px-5 py-4">No</th>
+                  <th className="px-5 py-4">User</th>
+                  <th className="px-5 py-4">Email</th>
+                  <th className="px-5 py-4">Role</th>
+                  <th className="px-5 py-4">Approval</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4 text-right">Action</th>
+                </tr>
+              </thead>
 
-            <tbody className="divide-y divide-[#EEF2F6] bg-white">
-              {paginatedUsers.map((user, index) => (
-                <tr key={user.id} className="hover:bg-[#FAFBFC]">
-                  <td className="px-5 py-4 font-bold text-[#667085]">
-                    {(pagination.page - 1) * pageSize + index + 1}
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      {user.profile_image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={mediaUrl(user.profile_image)}
-                          alt={user.name}
-                          className="h-9 w-9 rounded-xl object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#DDF1FF] font-semibold text-[#43A9F6]">
-                          {user.name.charAt(0)}
+              <tbody className="divide-y divide-[#EEF2F6] bg-white">
+                {paginatedUsers.map((user, index) => (
+                  <tr key={user.id} className="hover:bg-[#FAFBFC]">
+                    <td className="px-5 py-4 font-bold text-[#667085]">
+                      {(pagination.page - 1) * pageSize + index + 1}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        {user.profile_image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={mediaUrl(user.profile_image)}
+                            alt={user.name}
+                            className="h-9 w-9 rounded-xl object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#DDF1FF] font-semibold text-[#43A9F6]">
+                            {user.name.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-bold text-[#121826]">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-gray-400">ID: {user.id}</p>
                         </div>
-                      )}
-                      <div>
-                        <p className="font-bold text-[#121826]">
-                          {user.name}
-                        </p>
-                        <p className="text-xs text-gray-400">ID: {user.id}</p>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  <td className="px-5 py-4 text-gray-600">{user.email}</td>
+                    <td className="px-5 py-4 text-gray-600">{user.email}</td>
 
-                  <td className="px-5 py-4">
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
-                      {resolveRoleName(user)}
-                    </span>
-                  </td>
+                    <td className="px-5 py-4">
+                      <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+                        {resolveRoleName(user)}
+                      </span>
+                    </td>
 
-                  <td className="px-5 py-4">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-bold ${approvalClass(
-                        user.approval_status
-                      )}`}
-                    >
-                      {user.approval_status}
-                    </span>
-                  </td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold ${approvalClass(
+                          user.approval_status
+                        )}`}
+                      >
+                        {user.approval_status}
+                      </span>
+                    </td>
 
-                  <td className="px-5 py-4">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        user.is_active
-                          ? "bg-emerald-50 text-emerald-600"
-                          : "bg-red-50 text-red-600"
-                      }`}
-                    >
-                      {user.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          user.is_active
+                            ? "bg-emerald-50 text-emerald-600"
+                            : "bg-red-50 text-red-600"
+                        }`}
+                      >
+                        {user.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
 
-                  <td className="px-5 py-4">
-                    <div className="flex justify-end gap-2">
-                      {user.approval_status === "rejected" && (
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2">
+                        {user.approval_status === "rejected" && (
+                          <button
+                            disabled={saving}
+                            onClick={() => approveUser(user.id, user.role_id || "")}
+                            className="rounded-lg border border-[#E7EAF0] p-2 text-emerald-600 hover:bg-emerald-50"
+                            title="Approve user"
+                          >
+                            <CheckCircle2 size={15} />
+                          </button>
+                        )}
                         <button
                           disabled={saving}
-                          onClick={() => approveUser(user.id, user.role_id || "")}
-                          className="rounded-lg border border-[#E7EAF0] p-2 text-emerald-600 hover:bg-emerald-50"
-                          title="Approve user"
+                          onClick={() => handleSendReset(user.id)}
+                          className="rounded-lg border border-[#E7EAF0] p-2 text-gray-500 hover:bg-sky-50 hover:text-[#238DD7]"
+                          title="Send password reset email"
                         >
-                          <CheckCircle2 size={15} />
+                          <Mail size={15} />
                         </button>
-                      )}
-                      <button
-                        disabled={saving}
-                        onClick={() => handleSendReset(user.id)}
-                        className="rounded-lg border border-[#E7EAF0] p-2 text-gray-500 hover:bg-sky-50 hover:text-[#238DD7]"
-                        title="Send password reset email"
-                      >
-                        <Mail size={15} />
-                      </button>
-                      <button
-                        onClick={() => openEdit(user)}
-                        className="rounded-lg border border-[#E7EAF0] p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                      >
-                        <Edit size={15} />
-                      </button>
+                        <button
+                          onClick={() => openEdit(user)}
+                          className="rounded-lg border border-[#E7EAF0] p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                        >
+                          <Edit size={15} />
+                        </button>
 
-                      <button
-                        onClick={() => deleteUser(user.id)}
-                        className="rounded-lg border border-[#E7EAF0] p-2 text-gray-500 hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <button
+                          onClick={() => deleteUser(user.id)}
+                          className="rounded-lg border border-[#E7EAF0] p-2 text-gray-500 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
 
-              {approvedUsers.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-gray-400">
-                    No users found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                {approvedUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-10 text-center text-gray-400">
+                      No users found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           {approvedUsers.length > 0 && (
             <Pagination
               page={Math.min(pagination.page, totalPages)}
