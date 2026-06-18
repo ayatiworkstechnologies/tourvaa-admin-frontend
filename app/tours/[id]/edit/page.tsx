@@ -1,9 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import TourFormPage from "@/components/cms/TourFormPage";
+import TourEditPage from "@/components/tours/TourEditPage";
 
 export default function EditTourPage() {
   const params = useParams<{ id: string }>();
-  return <TourFormPage tourId={params.id} />;
+  return <TourEditPage tourId={params.id} />;
 }

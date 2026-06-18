@@ -15,7 +15,10 @@ export type AuthUser = {
   id: number;
   name: string;
   email: string;
+  user_type?: string;
   profile_image?: string;
+  profile_status?: string | null;
+  approval_status?: string | null;
   role: {
     id: number;
     name: string;

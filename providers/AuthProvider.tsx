@@ -10,6 +10,9 @@ type DashboardData = {
   user: AuthUser;
   permissions: Permission[];
   menus: MenuItem[];
+  sidebar_menu: MenuItem[];
+  allowed_modules: string[];
+  dashboard_type: string;
   stats: DashboardStats;
   pending_approvals: PendingApproval[];
 };

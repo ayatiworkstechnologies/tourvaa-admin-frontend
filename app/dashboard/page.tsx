@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -18,9 +18,12 @@ import {
   Plane,
   ShieldCheck,
   Star,
+  Ticket,
   TrendingUp,
   UserPlus,
   Users,
+  UsersRound,
+  Warehouse,
   WalletCards,
   XCircle,
 } from "lucide-react";
@@ -35,9 +38,15 @@ type DashboardSummary = {
   total_bookings: number;
   total_customers: number;
   total_suppliers: number;
+  approved_suppliers: number;
   pending_suppliers: number;
   total_agents: number;
+  approved_agents: number;
   pending_agents: number;
+  total_affiliates: number;
+  pending_affiliates: number;
+  total_tours: number;
+  published_tours: number;
   total_revenue: number;
   pending_payments: number;
   pending_admin_users: number;
@@ -96,17 +105,17 @@ const moduleHref: Record<string, string> = {
   reports: "/reports",
   settings: "/settings",
   profile: "/profile",
+  suppliers: "/suppliers",
+  agents: "/agents",
+  affiliates: "/affiliates",
+  tours: "/tours",
+  categories: "/tours/categories",
+  subcategories: "/tours/subcategories",
+  countries: "/settings/countries",
+  cities: "/settings/cities",
 };
 
-const roleTheme: Record<
-  string,
-  {
-    eyebrow: string;
-    title: string;
-    subtitle: string;
-    accent: string;
-  }
-> = {
+const roleTheme: Record<string, { eyebrow: string; title: string; subtitle: string; accent: string }> = {
   "super-admin": {
     eyebrow: "Admin Control Center",
     title: "Platform operations at a glance",
@@ -122,7 +131,7 @@ const roleTheme: Record<
   "sub-admin": {
     eyebrow: "Operations Workspace",
     title: "Daily travel operations dashboard",
-    subtitle: "Review users, suppliers, agents, tours, and bookings assigned to your role.",
+    subtitle: "Review suppliers, agents, affiliates, tours, and bookings assigned to your role.",
     accent: "from-[#1E3A8A] to-[#0D9488]",
   },
   supplier: {
@@ -145,24 +154,32 @@ const roleTheme: Record<
   },
 };
 
-function getRoleKind(roleSlug?: string | null) {
-  if (roleSlug === "super-admin" || roleSlug === "admin") return "admin";
-  if (roleSlug === "sub-admin") return "sub-admin";
-  if (roleSlug === "supplier") return "supplier";
-  if (roleSlug === "agent-reseller") return "agent-reseller";
-  if (roleSlug === "customer") return "customer";
+function getRoleKind(slug?: string | null) {
+  if (slug === "super-admin" || slug === "admin") return "admin";
+  if (slug === "sub-admin") return "sub-admin";
+  if (slug === "supplier") return "supplier";
+  if (slug === "agent-reseller") return "agent-reseller";
+  if (slug === "customer") return "customer";
   return "admin";
+}
+
+function ProgressBar({ value, max = 12.5, color }: { value: number; max?: number; color: string }) {
+  const fillRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (fillRef.current) fillRef.current.style.width = `${Math.min((value / max) * 100, 100)}%`;
+  }, [value, max]);
+  return (
+    <div className="h-2 rounded-full bg-[#EEF2F6]">
+      <div ref={fillRef} className={`h-2 rounded-full ${color}`} />
+    </div>
+  );
 }
 
 export default function DashboardPage() {
   const { dashboard, loading, refetch } = useDashboard();
   const [approvalSavingId, setApprovalSavingId] = useState<number | null>(null);
   const [approvalMessage, setApprovalMessage] = useState("");
-  const [filters, setFilters] = useState({
-    start_date: "",
-    end_date: "",
-    country: "",
-  });
+  const [filters, setFilters] = useState({ start_date: "", end_date: "", country: "" });
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [bookings, setBookings] = useState<BookingAnalytics | null>(null);
   const [payments, setPayments] = useState<PaymentSummary | null>(null);
@@ -172,33 +189,28 @@ export default function DashboardPage() {
 
   const filterQuery = useMemo(() => {
     const params = new URLSearchParams();
-
     if (filters.start_date) params.set("start_date", filters.start_date);
     if (filters.end_date) params.set("end_date", filters.end_date);
     if (filters.country) params.set("country_id", String(countries.indexOf(filters.country) + 1));
-
     return params.toString();
   }, [filters]);
 
   const fetchAnalytics = useCallback(async () => {
     setAnalyticsLoading(true);
-
     try {
       const suffix = filterQuery ? `?${filterQuery}` : "";
-      const [summaryResponse, bookingsResponse, paymentsResponse, reportsResponse, activitiesResponse] =
-        await Promise.all([
-          api.get(`/dashboard/summary${suffix}`),
-          api.get(`/dashboard/bookings${suffix}`),
-          api.get(`/dashboard/payments${suffix}`),
-          api.get(`/dashboard/reports${suffix}`),
-          api.get("/dashboard/recent-activities"),
-        ]);
-
-      setSummary(summaryResponse.data.data);
-      setBookings(bookingsResponse.data.data);
-      setPayments(paymentsResponse.data.data);
-      setReports(reportsResponse.data.data);
-      setActivities(activitiesResponse.data.data);
+      const [s, b, p, r, a] = await Promise.all([
+        api.get(`/dashboard/summary${suffix}`),
+        api.get(`/dashboard/bookings${suffix}`),
+        api.get(`/dashboard/payments${suffix}`),
+        api.get(`/dashboard/reports${suffix}`),
+        api.get("/dashboard/recent-activities"),
+      ]);
+      setSummary(s.data.data);
+      setBookings(b.data.data);
+      setPayments(p.data.data);
+      setReports(r.data.data);
+      setActivities(a.data.data);
     } finally {
       setAnalyticsLoading(false);
     }
@@ -206,11 +218,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!dashboard) return;
-
-    const timer = window.setTimeout(() => {
-      fetchAnalytics();
-    }, 0);
-
+    const timer = window.setTimeout(fetchAnalytics, 0);
     return () => window.clearTimeout(timer);
   }, [dashboard, fetchAnalytics]);
 
@@ -226,24 +234,26 @@ export default function DashboardPage() {
 
   const roleSlug = dashboard.user.role?.slug;
   const roleKind = getRoleKind(roleSlug);
-  const theme = roleTheme[roleSlug || ""] || roleTheme[roleKind];
-  const permissionSlugs = new Set(
-    (dashboard.permissions || []).map((permission) => permission.slug)
-  );
+  const theme = roleTheme[roleSlug || ""] ?? roleTheme[roleKind] ?? roleTheme.admin;
+  const permissionSlugs = new Set((dashboard.permissions || []).map((p) => p.slug));
   const canApproveUsers = permissionSlugs.has("update-users");
   const pendingApprovals = dashboard.pending_approvals || [];
-  const menuModules = new Set(dashboard.menus.map((menu) => menu.module));
-  const canOpen = (module: string) => menuModules.has(module);
+  const menuModules = new Set(dashboard.menus.map((m) => m.module));
+  const canOpen = (module: string) => menuModules.has(module) || permissionSlugs.has(`${module}.view`) || permissionSlugs.has(`view-${module}`);
   const hrefFor = (module: string) => moduleHref[module] || "/dashboard";
+
+  // Permission helpers for operations roles
+  const canViewSuppliers = permissionSlugs.has("suppliers.view") || permissionSlugs.has("view-suppliers");
+  const canViewAgents = permissionSlugs.has("agents.view") || permissionSlugs.has("view-agents");
+  const canViewAffiliates = permissionSlugs.has("affiliates.view") || permissionSlugs.has("view-affiliates");
+  const canViewTours = permissionSlugs.has("tours.view") || permissionSlugs.has("view-tours");
+  const showOpsQueue = (roleKind === "admin" || roleKind === "sub-admin") && (canViewSuppliers || canViewAgents || canViewAffiliates);
 
   const approveUser = async (userId: number, roleId?: number | null) => {
     setApprovalSavingId(userId);
     setApprovalMessage("");
-
     try {
-      await api.post(`/users/${userId}/approve`, {
-        role_id: roleId || undefined,
-      });
+      await api.post(`/users/${userId}/approve`, { role_id: roleId || undefined });
       setApprovalMessage("User approved successfully.");
       await refetch();
     } catch {
@@ -254,13 +264,9 @@ export default function DashboardPage() {
   };
 
   const rejectUser = async (userId: number) => {
-    const ok = confirm("Reject this user registration?");
-
-    if (!ok) return;
-
+    if (!confirm("Reject this user registration?")) return;
     setApprovalSavingId(userId);
     setApprovalMessage("");
-
     try {
       await api.post(`/users/${userId}/reject`);
       setApprovalMessage("User rejected successfully.");
@@ -272,6 +278,7 @@ export default function DashboardPage() {
     }
   };
 
+  // --- Stat cards per role ---
   const stats =
     summary && roleKind === "admin"
       ? [
@@ -281,6 +288,13 @@ export default function DashboardPage() {
           { title: "Total Revenue", value: `₹${summary.total_revenue.toLocaleString()}`, change: "Revenue", icon: CircleDollarSign },
           { title: "Suppliers", value: summary.total_suppliers.toLocaleString(), change: `${summary.pending_suppliers} pending`, icon: PackageCheck },
           { title: "Agents", value: summary.total_agents.toLocaleString(), change: `${summary.pending_agents} pending`, icon: Headphones },
+        ]
+      : summary && roleKind === "sub-admin"
+      ? [
+          ...(canViewSuppliers ? [{ title: "Pending Suppliers", value: summary.pending_suppliers.toLocaleString(), change: `${summary.total_suppliers} total`, icon: Warehouse }] : []),
+          ...(canViewAgents ? [{ title: "Pending Agents", value: summary.pending_agents.toLocaleString(), change: `${summary.total_agents} total`, icon: UsersRound }] : []),
+          ...(canViewAffiliates ? [{ title: "Pending Affiliates", value: summary.pending_affiliates.toLocaleString(), change: `${summary.total_affiliates} total`, icon: Ticket }] : []),
+          ...(canViewTours ? [{ title: "Published Tours", value: summary.published_tours.toLocaleString(), change: `${summary.total_tours} total`, icon: MapPinned }] : []),
         ]
       : roleKind === "customer"
       ? [
@@ -292,13 +306,13 @@ export default function DashboardPage() {
       ? [
           { title: "Active Tours", value: 18, change: "Live", icon: PackageCheck },
           { title: "Bookings", value: 42, change: "This month", icon: CalendarCheck },
-          { title: "Pending Payout", value: "$8.4k", change: "Review", icon: WalletCards },
+          { title: "Pending Payout", value: "₹8.4k", change: "Review", icon: WalletCards },
         ]
       : roleKind === "agent-reseller"
       ? [
           { title: "Customers", value: 64, change: "Pipeline", icon: Users },
           { title: "Bookings", value: 27, change: "Active", icon: CalendarCheck },
-          { title: "Commission", value: "$3.2k", change: "Month", icon: CircleDollarSign },
+          { title: "Commission", value: "₹3.2k", change: "Month", icon: CircleDollarSign },
         ]
       : [
           { title: "Total Users", value: dashboard.stats.users.toLocaleString(), change: "Platform", icon: Users },
@@ -306,8 +320,16 @@ export default function DashboardPage() {
           { title: "Pending Users", value: dashboard.stats.pending_users.toLocaleString(), change: "Approve", icon: KeyRound },
         ];
 
+  // --- Action cards per role ---
   const actionCards =
-    roleKind === "customer"
+    roleKind === "sub-admin"
+      ? [
+          ...(canViewSuppliers ? [{ title: "Suppliers", text: "Review and approve supplier applications.", module: "suppliers", icon: Warehouse }] : []),
+          ...(canViewAgents ? [{ title: "Agents", text: "Manage agent approvals and discount settings.", module: "agents", icon: UsersRound }] : []),
+          ...(canViewAffiliates ? [{ title: "Affiliates", text: "Track affiliates and API link assignments.", module: "affiliates", icon: Ticket }] : []),
+          ...(canViewTours ? [{ title: "Tours", text: "Publish and manage travel packages.", module: "tours", icon: MapPinned }] : []),
+        ].slice(0, 3)
+      : roleKind === "customer"
       ? [
           { title: "Browse Tours", text: "Find travel packages and booking options.", module: "tours", icon: MapPinned },
           { title: "My Bookings", text: "Review upcoming and past reservations.", module: "bookings", icon: CalendarCheck },
@@ -331,8 +353,11 @@ export default function DashboardPage() {
           { title: "Email Templates", text: "Update system email communication.", module: "email", icon: Headphones },
         ];
 
+  // --- Timeline per role ---
   const timeline =
-    roleKind === "customer"
+    roleKind === "sub-admin"
+      ? ["Pending supplier approvals reviewed", "Agent discount configurations checked", "New tour packages validated"]
+      : roleKind === "customer"
       ? ["Booking request received", "Payment verification pending", "Travel profile ready"]
       : roleKind === "supplier"
       ? ["Tour calendar checked", "New booking request assigned", "Payout review pending"]
@@ -342,473 +367,487 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute requiredPermission="dashboard.view">
-    <DashboardLayout menus={dashboard.menus} user={dashboard.user}>
-      <div className="mx-auto max-w-[1440px] space-y-6">
-        <section
-          className={`overflow-hidden rounded-2xl bg-gradient-to-br ${theme.accent} p-6 text-white shadow-xl`}
-        >
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-sm font-bold text-white/75">{theme.eyebrow}</p>
-              <h2 className="mt-2 max-w-2xl text-3xl font-bold tracking-tight">
-                {theme.title}
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78">
-                {theme.subtitle}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/20 bg-white/15 p-4 backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-wide text-white/65">
-                Signed in as
-              </p>
-              <p className="mt-1 text-xl font-bold">{dashboard.user.name}</p>
-              <p className="text-sm text-white/75">{dashboard.user.role?.name}</p>
-            </div>
-          </div>
-        </section>
+      <DashboardLayout menus={dashboard.menus} user={dashboard.user}>
+        <div className="mx-auto max-w-360 space-y-6">
 
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {stats.map((card) => (
-            <StatCard
-              key={card.title}
-              title={card.title}
-              value={card.value}
-              change={card.change}
-              icon={card.icon}
-            />
-          ))}
-        </section>
-
-        {roleKind === "admin" && (
-          <section className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-            <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          {/* Hero banner */}
+          <section className={`overflow-hidden rounded-2xl bg-linear-to-br ${theme.accent} p-6 text-white shadow-xl`}>
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <h3 className="text-lg font-bold text-[#121826]">Dashboard Filters</h3>
-                <p className="text-sm text-[#667085]">
-                  Filter operational dashboard data by date range and country.
-                </p>
+                <p className="text-sm font-bold text-white/75">{theme.eyebrow}</p>
+                <h2 className="mt-2 max-w-2xl text-3xl font-bold tracking-tight">{theme.title}</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78">{theme.subtitle}</p>
               </div>
-              {analyticsLoading && (
-                <p className="text-sm font-semibold text-[#238DD7]">Refreshing analytics...</p>
-              )}
+              <div className="rounded-2xl border border-white/20 bg-white/15 p-4 backdrop-blur">
+                <p className="text-xs font-semibold uppercase tracking-wide text-white/65">Signed in as</p>
+                <p className="mt-1 text-xl font-bold">{dashboard.user.name}</p>
+                <p className="text-sm text-white/75">{dashboard.user.role?.name}</p>
+              </div>
             </div>
+          </section>
 
-            <div className="grid gap-4 md:grid-cols-4">
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">
-                  Start Date
-                </span>
-                <input
-                  type="date"
-                  value={filters.start_date}
-                  onChange={(event) =>
-                    setFilters((current) => ({ ...current, start_date: event.target.value }))
-                  }
-                  className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                />
-              </label>
+          {/* Stat cards */}
+          {stats.length > 0 && (
+            <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {stats.map((card) => (
+                <StatCard key={card.title} title={card.title} value={card.value} change={card.change} icon={card.icon} />
+              ))}
+            </section>
+          )}
 
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">
-                  End Date
-                </span>
-                <input
-                  type="date"
-                  value={filters.end_date}
-                  onChange={(event) =>
-                    setFilters((current) => ({ ...current, end_date: event.target.value }))
-                  }
-                  className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">
-                  Country
-                </span>
-                <select
-                  value={filters.country}
-                  onChange={(event) =>
-                    setFilters((current) => ({ ...current, country: event.target.value }))
-                  }
-                  className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+          {/* Filter bar — admin only */}
+          {roleKind === "admin" && (
+            <section className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+              <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-[#121826]">Dashboard Filters</h3>
+                  <p className="text-sm text-[#667085]">Filter operational data by date range and country.</p>
+                </div>
+                {analyticsLoading && <p className="text-sm font-semibold text-[#238DD7]">Refreshing...</p>}
+              </div>
+              <div className="grid gap-4 md:grid-cols-4">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">Start Date</span>
+                  <input
+                    type="date"
+                    value={filters.start_date}
+                    onChange={(e) => setFilters((c) => ({ ...c, start_date: e.target.value }))}
+                    className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">End Date</span>
+                  <input
+                    type="date"
+                    value={filters.end_date}
+                    onChange={(e) => setFilters((c) => ({ ...c, end_date: e.target.value }))}
+                    className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">Country</span>
+                  <select
+                    value={filters.country}
+                    onChange={(e) => setFilters((c) => ({ ...c, country: e.target.value }))}
+                    className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                  >
+                    <option value="">All Countries</option>
+                    {countries.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setFilters({ start_date: "", end_date: "", country: "" })}
+                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm font-bold text-[#121826] hover:bg-[#F7F9FC] md:mt-6"
                 >
-                  <option value="">All Countries</option>
-                  {countries.map((country) => (
-                    <option key={country} value={country}>
-                      {country}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <button
-                type="button"
-                onClick={() => setFilters({ start_date: "", end_date: "", country: "" })}
-                className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm font-bold text-[#121826] hover:bg-[#F7F9FC] md:mt-6"
-              >
-                <Filter size={16} />
-                Reset
-              </button>
-            </div>
-          </section>
-        )}
-
-        {roleKind === "admin" && bookings && payments && (
-          <section className="grid gap-6 xl:grid-cols-2">
-            <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-              <div className="mb-5 flex items-center gap-3">
-                <BarChart3 className="text-[#238DD7]" size={20} />
-                <h3 className="text-lg font-bold text-[#121826]">Booking Analytics</h3>
+                  <Filter size={16} />
+                  Reset
+                </button>
               </div>
-              {[
-                ["Upcoming", bookings.upcoming_bookings],
-                ["Ongoing", bookings.ongoing_bookings],
-                ["Completed", bookings.completed_bookings],
-                ["Cancelled", bookings.cancelled_bookings],
-                ["Supplier Pending", bookings.pending_supplier_acceptance],
-              ].map(([label, value]) => (
-                <div key={label} className="mb-4">
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span className="font-semibold text-[#667085]">{label}</span>
-                    <b>{value}</b>
-                  </div>
-                  <div className="h-2 rounded-full bg-[#EEF2F6]">
-                    <div
-                      className="h-2 rounded-full bg-[#43A9F6]"
-                      style={{ width: `${Math.min(Number(value) * 8, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+            </section>
+          )}
 
-            <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-              <div className="mb-5 flex items-center gap-3">
-                <WalletCards className="text-[#238DD7]" size={20} />
-                <h3 className="text-lg font-bold text-[#121826]">Payment Status</h3>
-              </div>
-              {[
-                ["Full", payments.full_payment_count],
-                ["Partial", payments.partial_payment_count],
-                ["Pending", payments.pending_payment_count],
-                ["Failed", payments.failed_payment_count],
-                ["Refunded", payments.refunded_payment_count],
-              ].map(([label, value]) => (
-                <div key={label} className="mb-4">
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span className="font-semibold text-[#667085]">{label}</span>
-                    <b>{value}</b>
-                  </div>
-                  <div className="h-2 rounded-full bg-[#EEF2F6]">
-                    <div
-                      className="h-2 rounded-full bg-emerald-500"
-                      style={{ width: `${Math.min(Number(value) * 8, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {roleKind === "admin" && reports && (
-          <section className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="text-[#238DD7]" size={20} />
-                  <h3 className="text-lg font-bold text-[#121826]">Reports Snapshot</h3>
-                </div>
-                <p className="mt-1 text-sm text-[#667085]">
-                  Dummy report data for dashboard preview until report modules are connected.
-                </p>
-              </div>
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="rounded-xl bg-[#F7F9FC] px-4 py-3">
-                  <p className="text-lg font-bold text-[#121826]">{reports.total_reports}</p>
-                  <p className="text-xs font-semibold text-[#667085]">Reports</p>
-                </div>
-                <div className="rounded-xl bg-[#F7F9FC] px-4 py-3">
-                  <p className="text-lg font-bold text-[#121826]">{reports.scheduled_reports}</p>
-                  <p className="text-xs font-semibold text-[#667085]">Scheduled</p>
-                </div>
-                <div className="rounded-xl bg-[#F7F9FC] px-4 py-3">
-                  <p className="text-lg font-bold text-[#121826]">{reports.exported_reports}</p>
-                  <p className="text-xs font-semibold text-[#667085]">Exports</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {reports.report_cards.map((report) => (
-                  <div key={report.name} className="rounded-xl border border-[#EEF2F6] p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-[#121826]">{report.name}</p>
-                        <p className="mt-2 text-2xl font-bold text-[#238DD7]">{report.value}</p>
-                      </div>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-                          report.status === "ready"
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-amber-50 text-amber-700"
-                        }`}
-                      >
-                        {report.status}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-xs font-semibold text-[#667085]">{report.change}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="rounded-xl bg-[#F7F9FC] p-4">
-                <h4 className="text-sm font-bold text-[#121826]">Recent Exports</h4>
-                <div className="mt-3 space-y-3">
-                  {reports.recent_exports.map((item) => (
-                    <div key={item.id} className="rounded-xl bg-white p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-bold text-[#121826]">{item.name}</p>
-                        <span className="rounded-full bg-[#E7F5FF] px-2 py-1 text-xs font-bold text-[#238DD7]">
-                          {item.format}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-[#667085]">{item.generated_at}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-6">
-            {canApproveUsers && roleKind !== "customer" && (
-              <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg font-bold text-[#121826]">
-                      User Approvals
-                    </h3>
-                    <p className="text-sm text-[#667085]">
-                      Pending registrations waiting for admin action
-                    </p>
-                  </div>
-                  <Link
-                    href="/users"
-                    className="rounded-xl border border-[#E7EAF0] px-4 py-2 text-sm font-bold text-[#121826] hover:bg-[#F7F9FC]"
-                  >
-                    View All
-                  </Link>
-                </div>
-
-                {approvalMessage && (
-                  <p
-                    className={`mb-4 rounded-xl px-4 py-3 text-sm ${
-                      approvalMessage.includes("Could not")
-                        ? "bg-red-50 text-red-600"
-                        : "bg-emerald-50 text-emerald-700"
-                    }`}
-                  >
-                    {approvalMessage}
-                  </p>
-                )}
-
-                <div className="space-y-3">
-                  {pendingApprovals.length > 0 ? (
-                    pendingApprovals.map((user) => (
-                      <div
-                        key={user.id}
-                        className="flex flex-col gap-4 rounded-xl border border-[#EEF2F6] p-4 lg:flex-row lg:items-center lg:justify-between"
-                      >
-                        <div className="min-w-0">
-                          <p className="font-bold text-[#121826]">{user.name}</p>
-                          <p className="mt-1 truncate text-sm text-[#667085]">
-                            {user.email}
-                          </p>
-                          <p className="mt-2 text-xs font-semibold text-amber-700">
-                            Role: {user.role_name || "Not assigned"}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            disabled={approvalSavingId === user.id}
-                            onClick={() => approveUser(user.id, user.role_id)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
-                          >
-                            <CheckCircle2 size={16} />
-                            Approve
-                          </button>
-                          <button
-                            disabled={approvalSavingId === user.id}
-                            onClick={() => rejectUser(user.id)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-60"
-                          >
-                            <XCircle size={16} />
-                            Reject
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="rounded-xl bg-[#F7F9FC] p-4 text-sm leading-6 text-[#667085]">
-                      No pending user approvals right now.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-              <div className="mb-5">
-                <h3 className="text-lg font-bold text-[#121826]">
-                  {roleKind === "customer" ? "Travel Shortcuts" : "Workspace Actions"}
-                </h3>
-                <p className="text-sm text-[#667085]">
-                  Role-focused actions for the current account
-                </p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                {actionCards.map((item) => {
-                  const Icon = item.icon;
-                  const enabled = canOpen(item.module);
-
-                  return (
-                    <Link
-                      key={item.title}
-                      href={enabled ? hrefFor(item.module) : "/dashboard"}
-                      className={`rounded-xl border border-[#EEF2F6] p-4 transition ${
-                        enabled
-                          ? "hover:border-[#43A9F6] hover:bg-[#F7FBFF]"
-                          : "cursor-default opacity-60"
-                      }`}
-                    >
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#E7F5FF] text-[#238DD7]">
-                        <Icon size={20} />
-                      </div>
-                      <p className="mt-4 font-bold text-[#121826]">{item.title}</p>
-                      <p className="mt-2 min-h-10 text-sm leading-6 text-[#667085]">
-                        {item.text}
-                      </p>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-              <h3 className="text-lg font-bold text-[#121826]">
-                {roleKind === "customer" ? "Trip Timeline" : "Today’s Activity"}
-              </h3>
-              <div className="mt-5 grid gap-3">
-                {timeline.map((item, index) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-3 rounded-xl bg-[#F7F9FC] p-4"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#238DD7]">
-                      {index + 1}
-                    </div>
-                    <p className="text-sm font-semibold text-[#121826]">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <aside className="space-y-6">
-            {roleKind === "admin" && (
+          {/* Booking & payment analytics — admin only */}
+          {roleKind === "admin" && bookings && payments && (
+            <section className="grid gap-6 xl:grid-cols-2">
               <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
                 <div className="mb-5 flex items-center gap-3">
-                  <Activity className="text-[#238DD7]" size={20} />
-                  <h3 className="text-lg font-bold text-[#121826]">Recent Activity</h3>
+                  <BarChart3 className="text-[#238DD7]" size={20} />
+                  <h3 className="text-lg font-bold text-[#121826]">Booking Analytics</h3>
                 </div>
-                <div className="space-y-3">
-                  {(activities?.recent_admin_actions || []).length > 0 ? (
-                    activities?.recent_admin_actions.slice(0, 5).map((item) => (
-                      <div key={item.id} className="rounded-xl bg-[#F7F9FC] p-3">
-                        <p className="text-sm font-bold text-[#121826]">{item.action}</p>
-                        <p className="text-xs text-[#667085]">
-                          {item.entity_type}
-                          {item.entity_id ? ` #${item.entity_id}` : ""}
-                        </p>
+                {(
+                  [
+                    ["Upcoming", bookings.upcoming_bookings],
+                    ["Ongoing", bookings.ongoing_bookings],
+                    ["Completed", bookings.completed_bookings],
+                    ["Cancelled", bookings.cancelled_bookings],
+                    ["Supplier Pending", bookings.pending_supplier_acceptance],
+                  ] as [string, number][]
+                ).map(([label, value]) => (
+                  <div key={label} className="mb-4">
+                    <div className="mb-1 flex justify-between text-sm">
+                      <span className="font-semibold text-[#667085]">{label}</span>
+                      <b>{value}</b>
+                    </div>
+                    <ProgressBar value={value} color="bg-[#43A9F6]" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+                <div className="mb-5 flex items-center gap-3">
+                  <WalletCards className="text-[#238DD7]" size={20} />
+                  <h3 className="text-lg font-bold text-[#121826]">Payment Status</h3>
+                </div>
+                {(
+                  [
+                    ["Full", payments.full_payment_count],
+                    ["Partial", payments.partial_payment_count],
+                    ["Pending", payments.pending_payment_count],
+                    ["Failed", payments.failed_payment_count],
+                    ["Refunded", payments.refunded_payment_count],
+                  ] as [string, number][]
+                ).map(([label, value]) => (
+                  <div key={label} className="mb-4">
+                    <div className="mb-1 flex justify-between text-sm">
+                      <span className="font-semibold text-[#667085]">{label}</span>
+                      <b>{value}</b>
+                    </div>
+                    <ProgressBar value={value} color="bg-emerald-500" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Reports snapshot — admin only */}
+          {roleKind === "admin" && reports && (
+            <section className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+              <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="text-[#238DD7]" size={20} />
+                    <h3 className="text-lg font-bold text-[#121826]">Reports Snapshot</h3>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  {[
+                    ["Reports", reports.total_reports],
+                    ["Scheduled", reports.scheduled_reports],
+                    ["Exports", reports.exported_reports],
+                  ].map(([label, val]) => (
+                    <div key={label} className="rounded-xl bg-[#F7F9FC] px-4 py-3">
+                      <p className="text-lg font-bold text-[#121826]">{val}</p>
+                      <p className="text-xs font-semibold text-[#667085]">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {reports.report_cards.map((r) => (
+                    <div key={r.name} className="rounded-xl border border-[#EEF2F6] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-[#121826]">{r.name}</p>
+                          <p className="mt-2 text-2xl font-bold text-[#238DD7]">{r.value}</p>
+                        </div>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${r.status === "ready" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-700"}`}>
+                          {r.status}
+                        </span>
                       </div>
-                    ))
-                  ) : (
-                    <p className="rounded-xl bg-[#F7F9FC] p-4 text-sm text-[#667085]">
-                      No recent admin activity yet.
+                      <p className="mt-3 text-xs font-semibold text-[#667085]">{r.change}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-xl bg-[#F7F9FC] p-4">
+                  <h4 className="text-sm font-bold text-[#121826]">Recent Exports</h4>
+                  <div className="mt-3 space-y-3">
+                    {reports.recent_exports.map((item) => (
+                      <div key={item.id} className="rounded-xl bg-white p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-bold text-[#121826]">{item.name}</p>
+                          <span className="rounded-full bg-[#E7F5FF] px-2 py-1 text-xs font-bold text-[#238DD7]">{item.format}</span>
+                        </div>
+                        <p className="mt-1 text-xs text-[#667085]">{item.generated_at}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Operations approval queue — admin + sub-admin */}
+          {showOpsQueue && summary && (
+            <section className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-[#121826]">Operations Approval Queue</h3>
+                  <p className="text-sm text-[#667085]">Pending items across suppliers, agents, and affiliates</p>
+                </div>
+                {analyticsLoading && <p className="text-sm font-semibold text-[#238DD7]">Refreshing...</p>}
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                {canViewSuppliers && (
+                  <Link
+                    href="/suppliers?approval_status=pending"
+                    className="group flex items-center justify-between rounded-xl border border-[#EEF2F6] p-5 transition hover:border-[#43A9F6] hover:bg-[#F7FBFF]"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                        <Warehouse size={22} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-[#667085]">Suppliers</p>
+                        <p className="mt-0.5 text-2xl font-bold text-[#121826]">{summary.pending_suppliers}</p>
+                        <p className="text-xs text-[#667085]">pending approval</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700">
+                      Review
+                    </span>
+                  </Link>
+                )}
+                {canViewAgents && (
+                  <Link
+                    href="/agents?approval_status=pending"
+                    className="group flex items-center justify-between rounded-xl border border-[#EEF2F6] p-5 transition hover:border-[#43A9F6] hover:bg-[#F7FBFF]"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        <UsersRound size={22} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-[#667085]">Agents</p>
+                        <p className="mt-0.5 text-2xl font-bold text-[#121826]">{summary.pending_agents}</p>
+                        <p className="text-xs text-[#667085]">pending approval</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
+                      Review
+                    </span>
+                  </Link>
+                )}
+                {canViewAffiliates && (
+                  <Link
+                    href="/affiliates?approval_status=pending"
+                    className="group flex items-center justify-between rounded-xl border border-[#EEF2F6] p-5 transition hover:border-[#43A9F6] hover:bg-[#F7FBFF]"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                        <Ticket size={22} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-[#667085]">Affiliates</p>
+                        <p className="mt-0.5 text-2xl font-bold text-[#121826]">{summary.pending_affiliates}</p>
+                        <p className="text-xs text-[#667085]">pending approval</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-bold text-purple-700">
+                      Review
+                    </span>
+                  </Link>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Main content + aside */}
+          <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="space-y-6">
+
+              {/* User approvals — admin + sub-admin with permission */}
+              {canApproveUsers && roleKind !== "customer" && (
+                <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+                  <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-bold text-[#121826]">User Approvals</h3>
+                      <p className="text-sm text-[#667085]">Pending registrations waiting for admin action</p>
+                    </div>
+                    <Link href="/users" className="rounded-xl border border-[#E7EAF0] px-4 py-2 text-sm font-bold text-[#121826] hover:bg-[#F7F9FC]">
+                      View All
+                    </Link>
+                  </div>
+
+                  {approvalMessage && (
+                    <p className={`mb-4 rounded-xl px-4 py-3 text-sm ${approvalMessage.includes("Could not") ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}>
+                      {approvalMessage}
                     </p>
                   )}
-                </div>
-              </div>
-            )}
 
-            {roleKind === "admin" && summary && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="mt-0.5 text-amber-600" size={20} />
-                  <div>
-                    <h3 className="text-lg font-bold text-[#121826]">Alerts</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#667085]">
-                      {summary.pending_admin_users} admin approvals, {summary.pending_suppliers} supplier approvals,
-                      and {summary.pending_payments} pending payments need attention.
-                    </p>
+                  <div className="space-y-3">
+                    {pendingApprovals.length > 0 ? (
+                      pendingApprovals.map((user) => (
+                        <div key={user.id} className="flex flex-col gap-4 rounded-xl border border-[#EEF2F6] p-4 lg:flex-row lg:items-center lg:justify-between">
+                          <div className="min-w-0">
+                            <p className="font-bold text-[#121826]">{user.name}</p>
+                            <p className="mt-1 truncate text-sm text-[#667085]">{user.email}</p>
+                            <p className="mt-2 text-xs font-semibold text-amber-700">Role: {user.role_name || "Not assigned"}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={approvalSavingId === user.id}
+                              onClick={() => approveUser(user.id, user.role_id)}
+                              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+                            >
+                              <CheckCircle2 size={16} />
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              disabled={approvalSavingId === user.id}
+                              onClick={() => rejectUser(user.id)}
+                              className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-60"
+                            >
+                              <XCircle size={16} />
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="rounded-xl bg-[#F7F9FC] p-4 text-sm leading-6 text-[#667085]">
+                        No pending user approvals right now.
+                      </p>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-              <h3 className="text-lg font-bold text-[#121826]">
-                {roleKind === "customer" ? "Next Trip" : "Priority Panel"}
-              </h3>
-              <div className="mt-5 rounded-2xl bg-[#F7F9FC] p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E7F5FF] text-[#238DD7]">
-                    {roleKind === "customer" ? <Plane size={23} /> : <Clock3 size={23} />}
+              {/* Workspace action cards */}
+              {actionCards.length > 0 && (
+                <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+                  <div className="mb-5">
+                    <h3 className="text-lg font-bold text-[#121826]">
+                      {roleKind === "customer" ? "Travel Shortcuts" : "Workspace Actions"}
+                    </h3>
+                    <p className="text-sm text-[#667085]">Role-focused actions for the current account</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-[#121826]">
-                      {roleKind === "customer"
-                        ? "Kerala Backwater Escape"
-                        : "Pending review queue"}
-                    </p>
-                    <p className="text-xs text-[#667085]">
-                      {roleKind === "customer"
-                        ? "3 nights, booking confirmation pending"
-                        : "Keep today’s operational items moving"}
-                    </p>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    {actionCards.map((item) => {
+                      const Icon = item.icon;
+                      const enabled = canOpen(item.module);
+                      return (
+                        <Link
+                          key={item.title}
+                          href={enabled ? hrefFor(item.module) : "/dashboard"}
+                          className={`rounded-xl border border-[#EEF2F6] p-4 transition ${enabled ? "hover:border-[#43A9F6] hover:bg-[#F7FBFF]" : "cursor-default opacity-60"}`}
+                        >
+                          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#E7F5FF] text-[#238DD7]">
+                            <Icon size={20} />
+                          </div>
+                          <p className="mt-4 font-bold text-[#121826]">{item.title}</p>
+                          <p className="mt-2 min-h-10 text-sm leading-6 text-[#667085]">{item.text}</p>
+                        </Link>
+                      );
+                    })}
                   </div>
+                </div>
+              )}
+
+              {/* Timeline */}
+              <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+                <h3 className="text-lg font-bold text-[#121826]">
+                  {roleKind === "customer" ? "Trip Timeline" : "Today's Activity"}
+                </h3>
+                <div className="mt-5 grid gap-3">
+                  {timeline.map((item, i) => (
+                    <div key={item} className="flex items-center gap-3 rounded-xl bg-[#F7F9FC] p-4">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#238DD7]">{i + 1}</div>
+                      <p className="text-sm font-semibold text-[#121826]">{item}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-              <h3 className="text-lg font-bold text-[#121826]">Account Summary</h3>
-              <div className="mt-5 grid gap-3">
-                <div className="flex items-center justify-between rounded-xl bg-[#F7F9FC] p-3">
-                  <span className="text-sm font-semibold text-[#667085]">User</span>
-                  <b>{dashboard.user.name}</b>
+            {/* Aside */}
+            <aside className="space-y-6">
+
+              {/* Recent admin activity */}
+              {(roleKind === "admin" || roleKind === "sub-admin") && (
+                <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+                  <div className="mb-5 flex items-center gap-3">
+                    <Activity className="text-[#238DD7]" size={20} />
+                    <h3 className="text-lg font-bold text-[#121826]">Recent Activity</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {(activities?.recent_admin_actions || []).length > 0 ? (
+                      activities?.recent_admin_actions.slice(0, 5).map((item) => (
+                        <div key={item.id} className="rounded-xl bg-[#F7F9FC] p-3">
+                          <p className="text-sm font-bold text-[#121826]">{item.action}</p>
+                          <p className="text-xs text-[#667085]">
+                            {item.entity_type}{item.entity_id ? ` #${item.entity_id}` : ""}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="rounded-xl bg-[#F7F9FC] p-4 text-sm text-[#667085]">No recent activity yet.</p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center justify-between rounded-xl bg-[#F7F9FC] p-3">
-                  <span className="text-sm font-semibold text-[#667085]">Role</span>
-                  <b>{dashboard.user.role?.name}</b>
+              )}
+
+              {/* Alerts — admin only */}
+              {roleKind === "admin" && summary && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="mt-0.5 text-amber-600" size={20} />
+                    <div>
+                      <h3 className="text-lg font-bold text-[#121826]">Alerts</h3>
+                      <p className="mt-2 text-sm leading-6 text-[#667085]">
+                        {summary.pending_admin_users} admin approval{summary.pending_admin_users !== 1 ? "s" : ""},{" "}
+                        {summary.pending_suppliers} supplier approval{summary.pending_suppliers !== 1 ? "s" : ""}, and{" "}
+                        {summary.pending_payments} pending payment{summary.pending_payments !== 1 ? "s" : ""} need attention.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between rounded-xl bg-[#F7F9FC] p-3">
-                  <span className="text-sm font-semibold text-[#667085]">Modules</span>
-                  <b>{dashboard.menus.length}</b>
+              )}
+
+              {/* Sub-admin alerts */}
+              {roleKind === "sub-admin" && summary && (canViewSuppliers || canViewAgents || canViewAffiliates) && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="mt-0.5 text-amber-600" size={20} />
+                    <div>
+                      <h3 className="text-lg font-bold text-[#121826]">Pending Actions</h3>
+                      <ul className="mt-2 space-y-1 text-sm text-[#667085]">
+                        {canViewSuppliers && <li>{summary.pending_suppliers} supplier{summary.pending_suppliers !== 1 ? "s" : ""} awaiting approval</li>}
+                        {canViewAgents && <li>{summary.pending_agents} agent{summary.pending_agents !== 1 ? "s" : ""} awaiting approval</li>}
+                        {canViewAffiliates && <li>{summary.pending_affiliates} affiliate{summary.pending_affiliates !== 1 ? "s" : ""} awaiting approval</li>}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Priority / next trip panel */}
+              <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+                <h3 className="text-lg font-bold text-[#121826]">
+                  {roleKind === "customer" ? "Next Trip" : "Priority Panel"}
+                </h3>
+                <div className="mt-5 rounded-2xl bg-[#F7F9FC] p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E7F5FF] text-[#238DD7]">
+                      {roleKind === "customer" ? <Plane size={23} /> : <Clock3 size={23} />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[#121826]">
+                        {roleKind === "customer" ? "Kerala Backwater Escape" : "Pending review queue"}
+                      </p>
+                      <p className="text-xs text-[#667085]">
+                        {roleKind === "customer"
+                          ? "3 nights, booking confirmation pending"
+                          : "Keep today's operational items moving"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </aside>
-        </section>
-      </div>
-    </DashboardLayout>
+
+              {/* Account summary */}
+              <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+                <h3 className="text-lg font-bold text-[#121826]">Account Summary</h3>
+                <div className="mt-5 grid gap-3">
+                  {[
+                    ["User", dashboard.user.name],
+                    ["Role", dashboard.user.role?.name ?? "—"],
+                    ["Modules", dashboard.menus.length],
+                  ].map(([label, val]) => (
+                    <div key={String(label)} className="flex items-center justify-between rounded-xl bg-[#F7F9FC] p-3">
+                      <span className="text-sm font-semibold text-[#667085]">{label}</span>
+                      <b>{val}</b>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          </section>
+        </div>
+      </DashboardLayout>
     </ProtectedRoute>
   );
 }
