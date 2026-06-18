@@ -81,6 +81,7 @@ export default function UsersPage() {
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form, setForm] = useState<UserFormData>(emptyForm);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [phoneCountryCode, setPhoneCountryCode] = useState("+91");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [message, setMessage] = useState("");
@@ -93,6 +94,7 @@ export default function UsersPage() {
   const openCreate = () => {
     setEditingUser(null);
     setForm(emptyForm);
+    setConfirmPassword("");
     setPhoneCountryCode("+91");
     setPhoneNumber("");
     setMessage("");
@@ -126,6 +128,7 @@ export default function UsersPage() {
     setOpen(false);
     setEditingUser(null);
     setForm(emptyForm);
+    setConfirmPassword("");
     setPhoneCountryCode("+91");
     setPhoneNumber("");
   };
@@ -145,19 +148,24 @@ export default function UsersPage() {
     setMessage("");
 
     let success = false;
-    const phone = phoneNumber ? combinePhone(phoneCountryCode, phoneNumber) : "";
-
-    if (!validateMobile(phone)) {
-      setMessage(mobileHelp);
-      return;
-    }
-
-    const payload = { ...form, phone };
 
     if (editingUser) {
-      success = await updateUser(editingUser.id, payload);
+      const phone = phoneNumber ? combinePhone(phoneCountryCode, phoneNumber) : "";
+      if (!validateMobile(phone)) {
+        setMessage(mobileHelp);
+        return;
+      }
+      success = await updateUser(editingUser.id, { ...form, phone });
     } else {
-      success = await createUser(payload);
+      if (!form.password || form.password.length < 8) {
+        setMessage("Password must be at least 8 characters.");
+        return;
+      }
+      if (form.password !== confirmPassword) {
+        setMessage("Passwords do not match.");
+        return;
+      }
+      success = await createUser({ ...form, phone: "" });
     }
 
     if (success) {
@@ -491,225 +499,226 @@ export default function UsersPage() {
             </div>
 
             <form onSubmit={submitForm} className="space-y-4">
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold text-gray-500">
-                  Name
-                </span>
-                <input
-                  value={form.name}
-                  onChange={(e) => updateForm("name", e.target.value)}
-                  className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                  required
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold text-gray-500">
-                  Email
-                </span>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => updateForm("email", e.target.value)}
-                  className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                  required
-                />
-              </label>
-
-              {!editingUser && (
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-gray-500">
-                    Password
-                  </span>
-                  <input
-                    type="password"
-                    value={form.password || ""}
-                    onChange={(e) => updateForm("password", e.target.value)}
-                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                    required
-                  />
-                </label>
-              )}
-
-              <div className="grid gap-4 sm:grid-cols-[170px_1fr]">
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-gray-500">
-                    Country Code
-                  </span>
-                  <select
-                    value={phoneCountryCode}
-                    onChange={(e) => setPhoneCountryCode(e.target.value)}
-                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                  >
-                    {phoneCountryCodes.map((item, index) => (
-                      <option key={`${item.value}-${index}`} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-gray-500">
-                    Mobile Number
-                  </span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
-                    placeholder="9876543210"
-                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                  />
-                  <p className="mt-1 text-xs text-[#98A2B3]">{mobileHelp}</p>
-                </label>
-              </div>
-
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold text-gray-500">
-                  Address
-                </span>
-                <input
-                  value={form.address}
-                  onChange={(e) => updateForm("address", e.target.value)}
-                  className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                />
-              </label>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-gray-500">
-                    Country
-                  </span>
-                  <select
-                    value={form.country}
-                    onChange={(e) => {
-                      updateForm("country", e.target.value);
-                      updateForm("state", "");
-                      updateForm("city", "");
-                    }}
-                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                  >
-                    <option value="">Select Country</option>
-                    {countries.map((country) => (
-                      <option key={country} value={country}>
-                        {country}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-gray-500">
-                    State
-                  </span>
-                  <select
-                    value={form.state}
-                    onChange={(e) => {
-                      updateForm("state", e.target.value);
-                      updateForm("city", "");
-                    }}
-                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                    disabled={!form.country}
-                  >
-                    <option value="">Select State</option>
-                    {getStates(form.country).map((state) => (
-                      <option key={state} value={state}>
-                        {state}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-gray-500">
-                    City
-                  </span>
-                  <select
-                    value={form.city}
-                    onChange={(e) => updateForm("city", e.target.value)}
-                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                    disabled={!form.state}
-                  >
-                    <option value="">Select City</option>
-                    {getCities(form.state).map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-gray-500">
-                    Pincode
-                  </span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={form.pincode}
-                    onChange={(e) => updateForm("pincode", digitsOnly(e.target.value))}
-                    className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                  />
-                </label>
-              </div>
-
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold text-gray-500">
-                  Role
-                </span>
-                <select
-                  value={form.role_id}
-                  onChange={(e) =>
-                    updateForm(
-                      "role_id",
-                      e.target.value ? Number(e.target.value) : ""
-                    )
-                  }
-                  className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
-                  required={!editingUser}
-                >
-                  <option value="">Select Role</option>
-                  {roles.map((role) => (
-                    <option key={role.id} value={role.id}>
-                      {role.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {editingUser && (
-                <div className="grid gap-4 sm:grid-cols-2">
+              {!editingUser ? (
+                <>
                   <label className="block">
-                    <span className="mb-1 block text-xs font-semibold text-gray-500">
-                      Approval
-                    </span>
+                    <span className="mb-1 block text-xs font-semibold text-gray-500">Name</span>
+                    <input
+                      value={form.name}
+                      onChange={(e) => updateForm("name", e.target.value)}
+                      placeholder="Full name"
+                      className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      required
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gray-500">Email</span>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => updateForm("email", e.target.value)}
+                      placeholder="user@example.com"
+                      className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      required
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gray-500">Password</span>
+                    <input
+                      type="password"
+                      value={form.password || ""}
+                      onChange={(e) => updateForm("password", e.target.value)}
+                      placeholder="Min. 8 characters"
+                      className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      required
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gray-500">Confirm Password</span>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter password"
+                      className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      required
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gray-500">Role</span>
                     <select
-                      value={form.approval_status || "pending"}
-                      onChange={(e) =>
-                        updateForm(
-                          "approval_status",
-                          e.target.value as "pending" | "approved" | "rejected"
-                        )
-                      }
+                      value={form.role_id}
+                      onChange={(e) => updateForm("role_id", e.target.value ? Number(e.target.value) : "")}
+                      className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      required
+                    >
+                      <option value="">Select Role</option>
+                      {roles.map((role) => (
+                        <option key={role.id} value={role.id}>{role.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gray-500">Name</span>
+                    <input
+                      value={form.name}
+                      onChange={(e) => updateForm("name", e.target.value)}
+                      className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      required
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gray-500">Email</span>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => updateForm("email", e.target.value)}
+                      className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      required
+                    />
+                  </label>
+
+                  <div className="grid gap-4 sm:grid-cols-[170px_1fr]">
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-gray-500">Country Code</span>
+                      <select
+                        value={phoneCountryCode}
+                        onChange={(e) => setPhoneCountryCode(e.target.value)}
+                        className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      >
+                        {phoneCountryCodes.map((item, index) => (
+                          <option key={`${item.value}-${index}`} value={item.value}>{item.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-gray-500">Mobile Number</span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
+                        placeholder="9876543210"
+                        className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      />
+                      <p className="mt-1 text-xs text-[#98A2B3]">{mobileHelp}</p>
+                    </label>
+                  </div>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gray-500">Address</span>
+                    <input
+                      value={form.address}
+                      onChange={(e) => updateForm("address", e.target.value)}
+                      className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                    />
+                  </label>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-gray-500">Country</span>
+                      <select
+                        value={form.country}
+                        onChange={(e) => { updateForm("country", e.target.value); updateForm("state", ""); updateForm("city", ""); }}
+                        className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      >
+                        <option value="">Select Country</option>
+                        {countries.map((country) => (
+                          <option key={country} value={country}>{country}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-gray-500">State</span>
+                      <select
+                        value={form.state}
+                        onChange={(e) => { updateForm("state", e.target.value); updateForm("city", ""); }}
+                        className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                        disabled={!form.country}
+                      >
+                        <option value="">Select State</option>
+                        {getStates(form.country).map((state) => (
+                          <option key={state} value={state}>{state}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-gray-500">City</span>
+                      <select
+                        value={form.city}
+                        onChange={(e) => updateForm("city", e.target.value)}
+                        className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                        disabled={!form.state}
+                      >
+                        <option value="">Select City</option>
+                        {getCities(form.state).map((city) => (
+                          <option key={city} value={city}>{city}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-gray-500">Pincode</span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={form.pincode}
+                        onChange={(e) => updateForm("pincode", digitsOnly(e.target.value))}
+                        className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gray-500">Role</span>
+                    <select
+                      value={form.role_id}
+                      onChange={(e) => updateForm("role_id", e.target.value ? Number(e.target.value) : "")}
                       className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
                     >
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
+                      <option value="">Select Role</option>
+                      {roles.map((role) => (
+                        <option key={role.id} value={role.id}>{role.name}</option>
+                      ))}
                     </select>
                   </label>
 
-                  <label className="flex items-center gap-2 pt-6 text-sm text-gray-600">
-                    <input
-                      type="checkbox"
-                      checked={form.is_active}
-                      onChange={(e) => updateForm("is_active", e.target.checked)}
-                    />
-                    Active User
-                  </label>
-                </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-gray-500">Approval</span>
+                      <select
+                        value={form.approval_status || "pending"}
+                        onChange={(e) => updateForm("approval_status", e.target.value as "pending" | "approved" | "rejected")}
+                        className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </label>
+
+                    <label className="flex items-center gap-2 pt-6 text-sm text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={form.is_active}
+                        onChange={(e) => updateForm("is_active", e.target.checked)}
+                      />
+                      Active User
+                    </label>
+                  </div>
+                </>
               )}
 
               {message && (
@@ -731,11 +740,7 @@ export default function UsersPage() {
                   disabled={saving}
                   className="rounded-md bg-[#43A9F6] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2F9FE9]"
                 >
-                  {saving
-                    ? "Saving..."
-                    : editingUser
-                    ? "Update User"
-                    : "Create User"}
+                  {saving ? "Saving..." : editingUser ? "Update User" : "Create User"}
                 </button>
               </div>
             </form>

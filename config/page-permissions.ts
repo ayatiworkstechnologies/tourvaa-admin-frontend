@@ -14,10 +14,13 @@ export const pagePermissions: Record<string, string> = {
   "/customers/[id]": "customers.view",
   "/suppliers": "suppliers.view",
   "/agents": "agents.view",
-  "/affiliates": "affiliates.view",
+
   "/tours": "tours.view",
   "/tours/create": "tours.create",
   "/tours/[id]/edit": "tours.edit",
   "/tours/categories": "categories.view",
   "/tours/subcategories": "subcategories.view",
+  "/bookings": "bookings.view",
+  "/payments": "payments.view",
+  "/reports": "reports.view",
 };

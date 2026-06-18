@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CalendarCheck,
+  CreditCard,
   FileText,
   Grid2X2,
   KeyRound,
@@ -58,17 +60,24 @@ const defaultMenus = [
     href: "/agents",
     icon: UsersRound,
   },
-  {
-    label: "Affiliates",
-    permission: "affiliates.view",
-    href: "/affiliates",
-    icon: Ticket,
-  },
+
   {
     label: "Tours",
     permission: "tours.view",
     href: "/tours",
     icon: MapPinned,
+  },
+  {
+    label: "Bookings",
+    permission: "bookings.view",
+    href: "/bookings",
+    icon: CalendarCheck,
+  },
+  {
+    label: "Payments",
+    permission: "payments.view",
+    href: "/payments",
+    icon: CreditCard,
   },
   {
     label: "Categories",
@@ -180,15 +189,7 @@ export default function Sidebar({ menus, mobile = false }: SidebarProps) {
           })}
         </nav>
 
-        <div className="mt-6 space-y-5">
-          <div className="rounded-2xl bg-[#E7F5FF] p-5">
-            <p className="text-sm font-bold text-[#121826]">
-              Need more control?
-            </p>
-            <p className="mt-1 text-xs leading-5 text-[#667085]">
-              Assign roles and permissions from the admin modules.
-            </p>
-          </div>
+        <div className="mt-6">
           <button
             type="button"
             onClick={logout}

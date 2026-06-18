@@ -40,7 +40,8 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
         const updated = await updateCalendarEntry(tourId, editing.id, editing);
         setEntries((prev) => prev.map((i) => i.id === updated.id ? updated : i));
       } else {
-        setEntries((prev) => [...prev, await createCalendarEntry(tourId, editing)]);
+        const created = await createCalendarEntry(tourId, editing);
+        setEntries((prev) => [...prev, created]);
       }
       setEditing(null);
       toast.success("Saved.");

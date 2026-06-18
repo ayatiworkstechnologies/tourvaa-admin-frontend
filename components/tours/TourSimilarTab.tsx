@@ -23,7 +23,7 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
         listCms("/tours", { limit: 200 }),
       ]);
       setItems(similar);
-      setAllTours(tours.items.map((t) => ({ id: t.id as number, title: String(t.title) })));
+      setAllTours((tours.items ?? []).map((t) => ({ id: t.id as number, title: String(t.title) })));
     } catch { toast.error("Failed to load."); }
     finally { setLoading(false); }
   }, [tourId, toast]);

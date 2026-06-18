@@ -77,6 +77,20 @@ type RecentActivity = {
   }>;
 };
 
+type PendingSupplier = {
+  id: number;
+  supplier_name: string;
+  email: string;
+  phone: string;
+};
+
+type PendingAgent = {
+  id: number;
+  agent_name: string;
+  email: string;
+  phone: string;
+};
+
 type ReportsSummary = {
   total_reports: number;
   scheduled_reports: number;
@@ -179,6 +193,10 @@ export default function DashboardPage() {
   const { dashboard, loading, refetch } = useDashboard();
   const [approvalSavingId, setApprovalSavingId] = useState<number | null>(null);
   const [approvalMessage, setApprovalMessage] = useState("");
+  const [pendingSuppliers, setPendingSuppliers] = useState<PendingSupplier[]>([]);
+  const [pendingAgents, setPendingAgents] = useState<PendingAgent[]>([]);
+  const [opsSavingId, setOpsSavingId] = useState<string | null>(null);
+  const [opsMessage, setOpsMessage] = useState("");
   const [filters, setFilters] = useState({ start_date: "", end_date: "", country: "" });
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [bookings, setBookings] = useState<BookingAnalytics | null>(null);
@@ -199,18 +217,22 @@ export default function DashboardPage() {
     setAnalyticsLoading(true);
     try {
       const suffix = filterQuery ? `?${filterQuery}` : "";
-      const [s, b, p, r, a] = await Promise.all([
+      const [s, b, p, r, a, suppRes, agentRes] = await Promise.all([
         api.get(`/dashboard/summary${suffix}`),
         api.get(`/dashboard/bookings${suffix}`),
         api.get(`/dashboard/payments${suffix}`),
         api.get(`/dashboard/reports${suffix}`),
         api.get("/dashboard/recent-activities"),
+        api.get("/suppliers/?approval_status=pending&page=1&limit=10").catch(() => null),
+        api.get("/agents/?approval_status=pending&page=1&limit=10").catch(() => null),
       ]);
       setSummary(s.data.data);
       setBookings(b.data.data);
       setPayments(p.data.data);
       setReports(r.data.data);
       setActivities(a.data.data);
+      if (suppRes) setPendingSuppliers(suppRes.data.items || suppRes.data.data || []);
+      if (agentRes) setPendingAgents(agentRes.data.items || agentRes.data.data || []);
     } finally {
       setAnalyticsLoading(false);
     }
@@ -275,6 +297,66 @@ export default function DashboardPage() {
       setApprovalMessage("Could not reject user.");
     } finally {
       setApprovalSavingId(null);
+    }
+  };
+
+  const approveSupplier = async (id: number) => {
+    setOpsSavingId(`s-${id}`);
+    setOpsMessage("");
+    try {
+      await api.patch(`/suppliers/${id}/approve`);
+      setPendingSuppliers((prev) => prev.filter((s) => s.id !== id));
+      setOpsMessage("Supplier approved.");
+    } catch {
+      setOpsMessage("Could not approve supplier.");
+    } finally {
+      setOpsSavingId(null);
+    }
+  };
+
+  const rejectSupplier = async (id: number) => {
+    const reason = window.prompt("Rejection reason:", "Does not meet requirements");
+    if (!reason) return;
+    setOpsSavingId(`s-${id}`);
+    setOpsMessage("");
+    try {
+      await api.patch(`/suppliers/${id}/reject`, { rejection_reason: reason });
+      setPendingSuppliers((prev) => prev.filter((s) => s.id !== id));
+      setOpsMessage("Supplier rejected.");
+    } catch {
+      setOpsMessage("Could not reject supplier.");
+    } finally {
+      setOpsSavingId(null);
+    }
+  };
+
+  const approveAgent = async (id: number) => {
+    setOpsSavingId(`a-${id}`);
+    setOpsMessage("");
+    try {
+      await api.patch(`/agents/${id}/approve`);
+      setPendingAgents((prev) => prev.filter((a) => a.id !== id));
+      setOpsMessage("Agent approved.");
+    } catch {
+      setOpsMessage("Could not approve agent.");
+    } finally {
+      setOpsSavingId(null);
+    }
+  };
+
+  const rejectAgent = async (id: number) => {
+    const reason = window.prompt("Rejection reason:", "Does not meet requirements");
+    if (!reason) return;
+    setOpsSavingId(`a-${id}`);
+    setOpsMessage("");
+    try {
+      await api.patch(`/agents/${id}/reject`, { rejection_reason: reason });
+      setPendingAgents((prev) => prev.filter((a) => a.id !== id));
+      setOpsMessage("Agent rejected.");
+    } catch {
+      setOpsMessage("Could not reject agent.");
+    } finally {
+      setOpsSavingId(null);
     }
   };
 
@@ -558,78 +640,116 @@ export default function DashboardPage() {
             </section>
           )}
 
-          {/* Operations approval queue — admin + sub-admin */}
-          {showOpsQueue && summary && (
-            <section className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-[#121826]">Operations Approval Queue</h3>
-                  <p className="text-sm text-[#667085]">Pending items across suppliers, agents, and affiliates</p>
+          {/* Supplier + Agent inline approvals — admin + sub-admin */}
+          {showOpsQueue && (canViewSuppliers || canViewAgents) && (
+            <section className="space-y-4">
+              {opsMessage && (
+                <p className={`rounded-xl px-4 py-3 text-sm font-semibold ${opsMessage.includes("Could not") ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}>
+                  {opsMessage}
+                </p>
+              )}
+
+              {canViewSuppliers && (
+                <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                        <Warehouse size={20} />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-[#121826]">Pending Supplier Approvals</h3>
+                        <p className="text-xs text-[#667085]">{pendingSuppliers.length} waiting for review</p>
+                      </div>
+                    </div>
+                    {analyticsLoading && <p className="text-xs font-semibold text-[#238DD7]">Loading...</p>}
+                  </div>
+
+                  <div className="space-y-3">
+                    {pendingSuppliers.length > 0 ? pendingSuppliers.map((s) => (
+                      <div key={s.id} className="flex flex-col gap-3 rounded-xl border border-[#EEF2F6] p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="font-bold text-[#121826]">{s.supplier_name}</p>
+                          <p className="mt-0.5 truncate text-sm text-[#667085]">{s.email}</p>
+                          {s.phone && <p className="mt-0.5 text-xs text-[#98A2B3]">{s.phone}</p>}
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            type="button"
+                            disabled={opsSavingId === `s-${s.id}`}
+                            onClick={() => approveSupplier(s.id)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+                          >
+                            <CheckCircle2 size={15} />
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={opsSavingId === `s-${s.id}`}
+                            onClick={() => rejectSupplier(s.id)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-60"
+                          >
+                            <XCircle size={15} />
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="rounded-xl bg-[#F7F9FC] p-4 text-sm text-[#667085]">No pending supplier approvals.</p>
+                    )}
+                  </div>
                 </div>
-                {analyticsLoading && <p className="text-sm font-semibold text-[#238DD7]">Refreshing...</p>}
-              </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                {canViewSuppliers && (
-                  <Link
-                    href="/suppliers?approval_status=pending"
-                    className="group flex items-center justify-between rounded-xl border border-[#EEF2F6] p-5 transition hover:border-[#43A9F6] hover:bg-[#F7FBFF]"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                        <Warehouse size={22} />
+              )}
+
+              {canViewAgents && (
+                <div className="rounded-xl border border-[#E7EAF0] bg-white p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        <UsersRound size={20} />
                       </div>
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-[#667085]">Suppliers</p>
-                        <p className="mt-0.5 text-2xl font-bold text-[#121826]">{summary.pending_suppliers}</p>
-                        <p className="text-xs text-[#667085]">pending approval</p>
+                        <h3 className="text-base font-bold text-[#121826]">Pending Agent Approvals</h3>
+                        <p className="text-xs text-[#667085]">{pendingAgents.length} waiting for review</p>
                       </div>
                     </div>
-                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700">
-                      Review
-                    </span>
-                  </Link>
-                )}
-                {canViewAgents && (
-                  <Link
-                    href="/agents?approval_status=pending"
-                    className="group flex items-center justify-between rounded-xl border border-[#EEF2F6] p-5 transition hover:border-[#43A9F6] hover:bg-[#F7FBFF]"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                        <UsersRound size={22} />
+                    {analyticsLoading && <p className="text-xs font-semibold text-[#238DD7]">Loading...</p>}
+                  </div>
+
+                  <div className="space-y-3">
+                    {pendingAgents.length > 0 ? pendingAgents.map((a) => (
+                      <div key={a.id} className="flex flex-col gap-3 rounded-xl border border-[#EEF2F6] p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="font-bold text-[#121826]">{a.agent_name}</p>
+                          <p className="mt-0.5 truncate text-sm text-[#667085]">{a.email}</p>
+                          {a.phone && <p className="mt-0.5 text-xs text-[#98A2B3]">{a.phone}</p>}
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            type="button"
+                            disabled={opsSavingId === `a-${a.id}`}
+                            onClick={() => approveAgent(a.id)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+                          >
+                            <CheckCircle2 size={15} />
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={opsSavingId === `a-${a.id}`}
+                            onClick={() => rejectAgent(a.id)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-60"
+                          >
+                            <XCircle size={15} />
+                            Reject
+                          </button>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-[#667085]">Agents</p>
-                        <p className="mt-0.5 text-2xl font-bold text-[#121826]">{summary.pending_agents}</p>
-                        <p className="text-xs text-[#667085]">pending approval</p>
-                      </div>
-                    </div>
-                    <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
-                      Review
-                    </span>
-                  </Link>
-                )}
-                {canViewAffiliates && (
-                  <Link
-                    href="/affiliates?approval_status=pending"
-                    className="group flex items-center justify-between rounded-xl border border-[#EEF2F6] p-5 transition hover:border-[#43A9F6] hover:bg-[#F7FBFF]"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                        <Ticket size={22} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-[#667085]">Affiliates</p>
-                        <p className="mt-0.5 text-2xl font-bold text-[#121826]">{summary.pending_affiliates}</p>
-                        <p className="text-xs text-[#667085]">pending approval</p>
-                      </div>
-                    </div>
-                    <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-bold text-purple-700">
-                      Review
-                    </span>
-                  </Link>
-                )}
-              </div>
+                    )) : (
+                      <p className="rounded-xl bg-[#F7F9FC] p-4 text-sm text-[#667085]">No pending agent approvals.</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
           )}
 

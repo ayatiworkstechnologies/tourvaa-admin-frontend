@@ -37,7 +37,8 @@ export default function TourPricingTab({ tourId }: { tourId: string }) {
         const updated = await updatePricing(tourId, editing.id, editing);
         setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
       } else {
-        setItems((prev) => [...prev, await createPricing(tourId, editing)]);
+        const created = await createPricing(tourId, editing);
+        setItems((prev) => [...prev, created]);
       }
       setEditing(null);
       toast.success("Saved.");

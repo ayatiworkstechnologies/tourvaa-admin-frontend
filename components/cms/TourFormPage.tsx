@@ -55,11 +55,11 @@ export default function TourFormPage({ tourId }: Props) {
   // Load dropdown data
   useEffect(() => {
     listCms("/countries", { limit: 200 })
-      .then((r) => setCountries(r.items.map((c) => ({ id: c.id as number, label: String(c.country_name) }))))
+      .then((r) => setCountries((r.items ?? []).map((c) => ({ id: c.id as number, label: String(c.country_name) }))))
       .catch(() => {});
 
     listCms("/tour-categories", { limit: 200 })
-      .then((r) => setCategories(r.items.map((c) => ({ id: c.id as number, label: String(c.category_name) }))))
+      .then((r) => setCategories((r.items ?? []).map((c) => ({ id: c.id as number, label: String(c.category_name) }))))
       .catch(() => {});
 
     api
@@ -79,7 +79,7 @@ export default function TourFormPage({ tourId }: Props) {
       return;
     }
     listCms("/cities", { limit: 200, country_id: countryId })
-      .then((r) => setCities(r.items.map((c) => ({ id: c.id as number, label: String(c.city_name) }))))
+      .then((r) => setCities((r.items ?? []).map((c) => ({ id: c.id as number, label: String(c.city_name) }))))
       .catch(() => {});
   }, [form.country_id]);
 

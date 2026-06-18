@@ -28,12 +28,19 @@ const menuHrefByPermission: Record<string, string> = {
   "view-users": "/users",
   "view-customers": "/customers",
   "customers.view": "/customers",
+  "view-bookings": "/bookings",
+  "bookings.view": "/bookings",
+  "view-payments": "/payments",
+  "payments.view": "/payments",
   "view-roles": "/roles",
   "view-permissions": "/permissions",
   "view-email": "/email-templates",
   "view-reports": "/reports",
+  "reports.view": "/reports",
   "view-settings": "/settings",
+  "settings.view": "/settings",
   "view-profile": "/profile",
+  "profile.view": "/profile",
 };
 
 function getMenuHref(menu: MenuItem) {

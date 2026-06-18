@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
+  BadgeCheck,
   Eye,
   EyeOff,
   Lock,
   Mail,
-  Phone,
   User,
   UserPlus,
 } from "lucide-react";
@@ -17,16 +17,11 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
 import api from "@/lib/api";
 import {
-  combinePhone,
-  digitsOnly,
-  mobileHelp,
   normalizeEmail,
   passwordHelp,
   validateEmail,
-  validateMobile,
   validatePassword,
 } from "@/lib/validators";
-import { phoneCountryCodes } from "@/lib/location-options";
 
 function getErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -39,56 +34,88 @@ function getErrorMessage(error: unknown) {
 type RegisterFormValues = {
   name: string;
   email: string;
-  phone_country_code: string;
-  phone_number: string;
+  role_id: string;
   password: string;
   confirmPassword: string;
+};
+
+type RoleOption = {
+  id: number;
+  name: string;
+  slug: "customer" | "supplier" | "agent-reseller";
+};
+
+const roleLabel: Record<RoleOption["slug"], string> = {
+  customer: "Customer",
+  supplier: "Supplier",
+  "agent-reseller": "Agent / Reseller",
 };
 
 export default function RegisterPage() {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const {
     register,
     handleSubmit,
     reset,
-    setValue,
-    control,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     defaultValues: {
       name: "",
       email: "",
-      phone_country_code: "+91",
-      phone_number: "",
+      role_id: "",
       password: "",
       confirmPassword: "",
     },
   });
+  const password = watch("password");
 
-  const password = useWatch({ control, name: "password" });
-  const phoneCountryCode = useWatch({ control, name: "phone_country_code" });
+  useEffect(() => {
+    let active = true;
+
+    const fetchRoles = async () => {
+      try {
+        const response = await api.get("/roles/public/options");
+        const options = (response.data.data || []) as RoleOption[];
+        if (active) setRoles(options);
+      } catch {
+        if (active) setRoles([]);
+      }
+    };
+
+    fetchRoles();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const onSubmit = async (values: RegisterFormValues) => {
     setMessage("");
     setIsError(false);
+    const selectedRole = roles.find((role) => role.id === Number(values.role_id));
 
     try {
       await api.post("/auth/register", {
         name: values.name,
         email: normalizeEmail(values.email),
-        phone: values.phone_number ? combinePhone(values.phone_country_code, values.phone_number) : "",
+        role_id: Number(values.role_id),
         password: values.password,
       });
 
-      setMessage("Registered successfully. Please wait for admin approval.");
+      setMessage(
+        selectedRole?.slug === "customer"
+          ? "Registered successfully. You can log in now."
+          : "Registered successfully. Please wait for admin approval."
+      );
       reset({
         name: "",
         email: "",
-        phone_country_code: "+91",
-        phone_number: "",
+        role_id: "",
         password: "",
         confirmPassword: "",
       });
@@ -101,10 +128,39 @@ export default function RegisterPage() {
   return (
     <AuthLayout
       title="Create account"
-      subtitle="Create your Tourvaa account. Admin approval is required before login."
+      subtitle="Create your Tourvaa account. Supplier and agent accounts require admin approval before login."
       badge="Registration"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-[#009FE3]">
+            Account Type
+          </span>
+          <div className="flex items-center gap-3 rounded-xl border border-[#D7E8F5] bg-white px-3 py-3 shadow-sm transition focus-within:border-[#43A9F6] focus-within:ring-4 focus-within:ring-sky-100">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E7F5FF] text-[#238DD7]">
+              <BadgeCheck size={16} />
+            </span>
+            <select
+              {...register("role_id", {
+                required: "Account type is required.",
+              })}
+              className="w-full bg-transparent text-sm font-medium text-[#121826] outline-none"
+            >
+              <option value="">Select account type</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {roleLabel[role.slug] || role.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </label>
+        {errors.role_id && (
+          <p className="-mt-2 text-xs font-medium text-red-600">
+            {errors.role_id.message}
+          </p>
+        )}
+
         <AuthInput
           label="Name"
           icon={User}
@@ -132,45 +188,6 @@ export default function RegisterPage() {
         {errors.email && (
           <p className="-mt-2 text-xs font-medium text-red-600">
             {errors.email.message}
-          </p>
-        )}
-
-        <div className="grid gap-3 sm:grid-cols-[170px_1fr]">
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-gray-600">
-              Country Code
-            </span>
-            <select
-              {...register("phone_country_code")}
-              className="h-[46px] w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-[#009FE3] focus:ring-2 focus:ring-sky-100"
-            >
-              {phoneCountryCodes.map((item, index) => (
-                <option key={`${item.value}-${index}`} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <AuthInput
-            label="Mobile Number"
-            icon={Phone}
-            type="tel"
-            placeholder="9876543210"
-            autoComplete="tel-national"
-            inputMode="numeric"
-            {...register("phone_number", {
-              validate: (value) =>
-                !value || validateMobile(combinePhone(phoneCountryCode, value)) || mobileHelp,
-              onChange: (event) =>
-                setValue("phone_number", digitsOnly(event.target.value), {
-                  shouldValidate: true,
-                }),
-            })}
-          />
-        </div>
-        {errors.phone_number && (
-          <p className="-mt-2 text-xs font-medium text-red-600">
-            {errors.phone_number.message}
           </p>
         )}
 
@@ -216,12 +233,13 @@ export default function RegisterPage() {
               validate: (value) =>
                 value === password || "Password and confirm password do not match.",
             })}
+            autoComplete="new-password"
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword((value) => !value)}
             className="absolute bottom-3 right-3 text-gray-500 hover:text-[#009FE3]"
-            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+            aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
           >
             {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>

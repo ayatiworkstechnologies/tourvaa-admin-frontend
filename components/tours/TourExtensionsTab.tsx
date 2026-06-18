@@ -25,7 +25,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
     try {
       const [exts, tours] = await Promise.all([getExtensions(tourId), listCms("/tours", { limit: 200 })]);
       setItems(exts);
-      setAllTours(tours.items.map((t) => ({ id: t.id as number, title: String(t.title) })));
+      setAllTours((tours.items ?? []).map((t) => ({ id: t.id as number, title: String(t.title) })));
     } catch { toast.error("Failed to load."); }
     finally { setLoading(false); }
   }, [tourId, toast]);
