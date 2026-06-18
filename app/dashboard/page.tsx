@@ -217,14 +217,17 @@ export default function DashboardPage() {
     setAnalyticsLoading(true);
     try {
       const suffix = filterQuery ? `?${filterQuery}` : "";
+      const roleSlugNow = dashboard?.user?.role?.slug;
+      const isOpsRole = roleSlugNow === "super-admin" || roleSlugNow === "admin" || roleSlugNow === "sub-admin";
+
       const [s, b, p, r, a, suppRes, agentRes] = await Promise.all([
         api.get(`/dashboard/summary${suffix}`),
         api.get(`/dashboard/bookings${suffix}`),
         api.get(`/dashboard/payments${suffix}`),
         api.get(`/dashboard/reports${suffix}`),
         api.get("/dashboard/recent-activities"),
-        api.get("/suppliers/?approval_status=pending&page=1&limit=10").catch(() => null),
-        api.get("/agents/?approval_status=pending&page=1&limit=10").catch(() => null),
+        isOpsRole ? api.get("/suppliers/?approval_status=pending&page=1&limit=10").catch(() => null) : Promise.resolve(null),
+        isOpsRole ? api.get("/agents/?approval_status=pending&page=1&limit=10").catch(() => null) : Promise.resolve(null),
       ]);
       setSummary(s.data.data);
       setBookings(b.data.data);
