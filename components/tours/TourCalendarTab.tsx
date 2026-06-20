@@ -25,15 +25,23 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       const [cal, unav] = await Promise.all([getCalendar(tourId), getUnavailableDates(tourId)]);
       setEntries(cal);
       setBlocked(unav);
-    } catch { toast.error("Failed to load."); }
-    finally { setLoading(false); }
+    } catch {
+      toast.error("Failed to load.");
+    } finally {
+      setLoading(false);
+    }
   }, [tourId, toast]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const saveEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editing || !editing.tour_date) { toast.error("Select a date."); return; }
+    if (!editing || !editing.tour_date) {
+      toast.error("Select a date.");
+      return;
+    }
     setSaving(true);
     try {
       if (editing.id) {
@@ -45,30 +53,48 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch { toast.error("Failed."); }
-    finally { setSaving(false); }
+    } catch {
+      toast.error("Failed.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const removeEntry = async (id: number) => {
     if (!confirm("Delete this calendar entry?")) return;
-    try { await deleteCalendarEntry(tourId, id); setEntries((prev) => prev.filter((i) => i.id !== id)); }
-    catch { toast.error("Failed."); }
+    try {
+      await deleteCalendarEntry(tourId, id);
+      setEntries((previousEntries) => previousEntries.filter((entry) => entry.id !== id));
+    }
+    catch {
+      toast.error("Failed.");
+    }
   };
 
   const addBlock = async () => {
-    if (!newBlockDate) { toast.error("Select a date."); return; }
+    if (!newBlockDate) {
+      toast.error("Select a date.");
+      return;
+    }
     try {
       const d = await createUnavailableDate(tourId, { unavailable_date: newBlockDate, reason: newBlockReason });
       setBlocked((prev) => [...prev, d]);
       setNewBlockDate("");
       setNewBlockReason("");
       toast.success("Date blocked.");
-    } catch { toast.error("Failed."); }
+    } catch {
+      toast.error("Failed.");
+    }
   };
 
   const removeBlock = async (id: number) => {
-    try { await deleteUnavailableDate(tourId, id); setBlocked((prev) => prev.filter((i) => i.id !== id)); }
-    catch { toast.error("Failed."); }
+    try {
+      await deleteUnavailableDate(tourId, id);
+      setBlocked((previousDates) => previousDates.filter((date) => date.id !== id));
+    }
+    catch {
+      toast.error("Failed.");
+    }
   };
 
   if (loading) return <Loader label="Loading calendar..." />;

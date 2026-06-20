@@ -108,7 +108,7 @@ export default function SettingsPage() {
         <section className="rounded-2xl border border-[#E7EAF0] bg-white p-6">
           <h2 className="text-2xl font-bold text-[#121826]">General Settings</h2>
           <p className="mt-1 text-sm text-[#667085]">
-            Manage system settings, payment placeholders, and API placeholders.
+            Manage system defaults, payment provider values, and API credentials.
           </p>
           {message && (
             <p className="mt-4 rounded-xl bg-sky-50 px-4 py-3 text-sm text-[#238DD7]">
@@ -145,9 +145,9 @@ export default function SettingsPage() {
             </h3>
             <p className="mb-5 text-sm text-[#667085]">
               {group === "payment"
-                ? "Store payment provider placeholders until full payment integration is ready."
+                ? "Store payment provider settings used by payment workflows."
                 : group === "api"
-                ? "Keep third-party API placeholders ready for future integrations."
+                ? "Keep third-party API settings ready for connected services."
                 : "Update platform defaults used by the admin and customer experience."}
             </p>
             <div className="grid gap-4 md:grid-cols-2">

@@ -1,41 +1,107 @@
 "use client";
 
-import { CreditCard } from "lucide-react";
+import { useEffect, useState } from "react";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
+import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { Payment, getPayments } from "@/lib/services/paymentService";
+
+const PAGE_SIZE = 10;
+
+function PaymentStatusBadge({ status }: { status: string }) {
+  return (
+    <span className="rounded-full bg-[#F2F4F7] px-3 py-1 text-xs font-bold capitalize text-[#475467]">
+      {status.replaceAll("_", " ")}
+    </span>
+  );
+}
 
 export default function PaymentsPage() {
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [totalPayments, setTotalPayments] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let shouldUpdateState = true;
+
+    async function fetchPayments() {
+      setIsLoading(true);
+      try {
+        const paymentResponse = await getPayments({
+          page: currentPage,
+          limit: PAGE_SIZE,
+          search: searchTerm,
+        });
+
+        if (!shouldUpdateState) return;
+
+        setPayments(paymentResponse.items || []);
+        setTotalPayments(paymentResponse.total || 0);
+        setTotalPages(paymentResponse.total_pages || 1);
+        setErrorMessage("");
+      } catch {
+        if (shouldUpdateState) setErrorMessage("Could not load payments.");
+      } finally {
+        if (shouldUpdateState) setIsLoading(false);
+      }
+    }
+
+    void fetchPayments();
+
+    return () => {
+      shouldUpdateState = false;
+    };
+  }, [currentPage, searchTerm]);
+
+  const paymentColumns: DataTableColumn<Payment>[] = [
+    { key: "payment_code", header: "Payment" },
+    { key: "booking_id", header: "Booking" },
+    { key: "payment_method", header: "Method" },
+    { key: "payment_type", header: "Type" },
+    {
+      key: "payment_status",
+      header: "Status",
+      render: (payment) => <PaymentStatusBadge status={payment.payment_status} />,
+    },
+    { key: "authorized_amount", header: "Authorized" },
+    { key: "captured_amount", header: "Captured" },
+    { key: "refunded_amount", header: "Refunded" },
+    { key: "pending_amount", header: "Pending" },
+  ];
+
+  function updateSearchTerm(nextSearchTerm: string) {
+    setCurrentPage(1);
+    setSearchTerm(nextSearchTerm);
+  }
+
   return (
     <ModuleWrapper title="Payments" requiredPermission="payments.view">
-      <div className="flex min-h-[70vh] items-center justify-center px-4">
-        <div className="text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#E7F5FF]">
-            <CreditCard size={36} className="text-[#238DD7]" />
-          </div>
-
-          <span className="inline-block rounded-full bg-amber-100 px-4 py-1 text-xs font-bold uppercase tracking-widest text-amber-700">
-            Coming Soon
-          </span>
-
-          <h1 className="mt-4 text-3xl font-bold text-[#121826]">
-            Payments & Transactions
-          </h1>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-[#667085]">
-            Monitor revenue, process refunds, and review transaction history. This module is under active development and will be available soon.
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[#121826]">Payments</h1>
+          <p className="text-sm text-[#667085]">
+            Monitor authorizations, captures, refunds, holds, and transaction history.
           </p>
-
-          <div className="mt-10 grid grid-cols-3 gap-4 text-center">
-            {[
-              { label: "Transaction Logs", desc: "Full payment history" },
-              { label: "Refund Management", desc: "Process & track refunds" },
-              { label: "Revenue Reports", desc: "Earnings & payout overview" },
-            ].map(({ label, desc }) => (
-              <div key={label} className="rounded-2xl border border-[#E7EAF0] bg-white p-4">
-                <p className="text-sm font-bold text-[#121826]">{label}</p>
-                <p className="mt-1 text-xs text-[#667085]">{desc}</p>
-              </div>
-            ))}
-          </div>
         </div>
+
+        <DataTable
+          ariaLabel="Payments"
+          columns={paymentColumns}
+          rows={payments}
+          loading={isLoading}
+          error={errorMessage}
+          page={currentPage}
+          pageSize={PAGE_SIZE}
+          total={totalPayments}
+          totalPages={totalPages}
+          search={searchTerm}
+          onSearchChange={updateSearchTerm}
+          onPageChange={setCurrentPage}
+          emptyTitle="No payments found"
+        />
       </div>
     </ModuleWrapper>
   );

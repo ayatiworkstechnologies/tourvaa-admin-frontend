@@ -21,12 +21,20 @@ export default function TourPricingTab({ tourId }: { tourId: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    try { setItems(await getPricing(tourId)); }
-    catch { toast.error("Failed to load pricing."); }
-    finally { setLoading(false); }
+    try {
+      const pricingItems = await getPricing(tourId);
+      setItems(pricingItems);
+    } catch {
+      toast.error("Failed to load pricing.");
+    }
+    finally {
+      setLoading(false);
+    }
   }, [tourId, toast]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,14 +50,22 @@ export default function TourPricingTab({ tourId }: { tourId: string }) {
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch { toast.error("Failed to save."); }
-    finally { setSaving(false); }
+    } catch {
+      toast.error("Failed to save.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (id: number) => {
     if (!confirm("Delete this pricing slab?")) return;
-    try { await deletePricing(tourId, id); setItems((prev) => prev.filter((i) => i.id !== id)); }
-    catch { toast.error("Failed."); }
+    try {
+      await deletePricing(tourId, id);
+      setItems((previousItems) => previousItems.filter((item) => item.id !== id));
+    }
+    catch {
+      toast.error("Failed.");
+    }
   };
 
   const numField = (key: keyof PricingSlab, lbl: string) => (

@@ -628,7 +628,11 @@ export default function UsersPage() {
                       <span className="mb-1 block text-xs font-semibold text-gray-500">Country</span>
                       <select
                         value={form.country}
-                        onChange={(e) => { updateForm("country", e.target.value); updateForm("state", ""); updateForm("city", ""); }}
+                        onChange={(event) => {
+                          updateForm("country", event.target.value);
+                          updateForm("state", "");
+                          updateForm("city", "");
+                        }}
                         className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
                       >
                         <option value="">Select Country</option>
@@ -642,7 +646,10 @@ export default function UsersPage() {
                       <span className="mb-1 block text-xs font-semibold text-gray-500">State</span>
                       <select
                         value={form.state}
-                        onChange={(e) => { updateForm("state", e.target.value); updateForm("city", ""); }}
+                        onChange={(event) => {
+                          updateForm("state", event.target.value);
+                          updateForm("city", "");
+                        }}
                         className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
                         disabled={!form.country}
                       >

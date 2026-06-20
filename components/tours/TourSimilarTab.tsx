@@ -24,11 +24,16 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
       ]);
       setItems(similar);
       setAllTours((tours.items ?? []).map((t) => ({ id: t.id as number, title: String(t.title) })));
-    } catch { toast.error("Failed to load."); }
-    finally { setLoading(false); }
+    } catch {
+      toast.error("Failed to load.");
+    } finally {
+      setLoading(false);
+    }
   }, [tourId, toast]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const add = async () => {
     if (!selectedId) return;
@@ -41,7 +46,9 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Failed to add.";
       toast.error(msg);
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (id: number) => {
@@ -49,7 +56,9 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
     try {
       await deleteSimilarTour(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
-    } catch { toast.error("Failed to remove."); }
+    } catch {
+      toast.error("Failed to remove.");
+    }
   };
 
   if (loading) return <Loader label="Loading similar tours..." />;

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
@@ -23,12 +23,20 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    try { setItems(await getItineraries(tourId)); }
-    catch { toast.error("Failed to load itinerary."); }
-    finally { setLoading(false); }
+    try {
+      const itineraryItems = await getItineraries(tourId);
+      setItems(itineraryItems);
+    } catch {
+      toast.error("Failed to load itinerary.");
+    }
+    finally {
+      setLoading(false);
+    }
   }, [tourId, toast]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +52,11 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch { toast.error("Failed to save."); }
-    finally { setSaving(false); }
+    } catch {
+      toast.error("Failed to save.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (id: number) => {
@@ -54,7 +65,9 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
       await deleteItinerary(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
       toast.success("Deleted.");
-    } catch { toast.error("Failed to delete."); }
+    } catch {
+      toast.error("Failed to delete.");
+    }
   };
 
   if (loading) return <Loader label="Loading itinerary..." />;
@@ -74,7 +87,7 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
 
       {items.length === 0 && !editing && (
         <div className="rounded-xl border border-dashed border-[#E7EAF0] p-10 text-center text-sm text-[#98A2B3]">
-          No itinerary days yet. Click "Add Day" to begin.
+          No itinerary days yet. Click &quot;Add Day&quot; to begin.
         </div>
       )}
 
@@ -83,7 +96,7 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
           <div className="flex items-start justify-between">
             <div>
               <span className="text-xs font-bold uppercase text-[#43A9F6]">Day {item.day_number}</span>
-              <h3 className="mt-0.5 font-semibold text-[#121826]">{item.day_title || "—"}</h3>
+              <h3 className="mt-0.5 font-semibold text-[#121826]">{item.day_title || "-"}</h3>
               {item.location_name && <p className="text-sm text-[#98A2B3]">{item.location_name}</p>}
             </div>
             <div className="flex gap-2">
@@ -160,3 +173,5 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
     </div>
   );
 }
+
+

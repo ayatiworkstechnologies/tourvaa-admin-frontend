@@ -1,4 +1,23 @@
-import api from "@/lib/api";
+﻿import api from "@/lib/api";
+
+export type PaymentTransaction = {
+  id: number;
+  transaction_type: string;
+  amount: string;
+  status: string;
+  gateway_reference?: string | null;
+  created_at?: string | null;
+};
+
+export type PaymentHold = {
+  id: number;
+  hold_amount: string;
+  captured_amount: string;
+  released_amount: string;
+  status: string;
+  expires_at?: string | null;
+  created_at?: string | null;
+};
 
 export type Payment = {
   id: number;
@@ -7,18 +26,20 @@ export type Payment = {
   customer_id: number;
   payment_method: string;
   payment_type: string;
-  total_amount: number;
-  paid_amount: number;
-  pending_amount: number;
-  gst_amount: number;
-  refunded_amount: number;
-  payment_status: "pending" | "partial" | "paid" | "failed" | "refunded";
+  gateway?: string;
+  total_amount: string;
+  authorized_amount?: string;
+  captured_amount?: string;
+  paid_amount: string;
+  pending_amount: string;
+  gst_amount: string;
+  surcharge_amount?: string;
+  refunded_amount: string;
+  payment_status: string;
   transaction_id?: string | null;
-  payment_date?: string | null;
-  notes?: string | null;
-  failure_reason?: string | null;
   created_at?: string | null;
-  updated_at?: string | null;
+  transactions?: PaymentTransaction[];
+  holds?: PaymentHold[];
 };
 
 export type PaymentFilters = {
@@ -38,12 +59,29 @@ export type PaymentCreate = {
   customer_id: number;
   payment_method: string;
   payment_type: string;
-  total_amount: number;
-  paid_amount: number;
-  gst_amount?: number;
-  transaction_id?: string | null;
-  payment_date?: string | null;
-  notes?: string | null;
+  total_amount: string | number;
+  paid_amount: string | number;
+  gst_amount?: string | number;
+  surcharge_amount?: string | number;
+  gateway?: string;
+  gateway_payment_id?: string;
+  gateway_order_id?: string;
+  idempotency_key?: string;
+  transaction_id?: string;
+  payment_date?: string;
+  notes?: string;
+};
+
+export type PaymentAuthorize = {
+  booking_id: number;
+  amount: string | number;
+  payment_method: string;
+  payment_type?: string;
+  gateway?: string;
+  gateway_payment_id?: string;
+  gateway_order_id?: string;
+  idempotency_key?: string;
+  notes?: string;
 };
 
 export type PaginatedPayments = {
@@ -55,52 +93,65 @@ export type PaginatedPayments = {
   total_pages: number;
 };
 
+type ApiDataResponse<T> = {
+  status: string;
+  data: T;
+};
+
 export async function getPayments(filters: PaymentFilters = {}) {
   const response = await api.get<PaginatedPayments & { status: string }>("/payments/", {
     params: filters,
   });
+
   return response.data;
 }
 
 export async function getPaymentDetail(paymentId: number | string) {
-  const response = await api.get<{ status: string; data: Payment }>(`/payments/${paymentId}`);
+  const response = await api.get<ApiDataResponse<Payment>>(`/payments/${paymentId}`);
   return response.data.data;
 }
 
-export async function getCustomerPayments(
-  customerId: number | string,
-  filters: { page?: number; limit?: number; payment_status?: string; payment_method?: string } = {}
-) {
-  const response = await api.get<PaginatedPayments & { status: string }>(`/payments/customer/${customerId}`, {
-    params: filters,
-  });
-  return response.data;
-}
-
-export async function createPayment(data: PaymentCreate) {
-  const response = await api.post<{ status: string; data: Payment }>("/payments/", data);
+export async function authorizePayment(payment: PaymentAuthorize) {
+  const response = await api.post<ApiDataResponse<Payment>>("/payments/authorize", payment);
   return response.data.data;
 }
 
-export async function updatePayment(paymentId: number | string, data: Partial<PaymentCreate>) {
-  const response = await api.put<{ status: string; data: Payment }>(`/payments/${paymentId}`, data);
+export async function createPayment(payment: PaymentCreate) {
+  const response = await api.post<ApiDataResponse<Payment>>("/payments/", payment);
   return response.data.data;
 }
 
-export async function updatePaymentStatus(
+export async function capturePayment(
   paymentId: number | string,
-  payment_status: "pending" | "partial" | "paid" | "failed" | "refunded"
+  amount: string | number,
+  transactionId?: string,
 ) {
-  const response = await api.patch<{ status: string; data: Payment }>(`/payments/${paymentId}/status`, {
-    payment_status,
+  const response = await api.post<ApiDataResponse<Payment>>(`/payments/${paymentId}/capture`, {
+    amount,
+    transaction_id: transactionId,
   });
+
+  return response.data.data;
+}
+
+export async function voidPayment(paymentId: number | string, reason?: string) {
+  const response = await api.post<ApiDataResponse<Payment>>(`/payments/${paymentId}/void`, { reason });
   return response.data.data;
 }
 
 export async function processRefund(paymentId: number | string, amount: number, reason?: string) {
-  const response = await api.post<{ status: string; data: Payment }>(`/payments/${paymentId}/refund`, {
+  const response = await api.post<ApiDataResponse<Payment>>(`/payments/${paymentId}/refund`, {
     amount,
     reason: reason ?? "Refund issued by admin",
   });
+
+  return response.data.data;
+}
+
+export async function updatePaymentStatus(paymentId: number | string, paymentStatus: string) {
+  const response = await api.patch<ApiDataResponse<Payment>>(`/payments/${paymentId}/status`, {
+    payment_status: paymentStatus,
+  });
+
   return response.data.data;
 }

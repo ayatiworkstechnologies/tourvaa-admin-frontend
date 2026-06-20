@@ -26,15 +26,23 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
       const [exts, tours] = await Promise.all([getExtensions(tourId), listCms("/tours", { limit: 200 })]);
       setItems(exts);
       setAllTours((tours.items ?? []).map((t) => ({ id: t.id as number, title: String(t.title) })));
-    } catch { toast.error("Failed to load."); }
-    finally { setLoading(false); }
+    } catch {
+      toast.error("Failed to load.");
+    } finally {
+      setLoading(false);
+    }
   }, [tourId, toast]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editing || !editing.extension_tour_id) { toast.error("Select an extension tour."); return; }
+    if (!editing || !editing.extension_tour_id) {
+      toast.error("Select an extension tour.");
+      return;
+    }
     setSaving(true);
     try {
       if (editing.id) {
@@ -46,14 +54,22 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch { toast.error("Failed to save."); }
-    finally { setSaving(false); }
+    } catch {
+      toast.error("Failed to save.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (id: number) => {
     if (!confirm("Delete this extension?")) return;
-    try { await deleteExtension(tourId, id); setItems((prev) => prev.filter((i) => i.id !== id)); }
-    catch { toast.error("Failed."); }
+    try {
+      await deleteExtension(tourId, id);
+      setItems((previousItems) => previousItems.filter((item) => item.id !== id));
+    }
+    catch {
+      toast.error("Failed.");
+    }
   };
 
   if (loading) return <Loader label="Loading extensions..." />;

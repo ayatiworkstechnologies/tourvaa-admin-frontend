@@ -71,12 +71,33 @@ export default function ToursPage() {
           total={total}
           totalPages={totalPages}
           search={search}
-          onSearchChange={(value) => { setSearch(value); setPage(1); }}
+          onSearchChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
           onPageChange={setPage}
           actions={(row) => (
             <div className="flex justify-end gap-2">
-              {hasPermission("tours.edit") && <Link href={`/tours/${row.id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#238DD7] hover:bg-[#E7F5FF]"><Edit size={14} /> Edit</Link>}
-              {hasPermission("tours.disable") && <button type="button" onClick={() => void updateCmsStatus("/tours", row.id, row.status === "published" ? "disabled" : "published").then(fetchRows)} className="rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#667085] hover:bg-[#F7F9FC]">Toggle</button>}
+              {hasPermission("tours.edit") && (
+                <Link
+                  href={`/tours/${row.id}/edit`}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#238DD7] hover:bg-[#E7F5FF]"
+                >
+                  <Edit size={14} /> Edit
+                </Link>
+              )}
+              {hasPermission("tours.disable") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextStatus = row.status === "published" ? "disabled" : "published";
+                    void updateCmsStatus("/tours", row.id, nextStatus).then(fetchRows);
+                  }}
+                  className="rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#667085] hover:bg-[#F7F9FC]"
+                >
+                  Toggle
+                </button>
+              )}
             </div>
           )}
         />

@@ -1,11 +1,14 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Activity,
+  Bell,
   CalendarCheck,
   CreditCard,
   FileText,
+  ReceiptText,
   Grid2X2,
   KeyRound,
   LogOut,
@@ -14,7 +17,6 @@ import {
   Settings,
   Shield,
   Tags,
-  Ticket,
   UserRound,
   Users,
   UsersRound,
@@ -71,7 +73,9 @@ const defaultMenus = [
     label: "Bookings",
     permission: "bookings.view",
     href: "/bookings",
-    icon: CalendarCheck,
+    icon: Activity,
+  Bell,
+  CalendarCheck,
   },
   {
     label: "Payments",
@@ -108,6 +112,7 @@ const defaultMenus = [
     permission: "view-reports",
     href: "/reports",
     icon: FileText,
+  ReceiptText,
   },
   {
     label: "Settings",
@@ -120,12 +125,14 @@ const defaultMenus = [
     permission: "countries.view",
     href: "/settings/countries",
     icon: FileText,
+  ReceiptText,
   },
   {
     label: "Cities",
     permission: "cities.view",
     href: "/settings/cities",
     icon: FileText,
+  ReceiptText,
   },
   {
     label: "Profile",
@@ -203,3 +210,5 @@ export default function Sidebar({ menus, mobile = false }: SidebarProps) {
     </aside>
   );
 }
+
+

@@ -27,12 +27,20 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
 
   const load = useCallback(async () => {
     setLoading(true);
-    try { setItems(await api.list(tourId)); }
-    catch { toast.error(`Failed to load ${segment}.`); }
-    finally { setLoading(false); }
+    try {
+      const segmentItems = await api.list(tourId);
+      setItems(segmentItems);
+    } catch {
+      toast.error(`Failed to load ${segment}.`);
+    }
+    finally {
+      setLoading(false);
+    }
   }, [tourId, api, segment, toast]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,8 +56,11 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch { toast.error("Failed to save."); }
-    finally { setSaving(false); }
+    } catch {
+      toast.error("Failed to save.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (id: number) => {
@@ -58,7 +69,9 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
       await api.delete(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
       toast.success("Deleted.");
-    } catch { toast.error("Failed to delete."); }
+    } catch {
+      toast.error("Failed to delete.");
+    }
   };
 
   if (loading) return <Loader label={`Loading ${segment}...`} />;

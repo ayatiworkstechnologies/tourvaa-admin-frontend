@@ -1,41 +1,116 @@
-"use client";
+﻿"use client";
 
-import { CalendarCheck } from "lucide-react";
+import { useEffect, useState } from "react";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
+import BookingFilters from "@/components/bookings/BookingFilters";
+import BookingTable from "@/components/bookings/BookingTable";
+import { Booking, getBookings, updateBookingStatus, cancelBooking } from "@/lib/services/bookingService";
+
+const PAGE_SIZE = 10;
 
 export default function BookingsPage() {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [bookingStatus, setBookingStatus] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("");
+  const [totalBookings, setTotalBookings] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let shouldUpdateState = true;
+
+    async function fetchBookings() {
+      setIsLoading(true);
+      try {
+        const bookingResponse = await getBookings({
+          page: currentPage,
+          limit: PAGE_SIZE,
+          search: searchTerm,
+          booking_status: bookingStatus,
+          payment_status: paymentStatus,
+        });
+
+        if (!shouldUpdateState) return;
+
+        setBookings(bookingResponse.items || bookingResponse.data || []);
+        setTotalBookings(bookingResponse.total || 0);
+        setTotalPages(bookingResponse.total_pages || 1);
+        setErrorMessage("");
+      } catch {
+        if (shouldUpdateState) setErrorMessage("Could not load bookings.");
+      } finally {
+        if (shouldUpdateState) setIsLoading(false);
+      }
+    }
+
+    void fetchBookings();
+
+    return () => {
+      shouldUpdateState = false;
+    };
+  }, [currentPage, searchTerm, bookingStatus, paymentStatus]);
+
+  function resetToFirstPage(nextValue: string, setter: (value: string) => void) {
+    setCurrentPage(1);
+    setter(nextValue);
+  }
+
+  function clearFilters() {
+    setCurrentPage(1);
+    setSearchTerm("");
+    setBookingStatus("");
+    setPaymentStatus("");
+  }
+
+  async function confirmBooking(bookingId: number) {
+    await updateBookingStatus(bookingId, "confirmed", "Confirmed from admin panel");
+    const refreshedBooking = await getBookings({ page: currentPage, limit: PAGE_SIZE, search: searchTerm });
+    setBookings(refreshedBooking.items || refreshedBooking.data || []);
+  }
+
+  async function cancelSelectedBooking(bookingId: number) {
+    await cancelBooking(bookingId, "Cancelled from admin panel");
+    const refreshedBooking = await getBookings({ page: currentPage, limit: PAGE_SIZE, search: searchTerm });
+    setBookings(refreshedBooking.items || refreshedBooking.data || []);
+  }
+
   return (
     <ModuleWrapper title="Bookings" requiredPermission="bookings.view">
-      <div className="flex min-h-[70vh] items-center justify-center px-4">
-        <div className="text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#E7F5FF]">
-            <CalendarCheck size={36} className="text-[#238DD7]" />
-          </div>
-
-          <span className="inline-block rounded-full bg-amber-100 px-4 py-1 text-xs font-bold uppercase tracking-widest text-amber-700">
-            Coming Soon
-          </span>
-
-          <h1 className="mt-4 text-3xl font-bold text-[#121826]">
-            Bookings Management
-          </h1>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-[#667085]">
-            View, manage, and track all tour bookings in one place. This module is under active development and will be available soon.
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[#121826]">Bookings</h1>
+          <p className="text-sm text-[#667085]">
+            Manage booking lifecycle, supplier acceptance, payment status, and history.
           </p>
-
-          <div className="mt-10 grid grid-cols-3 gap-4 text-center">
-            {[
-              { label: "Tour Reservations", desc: "Full booking lifecycle" },
-              { label: "Guest Management", desc: "Passenger details & docs" },
-              { label: "Status Tracking", desc: "Confirmed, pending, cancelled" },
-            ].map(({ label, desc }) => (
-              <div key={label} className="rounded-2xl border border-[#E7EAF0] bg-white p-4">
-                <p className="text-sm font-bold text-[#121826]">{label}</p>
-                <p className="mt-1 text-xs text-[#667085]">{desc}</p>
-              </div>
-            ))}
-          </div>
         </div>
+
+        <BookingFilters
+          search={searchTerm}
+          bookingStatus={bookingStatus}
+          paymentStatus={paymentStatus}
+          onSearchChange={(value) => resetToFirstPage(value, setSearchTerm)}
+          onBookingStatusChange={(value) => resetToFirstPage(value, setBookingStatus)}
+          onPaymentStatusChange={(value) => resetToFirstPage(value, setPaymentStatus)}
+          onClear={clearFilters}
+        />
+
+        <BookingTable
+          rows={bookings}
+          loading={isLoading}
+          error={errorMessage}
+          page={currentPage}
+          pageSize={PAGE_SIZE}
+          total={totalBookings}
+          totalPages={totalPages}
+          search={searchTerm}
+          onSearchChange={(value) => resetToFirstPage(value, setSearchTerm)}
+          onPageChange={setCurrentPage}
+          onCancel={cancelSelectedBooking}
+          onConfirm={confirmBooking}
+        />
       </div>
     </ModuleWrapper>
   );

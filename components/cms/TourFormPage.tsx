@@ -52,36 +52,83 @@ export default function TourFormPage({ tourId }: Props) {
   const [categories, setCategories] = useState<DropdownOption[]>([]);
   const [suppliers, setSuppliers] = useState<DropdownOption[]>([]);
 
-  // Load dropdown data
   useEffect(() => {
-    listCms("/countries", { limit: 200 })
-      .then((r) => setCountries((r.items ?? []).map((c) => ({ id: c.id as number, label: String(c.country_name) }))))
-      .catch(() => {});
+    let shouldUpdateState = true;
 
-    listCms("/tour-categories", { limit: 200 })
-      .then((r) => setCategories((r.items ?? []).map((c) => ({ id: c.id as number, label: String(c.category_name) }))))
-      .catch(() => {});
+    async function loadDropdownOptions() {
+      try {
+        const [countryResponse, categoryResponse, supplierResponse] = await Promise.all([
+          listCms("/countries", { limit: 200 }),
+          listCms("/tour-categories", { limit: 200 }),
+          api.get("/suppliers/", { params: { limit: 200 } }),
+        ]);
 
-    api
-      .get("/suppliers/", { params: { limit: 200 } })
-      .then((r) => {
-        const items: Record<string, unknown>[] = r.data?.items ?? r.data?.data ?? [];
-        setSuppliers(items.map((s) => ({ id: s.id as number, label: String(s.supplier_name ?? s.name ?? s.id) })));
-      })
-      .catch(() => {});
-  }, []);
+        if (!shouldUpdateState) return;
 
-  // Reload cities when country changes
-  useEffect(() => {
-    const countryId = form.country_id;
-    if (!countryId) {
-      setCities([]);
-      return;
+        const supplierItems: Array<{ id: number; supplier_name?: string; name?: string }> =
+          supplierResponse.data?.items ?? supplierResponse.data?.data ?? [];
+
+        setCountries(
+          (countryResponse.items ?? []).map((country) => ({
+            id: country.id as number,
+            label: String(country.country_name),
+          }))
+        );
+        setCategories(
+          (categoryResponse.items ?? []).map((category) => ({
+            id: category.id as number,
+            label: String(category.category_name),
+          }))
+        );
+        setSuppliers(
+          supplierItems.map((supplier) => ({
+            id: supplier.id,
+            label: String(supplier.supplier_name ?? supplier.name ?? supplier.id),
+          }))
+        );
+      } catch {
+        if (shouldUpdateState) toast.error("Could not load tour form options.");
+      }
     }
-    listCms("/cities", { limit: 200, country_id: countryId })
-      .then((r) => setCities((r.items ?? []).map((c) => ({ id: c.id as number, label: String(c.city_name) }))))
-      .catch(() => {});
-  }, [form.country_id]);
+
+    void loadDropdownOptions();
+
+    return () => {
+      shouldUpdateState = false;
+    };
+  }, [toast]);
+
+  useEffect(() => {
+    let shouldUpdateState = true;
+
+    async function loadCitiesForCountry() {
+      const countryId = form.country_id;
+      if (!countryId) {
+        setCities([]);
+        return;
+      }
+
+      try {
+        const cityResponse = await listCms("/cities", { limit: 200, country_id: countryId });
+        if (!shouldUpdateState) return;
+
+        setCities(
+          (cityResponse.items ?? []).map((city) => ({
+            id: city.id as number,
+            label: String(city.city_name),
+          }))
+        );
+      } catch {
+        if (shouldUpdateState) toast.error("Could not load cities for the selected country.");
+      }
+    }
+
+    void loadCitiesForCountry();
+
+    return () => {
+      shouldUpdateState = false;
+    };
+  }, [form.country_id, toast]);
 
   const fetchTour = useCallback(async () => {
     if (!tourId) return;

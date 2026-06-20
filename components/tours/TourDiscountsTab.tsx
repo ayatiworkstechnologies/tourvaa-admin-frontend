@@ -21,12 +21,20 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    try { setItems(await getDiscounts(tourId)); }
-    catch { toast.error("Failed to load discounts."); }
-    finally { setLoading(false); }
+    try {
+      const discounts = await getDiscounts(tourId);
+      setItems(discounts);
+    } catch {
+      toast.error("Failed to load discounts.");
+    }
+    finally {
+      setLoading(false);
+    }
   }, [tourId, toast]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,13 +53,20 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Failed to save.";
       toast.error(msg);
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (id: number) => {
     if (!confirm("Delete this discount?")) return;
-    try { await deleteDiscount(tourId, id); setItems((prev) => prev.filter((i) => i.id !== id)); }
-    catch { toast.error("Failed."); }
+    try {
+      await deleteDiscount(tourId, id);
+      setItems((previousItems) => previousItems.filter((item) => item.id !== id));
+    }
+    catch {
+      toast.error("Failed.");
+    }
   };
 
   if (loading) return <Loader label="Loading discounts..." />;

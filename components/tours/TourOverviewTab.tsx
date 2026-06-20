@@ -24,11 +24,17 @@ export default function TourOverviewTab({ tourId }: { tourId: string }) {
     try {
       const data = await getOverview(tourId);
       if (data) setForm(data);
-    } catch { toast.error("Failed to load overview"); }
-    finally { setLoading(false); }
+    } catch {
+      toast.error("Failed to load overview");
+    }
+    finally {
+      setLoading(false);
+    }
   }, [tourId, toast]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const update = (key: keyof TourOverview, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -39,8 +45,11 @@ export default function TourOverviewTab({ tourId }: { tourId: string }) {
     try {
       await saveOverview(tourId, form);
       toast.success("Overview saved.");
-    } catch { toast.error("Failed to save overview."); }
-    finally { setSaving(false); }
+    } catch {
+      toast.error("Failed to save overview.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <Loader label="Loading overview..." />;

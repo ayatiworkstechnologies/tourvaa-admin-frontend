@@ -18,12 +18,20 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    try { setItems(await getGallery(tourId)); }
-    catch { toast.error("Failed to load gallery."); }
-    finally { setLoading(false); }
+    try {
+      const galleryImages = await getGallery(tourId);
+      setItems(galleryImages);
+    } catch {
+      toast.error("Failed to load gallery.");
+    }
+    finally {
+      setLoading(false);
+    }
   }, [tourId, toast]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,14 +47,22 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch { toast.error("Failed to save."); }
-    finally { setSaving(false); }
+    } catch {
+      toast.error("Failed to save.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (id: number) => {
     if (!confirm("Delete this image?")) return;
-    try { await deleteGalleryImage(tourId, id); setItems((prev) => prev.filter((i) => i.id !== id)); }
-    catch { toast.error("Failed."); }
+    try {
+      await deleteGalleryImage(tourId, id);
+      setItems((previousItems) => previousItems.filter((item) => item.id !== id));
+    }
+    catch {
+      toast.error("Failed.");
+    }
   };
 
   if (loading) return <Loader label="Loading gallery..." />;

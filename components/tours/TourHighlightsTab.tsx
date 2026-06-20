@@ -17,12 +17,21 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    try { setItems(await getHighlights(tourId)); }
-    catch { toast.error("Failed to load highlights."); }
-    finally { setLoading(false); }
+    try {
+      const highlights = await getHighlights(tourId);
+      setItems(highlights);
+    }
+    catch {
+      toast.error("Failed to load highlights.");
+    }
+    finally {
+      setLoading(false);
+    }
   }, [tourId, toast]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +47,11 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch { toast.error("Failed to save."); }
-    finally { setSaving(false); }
+    } catch {
+      toast.error("Failed to save.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (id: number) => {
@@ -47,7 +59,9 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
     try {
       await deleteHighlight(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
-    } catch { toast.error("Failed to delete."); }
+    } catch {
+      toast.error("Failed to delete.");
+    }
   };
 
   if (loading) return <Loader label="Loading highlights..." />;

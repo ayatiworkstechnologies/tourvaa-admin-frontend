@@ -28,7 +28,15 @@ type Props = {
   columns: DataTableColumn<CmsRecord>[];
 };
 
-export default function CmsCrudPage({ title, endpoint, requiredPermission, createPermission, editPermission, fields, columns }: Props) {
+export default function CmsCrudPage({
+  title,
+  endpoint,
+  requiredPermission,
+  createPermission,
+  editPermission,
+  fields,
+  columns,
+}: Props) {
   const toast = useToast();
   const { hasPermission } = useAuthContext();
   const [rows, setRows] = useState<CmsRecord[]>([]);
@@ -88,7 +96,14 @@ export default function CmsCrudPage({ title, endpoint, requiredPermission, creat
             <p className="mt-1 text-sm text-[#667085]">Create, edit, and disable foundational CMS data.</p>
           </div>
           {hasPermission(createPermission) && (
-            <button type="button" onClick={() => { setEditing(null); setOpen(true); }} className="inline-flex items-center gap-2 rounded-xl bg-[#43A9F6] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#2F9FE9]">
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#43A9F6] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#2F9FE9]"
+            >
               <Plus size={16} /> Add
             </button>
           )}
@@ -103,17 +118,52 @@ export default function CmsCrudPage({ title, endpoint, requiredPermission, creat
           total={total}
           totalPages={totalPages}
           search={search}
-          onSearchChange={(value) => { setSearch(value); setPage(1); }}
+          onSearchChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
           onPageChange={setPage}
           actions={(row) => (
             <div className="flex justify-end gap-2">
-              {hasPermission(editPermission) && <button type="button" onClick={() => { setEditing(row); setOpen(true); }} className="inline-flex items-center gap-1 rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#238DD7] hover:bg-[#E7F5FF]"><Edit size={14} /> Edit</button>}
-              {hasPermission(editPermission) && <button type="button" onClick={() => void updateCmsStatus(endpoint, row.id, row.status === "active" || row.status === "published" ? "inactive" : "active").then(fetchRows)} className="rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#667085] hover:bg-[#F7F9FC]">Toggle</button>}
+              {hasPermission(editPermission) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(row);
+                    setOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#238DD7] hover:bg-[#E7F5FF]"
+                >
+                  <Edit size={14} /> Edit
+                </button>
+              )}
+              {hasPermission(editPermission) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextStatus = row.status === "active" || row.status === "published" ? "inactive" : "active";
+                    void updateCmsStatus(endpoint, row.id, nextStatus).then(fetchRows);
+                  }}
+                  className="rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#667085] hover:bg-[#F7F9FC]"
+                >
+                  Toggle
+                </button>
+              )}
             </div>
           )}
         />
       </div>
-      <ActionModal open={open} title={editing ? `Edit ${title}` : `Add ${title}`} fields={fields} saving={saving} onClose={() => { setOpen(false); setEditing(null); }} onSubmit={submit} />
+      <ActionModal
+        open={open}
+        title={editing ? `Edit ${title}` : `Add ${title}`}
+        fields={fields}
+        saving={saving}
+        onClose={() => {
+          setOpen(false);
+          setEditing(null);
+        }}
+        onSubmit={submit}
+      />
     </ModuleWrapper>
   );
 }
