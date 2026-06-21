@@ -4,13 +4,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { X } from "lucide-react";
 
 type ToastType = "success" | "error" | "warning" | "info";
-type Toast = { id: number; type: ToastType; message: string };
+type Toast = { id: number; type: ToastType; title?: string; message: string };
 type ToastContextValue = {
-  toast: (type: ToastType, message: string) => void;
-  success: (message: string) => void;
-  error: (message: string) => void;
-  warning: (message: string) => void;
-  info: (message: string) => void;
+  toast: (type: ToastType, message: string, title?: string) => void;
+  notify: (title: string, message: string, type?: ToastType) => void;
+  success: (message: string, title?: string) => void;
+  error: (message: string, title?: string) => void;
+  warning: (message: string, title?: string) => void;
+  info: (message: string, title?: string) => void;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -30,9 +31,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toast = useCallback(
-    (type: ToastType, message: string) => {
+    (type: ToastType, message: string, title?: string) => {
       const id = Date.now() + Math.random();
-      setToasts((current) => [...current, { id, type, message }]);
+      setToasts((current) => [...current, { id, type, title, message }]);
       window.setTimeout(() => remove(id), 4200);
     },
     [remove]
@@ -40,8 +41,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const listener = (event: Event) => {
-      const detail = (event as CustomEvent).detail as { type?: ToastType; message?: string };
-      if (detail?.message) toast(detail.type || "info", detail.message);
+      const detail = (event as CustomEvent).detail as { type?: ToastType; title?: string; message?: string };
+      if (detail?.message) toast(detail.type || "info", detail.message, detail.title);
     };
     window.addEventListener("tourvaa:toast", listener);
     return () => window.removeEventListener("tourvaa:toast", listener);
@@ -50,10 +51,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       toast,
-      success: (message: string) => toast("success", message),
-      error: (message: string) => toast("error", message),
-      warning: (message: string) => toast("warning", message),
-      info: (message: string) => toast("info", message),
+      notify: (title: string, message: string, type: ToastType = "info") => toast(type, message, title),
+      success: (message: string, title?: string) => toast("success", message, title),
+      error: (message: string, title?: string) => toast("error", message, title),
+      warning: (message: string, title?: string) => toast("warning", message, title),
+      info: (message: string, title?: string) => toast("info", message, title),
     }),
     [toast]
   );
@@ -61,14 +63,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed right-4 top-4 z-[70] space-y-3">
+      <div className="fixed right-4 top-4 z-70 space-y-3">
         {toasts.map((item) => (
           <div
             key={item.id}
             className={`flex min-w-72 max-w-sm items-start gap-3 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg ${colors[item.type]}`}
             role="status"
           >
-            <span className="min-w-0 flex-1">{item.message}</span>
+            <div className="min-w-0 flex-1">
+              {item.title && <p className="font-bold">{item.title}</p>}
+              <p className={item.title ? "mt-0.5 font-normal text-[0.8rem]" : ""}>{item.message}</p>
+            </div>
             <button type="button" onClick={() => remove(item.id)} aria-label="Dismiss notification">
               <X size={15} />
             </button>

@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell,
   ChevronDown,
   LogOut,
   Menu,
   Settings,
   User,
 } from "lucide-react";
+import NotificationInbox from "@/components/ui/NotificationInbox";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import { MenuItem } from "@/types/auth";
 import { mediaUrl } from "@/lib/media-url";
@@ -56,6 +57,7 @@ export default function Header({
   onMenuClick,
 }: HeaderProps) {
   const { logout } = useAuth();
+  const { supported, subscribed, loading, subscribe, unsubscribe } = usePushNotifications();
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -72,7 +74,7 @@ export default function Header({
   const canOpenProfile = allowedMenus.some((menu) => menu.permission === "view-profile");
 
   return (
-    <header className="flex h-[92px] items-center justify-between bg-[#F7F9FC] px-5 md:px-9">
+    <header className="flex h-23 items-center justify-between bg-[#F7F9FC] px-5 md:px-9">
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -104,13 +106,31 @@ export default function Header({
           </button>
         )}
 
-        <button
-          type="button"
-          className="relative flex h-11 w-11 items-center justify-center rounded-lg bg-white text-[#6B7280] hover:text-[#43A9F6]"
-          aria-label="Notifications"
-        >
-          <Bell size={18} />
-        </button>
+        {supported && (
+          <button
+            type="button"
+            onClick={subscribed ? unsubscribe : subscribe}
+            disabled={loading}
+            title={subscribed ? "Disable push notifications" : "Enable push notifications"}
+            className="hidden h-11 w-11 items-center justify-center rounded-lg bg-white text-[#6B7280] hover:text-[#43A9F6] sm:flex disabled:opacity-50"
+            aria-label={subscribed ? "Disable push notifications" : "Enable push notifications"}
+          >
+            {subscribed ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            )}
+          </button>
+        )}
+
+        <NotificationInbox />
 
         <div className="relative">
           <button

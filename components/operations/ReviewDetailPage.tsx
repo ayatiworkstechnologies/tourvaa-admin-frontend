@@ -67,7 +67,7 @@ export default function ReviewDetailPage({ module, id, title, requiredPermission
   }, [id, module, toast]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     void fetchRecord();
   }, [fetchRecord]);
 

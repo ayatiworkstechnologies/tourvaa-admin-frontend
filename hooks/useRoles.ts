@@ -32,7 +32,7 @@ export function useRoles({ enabled = true, publicOnly = false }: UseRolesOptions
   }, [enabled, publicOnly]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     fetchRoles();
   }, [fetchRoles]);
 

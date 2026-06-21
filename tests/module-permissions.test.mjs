@@ -46,11 +46,8 @@ console.log("\n=== Frontend Permissions ===\n");
 const allFiles = [...getAllTsxFiles(COMPONENTS_DIR), ...getAllTsxFiles(APP_DIR)];
 
 // Collect all permission strings used in source
-const hyphenPermPattern = /permission[s]?\s*[=:,([{]\s*["']([a-z]+-[a-z]+-[a-z]+)["']/g;
-const dottedPermPattern = /["']([a-z]+\.[a-z]+)["']/g;
 
 const hyphenFound = [];
-const dottedFound = [];
 
 // Known legacy hyphen-style permissions that are allowed for backward compat
 // (the backend API returns these slugs for old menu entries — frontend mirrors them)

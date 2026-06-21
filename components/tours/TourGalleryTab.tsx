@@ -85,7 +85,10 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
         {items.map((item) => (
           <div key={item.id} className="group relative rounded-xl border border-[#E7EAF0] bg-white overflow-hidden">
             <div className="aspect-video bg-[#F2F4F7]">
-              {item.image_path && <img src={item.image_path} alt={item.image_alt_text || item.image_title} className="h-full w-full object-cover" />}
+              {item.image_path && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.image_path} alt={item.image_alt_text || item.image_title} className="h-full w-full object-cover" />
+              )}
             </div>
             <div className="p-3">
               <p className="truncate text-sm font-semibold text-[#121826]">{item.image_title || "Untitled"}</p>

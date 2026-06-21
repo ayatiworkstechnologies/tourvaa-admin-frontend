@@ -158,7 +158,7 @@ export function useUsers({ enabled = true, page = 1, limit = 10, search = "" }: 
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     fetchUsers();
   }, [fetchUsers]);
 

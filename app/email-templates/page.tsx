@@ -61,7 +61,7 @@ export default function EmailTemplatesPage() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     fetchTemplates();
   }, [fetchTemplates]);
 

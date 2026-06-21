@@ -239,7 +239,7 @@ export default function DashboardPage() {
     } finally {
       setAnalyticsLoading(false);
     }
-  }, [filterQuery]);
+  }, [dashboard?.user?.role?.slug, filterQuery]);
 
   useEffect(() => {
     if (!dashboard) return;

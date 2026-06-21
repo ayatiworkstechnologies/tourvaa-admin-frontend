@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
+import { Plus, Save, X } from "lucide-react";
 import { TourHighlight, getHighlights, createHighlight, updateHighlight, deleteHighlight } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
@@ -83,7 +83,10 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <div key={item.id} className="rounded-xl border border-[#E7EAF0] bg-white overflow-hidden">
-            {item.image && <img src={item.image} alt={item.title} className="h-36 w-full object-cover" />}
+            {item.image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={item.image} alt={item.title} className="h-36 w-full object-cover" />
+            )}
             <div className="p-4">
               <p className="font-semibold text-[#121826]">{item.title}</p>
               <p className="mt-1 text-sm text-[#98A2B3]">{item.short_description}</p>

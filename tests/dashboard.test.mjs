@@ -15,11 +15,6 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
-const APP_DIR = resolve(ROOT, "app");
-const LIB_DIR = resolve(ROOT, "lib");
-const SERVICES_DIR = resolve(LIB_DIR, "services");
-const COMPONENTS_DIR = resolve(ROOT, "components");
-const PROVIDERS_DIR = resolve(ROOT, "providers");
 
 let passed = 0;
 let failed = 0;
@@ -36,9 +31,6 @@ function check(label, condition, detail = "") {
   }
 }
 
-function fileExists(rel) {
-  return existsSync(resolve(ROOT, rel));
-}
 
 function readFile(rel) {
   const p = resolve(ROOT, rel);

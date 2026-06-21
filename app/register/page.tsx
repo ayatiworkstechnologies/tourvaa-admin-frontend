@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   BadgeCheck,
   Eye,
@@ -61,7 +61,7 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     defaultValues: {
@@ -72,7 +72,7 @@ export default function RegisterPage() {
       confirmPassword: "",
     },
   });
-  const password = watch("password");
+  const password = useWatch({ control, name: "password" });
 
   useEffect(() => {
     let active = true;

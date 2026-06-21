@@ -30,21 +30,6 @@ const emptyForm: RoleForm = {
   is_active: true,
 };
 
-const actions = [
-  { key: "get", label: "GET", description: "View" },
-  { key: "post", label: "POST", description: "Create" },
-  { key: "put", label: "PUT", description: "Update" },
-  { key: "delete", label: "DELETE", description: "Delete" },
-] as const;
-
-const inferAction = (permission: Permission) => {
-  if (permission.action) return permission.action;
-  if (permission.slug.startsWith("create-")) return "post";
-  if (permission.slug.startsWith("update-")) return "put";
-  if (permission.slug.startsWith("delete-")) return "delete";
-  return "get";
-};
-
 export default function RolesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -71,23 +56,6 @@ export default function RolesPage() {
     }, {});
   }, [permissions]);
 
-  const permissionMatrix = useMemo(() => {
-    return Object.entries(groupedPermissions)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([module, items]) => ({
-        module,
-        items,
-        byAction: actions.reduce<Record<string, Permission | undefined>>(
-          (map, action) => {
-            map[action.key] = items.find(
-              (permission) => inferAction(permission) === action.key
-            );
-            return map;
-          },
-          {}
-        ),
-      }));
-  }, [groupedPermissions]);
 
   const allPermissionIds = permissions.map((permission) => permission.id);
   const allSelected =
@@ -131,7 +99,7 @@ export default function RolesPage() {
   }, [fetchPermissions, fetchRoles]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     loadData();
   }, [loadData]);
 
