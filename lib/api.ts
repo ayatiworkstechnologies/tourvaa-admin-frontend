@@ -2,6 +2,35 @@ import axios from "axios";
 import { clearSession, getStoredTokenSafe, setToken } from "@/lib/session";
 
 const API_PATH_PREFIX = "/api";
+const PUBLIC_API_PATHS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/register/customer",
+  "/auth/register/supplier",
+  "/auth/register/agent",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/reset-password/validate",
+  "/auth/verify-email",
+  "/roles/public/options",
+];
+
+const PUBLIC_PAGE_PATHS = [
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/join",
+  "/tours",
+  "/blogs",
+  "/about",
+  "/contact",
+  "/terms",
+  "/cookie-policy",
+  "/cancellation-policy",
+  "/accessibility",
+];
 
 function normalizeApiUrl(url?: string) {
   if (!url) return url;
@@ -19,33 +48,49 @@ function normalizeApiUrl(url?: string) {
   return url;
 }
 
+function getApiPath(url?: string) {
+  const normalized = normalizeApiUrl(url) || "";
+  const path = normalized.startsWith(API_PATH_PREFIX)
+    ? normalized.slice(API_PATH_PREFIX.length)
+    : normalized;
+  return path.split("?")[0].split("#")[0] || "/";
+}
+
+function isPublicApiPath(url?: string) {
+  const path = getApiPath(url);
+  return PUBLIC_API_PATHS.some((publicPath) => path === publicPath || path.startsWith(`${publicPath}/`));
+}
+
+function isPublicPagePath(pathname: string) {
+  return PUBLIC_PAGE_PATHS.some((publicPath) => pathname === publicPath || pathname.startsWith(`${publicPath}/`));
+}
+
 const api = axios.create({
   baseURL: API_PATH_PREFIX,
 });
 
-// Separate instance used only for token refresh — no interceptors, so it
+// Separate instance used only for token refresh - no interceptors, so it
 // cannot trigger the retry loop.
 const authAxios = axios.create({
   baseURL: API_PATH_PREFIX,
 });
 
 let isRefreshing = false;
-let refreshQueue: Array<(token: string) => void> = [];
+let refreshQueue: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = [];
 
 function drainQueue(token: string) {
-  refreshQueue.forEach((cb) => cb(token));
+  refreshQueue.forEach(({ resolve }) => resolve(token));
   refreshQueue = [];
 }
 
 function rejectQueue(error: unknown) {
-  refreshQueue.forEach((_, i, arr) => void arr);
+  refreshQueue.forEach(({ reject }) => reject(error));
   refreshQueue = [];
-  void error;
 }
 
 function hardLogout() {
   clearSession();
-  if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+  if (typeof window !== "undefined" && !isPublicPagePath(window.location.pathname)) {
     window.dispatchEvent(
       new CustomEvent("tourvaa:toast", {
         detail: {
@@ -65,7 +110,7 @@ api.interceptors.request.use((config) => {
 
     const token = getStoredTokenSafe();
 
-    if (token) {
+    if (token && !isPublicApiPath(config.url)) {
       config.headers.Authorization = `Bearer ${token}`;
     }
   }
@@ -78,14 +123,14 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error?.config;
 
-    if (error?.response?.status === 401 && typeof window !== "undefined") {
-      // The refresh call itself failed — nothing left to try.
+    if (error?.response?.status === 401 && typeof window !== "undefined" && !isPublicApiPath(originalRequest?.url)) {
+      // The refresh call itself failed - nothing left to try.
       if (originalRequest?.url?.includes("/auth/refresh-token")) {
         hardLogout();
         return Promise.reject(error);
       }
 
-      // Already retried once — give up.
+      // Already retried once - give up.
       if (originalRequest?._retry) {
         hardLogout();
         return Promise.reject(error);
@@ -93,13 +138,15 @@ api.interceptors.response.use(
 
       originalRequest._retry = true;
 
-      // Another refresh is already in flight — queue this request.
+      // Another refresh is already in flight - queue this request.
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
-          refreshQueue.push((newToken: string) => {
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            resolve(api(originalRequest));
-            void reject;
+          refreshQueue.push({
+            resolve: (newToken: string) => {
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              resolve(api(originalRequest));
+            },
+            reject,
           });
         });
       }

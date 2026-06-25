@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -35,7 +35,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/admin/login"];
 
-// Role-based portal paths are self-guarded — exclude from global redirect
+// Role-based portal paths are self-guarded -- exclude from global redirect
 const portalPaths = ["/customer", "/agent", "/supplier", "/affiliate"];
 
 function isPublicRoute(pathname: string) {
@@ -126,6 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError("");
       return response.data.data as DashboardData;
     } catch {
+      clearSession();
+      setTokenState(null);
       setDashboard(null);
       setError("Could not restore session.");
       return null;
