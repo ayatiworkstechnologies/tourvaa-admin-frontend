@@ -25,7 +25,7 @@ export default function AdminAssetUpload({ label, value, onChange }: Props) {
       <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">{label}</span>
       <div className="flex flex-col gap-2 rounded-xl border border-[#E7EAF0] p-3">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#E7F5FF] text-[#238DD7]">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#E7F5FF] text-[#2F9FE9]">
             <Upload size={17} />
           </span>
           <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={(event) => void upload(event.target.files?.[0] || null)} className="min-w-0 flex-1 text-sm text-[#667085]" />

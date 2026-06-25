@@ -19,6 +19,7 @@ export type AuthUser = {
   profile_image?: string;
   profile_status?: string | null;
   approval_status?: string | null;
+  customer_id?: number | null;
   role: {
     id: number;
     name: string;

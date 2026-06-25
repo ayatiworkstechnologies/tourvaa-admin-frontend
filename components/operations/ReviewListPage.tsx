@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -117,7 +117,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           }}
           onPageChange={setPage}
           actions={(row) => (
-            <Link href={`/${module}/${row.id}`} className="inline-flex items-center gap-2 rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#238DD7] hover:bg-[#E7F5FF]">
+            <Link href={`/admin/${module}/${row.id}`} className="inline-flex items-center gap-2 rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#2F9FE9] hover:bg-[#E7F5FF]">
               <Eye size={14} /> View
             </Link>
           )}
@@ -139,3 +139,4 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     </ModuleWrapper>
   );
 }
+

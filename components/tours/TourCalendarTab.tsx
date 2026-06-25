@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
 import { CalendarEntry, getCalendar, createCalendarEntry, updateCalendarEntry, deleteCalendarEntry, UnavailableDate, getUnavailableDates, createUnavailableDate, deleteUnavailableDate } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
+import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
 const STATUSES = ["available", "unavailable", "sold_out", "blocked"];
 const emptyEntry = (): CalendarEntry => ({ tour_date: "", start_date: null, end_date: null, available_seats: 10, booked_seats: 0, status: "available" });
@@ -116,32 +117,31 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
         )}
 
         {entries.length > 0 && (
-          <div className="overflow-x-auto rounded-xl border border-[#E7EAF0] bg-white">
-            <table className="w-full text-sm">
-              <thead className="border-b border-[#E7EAF0] bg-[#F9FAFB]">
-                <tr>{["Date", "Available", "Booked", "Status", ""].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase text-[#98A2B3]">{h}</th>
-                ))}</tr>
-              </thead>
-              <tbody>
-                {entries.map((item) => (
-                  <tr key={item.id} className="border-b border-[#F2F4F7] last:border-0">
-                    <td className="px-4 py-3">{item.tour_date?.toString().slice(0, 10)}</td>
-                    <td className="px-4 py-3">{item.available_seats}</td>
-                    <td className="px-4 py-3">{item.booked_seats}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.status === "available" ? "bg-green-100 text-green-700" : item.status === "sold_out" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>{item.status}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-[#E7EAF0] p-1.5 hover:bg-[#F2F4F7]"><Pencil size={13} /></button>
-                        <button type="button" onClick={() => removeEntry(item.id!)} className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500"><Trash2 size={13} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="rounded-xl border border-[#E7EAF0] bg-white p-0">
+            <DataTable
+              ariaLabel="Tour Calendar"
+              columns={[
+                { key: "date", header: "Date", render: (item) => item.tour_date?.toString().slice(0, 10) },
+                { key: "available", header: "Available", render: (item) => item.available_seats },
+                { key: "booked", header: "Booked", render: (item) => item.booked_seats },
+                {
+                  key: "status",
+                  header: "Status",
+                  render: (item) => (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.status === "available" ? "bg-green-100 text-green-700" : item.status === "sold_out" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>
+                      {item.status}
+                    </span>
+                  ),
+                },
+              ]}
+              rows={entries}
+              actions={(item) => (
+                <div className="flex gap-2 justify-end">
+                  <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-[#E7EAF0] p-1.5 hover:bg-[#F2F4F7]"><Pencil size={13} /></button>
+                  <button type="button" onClick={() => removeEntry(item.id!)} className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500"><Trash2 size={13} /></button>
+                </div>
+              )}
+            />
           </div>
         )}
 

@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
 import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
+import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
 const empty = (): PricingSlab => ({
   passenger_from: 1, passenger_to: 4, adult_price: 0, child_price: 0,
@@ -94,32 +95,38 @@ export default function TourPricingTab({ tourId }: { tourId: string }) {
       )}
 
       {items.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-[#E7EAF0] bg-white">
-          <table className="w-full text-sm">
-            <thead className="border-b border-[#E7EAF0] bg-[#F9FAFB]">
-              <tr>{["Pax Range", "Adult Price", "Child Price", "Markup", "Final Price", "Currency", ""].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase text-[#98A2B3]">{h}</th>
-              ))}</tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b border-[#F2F4F7] last:border-0">
-                  <td className="px-4 py-3 font-semibold">{item.passenger_from}–{item.passenger_to}</td>
-                  <td className="px-4 py-3">{item.adult_price}</td>
-                  <td className="px-4 py-3">{item.child_price}</td>
-                  <td className="px-4 py-3">{item.markup_value}{item.markup_type === "percentage" ? "%" : " fixed"}</td>
-                  <td className="px-4 py-3 font-bold text-[#43A9F6]">{item.final_price}</td>
-                  <td className="px-4 py-3">{item.currency}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-[#E7EAF0] p-1.5 hover:bg-[#F2F4F7]"><Pencil size={13} /></button>
-                      <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500"><Trash2 size={13} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="rounded-xl border border-[#E7EAF0] bg-white p-0">
+          <DataTable
+            ariaLabel="Pricing slabs"
+            columns={[
+              {
+                key: "pax_range",
+                header: "Pax Range",
+                className: "font-semibold",
+                render: (item) => `${item.passenger_from}–${item.passenger_to}`,
+              },
+              { key: "adult_price", header: "Adult Price" },
+              { key: "child_price", header: "Child Price" },
+              {
+                key: "markup",
+                header: "Markup",
+                render: (item) => `${item.markup_value}${item.markup_type === "percentage" ? "%" : " fixed"}`,
+              },
+              {
+                key: "final_price",
+                header: "Final Price",
+                className: "font-bold text-[#43A9F6]",
+              },
+              { key: "currency", header: "Currency" },
+            ]}
+            rows={items}
+            actions={(item) => (
+              <div className="flex gap-2 justify-end">
+                <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-[#E7EAF0] p-1.5 hover:bg-[#F2F4F7]"><Pencil size={13} /></button>
+                <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500"><Trash2 size={13} /></button>
+              </div>
+            )}
+          />
         </div>
       )}
 

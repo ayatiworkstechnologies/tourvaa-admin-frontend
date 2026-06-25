@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -26,7 +26,7 @@ export default function AccessDenied() {
           </button>
           <button
             type="button"
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/admin/dashboard")}
             className="rounded-xl bg-[#43A9F6] px-4 py-2 text-sm font-bold text-white hover:bg-[#2F9FE9]"
           >
             Go to Dashboard
@@ -36,3 +36,4 @@ export default function AccessDenied() {
     </div>
   );
 }
+

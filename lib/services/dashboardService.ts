@@ -1,4 +1,4 @@
-import api from "@/lib/api";
+﻿import api from "@/lib/api";
 
 export type DashboardFilters = {
   start_date?: string;
@@ -44,3 +44,5 @@ export async function getDashboardAlerts(filters?: DashboardFilters) {
   const resp = await api.get(`/dashboard/alerts${buildQuery(filters)}`);
   return resp.data?.data ?? resp.data;
 }
+
+

@@ -43,7 +43,7 @@ export default function TourEditPage({ tourId }: { tourId: string }) {
   return (
     <ModuleWrapper title="Edit Tour" requiredPermission="tours.edit">
       <div className="mb-4 flex items-center gap-3">
-        <Link href="/tours" className="inline-flex items-center gap-1 text-sm font-bold text-[#238DD7]">
+        <Link href="/admin/tours" className="inline-flex items-center gap-1 text-sm font-bold text-[#2F9FE9]">
           <ArrowLeft size={15} /> Tours
         </Link>
         <span className="text-[#98A2B3]">/</span>
@@ -86,3 +86,4 @@ export default function TourEditPage({ tourId }: { tourId: string }) {
     </ModuleWrapper>
   );
 }
+

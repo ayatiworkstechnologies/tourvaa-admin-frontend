@@ -24,7 +24,7 @@ export default function BookingActionMenu({
     <div className="flex flex-wrap items-center gap-2">
       <Link
         className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        href={`/bookings/${bookingId}`}
+        href={`/admin/bookings/${bookingId}`}
       >
         View
       </Link>
@@ -57,3 +57,4 @@ export default function BookingActionMenu({
     </div>
   );
 }
+

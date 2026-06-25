@@ -99,7 +99,7 @@ export default function ProfileImageUpload({
           )}
         </div>
 
-        <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#43A9F6] px-4 py-2.5 text-sm font-bold text-[#238DD7] hover:bg-sky-50">
+        <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#43A9F6] px-4 py-2.5 text-sm font-bold text-[#2F9FE9] hover:bg-sky-50">
           {uploading ? <Loader2 size={16} className="animate-spin" /> : <ImageUp size={16} />}
           {uploading ? "Uploading..." : "Upload Image"}
           <input

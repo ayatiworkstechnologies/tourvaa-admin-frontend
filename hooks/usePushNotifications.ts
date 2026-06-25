@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import api from "@/lib/api";
@@ -77,3 +77,5 @@ export function usePushNotifications() {
 
   return { supported, subscribed, loading, subscribe, unsubscribe };
 }
+
+

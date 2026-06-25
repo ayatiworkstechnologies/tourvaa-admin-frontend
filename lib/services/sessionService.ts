@@ -41,3 +41,5 @@ export async function revokeSession(sessionId: number | string) {
   const response = await api.post<ApiDataResponse<UserSession>>(`/sessions/${sessionId}/revoke`);
   return response.data.data;
 }
+
+

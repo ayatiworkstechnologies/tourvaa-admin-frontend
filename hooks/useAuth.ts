@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { getDashboardPath } from "@/lib/dashboardPath";
 import { getApiErrorMessage } from "@/lib/error-handler";
 import { normalizeEmail } from "@/lib/validators";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -34,7 +35,8 @@ export function useAuth() {
 
       await auth.loginWithToken(data.access_token);
 
-      router.push("/dashboard");
+      const roleSlug = data.user?.role?.slug ?? "";
+      router.push(getDashboardPath(roleSlug));
     } catch (error: unknown) {
       const message = getApiErrorMessage(error);
       setError(message);
@@ -44,8 +46,8 @@ export function useAuth() {
     }
   };
 
-  const logout = () => {
-    auth.logout();
+  const logout = (redirectTo?: string) => {
+    auth.logout(redirectTo);
   };
 
   return {
@@ -60,3 +62,4 @@ export function useAuth() {
     refreshSession: auth.refreshSession,
   };
 }
+

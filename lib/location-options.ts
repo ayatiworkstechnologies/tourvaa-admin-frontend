@@ -1,4 +1,4 @@
-export const phoneCountryCodes = [
+﻿export const phoneCountryCodes = [
   { label: "India (+91)", value: "+91" },
   { label: "United States (+1)", value: "+1" },
   { label: "United Kingdom (+44)", value: "+44" },
@@ -130,6 +130,10 @@ export function getCities(state: string) {
   return citiesByState[state] || [];
 }
 
+export function getCitiesForCountry(country: string) {
+  return getStates(country).flatMap((state) => getCities(state));
+}
 export const phoneCountryCodeValues = Array.from(
   new Set(phoneCountryCodes.map((item) => item.value))
 );
+

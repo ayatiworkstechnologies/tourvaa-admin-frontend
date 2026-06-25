@@ -1,4 +1,4 @@
-import api from "@/lib/api";
+﻿import api from "@/lib/api";
 
 export type ReviewRecord = {
   id: number;
@@ -99,3 +99,5 @@ export async function updateAffiliateApiLink(id: string | number, api_link: stri
   const response = await api.patch<{ data: ReviewRecord }>(`/affiliates/${id}/api-link`, { api_link });
   return response.data.data;
 }
+
+

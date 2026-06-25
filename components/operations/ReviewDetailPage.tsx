@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -92,7 +92,7 @@ export default function ReviewDetailPage({ module, id, title, requiredPermission
       ) : record ? (
         <div className="space-y-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <Link href={`/${module}`} className="inline-flex items-center gap-2 text-sm font-bold text-[#238DD7]">
+            <Link href={`/admin/${module}`} className="inline-flex items-center gap-2 text-sm font-bold text-[#2F9FE9]">
               <ArrowLeft size={16} /> Back to {module}
             </Link>
             <div className="flex flex-wrap gap-2">
@@ -138,3 +138,4 @@ export default function ReviewDetailPage({ module, id, title, requiredPermission
     </ModuleWrapper>
   );
 }
+

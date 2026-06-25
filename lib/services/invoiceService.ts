@@ -63,3 +63,6 @@ export async function emailInvoice(invoiceId: number | string, email?: string) {
   const response = await api.post<ApiDataResponse<Invoice>>(`/invoices/${invoiceId}/email`, { email });
   return response.data.data;
 }
+
+
+

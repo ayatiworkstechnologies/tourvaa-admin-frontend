@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 
-import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { createCms, getCms, listCms, updateCms } from "@/lib/services/cmsService";
@@ -172,12 +171,12 @@ export default function TourFormPage({ tourId }: Props) {
     payload.banner_image = form.banner_image?.trim() ?? "";
     payload.map_image = form.map_image?.trim() ?? "";
 
-    // Simple number fields — use default if blank
+    // Simple number fields â€” use default if blank
     payload.price_start_per_person = form.price_start_per_person ? Number(form.price_start_per_person) : 0;
     payload.number_of_days = form.number_of_days ? Number(form.number_of_days) : 1;
     payload.number_of_hours = form.number_of_hours ? Number(form.number_of_hours) : null;
 
-    // FK fields — null when not selected
+    // FK fields â€” null when not selected
     payload.supplier_id = form.supplier_id ? Number(form.supplier_id) : null;
     payload.country_id = form.country_id ? Number(form.country_id) : null;
     payload.city_id = form.city_id ? Number(form.city_id) : null;
@@ -203,29 +202,30 @@ export default function TourFormPage({ tourId }: Props) {
   };
 
   return (
-    <ModuleWrapper
-      title={tourId ? "Edit Tour" : "Create Tour"}
-      requiredPermission={tourId ? "tours.edit" : "tours.create"}
-    >
+    <div className="animate-in fade-in zoom-in-95 duration-200">
       {loading ? (
         <Loader label="Loading tour..." />
       ) : (
         <form onSubmit={submit} className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <Link
-              href="/tours"
-              className="inline-flex items-center gap-2 text-sm font-bold text-[#238DD7]"
-            >
-              <ArrowLeft size={16} /> Back to tours
-            </Link>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#43A9F6] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2F9FE9] disabled:opacity-60"
-            >
-              <Save size={16} /> {saving ? "Saving..." : "Save Tour"}
-            </button>
+          <div className="flex items-center justify-between mb-2">
+            {!tourId && (
+              <Link
+                href="/admin/tours"
+                className="inline-flex items-center gap-2 text-sm font-bold text-[#667085] hover:text-[#121826]"
+              >
+                <ArrowLeft size={16} /> Back to tours
+              </Link>
+            )}
+            <div className={tourId ? "w-full flex justify-end" : ""}>
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#43A9F6] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2F9FE9] shadow-sm disabled:opacity-60 transition"
+              >
+                <Save size={16} /> {saving ? "Saving..." : "Save Tour"}
+              </button>
+            </div>
           </div>
 
           {/* Basic details */}
@@ -289,7 +289,7 @@ export default function TourFormPage({ tourId }: Props) {
                   onChange={(e) => update("supplier_id", e.target.value)}
                   className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
                 >
-                  <option value="">— None —</option>
+                  <option value="">â€” None â€”</option>
                   {suppliers.map((s) => (
                     <option key={s.id} value={String(s.id)}>{s.label}</option>
                   ))}
@@ -304,7 +304,7 @@ export default function TourFormPage({ tourId }: Props) {
                   onChange={(e) => update("category_id", e.target.value)}
                   className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
                 >
-                  <option value="">— None —</option>
+                  <option value="">â€” None â€”</option>
                   {categories.map((c) => (
                     <option key={c.id} value={String(c.id)}>{c.label}</option>
                   ))}
@@ -322,7 +322,7 @@ export default function TourFormPage({ tourId }: Props) {
                   }}
                   className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
                 >
-                  <option value="">— None —</option>
+                  <option value="">â€” None â€”</option>
                   {countries.map((c) => (
                     <option key={c.id} value={String(c.id)}>{c.label}</option>
                   ))}
@@ -338,7 +338,7 @@ export default function TourFormPage({ tourId }: Props) {
                   disabled={!form.country_id}
                   className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6] disabled:bg-gray-50 disabled:text-gray-400"
                 >
-                  <option value="">— {form.country_id ? "Select city" : "Select country first"} —</option>
+                  <option value="">â€” {form.country_id ? "Select city" : "Select country first"} â€”</option>
                   {cities.map((c) => (
                     <option key={c.id} value={String(c.id)}>{c.label}</option>
                   ))}
@@ -376,6 +376,8 @@ export default function TourFormPage({ tourId }: Props) {
           </section>
         </form>
       )}
-    </ModuleWrapper>
+    </div>
   );
 }
+
+

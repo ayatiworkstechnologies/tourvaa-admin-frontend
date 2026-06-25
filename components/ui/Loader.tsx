@@ -11,7 +11,7 @@ export default function Loader({ label = "Loading...", fullScreen = false }: Loa
       }`}
     >
       <div className="flex items-center gap-3 rounded-2xl border border-[#E7EAF0] bg-white px-5 py-4 shadow-sm">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#DDF1FF] border-t-[#43A9F6]" />
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#D7E8F5] border-t-[#43A9F6]" />
         <span className="text-sm font-semibold text-[#667085]">{label}</span>
       </div>
     </div>

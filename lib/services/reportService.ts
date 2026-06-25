@@ -38,3 +38,5 @@ export async function getPaymentReport() {
   const response = await api.get<ApiDataResponse<PaymentReportRow[]>>("/reports/payments");
   return response.data.data;
 }
+
+

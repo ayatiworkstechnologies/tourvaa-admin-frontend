@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Edit, Plus, Trash2, X } from "lucide-react";
 import api from "@/lib/api";
-import Loader from "@/components/ui/Loader";
-import Pagination from "@/components/ui/Pagination";
+import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
 type Field = {
   name: string;
@@ -177,87 +176,64 @@ export default function DynamicModulePage({
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-[#E7EAF0]">
-        <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-[#F7F9FC] text-xs uppercase text-[#667085]">
-            <tr>
-              <th className="w-20 px-5 py-4">No</th>
-              {fields.slice(0, 4).map((field) => (
-                <th key={field.name} className="px-5 py-4">
-                  {field.label}
-                </th>
-              ))}
-              <th className="px-5 py-4 text-right">Action</th>
-            </tr>
-          </thead>
+      <div className="p-0">
+        <DataTable
+          ariaLabel={title}
+          columns={[
+            {
+              key: "no",
+              header: "No",
+              className: "w-20 font-bold text-[#667085]",
+              render: (_, index) => (page - 1) * pageSize + index + 1,
+            },
+            ...fields.slice(0, 4).map((field) => ({
+              key: field.name,
+              header: field.label,
+              className: "text-[#344054]",
+              render: (item: DynamicItem) => {
+                if (field.name === "is_active") {
+                  return (
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        item[field.name]
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-red-50 text-red-600"
+                      }`}
+                    >
+                      {item[field.name] ? "Active" : "Inactive"}
+                    </span>
+                  );
+                }
+                return String(item[field.name] ?? "-");
+              },
+            })),
+          ]}
+          rows={paginatedItems}
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={items.length}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          emptyTitle="No records found."
+          actions={(item) => (
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => openEdit(item)}
+                className="rounded-lg border border-[#E7EAF0] p-2 text-[#667085] hover:bg-[#E7F5FF] hover:text-[#2F9FE9]"
+              >
+                <Edit size={15} />
+              </button>
 
-          <tbody className="divide-y divide-[#EEF2F6]">
-            {loading ? (
-              <tr>
-                <td colSpan={fields.length + 2} className="px-5 py-10 text-center">
-                  <Loader label={`Loading ${title.toLowerCase()}...`} />
-                </td>
-              </tr>
-            ) : items.length === 0 ? (
-              <tr>
-                <td colSpan={fields.length + 2} className="px-5 py-10 text-center text-gray-400">
-                  No records found.
-                </td>
-              </tr>
-            ) : (
-              paginatedItems.map((item, index) => (
-                <tr key={item.id} className="hover:bg-[#FAFBFC]">
-                  <td className="px-5 py-4 font-bold text-[#667085]">
-                    {(page - 1) * pageSize + index + 1}
-                  </td>
-                  {fields.slice(0, 4).map((field) => (
-                    <td key={field.name} className="px-5 py-4 text-[#344054]">
-                      {field.name === "is_active" ? (
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                            item[field.name]
-                              ? "bg-emerald-50 text-emerald-600"
-                              : "bg-red-50 text-red-600"
-                          }`}
-                        >
-                          {item[field.name] ? "Active" : "Inactive"}
-                        </span>
-                      ) : (
-                        String(item[field.name] ?? "-")
-                      )}
-                    </td>
-                  ))}
-
-                  <td className="px-5 py-4">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => openEdit(item)}
-                        className="rounded-lg border border-[#E7EAF0] p-2 text-[#667085] hover:bg-[#E7F5FF] hover:text-[#238DD7]"
-                      >
-                        <Edit size={15} />
-                      </button>
-
-                      <button
-                        onClick={() => deleteItem(item.id)}
-                        className="rounded-lg border border-[#E7EAF0] p-2 text-[#667085] hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        {!loading && items.length > 0 && (
-          <Pagination
-            page={Math.min(page, totalPages)}
-            pageSize={pageSize}
-            total={items.length}
-            onPageChange={setPage}
-          />
-        )}
+              <button
+                onClick={() => deleteItem(item.id)}
+                className="rounded-lg border border-[#E7EAF0] p-2 text-[#667085] hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          )}
+        />
       </div>
 
       {open && (

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
@@ -75,7 +75,7 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
         <div className="flex gap-3">
           <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}
             className="flex-1 rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]">
-            <option value="">— Select a tour —</option>
+            <option value="">â€” Select a tour â€”</option>
             {available.map((t) => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
           </select>
           <button type="button" onClick={add} disabled={!selectedId || saving}
@@ -103,3 +103,5 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
     </div>
   );
 }
+
+

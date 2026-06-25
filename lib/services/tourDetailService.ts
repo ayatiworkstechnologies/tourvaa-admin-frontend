@@ -1,8 +1,8 @@
-import api from "@/lib/api";
+﻿import api from "@/lib/api";
 
 const base = (tourId: number | string) => `/tours/${tourId}`;
 
-// ── Overview ────────────────────────────────────────────────────────────────
+// â”€â”€ Overview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type TourOverview = {
   id?: number;
@@ -25,7 +25,7 @@ export async function saveOverview(tourId: number | string, data: TourOverview):
   return r.data.data;
 }
 
-// ── Itinerary ────────────────────────────────────────────────────────────────
+// â”€â”€ Itinerary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type ItineraryDay = {
   id?: number;
@@ -61,7 +61,7 @@ export async function reorderItineraries(tourId: number | string, orderedIds: nu
   await api.patch(`${base(tourId)}/itineraries/reorder`, { ordered_ids: orderedIds });
 }
 
-// ── Inclusion / Exclusion ─────────────────────────────────────────────────────
+// â”€â”€ Inclusion / Exclusion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type TourItem = {
   id?: number;
@@ -99,7 +99,7 @@ export const createExclusion = (id: number | string, data: TourItem) => _itemCre
 export const updateExclusion = (id: number | string, rid: number, data: TourItem) => _itemUpdate(id, "exclusions", rid, data);
 export const deleteExclusion = (id: number | string, rid: number) => _itemDelete(id, "exclusions", rid);
 
-// ── Highlight ─────────────────────────────────────────────────────────────────
+// â”€â”€ Highlight â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type TourHighlight = {
   id?: number;
@@ -127,7 +127,7 @@ export async function deleteHighlight(tourId: number | string, id: number): Prom
   await api.delete(`${base(tourId)}/highlights/${id}`);
 }
 
-// ── Similar Tours ─────────────────────────────────────────────────────────────
+// â”€â”€ Similar Tours â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type SimilarTour = {
   id?: number;
@@ -150,7 +150,7 @@ export async function deleteSimilarTour(tourId: number | string, similarId: numb
   await api.delete(`${base(tourId)}/similar-tours/${similarId}`);
 }
 
-// ── Extensions ────────────────────────────────────────────────────────────────
+// â”€â”€ Extensions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type TourExtension = {
   id?: number;
@@ -180,7 +180,7 @@ export async function deleteExtension(tourId: number | string, id: number): Prom
   await api.delete(`${base(tourId)}/extensions/${id}`);
 }
 
-// ── Gallery ───────────────────────────────────────────────────────────────────
+// â”€â”€ Gallery â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type GalleryImage = {
   id?: number;
@@ -210,7 +210,7 @@ export async function deleteGalleryImage(tourId: number | string, id: number): P
   await api.delete(`${base(tourId)}/gallery/${id}`);
 }
 
-// ── Pricing ───────────────────────────────────────────────────────────────────
+// â”€â”€ Pricing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type PricingSlab = {
   id?: number;
@@ -243,7 +243,7 @@ export async function deletePricing(tourId: number | string, id: number): Promis
   await api.delete(`${base(tourId)}/pricing/${id}`);
 }
 
-// ── Optional Activities ───────────────────────────────────────────────────────
+// â”€â”€ Optional Activities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type OptionalActivity = {
   id?: number;
@@ -271,7 +271,7 @@ export async function deleteOptionalActivity(tourId: number | string, id: number
   await api.delete(`${base(tourId)}/optional-activities/${id}`);
 }
 
-// ── Accommodation Extras ──────────────────────────────────────────────────────
+// â”€â”€ Accommodation Extras â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type AccommodationExtra = {
   id?: number;
@@ -300,7 +300,7 @@ export async function deleteAccommodationExtra(tourId: number | string, id: numb
   await api.delete(`${base(tourId)}/accommodation-extras/${id}`);
 }
 
-// ── Calendar ──────────────────────────────────────────────────────────────────
+// â”€â”€ Calendar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type CalendarEntry = {
   id?: number;
@@ -329,7 +329,7 @@ export async function deleteCalendarEntry(tourId: number | string, id: number): 
   await api.delete(`${base(tourId)}/calendar/${id}`);
 }
 
-// ── Unavailable Dates ─────────────────────────────────────────────────────────
+// â”€â”€ Unavailable Dates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type UnavailableDate = {
   id?: number;
@@ -350,7 +350,7 @@ export async function deleteUnavailableDate(tourId: number | string, id: number)
   await api.delete(`${base(tourId)}/unavailable-dates/${id}`);
 }
 
-// ── Discounts ─────────────────────────────────────────────────────────────────
+// â”€â”€ Discounts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type TourDiscount = {
   id?: number;
@@ -383,3 +383,5 @@ export async function updateDiscount(tourId: number | string, id: number, data: 
 export async function deleteDiscount(tourId: number | string, id: number): Promise<void> {
   await api.delete(`${base(tourId)}/discounts/${id}`);
 }
+
+

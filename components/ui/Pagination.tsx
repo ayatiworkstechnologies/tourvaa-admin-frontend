@@ -36,7 +36,7 @@ export default function Pagination({
           Prev
         </button>
 
-        <span className="rounded-lg bg-[#E7F5FF] px-3 py-2 text-sm font-bold text-[#238DD7]">
+        <span className="rounded-lg bg-[#E7F5FF] px-3 py-2 text-sm font-bold text-[#2F9FE9]">
           {page} / {totalPages}
         </span>
 

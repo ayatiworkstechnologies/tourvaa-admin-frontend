@@ -31,3 +31,5 @@ export async function getActivityLogs(filters: ActivityLogFilters = {}) {
   const response = await api.get<PaginatedActivityLogs>("/activity-logs/", { params: filters });
   return response.data;
 }
+
+

@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tourvaa Admin Panel",
-  description: "Tourvaa role based admin dashboard",
+  title: "Tourvaa",
+  description: "Tourvaa travel and operations platform",
 };
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body>
         <ToastProvider>
           <AuthProvider>{children}</AuthProvider>
@@ -23,3 +23,4 @@ export default function RootLayout({
     </html>
   );
 }
+

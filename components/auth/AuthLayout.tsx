@@ -50,7 +50,7 @@ export default function AuthLayout({
                   </p>
                   <p className="mt-1 text-2xl font-bold">Role access active</p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#0284C7]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#43A9F6]">
                   <ShieldCheck size={24} />
                 </div>
               </div>
@@ -70,10 +70,10 @@ export default function AuthLayout({
           </div>
         </section>
 
-        <section className="relative flex items-center justify-center bg-[radial-gradient(circle_at_top_right,#E0F2FE_0%,transparent_34%),#FFFFFF] px-6 py-10 sm:px-10">
+        <section className="relative flex items-center justify-center bg-[radial-gradient(circle_at_top_right,#E7F5FF_0%,transparent_34%),#FFFFFF] px-6 py-10 sm:px-10">
           <div className="w-full max-w-md">
             <div className="mb-8">
-              <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-bold text-[#0284C7] ring-1 ring-sky-100">
+              <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-bold text-[#43A9F6] ring-1 ring-sky-100">
                 <ShieldCheck size={13} />
                 {badge}
               </p>

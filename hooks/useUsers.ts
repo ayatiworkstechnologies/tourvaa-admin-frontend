@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import api from "@/lib/api";
@@ -177,3 +177,5 @@ export function useUsers({ enabled = true, page = 1, limit = 10, search = "" }: 
     sendPasswordReset,
   };
 }
+
+

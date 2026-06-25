@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { getDashboardPath } from "@/lib/dashboardPath";
 import { clearSession, getStoredTokenSafe, setToken as storeToken } from "@/lib/session";
 import { AuthUser, DashboardStats, MenuItem, PendingApproval, Permission } from "@/types/auth";
 
@@ -26,21 +27,42 @@ type AuthContextValue = {
   isLoggedIn: boolean;
   loginWithToken: (token: string) => Promise<void>;
   refreshSession: () => Promise<DashboardData | null>;
-  logout: () => void;
+  logout: (redirectTo?: string) => void;
   hasPermission: (permission: string) => boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password"];
+const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/admin/login"];
+
+// Role-based portal paths are self-guarded — exclude from global redirect
+const portalPaths = ["/customer", "/agent", "/supplier", "/affiliate"];
+
+function isPublicRoute(pathname: string) {
+  return (
+    pathname === "/" ||
+    pathname.startsWith("/tours") ||
+    pathname.startsWith("/blogs") ||
+    pathname.startsWith("/about") ||
+    pathname.startsWith("/contact") ||
+    pathname.startsWith("/join") ||
+    pathname.startsWith("/terms") ||
+    pathname.startsWith("/cookie-policy") ||
+    pathname.startsWith("/cancellation-policy") ||
+    pathname.startsWith("/accessibility") ||
+    portalPaths.some((p) => pathname.startsWith(p)) ||
+    publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+  );
+}
 
 function permissionAliases(permission: string) {
   const aliases = new Set([permission]);
-  const moduleMap: Record<string, string> = {
-    email_templates: "email",
-    email: "email_templates",
+  const moduleAliases: Record<string, string[]> = {
+    activity_logs: ["activity-logs"],
+    "activity-logs": ["activity_logs"],
+    email_templates: ["email"],
+    email: ["email_templates"],
   };
-
   const dottedToLegacyAction: Record<string, string> = {
     view: "view",
     create: "create",
@@ -54,13 +76,19 @@ function permissionAliases(permission: string) {
     delete: "delete",
   };
 
+  const addModuleAliases = (action: string, moduleName: string, format: "dotted" | "legacy") => {
+    const modules = [moduleName, ...(moduleAliases[moduleName] || [])];
+    modules.forEach((name) => {
+      aliases.add(format === "dotted" ? `${name}.${action}` : `${action}-${name}`);
+    });
+  };
+
   if (permission.includes(".")) {
     const [moduleName, action] = permission.split(".");
     const legacyAction = dottedToLegacyAction[action];
 
-    if (moduleName && legacyAction) {
-      aliases.add(`${legacyAction}-${moduleMap[moduleName] || moduleName}`);
-    }
+    if (moduleName && action) addModuleAliases(action, moduleName, "dotted");
+    if (moduleName && legacyAction) addModuleAliases(legacyAction, moduleName, "legacy");
   }
 
   if (permission.includes("-")) {
@@ -68,14 +96,12 @@ function permissionAliases(permission: string) {
     const moduleName = moduleParts.join("-");
     const dottedAction = legacyToDottedAction[action];
 
-    if (moduleName && dottedAction) {
-      aliases.add(`${moduleMap[moduleName] || moduleName}.${dottedAction}`);
-    }
+    if (moduleName) addModuleAliases(action, moduleName, "legacy");
+    if (moduleName && dottedAction) addModuleAliases(dottedAction, moduleName, "dotted");
   }
 
   return aliases;
 }
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -125,17 +151,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
-    const isPublic = publicRoutes.some((route) => pathname.startsWith(route));
+    const isPublic = isPublicRoute(pathname);
 
     if (!token && !isPublic) {
       router.replace("/login");
       return;
     }
 
-    if (token && pathname === "/login") {
-      router.replace("/dashboard");
+    if (token && (pathname === "/login" || pathname === "/admin/login")) {
+      const roleSlug = dashboard?.user?.role?.slug ?? "";
+      router.replace(getDashboardPath(roleSlug));
     }
-  }, [loading, pathname, router, token]);
+  }, [loading, pathname, router, token, dashboard]);
 
   const loginWithToken = useCallback(
     async (newToken: string) => {
@@ -146,11 +173,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [refreshSession]
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback((redirectTo = "/login") => {
     clearSession();
     setTokenState(null);
     setDashboard(null);
-    router.push("/login");
+    router.push(redirectTo);
   }, [router]);
 
   const hasPermission = useCallback(
@@ -189,3 +216,8 @@ export function useAuthContext() {
   if (!context) throw new Error("useAuthContext must be used inside AuthProvider");
   return context;
 }
+
+
+
+
+

@@ -181,3 +181,7 @@ export async function getBookingPayments(bookingId: number | string) {
   const response = await api.get("/payments/", { params: { booking_id: bookingId } });
   return response.data;
 }
+
+
+
+

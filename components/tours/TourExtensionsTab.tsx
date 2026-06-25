@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
@@ -116,7 +116,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
               <select value={String(editing.extension_tour_id || "")}
                 onChange={(e) => setEditing((p) => p ? { ...p, extension_tour_id: Number(e.target.value) } : p)}
                 className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]">
-                <option value="">— Select —</option>
+                <option value="">â€” Select â€”</option>
                 {allTours.filter((t) => t.id !== Number(tourId)).map((t) => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
               </select>
             </label>
@@ -155,3 +155,5 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
     </div>
   );
 }
+
+

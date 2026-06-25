@@ -77,6 +77,10 @@ const nextConfig: NextConfig = {
         destination: `${apiProxyTarget}/api/email-templates/`,
       },
       {
+        source: "/api/public/:path*",
+        destination: `${apiProxyTarget}/api/public/:path*`,
+      },
+      {
         source: "/api/:path*",
         destination: `${apiProxyTarget}/api/:path*`,
       },

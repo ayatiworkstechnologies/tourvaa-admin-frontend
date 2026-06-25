@@ -132,7 +132,7 @@ export default function CmsCrudPage({
                     setEditing(row);
                     setOpen(true);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#238DD7] hover:bg-[#E7F5FF]"
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#2F9FE9] hover:bg-[#E7F5FF]"
                 >
                   <Edit size={14} /> Edit
                 </button>
@@ -158,6 +158,7 @@ export default function CmsCrudPage({
         title={editing ? `Edit ${title}` : `Add ${title}`}
         fields={fields}
         saving={saving}
+        initialValues={editing || undefined}
         onClose={() => {
           setOpen(false);
           setEditing(null);
