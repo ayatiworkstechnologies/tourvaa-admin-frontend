@@ -13,6 +13,10 @@ const PUBLIC_API_PATHS = [
   "/auth/reset-password/validate",
   "/auth/verify-email",
   "/roles/public/options",
+  "/countries",
+  "/states",
+  "/cities",
+  "/public",
 ];
 
 const PUBLIC_PAGE_PATHS = [
