@@ -1,52 +1,43 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-const REST_COUNTRIES_URL = "https://api.restcountries.com/countries/v5";
-
-type RestCountry = {
-  name?: {
-    common?: string;
-    official?: string;
-  };
+type Country = {
+  id: number;
+  country_name?: string;
+  name?: string;
+  country_code?: string;
+  code?: string;
 };
 
 export async function GET(request: Request) {
-  const token = process.env.RESTCOUNTRIES_API_TOKEN;
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q")?.trim() || "";
+  const query = searchParams.get("q")?.trim().toLowerCase() || "";
+  const apiProxyTarget = process.env.API_PROXY_TARGET || "http://127.0.0.1:8000";
 
-  if (!token) {
+  try {
+    const response = await fetch(`${apiProxyTarget}/api/countries?limit=500`, { cache: "no-store" });
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: "Could not fetch countries", items: [] },
+        { status: response.status }
+      );
+    }
+
+    const payload = (await response.json()) as { data?: Country[]; items?: Country[] };
+    const items = (payload.items ?? payload.data ?? [])
+      .map((country) => ({
+        id: country.id,
+        country_name: country.country_name ?? country.name ?? "",
+        country_code: country.country_code ?? country.code ?? "",
+      }))
+      .filter((country) => !query || country.country_name.toLowerCase().includes(query))
+      .slice(0, 100);
+
+    return NextResponse.json({ items });
+  } catch {
     return NextResponse.json(
-      { error: "RESTCOUNTRIES_API_TOKEN is not configured", items: [] },
+      { error: "Could not fetch countries", items: [] },
       { status: 500 }
     );
   }
-
-  if (query.length < 2) {
-    return NextResponse.json({ items: [] });
-  }
-
-  const upstream = await fetch(`${REST_COUNTRIES_URL}?q=${encodeURIComponent(query)}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    cache: "no-store",
-  });
-
-  if (!upstream.ok) {
-    return NextResponse.json(
-      { error: "Could not fetch countries", items: [] },
-      { status: upstream.status }
-    );
-  }
-
-  const data = (await upstream.json()) as RestCountry[];
-  const items = Array.from(
-    new Set(
-      data
-        .map((country) => country.name?.common || country.name?.official || "")
-        .filter(Boolean)
-    )
-  ).slice(0, 20);
-
-  return NextResponse.json({ items });
 }

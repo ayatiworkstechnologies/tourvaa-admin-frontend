@@ -30,7 +30,7 @@ export default function AdminLayout({ children, title, menus, user }: Props) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F7F9FC]">
+    <div className="h-screen overflow-hidden bg-[#F7F9FC]">
       <AdminSidebar menus={menus} collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
 
       {mobileOpen && (
@@ -40,13 +40,13 @@ export default function AdminLayout({ children, title, menus, user }: Props) {
             onClick={() => setMobileOpen(false)}
             aria-label="Close menu"
           />
-          <div className="relative h-full w-[260px] bg-white shadow-2xl">
+          <div className="relative h-full w-65 bg-white shadow-2xl">
             <AdminSidebar menus={menus} mobile collapsed={false} onToggleCollapse={() => {}} />
           </div>
         </div>
       )}
 
-      <main className={`flex min-h-screen flex-col transition-all duration-300 ${collapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"}`}>
+      <main className={`flex h-screen flex-col overflow-y-auto transition-all duration-300 ${collapsed ? "lg:ml-20" : "lg:ml-65"}`}>
         <AdminHeader
           title={title}
           name={user.name}
@@ -55,9 +55,9 @@ export default function AdminLayout({ children, title, menus, user }: Props) {
           menus={menus}
           onMenuClick={() => setMobileOpen(true)}
         />
-        <div className="flex-1 px-5 pb-8 md:px-9">
+        <div className="flex-1 px-5 pt-8 pb-10 md:px-9">
           {children}
-          <AdminFooter />
+          {/* <AdminFooter /> */}
         </div>
       </main>
     </div>

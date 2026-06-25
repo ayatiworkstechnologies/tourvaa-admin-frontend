@@ -13,8 +13,11 @@ export type ReviewRecord = {
   email?: string;
   phone?: string;
   type?: string;
+  supplier_type?: string;
+  agent_type?: string;
   country_name?: string;
   city_name?: string;
+  years_in_operation?: number;
   status: string;
   approval_status: string;
   rejection_reason?: string | null;

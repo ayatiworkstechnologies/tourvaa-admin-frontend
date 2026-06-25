@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { User, Building, FileCheck } from "lucide-react";
+import { User, Building, FileCheck, Percent } from "lucide-react";
 import PersonalDetailsTab from "@/components/supplier/profile/PersonalDetailsTab";
 import CompanyInfoTab from "@/components/supplier/profile/CompanyInfoTab";
 import DocumentsTab from "@/components/supplier/profile/DocumentsTab";
+import CommissionRequestTab from "@/components/supplier/profile/CommissionRequestTab";
 
 const TABS = [
   { id: "personal", label: "Personal Details", icon: User },
   { id: "company", label: "Company Information", icon: Building },
+  { id: "commission", label: "Commission Request", icon: Percent },
   { id: "documents", label: "Verification Documents", icon: FileCheck },
 ];
 
@@ -49,6 +51,7 @@ export default function UnifiedSupplierProfilePage() {
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           {activeTab === "personal" && <PersonalDetailsTab />}
           {activeTab === "company" && <CompanyInfoTab />}
+          {activeTab === "commission" && <CommissionRequestTab />}
           {activeTab === "documents" && <DocumentsTab />}
         </div>
       </div>

@@ -52,98 +52,153 @@ export default function DataTable<T extends { id?: number | string }>({
   emptyAction,
   renderExpandedRow,
 }: Props<T>) {
+  const hasPagination =
+    page !== undefined &&
+    pageSize !== undefined &&
+    total !== undefined &&
+    totalPages !== undefined &&
+    onPageChange !== undefined;
+
+  const safeTotalPages = Math.max(1, totalPages ?? 1);
+  const start = hasPagination && rows.length ? (page! - 1) * pageSize! + 1 : 0;
+  const end   = hasPagination ? Math.min(page! * pageSize!, total!) : 0;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* ── Search bar (standalone, above card) ──────────────────────── */}
       {onSearchChange && (
-        <label className="relative block max-w-md">
+        <label className="relative block max-w-xs">
           <span className="sr-only">Search</span>
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
+          <Search
+            size={15}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#B0B9C6]"
+          />
           <input
             value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search..."
-            className="w-full rounded-2xl border border-[#E7EAF0]/80 bg-white py-3 pl-10 pr-4 text-sm font-medium shadow-[0_2px_8px_rgb(0,0,0,0.02)] outline-none focus:border-[#43A9F6] focus:ring-4 focus:ring-[#43A9F6]/10 transition-all"
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search…"
+            className="w-full rounded-xl border border-[#E9EDF3] bg-white py-2.5 pl-9 pr-4 text-sm outline-none transition focus:border-[#43A9F6] focus:ring-4 focus:ring-[#43A9F6]/10"
           />
         </label>
       )}
 
       {error && <ErrorState message={error} />}
 
-      <div className="overflow-x-auto rounded-3xl border border-[#E7EAF0]/60 bg-white shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
-        <table className="w-full min-w-[760px] border-collapse text-left text-sm" aria-label={ariaLabel}>
-          <thead className="bg-slate-50/50 text-xs font-bold uppercase tracking-wider text-[#667085]">
-            <tr>
-              {columns.map((column) => (
-                <th key={column.key} className={`px-5 py-4 ${column.className || ""}`}>
-                  {column.header}
-                </th>
-              ))}
-              {actions && <th className="px-5 py-4 text-right">Action</th>}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#EEF2F6] bg-white">
-            {loading ? (
-              <tr>
-                <td colSpan={columns.length + (actions ? 1 : 0)} className="px-5 py-10 text-center">
-                  <LoadingState label="Loading records..." table />
-                </td>
+      {/* ── Table card ───────────────────────────────────────────────── */}
+      <div className="overflow-hidden rounded-2xl border border-[#E9EDF3] bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+        <div className="overflow-x-auto">
+          <table
+            className="w-full min-w-170 border-collapse text-left text-sm"
+            aria-label={ariaLabel}
+          >
+            {/* ── Head ── */}
+            <thead>
+              <tr className="border-b border-[#F0F3F8] bg-[#F7F9FC]">
+                {columns.map((col) => (
+                  <th
+                    key={col.key}
+                    className={`px-5 py-3.5 text-xs font-bold uppercase tracking-wide text-[#8B93A1] ${col.className ?? ""}`}
+                  >
+                    {col.header}
+                  </th>
+                ))}
+                {actions && (
+                  <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wide text-[#8B93A1]">
+                    Actions
+                  </th>
+                )}
               </tr>
-            ) : rows.length === 0 ? (
-              <tr>
-                <td colSpan={columns.length + (actions ? 1 : 0)} className="px-5 py-10">
-                  <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
-                </td>
-              </tr>
-            ) : (
-              rows.map((row, index) => (
-                <Fragment key={row.id ?? index}>
-                  <tr className="transition-colors hover:bg-[#F3F8FC]">
-                    {columns.map((column) => (
-                      <td key={column.key} className={`px-5 py-4 ${column.className || ""}`}>
-                        {column.render ? column.render(row, index) : String((row as Record<string, unknown>)[column.key] ?? "-")}
-                      </td>
-                    ))}
-                    {actions && <td className="px-5 py-4 text-right">{actions(row)}</td>}
-                  </tr>
-                  {renderExpandedRow && renderExpandedRow(row)}
-                </Fragment>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
 
-      {page !== undefined && pageSize !== undefined && total !== undefined && totalPages !== undefined && onPageChange && (
-        <div className="flex flex-col gap-4 rounded-2xl border border-[#E7EAF0]/60 bg-white px-5 py-4 text-sm font-medium text-[#667085] shadow-[0_2px_12px_rgb(0,0,0,0.03)] sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            Showing <strong className="text-[#121826]">{rows.length ? (page - 1) * pageSize + 1 : 0}</strong>-
-            <strong className="text-[#121826]">{Math.min(page * pageSize, total)}</strong> of <strong className="text-[#121826]">{total}</strong>
-          </span>
-          <div className="flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => onPageChange(Math.max(1, page - 1))}
-              disabled={page <= 1}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#E7EAF0]/80 bg-white px-4 py-2 font-bold text-[#344054] shadow-sm hover:bg-[#F7F9FC] hover:text-[#121826] disabled:cursor-not-allowed disabled:opacity-50 transition-all"
-            >
-              <ChevronLeft size={16} />
-              Previous
-            </button>
-            <span className="px-2 font-bold text-[#121826]">
-              {page} / {Math.max(1, totalPages)}
-            </span>
-            <button
-              type="button"
-              onClick={() => onPageChange(Math.min(Math.max(1, totalPages), page + 1))}
-              disabled={page >= totalPages}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#E7EAF0]/80 bg-white px-4 py-2 font-bold text-[#344054] shadow-sm hover:bg-[#F7F9FC] hover:text-[#121826] disabled:cursor-not-allowed disabled:opacity-50 transition-all"
-            >
-              Next
-              <ChevronRight size={16} />
-            </button>
-          </div>
+            {/* ── Body ── */}
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={columns.length + (actions ? 1 : 0)}
+                    className="px-5 py-14 text-center"
+                  >
+                    <LoadingState label="Loading…" table />
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length + (actions ? 1 : 0)}
+                    className="px-5 py-14"
+                  >
+                    <EmptyState
+                      title={emptyTitle}
+                      description={emptyDescription}
+                      action={emptyAction}
+                    />
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row, index) => (
+                  <Fragment key={row.id ?? index}>
+                    <tr className="border-b border-[#F5F7FA] transition-colors last:border-0 hover:bg-[#F7FAFF]">
+                      {columns.map((col) => (
+                        <td
+                          key={col.key}
+                          className={`px-5 py-4 text-sm text-[#344054] ${col.className ?? ""}`}
+                        >
+                          {col.render
+                            ? col.render(row, index)
+                            : String((row as Record<string, unknown>)[col.key] ?? "—")}
+                        </td>
+                      ))}
+                      {actions && (
+                        <td className="px-5 py-4 text-right">
+                          {actions(row)}
+                        </td>
+                      )}
+                    </tr>
+                    {renderExpandedRow && renderExpandedRow(row)}
+                  </Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {/* ── Pagination (inside card) ─────────────────────────────── */}
+        {hasPagination && (
+          <div className="flex flex-col gap-3 border-t border-[#F0F3F8] bg-white px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-xs text-[#8B93A1]">
+              {total === 0
+                ? "No records"
+                : <>Showing <strong className="text-[#344054]">{start}</strong>–<strong className="text-[#344054]">{end}</strong> of <strong className="text-[#344054]">{total}</strong></>}
+            </span>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onPageChange!(Math.max(1, page! - 1))}
+                disabled={page! <= 1}
+                className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#E9EDF3] px-3 text-xs font-bold text-[#344054] hover:bg-[#F7F9FC] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+              >
+                <ChevronLeft size={14} />
+                Prev
+              </button>
+
+              <span className="min-w-14 rounded-lg bg-[#EDF5FF] px-3 py-1.5 text-center text-xs font-bold text-[#2F9FE9]">
+                {page} / {safeTotalPages}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => onPageChange!(Math.min(safeTotalPages, page! + 1))}
+                disabled={page! >= safeTotalPages}
+                className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#E9EDF3] px-3 text-xs font-bold text-[#344054] hover:bg-[#F7F9FC] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+              >
+                Next
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

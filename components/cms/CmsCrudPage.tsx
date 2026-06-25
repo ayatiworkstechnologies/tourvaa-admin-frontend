@@ -26,6 +26,7 @@ type Props = {
   editPermission: string;
   fields: CmsField[];
   columns: DataTableColumn<CmsRecord>[];
+  topContent?: React.ReactNode;
 };
 
 export default function CmsCrudPage({
@@ -36,6 +37,7 @@ export default function CmsCrudPage({
   editPermission,
   fields,
   columns,
+  topContent,
 }: Props) {
   const toast = useToast();
   const { hasPermission } = useAuthContext();
@@ -90,6 +92,7 @@ export default function CmsCrudPage({
   return (
     <ModuleWrapper title={title} requiredPermission={requiredPermission}>
       <div className="space-y-5">
+        {topContent}
         <section className="flex flex-col gap-4 rounded-xl border border-[#E7EAF0] bg-white p-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-[#121826]">{title}</h2>

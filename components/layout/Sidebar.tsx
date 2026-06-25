@@ -1,5 +1,7 @@
 "use client";
 
+import { createPortal } from "react-dom";
+import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight, LogOut, MapPinned, LucideIcon } from "lucide-react";
@@ -10,6 +12,9 @@ export type SidebarNavItem = {
   href: string;
   icon: LucideIcon | React.ElementType;
   module?: string;
+  section?: string;
+  placement?: "main" | "bottom";
+  matchHrefs?: string[];
 };
 
 type SidebarProps = {
@@ -34,6 +39,10 @@ const iconColors = [
   "text-fuchsia-500",
 ];
 
+void iconColors; // suppress unused warning
+
+type TooltipState = { label: string; y: number } | null;
+
 export default function Sidebar({
   navItems,
   title = "Tourvaa",
@@ -45,114 +54,175 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
-  
-  // To avoid highlighting root dashboard if we are on a deeper path, we'll extract base path logic.
-  // The first item usually is Dashboard.
+  const [tooltip, setTooltip] = useState<TooltipState>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (tooltipRef.current && tooltip) {
+      tooltipRef.current.style.top = `${tooltip.y}px`;
+    }
+  }, [tooltip]);
+
   const dashboardHref = navItems[0]?.href || "/";
+  const mainItems = navItems.filter((item) => item.placement !== "bottom");
+  const bottomItems = navItems.filter((item) => item.placement === "bottom");
 
-  return (
-    <aside
-      className={`left-0 top-0 z-40 h-screen flex-col border-r border-[#E7EAF0] bg-white shadow-[2px_0_8px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 ${
-        mobile ? "flex w-[260px]" : `fixed hidden lg:flex ${collapsed ? "w-[80px]" : "w-[260px]"}`
-      }`}
-    >
-      <div className="flex h-[80px] items-center justify-between px-6 border-b border-[#E7EAF0]">
-        <Link href={dashboardHref} className={`flex items-center gap-3 overflow-hidden ${collapsed ? "w-0 opacity-0" : "w-auto opacity-100"} transition-all duration-300`}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#43A9F6] text-white shadow-sm">
-            <LogoIcon size={20} strokeWidth={2.5} />
-          </div>
-          <div className="flex flex-col justify-center">
-            <h1 className="text-[19px] font-black tracking-tight text-[#121826] leading-none mb-1 whitespace-nowrap">
-              {title}
-            </h1>
-            <p className="text-[10px] font-bold text-[#98A2B3] tracking-wider uppercase leading-none">
-              {subtitle}
-            </p>
-          </div>
-        </Link>
-        
-        {onToggleCollapse && !mobile && (
-          <button 
-            onClick={onToggleCollapse} 
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg hover:bg-[#F3F8FC] text-[#667085] transition-colors"
-          >
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          </button>
+  function showTooltip(e: React.MouseEvent<HTMLElement>, label: string) {
+    if (!collapsed) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({ label, y: rect.top + rect.height / 2 });
+  }
+
+  function hideTooltip() {
+    setTooltip(null);
+  }
+
+  function isActiveItem(item: SidebarNavItem) {
+    const hrefs = [item.href, ...(item.matchHrefs ?? [])];
+    return hrefs.some((href) => pathname === href || (href !== dashboardHref && pathname.startsWith(`${href}/`)));
+  }
+
+  function renderSidebarItem(item: SidebarNavItem, index: number) {
+    const Icon = item.icon;
+    const active = isActiveItem(item);
+
+    return (
+      <Link
+        key={`${item.module ?? index}-${item.href}`}
+        href={item.href}
+        onMouseEnter={(e) => showTooltip(e, item.label)}
+        onMouseLeave={hideTooltip}
+        onClick={() => {
+          hideTooltip();
+          if (mobile) window.dispatchEvent(new Event("tourvaa:close-mobile-sidebar"));
+        }}
+        className={`flex h-14 w-full items-center rounded-r-full px-6 transition ${
+          active ? "bg-blue-500 text-white shadow-md" : "text-slate-800 hover:bg-slate-100"
+        } ${collapsed ? "mx-2 w-auto justify-center rounded-xl px-0" : ""}`}
+      >
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+          <Icon
+            className={`h-5 w-5 ${active ? "text-white" : "text-slate-600"}`}
+            strokeWidth={1.8}
+          />
+        </span>
+        {!collapsed && (
+          <span className="ml-4 min-w-0 truncate text-[16px] font-medium leading-none">
+            {item.label}
+          </span>
         )}
-      </div>
+      </Link>
+    );
+  }
 
-      <div className="flex min-h-0 flex-1 flex-col justify-between pb-6 pt-5">
-        <nav className={`space-y-1.5 pr-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${
-          collapsed ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
-        }`}>
-          {!collapsed && (
-            <div className="mb-3 pl-6">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#98A2B3]">
-                {subtitle} Menu
-              </span>
+  function renderGroupedItems(items: SidebarNavItem[]) {
+    let currentSection = "";
+
+    return items.map((item, index) => {
+      const section = item.section || "";
+      const showSection = !collapsed && section && section !== currentSection;
+      currentSection = section || currentSection;
+
+      return (
+        <div key={`${item.module ?? index}-${item.href}-wrap`}>
+          {showSection && (
+            <div className="pb-2 pl-6 pt-5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+              {section}
             </div>
           )}
-          {navItems.map((item, index) => {
-            const Icon = item.icon;
-            const active = pathname === item.href || (item.href !== dashboardHref && pathname.startsWith(`${item.href}/`));
-            const iconColorClass = iconColors[index % iconColors.length];
-
-            return (
-              <Link
-                key={`${item.module || index}-${item.href}`}
-                href={item.href}
-                onClick={() => {
-                  if (mobile) {
-                    window.dispatchEvent(new Event("tourvaa:close-mobile-sidebar"));
-                  }
-                }}
-                className={`group relative flex h-[44px] items-center gap-3.5 text-[14px] font-semibold transition-all duration-200 ${
-                  active
-                    ? "bg-[#43A9F6] text-white shadow-md"
-                    : "text-[#667085] hover:bg-[#F3F8FC] hover:text-[#43A9F6]"
-                } ${
-                  collapsed 
-                    ? "justify-center mx-3 rounded-xl px-0" 
-                    : "rounded-r-full pl-6 pr-4 mr-3"
-                }`}
-              >
-                <Icon size={collapsed ? 24 : 20} strokeWidth={active ? 2.5 : 2} className={`${collapsed ? "shrink-0" : ""} ${active ? "text-white" : "text-[#98A2B3] group-hover:text-[#43A9F6]"} transition-all duration-300`} />
-                {!collapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
-                
-                {/* Custom Tooltip */}
-                {collapsed && (
-                  <div className="absolute left-14 top-1/2 -translate-y-1/2 z-50 hidden rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white shadow-xl group-hover:block whitespace-nowrap">
-                    {item.label}
-                  </div>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mt-6 pr-4">
-          <button
-            type="button"
-            onClick={() => logout("/")}
-            className={`group relative flex w-full items-center gap-3.5 h-[44px] text-[14px] font-semibold text-[#667085] hover:text-[#43A9F6] hover:bg-[#F3F8FC] transition-all duration-200 ${
-              collapsed 
-                ? "justify-center mx-3 rounded-xl px-0" 
-                : "rounded-r-full pl-6 pr-4 mr-3"
-            }`}
-          >
-            <LogOut size={collapsed ? 24 : 20} strokeWidth={2} className={`${collapsed ? "shrink-0" : "text-[#98A2B3] group-hover:text-[#43A9F6]"} transition-all duration-300`} />
-            {!collapsed && <span>Logout</span>}
-            
-            {/* Custom Tooltip */}
-            {collapsed && (
-               <div className="absolute left-14 top-1/2 -translate-y-1/2 z-50 hidden rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white shadow-xl group-hover:block whitespace-nowrap">
-                 Logout
-               </div>
-            )}
-          </button>
+          {renderSidebarItem(item, index)}
         </div>
-      </div>
-    </aside>
+      );
+    });
+  }
+
+  return (
+    <>
+      <aside
+        className={`left-0 top-0 z-40 h-screen flex-col border-r border-[#E7EAF0] bg-white shadow-[2px_0_8px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 ${
+          mobile ? "flex w-65" : `fixed hidden lg:flex ${collapsed ? "w-20" : "w-65"}`
+        }`}
+      >
+        {/* ── Header ── */}
+        <div
+          className={`relative flex h-16 shrink-0 items-center border-b border-[#E7EAF0] ${
+            collapsed ? "justify-center px-3" : "justify-between px-5"
+          }`}
+        >
+          {collapsed ? (
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#43A9F6] text-white shadow-sm">
+              <LogoIcon size={18} strokeWidth={2.5} />
+            </div>
+          ) : (
+            <Link href={dashboardHref} className="flex min-w-0 items-center gap-3 overflow-hidden">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#43A9F6] text-white shadow-sm">
+                <LogoIcon size={18} strokeWidth={2.5} />
+              </div>
+              <div className="flex min-w-0 flex-col justify-center">
+                <h1 className="mb-0.5 truncate text-[17px] font-black leading-none tracking-tight text-[#121826]">
+                  {title}
+                </h1>
+                <p className="text-[9px] font-bold uppercase leading-none tracking-wider text-[#98A2B3]">
+                  {subtitle}
+                </p>
+              </div>
+            </Link>
+          )}
+
+          {onToggleCollapse && !mobile && (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#E7EAF0] bg-white text-[#667085] shadow-sm transition-colors hover:bg-[#F3F8FC] ${
+                collapsed ? "absolute -right-3 top-6 z-50" : ""
+              }`}
+            >
+              {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+            </button>
+          )}
+        </div>
+
+        {/* ── Nav + Logout ── */}
+        <div className="flex min-h-0 flex-1 flex-col pb-4 pt-4">
+          <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none pr-3">
+            {renderGroupedItems(mainItems)}
+          </nav>
+
+          <div className="mt-2 shrink-0 space-y-1 border-t border-[#E7EAF0] pr-3 pt-3">
+            {bottomItems.map((item, index) => renderSidebarItem(item, index))}
+            <button
+              type="button"
+              onClick={() => logout("/")}
+              onMouseEnter={(e) => showTooltip(e, "Logout")}
+              onMouseLeave={hideTooltip}
+              className={`flex h-14 w-full items-center rounded-r-full px-6 text-slate-800 transition hover:bg-slate-100 ${
+                collapsed ? "mx-2 w-auto justify-center rounded-xl px-0" : ""
+              }`}
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+                <LogOut className="h-5 w-5 text-slate-600" strokeWidth={1.8} />
+              </span>
+              {!collapsed && <span className="ml-4 text-[16px] font-medium leading-none">Logout</span>}
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Portal tooltip — renders outside the sidebar overflow context */}
+      {collapsed && tooltip && typeof window !== "undefined" &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className="pointer-events-none fixed left-22 z-9999 -translate-y-1/2 whitespace-nowrap rounded-lg bg-[#1E293B] px-3 py-1.5 text-xs font-semibold text-white shadow-xl"
+          >
+            {/* arrow */}
+            <span className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[#1E293B]" />
+            {tooltip.label}
+          </div>,
+          document.body
+        )
+      }
+    </>
   );
 }
-

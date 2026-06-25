@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Edit, Globe, MapPin, Plus } from "lucide-react";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import StatusBadge from "@/components/operations/StatusBadge";
@@ -10,6 +11,12 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import api from "@/lib/api";
+
+function singular(word: string): string {
+  if (word.endsWith("ies")) return word.slice(0, -3) + "y";
+  if (word.endsWith("s")) return word.slice(0, -1);
+  return word;
+}
 
 type Row = Record<string, unknown>;
 
@@ -80,10 +87,10 @@ function CrudTab({ title, endpoint, fields, columns, extraParams = {}, canCreate
     try {
       if (editing) {
         await api.put(`${endpoint}/${editing.id}`, form);
-        toast.success(`${title.slice(0, -1)} updated`);
+        toast.success(`${singular(title)} updated`);
       } else {
         await api.post(endpoint, form);
-        toast.success(`${title.slice(0, -1)} added`);
+        toast.success(`${singular(title)} added`);
       }
       setOpen(false);
       await load();
@@ -139,7 +146,7 @@ function CrudTab({ title, endpoint, fields, columns, extraParams = {}, canCreate
         {canCreate && (
           <button type="button" onClick={openAdd}
             className="inline-flex items-center gap-2 rounded-xl bg-[#43A9F6] px-4 py-2 text-sm font-bold text-white hover:bg-[#238DD7]">
-            <Plus size={15} /> Add {title.slice(0, -1)}
+            <Plus size={15} /> Add {singular(title)}
           </button>
         )}
       </div>
@@ -151,8 +158,9 @@ function CrudTab({ title, endpoint, fields, columns, extraParams = {}, canCreate
         loading={loading}
         emptyTitle={`No ${title.toLowerCase()} found.`}
         page={page}
-        totalPages={totalPages}
+        pageSize={20}
         total={total}
+        totalPages={totalPages}
         onPageChange={setPage}
       />
 
@@ -160,7 +168,7 @@ function CrudTab({ title, endpoint, fields, columns, extraParams = {}, canCreate
         isOpen={open}
         onClose={() => setOpen(false)}
         onConfirm={handleSave}
-        title={editing ? `Edit ${title.slice(0, -1)}` : `Add ${title.slice(0, -1)}`}
+        title={editing ? `Edit ${singular(title)}` : `Add ${singular(title)}`}
         confirmLabel={saving ? "Saving…" : "Save"}
         isLoading={saving}
       >
@@ -333,9 +341,13 @@ const TABS: { key: Tab; label: string; icon: typeof Globe }[] = [
   { key: "cities", label: "Cities", icon: MapPin },
 ];
 
-export default function CountriesPage() {
+function CountriesPageContent() {
   const { hasPermission } = useAuthContext();
-  const [activeTab, setActiveTab] = useState<Tab>("countries");
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as Tab) || "countries";
+  const [activeTab, setActiveTab] = useState<Tab>(
+    TABS.some((t) => t.key === initialTab) ? initialTab : "countries"
+  );
 
   const canCreate = hasPermission("countries.create");
   const canEdit = hasPermission("countries.edit");
@@ -368,5 +380,13 @@ export default function CountriesPage() {
         {activeTab === "cities" && <CitiesTab canCreate={canCreate} canEdit={canEdit} />}
       </div>
     </ModuleWrapper>
+  );
+}
+
+export default function CountriesPage() {
+  return (
+    <Suspense fallback={<ModuleWrapper title="Countries, States & Cities" requiredPermission="countries.view"><div /></ModuleWrapper>}>
+      <CountriesPageContent />
+    </Suspense>
   );
 }

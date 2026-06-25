@@ -11,6 +11,7 @@ import {
   SendHorizonal,
 } from "lucide-react";
 import api from "@/lib/api";
+import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import TourOverviewTab from "@/components/tours/TourOverviewTab";
 import TourItineraryTab from "@/components/tours/TourItineraryTab";
 import TourItemsTab from "@/components/tours/TourItemsTab";
@@ -42,7 +43,7 @@ type Tour = {
   price_start_per_person?: number;
 };
 
-type SelectOption = { id: number; name: string };
+type SelectOption = { id: number; name?: string; category_name?: string };
 
 const TABS = [
   "Basic Details",
@@ -96,11 +97,13 @@ export default function TourEditPage() {
   const [groupSize, setGroupSize] = useState("");
   const [numberOfDays, setNumberOfDays] = useState("");
   const [countryId, setCountryId] = useState("");
+  const [stateId, setStateId] = useState("");
   const [cityId, setCityId] = useState("");
   const [categoryId, setCategoryId] = useState("");
 
-  const [countries, setCountries] = useState<SelectOption[]>([]);
-  const [cities, setCities] = useState<SelectOption[]>([]);
+  const { countries } = useGeoCountries();
+  const { states } = useGeoStates(countryId ? Number(countryId) : null);
+  const { cities } = useGeoCities(stateId ? Number(stateId) : null, countryId ? Number(countryId) : null);
   const [categories, setCategories] = useState<SelectOption[]>([]);
 
   const [saving, setSaving] = useState(false);
@@ -139,29 +142,10 @@ export default function TourEditPage() {
 
   useEffect(() => {
     void fetchTour();
-    Promise.allSettled([
-      api.get("/settings/countries"),
-      api.get("/settings/cities"),
-      api.get("/tours/categories"),
-    ]).then(([c, ci, cat]) => {
-      if (c.status === "fulfilled")
-        setCountries(c.value.data?.items ?? c.value.data?.data ?? c.value.data ?? []);
-      if (ci.status === "fulfilled")
-        setCities(ci.value.data?.items ?? ci.value.data?.data ?? ci.value.data ?? []);
-      if (cat.status === "fulfilled")
-        setCategories(
-          cat.value.data?.items ?? cat.value.data?.data ?? cat.value.data ?? []
-        );
-    });
+    api.get("/tours/categories").then((cat) => {
+      setCategories(cat.data?.items ?? cat.data?.data ?? cat.data ?? []);
+    }).catch(() => {});
   }, [fetchTour]);
-
-  const filteredCities = countryId
-    ? cities.filter(
-        (c) =>
-          (c as SelectOption & { country_id?: number }).country_id ===
-          Number(countryId)
-      )
-    : cities;
 
   const handleSaveBasic = async () => {
     setSaving(true);
@@ -382,6 +366,7 @@ export default function TourEditPage() {
                     value={countryId}
                     onChange={(e) => {
                       setCountryId(e.target.value);
+                      setStateId("");
                       setCityId("");
                     }}
                   >
@@ -394,14 +379,34 @@ export default function TourEditPage() {
                   </select>
                 </div>
                 <div>
+                  <label className={labelCls}>State</label>
+                  <select
+                    className={inputCls}
+                    value={stateId}
+                    onChange={(e) => {
+                      setStateId(e.target.value);
+                      setCityId("");
+                    }}
+                    disabled={!countryId}
+                  >
+                    <option value="">{countryId ? "Select state" : "Select country first"}</option>
+                    {states.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className={labelCls}>City</label>
                   <select
                     className={inputCls}
                     value={cityId}
                     onChange={(e) => setCityId(e.target.value)}
+                    disabled={!countryId}
                   >
-                    <option value="">Select city</option>
-                    {filteredCities.map((c) => (
+                    <option value="">{countryId ? "Select city" : "Select country first"}</option>
+                    {cities.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
@@ -418,7 +423,7 @@ export default function TourEditPage() {
                     <option value="">Select category</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.name}
+                        {c.name ?? c.category_name ?? c.id}
                       </option>
                     ))}
                   </select>

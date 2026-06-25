@@ -7,7 +7,6 @@ import CustomerFilters, { CustomerFilterState } from "@/components/customers/Cus
 import CustomerTable from "@/components/customers/CustomerTable";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
-import Pagination from "@/components/ui/Pagination";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { usePagination } from "@/hooks/usePagination";
 import { useToast } from "@/hooks/useToast";
@@ -32,7 +31,7 @@ const initialFilters: CustomerFilterState = {
 
 export default function CustomersPage() {
   const pagination = usePagination(10);
-  const { page, limit, total, setPage, setTotal, setTotalPages } = pagination;
+  const { page, limit, total, totalPages, setPage, setTotal, setTotalPages } = pagination;
   const { hasPermission } = useAuthContext();
   const toast = useToast();
   const [filters, setFilters] = useState(initialFilters);
@@ -159,33 +158,21 @@ export default function CustomersPage() {
           {loading ? (
             <Loader label="Loading customers..." />
           ) : (
-            <>
-              <CustomerTable
-                customers={customers}
-                page={page}
-                limit={limit}
-                savingId={savingId}
-                canBlock={canBlock}
-                canUnblock={canUnblock}
-                canReset={canReset}
-                onBlock={handleBlock}
-                onUnblock={handleUnblock}
-                onReset={handleResetPassword}
-              />
-              <div className="flex flex-col gap-3 border-t border-[#EEF2F6] p-4 lg:flex-row lg:items-center lg:justify-between">
-                {canReset && customers.length > 0 && (
-                  <p className="text-xs font-semibold text-[#98A2B3]">
-                    Open a customer detail page to send password reset or customer messages.
-                  </p>
-                )}
-                <Pagination
-                  page={page}
-                  pageSize={limit}
-                  total={total}
-                  onPageChange={setPage}
-                />
-              </div>
-            </>
+            <CustomerTable
+              customers={customers}
+              page={page}
+              limit={limit}
+              total={total}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              savingId={savingId}
+              canBlock={canBlock}
+              canUnblock={canUnblock}
+              canReset={canReset}
+              onBlock={handleBlock}
+              onUnblock={handleUnblock}
+              onReset={handleResetPassword}
+            />
           )}
         </section>
       </div>

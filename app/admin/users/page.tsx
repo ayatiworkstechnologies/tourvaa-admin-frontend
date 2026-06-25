@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   Edit,
@@ -28,12 +28,8 @@ import {
   splitPhone,
   validateMobile,
 } from "@/lib/validators";
-import {
-  countries,
-  getCities,
-  getStates,
-  phoneCountryCodeValues,
-} from "@/lib/location-options";
+import { phoneCountryCodeValues } from "@/lib/location-options";
+import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import { mediaUrl } from "@/lib/media-url";
 
 const emptyForm: UserFormData = {
@@ -85,6 +81,17 @@ export default function UsersPage() {
   const [phoneCountryCode, setPhoneCountryCode] = useState("+91");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [message, setMessage] = useState("");
+  const { countries } = useGeoCountries();
+  const countryId = useMemo(
+    () => countries.find((country) => country.name === form.country)?.id ?? null,
+    [countries, form.country]
+  );
+  const { states } = useGeoStates(countryId);
+  const stateId = useMemo(
+    () => states.find((state) => state.name === form.state)?.id ?? null,
+    [states, form.state]
+  );
+  const { cities } = useGeoCities(stateId);
 
   useEffect(() => {
     setTotal(total);
@@ -531,7 +538,7 @@ export default function UsersPage() {
                       >
                         <option value="">Select Country</option>
                         {countries.map((country) => (
-                          <option key={country} value={country}>{country}</option>
+                          <option key={country.id} value={country.name}>{country.name}</option>
                         ))}
                       </select>
                     </label>
@@ -548,8 +555,8 @@ export default function UsersPage() {
                         disabled={!form.country}
                       >
                         <option value="">Select State</option>
-                        {getStates(form.country).map((state) => (
-                          <option key={state} value={state}>{state}</option>
+                        {states.map((state) => (
+                          <option key={state.id} value={state.name}>{state.name}</option>
                         ))}
                       </select>
                     </label>
@@ -563,8 +570,8 @@ export default function UsersPage() {
                         disabled={!form.state}
                       >
                         <option value="">Select City</option>
-                        {getCities(form.state).map((city) => (
-                          <option key={city} value={city}>{city}</option>
+                        {cities.map((city) => (
+                          <option key={city.id} value={city.name}>{city.name}</option>
                         ))}
                       </select>
                     </label>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { countries } from "@/lib/location-options";
+import { useGeoCountries } from "@/hooks/useGeo";
 
 export type CustomerFilterState = {
   search: string;
@@ -20,6 +20,8 @@ type Props = {
 };
 
 export default function CustomerFilters({ filters, onChange }: Props) {
+  const { countries } = useGeoCountries();
+
   return (
     <div className="overflow-x-auto pb-2">
       <div className="grid gap-3 grid-cols-[minmax(240px,1.4fr)_repeat(7,minmax(130px,1fr))]">
@@ -40,8 +42,8 @@ export default function CustomerFilters({ filters, onChange }: Props) {
         >
           <option value="">All countries</option>
           {countries.map((country) => (
-            <option key={country} value={country}>
-              {country}
+            <option key={country.id} value={country.id}>
+              {country.name}
             </option>
           ))}
         </select>

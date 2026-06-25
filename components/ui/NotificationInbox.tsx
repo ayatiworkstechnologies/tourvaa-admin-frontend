@@ -17,21 +17,86 @@ export default function NotificationInbox() {
   const { user } = useAuthContext();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
+  const [hasNewAlert, setHasNewAlert] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const knownIdsRef = useRef<Set<number>>(new Set());
+  const initializedRef = useRef(false);
+  const audioUnlockedRef = useRef(false);
+
+  const playNotificationSound = useCallback(() => {
+    if (typeof window === 'undefined' || !audioUnlockedRef.current) return;
+
+    try {
+      const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const ctx = new AudioContextClass();
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
+      gain.connect(ctx.destination);
+
+      [880, 1175].forEach((frequency, index) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(frequency, ctx.currentTime + index * 0.12);
+        osc.connect(gain);
+        osc.start(ctx.currentTime + index * 0.12);
+        osc.stop(ctx.currentTime + index * 0.12 + 0.22);
+      });
+
+      window.setTimeout(() => void ctx.close().catch(() => {}), 700);
+    } catch {
+      // Browser audio can fail before interaction; notification UI still works.
+    }
+  }, []);
+
+  const unlockNotificationSound = useCallback(() => {
+    audioUnlockedRef.current = true;
+  }, []);
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.id) return;
     try {
       const res = await api.get(`/notifications?user_id=${user.id}&limit=20`);
-      setItems(res.data?.data ?? res.data?.items ?? []);
+      const nextItems = (res.data?.data ?? res.data?.items ?? []) as Notification[];
+      const nextIds = new Set(nextItems.map((item) => item.id));
+      const hasNewUnread = nextItems.some((item) => !item.is_read && !knownIdsRef.current.has(item.id));
+
+      if (initializedRef.current && hasNewUnread) {
+        setHasNewAlert(true);
+        playNotificationSound();
+      }
+
+      knownIdsRef.current = nextIds;
+      initializedRef.current = true;
+      setItems(nextItems);
     } catch {
       // silently fail
     }
-  }, [user?.id]);
+  }, [playNotificationSound, user?.id]);
 
   useEffect(() => {
-    fetchNotifications();
+    knownIdsRef.current = new Set();
+    initializedRef.current = false;
+    void fetchNotifications();
   }, [fetchNotifications]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const timer = window.setInterval(() => void fetchNotifications(), 30000);
+    return () => window.clearInterval(timer);
+  }, [fetchNotifications, user?.id]);
+
+  useEffect(() => {
+    window.addEventListener('pointerdown', unlockNotificationSound, { once: true });
+    window.addEventListener('keydown', unlockNotificationSound, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlockNotificationSound);
+      window.removeEventListener('keydown', unlockNotificationSound);
+    };
+  }, [unlockNotificationSound]);
 
   useEffect(() => {
     if (!open) return;
@@ -54,16 +119,18 @@ export default function NotificationInbox() {
   }
 
   const unread = items.filter((n) => !n.is_read).length;
+  const shouldBlink = hasNewAlert || unread > 0;
 
   return (
     <div className="relative" ref={panelRef}>
       <button
         type="button"
-        onClick={() => { setOpen((v) => !v); if (!open) fetchNotifications(); }}
-        className="relative flex h-11 w-11 items-center justify-center rounded-lg bg-white text-[#6B7280] hover:text-[#43A9F6]"
+        onClick={() => { unlockNotificationSound(); setHasNewAlert(false); setOpen((v) => !v); if (!open) fetchNotifications(); }}
+        className={`relative flex h-11 w-11 items-center justify-center rounded-lg bg-white text-[#6B7280] hover:text-[#43A9F6] ${shouldBlink ? 'animate-pulse text-[#43A9F6] ring-2 ring-[#43A9F6]/30' : ''}`}
         aria-label="Notifications"
       >
-        <Bell size={18} />
+        {shouldBlink && <span className="absolute inset-0 rounded-lg bg-[#43A9F6]/10" />}
+        <Bell size={18} className={shouldBlink ? 'animate-bounce' : ''} />
         {unread > 0 && (
           <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
             {unread > 9 ? '9+' : unread}

@@ -9,6 +9,7 @@ import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { createCms, getCms, listCms, updateCms } from "@/lib/services/cmsService";
 import { useToast } from "@/hooks/useToast";
 import api from "@/lib/api";
+import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 
 type Props = {
   tourId?: string;
@@ -46,8 +47,13 @@ export default function TourFormPage({ tourId }: Props) {
   const [loading, setLoading] = useState(Boolean(tourId));
   const [saving, setSaving] = useState(false);
 
-  const [countries, setCountries] = useState<DropdownOption[]>([]);
-  const [cities, setCities] = useState<DropdownOption[]>([]);
+  const [selectedStateId, setSelectedStateId] = useState("");
+  const { countries } = useGeoCountries();
+  const { states } = useGeoStates(form.country_id ? Number(form.country_id) : null);
+  const { cities } = useGeoCities(
+    selectedStateId ? Number(selectedStateId) : null,
+    form.country_id ? Number(form.country_id) : null
+  );
   const [categories, setCategories] = useState<DropdownOption[]>([]);
   const [suppliers, setSuppliers] = useState<DropdownOption[]>([]);
 
@@ -56,8 +62,7 @@ export default function TourFormPage({ tourId }: Props) {
 
     async function loadDropdownOptions() {
       try {
-        const [countryResponse, categoryResponse, supplierResponse] = await Promise.all([
-          listCms("/countries", { limit: 200 }),
+        const [categoryResponse, supplierResponse] = await Promise.all([
           listCms("/tour-categories", { limit: 200 }),
           api.get("/suppliers/", { params: { limit: 200 } }),
         ]);
@@ -67,12 +72,6 @@ export default function TourFormPage({ tourId }: Props) {
         const supplierItems: Array<{ id: number; supplier_name?: string; name?: string }> =
           supplierResponse.data?.items ?? supplierResponse.data?.data ?? [];
 
-        setCountries(
-          (countryResponse.items ?? []).map((country) => ({
-            id: country.id as number,
-            label: String(country.country_name),
-          }))
-        );
         setCategories(
           (categoryResponse.items ?? []).map((category) => ({
             id: category.id as number,
@@ -96,38 +95,6 @@ export default function TourFormPage({ tourId }: Props) {
       shouldUpdateState = false;
     };
   }, [toast]);
-
-  useEffect(() => {
-    let shouldUpdateState = true;
-
-    async function loadCitiesForCountry() {
-      const countryId = form.country_id;
-      if (!countryId) {
-        setCities([]);
-        return;
-      }
-
-      try {
-        const cityResponse = await listCms("/cities", { limit: 200, country_id: countryId });
-        if (!shouldUpdateState) return;
-
-        setCities(
-          (cityResponse.items ?? []).map((city) => ({
-            id: city.id as number,
-            label: String(city.city_name),
-          }))
-        );
-      } catch {
-        if (shouldUpdateState) toast.error("Could not load cities for the selected country.");
-      }
-    }
-
-    void loadCitiesForCountry();
-
-    return () => {
-      shouldUpdateState = false;
-    };
-  }, [form.country_id, toast]);
 
   const fetchTour = useCallback(async () => {
     if (!tourId) return;
@@ -318,13 +285,33 @@ export default function TourFormPage({ tourId }: Props) {
                   value={form.country_id ?? ""}
                   onChange={(e) => {
                     update("country_id", e.target.value);
+                    setSelectedStateId("");
                     update("city_id", "");
                   }}
                   className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
                 >
                   <option value="">â€” None â€”</option>
                   {countries.map((c) => (
-                    <option key={c.id} value={String(c.id)}>{c.label}</option>
+                    <option key={c.id} value={String(c.id)}>{c.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              {/* State */}
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">State</span>
+                <select
+                  value={selectedStateId}
+                  onChange={(e) => {
+                    setSelectedStateId(e.target.value);
+                    update("city_id", "");
+                  }}
+                  disabled={!form.country_id}
+                  className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6] disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  <option value="">- {form.country_id ? "Select state" : "Select country first"} -</option>
+                  {states.map((s) => (
+                    <option key={s.id} value={String(s.id)}>{s.name}</option>
                   ))}
                 </select>
               </label>
@@ -338,9 +325,9 @@ export default function TourFormPage({ tourId }: Props) {
                   disabled={!form.country_id}
                   className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6] disabled:bg-gray-50 disabled:text-gray-400"
                 >
-                  <option value="">â€” {form.country_id ? "Select city" : "Select country first"} â€”</option>
+                  <option value="">- {form.country_id ? "Select city" : "Select country first"} -</option>
                   {cities.map((c) => (
-                    <option key={c.id} value={String(c.id)}>{c.label}</option>
+                    <option key={c.id} value={String(c.id)}>{c.name}</option>
                   ))}
                 </select>
               </label>

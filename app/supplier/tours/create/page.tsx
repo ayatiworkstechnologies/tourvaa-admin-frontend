@@ -13,9 +13,10 @@ import {
   Trash2,
 } from "lucide-react";
 import api from "@/lib/api";
+import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 
-type SelectOption = { id: number; name: string; country_id?: number };
-type ApiOption = { id: number; name?: string; country_id?: number; country_name?: string; city_name?: string; category_name?: string };
+type SelectOption = { id: number; name: string };
+type ApiOption = { id: number; name?: string; category_name?: string };
 type PriceSlab = {
   persons_from: number;
   persons_to: number;
@@ -84,17 +85,19 @@ export default function CreateTourPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Dropdown options
-  const [countries, setCountries] = useState<SelectOption[]>([]);
-  const [cities, setCities] = useState<SelectOption[]>([]);
-  const [categories, setCategories] = useState<SelectOption[]>([]);
-
   // Step 1: Basic Details
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [countryId, setCountryId] = useState("");
+  const [stateId, setStateId] = useState("");
   const [cityId, setCityId] = useState("");
   const [categoryId, setCategoryId] = useState("");
+
+  // Dropdown options
+  const { countries } = useGeoCountries();
+  const { states } = useGeoStates(countryId ? Number(countryId) : null);
+  const { cities } = useGeoCities(stateId ? Number(stateId) : null, countryId ? Number(countryId) : null);
+  const [categories, setCategories] = useState<SelectOption[]>([]);
   const [numberOfDays, setNumberOfDays] = useState("");
   const [shortDescription, setShortDescription] = useState("");
 
@@ -111,29 +114,11 @@ export default function CreateTourPage() {
   ]);
 
   useEffect(() => {
-    Promise.allSettled([
-      api.get("/settings/countries"),
-      api.get("/settings/cities"),
-      api.get("/tours/categories"),
-    ]).then(([c, ci, cat]) => {
-      if (c.status === "fulfilled") {
-        const items = (c.value.data?.items ?? c.value.data?.data ?? c.value.data ?? []) as ApiOption[];
-        setCountries(items.map((item) => ({ id: item.id, name: String(item.country_name ?? item.name ?? item.id) })));
-      }
-      if (ci.status === "fulfilled") {
-        const items = (ci.value.data?.items ?? ci.value.data?.data ?? ci.value.data ?? []) as ApiOption[];
-        setCities(items.map((item) => ({ id: item.id, country_id: item.country_id, name: String(item.city_name ?? item.name ?? item.id) })));
-      }
-      if (cat.status === "fulfilled") {
-        const items = (cat.value.data?.items ?? cat.value.data?.data ?? cat.value.data ?? []) as ApiOption[];
-        setCategories(items.map((item) => ({ id: item.id, name: String(item.category_name ?? item.name ?? item.id) })));
-      }
-    });
+    api.get("/tours/categories").then((res) => {
+      const items = (res.data?.items ?? res.data?.data ?? res.data ?? []) as ApiOption[];
+      setCategories(items.map((item) => ({ id: item.id, name: String(item.category_name ?? item.name ?? item.id) })));
+    }).catch(() => {});
   }, []);
-
-  const filteredCities = countryId
-    ? cities.filter((c) => (c as SelectOption & { country_id?: number }).country_id === Number(countryId))
-    : cities;
 
   const updateSlab = (i: number, field: keyof PriceSlab, val: string | number) => {
     setSlabs((prev) => prev.map((s, idx) => (idx === i ? { ...s, [field]: val } : s)));
@@ -290,6 +275,7 @@ export default function CreateTourPage() {
                     value={countryId}
                     onChange={(e) => {
                       setCountryId(e.target.value);
+                      setStateId("");
                       setCityId("");
                     }}
                   >
@@ -302,14 +288,34 @@ export default function CreateTourPage() {
                   </select>
                 </div>
                 <div>
+                  <label className={labelCls}>State</label>
+                  <select
+                    className={inputCls}
+                    value={stateId}
+                    onChange={(e) => {
+                      setStateId(e.target.value);
+                      setCityId("");
+                    }}
+                    disabled={!countryId}
+                  >
+                    <option value="">{countryId ? "Select state" : "Select country first"}</option>
+                    {states.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className={labelCls}>City</label>
                   <select
                     className={inputCls}
                     value={cityId}
                     onChange={(e) => setCityId(e.target.value)}
+                    disabled={!countryId}
                   >
-                    <option value="">Select city</option>
-                    {filteredCities.map((c) => (
+                    <option value="">{countryId ? "Select city" : "Select country first"}</option>
+                    {cities.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>

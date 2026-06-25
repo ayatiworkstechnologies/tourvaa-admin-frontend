@@ -15,6 +15,9 @@ type Props = {
   customers: Customer[];
   page: number;
   limit: number;
+  total?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
   savingId?: number | null;
   canBlock?: boolean;
   canUnblock?: boolean;
@@ -28,6 +31,9 @@ export default function CustomerTable({
   customers,
   page,
   limit,
+  total,
+  totalPages,
+  onPageChange,
   savingId,
   canBlock,
   canUnblock,
@@ -65,7 +71,7 @@ export default function CustomerTable({
       key: "country",
       header: "Country",
       className: "text-[#667085]",
-      render: (customer) => customer.country || "-",
+      render: (customer) => customer.country_name || customer.country || "-",
     },
     {
       key: "status",
@@ -110,12 +116,16 @@ export default function CustomerTable({
   ];
 
   return (
-    <div className="p-0">
-      <DataTable
-        ariaLabel="Customers table"
-        columns={columns}
-        rows={customers}
-        emptyTitle="No customers found."
+    <DataTable
+      ariaLabel="Customers table"
+      columns={columns}
+      rows={customers}
+      page={page}
+      pageSize={limit}
+      total={total}
+      totalPages={totalPages}
+      onPageChange={onPageChange}
+      emptyTitle="No customers found."
         actions={(customer) => (
           <div className="flex justify-end gap-2">
             <Link
@@ -161,8 +171,7 @@ export default function CustomerTable({
                 )}
           </div>
         )}
-      />
-    </div>
+    />
   );
 }
 

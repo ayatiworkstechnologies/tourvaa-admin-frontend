@@ -8,10 +8,8 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import PhoneInput from "@/components/ui/PhoneInput";
 import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
-import LocationInput from "@/components/ui/LocationInput";
 import {
   combinePhone,
-  digitsOnly,
   mobileHelp,
   passwordHelp,
   splitPhone,
@@ -19,6 +17,7 @@ import {
   validatePassword,
 } from "@/lib/validators";
 import { phoneCountryCodeValues } from "@/lib/location-options";
+import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 
 const emptyProfile = {
   name: "",
@@ -26,6 +25,9 @@ const emptyProfile = {
   phone: "",
   profile_image: "",
   address: "",
+  country_id: "",
+  state_id: "",
+  city_id: "",
   country: "",
   state: "",
   city: "",
@@ -54,22 +56,31 @@ export default function CustomerProfilePage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const { countries } = useGeoCountries();
+  const { states } = useGeoStates(profile.country_id ? Number(profile.country_id) : null);
+  const { cities } = useGeoCities(
+    profile.state_id ? Number(profile.state_id) : null,
+    profile.country_id ? Number(profile.country_id) : null
+  );
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await api.get("/profile/me");
+        const response = await api.get("/customers/me");
         const d = response.data.data;
         setProfile({
           name: d.name || "",
           email: d.email || "",
           phone: d.phone || "",
           profile_image: d.profile_image || "",
-          address: d.address || "",
-          country: d.country || "",
-          state: d.state || "",
-          city: d.city || "",
-          pincode: d.pincode || "",
+          address: d.address || d.address_line_1 || "",
+          country_id: String(d.country_id || ""),
+          state_id: "",
+          city_id: String(d.city_id || ""),
+          country: d.country_name || d.country || "",
+          state: d.state_name || d.state || "",
+          city: d.city_name || d.city || "",
+          pincode: d.pincode || d.postal_code || "",
         });
         const phoneParts = splitPhone(d.phone || "", phoneCountryCodeValues);
         setPhoneCountryCode(phoneParts.countryCode);
@@ -81,6 +92,9 @@ export default function CustomerProfilePage() {
             name: user.name,
             email: user.email,
             profile_image: user.profile_image || "",
+            country_id: "",
+            state_id: "",
+            city_id: "",
           });
         }
       }
@@ -102,15 +116,22 @@ export default function CustomerProfilePage() {
     }
 
     try {
-      await api.put("/profile/me", {
-        name: profile.name,
+      const selectedCountry = countries.find((country) => String(country.id) === profile.country_id);
+      const selectedState = states.find((state) => String(state.id) === profile.state_id);
+      const selectedCity = cities.find((city) => String(city.id) === profile.city_id);
+      await api.patch("/customers/me", {
+        full_name: profile.name,
         phone,
         profile_image: profile.profile_image,
         address: profile.address,
-        country: profile.country,
-        state: profile.state,
-        city: profile.city,
+        address_line_1: profile.address,
+        country_id: parseInt(profile.country_id) || null,
+        city_id: parseInt(profile.city_id) || null,
+        country: selectedCountry?.name || profile.country,
+        state: selectedState?.name || profile.state,
+        city: selectedCity?.name || profile.city,
         pincode: profile.pincode,
+        postal_code: profile.pincode,
       });
       await refreshSession();
       toast.success("Profile updated successfully.");
@@ -144,7 +165,7 @@ export default function CustomerProfilePage() {
     }
 
     try {
-      await api.put("/profile/password", {
+      await api.post("/customer/change-password", {
         current_password: passwordForm.current_password,
         new_password: passwordForm.new_password,
       });
@@ -228,18 +249,58 @@ export default function CustomerProfilePage() {
               />
             </label>
 
-            <LocationInput
-              country={profile.country}
-              city={profile.city}
-              onCountryChange={(country) => setProfile((current) => ({ ...current, country, state: "", city: "" }))}
-              onCityChange={(city) => setProfile((current) => ({ ...current, city }))}
-              state={profile.state}
-              pincode={profile.pincode}
-              onStateChange={(state) => setProfile((current) => ({ ...current, state }))}
-              onPincodeChange={(pincode) => setProfile((current) => ({ ...current, pincode: digitsOnly(pincode) }))}
-              theme="sky"
-              required
-            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">Country</span>
+                <select
+                  required
+                  value={profile.country_id}
+                  onChange={(event) => setProfile((current) => ({ ...current, country_id: event.target.value, state_id: "", city_id: "", country: countries.find((country) => String(country.id) === event.target.value)?.name || "", state: "", city: "" }))}
+                  className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6] focus:ring-2 focus:ring-sky-100 transition-all"
+                >
+                  <option value="">Select country</option>
+                  {countries.map((country) => <option key={country.id} value={country.id}>{country.name}</option>)}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">State</span>
+                <select
+                  value={profile.state_id}
+                  onChange={(event) => setProfile((current) => ({ ...current, state_id: event.target.value, city_id: "", state: states.find((state) => String(state.id) === event.target.value)?.name || "", city: "" }))}
+                  disabled={!profile.country_id}
+                  className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6] focus:ring-2 focus:ring-sky-100 transition-all disabled:bg-[#F7F9FC]"
+                >
+                  <option value="">{profile.country_id ? "Select state" : "Select country first"}</option>
+                  {states.map((state) => <option key={state.id} value={state.id}>{state.name}</option>)}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">City</span>
+                <select
+                  required
+                  value={profile.city_id}
+                  onChange={(event) => setProfile((current) => ({ ...current, city_id: event.target.value, city: cities.find((city) => String(city.id) === event.target.value)?.name || "" }))}
+                  disabled={!profile.country_id}
+                  className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6] focus:ring-2 focus:ring-sky-100 transition-all disabled:bg-[#F7F9FC]"
+                >
+                  <option value="">{profile.country_id ? "Select city" : "Select country first"}</option>
+                  {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">Pincode</span>
+                <input
+                  value={profile.pincode}
+                  onChange={(event) => setProfile((current) => ({ ...current, pincode: event.target.value.replace(/\D/g, "") }))}
+                  className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6] focus:ring-2 focus:ring-sky-100 transition-all"
+                  required
+                  placeholder="Pincode"
+                />
+              </label>
+            </div>
           </div>
         </form>
 

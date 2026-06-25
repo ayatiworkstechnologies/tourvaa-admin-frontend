@@ -11,9 +11,14 @@ export type Customer = {
   phone: string;
   address: string;
   profile_image: string;
+  country_id?: number | null;
+  city_id?: number | null;
   country: string;
   state: string;
   city: string;
+  country_name?: string;
+  state_name?: string;
+  city_name?: string;
   pincode: string;
   status: "active" | "inactive" | "blocked";
   is_blocked: boolean;

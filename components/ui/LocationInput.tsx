@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import publicApi from "@/lib/publicApi";
-import { countries as fallbackCountries, getCitiesForCountry } from "@/lib/location-options";
+import { useMemo } from "react";
+import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 
 type LocationInputProps = {
   country: string;
@@ -17,8 +16,6 @@ type LocationInputProps = {
   theme?: "emerald" | "orange" | "sky" | "blue";
 };
 
-type PublicCountryOption = { country_name?: string; name?: string };
-type PublicCityOption = { city_name?: string; name?: string };
 
 export default function LocationInput({
   country,
@@ -32,65 +29,31 @@ export default function LocationInput({
   onPincodeChange,
   theme = "sky",
 }: LocationInputProps) {
-  const [publicCountries, setPublicCountries] = useState<string[]>([]);
-  const [publicCities, setPublicCities] = useState<string[]>([]);
-
-  useEffect(() => {
-    let active = true;
-
-    publicApi
-      .get("/countries")
-      .then((response) => {
-        if (!active) return;
-        const items = (response.data?.items || []) as PublicCountryOption[];
-        setPublicCountries(
-          items
-             .map((item) => item.country_name || item.name || "")
-             .filter(Boolean)
-        );
-      })
-      .catch(() => setPublicCountries([]));
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    const query = country.trim();
-
-    if (!query) {
-      setPublicCities([]);
-      return;
-    }
-
-    publicApi
-      .get("/cities", { params: { country: query } })
-      .then((response) => {
-        if (!active) return;
-        const items = (response.data?.items || []) as PublicCityOption[];
-        setPublicCities(
-          items
-             .map((item) => item.city_name || item.name || "")
-             .filter(Boolean)
-        );
-      })
-      .catch(() => setPublicCities([]));
-
-    return () => {
-      active = false;
-    };
-  }, [country]);
+  const { countries } = useGeoCountries();
+  const countryId = useMemo(
+    () => countries.find((item) => item.name === country)?.id ?? null,
+    [countries, country]
+  );
+  const { states } = useGeoStates(countryId);
+  const stateId = useMemo(
+    () => states.find((item) => item.name === state)?.id ?? null,
+    [states, state]
+  );
+  const { cities } = useGeoCities(stateId, countryId);
 
   const countryOptions = useMemo(
-    () => Array.from(new Set([...publicCountries, ...fallbackCountries])).slice(0, 100),
-    [publicCountries]
+    () => countries.map((item) => ({ key: `country-${item.id}`, value: item.name })),
+    [countries]
+  );
+
+  const stateOptions = useMemo(
+    () => states.map((item) => ({ key: `state-${item.id}`, value: item.name })),
+    [states]
   );
 
   const cityOptions = useMemo(
-    () => Array.from(new Set([...publicCities, ...getCitiesForCountry(country)])).slice(0, 100),
-    [country, publicCities]
+    () => cities.map((item) => ({ key: `city-${item.id}`, value: item.name })),
+    [cities]
   );
 
   const themeCls = (t: string) => {
@@ -104,51 +67,56 @@ export default function LocationInput({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">Country</span>
-          <input
-            list="tourvaa-country-options"
+          <select
             value={country}
             onChange={(event) => {
               onCountryChange(event.target.value);
+              onStateChange?.("");
               onCityChange("");
             }}
-            placeholder="Search country"
-            className={`w-full rounded-xl border border-[#E7EAF0] px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)}`}
+            className={`w-full rounded-xl border border-[#E7EAF0] bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)}`}
             required={required}
-          />
-          <datalist id="tourvaa-country-options">
+          >
+            <option value="">Select country</option>
             {countryOptions.map((item) => (
-              <option key={item} value={item} />
+              <option key={item.key} value={item.value}>{item.value}</option>
             ))}
-          </datalist>
+          </select>
         </label>
 
         <label className="block">
           <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">State</span>
-          <input
+          <select
             value={state}
-            onChange={(event) => onStateChange(event.target.value)}
-            placeholder="State"
-            className={`w-full rounded-xl border border-[#E7EAF0] px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)}`}
+            onChange={(event) => {
+              onStateChange(event.target.value);
+              onCityChange("");
+            }}
+            className={`w-full rounded-xl border border-[#E7EAF0] bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)} disabled:bg-[#F7F9FC]`}
+            disabled={!country}
             required={required}
-          />
+          >
+            <option value="">{country ? "Select state" : "Select country first"}</option>
+            {stateOptions.map((item) => (
+              <option key={item.key} value={item.value}>{item.value}</option>
+            ))}
+          </select>
         </label>
 
         <label className="block">
           <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">City</span>
-          <input
-            list="tourvaa-city-options"
+          <select
             value={city}
             onChange={(event) => onCityChange(event.target.value)}
-            placeholder={country ? "Search city" : "Select country first"}
-            className={`w-full rounded-xl border border-[#E7EAF0] px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)} disabled:bg-[#F7F9FC]`}
-            disabled={!country}
+            className={`w-full rounded-xl border border-[#E7EAF0] bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)} disabled:bg-[#F7F9FC]`}
+            disabled={!state}
             required={required}
-          />
-          <datalist id="tourvaa-city-options">
+          >
+            <option value="">{state ? "Select city" : "Select state first"}</option>
             {cityOptions.map((item) => (
-              <option key={item} value={item} />
+              <option key={item.key} value={item.value}>{item.value}</option>
             ))}
-          </datalist>
+          </select>
         </label>
 
         <label className="block">
@@ -171,40 +139,36 @@ export default function LocationInput({
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="block">
         <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">Country</span>
-        <input
-          list="tourvaa-country-options"
+        <select
           value={country}
           onChange={(event) => {
             onCountryChange(event.target.value);
             onCityChange("");
           }}
-          placeholder="Search country"
-          className={`w-full rounded-xl border border-[#E7EAF0] px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)}`}
+          className={`w-full rounded-xl border border-[#E7EAF0] bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)}`}
           required={required}
-        />
-        <datalist id="tourvaa-country-options">
+        >
+          <option value="">Select country</option>
           {countryOptions.map((item) => (
-            <option key={item} value={item} />
+            <option key={item.key} value={item.value}>{item.value}</option>
           ))}
-        </datalist>
+        </select>
       </label>
 
       <label className="block">
         <span className="mb-1 block text-xs font-bold uppercase text-[#667085]">City</span>
-        <input
-          list="tourvaa-city-options"
+        <select
           value={city}
           onChange={(event) => onCityChange(event.target.value)}
-          placeholder={country ? "Search city" : "Select country first"}
-          className={`w-full rounded-xl border border-[#E7EAF0] px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)} disabled:bg-[#F7F9FC]`}
+          className={`w-full rounded-xl border border-[#E7EAF0] bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)} disabled:bg-[#F7F9FC]`}
           disabled={!country}
           required={required}
-        />
-        <datalist id="tourvaa-city-options">
+        >
+          <option value="">{country ? "Select city" : "Select country first"}</option>
           {cityOptions.map((item) => (
-            <option key={item} value={item} />
+            <option key={item.key} value={item.value}>{item.value}</option>
           ))}
-        </datalist>
+        </select>
       </label>
     </div>
   );

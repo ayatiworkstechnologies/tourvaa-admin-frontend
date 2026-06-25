@@ -5,9 +5,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
-
-type Country = { id: number; country_name: string };
-type City = { id: number; city_name: string };
+import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 
 type Form = {
   supplier_name: string;
@@ -25,8 +23,7 @@ const BUSINESS_TYPES = ["dmc", "tour_operator", "transport_provider", "hotel", "
 
 export default function CompanyInfoTab() {
   const toast = useToast();
-  const { dashboard, refreshSession } = useAuthContext();
-  const supplierId = (dashboard?.user as Record<string, unknown>)?.supplier_id ?? dashboard?.user?.id;
+  const { refreshSession } = useAuthContext();
   const [form, setForm] = useState<Form>({
     supplier_name: "",
     supplier_type: "",
@@ -39,24 +36,16 @@ export default function CompanyInfoTab() {
     city_id: "",
   });
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
+  const [selectedStateId, setSelectedStateId] = useState("");
+  const { countries } = useGeoCountries();
+  const { states } = useGeoStates(form.country_id ? Number(form.country_id) : null);
+  const { cities } = useGeoCities(
+    selectedStateId ? Number(selectedStateId) : null,
+    form.country_id ? Number(form.country_id) : null
+  );
 
   useEffect(() => {
-    api.get("/countries", { params: { limit: 200 } }).then(res => setCountries(res.data?.data?.items ?? res.data?.items ?? [])).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!form.country_id) {
-      setCities([]);
-      return;
-    }
-    api.get("/cities", { params: { limit: 500, country_id: form.country_id } }).then(res => setCities(res.data?.data?.items ?? res.data?.items ?? [])).catch(() => {});
-  }, [form.country_id]);
-
-  useEffect(() => {
-    if (!supplierId) return;
-    api.get(`/suppliers/${supplierId}`).then(res => {
+    api.get("/suppliers/me").then(res => {
       const d = res.data?.data ?? res.data ?? {};
       setForm({
         supplier_name: d.supplier_name || d.name || "",
@@ -70,13 +59,27 @@ export default function CompanyInfoTab() {
         city_id: String(d.city_id || ""),
       });
     }).catch(() => {});
-  }, [supplierId]);
+  }, []);
 
-  const set = (k: keyof Form, v: string) => { setState("idle"); setForm(f => ({ ...f, [k]: v })); };
+  const set = (k: keyof Form, v: string) => {
+    setState("idle");
+    setForm(f => ({ ...f, [k]: v }));
+  };
+
+  const setCountry = (value: string) => {
+    setSelectedStateId("");
+    setForm(f => ({ ...f, country_id: value, city_id: "" }));
+    setState("idle");
+  };
+
+  const setCompanyState = (value: string) => {
+    setSelectedStateId(value);
+    setForm(f => ({ ...f, city_id: "" }));
+    setState("idle");
+  };
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!supplierId) return;
     setState("saving");
     try {
       const payload = {
@@ -92,7 +95,7 @@ export default function CompanyInfoTab() {
           destinations_sold: form.destinations_sold,
         }
       };
-      await api.patch(`/suppliers/${supplierId}`, payload);
+      await api.patch("/suppliers/me", payload);
       await refreshSession();
       setState("saved");
       toast.success("Company info updated.");
@@ -160,18 +163,26 @@ export default function CompanyInfoTab() {
         </label>
         <label className="block">
           <span className="text-xs font-bold uppercase text-[#667085]">Country</span>
-          <select value={form.country_id} onChange={e => set("country_id", e.target.value)}
+          <select value={form.country_id} onChange={e => setCountry(e.target.value)}
             className="mt-1 w-full rounded-xl border border-[#E7EAF0] px-3 py-2.5 text-sm outline-none focus:border-emerald-500">
             <option value="">Select country</option>
-            {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
+            {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-xs font-bold uppercase text-[#667085]">State</span>
+          <select value={selectedStateId} onChange={e => setCompanyState(e.target.value)} disabled={!form.country_id}
+            className="mt-1 w-full rounded-xl border border-[#E7EAF0] px-3 py-2.5 text-sm outline-none focus:border-emerald-500 disabled:bg-[#F7F9FC]">
+            <option value="">{form.country_id ? "Select state" : "Select country first"}</option>
+            {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </label>
         <label className="block">
           <span className="text-xs font-bold uppercase text-[#667085]">City</span>
-          <select value={form.city_id} onChange={e => set("city_id", e.target.value)}
-            className="mt-1 w-full rounded-xl border border-[#E7EAF0] px-3 py-2.5 text-sm outline-none focus:border-emerald-500">
-            <option value="">Select city</option>
-            {cities.map(c => <option key={c.id} value={c.id}>{c.city_name}</option>)}
+          <select value={form.city_id} onChange={e => set("city_id", e.target.value)} disabled={!form.country_id}
+            className="mt-1 w-full rounded-xl border border-[#E7EAF0] px-3 py-2.5 text-sm outline-none focus:border-emerald-500 disabled:bg-[#F7F9FC]">
+            <option value="">{form.country_id ? "Select city" : "Select country first"}</option>
+            {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>
       </div>
