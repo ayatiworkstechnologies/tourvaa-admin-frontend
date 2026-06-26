@@ -6,7 +6,6 @@ import axios from "axios";
 import { ArrowRight, Banknote, Briefcase, CheckCircle2, LayoutDashboard, Star, Users } from "lucide-react";
 import PhoneInput from "@/components/ui/PhoneInput";
 import api from "@/lib/api";
-import { hashPassword } from "@/lib/crypto";
 import { combinePhone, mobileHelp, normalizeEmail, passwordHelp, validateEmail, validateMobile, validatePassword } from "@/lib/validators";
 
 const perks = [
@@ -51,7 +50,7 @@ export default function JoinAgentPage() {
     if (phone && !validateMobile(phone)) { setError(mobileHelp); return; }
     setSubmitting(true);
     try {
-      await api.post("/auth/register/agent", { name: form.name, email: normalizeEmail(form.email), phone, password: await hashPassword(form.password) });
+      await api.post("/auth/register/agent", { name: form.name, email: normalizeEmail(form.email), phone, password: form.password });
       setSent(true);
     } catch (err: unknown) {
       setError(axios.isAxiosError(err) ? err.response?.data?.detail || "Agent registration failed." : "Agent registration failed.");

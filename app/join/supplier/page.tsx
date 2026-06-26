@@ -5,7 +5,6 @@ import { useState } from "react";
 import axios from "axios";
 import { ArrowRight, CheckCircle2, Globe, LayoutDashboard, Star, TrendingUp, Users, Warehouse } from "lucide-react";
 import api from "@/lib/api";
-import { hashPassword } from "@/lib/crypto";
 import PhoneInput from "@/components/ui/PhoneInput";
 import LocationInput from "@/components/ui/LocationInput";
 import { combinePhone, mobileHelp, normalizeEmail, passwordHelp, validateEmail, validateMobile, validatePassword } from "@/lib/validators";
@@ -52,7 +51,7 @@ export default function JoinSupplierPage() {
     if (phone && !validateMobile(phone)) { setError(mobileHelp); return; }
     setSubmitting(true);
     try {
-      await api.post("/auth/register/supplier", { name: form.name, email: normalizeEmail(form.email), phone, country: form.country, city: form.city, password: await hashPassword(form.password) });
+      await api.post("/auth/register/supplier", { name: form.name, email: normalizeEmail(form.email), phone, country: form.country, city: form.city, password: form.password });
       setSent(true);
     } catch (err: unknown) {
       setError(axios.isAxiosError(err) ? err.response?.data?.detail || "Supplier registration failed." : "Supplier registration failed.");

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, Eye, EyeOff, Loader2 } from "lucide-react";
 import axios from "axios";
 import api from "@/lib/api";
-import { hashPassword } from "@/lib/crypto";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
@@ -158,8 +157,8 @@ export default function AgencyDetailsTab() {
     setSavingPw(true);
     try {
       await api.put("/profile/password", {
-        current_password: await hashPassword(pwForm.current_password),
-        new_password: await hashPassword(pwForm.new_password),
+        current_password: pwForm.current_password,
+        new_password: pwForm.new_password,
       });
       setPwForm({ current_password: "", new_password: "", confirm_password: "" });
       toast.success("Password updated successfully.");

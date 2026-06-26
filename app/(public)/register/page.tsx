@@ -6,7 +6,6 @@ import axios from "axios";
 import { useForm, useWatch } from "react-hook-form";
 import { CheckCircle2, Eye, EyeOff, Lock, Mail, User, UserPlus } from "lucide-react";
 import api from "@/lib/api";
-import { hashPassword } from "@/lib/crypto";
 import { normalizeEmail, passwordHelp, validateEmail, validatePassword } from "@/lib/validators";
 
 type FormValues = { name: string; email: string; password: string; confirmPassword: string };
@@ -55,7 +54,7 @@ export default function CustomerRegisterPage() {
         name: values.name,
         email: normalizeEmail(values.email),
         role_id: customerRoleId,
-        password: await hashPassword(values.password),
+        password: values.password,
       });
       setSuccess(true);
       reset();
