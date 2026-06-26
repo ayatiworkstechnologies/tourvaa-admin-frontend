@@ -21,7 +21,18 @@ export default function PublicHeader() {
   const { isLoggedIn, loading: sessionLoading, user, logout, dashboard } = useAuthContext();
   const roleSlug = dashboard?.user?.role?.slug ?? "";
   const dashboardPath = getDashboardPath(roleSlug);
-  const isPortalUser = isLoggedIn && !!roleSlug;
+
+  // Only show the user dropdown for non-admin portal users
+  const NON_ADMIN_ROLES = ["customer", "agent-reseller", "supplier", "affiliate"];
+  const isPortalUser = isLoggedIn && NON_ADMIN_ROLES.includes(roleSlug);
+
+  function profilePath() {
+    if (roleSlug === "customer") return "/customer/profile";
+    if (roleSlug === "agent-reseller") return "/agent/profile";
+    if (roleSlug === "supplier") return "/supplier/profile";
+    if (roleSlug === "affiliate") return "/affiliate/profile";
+    return "/";
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -118,7 +129,7 @@ export default function PublicHeader() {
                     <LayoutDashboard size={14} className="text-sky-500" /> My Dashboard
                   </Link>
                   <Link
-                    href={roleSlug === "customer" ? "/customer/profile" : "/admin/profile"}
+                    href={profilePath()}
                     onClick={() => setDropOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-[#0F172A]"
                   >

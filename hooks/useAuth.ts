@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { hashPassword } from "@/lib/crypto";
 import { getDashboardPath } from "@/lib/dashboardPath";
 import { getApiErrorMessage } from "@/lib/error-handler";
 import { normalizeEmail } from "@/lib/validators";
@@ -28,8 +29,8 @@ export function useAuth() {
 
     try {
       const response = await api.post("/auth/login", {
-        ...payload,
         email: normalizeEmail(payload.email),
+        password: await hashPassword(payload.password),
       });
       const data = response.data.data;
 

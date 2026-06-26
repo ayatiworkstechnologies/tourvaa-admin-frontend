@@ -115,7 +115,7 @@ export default function SupplierDetailPage() {
   const canPartial = !isApproved && !isBlocked && (hasPermission("suppliers.partial_approve") || canApprove);
   const canCommercial = hasPermission("suppliers.manage_markup");
   const hasCommissionRequest = String(record?.pending_requirements || "").toLowerCase().includes("commission request");
-  const canBlock = hasPermission("suppliers.edit") || hasPermission("update-suppliers") || hasPermission("suppliers.approve");
+  const canBlock = hasPermission("suppliers.edit") || hasPermission("suppliers.approve");
 
   const fetchRecord = useCallback(async () => {
     setLoading(true);

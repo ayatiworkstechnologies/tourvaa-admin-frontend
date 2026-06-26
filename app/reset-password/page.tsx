@@ -8,6 +8,7 @@ import { Eye, EyeOff, Lock } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
 import api from "@/lib/api";
+import { hashPassword } from "@/lib/crypto";
 import { passwordHelp, validatePassword } from "@/lib/validators";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -92,7 +93,7 @@ function ResetPasswordForm() {
     try {
       const response = await api.post("/auth/reset-password", {
         token,
-        password,
+        password: await hashPassword(password),
       });
       setMessage(response.data.message || "Password reset successfully.");
       setPassword("");

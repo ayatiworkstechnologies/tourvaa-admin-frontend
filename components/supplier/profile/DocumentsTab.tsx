@@ -5,7 +5,6 @@ import { CheckCircle2, FileText, Loader2, Upload } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
-import { mediaUrl } from "@/lib/media-url";
 
 type Document = { id: number; document_type: string; file_url: string; status: string; uploaded_at?: string; notes?: string };
 
@@ -28,12 +27,22 @@ function statusCls(s: string) {
 export default function DocumentsTab() {
   const toast = useToast();
   const { dashboard } = useAuthContext();
-  const supplierId = (dashboard?.user as Record<string, unknown>)?.supplier_id ?? dashboard?.user?.id;
+  const [supplierId, setSupplierId] = useState<number | null>(null);
   const [docs, setDocs] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  // Resolve supplier record ID from /suppliers/me (not user.id)
+  useEffect(() => {
+    api.get("/suppliers/me")
+      .then(res => {
+        const id = res.data?.data?.id ?? res.data?.id;
+        if (id) setSupplierId(Number(id));
+      })
+      .catch(() => {});
+  }, [dashboard]);
 
   async function load() {
     if (!supplierId) return;
@@ -68,11 +77,29 @@ export default function DocumentsTab() {
     }
   }
 
+  async function viewDocument(fileUrl: string) {
+    if (fileUrl.startsWith("/api/private-documents/") || fileUrl.includes("/private-documents/")) {
+      // Private document — fetch with auth header, open as blob
+      try {
+        const res = await api.get(fileUrl.replace(/^\/api/, ""), { responseType: "blob" });
+        const contentType = String(res.headers["content-type"] || "application/octet-stream");
+        const blob = new Blob([res.data as BlobPart], { type: contentType });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+      } catch {
+        toast.error("Could not open document.");
+      }
+    } else {
+      window.open(fileUrl, "_blank");
+    }
+  }
+
   async function submitVerification() {
     if (!supplierId) return;
     setSubmitting(true);
     try {
-      await api.post(`/suppliers/${supplierId}/submit-verification`);
+      await api.post(`/suppliers/submit-verification`);
       toast.success("Verification submitted. Admin will review your documents.");
     } catch {
       toast.error("Could not submit verification.");
@@ -118,7 +145,7 @@ export default function DocumentsTab() {
                         <div className="mt-0.5 flex items-center gap-2">
                           <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusCls(doc.status)}`}>{doc.status}</span>
                           {doc.uploaded_at && <span className="text-xs text-[#98A2B3]">{new Date(doc.uploaded_at).toLocaleDateString()}</span>}
-                          <a href={mediaUrl(doc.file_url)} target="_blank" rel="noreferrer" className="text-xs font-bold text-emerald-600 hover:underline">View file</a>
+                          <button type="button" onClick={() => viewDocument(doc.file_url)} className="text-xs font-bold text-emerald-600 hover:underline">View file</button>
                         </div>
                       ) : (
                         <p className="text-xs text-[#98A2B3]">Not uploaded yet</p>
@@ -127,6 +154,7 @@ export default function DocumentsTab() {
                   </div>
                   <div className="flex items-center gap-2">
                     <input ref={el => { fileRefs.current[key] = el; }} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="hidden"
+                      aria-label={`Upload ${label}`}
                       onChange={e => { if (e.target.files?.[0]) void upload(key, e.target.files[0]); }} />
                     <button type="button" onClick={() => fileRefs.current[key]?.click()} disabled={uploading === key}
                       className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60 transition-colors">

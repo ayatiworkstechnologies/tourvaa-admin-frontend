@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import api from "@/lib/api";
+import { hashPassword } from "@/lib/crypto";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import PhoneInput from "@/components/ui/PhoneInput";
@@ -166,8 +167,8 @@ export default function CustomerProfilePage() {
 
     try {
       await api.post("/customer/change-password", {
-        current_password: passwordForm.current_password,
-        new_password: passwordForm.new_password,
+        current_password: await hashPassword(passwordForm.current_password),
+        new_password: await hashPassword(passwordForm.new_password),
       });
       setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
       toast.success("Password updated successfully.");

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff, Lock, LogIn, Mail } from "lucide-react";
 import api from "@/lib/api";
+import { hashPassword } from "@/lib/crypto";
 import { getDashboardPath } from "@/lib/dashboardPath";
 import { getApiErrorMessage } from "@/lib/error-handler";
 import { normalizeEmail, validateEmail } from "@/lib/validators";
@@ -40,7 +41,7 @@ function LoginForm() {
     try {
       const res = await api.post("/auth/login", {
         email: normalizeEmail(values.email),
-        password: values.password,
+        password: await hashPassword(values.password),
       });
       const data = res.data.data;
       await loginWithToken(data.access_token);

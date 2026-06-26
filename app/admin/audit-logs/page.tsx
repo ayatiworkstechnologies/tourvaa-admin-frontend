@@ -38,7 +38,7 @@ export default function AuditLogsPage() {
       const params: Record<string, string | number> = { limit, page };
       if (search) params.search = search;
       if (entity) params.entity_type = entity;
-      const res = await api.get("/audit-logs", { params });
+      const res = await api.get("/activity-logs", { params });
       const data = res.data?.data ?? res.data ?? {};
       setLogs(Array.isArray(data) ? data : data.items ?? []);
       setTotal(data.total ?? (Array.isArray(data) ? data.length : 0));

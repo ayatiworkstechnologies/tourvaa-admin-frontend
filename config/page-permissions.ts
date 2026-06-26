@@ -29,7 +29,13 @@
   "/admin/invoices": "invoices.view",
   "/admin/reports": "reports.view",
   "/admin/activity-logs": "activity_logs.view",
+  "/admin/audit-logs": "activity_logs.view",
   "/admin/notifications": "notifications.view",
   "/admin/sessions": "sessions.view",
+  "/admin/tour-approval": "tours.approve",
+  "/admin/cms": "cms.view",
+  "/admin/chatbot": "chatbot.view",
+  "/admin/refunds": "cancellations.view",
+  "/admin/supplier-payouts": "supplier_ledger.view",
 };
 

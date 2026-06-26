@@ -34,7 +34,8 @@ const emptyProfile = {
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.detail || fallback;
+    const data = error.response?.data;
+    return data?.message || data?.detail || fallback;
   }
   return fallback;
 }

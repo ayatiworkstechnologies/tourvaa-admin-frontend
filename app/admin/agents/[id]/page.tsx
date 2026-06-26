@@ -111,7 +111,7 @@ export default function AgentDetailPage() {
   const canReject = hasPermission("agents.reject") && !isRejected && !isBlocked;
   const canPartial = !isApproved && !isBlocked && (hasPermission("agents.partial_approve") || canApprove);
   const canCommercial = hasPermission("agents.manage_discount");
-  const canBlock = hasPermission("agents.edit") || hasPermission("update-agents") || hasPermission("agents.approve");
+  const canBlock = hasPermission("agents.edit") || hasPermission("agents.approve");
 
   const fetchRecord = useCallback(async () => {
     setLoading(true);
