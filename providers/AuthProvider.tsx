@@ -160,8 +160,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (token && (pathname === "/login" || pathname === "/admin/login")) {
-      const roleSlug = dashboard?.user?.role?.slug ?? "";
+    if (token && dashboard && (pathname === "/login" || pathname === "/admin/login")) {
+      const roleSlug = dashboard.user?.role?.slug ?? "";
       router.replace(getDashboardPath(roleSlug));
     }
   }, [loading, pathname, router, token, dashboard]);

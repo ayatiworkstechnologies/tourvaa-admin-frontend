@@ -149,18 +149,23 @@ export async function resetCustomerPassword(customerId: string | number) {
 }
 
 export async function getCustomerBookings(customerId: string | number) {
-  const response = await api.get<Paginated<BookingHistory> & { status: string }>(`/customers/${customerId}/bookings`);
+  const response = await api.get<Paginated<BookingHistory> & { status: string }>(`/customers/${customerId}/bookings`, {
+    params: { limit: 1000 },
+  });
   return response.data;
 }
 
 export async function getCustomerPayments(customerId: string | number) {
-  const response = await api.get<Paginated<PaymentHistory> & { status: string }>(`/customers/${customerId}/payments`);
+  const response = await api.get<Paginated<PaymentHistory> & { status: string }>(`/customers/${customerId}/payments`, {
+    params: { limit: 1000 },
+  });
   return response.data;
 }
 
 export async function getCustomerCommunications(customerId: string | number) {
   const response = await api.get<Paginated<CustomerCommunication> & { status: string }>(
-    `/customers/${customerId}/communications`
+    `/customers/${customerId}/communications`,
+    { params: { limit: 1000 } }
   );
   return response.data;
 }

@@ -22,7 +22,10 @@ export function useRoles({ enabled = true, publicOnly = false }: UseRolesOptions
     setLoading(true);
 
     try {
-      const response = await api.get(publicOnly ? "/roles/public/options" : "/roles/");
+      const response = await api.get(
+        publicOnly ? "/roles/public/options" : "/roles/",
+        publicOnly ? undefined : { params: { limit: 1000 } }
+      );
       setRoles(response.data.data || []);
     } catch {
       setRoles([]);

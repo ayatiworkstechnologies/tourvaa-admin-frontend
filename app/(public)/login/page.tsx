@@ -28,8 +28,8 @@ function LoginForm() {
 
   // Already logged in — redirect to the right dashboard
   useEffect(() => {
-    if (!sessionLoading && isLoggedIn) {
-      const roleSlug = dashboard?.user?.role?.slug ?? "";
+    if (!sessionLoading && isLoggedIn && dashboard) {
+      const roleSlug = dashboard.user?.role?.slug ?? "";
       router.replace(getDashboardPath(roleSlug));
     }
   }, [sessionLoading, isLoggedIn, dashboard, router]);

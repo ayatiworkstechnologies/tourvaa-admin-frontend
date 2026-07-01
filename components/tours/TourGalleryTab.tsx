@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
 import { GalleryImage, getGallery, createGalleryImage, updateGalleryImage, deleteGalleryImage } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
+import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 
 const IMAGE_TYPES = ["gallery", "itinerary", "highlight", "banner", "map"];
 const empty = (): GalleryImage => ({ image_path: "", image_title: "", image_alt_text: "", image_caption: "", image_type: "gallery", display_order: 0, status: "active" });
@@ -109,11 +110,13 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
             <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="md:col-span-2">
-              <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Image URL *</span>
-              <input value={editing.image_path} onChange={(e) => setEditing((p) => p ? { ...p, image_path: e.target.value } : p)}
-                className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]" />
-            </label>
+            <div className="md:col-span-2">
+              <AdminAssetUpload
+                label="Image *"
+                value={editing.image_path}
+                onChange={(value) => setEditing((p) => (p ? { ...p, image_path: value } : p))}
+              />
+            </div>
             {[["image_title", "Title"], ["image_alt_text", "Alt text"]].map(([key, lbl]) => (
               <label key={key}>
                 <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">{lbl}</span>

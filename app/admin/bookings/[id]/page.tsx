@@ -1,19 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import { Booking, getBookingDetail } from "@/lib/services/bookingService";
+import BookingStatusBadge from "@/components/bookings/BookingStatusBadge";
+import SupplierPicker from "@/components/bookings/SupplierPicker";
 import api from "@/lib/api";
-import { CheckCircle2, Loader2, MessageSquare, RefreshCw, UserCheck, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  Mail,
+  MessageSquare,
+  RefreshCw,
+  Ticket,
+  UserCheck,
+  Users,
+  XCircle,
+} from "lucide-react";
 
 type DetailPanelProps = { title: string; children: React.ReactNode };
 type DetailFieldProps = { label: string; value?: React.ReactNode };
 
 function DetailPanel({ title, children }: DetailPanelProps) {
   return (
-    <section className="rounded-lg border border-[#E7EAF0] bg-white p-5">
+    <section className="rounded-2xl border border-[#E9EDF3] bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
       <h2 className="mb-4 text-sm font-bold uppercase text-[#667085]">{title}</h2>
       {children}
     </section>
@@ -37,11 +49,12 @@ function StatusTimeline({ booking }: { booking: Booking }) {
   return (
     <div className="space-y-3">
       {historyItems.map((h) => (
-        <div key={h.id} className="border-l-2 border-blue-200 pl-3">
+        <div key={h.id} className="border-l-2 border-[#43A9F6]/40 pl-3">
           <p className="text-sm font-bold text-[#121826]">
-            {h.old_status || "created"} → {h.new_status}
+            {(h.old_status || "created").replaceAll("_", " ")} → {h.new_status.replaceAll("_", " ")}
           </p>
           <p className="text-xs text-[#667085]">{h.reason || "No reason"}</p>
+          {h.created_at && <p className="text-[11px] text-[#98A2B3]">{new Date(h.created_at).toLocaleString()}</p>}
         </div>
       ))}
     </div>
@@ -49,8 +62,25 @@ function StatusTimeline({ booking }: { booking: Booking }) {
 }
 
 const BOOKING_STATUSES = [
-  "confirmed", "ongoing", "completed", "cancelled", "pending_payment", "pending_supplier_acceptance",
+  "draft",
+  "pending_payment",
+  "payment_authorized",
+  "pending_supplier_acceptance",
+  "confirmed",
+  "upcoming",
+  "ongoing",
+  "postponed",
+  "completed",
+  "declined",
+  "cancelled",
+  "refunded",
 ];
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
+}
 
 export default function BookingDetailPage() {
   const params = useParams<{ id: string }>();
@@ -68,7 +98,7 @@ export default function BookingDetailPage() {
 
   // Assign supplier state
   const [showAssignForm, setShowAssignForm] = useState(false);
-  const [supplierId, setSupplierId] = useState("");
+  const [supplierId, setSupplierId] = useState<number | null>(null);
   const [assigning, setAssigning] = useState(false);
 
   // Communication state
@@ -77,7 +107,7 @@ export default function BookingDetailPage() {
   const [commSubject, setCommSubject] = useState("");
   const [sendingComm, setSendingComm] = useState(false);
 
-  async function fetchBooking() {
+  const fetchBooking = useCallback(async () => {
     if (!params.id) return;
     setIsLoading(true);
     try {
@@ -88,9 +118,11 @@ export default function BookingDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [params.id]);
 
-  useEffect(() => { void fetchBooking(); }, [params.id]);
+  useEffect(() => {
+    void fetchBooking();
+  }, [fetchBooking]);
 
   async function changeStatus(e: React.FormEvent) {
     e.preventDefault();
@@ -99,7 +131,7 @@ export default function BookingDetailPage() {
     setActionErr("");
     try {
       await api.patch(`/bookings/${params.id}/status`, { booking_status: newStatus, reason: statusReason });
-      setActionMsg(`Status changed to ${newStatus}`);
+      setActionMsg(`Status changed to ${newStatus.replaceAll("_", " ")}`);
       setShowStatusForm(false);
       setNewStatus("");
       setStatusReason("");
@@ -118,10 +150,10 @@ export default function BookingDetailPage() {
     setAssigning(true);
     setActionErr("");
     try {
-      await api.post(`/bookings/${params.id}/assign-supplier`, { supplier_id: Number(supplierId) });
+      await api.post(`/bookings/${params.id}/assign-supplier`, { supplier_id: supplierId });
       setActionMsg("Supplier assigned successfully");
       setShowAssignForm(false);
-      setSupplierId("");
+      setSupplierId(null);
       await fetchBooking();
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
@@ -147,6 +179,7 @@ export default function BookingDetailPage() {
       setShowMsgForm(false);
       setCommMessage("");
       setCommSubject("");
+      await fetchBooking();
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       setActionErr(e?.response?.data?.detail || "Failed to send communication.");
@@ -154,6 +187,12 @@ export default function BookingDetailPage() {
       setSendingComm(false);
     }
   }
+
+  const activityItems = booking?.optional_activities || [];
+  const accommodationItems = booking?.accommodations || [];
+  const extensionItems = booking?.extensions || [];
+  const travellers = booking?.travellers || [];
+  const communications = booking?.communications || [];
 
   return (
     <ModuleWrapper title="Booking Detail" requiredPermission="bookings.view">
@@ -165,30 +204,53 @@ export default function BookingDetailPage() {
 
       {!isLoading && booking ? (
         <div className="space-y-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-[#121826]">{booking.booking_code}</h1>
-              <p className="text-sm text-[#667085]">{booking.tour_name}</p>
-            </div>
+          <section className="overflow-hidden rounded-2xl border border-[#E9EDF3] bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+            <div className="h-2 bg-gradient-to-r from-[#43A9F6] to-[#2F9FE9]" />
+            <div className="p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-14 w-14 flex-none items-center justify-center rounded-2xl bg-gradient-to-br from-[#43A9F6] to-[#2F9FE9] text-lg font-black text-white shadow-[0_4px_12px_rgb(67,169,246,0.35)]">
+                    {initials(booking.customer_name || booking.booking_code)}
+                  </div>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-2xl font-black tracking-tight text-[#121826]">{booking.booking_code}</h1>
+                      <BookingStatusBadge value={booking.booking_status} />
+                    </div>
+                    <p className="mt-1 text-sm font-semibold text-[#344054]">{booking.tour_name}</p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#667085]">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Users size={14} className="text-[#98A2B3]" />
+                        {booking.customer_name || `Customer #${booking.customer_id}`}
+                      </span>
+                      {booking.customer_email && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <Mail size={14} className="text-[#98A2B3]" />
+                          {booking.customer_email}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => { setShowStatusForm(!showStatusForm); setShowAssignForm(false); setShowMsgForm(false); }}
-                className="flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-xs font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
-                <RefreshCw size={14} /> Change Status
-              </button>
-              <button type="button" onClick={() => { setShowAssignForm(!showAssignForm); setShowStatusForm(false); setShowMsgForm(false); }}
-                className="flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-xs font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
-                <UserCheck size={14} /> Assign Supplier
-              </button>
-              <button type="button" onClick={() => { setShowMsgForm(!showMsgForm); setShowStatusForm(false); setShowAssignForm(false); }}
-                className="flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-xs font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
-                <MessageSquare size={14} /> Send Communication
-              </button>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => { setShowStatusForm(!showStatusForm); setShowAssignForm(false); setShowMsgForm(false); }}
+                    className="flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-xs font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
+                    <RefreshCw size={14} /> Change Status
+                  </button>
+                  <button type="button" onClick={() => { setShowAssignForm(!showAssignForm); setShowStatusForm(false); setShowMsgForm(false); }}
+                    className="flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-xs font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
+                    <UserCheck size={14} /> Assign Supplier
+                  </button>
+                  <button type="button" onClick={() => { setShowMsgForm(!showMsgForm); setShowStatusForm(false); setShowAssignForm(false); }}
+                    className="flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-xs font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
+                    <MessageSquare size={14} /> Send Communication
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
 
-          {/* Feedback banners */}
           {actionMsg && (
             <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
               <CheckCircle2 size={16} />{actionMsg}
@@ -202,9 +264,8 @@ export default function BookingDetailPage() {
             </div>
           )}
 
-          {/* Change status form */}
           {showStatusForm && (
-            <form onSubmit={changeStatus} className="rounded-xl border border-[#E7EAF0] bg-white p-5">
+            <form onSubmit={changeStatus} className="rounded-2xl border border-[#E9EDF3] bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
               <p className="mb-3 font-bold text-[#121826]">Change Booking Status</p>
               <div className="flex flex-wrap gap-3">
                 <select required title="New booking status" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}
@@ -226,15 +287,14 @@ export default function BookingDetailPage() {
             </form>
           )}
 
-          {/* Assign supplier form */}
           {showAssignForm && (
-            <form onSubmit={assignSupplier} className="rounded-xl border border-[#E7EAF0] bg-white p-5">
+            <form onSubmit={assignSupplier} className="rounded-2xl border border-[#E9EDF3] bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
               <p className="mb-3 font-bold text-[#121826]">Assign Supplier</p>
-              <div className="flex gap-3">
-                <input required type="number" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}
-                  placeholder="Supplier ID"
-                  className="rounded-xl border border-[#E7EAF0] px-3 py-2 text-sm outline-none focus:border-[#43A9F6] w-40" />
-                <button type="submit" disabled={assigning}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="min-w-[260px] flex-1">
+                  <SupplierPicker value={supplierId} onChange={(id) => setSupplierId(id)} />
+                </div>
+                <button type="submit" disabled={assigning || !supplierId}
                   className="flex items-center gap-2 rounded-xl bg-[#121826] px-4 py-2 text-sm font-bold text-white hover:bg-[#1e2d3f] disabled:opacity-60">
                   {assigning ? <Loader2 className="animate-spin" size={14} /> : null}
                   Assign
@@ -243,9 +303,8 @@ export default function BookingDetailPage() {
             </form>
           )}
 
-          {/* Communication form */}
           {showMsgForm && (
-            <form onSubmit={sendCommunication} className="rounded-xl border border-[#E7EAF0] bg-white p-5">
+            <form onSubmit={sendCommunication} className="rounded-2xl border border-[#E9EDF3] bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
               <p className="mb-3 font-bold text-[#121826]">Send Communication</p>
               <div className="space-y-3">
                 <input value={commSubject} onChange={(e) => setCommSubject(e.target.value)}
@@ -266,9 +325,15 @@ export default function BookingDetailPage() {
           <div className="grid gap-4 lg:grid-cols-3">
             <DetailPanel title="Summary">
               <div className="grid gap-4">
-                <DetailField label="Booking Status" value={booking.booking_status} />
-                <DetailField label="Supplier Status" value={booking.supplier_acceptance_status} />
-                <DetailField label="Payment Status" value={booking.payment_status} />
+                <div>
+                  <p className="text-xs font-bold uppercase text-[#98A2B3]">Booking Status</p>
+                  <div className="mt-1"><BookingStatusBadge value={booking.booking_status} /></div>
+                </div>
+                <DetailField label="Supplier Status" value={booking.supplier_acceptance_status?.replaceAll("_", " ")} />
+                <div>
+                  <p className="text-xs font-bold uppercase text-[#98A2B3]">Payment Status</p>
+                  <div className="mt-1"><BookingStatusBadge value={booking.payment_status} /></div>
+                </div>
                 <DetailField label="Travellers" value={booking.total_travellers} />
               </div>
             </DetailPanel>
@@ -291,9 +356,71 @@ export default function BookingDetailPage() {
             </DetailPanel>
           </div>
 
+          {travellers.length > 0 && (
+            <DetailPanel title="Travellers">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {travellers.map((t, index) => (
+                  <div key={t.id ?? index} className="rounded-xl bg-[#F7F9FC] p-3">
+                    <p className="text-sm font-bold text-[#121826]">{t.full_name}</p>
+                    <p className="text-xs text-[#98A2B3]">
+                      {t.traveller_type ? t.traveller_type.charAt(0).toUpperCase() + t.traveller_type.slice(1) : "Traveller"}
+                      {t.age !== undefined && t.age !== null ? ` · ${t.age} yrs` : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </DetailPanel>
+          )}
+
+          {(activityItems.length > 0 || accommodationItems.length > 0 || extensionItems.length > 0) && (
+            <DetailPanel title="Add-ons">
+              <div className="space-y-4">
+                {[
+                  { label: "Optional Activities", items: activityItems },
+                  { label: "Accommodations", items: accommodationItems },
+                  { label: "Extensions", items: extensionItems },
+                ]
+                  .filter((group) => group.items.length > 0)
+                  .map((group) => (
+                    <div key={group.label}>
+                      <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase text-[#98A2B3]">
+                        <Ticket size={13} /> {group.label}
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {group.items.map((item, index) => (
+                          <div key={item.id ?? index} className="flex items-center justify-between rounded-xl bg-[#F7F9FC] px-3 py-2 text-sm">
+                            <span className="font-semibold text-[#344054]">{item.name || item.title || "Item"}</span>
+                            <span className="font-bold text-[#121826]">{item.amount || item.price || "-"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </DetailPanel>
+          )}
+
           <DetailPanel title="Status Timeline">
             <StatusTimeline booking={booking} />
           </DetailPanel>
+
+          {communications.length > 0 && (
+            <DetailPanel title="Communications">
+              <div className="space-y-3">
+                {communications.map((c) => (
+                  <div key={c.id} className="rounded-xl bg-[#F7F9FC] p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase text-[#98A2B3]">
+                        <MessageSquare size={12} /> {c.sender_type || "System"}
+                      </span>
+                      {c.created_at && <span className="text-[11px] text-[#98A2B3]">{new Date(c.created_at).toLocaleString()}</span>}
+                    </div>
+                    <p className="mt-1 text-sm text-[#344054]">{c.message}</p>
+                  </div>
+                ))}
+              </div>
+            </DetailPanel>
+          )}
 
           <DetailPanel title="Notes">
             <p className="text-sm text-[#667085]">{booking.notes || "No notes."}</p>

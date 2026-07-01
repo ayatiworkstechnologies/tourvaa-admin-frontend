@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import { Edit, Plus, Trash2, X } from "lucide-react";
+import { Edit, Eye, Plus, Trash2, X } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -44,6 +44,10 @@ export default function EmailTemplatesPage() {
   const [editing, setEditing] = useState<EmailTemplate | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
+  const [previewing, setPreviewing] = useState<EmailTemplate | null>(null);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewSubject, setPreviewSubject] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(templates.length / pageSize));
@@ -87,6 +91,29 @@ export default function EmailTemplatesPage() {
     setOpen(false);
     setEditing(null);
     setForm(emptyForm);
+  };
+
+  const openPreview = async (template: EmailTemplate) => {
+    setPreviewing(template);
+    setPreviewLoading(true);
+    setPreviewHtml("");
+    setPreviewSubject("");
+    try {
+      const response = await api.get(`/email-templates/${template.id}/preview`);
+      setPreviewHtml(response.data?.data?.html || "");
+      setPreviewSubject(response.data?.data?.subject || template.subject);
+    } catch (err: unknown) {
+      setMessage(getErrorMessage(err, "Could not load preview."));
+      setPreviewing(null);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const closePreview = () => {
+    setPreviewing(null);
+    setPreviewHtml("");
+    setPreviewSubject("");
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -220,6 +247,13 @@ export default function EmailTemplatesPage() {
               actions={(template) => (
                 <div className="flex justify-end gap-2">
                   <button
+                    onClick={() => openPreview(template)}
+                    className="rounded-lg border border-[#E7EAF0] p-2 text-[#667085] hover:bg-sky-50 hover:text-[#2F9FE9]"
+                    title="Preview design"
+                  >
+                    <Eye size={15} />
+                  </button>
+                  <button
                     onClick={() => openEdit(template)}
                     className="rounded-lg border border-[#E7EAF0] p-2 text-[#667085] hover:bg-sky-50 hover:text-[#2F9FE9]"
                   >
@@ -342,6 +376,47 @@ export default function EmailTemplatesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {previewing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#E7EAF0] px-6 py-4">
+              <div>
+                <h3 className="text-lg font-bold text-[#121826]">{previewing.name}</h3>
+                <p className="mt-0.5 text-xs text-[#667085]">
+                  Subject: <span className="font-semibold text-[#344054]">{previewSubject}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closePreview}
+                aria-label="Close preview"
+                title="Close preview"
+                className="rounded-lg p-2 text-[#667085] hover:bg-[#F7F9FC]"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden bg-[#F0F4F9]">
+              {previewLoading ? (
+                <div className="flex h-64 items-center justify-center text-sm text-[#667085]">
+                  Loading preview...
+                </div>
+              ) : (
+                <iframe
+                  title="Email preview"
+                  srcDoc={previewHtml}
+                  className="h-[70vh] w-full border-0"
+                  sandbox=""
+                />
+              )}
+            </div>
+            <div className="border-t border-[#E7EAF0] px-6 py-3 text-xs text-[#98A2B3]">
+              Preview uses sample placeholder data for any {"{{variables}}"} in this template.
+            </div>
           </div>
         </div>
       )}

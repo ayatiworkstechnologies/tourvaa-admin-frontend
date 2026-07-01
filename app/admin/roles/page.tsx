@@ -44,9 +44,22 @@ export default function RolesPage() {
     []
   );
   const [page, setPage] = useState(1);
+  const [roleSearch, setRoleSearch] = useState("");
+  const [permissionSearch, setPermissionSearch] = useState("");
   const pageSize = 10;
-  const totalPages = Math.max(1, Math.ceil(roles.length / pageSize));
-  const paginatedRoles = roles.slice((page - 1) * pageSize, page * pageSize);
+
+  const filteredRoles = useMemo(() => {
+    const query = roleSearch.trim().toLowerCase();
+    if (!query) return roles;
+    return roles.filter(
+      (role) =>
+        role.name.toLowerCase().includes(query) ||
+        role.slug.toLowerCase().includes(query)
+    );
+  }, [roles, roleSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRoles.length / pageSize));
+  const paginatedRoles = filteredRoles.slice((page - 1) * pageSize, page * pageSize);
 
   const groupedPermissions = useMemo(() => {
     return permissions.reduce<Record<string, Permission[]>>((groups, item) => {
@@ -56,6 +69,26 @@ export default function RolesPage() {
     }, {});
   }, [permissions]);
 
+  const filteredGroupedPermissions = useMemo(() => {
+    const query = permissionSearch.trim().toLowerCase();
+    const entries = Object.entries(groupedPermissions);
+    if (!query) return entries;
+
+    return entries
+      .map(([module, items]) => {
+        const moduleMatches = module.toLowerCase().includes(query);
+        const matchedItems = moduleMatches
+          ? items
+          : items.filter(
+              (item) =>
+                item.name.toLowerCase().includes(query) ||
+                item.slug.toLowerCase().includes(query)
+            );
+        return [module, matchedItems] as [string, Permission[]];
+      })
+      .filter(([, items]) => items.length > 0);
+  }, [groupedPermissions, permissionSearch]);
+
 
   const allPermissionIds = permissions.map((permission) => permission.id);
   const allSelected =
@@ -63,10 +96,14 @@ export default function RolesPage() {
     allPermissionIds.every((id) => selectedPermissionIds.includes(id));
 
   const fetchRoles = useCallback(async () => {
-    const response = await api.get("/roles/");
+    const response = await api.get("/roles/", { params: { limit: 1000 } });
     setRoles(response.data.data || []);
     setPage(1);
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [roleSearch]);
 
   const fetchPermissions = useCallback(async () => {
     try {
@@ -174,6 +211,7 @@ export default function RolesPage() {
     setSelectedRole(null);
     setSelectedPermissionIds([]);
     setPermissionOpen(false);
+    setPermissionSearch("");
   };
 
   const togglePermission = (permissionId: number) => {
@@ -264,13 +302,22 @@ export default function RolesPage() {
             </p>
           </div>
 
-          <button
-            onClick={openCreate}
-            className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#43A9F6] px-5 py-3 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] hover:bg-[#2F9FE9] transition-all hover:-translate-y-0.5"
-          >
-            <Plus size={18} strokeWidth={2.5} />
-            Add Role
-          </button>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <input
+              value={roleSearch}
+              onChange={(event) => setRoleSearch(event.target.value)}
+              placeholder="Search roles by name or slug…"
+              className="w-full rounded-xl border border-[#E7EAF0]/80 bg-[#F7F9FC] px-4 py-3 text-sm font-medium outline-none focus:bg-white focus:border-[#43A9F6] focus:ring-4 focus:ring-[#43A9F6]/10 transition-all sm:w-64"
+            />
+            <button
+              type="button"
+              onClick={openCreate}
+              className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#43A9F6] px-5 py-3 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] hover:bg-[#2F9FE9] transition-all hover:-translate-y-0.5"
+            >
+              <Plus size={18} strokeWidth={2.5} />
+              Add Role
+            </button>
+          </div>
         </div>
 
         <div className="mt-6">
@@ -411,12 +458,20 @@ export default function RolesPage() {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={closePermissions}
                 className="rounded-md p-2 text-gray-500 hover:bg-gray-100"
               >
                 <X size={18} />
               </button>
             </div>
+
+            <input
+              value={permissionSearch}
+              onChange={(event) => setPermissionSearch(event.target.value)}
+              placeholder="Search by module or permission name…"
+              className="mb-3 w-full rounded-lg border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6] focus:ring-4 focus:ring-[#43A9F6]/10 transition-all"
+            />
 
             <div className="mb-4 flex flex-col gap-3 rounded-lg bg-[#F7F9FC] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <label className="flex items-center gap-3 text-sm font-semibold text-[#1F1B2D]">
@@ -447,7 +502,12 @@ export default function RolesPage() {
                     </div>
 
                     <div className="divide-y divide-[#E6E8F0]">
-                      {Object.entries(groupedPermissions)
+                      {filteredGroupedPermissions.length === 0 && (
+                        <p className="px-4 py-8 text-center text-sm text-gray-400">
+                          No modules or permissions match your search.
+                        </p>
+                      )}
+                      {filteredGroupedPermissions
                         .sort(([left], [right]) => left.localeCompare(right))
                         .map(([module, items]) => {
                           const moduleSelected = items.every((permission) =>

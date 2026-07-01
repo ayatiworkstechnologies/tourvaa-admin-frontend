@@ -182,7 +182,8 @@ api.interceptors.response.use(
       }
     }
 
-    if (typeof window !== "undefined" && error?.response?.status === 403) {
+    const method = (originalRequest?.method || "get").toLowerCase();
+    if (typeof window !== "undefined" && error?.response?.status === 403 && method !== "get") {
       window.dispatchEvent(
         new CustomEvent("tourvaa:toast", {
           detail: {

@@ -10,7 +10,6 @@ import {
   Warehouse,
   Mail,
   Headset,
-  Calendar as CalendarIcon,
   Filter,
   BarChart3,
   CreditCard,
@@ -54,6 +53,9 @@ type Summary = {
 type PendingSupplier = { id: number; supplier_name: string; email?: string; approval_status?: string; status?: string };
 type PendingAgent   = { id: number; agent_name: string; email?: string; approval_status?: string; status?: string };
 type Country        = { id: number; country_name: string };
+type ChartRow        = { status: string; count: number };
+type Charts           = { booking_status_chart?: ChartRow[]; payment_status_chart?: ChartRow[] };
+type ActivityLog      = { action: string; entity_type: string; entity_id: number };
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -76,15 +78,15 @@ function changeBadge(pct: number) {
 
 // ─── main content ───────────────────────────────────────────────────────────
 
-function AdminDashboardContent() {
+function AdminDashboardContent({ user }: { user: { name: string; role: { name: string } } }) {
   const { formatCompact } = useCurrency();
 
   // data state
   const [summary,          setSummary]          = useState<Summary>({});
   const [pendingSuppliers, setPendingSuppliers] = useState<PendingSupplier[]>([]);
   const [pendingAgents,    setPendingAgents]    = useState<PendingAgent[]>([]);
-  const [charts,           setCharts]           = useState<Record<string, any>>({});
-  const [activities,       setActivities]       = useState<any[]>([]);
+  const [charts,           setCharts]           = useState<Charts>({});
+  const [activities,       setActivities]       = useState<ActivityLog[]>([]);
   const [snapshot,         setSnapshot]         = useState<ReportSnapshot | null>(null);
   const [countries,        setCountries]        = useState<Country[]>([]);
   const [loading,          setLoading]          = useState(true);
@@ -109,8 +111,8 @@ function AdminDashboardContent() {
       const [sumRes, suppRes, agentRes, chartRes, actRes, snapRes, countryRes] =
         await Promise.allSettled([
           api.get("/dashboard/summary"),
-          api.get("/suppliers",  { params: { limit: 100 } }),
-          api.get("/agents",     { params: { limit: 100 } }),
+          api.get("/suppliers",  { params: { limit: 1000 } }),
+          api.get("/agents",     { params: { limit: 1000 } }),
           api.get("/dashboard/charts",           { params: p }),
           api.get("/dashboard/recent-activities"),
           api.get("/reports/snapshot"),
@@ -237,8 +239,8 @@ function AdminDashboardContent() {
         </div>
         <div className="relative z-10 shrink-0 flex flex-col items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-8 py-5 shadow-xl backdrop-blur-md">
           <span className="mb-1 text-[10px] font-bold uppercase tracking-widest text-white/60">Signed in as</span>
-          <span className="text-xl font-black leading-none text-white">Super Admin</span>
-          <span className="mt-1 text-xs text-white/70">Super Admin</span>
+          <span className="text-xl font-black leading-none text-white">{user.name}</span>
+          <span className="mt-1 text-xs text-white/70">{user.role.name}</span>
         </div>
         <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
       </div>
@@ -378,7 +380,7 @@ function AdminDashboardContent() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={charts.payment_status_chart} cx="50%" cy="50%" innerRadius={55} outerRadius={78} paddingAngle={4} dataKey="count" nameKey="status">
-                    {charts.payment_status_chart.map((_: any, i: number) => (
+                    {charts.payment_status_chart.map((_: ChartRow, i: number) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Pie>
@@ -632,7 +634,7 @@ function AdminDashboardContent() {
               <p className="text-xs font-semibold text-[#667085]">No recent activities yet.</p>
             ) : (
               <ul className="space-y-2">
-                {activities.slice(0, 6).map((log: any, i: number) => (
+                {activities.slice(0, 6).map((log: ActivityLog, i: number) => (
                   <li key={i} className="rounded-lg bg-[#F7F9FC] p-2.5">
                     <p className="text-xs font-bold text-[#121826]">{log.action}</p>
                     <p className="mt-0.5 text-[10px] font-semibold text-[#667085]">
@@ -696,7 +698,7 @@ function AdminDashboardShell() {
 
   return (
     <DashboardLayout title="Dashboard" menus={dashboard.menus} user={dashboard.user}>
-      <AdminDashboardContent />
+      <AdminDashboardContent user={dashboard.user} />
     </DashboardLayout>
   );
 }

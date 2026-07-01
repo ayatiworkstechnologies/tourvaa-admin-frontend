@@ -76,7 +76,7 @@ export default function DynamicModulePage({
 
   const fetchItems = useCallback(async () => {
     try {
-      const response = await api.get(endpoint);
+      const response = await api.get(endpoint, { params: { limit: 1000 } });
       setItems(response.data.data || []);
       setPage(1);
     } catch {

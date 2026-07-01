@@ -1,21 +1,23 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
 import { TourExtension, getExtensions, createExtension, updateExtension, deleteExtension } from "@/lib/services/tourDetailService";
-import { listCms } from "@/lib/services/cmsService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
+import TourPicker from "@/components/tours/TourPicker";
 
 const empty = (): TourExtension => ({
   extension_tour_id: 0, extension_title: "", extension_note: "",
   extra_price: 0, display_order: 0, status: "active",
 });
 
+const inputClass =
+  "w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none transition focus:border-[#43A9F6] focus:ring-4 focus:ring-[#43A9F6]/10";
+
 export default function TourExtensionsTab({ tourId }: { tourId: string }) {
   const toast = useToast();
   const [items, setItems] = useState<TourExtension[]>([]);
-  const [allTours, setAllTours] = useState<{ id: number; title: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourExtension | null>(null);
   const [saving, setSaving] = useState(false);
@@ -23,9 +25,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [exts, tours] = await Promise.all([getExtensions(tourId), listCms("/tours", { limit: 200 })]);
-      setItems(exts);
-      setAllTours((tours.items ?? []).map((t) => ({ id: t.id as number, title: String(t.title) })));
+      setItems(await getExtensions(tourId));
     } catch {
       toast.error("Failed to load.");
     } finally {
@@ -77,19 +77,25 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-[#121826]">Tour Extensions</h2>
-        <button type="button" onClick={() => setEditing({ ...empty(), display_order: items.length })}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#43A9F6] px-4 py-2 text-sm font-bold text-white">
+        <div>
+          <h2 className="text-xl font-bold text-[#121826]">Tour Extensions</h2>
+          <p className="text-xs text-[#98A2B3]">Bolt-on trips guests can add to this tour for an extra price.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEditing({ ...empty(), display_order: items.length })}
+          className="inline-flex items-center gap-2 rounded-xl bg-[#43A9F6] px-4 py-2 text-sm font-bold text-white"
+        >
           <Plus size={16} /> Add Extension
         </button>
       </div>
 
       {items.length === 0 && !editing && (
-        <div className="rounded-xl border border-dashed border-[#E7EAF0] p-10 text-center text-sm text-[#98A2B3]">No extensions yet.</div>
+        <div className="rounded-2xl border border-dashed border-[#E7EAF0] p-10 text-center text-sm text-[#98A2B3]">No extensions yet.</div>
       )}
 
       {items.map((item) => (
-        <div key={item.id} className="rounded-xl border border-[#E7EAF0] bg-white p-5">
+        <div key={item.id} className="rounded-2xl border border-[#E9EDF3] bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
           <div className="flex items-start justify-between">
             <div>
               <p className="font-semibold text-[#121826]">{item.extension_title || item.extension_tour_title || `Tour #${item.extension_tour_id}`}</p>
@@ -105,43 +111,73 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
       ))}
 
       {editing && (
-        <form onSubmit={save} className="rounded-xl border-2 border-[#43A9F6] bg-white p-6">
+        <form onSubmit={save} className="rounded-2xl border-2 border-[#43A9F6] bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold">{editing.id ? "Edit Extension" : "New Extension"}</h3>
             <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <label>
+            <label className="md:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Extension Tour *</span>
-              <select value={String(editing.extension_tour_id || "")}
-                onChange={(e) => setEditing((p) => p ? { ...p, extension_tour_id: Number(e.target.value) } : p)}
-                className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]">
-                <option value="">â€” Select â€”</option>
-                {allTours.filter((t) => t.id !== Number(tourId)).map((t) => <option key={t.id} value={String(t.id)}>{t.title}</option>)}
-              </select>
+              <TourPicker
+                value={editing.extension_tour_id || null}
+                onChange={(id, title) =>
+                  setEditing((p) =>
+                    p
+                      ? {
+                          ...p,
+                          extension_tour_id: id ?? 0,
+                          extension_title: p.extension_title || title,
+                        }
+                      : p
+                  )
+                }
+                excludeIds={[Number(tourId)]}
+              />
             </label>
-            {[["extension_title", "Extension title"], ["extra_price", "Extra price"], ["display_order", "Order"]].map(([key, lbl]) => (
-              <label key={key}>
-                <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">{lbl}</span>
-                <input type={["extra_price", "display_order"].includes(key) ? "number" : "text"}
-                  value={(editing as Record<string, unknown>)[key] as string ?? ""}
-                  onChange={(e) => setEditing((p) => p ? { ...p, [key]: ["extra_price", "display_order"].includes(key) ? Number(e.target.value) : e.target.value } : p)}
-                  className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]" />
-              </label>
-            ))}
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">
+                Custom title <span className="normal-case font-normal">(optional — defaults to the tour name above)</span>
+              </span>
+              <input
+                value={editing.extension_title ?? ""}
+                onChange={(e) => setEditing((p) => (p ? { ...p, extension_title: e.target.value } : p))}
+                className={inputClass}
+              />
+            </label>
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Extra price</span>
+              <input
+                type="number"
+                value={editing.extra_price ?? ""}
+                onChange={(e) => setEditing((p) => (p ? { ...p, extra_price: Number(e.target.value) } : p))}
+                className={inputClass}
+              />
+            </label>
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Order</span>
+              <input
+                type="number"
+                value={editing.display_order ?? ""}
+                onChange={(e) => setEditing((p) => (p ? { ...p, display_order: Number(e.target.value) } : p))}
+                className={inputClass}
+              />
+            </label>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Status</span>
-              <select value={editing.status} onChange={(e) => setEditing((p) => p ? { ...p, status: e.target.value } : p)}
-                className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]">
+              <select value={editing.status} onChange={(e) => setEditing((p) => (p ? { ...p, status: e.target.value } : p))} className={inputClass}>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
             </label>
             <label className="md:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Extension note</span>
-              <textarea value={editing.extension_note} rows={2}
-                onChange={(e) => setEditing((p) => p ? { ...p, extension_note: e.target.value } : p)}
-                className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]" />
+              <textarea
+                value={editing.extension_note}
+                rows={2}
+                onChange={(e) => setEditing((p) => (p ? { ...p, extension_note: e.target.value } : p))}
+                className={inputClass}
+              />
             </label>
           </div>
           <div className="mt-4 flex justify-end gap-3">
@@ -155,5 +191,3 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
     </div>
   );
 }
-
-

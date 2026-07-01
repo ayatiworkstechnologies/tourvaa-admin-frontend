@@ -17,6 +17,10 @@ const APIs = {
 
 const empty = (): TourItem => ({ icon: "", title: "", description: "", display_order: 0, status: "active" });
 
+function isIconUrl(icon: string) {
+  return /^https?:\/\//i.test(icon);
+}
+
 export default function TourItemsTab({ tourId, segment, label }: { tourId: string; segment: "inclusions" | "exclusions"; label: string }) {
   const toast = useToast();
   const api = APIs[segment];
@@ -94,12 +98,20 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
 
       <div className="grid gap-3 md:grid-cols-2">
         {items.map((item) => (
-          <div key={item.id} className="rounded-xl border border-[#E7EAF0] bg-white p-4">
+          <div key={item.id} className="rounded-2xl border border-[#E9EDF3] bg-white p-4 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                {item.icon && <span className="text-lg">{item.icon}</span>}
-                <p className="font-semibold text-[#121826]">{item.title}</p>
-                {item.description && <p className="mt-0.5 text-sm text-[#98A2B3]">{item.description}</p>}
+              <div className="flex min-w-0 items-start gap-3">
+                {item.icon &&
+                  (isIconUrl(item.icon) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.icon} alt="" className="h-8 w-8 flex-none rounded-lg object-cover" />
+                  ) : (
+                    <span className="text-lg">{item.icon}</span>
+                  ))}
+                <div className="min-w-0">
+                  <p className="font-semibold text-[#121826]">{item.title}</p>
+                  {item.description && <p className="mt-0.5 text-sm text-[#98A2B3]">{item.description}</p>}
+                </div>
               </div>
               <div className="flex shrink-0 gap-1">
                 <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-[#E7EAF0] p-1.5 hover:bg-[#F2F4F7]"><Pencil size={13} /></button>

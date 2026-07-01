@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import TourFormPage from "@/components/cms/TourFormPage";
@@ -17,12 +18,12 @@ import TourPricingTab from "@/components/tours/TourPricingTab";
 import TourCalendarTab from "@/components/tours/TourCalendarTab";
 import TourDiscountsTab from "@/components/tours/TourDiscountsTab";
 
-type Tab = {
+type Step = {
   key: string;
   label: string;
 };
 
-const TABS: Tab[] = [
+const STEPS: Step[] = [
   { key: "basic", label: "Basic Details" },
   { key: "overview", label: "Overview" },
   { key: "itinerary", label: "Itinerary" },
@@ -38,7 +39,18 @@ const TABS: Tab[] = [
 ];
 
 export default function TourEditPage({ tourId }: { tourId: string }) {
-  const [activeTab, setActiveTab] = useState("basic");
+  const router = useRouter();
+  const [stepIndex, setStepIndex] = useState(0);
+  const [visited, setVisited] = useState<Set<number>>(new Set([0]));
+
+  const activeTab = STEPS[stepIndex].key;
+  const isFirst = stepIndex === 0;
+  const isLast = stepIndex === STEPS.length - 1;
+
+  const goTo = (index: number) => {
+    setStepIndex(index);
+    setVisited((prev) => new Set(prev).add(index));
+  };
 
   return (
     <ModuleWrapper title="Edit Tour" requiredPermission="tours.edit">
@@ -50,25 +62,44 @@ export default function TourEditPage({ tourId }: { tourId: string }) {
         <span className="text-sm text-[#344054]">Edit</span>
       </div>
 
-      {/* Tab bar */}
-      <div className="mb-6 flex flex-wrap gap-1 rounded-xl border border-[#E7EAF0] bg-white p-1.5">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={`rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors ${
-              activeTab === tab.key
-                ? "bg-[#43A9F6] text-white shadow-sm"
-                : "text-[#344054] hover:bg-[#F2F4F7]"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Step indicator */}
+      <div className="mb-6 overflow-x-auto rounded-2xl border border-[#E9EDF3] bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+        <div className="flex min-w-max items-center">
+          {STEPS.map((step, index) => {
+            const isActive = index === stepIndex;
+            const isDone = visited.has(index) && index !== stepIndex;
+            return (
+              <div key={step.key} className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => goTo(index)}
+                  className="flex flex-col items-center gap-1.5 px-2"
+                >
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                      isActive
+                        ? "bg-[#43A9F6] text-white shadow-[0_4px_10px_rgb(67,169,246,0.35)]"
+                        : isDone
+                        ? "bg-[#EDF5FF] text-[#2F9FE9]"
+                        : "bg-[#F0F3F8] text-[#98A2B3]"
+                    }`}
+                  >
+                    {isDone ? <Check size={14} /> : index + 1}
+                  </span>
+                  <span className={`whitespace-nowrap text-xs font-semibold ${isActive ? "text-[#121826]" : "text-[#98A2B3]"}`}>
+                    {step.label}
+                  </span>
+                </button>
+                {index < STEPS.length - 1 && (
+                  <span className={`mx-1 h-0.5 w-8 rounded-full ${visited.has(index + 1) || isDone ? "bg-[#43A9F6]" : "bg-[#F0F3F8]"}`} />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Tab content */}
+      {/* Step content */}
       <div>
         {activeTab === "basic" && <TourFormPage tourId={tourId} />}
         {activeTab === "overview" && <TourOverviewTab tourId={tourId} />}
@@ -83,7 +114,40 @@ export default function TourEditPage({ tourId }: { tourId: string }) {
         {activeTab === "calendar" && <TourCalendarTab tourId={tourId} />}
         {activeTab === "discounts" && <TourDiscountsTab tourId={tourId} />}
       </div>
+
+      {/* Step navigation */}
+      <div className="mt-6 flex items-center justify-between border-t border-[#F0F3F8] pt-5">
+        <button
+          type="button"
+          onClick={() => !isFirst && goTo(stepIndex - 1)}
+          disabled={isFirst}
+          className="inline-flex items-center gap-2 rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm font-bold text-[#344054] transition hover:bg-[#F7F9FC] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ArrowLeft size={15} /> Back
+        </button>
+
+        <span className="text-xs font-semibold text-[#98A2B3]">
+          Step {stepIndex + 1} of {STEPS.length}
+        </span>
+
+        {isLast ? (
+          <button
+            type="button"
+            onClick={() => router.push("/admin/tours")}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+          >
+            <Check size={15} /> Done
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => goTo(stepIndex + 1)}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#43A9F6] px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] transition hover:-translate-y-0.5 hover:bg-[#2F9FE9]"
+          >
+            Next <ArrowRight size={15} />
+          </button>
+        )}
+      </div>
     </ModuleWrapper>
   );
 }
-

@@ -23,7 +23,10 @@ export type Payment = {
   id: number;
   payment_code: string;
   booking_id: number;
+  booking_code?: string | null;
   customer_id: number;
+  customer_name?: string | null;
+  customer_email?: string | null;
   payment_method: string;
   payment_type: string;
   gateway?: string;

@@ -1,12 +1,13 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Pencil, Trash2, Save, X } from "lucide-react";
 import {
-  getItineraries, createItinerary, updateItinerary, deleteItinerary, ItineraryDay,
+  getItineraries, createItinerary, updateItinerary, deleteItinerary, reorderItineraries, ItineraryDay,
 } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
+import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 
 const empty = (): ItineraryDay => ({
   day_number: 1, day_title: "", location_name: "",
@@ -70,6 +71,20 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
     }
   };
 
+  const move = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+    const reordered = [...items];
+    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+    setItems(reordered);
+    try {
+      await reorderItineraries(tourId, reordered.map((item) => item.id!));
+    } catch {
+      toast.error("Failed to reorder.");
+      void load();
+    }
+  };
+
   if (loading) return <Loader label="Loading itinerary..." />;
 
   return (
@@ -91,8 +106,8 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
         </div>
       )}
 
-      {items.map((item) => (
-        <div key={item.id} className="rounded-xl border border-[#E7EAF0] bg-white p-5">
+      {items.map((item, index) => (
+        <div key={item.id} className="rounded-2xl border border-[#E9EDF3] bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-xs font-bold uppercase text-[#43A9F6]">Day {item.day_number}</span>
@@ -100,6 +115,8 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
               {item.location_name && <p className="text-sm text-[#98A2B3]">{item.location_name}</p>}
             </div>
             <div className="flex gap-2">
+              <button type="button" onClick={() => void move(index, -1)} disabled={index === 0} className="rounded-lg border border-[#E7EAF0] p-2 hover:bg-[#F2F4F7] disabled:opacity-30"><ArrowUp size={14} /></button>
+              <button type="button" onClick={() => void move(index, 1)} disabled={index === items.length - 1} className="rounded-lg border border-[#E7EAF0] p-2 hover:bg-[#F2F4F7] disabled:opacity-30"><ArrowDown size={14} /></button>
               <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-[#E7EAF0] p-2 hover:bg-[#F2F4F7]"><Pencil size={14} /></button>
               <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] p-2 text-red-500 hover:bg-[#FFF0F0]"><Trash2 size={14} /></button>
             </div>
@@ -142,14 +159,13 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
                 />
               </label>
             ))}
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Image URL</span>
-              <input
+            <div className="md:col-span-2">
+              <AdminAssetUpload
+                label="Day image"
                 value={editing.image ?? ""}
-                onChange={(e) => setEditing((prev) => prev ? { ...prev, image: e.target.value } : prev)}
-                className="w-full rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm outline-none focus:border-[#43A9F6]"
+                onChange={(value) => setEditing((prev) => (prev ? { ...prev, image: value } : prev))}
               />
-            </label>
+            </div>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Status</span>
               <select

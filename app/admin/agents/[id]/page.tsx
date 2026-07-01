@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Ban, CheckCircle2, Eye, FileText, Percent, ShieldHalf, XCircle } from "lucide-react";
+import { ArrowLeft, Ban, Briefcase, CheckCircle2, Eye, FileText, Percent, Receipt, ShieldHalf, XCircle } from "lucide-react";
 
 import ActionModal from "@/components/operations/ActionModal";
+import CompletionChecklist from "@/components/operations/CompletionChecklist";
+import ReviewProfileHero from "@/components/operations/ReviewProfileHero";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import StatusBadge from "@/components/operations/StatusBadge";
@@ -16,6 +18,7 @@ import { useToast } from "@/hooks/useToast";
 type DetailValue = string | number | boolean | null | undefined;
 type DetailObject = Record<string, DetailValue>;
 type AgentDocument = DetailObject & { id?: number; file_url?: string; file_path?: string };
+type AgentContact = DetailObject & { id?: number; email?: string; phone?: string; is_primary?: boolean };
 
 function valueText(value: DetailValue) {
   if (value === null || value === undefined || value === "") return "-";
@@ -25,15 +28,6 @@ function valueText(value: DetailValue) {
 
 function titleize(value: string) {
   return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-xl border border-[#E7EAF0] bg-white p-6">
-      <h3 className="text-lg font-bold text-[#121826]">{title}</h3>
-      <div className="mt-4">{children}</div>
-    </section>
-  );
 }
 
 function InfoGrid({ rows }: { rows: [string, DetailValue][] }) {
@@ -64,16 +58,7 @@ function CompletionCard({ record }: { record: ReviewRecord }) {
     { label: "Documents", done: documents.length > 0 },
   ];
 
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      {checks.map((check) => (
-        <div key={check.label} className={`rounded-xl border p-4 ${check.done ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-          <p className={`text-xs font-bold uppercase ${check.done ? "text-emerald-700" : "text-amber-700"}`}>{check.label}</p>
-          <p className="mt-1 text-sm font-black text-[#121826]">{check.done ? "Complete" : "Missing"}</p>
-        </div>
-      ))}
-    </div>
-  );
+  return <CompletionChecklist checks={checks} />;
 }
 
 function KeyValueList({ data, empty }: { data?: Record<string, unknown> | null; empty: string }) {
@@ -101,6 +86,7 @@ export default function AgentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState<"reject" | "partial" | "commercial" | "block" | null>(null);
+  const [activeTab, setActiveTab] = useState<"business" | "invoicing" | "documents">("business");
 
   const approvalStatus = String(record?.approval_status || "").toLowerCase();
   const accountStatus = String(record?.status || "").toLowerCase();
@@ -141,6 +127,17 @@ export default function AgentDetailPage() {
   };
 
   const documents = (record?.documents ?? []) as AgentDocument[];
+  const contacts = (record?.contacts ?? []) as AgentContact[];
+  const primaryContact = contacts.find((contact) => contact.is_primary) ?? contacts[0];
+
+  const tabs = useMemo(
+    () => [
+      { key: "business" as const, label: "Business Info", icon: Briefcase },
+      { key: "invoicing" as const, label: "Invoicing", icon: Receipt },
+      { key: "documents" as const, label: "Documents", icon: FileText, count: documents.length },
+    ],
+    [documents.length]
+  );
 
   return (
     <ModuleWrapper title="Agent Detail" requiredPermission="agents.view">
@@ -161,64 +158,98 @@ export default function AgentDetailPage() {
             </div>
           </div>
 
+          <ReviewProfileHero
+            name={String(record.agent_name || record.name || "-")}
+            code={record.agent_code || record.code}
+            entityType={record.agent_type || record.type}
+            countryName={record.country_name}
+            cityName={record.city_name}
+            yearsInOperation={record.years_in_operation}
+            status={record.status}
+            approvalStatus={record.approval_status}
+            rejectionReason={record.rejection_reason}
+            adminComments={record.admin_comments || record.pending_requirements}
+            contactEmail={primaryContact?.email}
+            contactPhone={primaryContact?.phone}
+          />
+
+          {record.discount_type && (
+            <div className="rounded-2xl border border-[#E9EDF3] bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#98A2B3]">Discount</p>
+              <p className="mt-1 text-lg font-black text-[#121826]">
+                {record.discount_type}: {record.discount_value ?? 0}
+              </p>
+            </div>
+          )}
+
           <CompletionCard record={record} />
 
-          <DetailSection title="Agent Profile">
-            <InfoGrid rows={[
-              ["Name", record.agent_name || record.name],
-              ["Code", record.agent_code || record.code],
-              ["Type", record.agent_type || record.type],
-              ["Country", record.country_name],
-              ["City", record.city_name],
-              ["Years in operation", record.years_in_operation],
-              ["Status", record.status],
-              ["Approval", record.approval_status],
-              ["Admin comments", record.admin_comments],
-              ["Pending requirements", record.pending_requirements],
-              ["Rejection reason", record.rejection_reason],
-              ["Discount", record.discount_type ? `${record.discount_type}: ${record.discount_value ?? 0}` : "-"],
-            ]} />
-          </DetailSection>
+          <section className="rounded-2xl border border-[#E9EDF3] bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+            <div className="flex flex-wrap gap-1 border-b border-[#F0F3F8] p-2">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors ${
+                    activeTab === tab.key ? "bg-[#EDF5FF] text-[#2F9FE9]" : "text-[#667085] hover:bg-[#F7F9FC]"
+                  }`}
+                >
+                  <tab.icon size={16} />
+                  {tab.label}
+                  {tab.count !== undefined && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                        activeTab === tab.key ? "bg-white text-[#2F9FE9]" : "bg-[#F0F3F8] text-[#98A2B3]"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
 
-          <div className="grid gap-6 xl:grid-cols-2">
-            <DetailSection title="Registration / Business Information">
-              <KeyValueList data={record.business_info} empty="No business registration information submitted yet." />
-            </DetailSection>
-            <DetailSection title="Invoicing">
-              <KeyValueList data={record.invoicing} empty="No invoicing information submitted yet." />
-            </DetailSection>
-          </div>
+            <div className="p-6">
+              {activeTab === "business" && (
+                <KeyValueList data={record.business_info} empty="No business registration information submitted yet." />
+              )}
 
-          <DetailSection title="Documents">
-            {documents.length === 0 ? (
-              <p className="rounded-lg bg-[#F7F9FC] p-4 text-sm font-semibold text-[#667085]">No agent documents uploaded yet.</p>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {documents.map((doc, index) => (
-                  <div key={doc.id ?? index} className="rounded-xl border border-[#E7EAF0] p-4">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <FileText size={16} className="text-[#43A9F6]" />
-                        <p className="text-sm font-bold text-[#121826]">{valueText(doc.document_name || doc.document_type)}</p>
+              {activeTab === "invoicing" && (
+                <KeyValueList data={record.invoicing} empty="No invoicing information submitted yet." />
+              )}
+
+              {activeTab === "documents" &&
+                (documents.length === 0 ? (
+                  <p className="rounded-lg bg-[#F7F9FC] p-4 text-sm font-semibold text-[#667085]">No agent documents uploaded yet.</p>
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {documents.map((doc, index) => (
+                      <div key={doc.id ?? index} className="rounded-xl border border-[#E7EAF0] p-4">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <FileText size={16} className="text-[#43A9F6]" />
+                            <p className="text-sm font-bold text-[#121826]">{valueText(doc.document_name || doc.document_type)}</p>
+                          </div>
+                          <StatusBadge value={String(doc.status || "pending")} />
+                        </div>
+                        <InfoGrid rows={[
+                          ["Type", doc.document_type],
+                          ["Mime", doc.mime_type],
+                          ["Uploaded", doc.uploaded_at],
+                          ["Reason", doc.rejection_reason],
+                        ]} />
+                        {(doc.file_url || doc.file_path) && (
+                          <a href={String(doc.file_url || doc.file_path)} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#2F9FE9] hover:bg-[#E7F5FF]">
+                            <Eye size={14} /> View document
+                          </a>
+                        )}
                       </div>
-                      <StatusBadge value={String(doc.status || "pending")} />
-                    </div>
-                    <InfoGrid rows={[
-                      ["Type", doc.document_type],
-                      ["Mime", doc.mime_type],
-                      ["Uploaded", doc.uploaded_at],
-                      ["Reason", doc.rejection_reason],
-                    ]} />
-                    {(doc.file_url || doc.file_path) && (
-                      <a href={String(doc.file_url || doc.file_path)} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[#E7EAF0] px-3 py-2 text-xs font-bold text-[#2F9FE9] hover:bg-[#E7F5FF]">
-                        <Eye size={14} /> View document
-                      </a>
-                    )}
+                    ))}
                   </div>
                 ))}
-              </div>
-            )}
-          </DetailSection>
+            </div>
+          </section>
 
           <ActionModal open={modal === "reject"} title="Reject agent" saving={saving} submitLabel="Reject" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => rejectReviewRecord("agents", id, { rejection_reason: String(payload.rejection_reason || ""), admin_comments: String(payload.admin_comments || "") }), "Agent rejected.")} fields={[{ name: "rejection_reason", label: "Rejection reason" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "partial"} title="Request agent changes" saving={saving} submitLabel="Send request" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => partialApproveReviewRecord("agents", id, { admin_comments: String(payload.admin_comments || ""), pending_requirements: String(payload.pending_requirements || "") }), "Agent change request sent.")} fields={[{ name: "pending_requirements", label: "Required changes", type: "textarea" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />

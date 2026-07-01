@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
+import { CheckCircle2, Eye, XCircle } from "lucide-react";
 
 type BookingActionMenuProps = {
   bookingId: number;
@@ -13,7 +14,6 @@ type BookingActionMenuProps = {
 export default function BookingActionMenu({
   bookingId,
   bookingStatus,
-  paymentStatus,
   onCancel,
   onConfirm,
 }: BookingActionMenuProps) {
@@ -21,40 +21,33 @@ export default function BookingActionMenu({
   const canCancel = bookingStatus !== "cancelled";
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <Link
-        className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-[#E7EAF0] px-3 py-1.5 text-xs font-bold text-[#2F9FE9] hover:bg-[#E7F5FF]"
         href={`/admin/bookings/${bookingId}`}
       >
-        View
+        <Eye size={13} /> View
       </Link>
 
       {canConfirm && onConfirm ? (
         <button
-          className="rounded-md border border-emerald-300 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
           type="button"
           onClick={() => onConfirm(bookingId)}
         >
-          Confirm
+          <CheckCircle2 size={13} /> Confirm
         </button>
       ) : null}
 
       {canCancel && onCancel ? (
         <button
-          className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50"
           type="button"
           onClick={() => onCancel(bookingId)}
         >
-          Cancel
+          <XCircle size={13} /> Cancel
         </button>
-      ) : null}
-
-      {paymentStatus ? (
-        <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-          {paymentStatus.replaceAll("_", " ")}
-        </span>
       ) : null}
     </div>
   );
 }
-

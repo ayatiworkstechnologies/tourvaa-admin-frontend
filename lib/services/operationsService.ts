@@ -103,4 +103,22 @@ export async function updateAffiliateApiLink(id: string | number, api_link: stri
   return response.data.data;
 }
 
+export async function reviewSupplierDocument(
+  supplierId: string | number,
+  documentId: number,
+  payload: { status: "approved" | "rejected"; rejection_reason?: string }
+) {
+  const response = await api.patch(`/suppliers/${supplierId}/documents/${documentId}/review`, payload);
+  return response.data.data;
+}
+
+export async function reviewSupplierVehicle(
+  supplierId: string | number,
+  vehicleId: number,
+  payload: { approval_status: "approved" | "rejected"; rejection_reason?: string }
+) {
+  const response = await api.patch(`/suppliers/${supplierId}/vehicles/${vehicleId}/review`, payload);
+  return response.data.data;
+}
+
 

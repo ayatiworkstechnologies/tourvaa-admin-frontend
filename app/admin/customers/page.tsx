@@ -9,6 +9,7 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { usePagination } from "@/hooks/usePagination";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/useToast";
 import {
   blockCustomer,
@@ -43,11 +44,13 @@ export default function CustomersPage() {
   const canUnblock = hasPermission("customers.unblock") || hasPermission("customers.edit");
   const canReset = hasPermission("customers.reset_password") || hasPermission("customers.edit");
 
+  const debouncedSearch = useDebounce(filters.search, 350);
+
   const filterParams = useMemo(
     () => ({
       page,
       limit,
-      search: filters.search,
+      search: debouncedSearch,
       country: filters.country,
       status: filters.status,
       booking_status: filters.booking_status,
@@ -56,7 +59,7 @@ export default function CustomersPage() {
       end_date: filters.end_date,
       sort_by: filters.sort_by,
     }),
-    [filters, limit, page]
+    [filters, debouncedSearch, limit, page]
   );
 
   const fetchCustomers = useCallback(async () => {
@@ -74,11 +77,7 @@ export default function CustomersPage() {
   }, [filterParams, setTotal, setTotalPages, toast]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void fetchCustomers();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+    void fetchCustomers();
   }, [fetchCustomers]);
 
   const updateFilter = (key: keyof CustomerFilterState, value: string) => {

@@ -20,6 +20,8 @@ export type Booking = {
   id: number;
   booking_code: string;
   customer_id: number;
+  customer_name?: string | null;
+  customer_email?: string | null;
   tour_id?: number | null;
   tour_calendar_id?: number | null;
   supplier_id?: number | null;

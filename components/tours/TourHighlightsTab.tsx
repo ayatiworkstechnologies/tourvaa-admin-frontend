@@ -5,6 +5,7 @@ import { Plus, Save, X } from "lucide-react";
 import { TourHighlight, getHighlights, createHighlight, updateHighlight, deleteHighlight } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
+import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 
 const empty = (): TourHighlight => ({ image: "", title: "", short_description: "", display_order: 0, status: "active" });
 
@@ -106,7 +107,14 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
             <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            {[["image", "Image URL"], ["title", "Title *"], ["display_order", "Order"]].map(([key, lbl]) => (
+            <div className="md:col-span-2">
+              <AdminAssetUpload
+                label="Image"
+                value={editing.image}
+                onChange={(value) => setEditing((p) => (p ? { ...p, image: value } : p))}
+              />
+            </div>
+            {[["title", "Title *"], ["display_order", "Order"]].map(([key, lbl]) => (
               <label key={key}>
                 <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">{lbl}</span>
                 <input type={key === "display_order" ? "number" : "text"}

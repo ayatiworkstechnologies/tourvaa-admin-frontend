@@ -1,13 +1,16 @@
-﻿import api from "@/lib/api";
+import api from "@/lib/api";
 
 export type Notification = {
   id: number;
+  user_id: number | null;
   title: string;
   message: string;
   notification_type: string;
   channel: string;
   status: string;
   is_read: boolean;
+  entity_type?: string | null;
+  entity_id?: number | null;
   created_at?: string | null;
 };
 
@@ -16,6 +19,9 @@ export type NotificationFilters = {
   limit?: number;
   user_id?: number;
   is_read?: string;
+  entity_type?: string;
+  entity_id?: number;
+  notification_type?: string;
 };
 
 export type PaginatedNotifications = {
@@ -45,6 +51,16 @@ export async function markNotificationRead(notificationId: number | string) {
   return response.data.data;
 }
 
+export async function markAllNotificationsRead(userId: number) {
+  const response = await api.patch<ApiDataResponse<{ updated: number }>>(
+    "/notifications/mark-all-read",
+    undefined,
+    { params: { user_id: userId } }
+  );
+
+  return response.data.data;
+}
+
 export async function retryNotification(notificationId: number | string) {
   const response = await api.post<ApiDataResponse<Notification>>(
     `/notifications/${notificationId}/retry`,
@@ -52,5 +68,3 @@ export async function retryNotification(notificationId: number | string) {
 
   return response.data.data;
 }
-
-

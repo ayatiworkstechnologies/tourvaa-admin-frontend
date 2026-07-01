@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { getDashboardPath } from "@/lib/dashboardPath";
 import { getApiErrorMessage } from "@/lib/error-handler";
 import { normalizeEmail } from "@/lib/validators";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -15,7 +13,6 @@ type LoginPayload = {
 };
 
 export function useAuth() {
-  const router = useRouter();
   const auth = useAuthContext();
   const toast = useToast();
 
@@ -34,9 +31,6 @@ export function useAuth() {
       const data = response.data.data;
 
       await auth.loginWithToken(data.access_token);
-
-      const roleSlug = data.user?.role?.slug ?? "";
-      router.push(getDashboardPath(roleSlug));
     } catch (error: unknown) {
       const message = getApiErrorMessage(error);
       setError(message);

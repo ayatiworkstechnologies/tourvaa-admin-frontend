@@ -1,4 +1,6 @@
-﻿"use client";
+"use client";
+
+import { Search, X } from "lucide-react";
 
 export type BookingFilterValues = {
   search: string;
@@ -32,6 +34,9 @@ const paymentStatusOptions = [
   { label: "Refunded", value: "refunded" },
 ];
 
+const selectClass =
+  "w-full rounded-xl border border-[#E7EAF0] bg-white px-3.5 py-2.5 text-sm font-medium text-[#344054] outline-none transition focus:border-[#43A9F6] focus:ring-4 focus:ring-[#43A9F6]/10";
+
 export default function BookingFilters({
   search,
   bookingStatus,
@@ -41,25 +46,24 @@ export default function BookingFilters({
   onPaymentStatusChange,
   onClear,
 }: BookingFiltersProps) {
+  const hasActiveFilters = Boolean(search || bookingStatus || paymentStatus);
+
   return (
-    <div className="grid gap-3 rounded-lg border border-gray-200 bg-white p-4 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto]">
-      <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-        Search
+    <div className="grid gap-3 rounded-2xl border border-[#E9EDF3] bg-white p-4 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)] md:grid-cols-[minmax(220px,1fr)_200px_200px_auto]">
+      <label className="relative block">
+        <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Search</span>
+        <Search size={15} className="pointer-events-none absolute left-3 top-[calc(50%+8px)] -translate-y-1/2 text-[#B0B9C6]" />
         <input
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm font-normal text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-          placeholder="Booking, tour, country"
+          className="w-full rounded-xl border border-[#E7EAF0] py-2.5 pl-9 pr-4 text-sm outline-none transition focus:border-[#43A9F6] focus:ring-4 focus:ring-[#43A9F6]/10"
+          placeholder="Booking, tour, customer, country…"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-        Booking status
-        <select
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm font-normal text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-          value={bookingStatus}
-          onChange={(event) => onBookingStatusChange(event.target.value)}
-        >
+      <label className="block">
+        <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Booking status</span>
+        <select className={selectClass} value={bookingStatus} onChange={(event) => onBookingStatusChange(event.target.value)}>
           {bookingStatusOptions.map((option) => (
             <option key={option.value || "all-bookings"} value={option.value}>
               {option.label}
@@ -68,13 +72,9 @@ export default function BookingFilters({
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-        Payment status
-        <select
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm font-normal text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-          value={paymentStatus}
-          onChange={(event) => onPaymentStatusChange(event.target.value)}
-        >
+      <label className="block">
+        <span className="mb-1 block text-xs font-bold uppercase text-[#98A2B3]">Payment status</span>
+        <select className={selectClass} value={paymentStatus} onChange={(event) => onPaymentStatusChange(event.target.value)}>
           {paymentStatusOptions.map((option) => (
             <option key={option.value || "all-payments"} value={option.value}>
               {option.label}
@@ -84,11 +84,12 @@ export default function BookingFilters({
       </label>
 
       <button
-        className="self-end rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        className="inline-flex items-center justify-center gap-1.5 self-end rounded-xl border border-[#E7EAF0] px-4 py-2.5 text-sm font-bold text-[#667085] transition hover:bg-[#F7F9FC] disabled:cursor-not-allowed disabled:opacity-40"
         type="button"
         onClick={onClear}
+        disabled={!hasActiveFilters}
       >
-        Clear
+        <X size={14} /> Clear
       </button>
     </div>
   );

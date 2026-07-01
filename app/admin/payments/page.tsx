@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Loader2, X } from "lucide-react";
+import Link from "next/link";
+import { createPortal } from "react-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertCircle, CheckCircle2, Clock, Loader2, RotateCcw, Wallet, X } from "lucide-react";
 import axios from "axios";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { Payment, capturePayment, getPayments, processRefund, voidPayment } from "@/lib/services/paymentService";
+import { useAuthContext } from "@/providers/AuthProvider";
+import { useDebounce } from "@/hooks/useDebounce";
 import api from "@/lib/api";
 
 const PAGE_SIZE = 15;
@@ -153,6 +157,43 @@ const STATUSES = ["pending", "authorized", "paid", "partially_paid", "failed", "
 function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function reposition() {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const menuWidth = 192;
+      setCoords({
+        top: rect.bottom + 4,
+        left: Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8),
+      });
+    }
+
+    reposition();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        !buttonRef.current?.contains(event.target as Node) &&
+        !menuRef.current?.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
 
   async function choose(s: string) {
     setSaving(true);
@@ -168,27 +209,35 @@ function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => voi
   }
 
   return (
-    <div className="relative">
-      <button type="button" onClick={() => setOpen(v => !v)} disabled={saving}
+    <>
+      <button ref={buttonRef} type="button" onClick={() => setOpen(v => !v)} disabled={saving}
         className="rounded-lg border border-[#E7EAF0] px-2 py-1 text-[10px] font-bold text-[#667085] hover:border-[#B0B8C9] hover:bg-[#F7F9FC] disabled:opacity-50">
         {saving ? <Loader2 size={10} className="animate-spin" /> : "Status ▾"}
       </button>
-      {open && (
-        <div className="absolute right-0 top-full z-30 mt-1 w-48 rounded-xl border border-[#E7EAF0] bg-white py-1 shadow-lg">
-          {STATUSES.map(s => (
-            <button key={s} type="button" onClick={() => choose(s)}
-              className="w-full px-3 py-1.5 text-left text-xs font-bold capitalize text-[#344054] hover:bg-[#F7F9FC]">
-              {s.replaceAll("_", " ")}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={{ position: "fixed", top: coords.top, left: coords.left }}
+            className="z-50 w-48 rounded-xl border border-[#E7EAF0] bg-white py-1 shadow-lg"
+          >
+            {STATUSES.map(s => (
+              <button key={s} type="button" onClick={() => choose(s)}
+                className="w-full px-3 py-1.5 text-left text-xs font-bold capitalize text-[#344054] hover:bg-[#F7F9FC]">
+                {s.replaceAll("_", " ")}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function PaymentsPage() {
+  const { hasPermission } = useAuthContext();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -197,11 +246,18 @@ export default function PaymentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [modal, setModal] = useState<{ payment: Payment; action: ModalAction } | null>(null);
+  const [stats, setStats] = useState({ total: 0, paid: 0, pending: 0, refunded: 0 });
 
-  async function fetchPayments() {
+  const debouncedSearch = useDebounce(searchTerm, 350);
+  const canCapture = hasPermission("payments.capture") || hasPermission("update-payments");
+  const canVoid = hasPermission("payments.void") || hasPermission("update-payments");
+  const canRefund = hasPermission("payments.refund") || hasPermission("update-payments");
+  const canEdit = hasPermission("payments.edit") || hasPermission("update-payments");
+
+  const fetchPayments = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await getPayments({ page: currentPage, limit: PAGE_SIZE, search: searchTerm });
+      const res = await getPayments({ page: currentPage, limit: PAGE_SIZE, search: debouncedSearch });
       setPayments(res.items ?? (res as { data?: Payment[] }).data ?? []);
       setTotalPayments(res.total ?? 0);
       setTotalPages(res.total_pages ?? 1);
@@ -211,17 +267,71 @@ export default function PaymentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [currentPage, debouncedSearch]);
 
-  useEffect(() => { void fetchPayments(); }, [currentPage, searchTerm]);
+  useEffect(() => { void fetchPayments(); }, [fetchPayments]);
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch]);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const [allRes, paidRes, pendingRes, refundedRes] = await Promise.all([
+        getPayments({ page: 1, limit: 1 }),
+        getPayments({ page: 1, limit: 1, payment_status: "paid" }),
+        getPayments({ page: 1, limit: 1, payment_status: "pending" }),
+        getPayments({ page: 1, limit: 1, payment_status: "refunded" }),
+      ]);
+      setStats({
+        total: allRes.total ?? 0,
+        paid: paidRes.total ?? 0,
+        pending: pendingRes.total ?? 0,
+        refunded: refundedRes.total ?? 0,
+      });
+    } catch {
+      // Non-critical — stat cards just stay at zero.
+    }
+  }, []);
+
+  useEffect(() => { void fetchStats(); }, [fetchStats]);
 
   function openModal(payment: Payment, action: ModalAction) {
     setModal({ payment, action });
   }
 
+  async function refreshAll() {
+    await Promise.all([fetchPayments(), fetchStats()]);
+  }
+
+  const statCards = useMemo(
+    () => [
+      { label: "Total Payments", value: stats.total, icon: Wallet, accent: "text-[#2F9FE9] bg-[#EDF5FF]" },
+      { label: "Paid", value: stats.paid, icon: CheckCircle2, accent: "text-emerald-600 bg-emerald-50" },
+      { label: "Pending", value: stats.pending, icon: Clock, accent: "text-amber-700 bg-amber-50" },
+      { label: "Refunded", value: stats.refunded, icon: RotateCcw, accent: "text-purple-600 bg-purple-50" },
+    ],
+    [stats]
+  );
+
   const columns: DataTableColumn<Payment>[] = [
-    { key: "payment_code", header: "Code" },
-    { key: "booking_id", header: "Booking" },
+    { key: "payment_code", header: "Code", className: "font-bold text-[#121826]" },
+    {
+      key: "customer_name",
+      header: "Customer",
+      render: p => (
+        <div>
+          <p className="font-semibold text-[#121826]">{p.customer_name || `Customer #${p.customer_id}`}</p>
+          {p.customer_email && <p className="text-xs text-[#98A2B3]">{p.customer_email}</p>}
+        </div>
+      ),
+    },
+    {
+      key: "booking_id",
+      header: "Booking",
+      render: p => (
+        <Link href={`/admin/bookings/${p.booking_id}`} className="font-semibold text-[#2F9FE9] hover:underline">
+          {p.booking_code || `#${p.booking_id}`}
+        </Link>
+      ),
+    },
     {
       key: "gateway",
       header: "Gateway",
@@ -260,25 +370,25 @@ export default function PaymentsPage() {
         const s = p.payment_status.toLowerCase();
         return (
           <div className="flex items-center gap-1.5">
-            {(s === "authorized") && (
+            {canCapture && s === "authorized" && (
               <button type="button" onClick={() => openModal(p, "capture")}
                 className="rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100 border border-emerald-200">
                 Capture
               </button>
             )}
-            {["authorized", "pending"].includes(s) && (
+            {canVoid && ["authorized", "pending"].includes(s) && (
               <button type="button" onClick={() => openModal(p, "void")}
                 className="rounded-lg bg-red-50 px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-100 border border-red-200">
                 Void
               </button>
             )}
-            {["paid", "partially_paid", "captured"].includes(s) && (
+            {canRefund && ["paid", "partially_paid", "captured"].includes(s) && (
               <button type="button" onClick={() => openModal(p, "refund")}
                 className="rounded-lg bg-purple-50 px-2 py-1 text-[10px] font-bold text-purple-700 hover:bg-purple-100 border border-purple-200">
                 Refund
               </button>
             )}
-            <StatusSelect payment={p} onDone={fetchPayments} />
+            {canEdit && <StatusSelect payment={p} onDone={refreshAll} />}
           </div>
         );
       },
@@ -289,11 +399,23 @@ export default function PaymentsPage() {
     <ModuleWrapper title="Payments" requiredPermission="payments.view">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#121826]">Payments</h1>
-          <p className="text-sm text-[#667085]">
+          <h1 className="text-[28px] font-black tracking-tight text-[#121826]">Payments</h1>
+          <p className="mt-1 text-sm font-medium text-[#667085]">
             Monitor authorizations, captures, refunds, and transaction history.
           </p>
         </div>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {statCards.map(({ label, value, icon: Icon, accent }) => (
+            <div key={label} className="rounded-2xl border border-[#E9EDF3] bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${accent}`}>
+                <Icon size={18} />
+              </div>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-[#98A2B3]">{label}</p>
+              <p className="mt-1 text-xl font-black text-[#121826]">{value}</p>
+            </div>
+          ))}
+        </section>
 
         <DataTable
           ariaLabel="Payments"
@@ -306,7 +428,7 @@ export default function PaymentsPage() {
           total={totalPayments}
           totalPages={totalPages}
           search={searchTerm}
-          onSearchChange={s => { setCurrentPage(1); setSearchTerm(s); }}
+          onSearchChange={s => setSearchTerm(s)}
           onPageChange={setCurrentPage}
           emptyTitle="No payments found"
         />
@@ -317,7 +439,7 @@ export default function PaymentsPage() {
           payment={modal.payment}
           action={modal.action}
           onClose={() => setModal(null)}
-          onDone={fetchPayments}
+          onDone={refreshAll}
         />
       )}
     </ModuleWrapper>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Bell } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuthContext } from '@/providers/AuthProvider';
+import { playNotificationSound, unlockNotificationSound } from '@/lib/notificationSound';
 
 type Notification = {
   id: number;
@@ -21,40 +22,6 @@ export default function NotificationInbox() {
   const panelRef = useRef<HTMLDivElement>(null);
   const knownIdsRef = useRef<Set<number>>(new Set());
   const initializedRef = useRef(false);
-  const audioUnlockedRef = useRef(false);
-
-  const playNotificationSound = useCallback(() => {
-    if (typeof window === 'undefined' || !audioUnlockedRef.current) return;
-
-    try {
-      const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioContextClass) return;
-
-      const ctx = new AudioContextClass();
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
-      gain.connect(ctx.destination);
-
-      [880, 1175].forEach((frequency, index) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(frequency, ctx.currentTime + index * 0.12);
-        osc.connect(gain);
-        osc.start(ctx.currentTime + index * 0.12);
-        osc.stop(ctx.currentTime + index * 0.12 + 0.22);
-      });
-
-      window.setTimeout(() => void ctx.close().catch(() => {}), 700);
-    } catch {
-      // Browser audio can fail before interaction; notification UI still works.
-    }
-  }, []);
-
-  const unlockNotificationSound = useCallback(() => {
-    audioUnlockedRef.current = true;
-  }, []);
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.id) return;
@@ -75,7 +42,7 @@ export default function NotificationInbox() {
     } catch {
       // silently fail
     }
-  }, [playNotificationSound, user?.id]);
+  }, [user]);
 
   useEffect(() => {
     knownIdsRef.current = new Set();
@@ -96,7 +63,7 @@ export default function NotificationInbox() {
       window.removeEventListener('pointerdown', unlockNotificationSound);
       window.removeEventListener('keydown', unlockNotificationSound);
     };
-  }, [unlockNotificationSound]);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
