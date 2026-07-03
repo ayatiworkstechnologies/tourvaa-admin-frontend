@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -10,8 +10,11 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  FileText,
+  History,
   Loader2,
   MapPinned,
+  Receipt,
   Users,
   X,
   XCircle,
@@ -64,17 +67,8 @@ type Booking = {
 };
 
 function fmt(v?: string | number, currency = "AED") {
-  if (v == null) return "—";
+  if (v == null) return "-";
   return `${currency} ${Number(v).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-}
-
-function statusChip(s: string) {
-  const v = (s || "").toLowerCase();
-  if (["confirmed", "completed", "paid"].includes(v)) return "bg-emerald-50 text-emerald-700 border border-emerald-100";
-  if (["pending", "pending_payment", "pending_supplier_acceptance", "payment_authorized", "authorized"].includes(v)) return "bg-amber-50 text-amber-700 border border-amber-100";
-  if (["cancelled", "declined", "failed", "refunded"].includes(v)) return "bg-red-50 text-red-600 border border-red-100";
-  if (["ongoing"].includes(v)) return "bg-blue-50 text-blue-700 border border-blue-100";
-  return "bg-slate-50 text-slate-600 border border-slate-100";
 }
 
 function StatusIcon({ status }: { status: string }) {
@@ -88,21 +82,27 @@ function Field({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-wide text-[#98A2B3]">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-[#121826]">{value || "—"}</p>
+      <p className="mt-1 text-sm font-semibold text-[#121826]">{value || "-"}</p>
     </div>
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({ title, icon: Icon, iconColor = "text-[#43A9F6]", iconBg = "bg-[#F0F7FF]", children }: { title: string; icon?: React.ComponentType<{ size?: number; className?: string }>; iconColor?: string; iconBg?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-[#E7EAF0]/80 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
-      <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-[#667085]">{title}</h3>
+    <div className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100 transition hover:shadow-md">
+      <div className="mb-4 flex items-center gap-2.5">
+        {Icon && (
+          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
+            <Icon size={15} className={iconColor} />
+          </div>
+        )}
+        <h3 className="text-xs font-black uppercase tracking-wider text-[#667085]">{title}</h3>
+      </div>
       {children}
     </div>
   );
 }
 
-// ── Pay Now Modal ──────────────────────────────────────────────────────────────
 type GatewayStatus = { stripe: boolean; paypal: boolean; test_mode_available: boolean } | null;
 
 function PayNowModal({
@@ -136,7 +136,7 @@ function PayNowModal({
       const origin = window.location.origin;
       const res = await api.post("/payments/stripe/create-session", {
         booking_id: bookingId, amount, currency: currency || "USD",
-        success_url: `${origin}/customer/bookings/${bookingId}?payment=success`,
+        success_url: `${origin}/customer/bookings/${bookingId}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/customer/bookings/${bookingId}?payment=cancelled`,
       });
       const { checkout_url } = res.data?.data ?? {};
@@ -254,7 +254,7 @@ function PayNowModal({
 
         <p className="mt-4 text-center text-xs text-[#98A2B3]">
           {gw?.test_mode_available
-            ? "Test mode active — no real money will be charged."
+            ? "Test mode active - no real money will be charged."
             : "Secured by industry-standard encryption."}
         </p>
       </div>
@@ -262,7 +262,7 @@ function PayNowModal({
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────────
+// Main Page
 export default function CustomerBookingDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -301,8 +301,20 @@ export default function CustomerBookingDetailPage() {
     const token = searchParams.get("token"); // PayPal order ID on return
 
     if (payment === "success") {
-      setPaymentBanner({ type: "success", msg: "Payment completed! Your booking is confirmed." });
-      void load();
+      const sessionId = searchParams.get("session_id");
+      setPaymentBanner({ type: "info", msg: "Confirming payment..." });
+      api.post("/payments/stripe/confirm-return", {
+        booking_id: Number(params.id),
+        session_id: sessionId || undefined,
+      })
+        .then(() => {
+          setPaymentBanner({ type: "success", msg: "Payment completed! Your booking is confirmed." });
+          void load();
+        })
+        .catch(() => {
+          setPaymentBanner({ type: "error", msg: "Payment succeeded, but booking update is still pending. Please refresh or contact support." });
+          void load();
+        });
     } else if (payment === "cancelled") {
       setPaymentBanner({ type: "info", msg: "Payment was cancelled. You can try again when ready." });
     } else if (payment === "paypal_approved" && token) {
@@ -322,7 +334,7 @@ export default function CustomerBookingDetailPage() {
           })
           .finally(() => setCapturingPayPal(false));
       } else {
-        setPaymentBanner({ type: "info", msg: "PayPal approved — processing payment..." });
+        setPaymentBanner({ type: "info", msg: "PayPal approved - processing payment..." });
       }
     }
     // Only run once on mount
@@ -350,14 +362,11 @@ export default function CustomerBookingDetailPage() {
   const canPay = booking && pendingAmount > 0 && !["cancelled", "declined", "completed"].includes(booking.booking_status);
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-6 flex items-center gap-3">
-        <button type="button" onClick={() => router.push("/customer/bookings")}
-          className="flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-sm font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
-          <ArrowLeft size={16} /> Back
-        </button>
-        <h1 className="text-2xl font-black text-[#121826]">Booking Details</h1>
-      </div>
+    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-8">
+      <button type="button" onClick={() => router.push("/customer/bookings")}
+        className="mb-5 flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-sm font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
+        <ArrowLeft size={16} /> Back to bookings
+      </button>
 
       {/* Payment status banner */}
       {paymentBanner && (
@@ -403,37 +412,41 @@ export default function CustomerBookingDetailPage() {
 
       {!loading && booking && (
         <>
-          {/* Header card */}
-          <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-[#E7EAF0]/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="font-mono text-sm font-bold text-[#667085]">{booking.booking_code}</p>
-              <h2 className="mt-1 text-xl font-black text-[#121826]">{booking.tour_name || "Tour Booking"}</h2>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${statusChip(booking.booking_status)}`}>
-                  <StatusIcon status={booking.booking_status} />
-                  {booking.booking_status.replaceAll("_", " ")}
-                </span>
-                {booking.payment_status && (
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusChip(booking.payment_status)}`}>
-                    {booking.payment_status.replaceAll("_", " ")}
+          {/* Hero header */}
+          <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-sky-500 to-sky-700 p-7 text-white shadow-xl shadow-sky-200/60 md:p-8">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+            <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+            <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-mono text-sm font-bold text-sky-100">{booking.booking_code}</p>
+                <h2 className="mt-1 text-2xl font-black leading-tight md:text-3xl">{booking.tour_name || "Tour Booking"}</h2>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-slate-700">
+                    <StatusIcon status={booking.booking_status} />
+                    {booking.booking_status.replaceAll("_", " ")}
                   </span>
+                  {booking.payment_status && (
+                    <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-sm">
+                      {booking.payment_status.replaceAll("_", " ")}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                {canPay && (
+                  <button type="button" onClick={() => setShowPayModal(true)}
+                    className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50 transition-all">
+                    <CreditCard size={16} />
+                    Pay Now ({booking.currency} {pendingAmount.toLocaleString()})
+                  </button>
+                )}
+                {canCancel && !showCancel && (
+                  <button type="button" onClick={() => setShowCancel(true)}
+                    className="flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-bold text-white backdrop-blur-sm hover:bg-white/20 transition-all">
+                    <XCircle size={16} /> Request Cancellation
+                  </button>
                 )}
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {canPay && (
-                <button type="button" onClick={() => setShowPayModal(true)}
-                  className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 transition-all">
-                  <CreditCard size={16} />
-                  Pay Now ({booking.currency} {pendingAmount.toLocaleString()})
-                </button>
-              )}
-              {canCancel && !showCancel && (
-                <button type="button" onClick={() => setShowCancel(true)}
-                  className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-100 transition-all">
-                  <XCircle size={16} /> Request Cancellation
-                </button>
-              )}
             </div>
           </div>
 
@@ -460,25 +473,25 @@ export default function CustomerBookingDetailPage() {
 
           {/* Detail panels */}
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Tour Info">
+            <Panel title="Tour Info" icon={MapPinned} iconColor="text-sky-600" iconBg="bg-sky-50">
               <div className="space-y-3">
                 <Field label="Tour" value={<span className="flex items-center gap-1"><MapPinned size={14} className="text-[#43A9F6]" />{booking.tour_name}</span>} />
-                <Field label="Travel Date" value={<span className="flex items-center gap-1"><CalendarCheck size={14} className="text-[#43A9F6]" />{booking.tour_date || "—"}</span>} />
+                <Field label="Travel Date" value={<span className="flex items-center gap-1"><CalendarCheck size={14} className="text-[#43A9F6]" />{booking.tour_date || "-"}</span>} />
                 <Field label="Country" value={booking.country} />
                 <Field label="Supplier" value={booking.supplier_name} />
               </div>
             </Panel>
 
-            <Panel title="Travellers">
+            <Panel title="Travellers" icon={Users} iconColor="text-violet-600" iconBg="bg-violet-50">
               <div className="space-y-3">
-                <Field label="Adults" value={booking.no_of_adults ?? "—"} />
+                <Field label="Adults" value={booking.no_of_adults ?? "-"} />
                 <Field label="Children" value={booking.no_of_children ?? 0} />
                 <Field label="Infants" value={booking.no_of_infants ?? 0} />
-                <Field label="Total" value={<span className="flex items-center gap-1"><Users size={14} className="text-[#43A9F6]" />{booking.total_travellers ?? "—"}</span>} />
+                <Field label="Total" value={<span className="flex items-center gap-1"><Users size={14} className="text-[#43A9F6]" />{booking.total_travellers ?? "-"}</span>} />
               </div>
             </Panel>
 
-            <Panel title="Payment">
+            <Panel title="Payment" icon={Receipt} iconColor="text-emerald-600" iconBg="bg-emerald-50">
               <div className="space-y-3">
                 <Field label="Total Amount" value={fmt(booking.final_amount, booking.currency)} />
                 <Field label="Amount Paid" value={<span className="text-emerald-700">{fmt(booking.amount_paid, booking.currency)}</span>} />
@@ -501,16 +514,16 @@ export default function CustomerBookingDetailPage() {
           {/* Traveller list */}
           {booking.travellers && booking.travellers.length > 0 && (
             <div className="mt-4">
-              <Panel title="Traveller Details">
+              <Panel title="Traveller Details" icon={Users} iconColor="text-violet-600" iconBg="bg-violet-50">
                 <div className="space-y-3">
                   {booking.travellers.map((t) => (
                     <div key={t.id} className="flex flex-wrap items-start justify-between gap-2 rounded-xl border border-[#E7EAF0] px-4 py-3">
                       <div>
                         <p className="font-semibold text-[#121826]">
-                          {t.full_name || `${t.first_name ?? ""} ${t.last_name ?? ""}`.trim() || "—"}
+                          {t.full_name || `${t.first_name ?? ""} ${t.last_name ?? ""}`.trim() || "-"}
                           {t.is_primary_contact && <span className="ml-2 rounded-full bg-[#F0F7FF] px-2 py-0.5 text-[10px] font-bold text-[#43A9F6]">Primary</span>}
                         </p>
-                        <p className="mt-0.5 text-xs text-[#667085]">{t.traveller_type}{t.age ? ` · Age ${t.age}` : ""}</p>
+                        <p className="mt-0.5 text-xs text-[#667085]">{t.traveller_type}{t.age ? ` - Age ${t.age}` : ""}</p>
                       </div>
                       {t.special_requirements && <p className="text-xs text-amber-600">Note: {t.special_requirements}</p>}
                     </div>
@@ -523,12 +536,12 @@ export default function CustomerBookingDetailPage() {
           {/* Status history */}
           {booking.status_history && booking.status_history.length > 0 && (
             <div className="mt-4">
-              <Panel title="Status History">
+              <Panel title="Status History" icon={History} iconColor="text-amber-600" iconBg="bg-amber-50">
                 <div className="space-y-3">
                   {booking.status_history.map((h) => (
                     <div key={h.id} className="border-l-2 border-[#43A9F6]/30 pl-3">
                       <p className="text-sm font-bold text-[#121826]">
-                        {h.old_status ? `${h.old_status.replaceAll("_", " ")} → ` : ""}
+                        {h.old_status ? `${h.old_status.replaceAll("_", " ")} -> ` : ""}
                         {h.new_status.replaceAll("_", " ")}
                       </p>
                       {h.reason && <p className="mt-0.5 text-xs text-[#667085]">{h.reason}</p>}
@@ -542,21 +555,20 @@ export default function CustomerBookingDetailPage() {
 
           {(booking.customer_notes || booking.notes) && (
             <div className="mt-4">
-              <Panel title="Notes">
+              <Panel title="Notes" icon={FileText} iconColor="text-slate-600" iconBg="bg-slate-100">
                 <p className="text-sm text-[#667085]">{booking.customer_notes || booking.notes}</p>
               </Panel>
             </div>
           )}
 
           <div className="mt-4 text-center">
-            <Link href="/customer/bookings" className="text-sm font-bold text-[#43A9F6] hover:underline">
-              ← Back to all bookings
+            <Link href="/customer/bookings" className="inline-flex items-center justify-center gap-1.5 text-sm font-bold text-[#43A9F6] hover:underline">
+              <ArrowLeft size={14} /> Back to all bookings
             </Link>
           </div>
         </>
       )}
 
-      {/* Pay Now Modal */}
       {showPayModal && booking && (
         <PayNowModal
           bookingId={booking.id}

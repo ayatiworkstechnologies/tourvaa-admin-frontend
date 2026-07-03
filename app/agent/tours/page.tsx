@@ -90,19 +90,24 @@ export default function AgentToursPage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-[#121826]">Browse Tours</h1>
-          <p className="mt-1 text-sm text-[#667085]">
-            Find and book tours for your customers.{total > 0 && ` ${total} tours available.`}
-          </p>
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-orange-500 to-orange-700 p-7 text-white shadow-xl shadow-orange-200/60 md:p-9">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Browse Tours</h1>
+            <p className="mt-2 max-w-md text-sm font-medium text-orange-100">
+              Find and book tours for your customers.{total > 0 && ` ${total} tours available.`}
+            </p>
+          </div>
+          <Link
+            href="/agent/bookings/create"
+            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-orange-700 shadow-sm transition hover:bg-orange-50"
+          >
+            <Plus size={16} /> Create Booking
+          </Link>
         </div>
-        <Link
-          href="/agent/bookings/create"
-          className="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-orange-700"
-        >
-          <Plus size={16} /> Create Booking
-        </Link>
       </div>
 
       {/* Search */}

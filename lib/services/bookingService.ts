@@ -1,4 +1,4 @@
-﻿import api from "@/lib/api";
+import api from "@/lib/api";
 
 export type BookingStatusHistoryItem = {
   id: number;
@@ -82,6 +82,7 @@ export type BookingFilters = {
   start_date?: string;
   end_date?: string;
   sort_by?: string;
+  _ts?: number;
 };
 
 export type BookingCreate = {
@@ -183,6 +184,7 @@ export async function getBookingPayments(bookingId: number | string) {
   const response = await api.get("/payments/", { params: { booking_id: bookingId } });
   return response.data;
 }
+
 
 
 

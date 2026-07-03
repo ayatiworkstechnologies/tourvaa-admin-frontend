@@ -206,16 +206,17 @@ export default function AgentCreateBookingPage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="flex items-center gap-3">
-        <Link
-          href="/agent/bookings"
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E7EAF0] bg-white text-[#667085] shadow-sm transition hover:bg-[#F5F7FA]"
-        >
-          <ArrowLeft size={16} />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-black text-[#121826]">Create Booking</h1>
-          <p className="mt-0.5 text-sm text-[#667085]">Book a tour on behalf of your customer.</p>
+      <Link href="/agent/bookings" className="mb-5 inline-flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-sm font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
+        <ArrowLeft size={15} /> Back to bookings
+      </Link>
+
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-orange-500 to-orange-700 p-7 text-white shadow-xl shadow-orange-200/60 md:p-8">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10">
+          <h1 className="text-2xl font-black leading-tight md:text-3xl">Create Booking</h1>
+          <p className="mt-1 text-sm font-medium text-orange-100">Book a tour on behalf of your customer.</p>
         </div>
       </div>
 

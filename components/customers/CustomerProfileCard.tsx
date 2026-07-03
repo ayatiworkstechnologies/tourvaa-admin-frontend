@@ -32,6 +32,7 @@ export default function CustomerProfileCard({ customer }: { customer: Customer }
     ["Address", customer.address || "-"],
     ["Created", customer.created_at ? new Date(customer.created_at).toLocaleString() : "-"],
     ["Last login", customer.last_login_at ? new Date(customer.last_login_at).toLocaleString() : "-"],
+    ["Login IP", customer.last_login_ip || "-"],
   ];
 
   return (
@@ -90,7 +91,7 @@ export default function CustomerProfileCard({ customer }: { customer: Customer }
           </p>
         )}
 
-        <div className="mt-6 grid gap-3 border-t border-[#F0F3F8] pt-6 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid gap-3 border-t border-[#F0F3F8] pt-6 sm:grid-cols-2 xl:grid-cols-5">
           {metaDetails.map(([label, value]) => (
             <div key={label}>
               <p className="text-xs font-bold uppercase tracking-wide text-[#98A2B3]">{label}</p>
@@ -102,3 +103,6 @@ export default function CustomerProfileCard({ customer }: { customer: Customer }
     </section>
   );
 }
+
+
+

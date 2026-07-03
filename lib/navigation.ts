@@ -9,6 +9,7 @@ import {
   Mail,
   MapPinned,
   Percent,
+  Banknote,
   ReceiptText,
   Settings,
   Shield,
@@ -47,6 +48,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Bookings", module: "bookings", href: "/admin/bookings", icon: CalendarCheck, permissions: ["bookings.view", "view-bookings"], section: "Finance" },
   { label: "Payments", module: "payments", href: "/admin/payments", icon: CreditCard, permissions: ["payments.view", "view-payments"], section: "Finance" },
   { label: "Invoices", module: "invoices", href: "/admin/invoices", icon: ReceiptText, permissions: ["invoices.view", "view-invoices"], section: "Finance" },
+  { label: "Supplier Payouts", module: "supplier_ledger", href: "/admin/supplier-payouts", icon: Banknote, permissions: ["supplier_ledger.view", "view-supplier_ledger"], section: "Finance" },
   { label: "Reports", module: "reports", href: "/admin/reports", icon: FileText, permissions: ["reports.view", "view-reports"], section: "Finance" },
   { label: "Email Templates", module: "email", href: "/admin/email-templates", icon: Mail, permissions: ["email_templates.view", "email.view", "view-email"], section: "System" },
   { label: "Settings", module: "settings", href: "/admin/settings", icon: Settings, permissions: ["settings.view", "view-settings"], placement: "bottom" },
@@ -70,4 +72,6 @@ export function getMenuHref(menu: MenuItem) {
 export function menuMatchesNavItem(menu: MenuItem, item: NavItem) {
   return menu.module === item.module || item.permissions.includes(menu.permission);
 }
+
+
 

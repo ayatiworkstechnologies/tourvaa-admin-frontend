@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -6,7 +6,9 @@ import Link from "next/link";
 import {
   AlertCircle,
   ArrowLeft,
+  Ban,
   Bell,
+  CalendarDays,
   CalendarCheck,
   CheckCircle2,
   ChevronDown,
@@ -70,19 +72,6 @@ type Booking = {
 
 type ActionType = "confirm" | "decline" | "complete" | "cancel" | "postpone";
 
-function statusColors(s: string) {
-  const v = (s || "").toLowerCase();
-  if (["confirmed", "completed", "paid"].includes(v))
-    return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (["pending", "pending_payment", "pending_confirmation", "pending_supplier_acceptance"].includes(v))
-    return "bg-amber-50 text-amber-700 border-amber-200";
-  if (["postponed", "ongoing"].includes(v))
-    return "bg-blue-50 text-blue-700 border-blue-200";
-  if (["cancelled", "declined", "failed"].includes(v))
-    return "bg-red-50 text-red-600 border-red-200";
-  return "bg-slate-50 text-slate-600 border-slate-200";
-}
-
 function statusDot(s: string) {
   const v = (s || "").toLowerCase();
   if (["confirmed", "completed"].includes(v)) return "bg-emerald-500";
@@ -93,7 +82,7 @@ function statusDot(s: string) {
 }
 
 function dateStr(val?: string | null) {
-  if (!val) return "—";
+  if (!val) return "-";
   const d = new Date(val);
   return isNaN(d.getTime()) ? val : d.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -108,7 +97,7 @@ function InfoRow({ label, value }: { label: string; value?: string | number | nu
   return (
     <div className="flex justify-between border-b border-[#F5F7FA] py-2.5 text-sm last:border-b-0">
       <span className="text-[#667085]">{label}</span>
-      <span className="font-semibold text-[#121826]">{value ?? "—"}</span>
+      <span className="font-semibold text-[#121826]">{value ?? "-"}</span>
     </div>
   );
 }
@@ -133,12 +122,22 @@ function ActionBanner({
   const isConfirmed = v === "confirmed" || v === "ongoing";
   const isPostponed = v === "postponed";
 
+  if (v === "completed") {
+    return (
+      <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <p className="flex items-center gap-2 text-sm font-bold text-emerald-800">
+          <CheckCircle2 size={16} /> This booking is already completed.
+        </p>
+      </div>
+    );
+  }
+
   if (!isPending && !isConfirmed && !isPostponed) return null;
 
   return (
-    <div className={`mb-5 rounded-2xl border p-5 ${isPending ? "border-amber-200 bg-amber-50" : isPostponed ? "border-blue-200 bg-blue-50" : "border-emerald-200 bg-emerald-50/40"}`}>
-      <p className={`mb-3 text-sm font-bold ${isPending ? "text-amber-800" : isPostponed ? "text-blue-800" : "text-emerald-800"}`}>
-        {isPending ? "This booking requires your action:" : isPostponed ? "This booking is postponed — you can reschedule or cancel:" : "Manage this confirmed booking:"}
+    <div className="mb-5 rounded-2xl border border-[#D9ECFF] bg-[#F0F7FF] p-5">
+      <p className="mb-4 text-sm font-bold text-[#121826]">
+        {isPending ? "This booking requires your action:" : isPostponed ? "This booking is postponed - you can reschedule or cancel:" : "Manage this confirmed booking:"}
       </p>
 
       <div className="flex flex-wrap gap-3">
@@ -159,119 +158,71 @@ function ActionBanner({
               onClick={() => onAction("decline")}
               className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-60 transition-all"
             >
-              {busy === "decline" ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />}
-              Decline
+              <XCircle size={15} /> Decline
             </button>
           </>
         )}
 
         {(isConfirmed || isPostponed) && (
           <>
-            {isConfirmed && (
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() => onAction("complete")}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60 transition-all"
-              >
-                {busy === "complete" ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                Mark Completed
-              </button>
-            )}
-
-            {/* Postpone */}
-            <div className="relative">
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() => { setShowPostpone(!showPostpone); setShowCancel(false); }}
-                className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-bold text-blue-700 hover:bg-blue-50 disabled:opacity-60 transition-all"
-              >
-                <Clock size={15} />
-                {isPostponed ? "Reschedule" : "Postpone"}
-                <ChevronDown size={13} className={`transition-transform ${showPostpone ? "rotate-180" : ""}`} />
-              </button>
-              {showPostpone && (
-                <div className="absolute left-0 top-full z-20 mt-2 w-80 rounded-2xl border border-[#E7EAF0] bg-white p-4 shadow-lg">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-[#667085]">Postpone / Reschedule</p>
-                  <div className="flex flex-col gap-3">
-                    <div>
-                      <label className="mb-1 block text-xs font-semibold text-[#667085]">Reason *</label>
-                      <textarea
-                        value={postponeReason}
-                        onChange={(e) => setPostponeReason(e.target.value)}
-                        rows={2}
-                        placeholder="Why is this being postponed?"
-                        className="w-full rounded-xl border border-[#E7EAF0] px-3 py-2 text-sm outline-none focus:border-[#43A9F6] resize-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-semibold text-[#667085]">New Tour Date (optional)</label>
-                      <input type="date" title="New tour date" value={newDate} onChange={(e) => setNewDate(e.target.value)}
-                        className="w-full rounded-xl border border-[#E7EAF0] px-3 py-2 text-sm outline-none focus:border-[#43A9F6]" />
-                    </div>
-                    <button
-                      type="button"
-                      disabled={!postponeReason.trim() || busy !== null}
-                      onClick={() => {
-                        onAction("postpone", { reason: postponeReason, new_tour_date: newDate });
-                        setShowPostpone(false);
-                        setPostponeReason("");
-                        setNewDate("");
-                      }}
-                      className="rounded-xl bg-blue-600 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 transition-all"
-                    >
-                      {busy === "postpone" ? "Postponing…" : "Confirm Postpone"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Cancel */}
-            <div className="relative">
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() => { setShowCancel(!showCancel); setShowPostpone(false); }}
-                className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-60 transition-all"
-              >
-                <XCircle size={15} />
-                Cancel Booking
-                <ChevronDown size={13} className={`transition-transform ${showCancel ? "rotate-180" : ""}`} />
-              </button>
-              {showCancel && (
-                <div className="absolute left-0 top-full z-20 mt-2 w-72 rounded-2xl border border-[#E7EAF0] bg-white p-4 shadow-lg">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#667085]">Cancellation Reason *</p>
-                  <textarea
-                    value={cancelReason}
-                    onChange={(e) => setCancelReason(e.target.value)}
-                    rows={3}
-                    placeholder="Explain why this booking is being cancelled…"
-                    className="w-full rounded-xl border border-[#E7EAF0] px-3 py-2 text-sm outline-none focus:border-red-400 resize-none"
-                  />
-                  <button
-                    type="button"
-                    disabled={!cancelReason.trim() || busy !== null}
-                    onClick={() => {
-                      onAction("cancel", { reason: cancelReason });
-                      setShowCancel(false);
-                      setCancelReason("");
-                    }}
-                    className="mt-3 w-full rounded-xl bg-red-600 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50 transition-all"
-                  >
-                    {busy === "cancel" ? "Cancelling…" : "Confirm Cancellation"}
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => onAction("complete")}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#43A9F6] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#2F9FE9] disabled:opacity-60 transition-all"
+            >
+              {busy === "complete" ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+              Mark Completed
+            </button>
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => setShowPostpone(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-[#E7EAF0] bg-white px-4 py-2.5 text-sm font-bold text-[#344054] hover:bg-white/70 disabled:opacity-60 transition-all"
+            >
+              <CalendarDays size={15} /> Postpone
+            </button>
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => setShowCancel(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-60 transition-all"
+            >
+              <Ban size={15} /> Cancel
+            </button>
           </>
         )}
       </div>
+
+      {showPostpone && (
+        <div className="mt-4 rounded-xl border border-[#D9ECFF] bg-white p-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="rounded-xl border border-[#E7EAF0] px-3 py-2 text-sm outline-none focus:border-[#43A9F6]" />
+            <input value={postponeReason} onChange={(e) => setPostponeReason(e.target.value)} placeholder="Reason for postponement" className="rounded-xl border border-[#E7EAF0] px-3 py-2 text-sm outline-none focus:border-[#43A9F6]" />
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button type="button" disabled={!postponeReason.trim() || busy !== null} onClick={() => onAction("postpone", { reason: postponeReason, new_tour_date: newDate })} className="rounded-xl bg-[#121826] px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
+              {busy === "postpone" ? "Postponing..." : "Confirm Postpone"}
+            </button>
+            <button type="button" onClick={() => setShowPostpone(false)} className="rounded-xl border border-[#E7EAF0] px-4 py-2 text-sm font-bold text-[#344054]">Close</button>
+          </div>
+        </div>
+      )}
+
+      {showCancel && (
+        <div className="mt-4 rounded-xl border border-red-100 bg-white p-4">
+          <textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Explain why this booking is being cancelled..." rows={3} className="w-full resize-none rounded-xl border border-[#E7EAF0] px-3 py-2 text-sm outline-none focus:border-red-400" />
+          <div className="mt-3 flex gap-2">
+            <button type="button" disabled={!cancelReason.trim() || busy !== null} onClick={() => onAction("cancel", { reason: cancelReason })} className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
+              {busy === "cancel" ? "Cancelling..." : "Confirm Cancellation"}
+            </button>
+            <button type="button" onClick={() => setShowCancel(false)} className="rounded-xl border border-[#E7EAF0] px-4 py-2 text-sm font-bold text-[#344054]">Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
 function NotifyModal({
   bookingCode,
   onClose,
@@ -355,10 +306,10 @@ function NotifyModal({
                 className="flex-1 rounded-xl border border-[#E7EAF0] py-2.5 text-sm font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
                 Cancel
               </button>
-              <button type="submit" disabled={sending || !message.trim()}
+              <button type="submit" disabled={sending}
                 className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#43A9F6] py-2.5 text-sm font-bold text-white hover:bg-[#2F9FE9] disabled:opacity-60 transition-all">
                 {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-                {sending ? "Sending…" : "Send Update"}
+                {sending ? "Sending..." : "Send Update"}
               </button>
             </div>
           </form>
@@ -384,7 +335,7 @@ function StatusHistory({ history }: { history: StatusHistory[] }) {
               <p className="text-sm font-bold text-[#121826] capitalize">{h.new_status.replace(/_/g, " ")}</p>
               {h.reason && <p className="text-xs text-[#667085]">{h.reason}</p>}
               <p className="text-[11px] text-[#98A2B3]">
-                {h.change_source} · {dateStr(h.created_at)} {timeStr(h.created_at)}
+                {h.change_source} - {dateStr(h.created_at)} {timeStr(h.created_at)}
               </p>
             </div>
           </li>
@@ -454,7 +405,8 @@ export default function SupplierBookingDetailPage() {
       }
       void load();
     } catch (e: unknown) {
-      const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      const responseData = (e as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
+      const detail = responseData?.detail || responseData?.message;
       showToast("error", typeof detail === "string" ? detail : "Action failed. Please try again.");
     } finally {
       setBusy(null);
@@ -505,29 +457,30 @@ export default function SupplierBookingDetailPage() {
 
   return (
     <div className="p-6 md:p-8">
-      {/* Back + header */}
-      <div className="mb-6">
-        <Link href="/supplier/bookings" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#667085] hover:text-[#121826]">
-          <ArrowLeft size={15} /> Bookings
-        </Link>
-        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <Link href="/supplier/bookings" className="mb-5 inline-flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-sm font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
+        <ArrowLeft size={15} /> Back to bookings
+      </Link>
+
+      {/* Hero header */}
+      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-7 text-white shadow-xl shadow-emerald-200/60 md:p-8">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-black text-[#121826]">Booking #{booking.booking_code}</h1>
-            <p className="mt-0.5 text-sm text-[#667085]">{booking.tour_name ?? booking.tour_title ?? "Tour booking"}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className={`inline-block rounded-full border px-3 py-1 text-xs font-bold capitalize ${statusColors(booking.booking_status)}`}>
+            <p className="font-mono text-sm font-bold text-emerald-100">{booking.booking_code}</p>
+            <h1 className="mt-1 text-2xl font-black leading-tight md:text-3xl">{booking.tour_name ?? booking.tour_title ?? "Tour booking"}</h1>
+            <span className="mt-3 inline-flex items-center rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold capitalize text-slate-700">
               {booking.booking_status.replace(/_/g, " ")}
             </span>
-            <button
-              type="button"
-              onClick={() => setShowNotify(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#E7EAF0] bg-white px-3.5 py-2 text-sm font-bold text-[#344054] shadow-sm hover:bg-[#F0F7FF] hover:text-[#43A9F6] hover:border-[#43A9F6]/30 transition-all"
-            >
-              <MessageSquare size={14} />
-              Send Update
-            </button>
           </div>
+          <button
+            type="button"
+            onClick={() => setShowNotify(true)}
+            className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50 transition-all"
+          >
+            <MessageSquare size={14} />
+            Send Update
+          </button>
         </div>
       </div>
 
@@ -556,10 +509,10 @@ export default function SupplierBookingDetailPage() {
           <InfoRow label="Booking Code" value={booking.booking_code} />
           <InfoRow label="Tour" value={booking.tour_name ?? booking.tour_title} />
           <InfoRow label="Travel Date" value={dateStr(booking.tour_date ?? booking.travel_date)} />
-          <InfoRow label="Travellers" value={pax ?? "—"} />
+          <InfoRow label="Travellers" value={pax ?? "-"} />
           <InfoRow label="Adults" value={booking.adults_count} />
           <InfoRow label="Booking Status" value={booking.booking_status.replace(/_/g, " ")} />
-          <InfoRow label="Payment Status" value={booking.payment_status ?? "—"} />
+          <InfoRow label="Payment Status" value={booking.payment_status ?? "-"} />
           <InfoRow label="Booked On" value={dateStr(booking.created_at)} />
         </div>
 
@@ -573,7 +526,7 @@ export default function SupplierBookingDetailPage() {
             label="Total Amount"
             value={`${booking.currency ?? "AED"} ${Number(booking.final_amount ?? booking.total_amount ?? 0).toLocaleString()}`}
           />
-          <InfoRow label="Payment Status" value={booking.payment_status ?? "—"} />
+          <InfoRow label="Payment Status" value={booking.payment_status ?? "-"} />
           {booking.cancellation_reason && (
             <div className="mt-3 rounded-xl bg-red-50 border border-red-100 p-3">
               <p className="text-xs font-bold text-red-600">Cancellation Reason</p>
@@ -638,3 +591,6 @@ export default function SupplierBookingDetailPage() {
     </div>
   );
 }
+
+
+

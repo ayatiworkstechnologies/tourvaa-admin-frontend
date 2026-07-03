@@ -173,28 +173,29 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="p-6 md:p-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/agent/bookings"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E7EAF0] bg-white text-[#667085] shadow-sm hover:bg-[#F5F7FA]"
-          >
-            <ArrowLeft size={16} />
-          </Link>
+      <Link href="/agent/bookings" className="mb-5 inline-flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-2 text-sm font-bold text-[#344054] hover:bg-[#F3F8FC] transition-all">
+        <ArrowLeft size={15} /> Back to bookings
+      </Link>
+
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-orange-500 to-orange-700 p-7 text-white shadow-xl shadow-orange-200/60 md:p-8">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black text-[#121826]">{booking.booking_code}</h1>
-            <p className="mt-0.5 text-sm text-[#667085]">Booking details</p>
+            <p className="font-mono text-sm font-bold text-orange-100">Booking details</p>
+            <h1 className="mt-1 text-2xl font-black leading-tight md:text-3xl">{booking.booking_code}</h1>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Pill status={booking.booking_status}>{booking.booking_status.replaceAll("_", " ")}</Pill>
+              <Pill status={booking.payment_status}>{booking.payment_status.replaceAll("_", " ")}</Pill>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Pill status={booking.booking_status}>{booking.booking_status.replaceAll("_", " ")}</Pill>
-          <Pill status={booking.payment_status}>{booking.payment_status.replaceAll("_", " ")}</Pill>
           {invoice && (
             <button
               type="button"
               onClick={handleDownloadInvoice}
               disabled={downloadLoading}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-orange-700 disabled:cursor-wait disabled:opacity-70"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-orange-700 shadow-sm transition hover:bg-orange-50 disabled:cursor-wait disabled:opacity-70"
             >
               {downloadLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
               Download Invoice

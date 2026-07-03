@@ -4,10 +4,14 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarCheck,
+  CreditCard,
+  FileText,
   Headphones,
   LayoutDashboard,
   MapPinned,
+  ReceiptText,
   User,
+  UsersRound,
 } from "lucide-react";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/dashboardPath";
@@ -18,6 +22,10 @@ const NAV = [
   { href: "/customer/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/tours", icon: MapPinned, label: "Browse Tours" },
   { href: "/customer/bookings", icon: CalendarCheck, label: "My Bookings" },
+  { href: "/customer/payments", icon: CreditCard, label: "Payments" },
+  { href: "/customer/invoices", icon: ReceiptText, label: "Invoices" },
+  { href: "/customer/travellers", icon: UsersRound, label: "Travellers" },
+  { href: "/customer/cancellations", icon: FileText, label: "Cancellations" },
   { href: "/customer/profile", icon: User, label: "My Profile" },
   { href: "/customer/support", icon: Headphones, label: "Support" },
 ];
@@ -26,6 +34,10 @@ const PAGE_TITLES: Record<string, string> = {
   "/customer/dashboard": "Dashboard",
   "/tours": "Browse Tours",
   "/customer/bookings": "My Bookings",
+  "/customer/payments": "Payments",
+  "/customer/invoices": "Invoices",
+  "/customer/travellers": "Travellers",
+  "/customer/cancellations": "Cancellations",
   "/customer/profile": "My Profile",
   "/customer/support": "Support",
 };
@@ -67,7 +79,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
       <div className="flex min-h-screen items-center justify-center bg-[#F7F9FC]">
         <div className="flex items-center gap-3 rounded-xl bg-white px-5 py-4 text-sm font-semibold text-[#667085] shadow ring-1 ring-[#E7EAF0]">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#43A9F6] border-t-transparent" />
-          Loading…
+          Loading...
         </div>
       </div>
     );
@@ -87,7 +99,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
       />
-      
+
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button className="absolute inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />
@@ -96,7 +108,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
           </div>
         </div>
       )}
-      
+
       <div className={`flex flex-1 flex-col transition-all duration-300 ${collapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"}`}>
         <Header
           title={pageTitle}
@@ -107,6 +119,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
           onMenuClick={() => setSidebarOpen(true)}
           theme="sky"
         />
+
         <main className="flex-1">{children}</main>
       </div>
     </div>

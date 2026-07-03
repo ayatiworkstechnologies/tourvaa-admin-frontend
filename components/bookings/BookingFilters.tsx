@@ -22,6 +22,9 @@ const bookingStatusOptions = [
   { label: "Payment authorized", value: "payment_authorized" },
   { label: "Pending supplier", value: "pending_supplier_acceptance" },
   { label: "Confirmed", value: "confirmed" },
+  { label: "Completed", value: "completed" },
+  { label: "Declined", value: "declined" },
+  { label: "Postponed", value: "postponed" },
   { label: "Cancelled", value: "cancelled" },
 ];
 
@@ -55,7 +58,7 @@ export default function BookingFilters({
         <Search size={15} className="pointer-events-none absolute left-3 top-[calc(50%+8px)] -translate-y-1/2 text-[#B0B9C6]" />
         <input
           className="w-full rounded-xl border border-[#E7EAF0] py-2.5 pl-9 pr-4 text-sm outline-none transition focus:border-[#43A9F6] focus:ring-4 focus:ring-[#43A9F6]/10"
-          placeholder="Booking, tour, customer, country…"
+          placeholder="Booking, tour, customer, country..."
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
         />
@@ -94,3 +97,4 @@ export default function BookingFilters({
     </div>
   );
 }
+

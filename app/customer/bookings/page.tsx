@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarCheck, Eye, MapPinned } from "lucide-react";
+import { CalendarCheck, CheckCircle2, Clock, Eye, MapPinned, Wallet } from "lucide-react";
 import api from "@/lib/api";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
@@ -20,14 +20,14 @@ type Booking = {
 const STATUSES = ["all", "confirmed", "pending", "pending_payment", "completed", "cancelled"];
 
 function money(value: string | number | undefined, currency = "AED") {
-  if (!value && value !== 0) return "—";
+  if (!value && value !== 0) return "-";
   const amount = Number(value);
   if (Number.isNaN(amount)) return String(value);
   return `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)}`;
 }
 
 function dateText(value?: string | null) {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
@@ -63,7 +63,7 @@ export default function CustomerBookingsPage() {
       setLoading(true);
       try {
         const params: Record<string, unknown> = { limit, page };
-        if (statusFilter !== "all") params.status = statusFilter;
+        if (statusFilter !== "all") params.booking_status = statusFilter;
         const res = await api.get("/customer/bookings", { params });
         if (!active) return;
         setBookings(res.data?.items ?? res.data?.data ?? []);
@@ -85,9 +85,21 @@ export default function CustomerBookingsPage() {
     setPage(1);
   }
 
+  const stats = useMemo(() => {
+    const confirmed = bookings.filter((b) => ["confirmed", "ongoing"].includes(b.booking_status.toLowerCase())).length;
+    const completed = bookings.filter((b) => b.booking_status.toLowerCase() === "completed").length;
+    const pending = bookings.filter((b) => ["pending", "pending_payment"].includes(b.booking_status.toLowerCase())).length;
+    return [
+      { label: "Total Bookings", value: total || bookings.length, icon: CalendarCheck, color: "text-sky-600", bg: "bg-sky-50" },
+      { label: "Active / Upcoming", value: confirmed, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+      { label: "Completed", value: completed, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
+      { label: "Pending Payment", value: pending, icon: Wallet, color: "text-rose-600", bg: "bg-rose-50" },
+    ];
+  }, [bookings, total]);
+
   const columns: DataTableColumn<Booking>[] = [
     { key: "code", header: "Code", render: (b) => <Link href={`/customer/bookings/${b.id}`} className="hover:text-[#43A9F6] hover:underline">{b.booking_code}</Link>, className: "font-bold text-[#121826]" },
-    { key: "tour", header: "Tour Name", render: (b) => b.tour_name ?? "—", className: "text-[#667085]" },
+    { key: "tour", header: "Tour Name", render: (b) => b.tour_name ?? "-", className: "text-[#667085]" },
     { key: "date", header: "Tour Date", render: (b) => dateText(b.tour_date), className: "hidden text-[#667085] sm:table-cell" },
     { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{b.booking_status.replaceAll("_", " ")}</Pill> },
     { key: "payment", header: "Payment Status", render: (b) => <Pill status={b.payment_status}>{b.payment_status.replaceAll("_", " ")}</Pill>, className: "hidden md:table-cell" },
@@ -95,18 +107,40 @@ export default function CustomerBookingsPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[32px] leading-tight font-black tracking-tight text-[#121826]">My Bookings</h1>
-          <p className="mt-2 text-sm font-medium text-[#667085]">View and track all of your bookings and travel history.</p>
+    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-8">
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-sky-500 to-sky-700 p-7 text-white shadow-xl shadow-sky-200/60 md:p-9">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">My Bookings</h1>
+            <p className="mt-2 max-w-md text-sm font-medium text-sky-100">View and track all of your bookings and travel history.</p>
+          </div>
+          <Link
+            href="/tours"
+            className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-sky-700 shadow-sm transition hover:bg-sky-50 hover:-translate-y-0.5"
+          >
+            <MapPinned size={18} strokeWidth={2.5} /> Browse Tours
+          </Link>
         </div>
-        <Link
-          href="/tours"
-          className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#43A9F6] px-5 py-3 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] hover:bg-[#2F9FE9] transition-all hover:-translate-y-0.5"
-        >
-          <MapPinned size={18} strokeWidth={2.5} /> Browse Tours
-        </Link>
+      </div>
+
+      {/* Stats */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className="group relative overflow-hidden rounded-2xl border border-transparent bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-500">{label}</p>
+                <p className={`mt-2 text-3xl font-black tracking-tight ${color}`}>{value}</p>
+              </div>
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg}`}>
+                <Icon size={20} className={color} />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Status Filter */}

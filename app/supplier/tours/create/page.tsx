@@ -20,7 +20,7 @@ type ApiOption = { id: number; name?: string; category_name?: string };
 type PriceSlab = {
   persons_from: number;
   persons_to: number;
-  price_per_person: number;
+  price_per_person: number | string;
   currency: string;
 };
 
@@ -110,7 +110,7 @@ export default function CreateTourPage() {
 
   // Step 3: Pricing
   const [slabs, setSlabs] = useState<PriceSlab[]>([
-    { persons_from: 1, persons_to: 10, price_per_person: 0, currency: "AED" },
+    { persons_from: 1, persons_to: 1, price_per_person: "", currency: "AED" },
   ]);
 
   useEffect(() => {
@@ -127,7 +127,7 @@ export default function CreateTourPage() {
   const addSlab = () =>
     setSlabs((prev) => [
       ...prev,
-      { persons_from: 1, persons_to: 20, price_per_person: 0, currency: "AED" },
+      { persons_from: 1, persons_to: 1, price_per_person: "", currency: slabs[0]?.currency || "AED" },
     ]);
 
   const removeSlab = (i: number) =>
@@ -574,7 +574,7 @@ export default function CreateTourPage() {
                         className="flex justify-between text-sm"
                       >
                         <span className="text-[#667085]">
-                          {s.persons_from}â€“{s.persons_to} persons
+                          {s.persons_from}-{s.persons_to} persons
                         </span>
                         <span className="font-semibold text-[#121826]">
                           {s.currency} {Number(s.price_per_person).toLocaleString()} / pax
@@ -642,4 +642,7 @@ export default function CreateTourPage() {
     </div>
   );
 }
+
+
+
 

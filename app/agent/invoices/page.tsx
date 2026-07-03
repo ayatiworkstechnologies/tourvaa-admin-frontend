@@ -105,9 +105,14 @@ export default function AgentInvoicesPage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div>
-        <h1 className="text-2xl font-black text-[#121826]">Invoices</h1>
-        <p className="mt-1 text-sm text-[#667085]">Download and review invoices for all bookings.</p>
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-orange-500 to-orange-700 p-7 text-white shadow-xl shadow-orange-200/60 md:p-9">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10">
+          <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Invoices</h1>
+          <p className="mt-2 max-w-md text-sm font-medium text-orange-100">Download and review invoices for all bookings.</p>
+        </div>
       </div>
 
       {/* Table */}

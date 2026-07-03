@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -14,6 +14,7 @@ type Payout = {
   id: number;
   payout_code?: string;
   amount?: number | string;
+  total_amount?: number | string;
   currency?: string;
   status?: string;
   payment_method?: string;
@@ -119,25 +120,30 @@ export default function PayoutsPage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-[#121826]">Payouts</h1>
-          <p className="mt-1 text-sm text-[#667085]">
-            Request and track your payout batches.
-          </p>
+      {/* Hero header */}
+      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-7 text-white shadow-xl shadow-emerald-200/60 md:p-9">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Payouts</h1>
+            <p className="mt-2 max-w-md text-sm font-medium text-emerald-100">
+              Request and track your payout batches.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowForm((v) => !v);
+              setFormError("");
+              setFormSuccess(false);
+            }}
+            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50 transition-all"
+          >
+            <Plus size={16} />
+            Request Payout
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setShowForm((v) => !v);
-            setFormError("");
-            setFormSuccess(false);
-          }}
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition"
-        >
-          <Plus size={16} />
-          Request Payout
-        </button>
       </div>
 
       {/* Success message */}
@@ -178,6 +184,7 @@ export default function PayoutsPage() {
             <div>
               <label className={labelCls}>Currency</label>
               <select
+                title="Currency"
                 className={inputCls}
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
@@ -192,6 +199,7 @@ export default function PayoutsPage() {
             <div>
               <label className={labelCls}>Payment Method</label>
               <select
+                title="Payment method"
                 className={inputCls}
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
@@ -241,7 +249,7 @@ export default function PayoutsPage() {
               ) : (
                 <CheckCircle2 size={15} />
               )}
-              {submitting ? "Submitting…" : "Submit Request"}
+              {submitting ? "Submitting..." : "Submit Request"}
             </button>
             <button
               type="button"
@@ -322,13 +330,13 @@ export default function PayoutsPage() {
                   </p>
                   <p className="text-xs text-[#667085]">
                     {p.payment_method?.replace(/_/g, " ") ?? "Bank Transfer"}
-                    {p.bank_name ? ` · ${p.bank_name}` : ""}
+                    {p.bank_name ? ` - ${p.bank_name}` : ""}
                   </p>
                   <p className="mt-0.5 text-xs text-[#98A2B3]">
                     Requested:{" "}
-                    {(p.created_at ?? "").split("T")[0] || "—"}
+                    {(p.created_at ?? "").split("T")[0] || "-"}
                     {p.paid_at
-                      ? ` · Paid: ${p.paid_at.split("T")[0]}`
+                      ? ` - Paid: ${p.paid_at.split("T")[0]}`
                       : ""}
                   </p>
                 </div>
@@ -336,7 +344,7 @@ export default function PayoutsPage() {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="font-black text-[#121826]">
-                    {money(p.amount, p.currency)}
+                    {money(p.total_amount ?? p.amount, p.currency)}
                   </p>
                   {p.notes && (
                     <p className="max-w-[160px] truncate text-xs text-[#98A2B3]">
@@ -357,3 +365,5 @@ export default function PayoutsPage() {
     </div>
   );
 }
+
+

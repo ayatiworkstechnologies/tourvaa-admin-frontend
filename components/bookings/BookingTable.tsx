@@ -46,8 +46,13 @@ export default function BookingTable({ onCancel, onConfirm, ...tableProps }: Boo
     },
     {
       key: "booking_status",
-      header: "Status",
+      header: "Booking Status",
       render: (booking) => <BookingStatusBadge value={booking.booking_status} />,
+    },
+    {
+      key: "supplier_acceptance_status",
+      header: "Supplier",
+      render: (booking) => <BookingStatusBadge value={booking.supplier_acceptance_status || "not_assigned"} />,
     },
     {
       key: "payment_status",

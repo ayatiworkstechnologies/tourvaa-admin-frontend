@@ -140,25 +140,29 @@ export default function AgentCustomersPage() {
 
   return (
     <div className="p-6 md:p-8">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[32px] leading-tight font-black tracking-tight text-[#121826]">My Customers</h1>
-          <p className="mt-1 text-sm font-medium text-[#667085]">
-            Customers linked to your bookings.{total > 0 && ` ${total} total.`}
-          </p>
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-orange-500 to-orange-700 p-7 text-white shadow-xl shadow-orange-200/60 md:p-9">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">My Customers</h1>
+            <p className="mt-2 max-w-md text-sm font-medium text-orange-100">
+              Customers linked to your bookings.{total > 0 && ` ${total} total.`}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setForm(BLANK); setShowModal(true); }}
+            className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-orange-700 shadow-sm transition hover:bg-orange-50 hover:-translate-y-0.5"
+          >
+            <UserPlus size={16} strokeWidth={2.5} /> New Customer
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => { setForm(BLANK); setShowModal(true); }}
-          className="flex items-center gap-2 rounded-xl bg-[#43A9F6] px-5 py-3 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] hover:bg-[#2F9FE9] transition-all hover:-translate-y-0.5"
-        >
-          <UserPlus size={16} strokeWidth={2.5} /> New Customer
-        </button>
       </div>
 
       {/* Search */}
-      <div className="relative mt-8 max-w-md">
+      <div className="relative mt-6 max-w-md">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
         <input
           value={search}

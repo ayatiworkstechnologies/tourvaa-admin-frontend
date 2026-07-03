@@ -14,7 +14,7 @@ import api from "@/lib/api";
 
 const PAGE_SIZE = 15;
 
-// ── Status badge ──────────────────────────────────────────────────────────────
+// â”€â”€ Status badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function StatusBadge({ status }: { status: string }) {
   const s = (status || "").toLowerCase();
   const cls =
@@ -31,7 +31,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ── Action modal ──────────────────────────────────────────────────────────────
+// â”€â”€ Action modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type ModalAction = "capture" | "void" | "refund";
 
 function ActionModal({
@@ -102,7 +102,7 @@ function ActionModal({
 
         <p className="mb-4 text-xs text-[#667085]">
           Payment: <strong className="text-[#121826]">{payment.payment_code}</strong>
-          {" · "}Gateway: <strong className="text-[#121826]">{payment.gateway || "manual"}</strong>
+          {" Â· "}Gateway: <strong className="text-[#121826]">{payment.gateway || "manual"}</strong>
         </p>
 
         {err && (
@@ -151,7 +151,7 @@ function ActionModal({
   );
 }
 
-// ── Status update popover ─────────────────────────────────────────────────────
+// â”€â”€ Status update popover â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STATUSES = ["pending", "authorized", "paid", "partially_paid", "failed", "refunded", "partially_refunded", "voided"];
 
 function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => void }) {
@@ -201,7 +201,7 @@ function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => voi
       await api.patch(`/payments/${payment.id}/status`, { payment_status: s });
       onDone();
     } catch {
-      // silent — DataTable will refresh on done anyway
+      // silent â€” DataTable will refresh on done anyway
     } finally {
       setSaving(false);
       setOpen(false);
@@ -212,7 +212,7 @@ function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => voi
     <>
       <button ref={buttonRef} type="button" onClick={() => setOpen(v => !v)} disabled={saving}
         className="rounded-lg border border-[#E7EAF0] px-2 py-1 text-[10px] font-bold text-[#667085] hover:border-[#B0B8C9] hover:bg-[#F7F9FC] disabled:opacity-50">
-        {saving ? <Loader2 size={10} className="animate-spin" /> : "Status ▾"}
+        {saving ? <Loader2 size={10} className="animate-spin" /> : "Status â–¾"}
       </button>
       {open &&
         typeof document !== "undefined" &&
@@ -235,7 +235,7 @@ function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => voi
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// â”€â”€ Main page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function PaymentsPage() {
   const { hasPermission } = useAuthContext();
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -249,10 +249,10 @@ export default function PaymentsPage() {
   const [stats, setStats] = useState({ total: 0, paid: 0, pending: 0, refunded: 0 });
 
   const debouncedSearch = useDebounce(searchTerm, 350);
-  const canCapture = hasPermission("payments.capture") || hasPermission("update-payments");
-  const canVoid = hasPermission("payments.void") || hasPermission("update-payments");
-  const canRefund = hasPermission("payments.refund") || hasPermission("update-payments");
-  const canEdit = hasPermission("payments.edit") || hasPermission("update-payments");
+  const canCapture = hasPermission("payments.capture");
+  const canVoid = hasPermission("payments.void");
+  const canRefund = hasPermission("payments.refund");
+  const canEdit = hasPermission("payments.edit");
 
   const fetchPayments = useCallback(async () => {
     setIsLoading(true);
@@ -287,7 +287,7 @@ export default function PaymentsPage() {
         refunded: refundedRes.total ?? 0,
       });
     } catch {
-      // Non-critical — stat cards just stay at zero.
+      // Non-critical â€” stat cards just stay at zero.
     }
   }, []);
 

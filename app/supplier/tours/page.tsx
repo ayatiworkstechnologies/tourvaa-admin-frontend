@@ -114,21 +114,25 @@ export default function SupplierToursPage() {
 
   return (
     <div className="p-6 md:p-8">
-      {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-[32px] leading-tight font-black tracking-tight text-[#121826]">My Tours</h1>
-          <p className="mt-2 text-sm font-medium text-[#667085]">
-            Manage and publish your tour offerings.
-          </p>
+      {/* Hero header */}
+      <div className="relative mb-8 overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-7 text-white shadow-xl shadow-emerald-200/60 md:p-9">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">My Tours</h1>
+            <p className="mt-2 max-w-md text-sm font-medium text-emerald-100">
+              Manage and publish your tour offerings.
+            </p>
+          </div>
+          <Link
+            href="/supplier/tours/create"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50 transition-all hover:-translate-y-0.5"
+          >
+            <Plus size={18} strokeWidth={2.5} />
+            Create Tour
+          </Link>
         </div>
-        <Link
-          href="/supplier/tours/create"
-          className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#43A9F6] px-5 py-3 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] hover:bg-[#2F9FE9] transition-all hover:-translate-y-0.5"
-        >
-          <Plus size={18} strokeWidth={2.5} />
-          Create Tour
-        </Link>
       </div>
 
       {/* Search */}

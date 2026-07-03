@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Loader2, Mail, MessageSquare, Phone, Send } from "lucide-react";
+import { CheckCircle2, Headphones, Loader2, Mail, MessageSquare, Phone, Send } from "lucide-react";
 import api from "@/lib/api";
 
 export default function CustomerSupportPage() {
@@ -27,17 +27,27 @@ export default function CustomerSupportPage() {
   }
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-8">
-        <h1 className="text-[32px] font-black leading-tight tracking-tight text-[#121826]">Support</h1>
-        <p className="mt-2 text-sm font-medium text-[#667085]">
-          Get help with your bookings, payments, or any other queries.
-        </p>
+    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-8">
+      {/* Hero header */}
+      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-sky-500 to-sky-700 p-7 text-white shadow-xl shadow-sky-200/60 md:p-9">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex items-center gap-5">
+          <div className="hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm ring-4 ring-white/20 sm:flex">
+            <Headphones size={28} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Support</h1>
+            <p className="mt-2 max-w-md text-sm font-medium text-sky-100">
+              Get help with your bookings, payments, or any other queries.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         {/* Contact form */}
-        <div className="rounded-2xl border border-[#E7EAF0]/80 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
+        <div className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100">
           <h2 className="mb-5 font-black text-[#121826]">Send us a message</h2>
 
           {sent ? (
@@ -104,7 +114,7 @@ export default function CustomerSupportPage() {
 
         {/* Contact info */}
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[#E7EAF0]/80 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
+          <div className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100">
             <h3 className="mb-4 font-black text-[#121826]">Contact Details</h3>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
@@ -140,7 +150,7 @@ export default function CustomerSupportPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#E7EAF0]/80 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
+          <div className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100">
             <h3 className="mb-3 font-black text-[#121826]">Common Issues</h3>
             <ul className="space-y-2 text-sm text-[#667085]">
               {[

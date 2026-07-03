@@ -1,4 +1,4 @@
-﻿import api from "@/lib/api";
+import api from "@/lib/api";
 
 export type Customer = {
   id: number;
@@ -44,6 +44,7 @@ export type Customer = {
   recent_bookings?: BookingHistory[];
   recent_payments?: PaymentHistory[];
   last_login_at?: string | null;
+  last_login_ip?: string | null;
 };
 
 export type CustomerFilters = {
@@ -180,6 +181,7 @@ export async function sendCustomerMessage(
   );
   return response.data.data;
 }
+
 
 
 

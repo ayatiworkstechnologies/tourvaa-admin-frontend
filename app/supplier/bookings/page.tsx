@@ -5,10 +5,13 @@ import Link from "next/link";
 import {
   AlertCircle,
   CalendarCheck,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Clock3,
   Eye,
   Filter,
+  XCircle,
 } from "lucide-react";
 import api from "@/lib/api";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
@@ -98,6 +101,13 @@ export default function SupplierBookingsPage() {
     setPage(1);
   };
 
+  const stats = [
+    { label: "Total Bookings", value: total, icon: CalendarCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Confirmed", value: bookings.filter((b) => ["confirmed", "ongoing"].includes(b.booking_status.toLowerCase())).length, icon: CheckCircle2, color: "text-sky-600", bg: "bg-sky-50" },
+    { label: "Pending", value: bookings.filter((b) => ["pending", "pending_payment", "pending_confirmation"].includes(b.booking_status.toLowerCase())).length, icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Cancelled / Declined", value: bookings.filter((b) => ["cancelled", "declined"].includes(b.booking_status.toLowerCase())).length, icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" },
+  ];
+
   const columns: DataTableColumn<Booking>[] = [
     { key: "booking_code", header: "Booking", className: "font-mono text-xs text-[#667085]", render: (b) => b.booking_code },
     { key: "tour", header: "Tour", className: "max-w-[200px]", render: (b) => <p className="truncate font-semibold text-[#121826]">{b.tour_name ?? b.tour_title ?? "—"}</p> },
@@ -110,11 +120,33 @@ export default function SupplierBookingsPage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mb-8">
-        <h1 className="text-[32px] leading-tight font-black tracking-tight text-[#121826]">Bookings</h1>
-        <p className="mt-2 text-sm font-medium text-[#667085]">
-          Manage all bookings for your tours.
-        </p>
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-7 text-white shadow-xl shadow-emerald-200/60 md:p-9">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10">
+          <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Bookings</h1>
+          <p className="mt-2 max-w-md text-sm font-medium text-emerald-100">
+            Manage all bookings for your tours.
+          </p>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className="group relative overflow-hidden rounded-2xl border border-transparent bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-500">{label}</p>
+                <p className={`mt-2 text-3xl font-black tracking-tight ${color}`}>{value}</p>
+              </div>
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg}`}>
+                <Icon size={20} className={color} />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
@@ -125,7 +157,7 @@ export default function SupplierBookingsPage() {
             value={statusFilter}
             onChange={(e) => handleFilterChange(e.target.value)}
             className="rounded-2xl border border-[#E7EAF0]/80 bg-white px-4 py-2.5 text-sm font-bold text-[#344054] shadow-[0_2px_8px_rgb(0,0,0,0.02)] outline-none focus:border-[#43A9F6] focus:ring-4 focus:ring-[#43A9F6]/10 transition-all cursor-pointer"
-          >
+          > 
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}

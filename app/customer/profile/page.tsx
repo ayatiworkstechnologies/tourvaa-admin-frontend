@@ -69,7 +69,7 @@ export default function CustomerProfilePage() {
         const response = await api.get("/customers/me");
         const d = response.data.data;
         setProfile({
-          name: d.name || "",
+          name: d.full_name || d.name || "",
           email: d.email || "",
           phone: d.phone || "",
           profile_image: d.profile_image || "",
@@ -178,16 +178,36 @@ export default function CustomerProfilePage() {
     }
   };
 
+  const initials = profile.name
+    ? profile.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "?";
+
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-[#121826]">My Profile</h1>
-        <p className="mt-1 text-sm text-[#667085]">Manage your traveller details, address info, and security credentials.</p>
+    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-8">
+      {/* Hero header */}
+      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-sky-500 to-sky-700 p-7 text-white shadow-xl shadow-sky-200/60 md:p-9">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex items-center gap-5">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/20 text-xl font-black backdrop-blur-sm ring-4 ring-white/20">
+            {profile.profile_image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.profile_image} alt={profile.name} className="h-full w-full object-cover" />
+            ) : (
+              initials
+            )}
+          </div>
+          <div>
+            <h1 className="text-2xl font-black leading-tight md:text-3xl">{profile.name || "My Profile"}</h1>
+            <p className="mt-1 text-sm font-medium text-sky-100">{profile.email}</p>
+            <p className="mt-2 text-sm text-sky-100">Manage your traveller details, address info, and security credentials.</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Profile/Account Form */}
-        <form onSubmit={saveProfile} className="rounded-2xl border border-[#E7EAF0] bg-white p-6 shadow-sm">
+        <form onSubmit={saveProfile} className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100">
           <div className="mb-5 flex items-center justify-between">
             <h3 className="text-lg font-bold text-[#121826]">Account Details</h3>
             <button
@@ -305,7 +325,7 @@ export default function CustomerProfilePage() {
         </form>
 
         {/* Change Password Form */}
-        <form onSubmit={savePassword} className="rounded-2xl border border-[#E7EAF0] bg-white p-6 shadow-sm self-start">
+        <form onSubmit={savePassword} className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100 self-start">
           <div className="mb-5 flex items-center justify-between">
             <h3 className="text-lg font-bold text-[#121826]">Security & Password</h3>
             <button
