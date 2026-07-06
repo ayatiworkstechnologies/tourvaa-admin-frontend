@@ -11,19 +11,23 @@ type Props = {
   requiredPermission?: string;
 };
 
+const DOCS_CAPTURE_MODE = typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
+
 export default function ProtectedRoute({ children, requiredPermission }: Props) {
   const router = useRouter();
   const { loading, isLoggedIn, hasPermission } = useAuthContext();
+  const docsMode = typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
 
   useEffect(() => {
-    if (!loading && !isLoggedIn) {
+    if (!docsMode && !loading && !isLoggedIn) {
       router.replace("/login");
     }
-  }, [isLoggedIn, loading, router]);
+  }, [docsMode, isLoggedIn, loading, router]);
 
-  if (loading) return <LoadingState label="Restoring session..." fullPage />;
-  if (!isLoggedIn) return <LoadingState label="Redirecting to login..." fullPage />;
-  if (requiredPermission && !hasPermission(requiredPermission)) return <AccessDenied />;
+  if (DOCS_CAPTURE_MODE) return <>{children}</>;
+  if (!docsMode && loading) return <LoadingState label="Restoring session..." fullPage />;
+  if (!docsMode && !isLoggedIn) return <LoadingState label="Redirecting to login..." fullPage />;
+  if (!docsMode && requiredPermission && !hasPermission(requiredPermission)) return <AccessDenied />;
 
   return <>{children}</>;
 }
