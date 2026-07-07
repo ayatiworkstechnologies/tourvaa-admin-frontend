@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { Eye, EyeOff, Lock, LogIn, Mail } from "lucide-react";
+import { LuEye as Eye, LuEyeOff as EyeOff, LuLock as Lock, LuLogIn as LogIn, LuMail as Mail } from "react-icons/lu";
 import api from "@/lib/api";
 import { getDashboardPath } from "@/lib/dashboardPath";
 import { getApiErrorMessage } from "@/lib/error-handler";
@@ -59,22 +59,22 @@ function LoginForm() {
   if (!sessionLoading && isLoggedIn) return null;
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-[#F7F9FC] px-4 py-12">
+    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-zinc-50 px-4 py-12">
       <div className="w-full max-w-md">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
           <div className="mb-6 text-center">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#E7F5FF] text-[#0284C7]">
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
               <LogIn size={22} />
             </span>
-            <h1 className="mt-3 text-xl font-bold text-[#0F172A]">Welcome back</h1>
-            <p className="mt-1 text-sm text-[#667085]">Sign in to your Tourvaa account</p>
+            <h1 className="mt-3 text-xl font-bold text-zinc-950">Welcome back</h1>
+            <p className="mt-1 text-sm text-zinc-500">Sign in to your Tourvaa account</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-[#344054]">Email address</label>
+              <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Email address</label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                 <input
                   type="email"
                   autoComplete="email"
@@ -83,27 +83,27 @@ function LoginForm() {
                     required: "Email is required.",
                     validate: (v) => validateEmail(v) || "Enter a valid email address.",
                   })}
-                  className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-[#0F172A] placeholder-[#98A2B3] outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100"
+                  className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
               {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-[#344054]">Password</label>
+              <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Password</label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   placeholder="Your password"
                   {...register("password", { required: "Password is required." })}
-                  className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-10 text-sm text-[#0F172A] placeholder-[#98A2B3] outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100"
+                  className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-10 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#98A2B3] hover:text-[#667085]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-500"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -113,7 +113,7 @@ function LoginForm() {
             </div>
 
             <div className="flex justify-end">
-              <Link href="/forgot-password" className="text-xs font-semibold text-[#0284C7] hover:underline">
+              <Link href="/forgot-password" className="text-xs font-semibold text-indigo-600 hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -125,15 +125,15 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0284C7] py-3 text-sm font-bold text-white transition hover:bg-[#0369A1] disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:opacity-60"
             >
               <LogIn size={15} />
               {loading ? "Signing in…" : "Sign In"}
             </button>
 
-            <p className="text-center text-sm text-[#667085]">
+            <p className="text-center text-sm text-zinc-500">
               Don&apos;t have an account?{" "}
-              <Link href="/register" className="font-bold text-[#0284C7] hover:underline">
+              <Link href="/register" className="font-bold text-indigo-600 hover:underline">
                 Create account
               </Link>
             </p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Building, Bus, FileCheck, Percent } from "lucide-react";
+import { LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck, LuPercent as Percent } from "react-icons/lu";
 import CompanyInfoTab from "@/components/supplier/profile/CompanyInfoTab";
 import DocumentsTab from "@/components/supplier/profile/DocumentsTab";
 import CommissionRequestTab from "@/components/supplier/profile/CommissionRequestTab";

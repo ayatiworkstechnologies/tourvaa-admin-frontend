@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Banknote } from "lucide-react";
+import { LuBanknote as Banknote } from "react-icons/lu";
 import api from "@/lib/api";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";

@@ -2,22 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Banknote,
-  CalendarCheck,
-  CircleDollarSign,
-  Clock3,
-  MapPinned,
-  PackageCheck,
-  Plus,
-  ReceiptText,
-  RefreshCw,
-  Scale,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { LuArrowRight as ArrowRight, LuBanknote as Banknote, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuClock3 as Clock3, LuMapPinned as MapPinned, LuPackageCheck as PackageCheck, LuPlus as Plus, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuScale as Scale, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";

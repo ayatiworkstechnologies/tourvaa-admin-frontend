@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { Eye, EyeOff, Lock, LogIn, Mail, ShieldCheck } from "lucide-react";
+import { LuEye as Eye, LuEyeOff as EyeOff, LuLock as Lock, LuLogIn as LogIn, LuMail as Mail, LuShieldCheck as ShieldCheck } from "react-icons/lu";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
 import { useAuth } from "@/hooks/useAuth";

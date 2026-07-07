@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Calendar, Hash, Mail, MapPin, Phone } from "lucide-react";
+import { LuBuilding2 as Building2, LuCalendar as Calendar, LuHash as Hash, LuMail as Mail, LuMapPin as MapPin, LuPhone as Phone } from "react-icons/lu";
 
 import StatusBadge from "@/components/operations/StatusBadge";
 

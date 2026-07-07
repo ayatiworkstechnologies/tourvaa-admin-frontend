@@ -29,10 +29,10 @@ const cookieTypes = [
 
 export default function CookiePolicyPage() {
   return (
-    <main className="min-h-screen bg-[#F7F9FC] pb-20">
-      <section className="bg-[#0F172A] py-14 text-white">
+    <main className="min-h-screen bg-zinc-50 pb-20">
+      <section className="bg-zinc-950 py-14 text-white">
         <div className="mx-auto max-w-4xl px-5 md:px-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#43A9F6]">Legal</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-400">Legal</p>
           <h1 className="mt-2 text-4xl font-bold">Cookie Policy</h1>
           <p className="mt-3 text-sm text-white/60">Last updated: June 2026</p>
         </div>
@@ -40,28 +40,28 @@ export default function CookiePolicyPage() {
 
       <div className="mx-auto max-w-4xl px-5 py-12 md:px-8">
         <div className="space-y-6">
-          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#E7EAF0]">
-            <h2 className="mb-3 font-bold text-[#121826]">What are cookies?</h2>
-            <p className="text-sm leading-7 text-[#667085]">
+          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-zinc-100 shadow-sm ring-0">
+            <h2 className="mb-3 font-bold text-zinc-950">What are cookies?</h2>
+            <p className="text-sm leading-7 text-zinc-500">
               Cookies are small text files placed on your device when you visit a website. They allow the site to recognise your device, remember your preferences, and improve your experience over time. Cookies do not give us access to your device or any personal information beyond what you choose to share.
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#E7EAF0]">
-            <h2 className="mb-5 font-bold text-[#121826]">Types of cookies we use</h2>
+          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-zinc-100 shadow-sm ring-0">
+            <h2 className="mb-5 font-bold text-zinc-950">Types of cookies we use</h2>
             <div className="space-y-5">
               {cookieTypes.map((c) => (
-                <div key={c.name} className="rounded-xl border border-[#E7EAF0] p-5">
-                  <p className="font-bold text-[#121826]">{c.name}</p>
-                  <p className="mt-2 text-sm leading-6 text-[#667085]">{c.purpose}</p>
+                <div key={c.name} className="rounded-xl border border-zinc-200 p-5">
+                  <p className="font-bold text-zinc-950">{c.name}</p>
+                  <p className="mt-2 text-sm leading-6 text-zinc-500">{c.purpose}</p>
                   <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <span className="font-bold uppercase text-[#98A2B3]">Examples</span>
-                      <p className="mt-0.5 text-[#667085]">{c.examples}</p>
+                      <span className="font-bold uppercase text-zinc-400">Examples</span>
+                      <p className="mt-0.5 text-zinc-500">{c.examples}</p>
                     </div>
                     <div>
-                      <span className="font-bold uppercase text-[#98A2B3]">Duration</span>
-                      <p className="mt-0.5 text-[#667085]">{c.duration}</p>
+                      <span className="font-bold uppercase text-zinc-400">Duration</span>
+                      <p className="mt-0.5 text-zinc-500">{c.duration}</p>
                     </div>
                   </div>
                 </div>
@@ -74,14 +74,14 @@ export default function CookiePolicyPage() {
             ["Third-party cookies", "Some features of our platform may use third-party services that set their own cookies. These include payment processors, analytics providers (such as Google Analytics), and marketing platforms. We do not have control over these cookies — please refer to the respective provider's privacy policies for details."],
             ["Changes to this policy", "We may update this Cookie Policy from time to time to reflect changes in technology or regulation. We will notify registered users of significant changes. The date at the top of this page always shows the most recent version."],
           ].map(([title, text]) => (
-            <div key={String(title)} className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#E7EAF0]">
-              <h2 className="mb-3 font-bold text-[#121826]">{String(title)}</h2>
-              <p className="text-sm leading-7 text-[#667085]">{String(text)}</p>
+            <div key={String(title)} className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-zinc-100 shadow-sm ring-0">
+              <h2 className="mb-3 font-bold text-zinc-950">{String(title)}</h2>
+              <p className="text-sm leading-7 text-zinc-500">{String(text)}</p>
             </div>
           ))}
 
-          <div className="rounded-xl bg-[#E7F5FF] p-5 text-sm text-[#344054]">
-            Questions? <Link href="/contact" className="font-bold text-[#0284C7] hover:underline">Contact us</Link> or see our <Link href="/terms" className="font-bold text-[#0284C7] hover:underline">Terms & Conditions</Link>.
+          <div className="rounded-xl bg-indigo-50 p-5 text-sm text-zinc-600">
+            Questions? <Link href="/contact" className="font-bold text-indigo-600 hover:underline">Contact us</Link> or see our <Link href="/terms" className="font-bold text-indigo-600 hover:underline">Terms & Conditions</Link>.
           </div>
         </div>
       </div>

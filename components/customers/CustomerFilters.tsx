@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { LuSearch as Search } from "react-icons/lu";
 import { useGeoCountries } from "@/hooks/useGeo";
 
 export type CustomerFilterState = {

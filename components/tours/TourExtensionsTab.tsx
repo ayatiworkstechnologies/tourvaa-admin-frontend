@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
+import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourExtension, getExtensions, createExtension, updateExtension, deleteExtension } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";

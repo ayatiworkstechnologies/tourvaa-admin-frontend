@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { LuX as X } from "react-icons/lu";
 
 type ToastType = "success" | "error" | "warning" | "info";
 type Toast = { id: number; type: ToastType; title?: string; message: string };

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Lock } from "lucide-react";
+import { LuLock as Lock } from "react-icons/lu";
 import { useRouter } from "next/navigation";
 
 export default function AccessDenied() {

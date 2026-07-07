@@ -2,19 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  AlertCircle,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Eye,
-  MapPinned,
-  Pencil,
-  Plus,
-  Search,
-  SendHorizonal,
-} from "lucide-react";
+import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuClock as Clock, LuEye as Eye, LuMapPinned as MapPinned, LuPencil as Pencil, LuPlus as Plus, LuSearch as Search, LuSendHorizontal as SendHorizonal } from "react-icons/lu";
 import api from "@/lib/api";
 
 type Tour = {

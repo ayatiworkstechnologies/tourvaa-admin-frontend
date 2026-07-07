@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText } from "lucide-react";
+import { LuFileText as FileText } from "react-icons/lu";
 import api from "@/lib/api";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 

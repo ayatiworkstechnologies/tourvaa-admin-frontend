@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarCheck, Clock, RefreshCw, TicketX, Wallet } from "lucide-react";
+import { LuCalendarCheck as CalendarCheck, LuClock as Clock, LuRefreshCw as RefreshCw, LuTicketX as TicketX, LuWallet as Wallet } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import BookingFilters from "@/components/bookings/BookingFilters";

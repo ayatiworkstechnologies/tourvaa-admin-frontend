@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Ban, Briefcase, Check, CheckCircle2, Eye, FileText, Percent, Receipt, ShieldHalf, Truck, X, XCircle } from "lucide-react";
+import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuTruck as Truck, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
 import ActionModal from "@/components/operations/ActionModal";
 import CompletionChecklist from "@/components/operations/CompletionChecklist";

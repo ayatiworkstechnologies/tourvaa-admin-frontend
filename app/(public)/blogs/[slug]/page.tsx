@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Calendar, Clock } from "lucide-react";
+import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuCalendar as Calendar, LuClock as Clock } from "react-icons/lu";
 
 const posts: Record<string, { title: string; date: string; category: string; readTime: string; img: string; excerpt: string; body: string[] }> = {
   "top-5-monsoon-destinations": {
@@ -70,9 +70,9 @@ function renderBody(text: string) {
     const end = text.indexOf("**", 2);
     const bold = text.slice(2, end);
     const rest = text.slice(end + 2);
-    return <p key={text} className="leading-7 text-[#344054]"><strong className="text-[#121826]">{bold}</strong>{rest}</p>;
+    return <p key={text} className="leading-relaxed text-zinc-600"><strong className="text-zinc-950">{bold}</strong>{rest}</p>;
   }
-  return <p key={text} className="leading-7 text-[#344054]">{text}</p>;
+  return <p key={text} className="leading-relaxed text-zinc-600">{text}</p>;
 }
 
 export default function BlogDetailPage({ params }: { params: { slug: string } }) {
@@ -83,53 +83,53 @@ export default function BlogDetailPage({ params }: { params: { slug: string } })
     .slice(0, 2);
 
   return (
-    <main className="min-h-screen bg-[#F7F9FC] pb-20">
+    <main className="min-h-screen bg-zinc-50 pb-20">
       {/* Hero */}
-      <div className="relative h-80 bg-[#0F172A] md:h-96">
+      <div className="relative h-96 bg-zinc-950 md:h-[500px]">
         <img src={post.img} alt={post.title} className="h-full w-full object-cover opacity-60" />
-        <div className="absolute inset-0 bg-linear-to-t from-[#0F172A] to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-3xl px-5 pb-8 md:px-8">
-          <span className="rounded-full bg-[#0284C7] px-3 py-1 text-xs font-bold text-white">{post.category}</span>
-          <h1 className="mt-3 text-2xl font-bold text-white md:text-4xl">{post.title}</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-white/70">
-            <span className="flex items-center gap-1"><Calendar size={12} />{post.date}</span>
-            <span className="flex items-center gap-1"><Clock size={12} />{post.readTime}</span>
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-3xl px-5 pb-10 md:px-8">
+          <span className="rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm">{post.category}</span>
+          <h1 className="mt-4 text-3xl font-black text-white drop-shadow-sm md:text-5xl lg:leading-tight">{post.title}</h1>
+          <div className="mt-5 flex flex-wrap items-center gap-5 text-sm font-medium text-white/80">
+            <span className="flex items-center gap-1.5"><Calendar size={16} className="text-indigo-400" />{post.date}</span>
+            <span className="flex items-center gap-1.5"><Clock size={16} className="text-indigo-400" />{post.readTime}</span>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-5 py-10 md:px-8">
-        <Link href="/blogs" className="mb-6 inline-flex items-center gap-2 text-xs font-semibold text-[#667085] hover:text-[#0284C7]">
-          <ArrowLeft size={13} /> Back to Blog
+      <div className="mx-auto max-w-3xl px-5 py-12 md:px-8">
+        <Link href="/blogs" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-zinc-500 hover:text-indigo-600 transition-colors">
+          <ArrowLeft size={16} /> Back to Blog
         </Link>
 
-        <p className="mb-6 text-lg font-semibold text-[#667085]">{post.excerpt}</p>
+        <p className="mb-8 text-xl font-medium leading-relaxed text-zinc-500">{post.excerpt}</p>
 
-        <article className="space-y-4 text-sm">
+        <article className="space-y-6 text-base">
           {post.body.map((para) => renderBody(para))}
         </article>
 
-        <div className="mt-10 rounded-2xl border border-[#E7EAF0] bg-white p-6 text-center">
-          <p className="font-bold text-[#121826]">Ready to experience it yourself?</p>
-          <p className="mt-1 text-sm text-[#667085]">Browse our handpicked tours and plan your next trip with Tourvaa.</p>
-          <Link href="/tours" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0284C7] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#0369A1]">
-            Browse Tours <ArrowRight size={14} />
+        <div className="mt-14 rounded-3xl border border-zinc-100 bg-white p-8 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <p className="text-xl font-black text-zinc-950 tracking-tight">Ready to experience it yourself?</p>
+          <p className="mt-2 text-base text-zinc-500">Browse our handpicked tours and plan your next trip with Tourvaa.</p>
+          <Link href="/tours" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all hover:-translate-y-0.5">
+            Browse Tours <ArrowRight size={16} />
           </Link>
         </div>
 
         {related.length > 0 && (
-          <section className="mt-12">
-            <h2 className="mb-5 font-bold text-[#121826]">More articles</h2>
-            <div className="grid gap-5 sm:grid-cols-2">
+          <section className="mt-16">
+            <h2 className="mb-6 text-2xl font-black tracking-tight text-zinc-950">More articles</h2>
+            <div className="grid gap-6 sm:grid-cols-2">
               {related.map(([slug, p]) => (
-                <Link key={slug} href={`/blogs/${slug}`} className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#E7EAF0] hover:ring-[#43A9F6]">
+                <Link key={slug} href={`/blogs/${slug}`} className="group overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-100 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col">
                   <div className="aspect-[16/9] overflow-hidden">
-                    <img src={p.img} alt={p.title} className="h-full w-full object-cover transition group-hover:scale-105" />
+                    <img src={p.img} alt={p.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
                   </div>
-                  <div className="p-4">
-                    <span className="text-xs font-bold text-[#0284C7]">{p.category}</span>
-                    <p className="mt-1 font-bold text-[#121826] group-hover:text-[#0284C7]">{p.title}</p>
-                    <p className="mt-0.5 text-xs text-[#98A2B3]">{p.date}</p>
+                  <div className="p-6 flex-1 flex flex-col">
+                    <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">{p.category}</span>
+                    <p className="mt-2 text-lg font-black text-zinc-950 group-hover:text-indigo-600 transition-colors">{p.title}</p>
+                    <p className="mt-4 text-xs font-bold uppercase tracking-widest text-zinc-400 mt-auto pt-2">{p.date}</p>
                   </div>
                 </Link>
               ))}

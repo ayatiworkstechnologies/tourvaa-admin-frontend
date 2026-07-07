@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bell, BellRing, CheckCheck, Volume2, VolumeX } from "lucide-react";
+import { LuBell as Bell, LuBellRing as BellRing, LuCheckCheck as CheckCheck, LuVolume2 as Volume2, LuVolumeX as VolumeX } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import {

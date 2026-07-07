@@ -1,13 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import {
-  AlertCircle,
-  Banknote,
-  CheckCircle2,
-  Loader2,
-  Plus,
-} from "lucide-react";
+import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus } from "react-icons/lu";
 import api from "@/lib/api";
 
 type Payout = {

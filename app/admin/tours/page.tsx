@@ -3,20 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  CalendarDays,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Edit,
-  FileEdit,
-  ImageOff,
-  MapPin,
-  Plus,
-  PowerOff,
-  Search,
-  Tag,
-} from "lucide-react";
+import { LuCalendarDays as CalendarDays, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuSquarePen as Edit, LuFilePen as FileEdit, LuImageOff as ImageOff, LuMapPin as MapPin, LuPlus as Plus, LuPowerOff as PowerOff, LuSearch as Search, LuTag as Tag } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import EmptyState from "@/components/common/EmptyState";

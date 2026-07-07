@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Clock, MapPin, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { LuClock as Clock, LuMapPin as MapPin, LuPlus as Plus, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal } from "react-icons/lu";
 import api from "@/lib/api";
 
 type Tour = {

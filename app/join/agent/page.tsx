@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import axios from "axios";
-import { ArrowRight, Banknote, Briefcase, CheckCircle2, LayoutDashboard, Star, Users } from "lucide-react";
+import { LuArrowRight as ArrowRight, LuBanknote as Banknote, LuBriefcase as Briefcase, LuCircleCheckBig as CheckCircle2, LuLayoutDashboard as LayoutDashboard, LuStar as Star, LuUsers as Users } from "react-icons/lu";
 import PhoneInput from "@/components/ui/PhoneInput";
 import api from "@/lib/api";
 import { combinePhone, mobileHelp, normalizeEmail, passwordHelp, validateEmail, validateMobile, validatePassword } from "@/lib/validators";
@@ -28,7 +28,7 @@ const tiers = [
   { range: "31+ bookings/mo", rate: "15%", color: "bg-emerald-100 text-emerald-800" },
 ];
 
-const INPUT = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-[#0F172A] outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100";
+const INPUT = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-zinc-950 outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100";
 const LABEL = "mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400";
 
 export default function JoinAgentPage() {
@@ -62,7 +62,7 @@ export default function JoinAgentPage() {
   return (
     <main className="min-h-screen bg-[#F5F8FC] pb-24">
 
-      {/* ── Hero ── */}
+      {/* hero */}
       <section className="relative overflow-hidden bg-[#0A0F1E] py-20">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(16,185,129,0.12),transparent_60%)]" />
         <div className="relative mx-auto max-w-7xl px-5 md:px-8">
@@ -87,13 +87,13 @@ export default function JoinAgentPage() {
         </div>
       </section>
 
-      {/* ── Stats strip ── */}
+      {/* stats strip */}
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="grid grid-cols-2 divide-x divide-slate-100 md:grid-cols-4">
             {stats.map(({ value, label }) => (
               <div key={label} className="px-6 py-5 text-center">
-                <p className="text-2xl font-black text-[#0F172A]">{value}</p>
+                <p className="text-2xl font-black text-zinc-950">{value}</p>
                 <p className="mt-0.5 text-xs text-slate-400">{label}</p>
               </div>
             ))}
@@ -101,21 +101,21 @@ export default function JoinAgentPage() {
         </div>
       </div>
 
-      {/* ── Main content ── */}
+      {/* main content */}
       <div className="mx-auto max-w-7xl px-5 py-14 md:px-8">
         <div className="grid gap-12 lg:grid-cols-[1fr_440px]">
 
           {/* Left */}
           <div className="space-y-10">
             <div>
-              <h2 className="text-2xl font-black text-[#0F172A]">Agent benefits</h2>
+              <h2 className="text-2xl font-black text-zinc-950">Agent benefits</h2>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 {perks.map(({ icon: Icon, title, desc }) => (
                   <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
                     <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
                       <Icon size={20} />
                     </div>
-                    <p className="font-bold text-[#0F172A]">{title}</p>
+                    <p className="font-bold text-zinc-950">{title}</p>
                     <p className="mt-1 text-sm leading-relaxed text-slate-500">{desc}</p>
                   </div>
                 ))}
@@ -123,14 +123,14 @@ export default function JoinAgentPage() {
             </div>
 
             <div>
-              <h2 className="text-xl font-black text-[#0F172A]">Commission tiers</h2>
+              <h2 className="text-xl font-black text-zinc-950">Commission tiers</h2>
               <p className="mt-2 text-sm text-slate-500">Tiers are reviewed quarterly and upgraded automatically as you grow.</p>
               <div className="mt-4 space-y-2.5">
                 {tiers.map(({ range, rate, color }) => (
                   <div key={range} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4">
                     <div className="flex items-center gap-3">
                       <Star size={14} className="text-emerald-500" />
-                      <span className="text-sm font-semibold text-[#0F172A]">{range}</span>
+                      <span className="text-sm font-semibold text-zinc-950">{range}</span>
                     </div>
                     <span className={`rounded-lg px-3 py-1 text-sm font-black ${color}`}>{rate}</span>
                   </div>
@@ -148,7 +148,7 @@ export default function JoinAgentPage() {
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50">
                     <CheckCircle2 size={34} className="text-emerald-500" />
                   </div>
-                  <p className="mt-4 text-xl font-black text-[#0F172A]">Application received!</p>
+                  <p className="mt-4 text-xl font-black text-zinc-950">Application received!</p>
                   <p className="mt-2 text-sm text-slate-500">Please verify your email, then wait for admin approval. We typically review within 1 business day.</p>
                   <Link href="/" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-600">
                     Back to Home
@@ -157,7 +157,7 @@ export default function JoinAgentPage() {
               ) : (
                 <>
                   <div className="mb-6">
-                    <h2 className="text-lg font-black text-[#0F172A]">Apply as an agent</h2>
+                    <h2 className="text-lg font-black text-zinc-950">Apply as an agent</h2>
                     <p className="mt-1 text-sm text-slate-400">Takes less than 3 minutes. We'll be in touch within 24 hours.</p>
                   </div>
                   <form onSubmit={submit} className="space-y-4">

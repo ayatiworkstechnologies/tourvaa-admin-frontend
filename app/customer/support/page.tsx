@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Headphones, Loader2, Mail, MessageSquare, Phone, Send } from "lucide-react";
+import { LuCircleCheckBig as CheckCircle2, LuHeadphones as Headphones, LuLoaderCircle as Loader2, LuMail as Mail, LuMessageSquare as MessageSquare, LuPhone as Phone, LuSend as Send } from "react-icons/lu";
 import api from "@/lib/api";
 
 export default function CustomerSupportPage() {

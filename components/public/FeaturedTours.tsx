@@ -16,23 +16,25 @@ const STATIC_FALLBACK = [
 function TourCard({ tour, isStatic }: { tour: Partial<PublicTour>; isStatic?: boolean }) {
   const href = isStatic ? "/tours" : `/tours/${tour.id}`;
   return (
-    <Link href={href} className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#E7EAF0] transition hover:shadow-md hover:ring-[#43A9F6]">
+    <Link href={href} className="group overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-100 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)]">
       <div className="aspect-[4/3] overflow-hidden">
         <img
           src={tour.banner_image && !tour.banner_image.startsWith("http") ? mediaUrl(tour.banner_image) : (tour.banner_image || PLACEHOLDER)}
           alt={tour.title || "Tour"}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
         />
       </div>
-      <div className="p-5">
-        <p className="text-xs font-semibold text-[#0284C7]">{tour.category_name}</p>
-        <h3 className="mt-1 line-clamp-2 font-bold text-[#121826] group-hover:text-[#0284C7]">{tour.title}</h3>
-        <p className="mt-0.5 text-xs text-[#667085]">{[tour.city_name, tour.country_name].filter(Boolean).join(", ")} · {tour.number_of_days} Days</p>
-        <div className="mt-3 flex items-center justify-between">
+      <div className="p-6">
+        <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">{tour.category_name}</p>
+        <h3 className="mt-2 line-clamp-2 text-lg font-black text-zinc-950 transition-colors group-hover:text-indigo-600">{tour.title}</h3>
+        <p className="mt-1 text-xs font-semibold text-zinc-500">{[tour.city_name, tour.country_name].filter(Boolean).join(", ")} · {tour.number_of_days} Days</p>
+        <div className="mt-5 flex items-center justify-between border-t border-zinc-100 pt-5">
           {tour.price_start_per_person
-            ? <p className="text-base font-bold text-[#0284C7]">{tour.currency} {Number(tour.price_start_per_person).toLocaleString()}<span className="text-xs font-normal text-[#667085]"> /person</span></p>
-            : <p className="text-sm font-semibold text-[#667085]">Price on request</p>}
-          <span className="text-xs font-bold text-[#0284C7]">View →</span>
+            ? <p className="text-lg font-black text-zinc-950">{tour.currency} {Number(tour.price_start_per_person).toLocaleString()}<span className="text-xs font-semibold text-zinc-400"> /person</span></p>
+            : <p className="text-sm font-semibold text-zinc-400">Price on request</p>}
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
+            →
+          </span>
         </div>
       </div>
     </Link>

@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, UsersRound } from "lucide-react";
+import { LuLoaderCircle as Loader2, LuPlus as Plus, LuTrash2 as Trash2, LuUsersRound as UsersRound } from "react-icons/lu";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/useToast";
 

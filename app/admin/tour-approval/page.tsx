@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, CheckCircle2, Clock, X } from "lucide-react";
+import { LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuX as X } from "react-icons/lu";
 import api from "@/lib/api";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import { useToast } from "@/hooks/useToast";

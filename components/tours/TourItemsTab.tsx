@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
+import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import {
   TourItem,
   getInclusions, createInclusion, updateInclusion, deleteInclusion,

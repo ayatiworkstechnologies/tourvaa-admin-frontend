@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import {
-  ArrowRight, Briefcase, CheckCircle2, Clock, Globe, Link2,
-  MapPin, Plane, Quote, Shield, Sparkles, Star, Users, Warehouse, Zap,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { LuArrowRight as ArrowRight, LuBriefcase as Briefcase, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuGlobe as Globe, LuLink2 as Link2, LuMapPin as MapPin, LuPlane as Plane, LuQuote as Quote, LuShield as Shield, LuSparkles as Sparkles, LuStar as Star, LuUsers as Users, LuWarehouse as Warehouse, LuZap as Zap, LuSearch as Search } from "react-icons/lu";
 import FeaturedTours from "@/components/public/FeaturedTours";
 
-/* ─── scroll-reveal hook ─── */
+// scroll-reveal hook
 function useReveal() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -30,7 +28,7 @@ const DELAY_CLS: Record<number, string> = {
   240: "tr-delay-240", 280: "tr-delay-280", 350: "tr-delay-350",
 };
 
-/* ─── reusable reveal wrapper ─── */
+// reusable reveal wrapper
 function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useReveal();
   return (
@@ -40,7 +38,38 @@ function Reveal({ children, delay = 0, className = "" }: { children: React.React
   );
 }
 
-/* ─── data ─── */
+function HeroSearch() {
+  const [search, setSearch] = useState("");
+  const router = useRouter();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (search.trim()) {
+      router.push(`/tours?search=${encodeURIComponent(search.trim())}`);
+    } else {
+      router.push(`/tours`);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSearch} className="animate-fade-up delay-500 mt-10 flex w-full max-w-2xl items-center rounded-2xl bg-white/10 p-2 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.2)] transition-all focus-within:bg-white/20 focus-within:border-white/30">
+      <div className="relative flex-1">
+        <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-white/70" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Where do you want to go?"
+          className="w-full bg-transparent py-4 pl-14 pr-5 text-white placeholder-white/70 outline-none placeholder:font-medium md:text-lg"
+        />
+      </div>
+      <button type="submit" className="flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-4 text-sm font-bold text-white transition-all hover:bg-indigo-500 hover:shadow-[0_0_24px_rgba(79,70,229,0.5)]">
+        Search
+      </button>
+    </form>
+  );
+}
+
+// data
 const stats = [
   { value: "50+", label: "Happy Travellers" },
   { value: "20+", label: "Curated Tours" },
@@ -77,8 +106,8 @@ const partners = [
     desc: "List your tours, manage bookings, track payments, and reach travellers across India and the Gulf.",
     features: ["Tour & calendar management", "Booking dashboard", "Payment tracking"],
     href: "/join/supplier",
-    tagCls: "bg-sky-50 text-sky-600", iconCls: "bg-sky-50 text-sky-600",
-    lineCls: "bg-sky-500", textCls: "text-sky-600", dotCls: "bg-sky-100", checkClr: "#0284C7",
+    tagCls: "bg-indigo-50 text-indigo-600", iconCls: "bg-indigo-50 text-indigo-600",
+    lineCls: "bg-indigo-500", textCls: "text-indigo-600", dotCls: "bg-indigo-100", checkClr: "#4F46E5",
   },
   {
     icon: Briefcase, title: "Agent", tag: "For Travel Agents",
@@ -106,83 +135,68 @@ const trust = [
   { icon: Clock,  label: "24/7 Support" },
 ];
 
-/* ─── page ─── */
+// page
 export default function Home() {
   return (
-    <main className="overflow-x-hidden bg-white text-[#0A0A0A]">
+    <main className="overflow-x-hidden bg-white text-zinc-950">
 
-      {/* ══════════════════════════════════════════════════════
-          HERO
-      ══════════════════════════════════════════════════════ */}
-      <section className="relative flex min-h-[100svh] items-center overflow-hidden">
-
+      {/* hero */}
+      <section className="relative flex min-h-[100svh] items-center justify-center overflow-hidden">
         {/* BG image */}
         <div className="absolute inset-0 animate-hero-img">
           <img
             src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=2400&q=90"
             alt="Scenic landscape"
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover scale-105"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-black/20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
+        <div className="absolute inset-0 bg-zinc-950/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent" />
 
         {/* Content */}
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-32 md:px-12 lg:px-20">
-          <div className="max-w-3xl">
+        <div className="relative z-10 mx-auto w-full max-w-5xl px-6 py-32 text-center md:px-12">
+          <div className="animate-fade-in mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-xl shadow-lg">
+            <Sparkles size={12} className="text-indigo-400" />
+            Premium travel experiences
+          </div>
 
-            <div className="animate-fade-in mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-md animate-badge">
-              <Sparkles size={11} className="text-sky-400" />
-              Handpicked travel experiences
-            </div>
+          <h1 className="hero-headline mx-auto font-black leading-[0.95] tracking-tighter text-white drop-shadow-2xl">
+            <span className="block animate-fade-up delay-100">Discover your</span>
+            <span className="block animate-fade-up delay-200 bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">next adventure.</span>
+          </h1>
 
-            <h1 className="hero-headline font-black leading-[0.9] tracking-tighter text-white">
-              <span className="block animate-fade-up delay-100">The world</span>
-              <span className="block animate-fade-up delay-200 text-sky-400">is waiting</span>
-              <span className="block animate-fade-up delay-300">for you.</span>
-            </h1>
+          <p className="animate-fade-up delay-300 mx-auto mt-8 max-w-xl text-base leading-relaxed text-zinc-300 md:text-lg">
+            Curated journeys across India and the Middle East, planned with precision and elevated for the modern traveler.
+          </p>
 
-            <p className="animate-fade-up delay-400 mt-7 max-w-md text-base leading-relaxed text-white/65 md:text-lg">
-              Curated journeys across India and the Middle East — planned with care, supported at every step.
-            </p>
+          <div className="flex justify-center">
+            <HeroSearch />
+          </div>
 
-            <div className="animate-fade-up delay-500 mt-9 flex flex-wrap gap-3">
-              <Link href="/tours" className="hero-btn-primary group inline-flex items-center gap-2.5 rounded-2xl px-7 py-3.5 text-sm font-black transition-all duration-300 hover:gap-4">
-                Explore Tours <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link href="/register" className="hero-btn-ghost inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold transition-all duration-300">
-                Create Account
-              </Link>
-            </div>
-
-            {/* Hero stats */}
-            <div className="animate-fade-up delay-600 mt-14 grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-4">
-              {stats.slice(0, 4).map((s) => (
-                <div key={s.label} className="border-l-2 border-white/20 pl-4">
-                  <p className="text-2xl font-black text-white">{s.value}</p>
-                  <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-white/45">{s.label}</p>
-                </div>
-              ))}
-            </div>
+          {/* Hero stats */}
+          <div className="animate-fade-up delay-600 mt-16 flex flex-wrap justify-center gap-8 sm:gap-16">
+            {stats.slice(0, 4).map((s) => (
+              <div key={s.label} className="text-center">
+                <p className="text-3xl font-black text-white">{s.value}</p>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-400">{s.label}</p>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Scroll hint */}
-        <div className="animate-fade-in anim-forwards delay-900 absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-0">
-          <div className="h-10 w-px overflow-hidden bg-white/20">
-            <div className="h-4 w-full animate-[scrollLine_1.6s_ease-in-out_infinite] bg-white/70" />
+        <div className="animate-fade-in anim-forwards delay-900 absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-0">
+          <div className="h-12 w-[2px] overflow-hidden bg-white/10 rounded-full">
+            <div className="h-1/2 w-full animate-[scrollLine_2s_ease-in-out_infinite] bg-indigo-500 rounded-full" />
           </div>
-          <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-white/35">Scroll</span>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          MARQUEE STATS
-      ══════════════════════════════════════════════════════ */}
+      {/* marquee stats */}
       <div className="overflow-hidden border-y border-slate-100 bg-slate-50 py-4">
         <div className="flex animate-marquee whitespace-nowrap">
           {[...stats, ...stats].map((s, i) => (
-            <span key={i} className="inline-flex items-center gap-3 px-10 text-sm font-bold text-[#0A0A0A]">
+            <span key={i} className="inline-flex items-center gap-3 px-10 text-sm font-bold text-zinc-950">
               <span className="text-sky-500">{s.value}</span>
               <span className="text-slate-400">{s.label}</span>
               <span className="text-slate-200">✦</span>
@@ -191,24 +205,22 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════
-          DESTINATIONS
-      ══════════════════════════════════════════════════════ */}
-      <section className="bg-white py-24">
+      {/* destinations */}
+      <section className="bg-zinc-950 py-24 text-white">
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <Reveal className="mb-12">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="h-px w-8 bg-sky-500" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-500">Destinations</span>
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="h-px w-8 bg-indigo-500" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Destinations</span>
                 </div>
-                <h2 className="text-4xl font-black tracking-tight text-[#0A0A0A] sm:text-5xl">
+                <h2 className="text-4xl font-black tracking-tight sm:text-5xl">
                   Where do you<br />
-                  <span className="text-slate-300">want to go?</span>
+                  <span className="text-zinc-600">want to go?</span>
                 </h2>
               </div>
-              <Link href="/tours" className="group inline-flex items-center gap-2 text-sm font-bold text-slate-500 transition-all hover:text-sky-500 hover:gap-3">
+              <Link href="/tours" className="group inline-flex items-center gap-2 text-sm font-bold text-zinc-400 transition-all hover:text-indigo-400 hover:gap-3">
                 All destinations <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
@@ -217,14 +229,14 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
             {destinations.map((d, i) => (
               <Reveal key={d.name} delay={i * 70}>
-                <Link href="/tours" className="group relative block overflow-hidden rounded-2xl">
-                  <div className="aspect-[3/4] w-full">
-                    <img src={d.img} alt={d.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <Link href="/tours" className="group relative block overflow-hidden rounded-2xl ring-1 ring-white/10 transition-all hover:ring-indigo-500/50 hover:shadow-[0_0_30px_rgba(79,70,229,0.2)]">
+                  <div className="aspect-[3/4] w-full bg-zinc-900">
+                    <img src={d.img} alt={d.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-                  <div className="absolute bottom-0 left-0 p-4">
-                    <p className="font-black text-white leading-tight">{d.name}</p>
-                    <p className="mt-0.5 text-[10px] font-semibold text-white/60">{d.tours}</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                  <div className="absolute bottom-0 left-0 p-5 w-full">
+                    <p className="text-lg font-black text-white leading-tight">{d.name}</p>
+                    <p className="mt-1 text-[11px] font-bold text-indigo-300 uppercase tracking-wider">{d.tours}</p>
                   </div>
                 </Link>
               </Reveal>
@@ -233,24 +245,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          FEATURED TOURS
-      ══════════════════════════════════════════════════════ */}
-      <section className="bg-[#F8FAFC] py-24">
+      {/* featured tours */}
+      <section className="bg-zinc-50 py-24">
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <Reveal className="mb-14">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="h-px w-8 bg-sky-500" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-500">Featured</span>
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="h-px w-8 bg-indigo-500" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Featured</span>
                 </div>
-                <h2 className="text-4xl font-black tracking-tight text-[#0A0A0A] sm:text-5xl">
+                <h2 className="text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl">
                   Popular<br />
-                  <span className="text-slate-300">tours</span>
+                  <span className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">tours</span>
                 </h2>
               </div>
-              <Link href="/tours" className="group inline-flex items-center gap-2 text-sm font-bold text-slate-500 transition-all hover:text-sky-500 hover:gap-3">
+              <Link href="/tours" className="group inline-flex items-center gap-2 text-sm font-bold text-zinc-500 transition-all hover:text-indigo-600 hover:gap-3">
                 View all tours <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
@@ -259,15 +269,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          HOW IT WORKS
-      ══════════════════════════════════════════════════════ */}
-      <section className="bg-[#0A0F1E] py-28 text-white">
+      {/* how it works */}
+      <section className="bg-zinc-950 py-28 text-white">
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <Reveal className="mb-16">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="h-px w-8 bg-sky-500" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-500">How it works</span>
+            <div className="mb-4 flex items-center gap-3">
+              <div className="h-px w-8 bg-indigo-500" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">How it works</span>
             </div>
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl">
               Three steps.<br />
@@ -275,22 +283,22 @@ export default function Home() {
             </h2>
           </Reveal>
 
-          <div className="grid gap-px bg-white/5 md:grid-cols-3">
+          <div className="grid gap-px bg-white/5 md:grid-cols-3 rounded-3xl overflow-hidden ring-1 ring-white/10">
             {steps.map((step, i) => {
               const Icon = step.icon;
               return (
-                <Reveal key={step.n} delay={i * 120} className="bg-[#0A0F1E]">
-                  <div className="group relative overflow-hidden p-10 transition-all duration-500 hover:bg-white/4 md:p-12">
-                    <span className="pointer-events-none absolute -right-4 -top-4 text-[9rem] font-black leading-none text-white/4 select-none transition-all duration-500 group-hover:text-white/7">
+                <Reveal key={step.n} delay={i * 120} className="bg-zinc-950">
+                  <div className="group relative overflow-hidden p-10 transition-all duration-500 hover:bg-white/[0.02] md:p-12 h-full">
+                    <span className="pointer-events-none absolute -right-4 -top-4 text-[9rem] font-black leading-none text-white/5 select-none transition-all duration-500 group-hover:text-white/10">
                       {step.n}
                     </span>
                     <div className="relative">
-                      <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-500/20 bg-sky-500/10 text-sky-400">
-                        <Icon size={22} />
+                      <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500/20 transition-transform group-hover:scale-110">
+                        <Icon size={24} />
                       </div>
-                      <h3 className="text-xl font-black text-white">{step.title}</h3>
-                      <p className="mt-3 text-sm leading-relaxed text-white/45">{step.desc}</p>
-                      <div className="mt-8 h-0.5 w-0 bg-sky-500 transition-all duration-500 group-hover:w-10" />
+                      <h3 className="text-2xl font-black text-white">{step.title}</h3>
+                      <p className="mt-4 text-sm leading-relaxed text-zinc-400">{step.desc}</p>
+                      <div className="mt-10 h-1 w-0 bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500 group-hover:w-16 rounded-full" />
                     </div>
                   </div>
                 </Reveal>
@@ -300,52 +308,52 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          TESTIMONIALS
-      ══════════════════════════════════════════════════════ */}
-      <section className="bg-white py-24">
+      {/* testimonials */}
+      <section className="bg-zinc-50 py-24">
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <Reveal className="mb-14 text-center">
-            <div className="mb-3 flex items-center justify-center gap-3">
-              <div className="h-px w-8 bg-sky-500" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-500">Testimonials</span>
-              <div className="h-px w-8 bg-sky-500" />
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <div className="h-px w-8 bg-indigo-500" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Testimonials</span>
+              <div className="h-px w-8 bg-indigo-500" />
             </div>
-            <h2 className="text-4xl font-black tracking-tight text-[#0A0A0A] sm:text-5xl">
+            <h2 className="text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl">
               Loved by travellers
             </h2>
           </Reveal>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {testimonials.map((t, i) => (
-              <Reveal key={t.name} delay={i * 100}>
-                <div className="group relative flex h-full flex-col rounded-2xl border border-slate-100 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                  <Quote size={28} className="mb-4 text-sky-100 transition-colors group-hover:text-sky-200" />
-                  <p className="flex-1 text-sm leading-relaxed text-slate-600">&ldquo;{t.text}&rdquo;</p>
-                  <div className="mt-6 flex items-center gap-3 border-t border-slate-100 pt-5">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0A0F1E] text-xs font-black text-sky-400">
-                      {t.avatar}
-                    </span>
-                    <div>
-                      <p className="text-sm font-bold text-[#0A0A0A]">{t.name}</p>
-                      <p className="text-xs text-slate-400">{t.role}</p>
+          <div className="relative mt-12">
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-8 pb-8 no-scrollbar">
+              {testimonials.map((t, i) => (
+                <div key={t.name} className="snap-center shrink-0 w-[85vw] sm:w-[420px]">
+                  <Reveal delay={i * 100}>
+                    <div className="group relative flex h-full min-h-[260px] flex-col rounded-3xl bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)]">
+                      <Quote size={32} className="mb-6 text-indigo-100 transition-colors group-hover:text-indigo-200" />
+                      <p className="flex-1 text-base leading-relaxed text-zinc-600">&ldquo;{t.text}&rdquo;</p>
+                      <div className="mt-8 flex items-center gap-4 border-t border-zinc-100 pt-6">
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-sm font-black text-white shadow-md">
+                          {t.avatar}
+                        </span>
+                        <div>
+                          <p className="text-sm font-bold text-zinc-950">{t.name}</p>
+                          <p className="text-xs text-zinc-400">{t.role}</p>
+                        </div>
+                        <div className="ml-auto flex gap-1">
+                          {Array.from({ length: t.rating }).map((_, j) => (
+                            <Star key={j} size={14} className="fill-amber-400 text-amber-400" />
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <div className="ml-auto flex gap-0.5">
-                      {Array.from({ length: t.rating }).map((_, j) => (
-                        <Star key={j} size={12} className="fill-amber-400 text-amber-400" />
-                      ))}
-                    </div>
-                  </div>
+                  </Reveal>
                 </div>
-              </Reveal>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          TRUST STRIP
-      ══════════════════════════════════════════════════════ */}
+      {/* trust strip */}
       <div className="border-y border-slate-100 bg-slate-50 py-6">
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14">
@@ -359,52 +367,50 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════
-          PARTNER CARDS
-      ══════════════════════════════════════════════════════ */}
+      {/* partner cards */}
       <section className="bg-white py-28">
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <Reveal className="mb-16 text-center">
-            <div className="mb-3 flex items-center justify-center gap-3">
-              <div className="h-px w-8 bg-sky-500" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-500">Partners</span>
-              <div className="h-px w-8 bg-sky-500" />
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <div className="h-px w-8 bg-indigo-500" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Partners</span>
+              <div className="h-px w-8 bg-indigo-500" />
             </div>
-            <h2 className="text-4xl font-black tracking-tight text-[#0A0A0A] sm:text-5xl">Grow with us</h2>
-            <p className="mx-auto mt-4 max-w-md text-base text-slate-500">
-              Join as a supplier, agent, or affiliate — each with a workspace built for how you work.
+            <h2 className="text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl">Grow with us</h2>
+            <p className="mx-auto mt-5 max-w-lg text-base text-zinc-500 leading-relaxed">
+              Join as a supplier, agent, or affiliate. Each workspace is custom-built with the tools you need to succeed.
             </p>
           </Reveal>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-3">
             {partners.map((p, i) => {
               const Icon = p.icon;
               return (
                 <Reveal key={p.title} delay={i * 100}>
-                  <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white p-8 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
-                    <div className={`absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100 ${p.lineCls}`} />
-                    <span className={`mb-5 inline-block self-start rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${p.tagCls}`}>
+                  <article className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)]">
+                    <div className={`absolute inset-x-0 top-0 h-1 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100 ${p.lineCls}`} />
+                    <span className={`mb-6 inline-block self-start rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-widest ${p.tagCls}`}>
                       {p.tag}
                     </span>
-                    <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 ${p.iconCls}`}>
-                      <Icon size={22} />
+                    <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 ${p.iconCls}`}>
+                      <Icon size={24} />
                     </div>
-                    <h3 className="text-xl font-black text-[#0A0A0A]">{p.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-500">{p.desc}</p>
-                    <ul className="mt-6 flex-1 space-y-2.5">
+                    <h3 className="text-2xl font-black text-zinc-950">{p.title}</h3>
+                    <p className="mt-3 text-sm leading-relaxed text-zinc-500">{p.desc}</p>
+                    <ul className="mt-8 flex-1 space-y-3">
                       {p.features.map((f) => (
-                        <li key={f} className="flex items-center gap-2.5 text-xs font-semibold text-slate-600">
-                          <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${p.dotCls}`}>
-                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                              <path d="M1.5 4.5L3.5 6.5L7 2.5" stroke={p.checkClr} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <li key={f} className="flex items-center gap-3 text-sm font-medium text-zinc-600">
+                          <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${p.dotCls}`}>
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                              <path d="M2 5L4 7L8 3" stroke={p.checkClr} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                           </span>
                           {f}
                         </li>
                       ))}
                     </ul>
-                    <Link href={p.href} className={`mt-8 inline-flex items-center gap-2 text-sm font-black transition-all duration-300 group-hover:gap-3 ${p.textCls}`}>
-                      Get started <ArrowRight size={14} />
+                    <Link href={p.href} className={`mt-10 inline-flex items-center gap-2 text-sm font-black transition-all duration-300 group-hover:gap-4 ${p.textCls}`}>
+                      Get started <ArrowRight size={16} />
                     </Link>
                   </article>
                 </Reveal>
@@ -414,9 +420,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          CTA
-      ══════════════════════════════════════════════════════ */}
+      {/* cta */}
       <section className="cta-gradient relative overflow-hidden py-32 text-white">
         <div className="cta-dot-grid pointer-events-none absolute inset-0 opacity-[0.06]" />
         <div className="pointer-events-none absolute -top-20 right-1/4 h-72 w-72 rounded-full bg-white/10 blur-3xl" />

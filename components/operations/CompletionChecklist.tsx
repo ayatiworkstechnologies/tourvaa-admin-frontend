@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2 } from "react-icons/lu";
 
 export type ChecklistItem = {
   label: string;

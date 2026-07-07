@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CreditCard, ExternalLink } from "lucide-react";
+import { LuCreditCard as CreditCard, LuExternalLink as ExternalLink } from "react-icons/lu";
 import api from "@/lib/api";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 

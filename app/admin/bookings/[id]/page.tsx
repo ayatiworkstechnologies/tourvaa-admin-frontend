@@ -8,17 +8,7 @@ import { Booking, getBookingDetail } from "@/lib/services/bookingService";
 import BookingStatusBadge from "@/components/bookings/BookingStatusBadge";
 import SupplierPicker from "@/components/bookings/SupplierPicker";
 import api from "@/lib/api";
-import {
-  CheckCircle2,
-  Loader2,
-  Mail,
-  MessageSquare,
-  RefreshCw,
-  Ticket,
-  UserCheck,
-  Users,
-  XCircle,
-} from "lucide-react";
+import { LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuMail as Mail, LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuTicket as Ticket, LuUserCheck as UserCheck, LuUsers as Users, LuCircleX as XCircle } from "react-icons/lu";
 
 type DetailPanelProps = { title: string; children: React.ReactNode };
 type DetailFieldProps = { label: string; value?: React.ReactNode };

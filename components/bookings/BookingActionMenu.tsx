@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Eye, XCircle } from "lucide-react";
+import { LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuCircleX as XCircle } from "react-icons/lu";
 
 type BookingActionMenuProps = {
   bookingId: number;

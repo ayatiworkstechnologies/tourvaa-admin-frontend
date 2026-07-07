@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Eye, Plus, XCircle } from "lucide-react";
+import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuClock3 as Clock3, LuEye as Eye, LuPlus as Plus, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 

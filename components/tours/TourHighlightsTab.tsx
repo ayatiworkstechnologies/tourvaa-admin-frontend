@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Save, X } from "lucide-react";
+import { LuPlus as Plus, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourHighlight, getHighlights, createHighlight, updateHighlight, deleteHighlight } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";

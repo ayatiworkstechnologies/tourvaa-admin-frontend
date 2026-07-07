@@ -1,15 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  CheckCircle2,
-  Edit,
-  Mail,
-  Plus,
-  Trash2,
-  X,
-  XCircle,
-} from "lucide-react";
+import { LuCircleCheckBig as CheckCircle2, LuSquarePen as Edit, LuMail as Mail, LuPlus as Plus, LuTrash2 as Trash2, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useDashboard } from "@/hooks/useDashboard";

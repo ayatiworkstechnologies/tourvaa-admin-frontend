@@ -2,16 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CalendarCheck,
-  CircleDollarSign,
-  FileText,
-  MapPinned,
-  PackageCheck,
-  Plus,
-  Users,
-} from "lucide-react";
+import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuFileText as FileText, LuMapPinned as MapPinned, LuPackageCheck as PackageCheck, LuPlus as Plus, LuUsers as Users } from "react-icons/lu";
 import api from "@/lib/api";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";

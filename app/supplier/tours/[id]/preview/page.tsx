@@ -1,7 +1,7 @@
 ﻿"use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Check, Clock, MapPin, Star, Users, X } from "lucide-react";
+import { LuArrowLeft as ArrowLeft, LuCheck as Check, LuClock as Clock, LuMapPin as MapPin, LuStar as Star, LuUsers as Users, LuX as X } from "react-icons/lu";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/useToast";
 import { mediaUrl } from "@/lib/media-url";

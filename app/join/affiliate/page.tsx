@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, BarChart3, CheckCircle2, Link2, Megaphone, Wallet, Zap } from "lucide-react";
+import { LuArrowRight as ArrowRight, LuChartColumn as BarChart3, LuCircleCheckBig as CheckCircle2, LuLink2 as Link2, LuMegaphone as Megaphone, LuWallet as Wallet, LuZap as Zap } from "react-icons/lu";
 
 const perks = [
   { icon: Link2, title: "Unique Referral Link", desc: "Get a personal tracking link to share across all your channels." },
@@ -26,7 +26,7 @@ const idealFor = [
   "Podcasters covering travel and lifestyle",
 ];
 
-const INPUT = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-[#0F172A] outline-none transition-all focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-100";
+const INPUT = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-zinc-950 outline-none transition-all focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-100";
 const LABEL = "mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400";
 
 export default function JoinAffiliatePage() {
@@ -47,7 +47,7 @@ export default function JoinAffiliatePage() {
   return (
     <main className="min-h-screen bg-[#F5F8FC] pb-24">
 
-      {/* ── Hero ── */}
+      {/* hero */}
       <section className="relative overflow-hidden bg-[#0A0F1E] py-20">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(139,92,246,0.14),transparent_60%)]" />
         <div className="relative mx-auto max-w-7xl px-5 md:px-8">
@@ -72,13 +72,13 @@ export default function JoinAffiliatePage() {
         </div>
       </section>
 
-      {/* ── Stats strip ── */}
+      {/* stats strip */}
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="grid grid-cols-2 divide-x divide-slate-100 md:grid-cols-4">
             {stats.map(({ value, label }) => (
               <div key={label} className="px-6 py-5 text-center">
-                <p className="text-2xl font-black text-[#0F172A]">{value}</p>
+                <p className="text-2xl font-black text-zinc-950">{value}</p>
                 <p className="mt-0.5 text-xs text-slate-400">{label}</p>
               </div>
             ))}
@@ -86,21 +86,21 @@ export default function JoinAffiliatePage() {
         </div>
       </div>
 
-      {/* ── Main content ── */}
+      {/* main content */}
       <div className="mx-auto max-w-7xl px-5 py-14 md:px-8">
         <div className="grid gap-12 lg:grid-cols-[1fr_440px]">
 
           {/* Left */}
           <div className="space-y-10">
             <div>
-              <h2 className="text-2xl font-black text-[#0F172A]">Why join as an affiliate?</h2>
+              <h2 className="text-2xl font-black text-zinc-950">Why join as an affiliate?</h2>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 {perks.map(({ icon: Icon, title, desc }) => (
                   <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
                     <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
                       <Icon size={20} />
                     </div>
-                    <p className="font-bold text-[#0F172A]">{title}</p>
+                    <p className="font-bold text-zinc-950">{title}</p>
                     <p className="mt-1 text-sm leading-relaxed text-slate-500">{desc}</p>
                   </div>
                 ))}
@@ -108,7 +108,7 @@ export default function JoinAffiliatePage() {
             </div>
 
             <div>
-              <h2 className="text-xl font-black text-[#0F172A]">Ideal for</h2>
+              <h2 className="text-xl font-black text-zinc-950">Ideal for</h2>
               <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <ul className="space-y-3">
                   {idealFor.map((item) => (
@@ -136,7 +136,7 @@ export default function JoinAffiliatePage() {
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50">
                     <CheckCircle2 size={34} className="text-violet-500" />
                   </div>
-                  <p className="mt-4 text-xl font-black text-[#0F172A]">Application received!</p>
+                  <p className="mt-4 text-xl font-black text-zinc-950">Application received!</p>
                   <p className="mt-2 text-sm text-slate-500">Once approved, your unique affiliate link will be emailed within 1 business day.</p>
                   <Link href="/" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-600">
                     Back to Home
@@ -145,7 +145,7 @@ export default function JoinAffiliatePage() {
               ) : (
                 <>
                   <div className="mb-6">
-                    <h2 className="text-lg font-black text-[#0F172A]">Apply as an affiliate</h2>
+                    <h2 className="text-lg font-black text-zinc-950">Apply as an affiliate</h2>
                     <p className="mt-1 text-sm text-slate-400">Quick application, no commitments. Get your link within 24 hours.</p>
                   </div>
                   <form onSubmit={submit} className="space-y-4">

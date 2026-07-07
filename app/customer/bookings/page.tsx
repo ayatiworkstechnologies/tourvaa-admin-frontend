@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarCheck, CheckCircle2, Clock, Eye, MapPinned, Wallet } from "lucide-react";
+import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuEye as Eye, LuMapPinned as MapPinned, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 

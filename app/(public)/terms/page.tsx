@@ -45,32 +45,32 @@ const sections = [
 
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-[#F7F9FC] pb-20">
-      <section className="bg-[#0F172A] py-14 text-white">
+    <main className="min-h-screen bg-zinc-50 pb-20">
+      <section className="bg-zinc-950 py-14 text-white">
         <div className="mx-auto max-w-4xl px-5 md:px-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#43A9F6]">Legal</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-400">Legal</p>
           <h1 className="mt-2 text-4xl font-bold">Terms & Conditions</h1>
           <p className="mt-3 text-sm text-white/60">Last updated: June 2026</p>
         </div>
       </section>
 
       <div className="mx-auto max-w-4xl px-5 py-12 md:px-8">
-        <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#E7EAF0] md:p-10">
-          <p className="mb-8 text-sm leading-7 text-[#667085]">
+        <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-zinc-100 shadow-sm ring-0 md:p-10">
+          <p className="mb-8 text-sm leading-7 text-zinc-500">
             Please read these Terms and Conditions carefully before using the Tourvaa platform. These terms constitute a legally binding agreement between you and Tourvaa NZ LLC.
           </p>
           <div className="space-y-8">
             {sections.map((s) => (
               <section key={s.title}>
-                <h2 className="mb-2 font-bold text-[#121826]">{s.title}</h2>
-                <p className="text-sm leading-7 text-[#667085]">{s.content}</p>
+                <h2 className="mb-2 font-bold text-zinc-950">{s.title}</h2>
+                <p className="text-sm leading-7 text-zinc-500">{s.content}</p>
               </section>
             ))}
           </div>
-          <div className="mt-10 rounded-xl bg-[#F7F9FC] p-5 text-sm text-[#667085]">
+          <div className="mt-10 rounded-xl bg-zinc-50 p-5 text-sm text-zinc-500">
             Questions about these terms? Contact us at{" "}
-            <a href="mailto:hello@tourvaa.com" className="font-semibold text-[#0284C7] hover:underline">hello@tourvaa.com</a>{" "}
-            or visit our <Link href="/contact" className="font-semibold text-[#0284C7] hover:underline">Contact page</Link>.
+            <a href="mailto:hello@tourvaa.com" className="font-semibold text-indigo-600 hover:underline">hello@tourvaa.com</a>{" "}
+            or visit our <Link href="/contact" className="font-semibold text-indigo-600 hover:underline">Contact page</Link>.
           </div>
         </div>
       </div>

@@ -3,17 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowLeft,
-  Check,
-  ChevronDown,
-  Loader2,
-  MapPin,
-  Plus,
-  Search,
-  User,
-  X,
-} from "lucide-react";
+import { LuArrowLeft as ArrowLeft, LuCheck as Check, LuChevronDown as ChevronDown, LuLoaderCircle as Loader2, LuMapPin as MapPin, LuPlus as Plus, LuSearch as Search, LuUser as User, LuX as X } from "react-icons/lu";
 import PhoneInput from "@/components/ui/PhoneInput";
 import api from "@/lib/api";
 import { combinePhone } from "@/lib/validators";

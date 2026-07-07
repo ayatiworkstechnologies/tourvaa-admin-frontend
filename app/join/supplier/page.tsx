@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import axios from "axios";
-import { ArrowRight, CheckCircle2, Globe, LayoutDashboard, Star, TrendingUp, Users, Warehouse } from "lucide-react";
+import { LuArrowRight as ArrowRight, LuCircleCheckBig as CheckCircle2, LuGlobe as Globe, LuLayoutDashboard as LayoutDashboard, LuStar as Star, LuTrendingUp as TrendingUp, LuUsers as Users, LuWarehouse as Warehouse } from "react-icons/lu";
 import api from "@/lib/api";
 import PhoneInput from "@/components/ui/PhoneInput";
 import LocationInput from "@/components/ui/LocationInput";
@@ -29,7 +29,7 @@ const stats = [
   { value: "24h", label: "Onboarding Time" },
 ];
 
-const INPUT = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-[#0F172A] outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100";
+const INPUT = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-zinc-950 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-indigo-100";
 const LABEL = "mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400";
 
 export default function JoinSupplierPage() {
@@ -63,11 +63,11 @@ export default function JoinSupplierPage() {
   return (
     <main className="min-h-screen bg-[#F5F8FC] pb-24">
 
-      {/* ── Hero ── */}
+      {/* hero */}
       <section className="relative overflow-hidden bg-[#0A0F1E] py-20">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.12),transparent_60%)]" />
         <div className="relative mx-auto max-w-7xl px-5 md:px-8">
-          <span className="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/10 px-4 py-1.5 text-xs font-bold text-sky-400">
+          <span className="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-indigo-500/10 px-4 py-1.5 text-xs font-bold text-sky-400">
             <Warehouse size={13} /> Supplier Programme
           </span>
           <h1 className="mt-5 max-w-2xl text-4xl font-black leading-tight tracking-tight text-white md:text-5xl">
@@ -78,7 +78,7 @@ export default function JoinSupplierPage() {
             Join Tourvaa as a verified tour supplier. List your experiences, manage bookings through a clean dashboard, and grow revenue through our agent and customer network.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href="#apply" className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-sky-400">
+            <a href="#apply" className="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-sky-400">
               Apply Now <ArrowRight size={14} />
             </a>
             <Link href="/login" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-5 py-2.5 text-sm font-semibold text-white/65 transition-all hover:border-white/25 hover:text-white">
@@ -88,13 +88,13 @@ export default function JoinSupplierPage() {
         </div>
       </section>
 
-      {/* ── Stats strip ── */}
+      {/* stats strip */}
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="grid grid-cols-2 divide-x divide-slate-100 md:grid-cols-4">
             {stats.map(({ value, label }) => (
               <div key={label} className="px-6 py-5 text-center">
-                <p className="text-2xl font-black text-[#0F172A]">{value}</p>
+                <p className="text-2xl font-black text-zinc-950">{value}</p>
                 <p className="mt-0.5 text-xs text-slate-400">{label}</p>
               </div>
             ))}
@@ -102,21 +102,21 @@ export default function JoinSupplierPage() {
         </div>
       </div>
 
-      {/* ── Main content ── */}
+      {/* main content */}
       <div className="mx-auto max-w-7xl px-5 py-14 md:px-8">
         <div className="grid gap-12 lg:grid-cols-[1fr_440px]">
 
           {/* Left: perks + steps */}
           <div className="space-y-10">
             <div>
-              <h2 className="text-2xl font-black text-[#0F172A]">What you get as a supplier</h2>
+              <h2 className="text-2xl font-black text-zinc-950">What you get as a supplier</h2>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 {perks.map(({ icon: Icon, title, desc }) => (
                   <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                       <Icon size={20} />
                     </div>
-                    <p className="font-bold text-[#0F172A]">{title}</p>
+                    <p className="font-bold text-zinc-950">{title}</p>
                     <p className="mt-1 text-sm leading-relaxed text-slate-500">{desc}</p>
                   </div>
                 ))}
@@ -124,13 +124,13 @@ export default function JoinSupplierPage() {
             </div>
 
             <div>
-              <h2 className="text-xl font-black text-[#0F172A]">How it works</h2>
+              <h2 className="text-xl font-black text-zinc-950">How it works</h2>
               <div className="mt-5 space-y-4">
                 {steps.map(({ n, title, desc }) => (
                   <div key={n} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0A0F1E] text-xs font-black text-sky-400">{n}</span>
                     <div>
-                      <p className="font-bold text-[#0F172A]">{title}</p>
+                      <p className="font-bold text-zinc-950">{title}</p>
                       <p className="mt-0.5 text-sm text-slate-500">{desc}</p>
                     </div>
                   </div>
@@ -147,16 +147,16 @@ export default function JoinSupplierPage() {
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-50">
                     <CheckCircle2 size={34} className="text-sky-500" />
                   </div>
-                  <p className="mt-4 text-xl font-black text-[#0F172A]">Application received!</p>
+                  <p className="mt-4 text-xl font-black text-zinc-950">Application received!</p>
                   <p className="mt-2 text-sm text-slate-500">Please verify your email, then wait for admin approval. We typically review within 1 business day.</p>
-                  <Link href="/" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-600">
+                  <Link href="/" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-600">
                     Back to Home
                   </Link>
                 </div>
               ) : (
                 <>
                   <div className="mb-6">
-                    <h2 className="text-lg font-black text-[#0F172A]">Apply to become a supplier</h2>
+                    <h2 className="text-lg font-black text-zinc-950">Apply to become a supplier</h2>
                     <p className="mt-1 text-sm text-slate-400">Takes less than 3 minutes. We'll be in touch within 24 hours.</p>
                   </div>
                   <form onSubmit={submit} className="space-y-4">
@@ -193,7 +193,7 @@ export default function JoinSupplierPage() {
                     {error && (
                       <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
                     )}
-                    <button type="submit" disabled={submitting} className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 py-3.5 text-sm font-bold text-white transition-all hover:bg-sky-600 disabled:opacity-55">
+                    <button type="submit" disabled={submitting} className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 py-3.5 text-sm font-bold text-white transition-all hover:bg-sky-600 disabled:opacity-55">
                       {submitting ? "Submitting…" : <><span>Submit Application</span> <ArrowRight size={15} /></>}
                     </button>
                     <p className="text-center text-xs text-slate-400">We never share your details with third parties.</p>

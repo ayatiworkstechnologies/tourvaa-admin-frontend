@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuSearch as Search } from "react-icons/lu";
 import EmptyState from "@/components/common/EmptyState";
 import ErrorState from "@/components/common/ErrorState";
 import LoadingState from "@/components/common/LoadingState";
@@ -65,7 +65,7 @@ export default function DataTable<T extends { id?: number | string }>({
 
   return (
     <div className="space-y-3">
-      {/* ── Search bar (standalone, above card) ──────────────────────── */}
+      {/* search bar (standalone, above card) */}
       {onSearchChange && (
         <label className="relative block max-w-xs">
           <span className="sr-only">Search</span>
@@ -84,14 +84,14 @@ export default function DataTable<T extends { id?: number | string }>({
 
       {error && <ErrorState message={error} />}
 
-      {/* ── Table card ───────────────────────────────────────────────── */}
+      {/* table card */}
       <div className="overflow-hidden rounded-2xl border border-[#E9EDF3] bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
         <div className="overflow-x-auto">
           <table
             className="w-full min-w-170 border-collapse text-left text-sm"
             aria-label={ariaLabel}
           >
-            {/* ── Head ── */}
+            {/* head */}
             <thead>
               <tr className="border-b border-[#F0F3F8] bg-[#F7F9FC]">
                 {columns.map((col) => (
@@ -110,7 +110,7 @@ export default function DataTable<T extends { id?: number | string }>({
               </tr>
             </thead>
 
-            {/* ── Body ── */}
+            {/* body */}
             <tbody>
               {loading ? (
                 <tr>
@@ -162,7 +162,7 @@ export default function DataTable<T extends { id?: number | string }>({
           </table>
         </div>
 
-        {/* ── Pagination (inside card) ─────────────────────────────── */}
+        {/* pagination (inside card) */}
         {hasPagination && (
           <div className="flex flex-col gap-3 border-t border-[#F0F3F8] bg-white px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-xs text-[#8B93A1]">

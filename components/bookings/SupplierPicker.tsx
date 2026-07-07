@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Search, Warehouse, X } from "lucide-react";
+import { LuLoaderCircle as Loader2, LuSearch as Search, LuWarehouse as Warehouse, LuX as X } from "react-icons/lu";
 
 import api from "@/lib/api";
 import { useDebounce } from "@/hooks/useDebounce";

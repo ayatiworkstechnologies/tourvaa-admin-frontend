@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import { Edit, MessageSquare, Plus, Trash2, X } from "lucide-react";
+import { LuSquarePen as Edit, LuMessageSquare as MessageSquare, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";

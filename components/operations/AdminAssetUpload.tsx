@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
+import { LuFileText as FileText, LuLoaderCircle as Loader2, LuTrash2 as Trash2, LuCloudUpload as UploadCloud } from "react-icons/lu";
 import api from "@/lib/api";
 
 type Props = {

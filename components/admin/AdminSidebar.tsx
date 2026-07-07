@@ -4,7 +4,7 @@ import { MenuItem } from "@/types/auth";
 import Sidebar from "@/components/layout/Sidebar";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { adminNavItems, menuMatchesNavItem } from "@/lib/navigation";
-import { MapPinned } from "lucide-react";
+import { LuMapPinned as MapPinned } from "react-icons/lu";
 
 type AdminSidebarProps = {
   menus: MenuItem[];

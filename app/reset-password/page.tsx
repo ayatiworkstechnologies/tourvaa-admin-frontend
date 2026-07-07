@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { LuEye as Eye, LuEyeOff as EyeOff, LuLock as Lock } from "react-icons/lu";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
 import api from "@/lib/api";
@@ -155,7 +155,7 @@ function ResetPasswordForm() {
           </p>
         )}
         {checkingToken && (
-          <p className="rounded bg-sky-50 px-3 py-2 text-sm text-[#009FE3]">
+          <p className="rounded bg-indigo-50 px-3 py-2 text-sm text-[#009FE3]">
             Checking reset link...
           </p>
         )}

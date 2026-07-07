@@ -3,19 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  CalendarCheck,
-  ChevronDown,
-  FileText,
-  LayoutDashboard,
-  LogOut,
-  MapPinned,
-  Menu,
-  MessageSquare,
-  Plus,
-  User,
-  Users,
-} from "lucide-react";
+import { LuCalendarCheck as CalendarCheck, LuChevronDown as ChevronDown, LuFileText as FileText, LuLayoutDashboard as LayoutDashboard, LuLogOut as LogOut, LuMapPinned as MapPinned, LuMenu as Menu, LuMessageSquare as MessageSquare, LuPlus as Plus, LuUser as User, LuUsers as Users } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";

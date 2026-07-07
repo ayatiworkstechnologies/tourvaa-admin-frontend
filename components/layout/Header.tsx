@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, LogOut, Menu, Settings, User } from "lucide-react";
+import { LuChevronDown as ChevronDown, LuLogOut as LogOut, LuMenu as Menu, LuSettings as Settings, LuUser as User } from "react-icons/lu";
 import NotificationInbox from "@/components/ui/NotificationInbox";
 import { useAuth } from "@/hooks/useAuth";
 import { MenuItem } from "@/types/auth";
@@ -77,7 +77,7 @@ export default function Header({
     <header className="sticky top-0 z-30 border-b border-[#E8ECF3] bg-white shadow-[0_1px_6px_-1px_rgba(15,23,42,0.06)]">
       <div className="flex h-[70px] items-center justify-between px-6 md:px-9">
 
-        {/* ── Left ── */}
+        {/* left */}
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -96,7 +96,7 @@ export default function Header({
           </div>
         </div>
 
-        {/* ── Right ── */}
+        {/* right */}
         <div className="flex shrink-0 items-center gap-2">
 
           {canSettings && (

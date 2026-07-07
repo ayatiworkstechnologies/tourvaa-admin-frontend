@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, LinkIcon, Percent, ShieldHalf, XCircle } from "lucide-react";
+import { LuArrowLeft as ArrowLeft, LuCircleCheckBig as CheckCircle2, LuLink as LinkIcon, LuPercent as Percent, LuShieldHalf as ShieldHalf, LuCircleX as XCircle } from "react-icons/lu";
 
 import ActionModal from "@/components/operations/ActionModal";
 import StatusBadge from "@/components/operations/StatusBadge";

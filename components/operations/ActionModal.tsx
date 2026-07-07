@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { LuX as X } from "react-icons/lu";
 
 type Field = {
   name: string;

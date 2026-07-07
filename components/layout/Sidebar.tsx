@@ -4,7 +4,8 @@ import { createPortal } from "react-dom";
 import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight, LogOut, MapPinned, LucideIcon } from "lucide-react";
+import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuLogOut as LogOut, LuMapPinned as MapPinned } from "react-icons/lu";
+import type { IconType as LucideIcon } from "react-icons";
 import { useAuth } from "@/hooks/useAuth";
 
 export type SidebarNavItem = {
@@ -143,7 +144,7 @@ export default function Sidebar({
           mobile ? "flex w-65" : `fixed hidden lg:flex ${collapsed ? "w-20" : "w-65"}`
         }`}
       >
-        {/* ── Header ── */}
+        {/* header */}
         <div
           className={`relative flex h-16 shrink-0 items-center border-b border-[#E7EAF0] ${
             collapsed ? "justify-center px-3" : "justify-between px-5"
@@ -183,7 +184,7 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* ── Nav + Logout ── */}
+        {/* nav + logout */}
         <div className="flex min-h-0 flex-1 flex-col pb-4 pt-4">
           <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none pr-3">
             {renderGroupedItems(mainItems)}

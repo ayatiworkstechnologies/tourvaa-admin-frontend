@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Save } from "lucide-react";
+import { LuSave as Save } from "react-icons/lu";
 import { getOverview, saveOverview, TourOverview } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";

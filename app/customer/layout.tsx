@@ -2,17 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  CalendarCheck,
-  CreditCard,
-  FileText,
-  Headphones,
-  LayoutDashboard,
-  MapPinned,
-  ReceiptText,
-  User,
-  UsersRound,
-} from "lucide-react";
+import { LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuHeadphones as Headphones, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuReceiptText as ReceiptText, LuUser as User, LuUsersRound as UsersRound } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";

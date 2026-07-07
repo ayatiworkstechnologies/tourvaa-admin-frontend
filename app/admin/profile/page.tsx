@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Eye, EyeOff } from "lucide-react";
+import { LuEye as Eye, LuEyeOff as EyeOff } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";

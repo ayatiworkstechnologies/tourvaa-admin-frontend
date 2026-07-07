@@ -2,20 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CalendarCheck,
-  CheckCircle2,
-  Clock3,
-  CreditCard,
-  FileText,
-  Headphones,
-  MapPin,
-  MapPinned,
-  ReceiptText,
-  UsersRound,
-  Wallet,
-} from "lucide-react";
+import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuCreditCard as CreditCard, LuFileText as FileText, LuHeadphones as Headphones, LuMapPin as MapPin, LuMapPinned as MapPinned, LuReceiptText as ReceiptText, LuUsersRound as UsersRound, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";

@@ -3,15 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  AlertCircle,
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  Loader2,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus, LuTrash2 as Trash2 } from "react-icons/lu";
 import api from "@/lib/api";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 

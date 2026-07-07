@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Clock, Loader2, RotateCcw, Wallet, X } from "lucide-react";
+import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuLoaderCircle as Loader2, LuRotateCcw as RotateCcw, LuWallet as Wallet, LuX as X } from "react-icons/lu";
 import axios from "axios";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";

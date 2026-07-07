@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell } from 'lucide-react';
+import { LuBell as Bell } from "react-icons/lu";
 import api from '@/lib/api';
 import { useAuthContext } from '@/providers/AuthProvider';
 import { playNotificationSound, unlockNotificationSound } from '@/lib/notificationSound';

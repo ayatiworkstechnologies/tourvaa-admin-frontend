@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, Percent } from "lucide-react";
+import { LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPercent as Percent } from "react-icons/lu";
 
 import api from "@/lib/api";
 import { useToast } from "@/hooks/useToast";

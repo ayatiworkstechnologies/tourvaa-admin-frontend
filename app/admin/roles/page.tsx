@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Edit, KeyRound, Plus, Save, Trash2, X } from "lucide-react";
+import { LuSquarePen as Edit, LuKeyRound as KeyRound, LuPlus as Plus, LuSave as Save, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import api from "@/lib/api";

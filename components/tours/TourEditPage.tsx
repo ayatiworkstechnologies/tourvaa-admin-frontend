@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuCheck as Check } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import TourFormPage from "@/components/cms/TourFormPage";

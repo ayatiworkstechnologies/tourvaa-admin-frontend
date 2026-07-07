@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy, Link2, Plus, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import { LuCheck as Check, LuCopy as Copy, LuLink2 as Link2, LuPlus as Plus, LuToggleLeft as ToggleLeft, LuToggleRight as ToggleRight, LuTrash2 as Trash2 } from "react-icons/lu";
 import api from "@/lib/api";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";

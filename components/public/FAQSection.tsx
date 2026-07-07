@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LuBot as Bot, LuMousePointerClick as MousePointerClick } from "react-icons/lu";
 
 type FAQ = {
   id: number;
@@ -70,7 +71,7 @@ export default function FAQSection({ faqs }: { faqs: FAQ[] }) {
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 rounded-full px-4 py-1.5 text-sm font-semibold mb-4">
-            🤖 AI-Powered FAQ
+            <Bot size={16} /> AI-Powered FAQ
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
             Frequently Asked Questions
@@ -159,8 +160,8 @@ export default function FAQSection({ faqs }: { faqs: FAQ[] }) {
           <p className="text-sm text-gray-500 mb-4">
             Our AI assistant can answer anything about tours, bookings, visa requirements, and more.
           </p>
-          <p className="text-blue-600 font-semibold text-sm">
-            👉 Click the chat button in the bottom-right corner
+          <p className="text-blue-600 font-semibold text-sm inline-flex items-center gap-1.5">
+            <MousePointerClick size={16} /> Click the chat button in the bottom-right corner
           </p>
         </div>
       </div>

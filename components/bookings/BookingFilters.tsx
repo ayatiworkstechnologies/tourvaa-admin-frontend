@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { LuSearch as Search, LuX as X } from "react-icons/lu";
 
 export type BookingFilterValues = {
   search: string;

@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { MapPin, Plus, Trash2 } from "lucide-react";
+import { LuMapPin as MapPin, LuPlus as Plus, LuTrash2 as Trash2 } from "react-icons/lu";
 import { getSimilarTours, addSimilarTour, deleteSimilarTour, SimilarTour } from "@/lib/services/tourDetailService";
+import { getApiErrorMessage } from "@/lib/error-handler";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import TourPicker from "@/components/tours/TourPicker";
@@ -40,8 +41,7 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
       setPickerKey((key) => key + 1);
       toast.success("Added.");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Failed to add.";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -100,6 +100,8 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
               <button
                 type="button"
                 onClick={() => void remove(item.id!)}
+                title="Remove similar tour"
+                aria-label="Remove similar tour"
                 className="rounded-lg border border-[#FFCDD2] p-2 text-red-500 hover:bg-[#FFF0F0]"
               >
                 <Trash2 size={14} />

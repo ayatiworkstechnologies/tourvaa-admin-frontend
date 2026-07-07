@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
+import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourDiscount, getDiscounts, createDiscount, updateDiscount, deleteDiscount } from "@/lib/services/tourDetailService";
+import { getApiErrorMessage } from "@/lib/error-handler";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 
@@ -51,8 +52,7 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
       setEditing(null);
       toast.success("Saved.");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Failed to save.";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -106,8 +106,8 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
                 <p className="mt-1 text-xs text-[#98A2B3]">Used: {item.used_count ?? 0}{item.usage_limit ? ` / ${item.usage_limit}` : ""}</p>
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-[#E7EAF0] p-2 hover:bg-[#F2F4F7]"><Pencil size={14} /></button>
-                <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] p-2 text-red-500"><Trash2 size={14} /></button>
+                <button type="button" aria-label="Edit discount" title="Edit discount" onClick={() => setEditing({ ...item })} className="rounded-lg border border-[#E7EAF0] p-2 hover:bg-[#F2F4F7]"><Pencil size={14} /></button>
+                <button type="button" aria-label="Delete discount" title="Delete discount" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] p-2 text-red-500"><Trash2 size={14} /></button>
               </div>
             </div>
           </div>
@@ -116,9 +116,9 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
 
       {editing && (
         <form onSubmit={save} className="rounded-xl border-2 border-[#43A9F6] bg-white p-6">
-          <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold">{editing.id ? "Edit Discount" : "New Discount"}</h3>
-            <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
+            <button type="button" aria-label="Close editor" title="Close editor" onClick={() => setEditing(null)}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="md:col-span-2">

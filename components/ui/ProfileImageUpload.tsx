@@ -2,7 +2,7 @@
 
 import { ChangeEvent, useState } from "react";
 import axios from "axios";
-import { ImageUp, Loader2, X } from "lucide-react";
+import { LuImageUp as ImageUp, LuLoaderCircle as Loader2, LuX as X } from "react-icons/lu";
 import api from "@/lib/api";
 import { mediaUrl } from "@/lib/media-url";
 

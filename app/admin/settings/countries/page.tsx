@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Edit, Globe, MapPin, Plus } from "lucide-react";
+import { LuSquarePen as Edit, LuGlobe as Globe, LuMapPin as MapPin, LuPlus as Plus } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import StatusBadge from "@/components/operations/StatusBadge";
 import ActionModal from "@/components/operations/ActionModal";
@@ -20,8 +20,7 @@ function singular(word: string): string {
 
 type Row = Record<string, unknown>;
 
-// ── Generic CRUD tab ─────────────────────────────────────────────────────────
-
+// generic crud tab
 type Field = {
   name: string;
   label: string;
@@ -204,8 +203,7 @@ function CrudTab({ title, endpoint, fields, columns, extraParams = {}, canCreate
   );
 }
 
-// ── Countries tab ─────────────────────────────────────────────────────────────
-
+// countries tab
 function CountriesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolean }) {
   return (
     <CrudTab
@@ -229,8 +227,7 @@ function CountriesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boo
   );
 }
 
-// ── States tab ────────────────────────────────────────────────────────────────
-
+// states tab
 function StatesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolean }) {
   const { countries } = useGeoCountries();
   const [countryFilter, setCountryFilter] = useState("");
@@ -271,8 +268,7 @@ function StatesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolea
   );
 }
 
-// ── Cities tab ────────────────────────────────────────────────────────────────
-
+// cities tab
 function CitiesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolean }) {
   const { countries } = useGeoCountries();
   const [countryFilter, setCountryFilter] = useState<number | null>(null);
@@ -331,8 +327,7 @@ function CitiesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolea
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
-
+// main page
 type Tab = "countries" | "states" | "cities";
 
 const TABS: { key: Tab; label: string; icon: typeof Globe }[] = [

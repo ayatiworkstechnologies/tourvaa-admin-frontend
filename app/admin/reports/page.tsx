@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Loader2 } from "lucide-react";
+import { LuDownload as Download, LuLoaderCircle as Loader2, LuTrendingUp as TrendingUp } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
@@ -25,8 +25,7 @@ import {
 } from "@/lib/services/reportService";
 import { useToast } from "@/hooks/useToast";
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
+// helpers
 function formatRevenue(raw: number): string {
   if (raw >= 10_000_000) return `₹${(raw / 10_000_000).toFixed(1)}Cr`;
   if (raw >= 100_000)    return `₹${(raw / 100_000).toFixed(1)}L`;
@@ -52,8 +51,7 @@ function changeBadge(pct: number) {
   );
 }
 
-// ─── status badge ─────────────────────────────────────────────────────────
-
+// status badge
 function StatusBadge({ status }: { status: "ready" | "review" }) {
   return status === "ready" ? (
     <span className="rounded-full bg-[#ECFDF3] px-2 py-0.5 text-xs font-semibold text-[#027A48]">ready</span>
@@ -62,8 +60,7 @@ function StatusBadge({ status }: { status: "ready" | "review" }) {
   );
 }
 
-// ─── snapshot card ────────────────────────────────────────────────────────
-
+// snapshot card
 interface SnapshotCardProps {
   title: string;
   status: "ready" | "review";
@@ -84,8 +81,7 @@ function SnapshotCard({ title, status, value, sub }: SnapshotCardProps) {
   );
 }
 
-// ─── format badge (XLSX / PDF / CSV) ─────────────────────────────────────
-
+// format badge (xlsx / pdf / csv)
 const FORMAT_COLORS: Record<string, string> = {
   XLSX: "bg-[#E6F4EA] text-[#1E7E34]",
   PDF:  "bg-[#FDE8E8] text-[#C81E1E]",
@@ -99,8 +95,7 @@ function FormatBadge({ format }: { format: string }) {
   );
 }
 
-// ─── period options ───────────────────────────────────────────────────────
-
+// period options
 const PERIOD_OPTIONS: { value: ReportPeriod; label: string }[] = [
   { value: "day", label: "Day" },
   { value: "week", label: "Week" },
@@ -112,8 +107,7 @@ const PERIOD_OPTIONS: { value: ReportPeriod; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
-// ─── report row types (loose — different report types have different shapes) ─
-
+// report row types (loose — different report types have different shapes)
 type ReportRow = Record<string, string | number | null>;
 
 function money(value: unknown) {
@@ -212,8 +206,7 @@ async function fetchReportRows(reportType: ReportType, periodParams: { period: R
   }
 }
 
-// ─── page ─────────────────────────────────────────────────────────────────
-
+// page
 export default function ReportsPage() {
   const toast = useToast();
   const [data, setData] = useState<ReportSnapshot | null>(null);
@@ -293,10 +286,10 @@ export default function ReportsPage() {
         {!loading && !error && data && (
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
 
-            {/* ── Left: Snapshot cards ── */}
+            {/* left: snapshot cards */}
             <div className="rounded-2xl border border-[#E9EDF3] bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
               <div className="mb-5 flex items-center gap-2">
-                <span className="text-base font-bold text-[#121826]">📈 Reports Snapshot</span>
+                <span className="inline-flex items-center gap-1.5 text-base font-bold text-[#121826]"><TrendingUp size={16} /> Reports Snapshot</span>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
@@ -353,7 +346,7 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {/* ── Right: Stats + Recent Exports ── */}
+            {/* right: stats + recent exports */}
             <div className="flex flex-col gap-4">
 
               {/* Stats strip */}
@@ -400,7 +393,7 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* ── Detailed / filterable reports ── */}
+        {/* detailed / filterable reports */}
         <section className="rounded-2xl border border-[#E9EDF3] bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
           <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>

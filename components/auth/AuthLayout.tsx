@@ -1,4 +1,4 @@
-import { BadgeCheck, MapPinned, ShieldCheck, UsersRound } from "lucide-react";
+import { LuBadgeCheck as BadgeCheck, LuMapPinned as MapPinned, LuShieldCheck as ShieldCheck, LuUsersRound as UsersRound } from "react-icons/lu";
 
 type AuthLayoutProps = {
   title: string;
@@ -14,9 +14,9 @@ export default function AuthLayout({
   children,
 }: AuthLayoutProps) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#EEF4F8] px-4 py-8">
+    <main className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-8">
       <div className="grid min-h-[680px] w-full max-w-6xl overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.18)] lg:grid-cols-[1.08fr_0.92fr]">
-        <section className="relative hidden flex-col justify-between overflow-hidden bg-[#071521] px-10 py-10 text-white lg:flex">
+        <section className="relative hidden flex-col justify-between overflow-hidden bg-zinc-950 px-10 py-10 text-white lg:flex">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -50,7 +50,7 @@ export default function AuthLayout({
                   </p>
                   <p className="mt-1 text-2xl font-bold">Role access active</p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#43A9F6]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-indigo-400">
                   <ShieldCheck size={24} />
                 </div>
               </div>
@@ -70,14 +70,14 @@ export default function AuthLayout({
           </div>
         </section>
 
-        <section className="relative flex items-center justify-center bg-[radial-gradient(circle_at_top_right,#E7F5FF_0%,transparent_34%),#FFFFFF] px-6 py-10 sm:px-10">
+        <section className="relative flex items-center justify-center bg-[radial-gradient(circle_at_top_right,#EEF2FF_0%,transparent_34%),#FFFFFF] px-6 py-10 sm:px-10">
           <div className="w-full max-w-md">
             <div className="mb-8">
-              <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-bold text-[#43A9F6] ring-1 ring-sky-100">
+              <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-400 ring-1 ring-indigo-100">
                 <ShieldCheck size={13} />
                 {badge}
               </p>
-              <h2 className="text-4xl font-extrabold tracking-tight text-[#101828]">
+              <h2 className="text-4xl font-extrabold tracking-tight text-zinc-950">
                 {title}
               </h2>
               <p className="mt-2 text-sm leading-6 text-gray-500">{subtitle}</p>

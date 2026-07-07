@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bus, CheckCircle2, ChevronDown, ChevronUp, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
+import { LuBus as Bus, LuCircleCheckBig as CheckCircle2, LuChevronDown as ChevronDown, LuChevronUp as ChevronUp, LuLoaderCircle as Loader2, LuPlus as Plus, LuTrash2 as Trash2, LuUpload as Upload, LuX as X } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/useToast";
@@ -198,7 +198,7 @@ export default function VehiclesTab() {
     }
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // render
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -328,8 +328,7 @@ export default function VehiclesTab() {
   );
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
+// sub-components
 type FormFields = typeof emptyForm;
 
 function VehicleForm({

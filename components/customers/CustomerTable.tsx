@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, KeyRound, Lock, Unlock } from "lucide-react";
+import { LuEye as Eye, LuKeyRound as KeyRound, LuLock as Lock, LuLockOpen as Unlock } from "react-icons/lu";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { Customer } from "@/lib/services/customerService";
 

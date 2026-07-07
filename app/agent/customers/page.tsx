@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Plus, Search, UserPlus, X } from "lucide-react";
+import { LuPlus as Plus, LuSearch as Search, LuUserPlus as UserPlus, LuX as X } from "react-icons/lu";
 import api from "@/lib/api";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/useToast";

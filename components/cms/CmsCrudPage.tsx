@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Edit, Plus } from "lucide-react";
+import { LuSquarePen as Edit, LuPlus as Plus } from "react-icons/lu";
 
 import ActionModal from "@/components/operations/ActionModal";
 import StatusBadge from "@/components/operations/StatusBadge";

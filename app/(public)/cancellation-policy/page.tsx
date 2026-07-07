@@ -10,10 +10,10 @@ const tiers = [
 
 export default function CancellationPolicyPage() {
   return (
-    <main className="min-h-screen bg-[#F7F9FC] pb-20">
-      <section className="bg-[#0F172A] py-14 text-white">
+    <main className="min-h-screen bg-zinc-50 pb-20">
+      <section className="bg-zinc-950 py-14 text-white">
         <div className="mx-auto max-w-4xl px-5 md:px-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#43A9F6]">Policy</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-400">Policy</p>
           <h1 className="mt-2 text-4xl font-bold">Cancellation Policy</h1>
           <p className="mt-3 text-sm text-white/60">Last updated: June 2026</p>
         </div>
@@ -21,23 +21,23 @@ export default function CancellationPolicyPage() {
 
       <div className="mx-auto max-w-4xl px-5 py-12 md:px-8">
         <div className="space-y-6">
-          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#E7EAF0]">
-            <h2 className="mb-4 font-bold text-[#121826]">Standard Cancellation Schedule</h2>
-            <p className="mb-5 text-sm leading-6 text-[#667085]">
+          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-zinc-100 shadow-sm ring-0">
+            <h2 className="mb-4 font-bold text-zinc-950">Standard Cancellation Schedule</h2>
+            <p className="mb-5 text-sm leading-6 text-zinc-500">
               The following cancellation schedule applies to most Tourvaa bookings. Individual tours may have more restrictive policies — always check the specific policy shown on the tour detail page before booking.
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-[#F7F9FC]">
-                    <th className="rounded-tl-xl px-4 py-3 text-left text-xs font-bold uppercase text-[#667085]">Cancellation Window</th>
-                    <th className="rounded-tr-xl px-4 py-3 text-left text-xs font-bold uppercase text-[#667085]">Refund Amount</th>
+                  <tr className="bg-zinc-50">
+                    <th className="rounded-tl-xl px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Cancellation Window</th>
+                    <th className="rounded-tr-xl px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Refund Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E7EAF0]">
+                <tbody className="divide-y divide-zinc-200">
                   {tiers.map((t, i) => (
                     <tr key={i}>
-                      <td className="px-4 py-3 font-semibold text-[#121826]">{t.window}</td>
+                      <td className="px-4 py-3 font-semibold text-zinc-950">{t.window}</td>
                       <td className={`px-4 py-3 ${i === tiers.length - 1 ? "text-red-500 font-bold" : "text-emerald-600 font-semibold"}`}>{t.refund}</td>
                     </tr>
                   ))}
@@ -53,16 +53,16 @@ export default function CancellationPolicyPage() {
             ["No-Show Policy", "Failure to appear at the confirmed departure point at the specified time is treated as a cancellation within 7 days. No refund will be issued for no-shows."],
             ["Travel Insurance", "We strongly recommend purchasing comprehensive travel insurance that covers trip cancellation, medical emergencies, and personal liability. Tourvaa does not provide travel insurance but can refer you to approved insurance partners."],
           ].map(([title, text]) => (
-            <div key={String(title)} className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#E7EAF0]">
-              <h2 className="mb-3 font-bold text-[#121826]">{String(title)}</h2>
-              <p className="whitespace-pre-line text-sm leading-7 text-[#667085]">{String(text)}</p>
+            <div key={String(title)} className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-zinc-100 shadow-sm ring-0">
+              <h2 className="mb-3 font-bold text-zinc-950">{String(title)}</h2>
+              <p className="whitespace-pre-line text-sm leading-7 text-zinc-500">{String(text)}</p>
             </div>
           ))}
 
-          <div className="rounded-xl bg-[#E7F5FF] p-5 text-sm text-[#344054]">
+          <div className="rounded-xl bg-indigo-50 p-5 text-sm text-zinc-600">
             Questions about a cancellation?{" "}
-            <Link href="/contact" className="font-bold text-[#0284C7] hover:underline">Contact us</Link>{" "}
-            or email <a href="mailto:hello@tourvaa.com" className="font-bold text-[#0284C7] hover:underline">hello@tourvaa.com</a>.
+            <Link href="/contact" className="font-bold text-indigo-600 hover:underline">Contact us</Link>{" "}
+            or email <a href="mailto:hello@tourvaa.com" className="font-bold text-indigo-600 hover:underline">hello@tourvaa.com</a>.
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { LucideIcon } from "lucide-react";
+import type { IconType as LucideIcon } from "react-icons";
 
 type StatCardProps = {
   title: string;

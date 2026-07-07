@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { LuRefreshCw as RefreshCw } from "react-icons/lu";
 
 import CustomerFilters, { CustomerFilterState } from "@/components/customers/CustomerFilters";
 import CustomerTable from "@/components/customers/CustomerTable";

@@ -3,22 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import {
-  AlertCircle,
-  ArrowLeft,
-  CalendarCheck,
-  CheckCircle2,
-  Clock,
-  CreditCard,
-  FileText,
-  History,
-  Loader2,
-  MapPinned,
-  Receipt,
-  Users,
-  X,
-  XCircle,
-} from "lucide-react";
+import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCreditCard as CreditCard, LuFileText as FileText, LuHistory as History, LuLoaderCircle as Loader2, LuMapPinned as MapPinned, LuReceipt as Receipt, LuUsers as Users, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/useToast";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { LuArrowRight as ArrowRight, LuBookOpen as BookOpen } from "react-icons/lu";
 
 const posts = [
   {
@@ -62,62 +62,64 @@ const categories = ["All", "Travel Tips", "Guide", "Destination", "Photography",
 
 export default function BlogsPage() {
   return (
-    <main className="min-h-screen bg-[#F7F9FC] pb-20">
+    <main className="min-h-screen bg-zinc-50 pb-20">
       {/* Header */}
-      <section className="bg-[#0F172A] py-14 text-white">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#43A9F6]">Blog</p>
-          <h1 className="mt-2 text-4xl font-bold">Travel stories & guides</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">
+      <section className="bg-zinc-950 py-20 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-indigo-600/20 blur-[100px]" />
+        <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-violet-600/20 blur-[100px]" />
+        <div className="relative mx-auto max-w-7xl px-5 md:px-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-400">Blog</p>
+          <h1 className="mt-4 text-5xl font-black drop-shadow-sm md:text-6xl">Travel stories & guides</h1>
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/70">
             Expert travel advice, destination guides, and stories from the road — written by our team and partner naturalists.
           </p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
+      <div className="mx-auto max-w-7xl px-5 py-12 md:px-8">
         {/* Category pills */}
-        <div className="mb-8 flex flex-wrap gap-2">
+        <div className="mb-10 flex flex-wrap gap-2.5">
           {categories.map((c) => (
-            <span key={c} className={`cursor-pointer rounded-full border px-4 py-2 text-xs font-bold transition ${c === "All" ? "border-[#0284C7] bg-[#E7F5FF] text-[#0284C7]" : "border-[#E7EAF0] bg-white text-[#667085] hover:border-[#0284C7] hover:text-[#0284C7]"}`}>
+            <span key={c} className={`cursor-pointer rounded-full border px-5 py-2 text-xs font-bold transition-all ${c === "All" ? "border-indigo-600 bg-indigo-50 text-indigo-600" : "border-zinc-200 bg-white text-zinc-500 hover:border-indigo-600 hover:text-indigo-600"}`}>
               {c}
             </span>
           ))}
         </div>
 
         {/* Featured post */}
-        <Link href={`/blogs/${posts[0].slug}`} className="group mb-8 flex overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#E7EAF0] hover:ring-[#43A9F6]">
-          <div className="flex-1 p-7 md:p-8">
-            <div className="flex items-center gap-3 text-xs">
-              <span className="rounded-full bg-[#E7F5FF] px-3 py-1 font-bold text-[#0284C7]">{posts[0].category}</span>
-              <span className="text-[#98A2B3]">{posts[0].date}</span>
-              <span className="text-[#98A2B3]">{posts[0].readTime}</span>
+        <Link href={`/blogs/${posts[0].slug}`} className="group mb-12 flex overflow-hidden rounded-3xl bg-white border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+          <div className="flex-1 p-8 md:p-10">
+            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest">
+              <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-600">{posts[0].category}</span>
+              <span className="text-zinc-400">{posts[0].date}</span>
+              <span className="text-zinc-400">{posts[0].readTime}</span>
             </div>
-            <h2 className="mt-3 text-2xl font-bold text-[#121826] group-hover:text-[#0284C7] md:text-3xl">{posts[0].title}</h2>
-            <p className="mt-3 max-w-lg text-sm leading-7 text-[#667085]">{posts[0].excerpt}</p>
-            <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#0284C7]">
-              Read article <ArrowRight size={14} />
+            <h2 className="mt-5 text-3xl font-black text-zinc-950 group-hover:text-indigo-600 transition-colors md:text-4xl">{posts[0].title}</h2>
+            <p className="mt-4 max-w-lg text-base leading-relaxed text-zinc-500">{posts[0].excerpt}</p>
+            <div className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-indigo-600 transition-colors group-hover:text-indigo-700">
+              Read article <ArrowRight size={16} />
             </div>
           </div>
-          <div className="hidden w-64 shrink-0 overflow-hidden lg:block">
-            <img src={posts[0].img} alt={posts[0].title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          <div className="hidden w-1/3 shrink-0 overflow-hidden lg:block">
+            <img src={posts[0].img} alt={posts[0].title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
           </div>
         </Link>
 
         {/* Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {posts.slice(1).map((post) => (
-            <Link key={post.slug} href={`/blogs/${post.slug}`} className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#E7EAF0] hover:ring-[#43A9F6]">
+            <Link key={post.slug} href={`/blogs/${post.slug}`} className="group overflow-hidden rounded-3xl bg-white border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col">
               <div className="aspect-[16/9] overflow-hidden">
-                <img src={post.img} alt={post.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                <img src={post.img} alt={post.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
               </div>
-              <div className="p-5">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="rounded-full bg-[#E7F5FF] px-2.5 py-1 font-bold text-[#0284C7]">{post.category}</span>
-                  <span className="text-[#98A2B3]">{post.readTime}</span>
+              <div className="p-6 flex-1 flex flex-col">
+                <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
+                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-600">{post.category}</span>
+                  <span className="text-zinc-400">{post.readTime}</span>
                 </div>
-                <h3 className="mt-2 font-bold text-[#121826] group-hover:text-[#0284C7]">{post.title}</h3>
-                <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#667085]">{post.excerpt}</p>
-                <p className="mt-3 text-xs text-[#98A2B3]">{post.date}</p>
+                <h3 className="mt-4 text-xl font-black text-zinc-950 group-hover:text-indigo-600 transition-colors leading-snug">{post.title}</h3>
+                <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-zinc-500 flex-1">{post.excerpt}</p>
+                <p className="mt-5 text-xs font-bold uppercase tracking-widest text-zinc-400">{post.date}</p>
               </div>
             </Link>
           ))}

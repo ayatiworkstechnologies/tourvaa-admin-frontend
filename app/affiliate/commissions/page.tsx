@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Banknote, Coins } from "lucide-react";
+import { LuArrowRight as ArrowRight, LuBanknote as Banknote, LuCoins as Coins } from "react-icons/lu";
 import api from "@/lib/api";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";

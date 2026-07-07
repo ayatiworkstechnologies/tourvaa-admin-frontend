@@ -3,23 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import {
-  AlertCircle,
-  ArrowLeft,
-  Ban,
-  Bell,
-  CalendarDays,
-  CalendarCheck,
-  CheckCircle2,
-  ChevronDown,
-  Clock,
-  Loader2,
-  MessageSquare,
-  Send,
-  User,
-  XCircle,
-  X,
-} from "lucide-react";
+import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuChevronDown as ChevronDown, LuClock as Clock, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
 import api from "@/lib/api";
 
 type Traveller = {

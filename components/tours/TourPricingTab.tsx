@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
+import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
@@ -122,8 +122,8 @@ export default function TourPricingTab({ tourId }: { tourId: string }) {
             rows={items}
             actions={(item) => (
               <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-[#E7EAF0] p-1.5 hover:bg-[#F2F4F7]"><Pencil size={13} /></button>
-                <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500"><Trash2 size={13} /></button>
+                <button type="button" onClick={() => setEditing({ ...item })} aria-label="Edit pricing slab" title="Edit pricing slab" className="rounded-lg border border-[#E7EAF0] p-1.5 hover:bg-[#F2F4F7]"><Pencil size={13} /></button>
+                <button type="button" onClick={() => remove(item.id!)} aria-label="Delete pricing slab" title="Delete pricing slab" className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500"><Trash2 size={13} /></button>
               </div>
             )}
           />
@@ -134,7 +134,7 @@ export default function TourPricingTab({ tourId }: { tourId: string }) {
         <form onSubmit={save} className="rounded-xl border-2 border-[#43A9F6] bg-white p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold">{editing.id ? "Edit Slab" : "New Pricing Slab"}</h3>
-            <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
+            <button type="button" onClick={() => setEditing(null)} aria-label="Close pricing slab form" title="Close pricing slab form"><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {numField("passenger_from", "Pax from")}

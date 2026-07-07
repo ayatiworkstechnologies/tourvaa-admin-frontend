@@ -2,18 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  Calendar,
-  CalendarCheck,
-  CalendarX,
-  CheckCircle2,
-  CreditCard,
-  Mail,
-  MessageSquare,
-  Wallet,
-  XCircle,
-} from "lucide-react";
+import { LuArrowLeft as ArrowLeft, LuCalendar as Calendar, LuCalendarCheck as CalendarCheck, LuCalendarX as CalendarX, LuCircleCheckBig as CheckCircle2, LuCreditCard as CreditCard, LuMail as Mail, LuMessageSquare as MessageSquare, LuWallet as Wallet, LuCircleX as XCircle } from "react-icons/lu";
 import { useParams } from "next/navigation";
 
 import CustomerActionButtons from "@/components/customers/CustomerActionButtons";

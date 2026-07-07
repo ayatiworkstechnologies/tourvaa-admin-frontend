@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Percent, Pencil, Plus, Save, Tag, Trash2, X } from "lucide-react";
+import { LuPercent as Percent, LuPencil as Pencil, LuPlus as Plus, LuSave as Save, LuTag as Tag, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";

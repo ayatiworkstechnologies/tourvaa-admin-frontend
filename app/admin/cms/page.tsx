@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Trash2, Pencil, X, Check, Globe, InboxIcon } from "lucide-react";
+import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil, LuX as X, LuCheck as Check, LuGlobe as Globe, LuInbox as InboxIcon } from "react-icons/lu";
 import api from "@/lib/api";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";

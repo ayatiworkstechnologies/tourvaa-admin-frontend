@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
+import { LuEye as Eye, LuEyeOff as EyeOff, LuLoaderCircle as Loader2, LuCircleCheckBig as CheckCircle2 } from "react-icons/lu";
 import api from "@/lib/api";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";

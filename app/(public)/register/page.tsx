@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useForm, useWatch } from "react-hook-form";
-import { CheckCircle2, Eye, EyeOff, Lock, Mail, User, UserPlus } from "lucide-react";
+import { LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuEyeOff as EyeOff, LuLock as Lock, LuMail as Mail, LuUser as User, LuUserPlus as UserPlus } from "react-icons/lu";
 import api from "@/lib/api";
 import { normalizeEmail, passwordHelp, validateEmail, validatePassword } from "@/lib/validators";
 
@@ -65,18 +65,18 @@ export default function CustomerRegisterPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-[#F7F9FC] px-4 py-12">
+    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-zinc-50 px-4 py-12">
       <div className="w-full max-w-md">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
 
           {success ? (
             <div className="flex flex-col items-center py-6 text-center">
               <CheckCircle2 size={48} className="text-emerald-500" />
-              <h2 className="mt-4 text-xl font-bold text-[#0F172A]">Account created!</h2>
-              <p className="mt-2 text-sm text-[#667085]">Your account has been created successfully. You can now sign in.</p>
+              <h2 className="mt-4 text-xl font-bold text-zinc-950">Account created!</h2>
+              <p className="mt-2 text-sm text-zinc-500">Your account has been created successfully. You can now sign in.</p>
               <Link
                 href="/login"
-                className="mt-6 flex items-center gap-2 rounded-xl bg-[#0284C7] px-6 py-3 text-sm font-bold text-white hover:bg-[#0369A1]"
+                className="mt-6 flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-700"
               >
                 Sign In Now
               </Link>
@@ -84,31 +84,31 @@ export default function CustomerRegisterPage() {
           ) : (
             <>
               <div className="mb-6 text-center">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#E7F5FF] text-[#0284C7]">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                   <UserPlus size={22} />
                 </span>
-                <h1 className="mt-3 text-xl font-bold text-[#0F172A]">Create your account</h1>
-                <p className="mt-1 text-sm text-[#667085]">Join Tourvaa as a traveller — free forever</p>
+                <h1 className="mt-3 text-xl font-bold text-zinc-950">Create your account</h1>
+                <p className="mt-1 text-sm text-zinc-500">Join Tourvaa as a traveller — free forever</p>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-[#344054]">Full Name</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Full Name</label>
                   <div className="relative">
-                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
+                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                     <input
                       placeholder="Your full name"
                       {...register("name", { required: "Name is required." })}
-                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-[#0F172A] placeholder-[#98A2B3] outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100"
+                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
                   {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-[#344054]">Email address</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Email address</label>
                   <div className="relative">
-                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
+                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                     <input
                       type="email"
                       autoComplete="email"
@@ -117,16 +117,16 @@ export default function CustomerRegisterPage() {
                         required: "Email is required.",
                         validate: (v) => validateEmail(v) || "Enter a valid email address.",
                       })}
-                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-[#0F172A] placeholder-[#98A2B3] outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100"
+                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
                   {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-[#344054]">Password</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Password</label>
                   <div className="relative">
-                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
+                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                     <input
                       type={showPassword ? "text" : "password"}
                       autoComplete="new-password"
@@ -136,9 +136,9 @@ export default function CustomerRegisterPage() {
                         minLength: { value: 8, message: "Minimum 8 characters." },
                         validate: (v) => validatePassword(v) || passwordHelp,
                       })}
-                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-10 text-sm text-[#0F172A] placeholder-[#98A2B3] outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100"
+                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-10 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                     />
-                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#98A2B3] hover:text-[#667085]" aria-label="Toggle password">
+                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-500" aria-label="Toggle password">
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
@@ -146,9 +146,9 @@ export default function CustomerRegisterPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-[#344054]">Confirm Password</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Confirm Password</label>
                   <div className="relative">
-                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
+                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                     <input
                       type={showConfirm ? "text" : "password"}
                       autoComplete="new-password"
@@ -157,9 +157,9 @@ export default function CustomerRegisterPage() {
                         required: "Please confirm your password.",
                         validate: (v) => v === password || "Passwords do not match.",
                       })}
-                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-10 text-sm text-[#0F172A] placeholder-[#98A2B3] outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100"
+                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-10 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                     />
-                    <button type="button" onClick={() => setShowConfirm((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#98A2B3] hover:text-[#667085]" aria-label="Toggle confirm password">
+                    <button type="button" onClick={() => setShowConfirm((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-500" aria-label="Toggle confirm password">
                       {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
@@ -167,7 +167,7 @@ export default function CustomerRegisterPage() {
                 </div>
 
                 {message && (
-                  <div className={`rounded-xl px-4 py-3 text-sm ${isError ? "bg-red-50 text-red-600" : "bg-sky-50 text-[#0284C7]"}`}>
+                  <div className={`rounded-xl px-4 py-3 text-sm ${isError ? "bg-red-50 text-red-600" : "bg-indigo-50 text-indigo-600"}`}>
                     {message}
                   </div>
                 )}
@@ -175,21 +175,21 @@ export default function CustomerRegisterPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0284C7] py-3 text-sm font-bold text-white transition hover:bg-[#0369A1] disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:opacity-60"
                 >
                   <UserPlus size={15} />
                   {isSubmitting ? "Creating account…" : "Create Account"}
                 </button>
 
-                <p className="text-center text-sm text-[#667085]">
+                <p className="text-center text-sm text-zinc-500">
                   Already have an account?{" "}
-                  <Link href="/login" className="font-bold text-[#0284C7] hover:underline">Sign in</Link>
+                  <Link href="/login" className="font-bold text-indigo-600 hover:underline">Sign in</Link>
                 </p>
-                <p className="text-center text-xs text-[#98A2B3]">
+                <p className="text-center text-xs text-zinc-400">
                   Are you a supplier or agent?{" "}
-                  <Link href="/join/supplier" className="font-semibold text-[#0284C7] hover:underline">Join as Supplier</Link>
+                  <Link href="/join/supplier" className="font-semibold text-indigo-600 hover:underline">Join as Supplier</Link>
                   {" · "}
-                  <Link href="/join/agent" className="font-semibold text-[#0284C7] hover:underline">Join as Agent</Link>
+                  <Link href="/join/agent" className="font-semibold text-indigo-600 hover:underline">Join as Agent</Link>
                 </p>
               </form>
             </>

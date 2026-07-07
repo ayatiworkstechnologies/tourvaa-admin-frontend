@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Pencil, Trash2, Save, X } from "lucide-react";
+import { LuArrowDown as ArrowDown, LuArrowUp as ArrowUp, LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import {
   getItineraries, createItinerary, updateItinerary, deleteItinerary, reorderItineraries, ItineraryDay,
 } from "@/lib/services/tourDetailService";

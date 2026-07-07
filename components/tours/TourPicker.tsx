@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, MapPin, Search, X } from "lucide-react";
+import { LuLoaderCircle as Loader2, LuMapPin as MapPin, LuSearch as Search, LuX as X } from "react-icons/lu";
 
 import { listCms } from "@/lib/services/cmsService";
 import { useDebounce } from "@/hooks/useDebounce";

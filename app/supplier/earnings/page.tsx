@@ -2,18 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  AlertCircle,
-  Banknote,
-  CheckCircle2,
-  Clock3,
-  Loader2,
-  ReceiptText,
-  RefreshCw,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuLoaderCircle as Loader2, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 

@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import { LucideIcon } from "lucide-react";
+import type { IconType as LucideIcon } from "react-icons";
 
 type AuthInputProps = {
   label: string;

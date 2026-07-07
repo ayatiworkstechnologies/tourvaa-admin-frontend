@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Edit, Plus, Trash2, X } from "lucide-react";
+import { LuSquarePen as Edit, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 import api from "@/lib/api";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 

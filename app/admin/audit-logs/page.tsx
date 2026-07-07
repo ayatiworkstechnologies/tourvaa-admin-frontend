@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ClipboardList, RefreshCw } from "lucide-react";
+import { LuClipboardList as ClipboardList, LuRefreshCw as RefreshCw } from "react-icons/lu";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/useToast";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";

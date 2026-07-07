@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, RefreshCcw, Trash2, XCircle, CheckCircle2, InboxIcon } from "lucide-react";
+import { LuPlus as Plus, LuRefreshCcw as RefreshCcw, LuTrash2 as Trash2, LuCircleX as XCircle, LuCircleCheckBig as CheckCircle2, LuInbox as InboxIcon } from "react-icons/lu";
 import api from "@/lib/api";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import StatusBadge from "@/components/operations/StatusBadge";

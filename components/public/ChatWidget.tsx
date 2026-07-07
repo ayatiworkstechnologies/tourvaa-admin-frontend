@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Calendar, CheckCircle2, Loader2, MessageCircle, Minus, Plus, Send, Sparkles, X } from "lucide-react";
+import { LuBot as Bot, LuCalendar as Calendar, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuMessageCircle as MessageCircle, LuMinus as Minus, LuPlus as Plus, LuSend as Send, LuSparkles as Sparkles, LuX as X } from "react-icons/lu";
 import { useEffect, useRef, useState } from "react";
 import { useAuthContext } from "@/providers/AuthProvider";
 import api from "@/lib/api";

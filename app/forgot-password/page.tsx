@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useForm } from "react-hook-form";
-import { Mail } from "lucide-react";
+import { LuMail as Mail } from "react-icons/lu";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthInput from "@/components/auth/AuthInput";
 import api from "@/lib/api";

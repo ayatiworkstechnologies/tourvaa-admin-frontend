@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare } from "lucide-react";
+import { LuMessageSquare as MessageSquare } from "react-icons/lu";
 
 export default function SupplierMessagesPage() {
   return (

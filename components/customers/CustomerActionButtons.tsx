@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound, Lock, Unlock } from "lucide-react";
+import { LuKeyRound as KeyRound, LuLock as Lock, LuLockOpen as Unlock } from "react-icons/lu";
 
 import { Customer } from "@/lib/services/customerService";
 

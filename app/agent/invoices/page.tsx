@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, FileText, Loader2 } from "lucide-react";
+import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2 } from "react-icons/lu";
 import api from "@/lib/api";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 

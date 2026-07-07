@@ -2,29 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import {
-  CalendarCheck,
-  CircleDollarSign,
-  PackageCheck,
-  Users,
-  Warehouse,
-  Mail,
-  Headset,
-  Filter,
-  BarChart3,
-  CreditCard,
-  TrendingUp,
-  UserPlus,
-  Shield,
-  Activity,
-  AlertTriangle,
-  Clock,
-  ChevronRight,
-  Home,
-  RefreshCw,
-  CheckCircle2,
-  XCircle,
-} from "lucide-react";
+import { LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuPackageCheck as PackageCheck, LuUsers as Users, LuWarehouse as Warehouse, LuMail as Mail, LuHeadset as Headset, LuFilter as Filter, LuChartColumn as BarChart3, LuCreditCard as CreditCard, LuTrendingUp as TrendingUp, LuUserPlus as UserPlus, LuShield as Shield, LuActivity as Activity, LuTriangleAlert as AlertTriangle, LuClock as Clock, LuChevronRight as ChevronRight, LuHouse as Home, LuRefreshCw as RefreshCw, LuCircleCheckBig as CheckCircle2, LuCircleX as XCircle } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useDashboard } from "@/hooks/useDashboard";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -36,8 +14,7 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 
-// ─── types ──────────────────────────────────────────────────────────────────
-
+// types
 type Summary = {
   total_bookings?: number;
   total_customers?: number;
@@ -57,8 +34,7 @@ type ChartRow        = { status: string; count: number };
 type Charts           = { booking_status_chart?: ChartRow[]; payment_status_chart?: ChartRow[] };
 type ActivityLog      = { action: string; entity_type: string; entity_id: number };
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
+// helpers
 function formatRevenue(raw: number): string {
   if (raw >= 10_000_000) return `₹${(raw / 10_000_000).toFixed(1)}Cr`;
   if (raw >= 100_000)    return `₹${(raw / 100_000).toFixed(1)}L`;
@@ -76,8 +52,7 @@ function changeBadge(pct: number) {
   );
 }
 
-// ─── main content ───────────────────────────────────────────────────────────
-
+// main content
 function AdminDashboardContent({ user }: { user: { name: string; role: { name: string } } }) {
   const { formatCompact } = useCurrency();
 
@@ -147,7 +122,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
     return () => clearTimeout(t);
   }, [msg]);
 
-  // ── approval actions ──
+  // approval actions
   const approveSupplier = async (id: number) => {
     setSavingId(`s-${id}`);
     try {
@@ -192,7 +167,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
     finally { setSavingId(null); }
   };
 
-  // ── stat cards ──
+  // stat cards
   const stats = [
     { label: "Total Bookings",   value: summary.total_bookings  ?? 0,                        icon: CalendarCheck,    sub: "All bookings" },
     { label: "Total Customers",  value: summary.total_customers ?? 0,                        icon: Users,            sub: "Platform" },
@@ -202,13 +177,13 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
     { label: "Agents",           value: summary.total_agents    ?? 0,                        icon: Headset,          sub: `${summary.pending_agents ?? 0} pending` },
   ];
 
-  // ── chart colours ──
+  // chart colours
   const PIE_COLORS = ["#43A9F6", "#1D3E64", "#F59E0B", "#EF4444", "#10B981"];
 
   return (
     <div className="space-y-6 pb-10 font-sans">
 
-      {/* ── Breadcrumb ── */}
+      {/* breadcrumb */}
       <nav className="flex items-center gap-1.5 text-[13px] font-semibold text-[#667085]">
         <Link href="/admin/dashboard" className="flex items-center gap-1 hover:text-[#43A9F6] transition-colors">
           <Home size={14} /> Home
@@ -217,14 +192,14 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         <span className="text-[#121826]">Dashboard</span>
       </nav>
 
-      {/* ── Flash message ── */}
+      {/* flash message */}
       {msg && (
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm font-semibold text-emerald-700">
           {msg}
         </div>
       )}
 
-      {/* ── 1. Hero card ── */}
+      {/* 1. hero card */}
       <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#0B1120] via-[#1D3E64] to-[#43A9F6] p-8 text-white shadow-lg flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div className="relative z-10">
           <span className="inline-block rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#43A9F6] backdrop-blur-md">
@@ -245,7 +220,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
       </div>
 
-      {/* ── 2. Stat cards ── */}
+      {/* 2. stat cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {stats.map((stat, idx) => (
           <div key={idx} className="group flex cursor-pointer items-center gap-5 rounded-3xl border border-[#E7EAF0]/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-[#43A9F6]/30 hover:shadow-xl">
@@ -265,7 +240,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         ))}
       </div>
 
-      {/* ── 3. Filters ── */}
+      {/* 3. filters */}
       <div className="rounded-3xl border border-[#E7EAF0]/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
         <div className="mb-5">
           <h2 className="text-base font-black text-[#121826]">Dashboard Filters</h2>
@@ -340,7 +315,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         )}
       </div>
 
-      {/* ── 4. Charts ── */}
+      {/* 4. charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-3xl border border-[#E7EAF0]/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
           <div className="mb-4 flex items-center gap-2 text-[#121826]">
@@ -392,7 +367,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         </div>
       </div>
 
-      {/* ── 5. Reports Snapshot (dynamic) ── */}
+      {/* 5. reports snapshot (dynamic) */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 rounded-3xl border border-[#E7EAF0]/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
           <div className="mb-5 flex items-center justify-between">
@@ -509,7 +484,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         </div>
       </div>
 
-      {/* ── 6. Approval Queues ── */}
+      {/* 6. approval queues */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Supplier approvals */}
         <div className="rounded-3xl border border-[#E7EAF0]/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
@@ -590,7 +565,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         </div>
       </div>
 
-      {/* ── 7. Bottom row ── */}
+      {/* 7. bottom row */}
       <div className="grid gap-6 lg:grid-cols-3">
 
         {/* Quick actions */}
@@ -672,8 +647,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   );
 }
 
-// ─── shell ───────────────────────────────────────────────────────────────────
-
+// shell
 function AdminDashboardShell() {
   const { dashboard, loading, error, refetch } = useDashboard();
 

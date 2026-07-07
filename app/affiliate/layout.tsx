@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Banknote, Coins, LayoutDashboard, Link2, LogOut,
-  Menu, MousePointerClick, TrendingUp, User, X,
-} from "lucide-react";
+import { LuBanknote as Banknote, LuCoins as Coins, LuLayoutDashboard as LayoutDashboard, LuLink2 as Link2, LuLogOut as LogOut, LuMenu as Menu, LuMousePointerClick as MousePointerClick, LuTrendingUp as TrendingUp, LuUser as User, LuX as X } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/dashboardPath";
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlignLeft, ArrowLeft, FileText, Image as ImageIcon, MapPinned, Save, Search, Tags } from "lucide-react";
+import { LuAlignLeft as AlignLeft, LuArrowLeft as ArrowLeft, LuFileText as FileText, LuImage as ImageIcon, LuMapPinned as MapPinned, LuSave as Save, LuSearch as Search, LuTags as Tags } from "react-icons/lu";
 
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";

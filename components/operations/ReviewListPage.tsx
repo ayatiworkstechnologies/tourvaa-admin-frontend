@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Eye, FileText, Plus, RefreshCw, Truck, XCircle } from "lucide-react";
+import { LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuPlus as Plus, LuRefreshCw as RefreshCw, LuTruck as Truck, LuCircleX as XCircle } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";

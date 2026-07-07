@@ -1,24 +1,5 @@
-﻿import type { LucideIcon } from "lucide-react";
-import {
-  Bell,
-  CalendarCheck,
-  CreditCard,
-  FileText,
-  Grid2X2,
-  KeyRound,
-  Mail,
-  MapPinned,
-  Percent,
-  Banknote,
-  ReceiptText,
-  Settings,
-  Shield,
-  Tags,
-  UserRound,
-  Users,
-  UsersRound,
-  Warehouse,
-} from "lucide-react";
+﻿import type { IconType as LucideIcon } from "react-icons";
+import { LuBell as Bell, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuMail as Mail, LuMapPinned as MapPinned, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuSettings as Settings, LuShield as Shield, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
 import { MenuItem } from "@/types/auth";
 
 export type NavItem = {

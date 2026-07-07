@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Eye, EyeOff, Loader2 } from "lucide-react";
+import { LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuEyeOff as EyeOff, LuLoaderCircle as Loader2 } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -45,7 +45,7 @@ export default function AgencyDetailsTab() {
   const toast = useToast();
   const { refreshSession } = useAuthContext();
 
-  // ── Agency form ─────────────────────────────────────────────────────────────
+  // agency form
   const [form, setForm] = useState<AgencyForm>({
     profile_image: "",
     agent_name: "",
@@ -137,7 +137,7 @@ export default function AgencyDetailsTab() {
     }
   }
 
-  // ── Password form ───────────────────────────────────────────────────────────
+  // password form
   const [pwForm, setPwForm] = useState({ current_password: "", new_password: "", confirm_password: "" });
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -171,7 +171,7 @@ export default function AgencyDetailsTab() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-      {/* ── Agency Details ────────────────────────────────────────────────────── */}
+      {/* agency details */}
       <form onSubmit={saveAgency} className="rounded-2xl border border-[#E7EAF0] bg-white p-6 shadow-sm">
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-lg font-bold text-[#121826]">Agency Details</h3>
@@ -313,7 +313,7 @@ export default function AgencyDetailsTab() {
         </div>
       </form>
 
-      {/* ── Security & Password ──────────────────────────────────────────────── */}
+      {/* security & password */}
       <form onSubmit={savePassword} className="rounded-2xl border border-[#E7EAF0] bg-white p-6 shadow-sm self-start">
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-lg font-bold text-[#121826]">Security & Password</h3>

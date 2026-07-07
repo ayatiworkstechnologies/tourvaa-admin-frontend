@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #6c3cf0;
-  --primary-dark: #2F9FE9;
-  --accent: #009fe3;
-  --bg-main: #f5f7fb;
-  --bg-sidebar: #f4f6fc;
-  --text-main: #1f1b2d;
-  --text-muted: #6b7280;
-  --border: #e6e8f0;
+  --primary: #4f46e5;
+  --primary-dark: #3730a3;
+  --accent: #8b5cf6;
+  --bg-main: #fafafa;
+  --bg-sidebar: #ffffff;
+  --text-main: #09090b;
+  --text-muted: #71717a;
+  --border: #e4e4e7;
   --admin-color: #00FFFF;
   --supplier-color: #FF00FF;
   --agent-color: #FFFF00;
-  --customer-color: #6c3cf0;
+  --customer-color: #4f46e5;
 }
 
 * {
@@ -57,6 +57,16 @@ button {
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
 }
 
 ::-webkit-scrollbar-track {
@@ -162,71 +172,76 @@ button {
 .delay-800 { animation-delay: 0.8s; }
 .delay-900 { animation-delay: 0.9s; }
 
-/* CTA section gradient */
+/* Aurora CTA gradient */
 .cta-gradient {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 50%, #ec4899 100%);
 }
 
 /* CTA section dot grid */
 .cta-dot-grid {
-  background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0);
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0);
   background-size: 40px 40px;
 }
 
-/* ─── Landing page buttons (explicit color to beat `a { color: inherit }`) ─── */
+/* ─── Aurora landing page buttons ─── */
 .hero-btn-primary {
   background-color: #ffffff;
-  color: #0a0a0a !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  color: #09090b !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
 }
 .hero-btn-primary:hover {
-  background-color: #38bdf8;
-  color: #ffffff !important;
+  background-color: #f4f4f5;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
 }
 
 .hero-btn-ghost {
-  background-color: rgba(255,255,255,0.08);
+  background-color: rgba(255,255,255,0.05);
   color: #ffffff !important;
-  border: 1.5px solid rgba(255,255,255,0.25);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
 }
 .hero-btn-ghost:hover {
-  background-color: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.55);
+  background-color: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.3);
+  transform: translateY(-2px);
 }
 
 .cta-btn-primary {
-  background-color: #0ea5e9;
+  background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
   color: #ffffff !important;
-  box-shadow: 0 4px 32px rgba(14,165,233,0.35);
+  box-shadow: 0 8px 32px rgba(79, 70, 229, 0.4);
+  transition: all 0.3s ease;
 }
 .cta-btn-primary:hover {
-  background-color: #0284c7;
-  color: #ffffff !important;
-  box-shadow: 0 6px 40px rgba(14,165,233,0.5);
-  transform: translateY(-1px);
+  box-shadow: 0 12px 48px rgba(79, 70, 229, 0.6);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .cta-btn-ghost {
   background-color: transparent;
   color: #ffffff !important;
-  border: 1.5px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.3s ease;
 }
 .cta-btn-ghost:hover {
-  background-color: rgba(255,255,255,0.07);
-  border-color: rgba(255,255,255,0.45);
+  background-color: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.5);
 }
 
 .cta-white-btn {
   background-color: #ffffff;
-  color: #0369a1 !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+  color: #4f46e5 !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
 }
 .cta-white-btn:hover {
-  background-color: #fde047;
-  color: #0c4a6e !important;
-  box-shadow: 0 6px 32px rgba(0,0,0,0.2);
+  background-color: #f4f4f5;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
 }
 
 /* Scroll-reveal block */
