@@ -5,7 +5,7 @@ import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save,
 import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } from "@/lib/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
-import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import DataTable from "@/components/ui/DataTable";
 
 const empty = (): PricingSlab => ({
   passenger_from: 1, passenger_to: 4, adult_price: 0, child_price: 0,

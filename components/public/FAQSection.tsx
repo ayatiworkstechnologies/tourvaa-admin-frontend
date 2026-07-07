@@ -135,7 +135,7 @@ export default function FAQSection({ faqs }: { faqs: FAQ[] }) {
                     {faq.question}
                   </span>
                   <span
-                    className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold transition-transform ${
+                    className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold transition-transform ${
                       isOpen
                         ? "bg-blue-600 text-white rotate-45"
                         : "bg-white border border-gray-200 text-gray-500"
@@ -155,7 +155,7 @@ export default function FAQSection({ faqs }: { faqs: FAQ[] }) {
         </div>
 
         {/* Ask AI CTA */}
-        <div className="mt-12 text-center p-8 rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+        <div className="mt-12 text-center p-8 rounded-3xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-100">
           <p className="text-gray-700 font-semibold mb-2">Still have questions?</p>
           <p className="text-sm text-gray-500 mb-4">
             Our AI assistant can answer anything about tours, bookings, visa requirements, and more.
