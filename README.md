@@ -1,6 +1,6 @@
-# Tourvaa Admin Dashboard
+# Tourvaa Platform Frontend
 
-Next.js admin dashboard for the Tourvaa travel platform. Provides role-based access to user management, tour CMS, customer/supplier/agent/affiliate operations, settings, and analytics.
+Single Next.js 16 (App Router) application serving both the public marketing/booking site and every role-based admin/self-service portal for the Tourvaa travel platform.
 
 ---
 
@@ -10,7 +10,8 @@ Next.js admin dashboard for the Tourvaa travel platform. Provides role-based acc
 | --- | --- |
 | Framework | Next.js 16 (App Router) |
 | Language | TypeScript 5 |
-| UI | Tailwind CSS 4 |
+| UI | Tailwind CSS 4 (`@theme` design tokens) |
+| Fonts | `next/font/google` — Outfit (headings) + Work Sans (body), scoped to public pages |
 | Icons | Lucide React |
 | HTTP Client | Axios |
 | Forms | React Hook Form |
@@ -26,7 +27,7 @@ Next.js admin dashboard for the Tourvaa travel platform. Provides role-based acc
 npm install
 ```
 
-### 2. Create `frontend/.env`
+### 2. Create `.env`
 
 ```env
 API_PROXY_TARGET=http://127.0.0.1:8000
@@ -59,9 +60,10 @@ npm run start
 
 ## Authentication
 
-- JWT stored in memory (not localStorage) with an Axios interceptor
+- JWT stored in memory (not localStorage) with an Axios interceptor (`src/lib/api/client.ts`)
 - Silent token refresh on 401 — queues concurrent requests until refresh completes
 - Forced logout clears all sessions server-side
+- Authenticated file downloads (e.g. invoice PDFs) use a blob-fetch through the authenticated client rather than a plain `<a href>`, since Bearer tokens can't ride on raw browser navigation
 
 Login with the default super admin:
 
@@ -72,92 +74,84 @@ Password: Admin@123
 
 ---
 
-## Roles & Access Control
+## Roles & Portals
 
-The dashboard is fully role and permission aware. Each user sees only what their role allows.
+The app is fully role and permission aware. Each user is routed to their own portal and sees only what their role allows.
 
-| Role | Dashboard |
-| --- | --- |
-| Super Admin | Full platform overview |
-| Admin | Permission-based module access |
-| Sub Admin | Only permitted modules |
-| Supplier | Own tours, bookings, revenue |
-| Agent / Reseller | Own bookings, clients, commission |
-| Customer | Own bookings, spend |
-| Affiliate | Own referrals, commissions |
+| Portal | Route Group | Access |
+| --- | --- | --- |
+| Public site | `(public)` | Anyone — homepage, tours, destinations, blogs, about/contact/legal, agent/supplier landing + registration |
+| Admin | `admin/` | Super Admin, Admin, Sub-Admin (permission-scoped) |
+| Customer | `customer/` | Customers — own bookings, invoices, payments, travellers, support |
+| Supplier | `supplier/` | Suppliers — own tours, bookings, earnings, payouts |
+| Agent | `agent/` | Agents/Resellers — own bookings, customers, commission, invoices |
+| Affiliate | `affiliate/` | Affiliates — referral links, clicks, conversions, commissions, payouts |
 
-Protected routes use `<ProtectedRoute requiredPermission="...">`. The sidebar is built dynamically from the logged-in user's permissions.
-
----
-
-## Pages
-
-| Route | Description |
-| --- | --- |
-| `/login` | Login |
-| `/register` | Registration |
-| `/forgot-password` | Forgot password |
-| `/reset-password` | Reset password with token |
-| `/dashboard` | Role-based analytics dashboard |
-| `/users` | User management |
-| `/roles` | Role management |
-| `/permissions` | Permission management |
-| `/customers` | Customer list |
-| `/customers/[id]` | Customer detail, booking/payment history |
-| `/suppliers` | Supplier list and approval |
-| `/agents` | Agent list and approval |
-| `/affiliates` | Affiliate list and approval |
-| `/tours` | Tour list |
-| `/tours/create` | Create / edit tour |
-| `/tours/categories` | Tour categories |
-| `/tours/subcategories` | Tour subcategories |
-| `/settings` | General settings |
-| `/settings/api` | API integration settings |
-| `/settings/payment` | Payment provider settings |
-| `/settings/countries` | Country management |
-| `/settings/cities` | City management |
-| `/email-templates` | Email templates |
-| `/profile` | User profile and avatar upload |
-| `/reports` | Reports (stub — no real data yet) |
+Protected routes use `<ProtectedRoute requiredPermission="...">`. Each portal's sidebar is built dynamically from the logged-in user's permissions.
 
 ---
 
-## Key Files
+## Project Structure
+
+Industry-standard `src/`-based layout — routing, UI, and application logic are cleanly separated:
 
 ```text
-frontend/
-├── app/                         Next.js App Router pages
+src/
+├── app/                        Next.js App Router — routing only
+│   ├── (public)/               Public marketing + booking site (own layout, fonts, palette)
+│   ├── admin/                  Admin/Sub-Admin portal
+│   ├── customer/                Customer self-service portal
+│   ├── supplier/                Supplier self-service portal
+│   ├── agent/                   Agent/reseller self-service portal
+│   ├── affiliate/               Affiliate self-service portal
+│   ├── login/, forgot-password/, reset-password/, join/, location/
+│   └── globals.css              Tailwind v4 @theme tokens (dash-*, pub-*), fonts, base styles
 ├── components/
-│   ├── auth/ProtectedRoute.tsx  Permission-gated route wrapper
-│   ├── dashboard/               Dashboard cards, charts, alerts
-│   └── layout/                  Sidebar, header, layout shell
-├── hooks/
-│   └── useDashboard.ts          Dashboard data hook
+│   ├── public/                  Homepage hero, filter bar, destination cards, footer, etc.
+│   ├── admin/, customers/, supplier/, agent/, bookings/, tours/, cms/, operations/
+│   ├── layout/                  Sidebar, header, portal shells
+│   ├── auth/                    ProtectedRoute
+│   └── ui/                      Shared primitives (inputs, buttons, PhoneInput, etc.)
 ├── lib/
-│   ├── api.ts                   Axios instance + JWT interceptors
-│   └── services/
-│       └── dashboardService.ts  Dashboard API calls
-├── providers/
-│   └── AuthProvider.tsx         Auth context — user, permissions, menus
-└── types/
-    └── auth.ts                  AuthUser, Permission, MenuItem types
+│   ├── api/
+│   │   ├── client.ts             Axios instance + JWT interceptors, public path allowlist
+│   │   ├── publicClient.ts       Unauthenticated client for public-site calls
+│   │   ├── session.ts            Token storage/retrieval
+│   │   └── services/             One file per resource (bookingService, invoiceService, etc.)
+│   ├── constants/                Shared enums/config values
+│   └── utils/                    errorHandler, formatting, misc helpers
+├── hooks/                      Data-fetching and UI hooks (useDashboard, useUsers, etc.)
+├── providers/                  AuthProvider — user, permissions, menus
+├── config/                     App-level configuration
+└── types/                      Shared TypeScript types (auth.ts, etc.)
 ```
 
 ---
 
-## Dashboard Service
+## Key Services (`src/lib/api/services/`)
 
-`lib/services/dashboardService.ts` exposes five functions:
+| Service | Covers |
+| --- | --- |
+| `dashboardService.ts` | `getDashboardMe/Summary/Charts/RecentActivities/Alerts` — all hit `/api/dashboard/*` |
+| `bookingService.ts` | Booking CRUD, calculate-price, calendar, status history |
+| `paymentService.ts` | Payment authorize/capture/refund/status |
+| `invoiceService.ts` | Invoice list/detail, `downloadInvoicePdf()` (authenticated blob download), `regenerateInvoicePdf()` |
+| `customerService.ts` | Customer CRUD, communications |
+| `cmsService.ts` | Tours, categories, countries/cities, pricing, calendar |
+| `discountService.ts` | Tour discount rules |
+| `activityLogService.ts`, `reportService.ts` | Audit/activity feed, reporting |
+| `sessionService.ts` | Active session listing, revoke, force-logout |
+| `notificationService.ts` | Notification list, mark-all-read |
+| `operationsService.ts` | Misc admin operations |
+| `tourDetailService.ts` | Public tour detail page data |
 
-```typescript
-getDashboardMe()                       // user profile, sidebar, allowed_modules
-getDashboardSummary(filters?)          // stats cards
-getDashboardCharts(filters?)           // chart data
-getDashboardRecentActivities(filters?) // activity log
-getDashboardAlerts(filters?)           // alerts
-```
+---
 
-All calls hit `/api/dashboard/*` (not `/api/v1/*`).
+## Public Site Highlights
+
+- Sky-blue / orange design system, distinct from the dashboard palette, scoped entirely to the `(public)` route group via CSS variables — no bleed into admin/portal styling.
+- Homepage hero includes a 4-field filter bar (`components/public/HeroFilterBar.tsx`): destination (flag-icon country list, wired to `/tours?country=`), flexible/specific date range picker, duration presets + custom slider (wired to `/tours?min_days=&max_days=`), and traveller count.
+- `/tours` reads all filters from URL search params on load (shareable/bookmarkable filtered URLs).
 
 ---
 
@@ -173,7 +167,16 @@ node tests/dashboard.test.mjs
 
 The test file (`tests/dashboard.test.mjs`) verifies:
 
-- `dashboardService.ts` exists and exports all five functions
+- `dashboardService.ts` exists and exports all five dashboard functions
 - `AuthProvider` includes `dashboard_type`, `allowed_modules`, `sidebar_menu`
 - `AuthUser` type has `user_type` and `approval_status`
 - No `/api/v1` references anywhere in dashboard files
+
+No automated browser/E2E suite exists yet — UI/flow verification is currently manual (API-contract + reachability checks). Consider adding Playwright for real browser-level coverage.
+
+---
+
+## Known Gaps
+
+- **Affiliate self-service portal** (`app/affiliate/*`) has UI pages but no working self-registration or scoped permissions on the backend yet — treat as non-functional until the backend affiliate-auth work lands.
+- `/admin/reports` is a UI stub with no real data wired up.
