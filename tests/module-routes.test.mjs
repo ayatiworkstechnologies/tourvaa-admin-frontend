@@ -8,7 +8,7 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const APP_DIR = resolve(__dirname, "../app");
+const APP_DIR = resolve(__dirname, "../src/app");
 
 let passed = 0;
 let failed = 0;

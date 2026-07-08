@@ -9,7 +9,7 @@ import { readdirSync, statSync } from "fs";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const FRONTEND_DIR = resolve(__dirname, "..");
+const FRONTEND_DIR = resolve(__dirname, "../src");
 const COMPONENTS_DIR = resolve(FRONTEND_DIR, "components");
 const APP_DIR = resolve(FRONTEND_DIR, "app");
 

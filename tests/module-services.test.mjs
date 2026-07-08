@@ -8,8 +8,8 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const LIB_DIR = resolve(__dirname, "../lib");
-const SERVICES_DIR = resolve(LIB_DIR, "services");
+const LIB_DIR = resolve(__dirname, "../src/lib");
+const SERVICES_DIR = resolve(LIB_DIR, "api/services");
 
 let passed = 0;
 let failed = 0;
@@ -48,18 +48,15 @@ console.log("\n=== Frontend Service Files ===\n");
 
 // Core lib files
 console.log("── Core lib");
-const apiSrc = readLib("api.ts");
-check("lib/api.ts exists", apiSrc.length > 0);
+const apiSrc = readLib("api/client.ts");
+check("lib/api/client.ts exists", apiSrc.length > 0);
 check("api uses /api base path", apiSrc.includes('"/api"') || apiSrc.includes("'/api'") || apiSrc.includes("API_PATH_PREFIX"));
 check("api has request interceptor", apiSrc.includes("interceptors.request"));
 check("api has response interceptor", apiSrc.includes("interceptors.response"));
 check("api handles 401 with refresh", apiSrc.includes("refresh-token") && apiSrc.includes("401"));
 
-const authSrc = readLib("auth.ts");
-check("lib/auth.ts exists", authSrc.length > 0);
-
-const sessionSrc = readLib("session.ts");
-check("lib/session.ts exists", sessionSrc.length > 0);
+const sessionSrc = readLib("api/session.ts");
+check("lib/api/session.ts exists", sessionSrc.length > 0);
 check("session has getStoredTokenSafe", sessionSrc.includes("getStoredTokenSafe"));
 check("session has clearSession", sessionSrc.includes("clearSession"));
 check("session has setToken", sessionSrc.includes("setToken"));
@@ -118,7 +115,7 @@ check("getDiscounts exported", hasExport(tdSrc, "getDiscounts"));
 
 // No /v1 in any service
 console.log("── API path hygiene");
-const allServicesSrc = [cmsSrc, customerSrc, opsSrc, bookingSrc, paymentSrc, tdSrc, apiSrc, authSrc].join("\n");
+const allServicesSrc = [cmsSrc, customerSrc, opsSrc, bookingSrc, paymentSrc, tdSrc, apiSrc].join("\n");
 check("No /api/v1 path in any service file", !allServicesSrc.includes("/api/v1"));
 
 // Summary

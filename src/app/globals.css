@@ -1,0 +1,341 @@
+@import "tailwindcss";
+
+/*
+ * Semantic tokens for the dashboard portals (admin/customer/supplier/agent/
+ * affiliate) — distinct from the public marketing site's --primary/--accent
+ * indigo/violet palette below. Values match the colors already in de facto
+ * use across those portals (measured by frequency across src/), so adopting
+ * these tokens in a component is a pure rename, not a visual change.
+ *
+ * These are intentionally not yet applied anywhere — components still use
+ * arbitrary hex values like `text-[#667085]`. Migrating ~2,100 occurrences
+ * across ~140 files is a large, visually-sensitive change that needs
+ * browser-based verification to do safely; this block only establishes the
+ * foundation so that migration (or new code) can use `text-dash-muted`,
+ * `border-dash`, `bg-dash-subtle`, etc. instead of inventing new hex values.
+ */
+@theme {
+  /* Public marketing site — travel/tourism palette (sky blue + adventure
+   * orange), distinct from the --color-dash-* dashboard tokens above. */
+  --color-pub-primary: #0EA5E9;
+  --color-pub-primary-dark: #0369A1;
+  --color-pub-secondary: #38BDF8;
+  --color-pub-accent: #EA580C;
+  --color-pub-bg: #F0F9FF;
+  --color-pub-fg: #0C4A6E;
+  --color-pub-muted: #64748B;
+  --color-pub-border: #BAE6FD;
+
+  --color-dash-text: #121826;
+  --color-dash-body: #344054;
+  --color-dash-muted: #667085;
+  --color-dash-subtle: #98A2B3;
+  --color-dash-border: #E7EAF0;
+  --color-dash-border-soft: #E9EDF3;
+  --color-dash-bg: #F7F9FC;
+  --color-dash-bg-muted: #F5F7FA;
+  --color-dash-brand: #43A9F6;
+  --color-dash-brand-hover: #2F9FE9;
+  --color-dash-brand-dark: #238DD7;
+}
+
+:root {
+  --primary: #4f46e5;
+  --primary-dark: #3730a3;
+  --accent: #8b5cf6;
+  --bg-main: #fafafa;
+  --bg-sidebar: #ffffff;
+  --text-main: #09090b;
+  --text-muted: #71717a;
+  --border: #e4e4e7;
+  --admin-color: #00FFFF;
+  --supplier-color: #FF00FF;
+  --agent-color: #FFFF00;
+  --customer-color: #4f46e5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Public site heading font (Outfit, loaded + scoped in PublicLayout.tsx).
+ * Falls back to the body font stack outside the public route group where
+ * --font-heading is never set. */
+.font-heading {
+  font-family: var(--font-heading, inherit);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+::selection {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+::-webkit-scrollbar-track {
+  background: #eef1f7;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c7cce0;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tourvaaHero {
+  from { transform: scale(1.05) translate3d(0, 0, 0); }
+  to   { transform: scale(1.12) translate3d(-1.5%, -1%, 0); }
+}
+
+@keyframes heroImg {
+  from { transform: scale(1.08); }
+  to   { transform: scale(1); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes lineDraw {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.3); }
+  50%       { box-shadow: 0 0 0 8px rgba(2, 132, 199, 0); }
+}
+
+/* Animation utility classes */
+.animate-hero-img   { animation: heroImg 1.6s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+.animate-fade-in    { animation: fadeIn  0.7s ease both; }
+.animate-fade-up    { animation: fadeUp  0.7s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-slide-r    { animation: slideRight 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-scale-in   { animation: scaleIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-marquee    { animation: marquee 28s linear infinite; }
+.animate-line       { animation: lineDraw 0.8s cubic-bezier(0.22,1,0.36,1) both; transform-origin: left; }
+.animate-badge      { animation: badgePulse 2.4s ease-in-out infinite; }
+
+/* Stagger delays */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-600 { animation-delay: 0.6s; }
+.delay-700 { animation-delay: 0.7s; }
+.delay-800 { animation-delay: 0.8s; }
+.delay-900 { animation-delay: 0.9s; }
+
+/* Aurora CTA gradient — sky blue to adventure orange */
+.cta-gradient {
+  background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 45%, #EA580C 100%);
+}
+
+/* CTA section dot grid */
+.cta-dot-grid {
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0);
+  background-size: 40px 40px;
+}
+
+/* ─── Aurora landing page buttons ─── */
+.hero-btn-primary {
+  background-color: #ffffff;
+  color: #09090b !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+.hero-btn-primary:hover {
+  background-color: #f4f4f5;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+.hero-btn-ghost {
+  background-color: rgba(255,255,255,0.05);
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.1);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+.hero-btn-ghost:hover {
+  background-color: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.3);
+  transform: translateY(-2px);
+}
+
+.cta-btn-primary {
+  background: linear-gradient(135deg, #0EA5E9 0%, #EA580C 100%);
+  color: #ffffff !important;
+  box-shadow: 0 8px 32px rgba(14, 165, 233, 0.4);
+  transition: all 0.3s ease;
+}
+.cta-btn-primary:hover {
+  box-shadow: 0 12px 48px rgba(14, 165, 233, 0.6);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.cta-btn-ghost {
+  background-color: transparent;
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.3s ease;
+}
+.cta-btn-ghost:hover {
+  background-color: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.5);
+}
+
+.cta-white-btn {
+  background-color: #ffffff;
+  color: #0EA5E9 !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+}
+.cta-white-btn:hover {
+  background-color: #f4f4f5;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
+}
+
+/* Scroll-reveal block */
+.reveal-block {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1);
+}
+.reveal-block.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Reveal transition-delay utilities */
+.tr-delay-70  { transition-delay:  70ms; }
+.tr-delay-100 { transition-delay: 100ms; }
+.tr-delay-120 { transition-delay: 120ms; }
+.tr-delay-140 { transition-delay: 140ms; }
+.tr-delay-200 { transition-delay: 200ms; }
+.tr-delay-210 { transition-delay: 210ms; }
+.tr-delay-240 { transition-delay: 240ms; }
+.tr-delay-280 { transition-delay: 280ms; }
+.tr-delay-350 { transition-delay: 350ms; }
+
+/* Hero headline responsive size */
+.hero-headline { font-size: clamp(3rem, 9vw, 6.5rem); }
+
+/* Scroll line animation for hero scroll indicator */
+@keyframes scrollLine {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+.anim-forwards { animation-fill-mode: forwards; }
+
+/* Respect the user's OS-level motion preference: shorten/disable animations
+   and transitions instead of removing them outright, so state changes (e.g.
+   reveal-block visibility, active nav highlight) still resolve correctly. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

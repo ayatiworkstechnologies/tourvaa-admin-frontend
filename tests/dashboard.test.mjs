@@ -14,7 +14,7 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, "..");
+const ROOT = resolve(__dirname, "../src");
 
 let passed = 0;
 let failed = 0;
@@ -51,7 +51,7 @@ function hasExport(src, name) {
 // ---------------------------------------------------------------------------
 console.log("\n=== Dashboard Service ===\n");
 
-const svcSrc = readFile("lib/services/dashboardService.ts");
+const svcSrc = readFile("lib/api/services/dashboardService.ts");
 check("dashboardService.ts exists", svcSrc.length > 0);
 check("getDashboardMe exported", hasExport(svcSrc, "getDashboardMe"));
 check("getDashboardSummary exported", hasExport(svcSrc, "getDashboardSummary"));
@@ -121,10 +121,10 @@ console.log("\n=== API Path Hygiene ===\n");
 const allSrc = [svcSrc, pageSrc, authProviderSrc, authTypesSrc, hookSrc].join("\n");
 check("No /api/v1 in any dashboard file", !allSrc.includes("/api/v1"));
 
-// Also check api.ts
-const apiSrc = readFile("lib/api.ts");
-check("lib/api.ts uses /api base path", apiSrc.includes('"/api"') || apiSrc.includes("'/api'") || apiSrc.includes("API_PATH_PREFIX"));
-check("lib/api.ts has no /api/v1", !apiSrc.includes("/api/v1"));
+// Also check api client
+const apiSrc = readFile("lib/api/client.ts");
+check("lib/api/client.ts uses /api base path", apiSrc.includes('"/api"') || apiSrc.includes("'/api'") || apiSrc.includes("API_PATH_PREFIX"));
+check("lib/api/client.ts has no /api/v1", !apiSrc.includes("/api/v1"));
 
 // ---------------------------------------------------------------------------
 // Summary
