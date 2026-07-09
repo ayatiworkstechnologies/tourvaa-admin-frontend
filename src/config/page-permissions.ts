@@ -1,4 +1,4 @@
-﻿export const pagePermissions: Record<string, string> = {
+export const pagePermissions: Record<string, string> = {
   "/admin/dashboard": "dashboard.view",
   "/admin/users": "users.view",
   "/admin/roles": "roles.view",
@@ -33,7 +33,7 @@
   "/admin/notifications": "notifications.view",
   "/admin/sessions": "sessions.view",
   "/admin/tour-approval": "tours.approve",
-  "/admin/cms": "cms.view",
+  "/admin/cms": "website_cms.view",
   "/admin/chatbot": "chatbot.view",
   "/admin/refunds": "cancellations.view",
   "/admin/supplier-payouts": "supplier_ledger.view",

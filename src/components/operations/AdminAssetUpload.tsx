@@ -82,7 +82,7 @@ export default function AdminAssetUpload({ label, value, onChange }: Props) {
           {uploading ? (
             <>
               <Loader2 size={22} className="animate-spin text-dash-brand-hover" />
-              <span className="text-xs font-bold text-dash-muted">Uploading…</span>
+              <span className="text-xs font-bold text-dash-muted">Uploading...</span>
             </>
           ) : (
             <>
@@ -90,7 +90,7 @@ export default function AdminAssetUpload({ label, value, onChange }: Props) {
                 <UploadCloud size={18} />
               </span>
               <span className="text-xs font-bold text-dash-body">Click to upload or drag & drop</span>
-              <span className="text-[11px] text-dash-subtle">JPG, PNG, WEBP, or PDF · up to 10MB</span>
+              <span className="text-[11px] text-dash-subtle">JPG, PNG, WEBP, or PDF - up to 10MB</span>
             </>
           )}
           <input

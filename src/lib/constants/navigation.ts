@@ -1,5 +1,5 @@
-﻿import type { IconType as LucideIcon } from "react-icons";
-import { LuBell as Bell, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuMail as Mail, LuMapPinned as MapPinned, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuSettings as Settings, LuShield as Shield, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
+import type { IconType as LucideIcon } from "react-icons";
+import { LuBell as Bell, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuMail as Mail, LuMapPinned as MapPinned, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuSettings as Settings, LuShield as Shield, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
 import { MenuItem } from "@/types/auth";
 
 export type NavItem = {
@@ -31,6 +31,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Invoices", module: "invoices", href: "/admin/invoices", icon: ReceiptText, permissions: ["invoices.view", "view-invoices"], section: "Finance" },
   { label: "Supplier Payouts", module: "supplier_ledger", href: "/admin/supplier-payouts", icon: Banknote, permissions: ["supplier_ledger.view", "view-supplier_ledger"], section: "Finance" },
   { label: "Reports", module: "reports", href: "/admin/reports", icon: FileText, permissions: ["reports.view", "view-reports"], section: "Finance" },
+  { label: "Website CMS", module: "website_cms", href: "/admin/cms", icon: Globe, permissions: ["website_cms.view", "view-website_cms", "settings.view", "view-settings"], section: "System" },
   { label: "Email Templates", module: "email", href: "/admin/email-templates", icon: Mail, permissions: ["email_templates.view", "email.view", "view-email"], section: "System" },
   { label: "Settings", module: "settings", href: "/admin/settings", icon: Settings, permissions: ["settings.view", "view-settings"], placement: "bottom" },
   { label: "Activity Logs", module: "activity_logs", href: "/admin/activity-logs", icon: FileText, permissions: ["activity_logs.view", "activity-logs.view", "view-activity_logs", "view-activity-logs"], section: "System" },
