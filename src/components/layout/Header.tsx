@@ -18,14 +18,17 @@ type HeaderProps = {
   onMenuClick?: () => void;
   profileHref?: string;
   settingsHref?: string;
-  theme?: "sky" | "emerald" | "orange";
+  theme?: "sky" | "navy" | "emerald" | "orange" | "violet" | "teal";
 };
 
 
 const AVATAR_BG: Record<string, string> = {
   sky:     "bg-[#DAEFFE] text-[#1E86D4]",
+  navy:    "bg-[#EDF2FA] text-[#1D3A6D]",
   emerald: "bg-emerald-50 text-emerald-600",
   orange:  "bg-orange-50  text-orange-600",
+  violet:  "bg-violet-50 text-violet-600",
+  teal:    "bg-teal-50 text-teal-700",
 };
 
 export default function Header({

@@ -60,9 +60,9 @@ export default function CustomerSupportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-8">
+    <div className="min-h-screen bg-dash-bg p-6 md:p-8">
       {/* Hero header */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-sky-500 to-sky-700 p-7 text-white shadow-xl shadow-sky-200/60 md:p-9">
+      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-teal-200/60 md:p-9">
         <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
         <div className="relative z-10 flex items-center gap-5">
@@ -71,7 +71,7 @@ export default function CustomerSupportPage() {
           </div>
           <div>
             <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Support</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-sky-100">
+            <p className="mt-2 max-w-md text-sm font-medium text-white/80">
               Get help with your bookings, payments, or any other queries.
             </p>
           </div>
@@ -138,7 +138,7 @@ export default function CustomerSupportPage() {
               <button
                 type="submit"
                 disabled={sending}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-dash-brand py-3 text-sm font-bold text-white hover:bg-[#2899f0] disabled:opacity-60 transition-all"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-dash-brand py-3 text-sm font-bold text-white hover:bg-dash-brand-dark disabled:opacity-60 transition-all"
               >
                 {sending ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
                 {sending ? "Sending…" : "Send Message"}
@@ -178,7 +178,7 @@ export default function CustomerSupportPage() {
             <h3 className="mb-4 font-black text-dash-text">Contact Details</h3>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F0F7FF]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--portal-soft)]">
                   <Mail size={18} className="text-dash-brand" />
                 </div>
                 <div>
@@ -188,7 +188,7 @@ export default function CustomerSupportPage() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F0F7FF]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--portal-soft)]">
                   <Phone size={18} className="text-dash-brand" />
                 </div>
                 <div>
@@ -198,7 +198,7 @@ export default function CustomerSupportPage() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F0F7FF]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--portal-soft)]">
                   <MessageSquare size={18} className="text-dash-brand" />
                 </div>
                 <div>

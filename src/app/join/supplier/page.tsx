@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import axios from "axios";
-import { LuArrowRight as ArrowRight, LuCircleCheckBig as CheckCircle2, LuGlobe as Globe, LuLayoutDashboard as LayoutDashboard, LuStar as Star, LuTrendingUp as TrendingUp, LuUsers as Users, LuWarehouse as Warehouse } from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuCircleCheckBig as CheckCircle2, LuGlobe as Globe, LuLayoutDashboard as LayoutDashboard, LuTrendingUp as TrendingUp, LuUsers as Users, LuWarehouse as Warehouse } from "react-icons/lu";
 import api from "@/lib/api/client";
 import PhoneInput from "@/components/ui/PhoneInput";
 import LocationInput from "@/components/ui/LocationInput";
@@ -148,16 +148,16 @@ export default function JoinSupplierPage() {
                     <CheckCircle2 size={34} className="text-sky-500" />
                   </div>
                   <p className="mt-4 text-xl font-black text-zinc-950">Application received!</p>
-                  <p className="mt-2 text-sm text-slate-500">Please verify your email, then wait for admin approval. We typically review within 1 business day.</p>
-                  <Link href="/" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-600">
-                    Back to Home
+                  <p className="mt-2 text-sm text-slate-500">Please verify your email, then wait for admin approval. Once approved, sign in and complete your company, documents, vehicles, and payout profile.</p>
+                  <Link href="/login?redirect=%2Fsupplier%2Fprofile" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-600">
+                    Continue to Supplier Login
                   </Link>
                 </div>
               ) : (
                 <>
                   <div className="mb-6">
                     <h2 className="text-lg font-black text-zinc-950">Apply to become a supplier</h2>
-                    <p className="mt-1 text-sm text-slate-400">Takes less than 3 minutes. We'll be in touch within 24 hours.</p>
+                    <p className="mt-1 text-sm text-slate-400">Takes less than 3 minutes. We&apos;ll be in touch within 24 hours.</p>
                   </div>
                   <form onSubmit={submit} className="space-y-4">
                     <div className="grid gap-4 sm:grid-cols-2">

@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LuPlus as Plus, LuSearch as Search, LuUserPlus as UserPlus, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/useToast";
+import { combinePhone } from "@/lib/utils/validators";
 
 type Customer = {
   id: number;
@@ -44,6 +46,7 @@ function useDebounce<T>(value: T, delay: number): T {
 const BLANK = { first_name: "", last_name: "", email: "", phone: "", phone_country_code: "" };
 
 export default function AgentCustomersPage() {
+  const router = useRouter();
   const toast = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,15 +95,20 @@ export default function AgentCustomersPage() {
     if (!form.first_name.trim() || !form.email.trim()) return;
     setSaving(true);
     try {
-      await api.post("/customers/", form);
-      toast.success("Customer created");
+      const fullName = `${form.first_name} ${form.last_name}`.trim();
+      const phone = form.phone ? combinePhone(form.phone_country_code || "+91", form.phone) : "";
+      const response = await api.post("/customers/", {
+        first_name: form.first_name,
+        last_name: form.last_name,
+        full_name: fullName,
+        email: form.email,
+        phone,
+      });
+      const customerId = response.data?.data?.id ?? response.data?.id;
+      toast.success("Customer created. Continue with their first booking.");
       setShowModal(false);
       setForm(BLANK);
-      setPage(1);
-      // refresh list
-      const r = await api.get("/customers", { params: { limit, page: 1 } });
-      setCustomers(r.data?.items ?? r.data?.data ?? []);
-      setTotal(r.data?.total ?? 0);
+      if (customerId) router.push(`/agent/bookings/create?customer_id=${customerId}`);
     } catch {
       toast.error("Could not create customer");
     } finally {

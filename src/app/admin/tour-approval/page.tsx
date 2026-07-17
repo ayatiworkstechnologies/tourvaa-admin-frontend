@@ -77,7 +77,7 @@ export default function TourApprovalPage() {
   };
 
   return (
-    <ModuleWrapper title="Tour Approval" requiredPermission="tours.approve">
+    <ModuleWrapper title="Tour Approval" requiredPermission="tours.publish">
       <div className="space-y-5">
         <section className="flex items-center justify-between rounded-xl border border-dash-border bg-white p-6">
           <div>

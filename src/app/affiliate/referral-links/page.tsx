@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { LuCheck as Check, LuCopy as Copy, LuLink2 as Link2, LuPlus as Plus, LuToggleLeft as ToggleLeft, LuToggleRight as ToggleRight, LuTrash2 as Trash2 } from "react-icons/lu";
+import { useCallback, useEffect, useState } from "react";
+import { LuCheck as Check, LuCopy as Copy, LuLink2 as Link2, LuPlus as Plus } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -11,7 +11,7 @@ type AffLink = { id: number; ref_code: string; label: string; destination_url: s
 export default function ReferralLinksPage() {
   const toast = useToast();
   const { dashboard } = useAuthContext();
-  const affiliateId = (dashboard?.user as Record<string, unknown>)?.affiliate_id ?? dashboard?.user?.id;
+  const affiliateId = dashboard?.user?.affiliate_id ?? null;
 
   const [links, setLinks] = useState<AffLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,8 +22,8 @@ export default function ReferralLinksPage() {
 
   const origin = typeof window !== "undefined" ? window.location.origin : "https://tourvaa.com";
 
-  async function load() {
-    if (!affiliateId) return;
+  const load = useCallback(async () => {
+    if (!affiliateId) { setLoading(false); return; }
     setLoading(true);
     try {
       const res = await api.get(`/affiliates/${affiliateId}/links`);
@@ -33,9 +33,9 @@ export default function ReferralLinksPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [affiliateId, toast]);
 
-  useEffect(() => { void load(); }, [affiliateId]);
+  useEffect(() => { void load(); }, [load]);
 
   async function createLink(e: React.FormEvent) {
     e.preventDefault();
@@ -54,28 +54,18 @@ export default function ReferralLinksPage() {
     }
   }
 
-  async function toggleActive(link: AffLink) {
+  function referralUrl(link: AffLink) {
     try {
-      await api.patch(`/affiliates/${affiliateId}/links/${link.id}`, { is_active: !link.is_active });
-      setLinks(prev => prev.map(l => l.id === link.id ? { ...l, is_active: !l.is_active } : l));
+      const url = new URL(link.destination_url || "/tours", origin);
+      url.searchParams.set("ref", link.ref_code);
+      return url.toString();
     } catch {
-      toast.error("Could not update link.");
-    }
-  }
-
-  async function deleteLink(id: number) {
-    if (!confirm("Delete this referral link?")) return;
-    try {
-      await api.delete(`/affiliates/${affiliateId}/links/${id}`);
-      setLinks(prev => prev.filter(l => l.id !== id));
-      toast.success("Link deleted.");
-    } catch {
-      toast.error("Could not delete link.");
+      return `${origin}/tours?ref=${encodeURIComponent(link.ref_code)}`;
     }
   }
 
   function copyLink(link: AffLink) {
-    const url = `${origin}/tours?ref=${link.ref_code}`;
+    const url = referralUrl(link);
     navigator.clipboard.writeText(url).then(() => {
       setCopied(link.id);
       setTimeout(() => setCopied(null), 2000);
@@ -137,7 +127,7 @@ export default function ReferralLinksPage() {
       ) : (
         <div className="space-y-3">
           {links.map(link => {
-            const fullUrl = `${origin}/tours?ref=${link.ref_code}`;
+            const fullUrl = referralUrl(link);
             return (
               <div key={link.id} className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -158,19 +148,6 @@ export default function ReferralLinksPage() {
                         {copied === link.id ? "Copied!" : "Copy"}
                       </button>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => toggleActive(link)}
-                      aria-label={link.is_active ? "Deactivate link" : "Activate link"}
-                      title={link.is_active ? "Deactivate" : "Activate"}
-                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-dash-border text-dash-muted hover:bg-dash-bg-muted">
-                      {link.is_active ? <ToggleRight size={20} className="text-emerald-600" /> : <ToggleLeft size={20} />}
-                    </button>
-                    <button type="button" onClick={() => deleteLink(link.id)}
-                      aria-label="Delete link" title="Delete link"
-                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-red-100 text-red-400 hover:bg-red-50">
-                      <Trash2 size={16} />
-                    </button>
                   </div>
                 </div>
               </div>

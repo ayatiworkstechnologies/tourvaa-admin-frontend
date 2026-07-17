@@ -11,5 +11,5 @@ type AdminHeaderProps = {
 };
 
 export default function AdminHeader(props: AdminHeaderProps) {
-  return <Header {...props} />;
+  return <Header {...props} theme="navy" />;
 }

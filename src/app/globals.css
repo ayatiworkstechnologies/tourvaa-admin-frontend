@@ -322,6 +322,27 @@ button {
 }
 .anim-forwards { animation-fill-mode: forwards; }
 
+/* Public booking funnel form primitives */
+.counter {
+  display: inline-flex; height: 2.25rem; width: 2.25rem; align-items: center; justify-content: center;
+  border: 1px solid #e2e8f0; border-radius: 9999px; background: #fff;
+}
+.counter:disabled { opacity: .4; }
+.field-label { display: block; font-size: .75rem; font-weight: 700; color: #475569; }
+.field {
+  margin-top: .5rem; width: 100%; border: 1px solid #e2e8f0; border-radius: .75rem;
+  background: #f8fafc; padding: .75rem; font-size: .875rem; outline: none;
+}
+.field:focus { border-color: #0f766e; background: #fff; box-shadow: 0 0 0 4px rgb(15 118 110 / .1); }
+.nav-primary, .nav-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  border-radius: .75rem; padding: .75rem 1.25rem; font-size: .875rem; font-weight: 800;
+}
+.nav-primary { background: #0f766e; color: #fff; }
+.nav-primary:hover { background: #115e59; }
+.nav-primary:disabled { opacity: .5; }
+.nav-secondary { border: 1px solid #cbd5e1; background: #fff; color: #334155; }
+
 /* Respect the user's OS-level motion preference: shorten/disable animations
    and transitions instead of removing them outright, so state changes (e.g.
    reveal-block visibility, active nav highlight) still resolve correctly. */

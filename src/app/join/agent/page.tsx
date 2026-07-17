@@ -149,16 +149,16 @@ export default function JoinAgentPage() {
                     <CheckCircle2 size={34} className="text-emerald-500" />
                   </div>
                   <p className="mt-4 text-xl font-black text-zinc-950">Application received!</p>
-                  <p className="mt-2 text-sm text-slate-500">Please verify your email, then wait for admin approval. We typically review within 1 business day.</p>
-                  <Link href="/" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-600">
-                    Back to Home
+                  <p className="mt-2 text-sm text-slate-500">Please verify your email, then wait for admin approval. Once approved, sign in and complete your agency profile.</p>
+                  <Link href="/login?redirect=%2Fagent%2Fprofile" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-600">
+                    Continue to Agent Login
                   </Link>
                 </div>
               ) : (
                 <>
                   <div className="mb-6">
                     <h2 className="text-lg font-black text-zinc-950">Apply as an agent</h2>
-                    <p className="mt-1 text-sm text-slate-400">Takes less than 3 minutes. We'll be in touch within 24 hours.</p>
+                    <p className="mt-1 text-sm text-slate-400">Takes less than 3 minutes. We&apos;ll be in touch within 24 hours.</p>
                   </div>
                   <form onSubmit={submit} className="space-y-4">
                     <div className="grid gap-4 sm:grid-cols-2">

@@ -4,7 +4,7 @@ import { MenuItem } from "@/types/auth";
 import Sidebar from "@/components/layout/Sidebar";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { adminNavItems, menuMatchesNavItem } from "@/lib/constants/navigation";
-import { LuMapPinned as MapPinned } from "react-icons/lu";
+import { LuShieldCheck as ShieldCheck } from "react-icons/lu";
 
 type AdminSidebarProps = {
   menus: MenuItem[];
@@ -24,8 +24,9 @@ export default function AdminSidebar(props: AdminSidebarProps) {
     <Sidebar 
       navItems={allowedMenus} 
       title="Tourvaa"
-      subtitle="Console"
-      logoIcon={MapPinned}
+      subtitle="Admin Console"
+      logoIcon={ShieldCheck}
+      theme="admin"
       {...props} 
     />
   );

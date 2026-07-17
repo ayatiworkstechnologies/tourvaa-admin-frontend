@@ -200,9 +200,9 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
       )}
 
       {/* 1. hero card */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#0B1120] via-[#1D3E64] to-dash-brand p-8 text-white shadow-lg flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-8 text-white shadow-lg flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div className="relative z-10">
-          <span className="inline-block rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-dash-brand backdrop-blur-md">
+          <span className="inline-block rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/80 backdrop-blur-md">
             Admin Control Center
           </span>
           <h2 className="mt-4 text-[28px] font-black leading-tight tracking-tight text-white">
@@ -224,7 +224,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {stats.map((stat, idx) => (
           <div key={idx} className="group flex cursor-pointer items-center gap-5 rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-dash-brand/30 hover:shadow-xl">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#F0F7FF] text-dash-brand shadow-sm transition-colors duration-300 group-hover:bg-dash-brand group-hover:text-white">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--portal-soft)] text-dash-brand shadow-sm transition-colors duration-300 group-hover:bg-dash-brand group-hover:text-white">
               <stat.icon size={24} strokeWidth={2} />
             </div>
             <div className="flex flex-1 flex-col justify-between self-stretch">
@@ -302,7 +302,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
                 setFStart(""); setFEnd(""); setFCountry("");
                 setActiveFilters({ start: "", end: "", country: "" });
               }}
-              className="flex h-10.5 items-center justify-center gap-1.5 rounded-xl border border-dash-border bg-white px-4 text-sm font-bold text-dash-body hover:bg-[#F3F8FC] transition-colors"
+              className="flex h-10.5 items-center justify-center gap-1.5 rounded-xl border border-dash-border bg-white px-4 text-sm font-bold text-dash-body hover:bg-[var(--portal-soft)] transition-colors"
             >
               <RefreshCw size={13} /> Reset
             </button>
@@ -475,7 +475,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
                       <p className="truncate text-xs font-bold text-dash-text">{ex.label}</p>
                       <p className="text-[10px] text-dash-subtle">{ex.exported_at}</p>
                     </div>
-                    <span className="rounded bg-[#F0F7FF] px-2 py-0.5 text-[10px] font-bold text-dash-brand">{ex.format}</span>
+                    <span className="rounded bg-[var(--portal-soft)] px-2 py-0.5 text-[10px] font-bold text-dash-brand">{ex.format}</span>
                   </li>
                 ))}
               </ul>
@@ -528,7 +528,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         {/* Agent approvals */}
         <div className="rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F0F7FF] text-dash-brand">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--portal-soft)] text-dash-brand">
               <Users size={20} strokeWidth={2} />
             </div>
             <div>
@@ -586,9 +586,9 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
               <Link
                 key={act.title}
                 href={act.href}
-                className="group flex flex-col rounded-xl border border-dash-border p-4 transition-all duration-200 hover:border-dash-brand/40 hover:bg-[#F0F7FF] hover:shadow-md"
+                className="group flex flex-col rounded-xl border border-dash-border p-4 transition-all duration-200 hover:border-dash-brand/40 hover:bg-[var(--portal-soft)] hover:shadow-md"
               >
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#F0F7FF] text-dash-brand transition-colors group-hover:bg-dash-brand group-hover:text-white">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--portal-soft)] text-dash-brand transition-colors group-hover:bg-dash-brand group-hover:text-white">
                   <act.icon size={18} />
                 </div>
                 <h3 className="text-sm font-bold text-dash-text">{act.title}</h3>

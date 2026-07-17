@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 const cookieTypes = [
   {
@@ -29,10 +29,10 @@ const cookieTypes = [
 
 export default function CookiePolicyPage() {
   return (
-    <main className="min-h-screen bg-zinc-50 pb-20">
-      <section className="bg-zinc-950 py-14 text-white">
+    <main className="min-h-screen bg-slate-50 pb-20">
+      <section className="bg-[#063c42] pb-14 pt-32 text-white">
         <div className="mx-auto max-w-4xl px-5 md:px-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-indigo-400">Legal</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-teal-400">Legal</p>
           <h1 className="mt-2 text-4xl font-bold">Cookie Policy</h1>
           <p className="mt-3 text-sm text-white/60">Last updated: June 2026</p>
         </div>
@@ -40,14 +40,14 @@ export default function CookiePolicyPage() {
 
       <div className="mx-auto max-w-4xl px-5 py-12 md:px-8">
         <div className="space-y-6">
-          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-zinc-100 shadow-sm ring-0">
+          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
             <h2 className="mb-3 font-bold text-zinc-950">What are cookies?</h2>
             <p className="text-sm leading-7 text-zinc-500">
               Cookies are small text files placed on your device when you visit a website. They allow the site to recognise your device, remember your preferences, and improve your experience over time. Cookies do not give us access to your device or any personal information beyond what you choose to share.
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-zinc-100 shadow-sm ring-0">
+          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
             <h2 className="mb-5 font-bold text-zinc-950">Types of cookies we use</h2>
             <div className="space-y-5">
               {cookieTypes.map((c) => (
@@ -74,14 +74,14 @@ export default function CookiePolicyPage() {
             ["Third-party cookies", "Some features of our platform may use third-party services that set their own cookies. These include payment processors, analytics providers (such as Google Analytics), and marketing platforms. We do not have control over these cookies — please refer to the respective provider's privacy policies for details."],
             ["Changes to this policy", "We may update this Cookie Policy from time to time to reflect changes in technology or regulation. We will notify registered users of significant changes. The date at the top of this page always shows the most recent version."],
           ].map(([title, text]) => (
-            <div key={String(title)} className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-zinc-100 shadow-sm ring-0">
+            <div key={String(title)} className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
               <h2 className="mb-3 font-bold text-zinc-950">{String(title)}</h2>
               <p className="text-sm leading-7 text-zinc-500">{String(text)}</p>
             </div>
           ))}
 
-          <div className="rounded-xl bg-indigo-50 p-5 text-sm text-zinc-600">
-            Questions? <Link href="/contact" className="font-bold text-indigo-600 hover:underline">Contact us</Link> or see our <Link href="/terms" className="font-bold text-indigo-600 hover:underline">Terms & Conditions</Link>.
+          <div className="rounded-xl bg-teal-50 p-5 text-sm text-zinc-600">
+            Questions? <Link href="/contact" className="font-bold text-teal-600 hover:underline">Contact us</Link> or see our <Link href="/terms" className="font-bold text-teal-600 hover:underline">Terms & Conditions</Link>.
           </div>
         </div>
       </div>

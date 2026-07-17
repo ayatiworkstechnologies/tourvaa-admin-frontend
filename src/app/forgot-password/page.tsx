@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { LuMail as Mail } from "react-icons/lu";
@@ -22,7 +23,10 @@ type ForgotPasswordFormValues = {
   email: string;
 };
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordForm() {
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
+  const safeRedirect = redirect?.startsWith("/") && !redirect.startsWith("//") ? redirect : null;
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const {
@@ -95,11 +99,19 @@ export default function ForgotPasswordPage() {
 
         <p className="text-center text-sm text-gray-700">
           Remember password?{" "}
-          <Link href="/login" className="font-bold text-black">
+          <Link href={safeRedirect ? `/login?redirect=${encodeURIComponent(safeRedirect)}` : "/login"} className="font-bold text-black">
             Login
           </Link>
         </p>
       </form>
     </AuthLayout>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ForgotPasswordForm />
+    </Suspense>
   );
 }

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AdminFooter from "@/components/admin/AdminFooter";
 import AdminHeader from "@/components/admin/AdminHeader";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { MenuItem } from "@/types/auth";
+import { portalThemeStyles } from "@/lib/constants/portalThemes";
 
 type Props = {
   children: React.ReactNode;
@@ -30,7 +30,7 @@ export default function AdminLayout({ children, title, menus, user }: Props) {
   }, []);
 
   return (
-    <div className="h-screen overflow-hidden bg-dash-bg">
+    <div className="h-screen overflow-hidden bg-dash-bg" style={portalThemeStyles.admin}>
       <AdminSidebar menus={menus} collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
 
       {mobileOpen && (

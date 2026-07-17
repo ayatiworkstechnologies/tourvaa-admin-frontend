@@ -1,5 +1,7 @@
-import Link from "next/link";
-import { LuArrowRight as ArrowRight, LuBookOpen as BookOpen } from "react-icons/lu";
+﻿import Link from "next/link";
+import { LuArrowRight as ArrowRight } from "react-icons/lu";
+
+/* eslint-disable @next/next/no-img-element */
 
 const posts = [
   {
@@ -62,13 +64,13 @@ const categories = ["All", "Travel Tips", "Guide", "Destination", "Photography",
 
 export default function BlogsPage() {
   return (
-    <main className="min-h-screen bg-zinc-50 pb-20">
+    <main className="min-h-screen bg-slate-50 pb-20">
       {/* Header */}
-      <section className="bg-zinc-950 py-20 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-indigo-600/20 blur-[100px]" />
-        <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-violet-600/20 blur-[100px]" />
+      <section className="relative overflow-hidden bg-[#063c42] pb-20 pt-36 text-white">
+        <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-teal-600/20 blur-[100px]" />
+        <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-orange-600/20 blur-[100px]" />
         <div className="relative mx-auto max-w-7xl px-5 md:px-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-indigo-400">Blog</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-teal-400">Blog</p>
           <h1 className="mt-4 text-5xl font-black drop-shadow-sm md:text-6xl">Travel stories & guides</h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/70">
             Expert travel advice, destination guides, and stories from the road — written by our team and partner naturalists.
@@ -80,23 +82,23 @@ export default function BlogsPage() {
         {/* Category pills */}
         <div className="mb-10 flex flex-wrap gap-2.5">
           {categories.map((c) => (
-            <span key={c} className={`cursor-pointer rounded-full border px-5 py-2 text-xs font-bold transition-all ${c === "All" ? "border-indigo-600 bg-indigo-50 text-indigo-600" : "border-zinc-200 bg-white text-zinc-500 hover:border-indigo-600 hover:text-indigo-600"}`}>
+            <span key={c} className={`cursor-pointer rounded-full border px-5 py-2 text-xs font-bold transition-all ${c === "All" ? "border-teal-600 bg-teal-50 text-teal-600" : "border-zinc-200 bg-white text-zinc-500 hover:border-teal-600 hover:text-teal-600"}`}>
               {c}
             </span>
           ))}
         </div>
 
         {/* Featured post */}
-        <Link href={`/blogs/${posts[0].slug}`} className="group mb-12 flex overflow-hidden rounded-3xl bg-white border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+        <Link href={`/blogs/${posts[0].slug}`} className="group mb-12 flex overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
           <div className="flex-1 p-8 md:p-10">
             <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest">
-              <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-600">{posts[0].category}</span>
+              <span className="rounded-full bg-teal-50 px-3 py-1 text-teal-600">{posts[0].category}</span>
               <span className="text-zinc-400">{posts[0].date}</span>
               <span className="text-zinc-400">{posts[0].readTime}</span>
             </div>
-            <h2 className="mt-5 text-3xl font-black text-zinc-950 group-hover:text-indigo-600 transition-colors md:text-4xl">{posts[0].title}</h2>
+            <h2 className="mt-5 text-3xl font-black text-zinc-950 group-hover:text-teal-600 transition-colors md:text-4xl">{posts[0].title}</h2>
             <p className="mt-4 max-w-lg text-base leading-relaxed text-zinc-500">{posts[0].excerpt}</p>
-            <div className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-indigo-600 transition-colors group-hover:text-indigo-700">
+            <div className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-teal-600 transition-colors group-hover:text-teal-700">
               Read article <ArrowRight size={16} />
             </div>
           </div>
@@ -108,16 +110,16 @@ export default function BlogsPage() {
         {/* Grid */}
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {posts.slice(1).map((post) => (
-            <Link key={post.slug} href={`/blogs/${post.slug}`} className="group overflow-hidden rounded-3xl bg-white border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col">
+            <Link key={post.slug} href={`/blogs/${post.slug}`} className="group overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col">
               <div className="aspect-[16/9] overflow-hidden">
                 <img src={post.img} alt={post.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
               </div>
               <div className="p-6 flex-1 flex flex-col">
                 <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
-                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-600">{post.category}</span>
+                  <span className="rounded-full bg-teal-50 px-3 py-1 text-teal-600">{post.category}</span>
                   <span className="text-zinc-400">{post.readTime}</span>
                 </div>
-                <h3 className="mt-4 text-xl font-black text-zinc-950 group-hover:text-indigo-600 transition-colors leading-snug">{post.title}</h3>
+                <h3 className="mt-4 text-xl font-black text-zinc-950 group-hover:text-teal-600 transition-colors leading-snug">{post.title}</h3>
                 <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-zinc-500 flex-1">{post.excerpt}</p>
                 <p className="mt-5 text-xs font-bold uppercase tracking-widest text-zinc-400">{post.date}</p>
               </div>

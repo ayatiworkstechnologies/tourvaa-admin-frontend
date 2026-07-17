@@ -105,7 +105,7 @@ export default function CustomerDashboardPage() {
   const firstName = user?.name?.split(" ")[0] || "Traveller";
 
   const stats = [
-    { label: "Total bookings", value: summary.total_bookings ?? bookings.length, icon: CalendarCheck, href: "/customer/bookings", color: "text-sky-700", bg: "bg-sky-50" },
+    { label: "Total bookings", value: summary.total_bookings ?? bookings.length, icon: CalendarCheck, href: "/customer/bookings", color: "text-dash-brand", bg: "bg-[var(--portal-soft)]" },
     { label: "Upcoming trips", value: summary.upcoming_tours ?? bookings.filter((booking) => booking.booking_status === "confirmed").length, icon: Clock3, href: "/customer/bookings", color: "text-indigo-700", bg: "bg-indigo-50" },
     { label: "Completed trips", value: summary.completed_tours ?? bookings.filter((booking) => booking.booking_status === "completed").length, icon: CheckCircle2, href: "/customer/bookings", color: "text-emerald-700", bg: "bg-emerald-50" },
     { label: "Pending balance", value: formatCompact(pendingAmount), icon: Wallet, href: "/customer/payments", color: "text-rose-700", bg: "bg-rose-50" },
@@ -119,22 +119,22 @@ export default function CustomerDashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-8">
+    <div className="min-h-screen bg-dash-bg p-6 md:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-2xl border border-dash-border bg-white p-6 shadow-sm md:p-7">
+        <section className="rounded-2xl border border-dash-border bg-gradient-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-6 text-white shadow-lg md:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-sm font-bold text-dash-brand">{greeting()}, {firstName}</p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-dash-text md:text-4xl">Your travel portal</h1>
-              <p className="mt-2 text-sm leading-6 text-dash-muted">
+              <p className="text-sm font-bold text-white/80">{greeting()}, {firstName}</p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-white md:text-4xl">Your travel portal</h1>
+              <p className="mt-2 text-sm leading-6 text-white/75">
                 Track bookings, payments, travellers, invoices, and support requests from one place.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/tours" className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-dash-brand-dark">
+              <Link href="/tours" className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-dash-brand shadow-sm hover:bg-[var(--portal-soft)]">
                 <MapPinned size={17} /> Browse tours
               </Link>
-              <Link href="/customer/support" className="inline-flex items-center gap-2 rounded-xl border border-dash-border bg-white px-5 py-3 text-sm font-bold text-dash-body hover:bg-[#F3F8FC]">
+              <Link href="/customer/support" className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/20">
                 <Headphones size={17} /> Get support
               </Link>
             </div>
@@ -195,7 +195,7 @@ export default function CustomerDashboardPage() {
             <div className="rounded-2xl border border-dash-border bg-white p-5 shadow-sm">
               <h2 className="font-black text-dash-text">Next trip</h2>
               {loading ? <CardSkeleton className="mt-4 h-32" /> : nextTrip ? (
-                <Link href={`/customer/bookings/${nextTrip.id}`} className="mt-4 block rounded-2xl border border-sky-100 bg-sky-50 p-4 transition hover:border-sky-200 hover:bg-sky-100/60">
+                <Link href={`/customer/bookings/${nextTrip.id}`} className="mt-4 block rounded-2xl border border-dash-border bg-[var(--portal-soft)] p-4 transition hover:border-teal-300 hover:bg-teal-100/60">
                   <p className="text-sm font-black text-dash-text">{nextTrip.tour_name || nextTrip.booking_code}</p>
                   <p className="mt-2 text-sm text-dash-muted">{formatDate(nextTrip.tour_date)}</p>
                   <p className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-dash-brand-dark">Open booking <ArrowRight size={14} /></p>
@@ -213,7 +213,7 @@ export default function CustomerDashboardPage() {
               {portalCards.map(({ label, value, href, icon: Icon, note }) => (
                 <Link key={label} href={href} className="flex items-center justify-between rounded-2xl border border-dash-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F0F7FF] text-dash-brand"><Icon size={18} /></span>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--portal-soft)] text-dash-brand"><Icon size={18} /></span>
                     <div className="min-w-0">
                       <p className="font-bold text-dash-text">{label}</p>
                       <p className="truncate text-xs text-dash-muted">{note}</p>

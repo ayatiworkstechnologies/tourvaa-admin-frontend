@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LuTrendingUp as TrendingUp } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -19,7 +18,7 @@ function statusCls(s: string) {
 export default function ConversionsPage() {
   const toast = useToast();
   const { dashboard } = useAuthContext();
-  const affiliateId = (dashboard?.user as Record<string, unknown>)?.affiliate_id ?? dashboard?.user?.id;
+  const affiliateId = dashboard?.user?.affiliate_id ?? null;
   const [conversions, setConversions] = useState<Conversion[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -30,7 +29,7 @@ export default function ConversionsPage() {
   const currency = conversions[0]?.currency || "AED";
 
   useEffect(() => {
-    if (!affiliateId) return;
+    if (!affiliateId) { setLoading(false); return; }
     async function load() {
       setLoading(true);
       try {
@@ -45,7 +44,7 @@ export default function ConversionsPage() {
       }
     }
     void load();
-  }, [affiliateId, page]);
+  }, [affiliateId, page, toast]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 

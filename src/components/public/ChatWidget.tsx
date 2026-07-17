@@ -2,6 +2,7 @@
 
 import { LuBot as Bot, LuCalendar as Calendar, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuMessageCircle as MessageCircle, LuMinus as Minus, LuPlus as Plus, LuSend as Send, LuSparkles as Sparkles, LuX as X } from "react-icons/lu";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useAuthContext } from "@/providers/AuthProvider";
 import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
@@ -40,7 +41,7 @@ function TourCards({ tours, onSelect }: { tours: TourCard[]; onSelect: (t: TourC
       {tours.map(tour => (
         <div key={tour.id} className="overflow-hidden rounded-xl border border-dash-border bg-white shadow-sm">
           {tour.cover_image && (
-            <img src={mediaUrl(tour.cover_image)} alt={tour.title} className="h-24 w-full object-cover" />
+            <Image src={mediaUrl(tour.cover_image)} alt={tour.title} width={384} height={96} unoptimized className="h-24 w-full object-cover" />
           )}
           <div className="p-3">
             <p className="text-xs font-bold text-dash-text line-clamp-1">{tour.title}</p>
@@ -94,7 +95,7 @@ function TravellerPicker({ onSelect }: { onSelect: (n: number) => void }) {
   );
 }
 
-function BookingConfirm({ data, onConfirm, onCancel }: { data: ActionData; onConfirm: () => void; onCancel: () => void }) {
+function BookingConfirm({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
   return (
     <div className="mt-2 rounded-xl border border-dash-border bg-white p-3 shadow-sm">
       <div className="flex gap-2">
@@ -185,13 +186,13 @@ export default function ChatWidget() {
     if (!user) {
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: "Please log in to complete your booking. Visit /auth/login and then come back to book.",
+        content: "Please log in to complete your booking. Open /login and then come back to book.",
       }]);
       return;
     }
     setBookingLoading(true);
     try {
-      const res = await api.post("/customers/me/bookings", {
+      const res = await api.post("/customer/bookings", {
         tour_id: data.tour_id,
         tour_date: data.date,
         no_of_adults: data.travellers ?? 1,
@@ -255,7 +256,6 @@ export default function ChatWidget() {
                   )}
                   {msg.role === "assistant" && msg.action_type === "confirm_booking" && msg.action_data && (
                     <BookingConfirm
-                      data={msg.action_data}
                       onConfirm={() => handleConfirmBooking(msg.action_data!)}
                       onCancel={handleCancelBooking}
                     />

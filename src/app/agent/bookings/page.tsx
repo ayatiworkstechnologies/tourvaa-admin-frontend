@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuClock3 as Clock3, LuEye as Eye, LuPlus as Plus, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuPlus as Plus, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
@@ -18,7 +18,7 @@ type Booking = {
   currency?: string;
 };
 
-const STATUSES = ["all", "confirmed", "pending", "pending_payment", "completed", "cancelled"];
+const STATUSES = ["all", "pending_payment", "payment_authorized", "pending_supplier_acceptance", "confirmed", "ongoing", "completed", "cancelled", "declined"];
 
 function money(value: string | number | undefined, currency = "AED") {
   if (!value && value !== 0) return "—";
@@ -37,8 +37,8 @@ function dateText(value?: string | null) {
 function statusClass(status?: string) {
   const v = (status || "").toLowerCase();
   if (["paid", "completed", "confirmed", "active"].includes(v)) return "bg-emerald-50 text-emerald-700";
-  if (["pending", "partial", "partially_paid", "pending_payment"].includes(v)) return "bg-amber-50 text-amber-700";
-  if (["cancelled", "failed"].includes(v)) return "bg-rose-50 text-rose-700";
+  if (["pending", "partial", "partially_paid", "pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(v)) return "bg-amber-50 text-amber-700";
+  if (["cancelled", "declined", "failed"].includes(v)) return "bg-rose-50 text-rose-700";
   return "bg-slate-50 text-slate-700";
 }
 
@@ -64,7 +64,7 @@ export default function AgentBookingsPage() {
       setLoading(true);
       try {
         const params: Record<string, unknown> = { limit, page };
-        if (statusFilter !== "all") params.status = statusFilter;
+        if (statusFilter !== "all") params.booking_status = statusFilter;
         const res = await api.get("/bookings", { params });
         if (!active) return;
         setBookings(res.data?.items ?? res.data?.data ?? []);
@@ -89,7 +89,7 @@ export default function AgentBookingsPage() {
   const stats = [
     { label: "Total Bookings", value: total, icon: CalendarCheck, color: "text-orange-600", bg: "bg-orange-50" },
     { label: "Confirmed", value: bookings.filter((b) => ["confirmed", "ongoing"].includes(b.booking_status.toLowerCase())).length, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "Pending", value: bookings.filter((b) => ["pending", "pending_payment"].includes(b.booking_status.toLowerCase())).length, icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Pending", value: bookings.filter((b) => ["pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(b.booking_status.toLowerCase())).length, icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
     { label: "Cancelled", value: bookings.filter((b) => ["cancelled", "declined"].includes(b.booking_status.toLowerCase())).length, icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" },
   ];
 

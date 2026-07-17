@@ -1,23 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LuBanknote as Banknote, LuCalendarCheck as CalendarCheck, LuChevronDown as ChevronDown, LuLayoutDashboard as LayoutDashboard, LuLogOut as LogOut, LuMapPinned as MapPinned, LuMenu as Menu, LuMessageSquare as MessageSquare, LuPlus as Plus, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
+import { LuBanknote as Banknote, LuCalendarCheck as CalendarCheck, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import { portalThemeStyles } from "@/lib/constants/portalThemes";
 
 const NAV = [
   { href: "/supplier/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/supplier/tours", icon: MapPinned, label: "My Tours" },
-  { href: "/supplier/tours/create", icon: Plus, label: "Create Tour" },
-  { href: "/supplier/bookings", icon: CalendarCheck, label: "Bookings" },
-  { href: "/supplier/earnings", icon: Wallet, label: "Earnings" },
-  { href: "/supplier/payouts", icon: Banknote, label: "Payouts" },
-  { href: "/supplier/messages", icon: MessageSquare, label: "Messages" },
-  { href: "/supplier/profile", icon: User, label: "My Profile" },
+  { href: "/supplier/tours", icon: MapPinned, label: "My Tours", section: "Tour Workspace" },
+  { href: "/supplier/tours/create", icon: Plus, label: "Create Tour", section: "Tour Workspace" },
+  { href: "/supplier/bookings", icon: CalendarCheck, label: "Bookings", section: "Operations" },
+  { href: "/supplier/earnings", icon: Wallet, label: "Earnings", section: "Operations" },
+  { href: "/supplier/payouts", icon: Banknote, label: "Payouts", section: "Operations" },
+  { href: "/supplier/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
+  { href: "/supplier/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -42,7 +42,7 @@ function getTitle(pathname: string) {
 export default function SupplierLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isLoggedIn, loading, user, logout, dashboard } = useAuthContext();
+  const { isLoggedIn, loading, user, dashboard } = useAuthContext();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -79,11 +79,13 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   const pageTitle = getTitle(pathname);
 
   return (
-    <div className="flex min-h-screen bg-dash-bg">
+    <div className="flex min-h-screen bg-dash-bg" style={portalThemeStyles.supplier}>
       <Sidebar
         navItems={NAV}
         title="Tourvaa"
         subtitle="Supplier"
+        logoIcon={Store}
+        theme="supplier"
         mobile={false}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
@@ -93,7 +95,7 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
         <div className="fixed inset-0 z-50 lg:hidden">
           <button className="absolute inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />
           <div className="relative h-full w-[260px] bg-white shadow-2xl">
-            <Sidebar navItems={NAV} title="Tourvaa" subtitle="Supplier" mobile={true} collapsed={false} onToggleCollapse={() => {}} />
+            <Sidebar navItems={NAV} title="Tourvaa" subtitle="Supplier" logoIcon={Store} theme="supplier" mobile={true} collapsed={false} onToggleCollapse={() => {}} />
           </div>
         </div>
       )}

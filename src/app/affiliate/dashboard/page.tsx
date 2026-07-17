@@ -7,9 +7,9 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";
 
-type Summary = { total_clicks?: number; total_conversions?: number; total_commission?: number; pending_commission?: number; currency?: string };
-type AffLink = { id: number; ref_code: string; label: string; destination_url: string; is_active: boolean; click_count?: number };
-type Conversion = { id: number; booking_code?: string; commission_amount: string; currency: string; status: string; created_at?: string };
+type Summary = { total_conversions?: number; total_commission?: string; pending_commission?: string };
+type AffLink = { id: number; ref_code: string; label: string; destination_url: string; is_active: boolean; total_clicks?: number; total_conversions?: number };
+type Conversion = { id: number; booking_code?: string; commission_amount: string; currency: string; status: string; converted_at?: string };
 
 function statusCls(s: string) {
   const v = (s || "").toLowerCase();
@@ -27,15 +27,15 @@ export default function AffiliateDashboardPage() {
   const [conversions, setConversions] = useState<Conversion[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const affiliateId = (dashboard?.user as Record<string, unknown>)?.affiliate_id ?? dashboard?.user?.id;
+  const affiliateId = dashboard?.user?.affiliate_id ?? null;
 
   useEffect(() => {
-    if (!affiliateId) return;
+    if (!affiliateId) { setLoading(false); return; }
     async function load() {
       setLoading(true);
       try {
         const [sumRes, linksRes, convRes] = await Promise.allSettled([
-          api.get("/dashboard/summary"),
+          api.get(`/affiliates/${affiliateId}/commissions`),
           api.get(`/affiliates/${affiliateId}/links`),
           api.get(`/affiliates/${affiliateId}/conversions`, { params: { limit: 5 } }),
         ]);
@@ -50,7 +50,7 @@ export default function AffiliateDashboardPage() {
   }, [affiliateId]);
 
   const stats = [
-    { label: "Total Clicks", value: summary.total_clicks ?? 0, icon: MousePointerClick, color: "text-blue-600 bg-blue-50" },
+    { label: "Total Clicks", value: links.reduce((total, link) => total + Number(link.total_clicks || 0), 0), icon: MousePointerClick, color: "text-blue-600 bg-blue-50" },
     { label: "Conversions", value: summary.total_conversions ?? conversions.length, icon: TrendingUp, color: "text-emerald-600 bg-emerald-50" },
     { label: "Total Commission", value: formatCompact(summary.total_commission), icon: Coins, color: "text-purple-600 bg-purple-50" },
     { label: "Pending Payout", value: formatCompact(summary.pending_commission), icon: Banknote, color: "text-amber-600 bg-amber-50" },
@@ -122,7 +122,7 @@ export default function AffiliateDashboardPage() {
                     <p className="text-xs font-mono text-dash-muted">{link.ref_code}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {link.click_count !== undefined && <span className="text-xs text-dash-subtle">{link.click_count} clicks</span>}
+                    {link.total_clicks !== undefined && <span className="text-xs text-dash-subtle">{link.total_clicks} clicks</span>}
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${link.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-500"}`}>
                       {link.is_active ? "Active" : "Inactive"}
                     </span>
@@ -150,7 +150,7 @@ export default function AffiliateDashboardPage() {
                 <div key={c.id} className="flex items-center justify-between rounded-xl border border-dash-border px-4 py-3">
                   <div>
                     <p className="font-semibold text-dash-text">{c.booking_code || `Conversion #${c.id}`}</p>
-                    <p className="text-xs text-dash-muted">{c.created_at ? new Date(c.created_at).toLocaleDateString() : ""}</p>
+                    <p className="text-xs text-dash-muted">{c.converted_at ? new Date(c.converted_at).toLocaleDateString() : ""}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-purple-700">{format(c.commission_amount)}</span>

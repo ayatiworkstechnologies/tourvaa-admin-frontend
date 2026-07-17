@@ -277,7 +277,7 @@ export default function SupplierToursPage() {
                     Edit
                   </Link>
                   <Link
-                    href={`/tours/${tour.id}`}
+                    href={`/supplier/tours/${tour.id}/preview`}
                     target="_blank"
                     className="flex items-center justify-center gap-1.5 rounded-xl border border-dash-border/80 bg-white px-3 py-2 text-xs font-bold text-dash-body shadow-sm hover:bg-[#F3F8FC] hover:text-dash-brand transition-all"
                   >

@@ -24,6 +24,7 @@ import {
 } from "@/lib/api/services/operationsService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
 
 type DetailValue = string | number | boolean | null | undefined;
 type DetailObject = Record<string, DetailValue>;
@@ -152,6 +153,14 @@ export default function SupplierDetailPage() {
 
   const approveVehicle = (vehicleId: number) =>
     void run(() => reviewSupplierVehicle(id, vehicleId, { approval_status: "approved" }), "Vehicle approved.");
+
+  const viewDocument = async (documentId: number) => {
+    try {
+      await openPrivateDocument("supplier", documentId);
+    } catch {
+      toast.error("Could not open supplier document.");
+    }
+  };
 
   const openRejectItem = (type: "document" | "vehicle", itemId: number) => {
     setReviewTarget({ type, id: itemId });
@@ -285,10 +294,10 @@ export default function SupplierDetailPage() {
                           ["Reason", doc.rejection_reason],
                         ]} />
                         <div className="mt-3 flex flex-wrap items-center gap-2">
-                          {(doc.file_url || doc.file_path) && (
-                            <a href={String(doc.file_url || doc.file_path)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]">
+                          {(doc.file_url || doc.file_path) && doc.id !== undefined && (
+                            <button type="button" onClick={() => void viewDocument(doc.id!)} className="inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]">
                               <Eye size={14} /> View document
-                            </a>
+                            </button>
                           )}
                           {canReviewItems && doc.status !== "approved" && (
                             <button

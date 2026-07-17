@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import AdminRouteGuard from "@/components/admin/AdminRouteGuard";
 
 export const metadata: Metadata = {
   title: "Tourvaa Admin Console",
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminRouteLayout({ children }: { children: React.ReactNode }) {
-  return <div data-route-scope="admin">{children}</div>;
+  return <AdminRouteGuard><div data-route-scope="admin">{children}</div></AdminRouteGuard>;
 }

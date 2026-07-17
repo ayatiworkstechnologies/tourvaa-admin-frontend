@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuClock3 as Clock3, LuEye as Eye, LuFilter as Filter, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuFilter as Filter, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
@@ -24,8 +24,11 @@ type Booking = {
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Statuses" },
-  { value: "pending", label: "Pending" },
+  { value: "pending_payment", label: "Pending Payment" },
+  { value: "pending_supplier_acceptance", label: "Awaiting My Decision" },
   { value: "confirmed", label: "Confirmed" },
+  { value: "ongoing", label: "Ongoing" },
+  { value: "postponed", label: "Postponed" },
   { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
   { value: "declined", label: "Declined" },
@@ -35,7 +38,7 @@ function statusColors(s: string) {
   const v = (s || "").toLowerCase();
   if (["confirmed", "completed", "paid"].includes(v))
     return "bg-emerald-50 text-emerald-700";
-  if (["pending", "pending_payment", "pending_confirmation"].includes(v))
+  if (["pending", "pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(v))
     return "bg-amber-50 text-amber-700";
   if (["cancelled", "declined", "failed"].includes(v))
     return "bg-red-50 text-red-600";
@@ -65,8 +68,8 @@ export default function SupplierBookingsPage() {
     setError("");
     try {
       const params: Record<string, string | number> = { limit, page };
-      if (statusFilter) params.status = statusFilter;
-      const res = await api.get("/supplier/bookings", { params });
+      if (statusFilter) params.booking_status = statusFilter;
+      const res = await api.get("/bookings", { params });
       const data = res.data;
       setBookings(data?.items ?? data?.data ?? data ?? []);
       setTotal(data?.total ?? 0);
@@ -94,7 +97,7 @@ export default function SupplierBookingsPage() {
   const stats = [
     { label: "Total Bookings", value: total, icon: CalendarCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
     { label: "Confirmed", value: bookings.filter((b) => ["confirmed", "ongoing"].includes(b.booking_status.toLowerCase())).length, icon: CheckCircle2, color: "text-sky-600", bg: "bg-sky-50" },
-    { label: "Pending", value: bookings.filter((b) => ["pending", "pending_payment", "pending_confirmation"].includes(b.booking_status.toLowerCase())).length, icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Awaiting Action", value: bookings.filter((b) => ["payment_authorized", "pending_supplier_acceptance"].includes(b.booking_status.toLowerCase())).length, icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
     { label: "Cancelled / Declined", value: bookings.filter((b) => ["cancelled", "declined"].includes(b.booking_status.toLowerCase())).length, icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" },
   ];
 
@@ -103,7 +106,7 @@ export default function SupplierBookingsPage() {
     { key: "tour", header: "Tour", className: "max-w-[200px]", render: (b) => <p className="truncate font-semibold text-dash-text">{b.tour_name ?? b.tour_title ?? "—"}</p> },
     { key: "travel_date", header: "Travel Date", className: "whitespace-nowrap text-dash-muted", render: (b) => b.tour_date ?? b.travel_date ?? "—" },
     { key: "travellers", header: "Travellers", className: "text-center text-dash-muted", render: (b) => b.num_travellers ?? b.total_pax ?? "—" },
-    { key: "status", header: "Status", render: (b) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusColors(b.booking_status)}`}>{b.booking_status}</span> },
+    { key: "status", header: "Status", render: (b) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(b.booking_status)}`}>{b.booking_status.replaceAll("_", " ")}</span> },
     { key: "payment", header: "Payment", render: (b) => b.payment_status ? <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(b.payment_status)}`}>{b.payment_status}</span> : <span className="text-xs text-dash-subtle">—</span> },
     { key: "amount", header: "Amount", className: "whitespace-nowrap font-semibold text-dash-text", render: (b) => `${b.currency ?? "AED"} ${Number(b.final_amount ?? b.total_amount ?? 0).toLocaleString()}` },
   ];

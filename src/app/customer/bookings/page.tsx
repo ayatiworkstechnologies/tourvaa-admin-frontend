@@ -17,7 +17,7 @@ type Booking = {
   currency?: string;
 };
 
-const STATUSES = ["all", "confirmed", "pending", "pending_payment", "completed", "cancelled"];
+const STATUSES = ["all", "pending_payment", "payment_authorized", "pending_supplier_acceptance", "confirmed", "completed", "cancelled"];
 
 function money(value: string | number | undefined, currency = "AED") {
   if (!value && value !== 0) return "-";
@@ -36,7 +36,7 @@ function dateText(value?: string | null) {
 function statusClass(status?: string) {
   const v = (status || "").toLowerCase();
   if (["paid", "completed", "confirmed", "active"].includes(v)) return "bg-emerald-50 text-emerald-700 border border-emerald-200/50";
-  if (["pending", "partial", "partially_paid", "pending_payment"].includes(v)) return "bg-amber-50 text-amber-700 border border-amber-200/50";
+  if (["pending", "partial", "partially_paid", "pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(v)) return "bg-amber-50 text-amber-700 border border-amber-200/50";
   if (["cancelled", "failed"].includes(v)) return "bg-rose-50 text-rose-700 border border-rose-200/50";
   return "bg-slate-50 text-slate-700 border border-slate-200/50";
 }
@@ -88,12 +88,12 @@ export default function CustomerBookingsPage() {
   const stats = useMemo(() => {
     const confirmed = bookings.filter((b) => ["confirmed", "ongoing"].includes(b.booking_status.toLowerCase())).length;
     const completed = bookings.filter((b) => b.booking_status.toLowerCase() === "completed").length;
-    const pending = bookings.filter((b) => ["pending", "pending_payment"].includes(b.booking_status.toLowerCase())).length;
+    const pending = bookings.filter((b) => ["pending", "pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(b.booking_status.toLowerCase())).length;
     return [
-      { label: "Total Bookings", value: total || bookings.length, icon: CalendarCheck, color: "text-sky-600", bg: "bg-sky-50" },
+      { label: "Total Bookings", value: total || bookings.length, icon: CalendarCheck, color: "text-dash-brand", bg: "bg-[var(--portal-soft)]" },
       { label: "Active / Upcoming", value: confirmed, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
       { label: "Completed", value: completed, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
-      { label: "Pending Payment", value: pending, icon: Wallet, color: "text-rose-600", bg: "bg-rose-50" },
+      { label: "Pending Requests", value: pending, icon: Wallet, color: "text-amber-600", bg: "bg-amber-50" },
     ];
   }, [bookings, total]);
 
@@ -107,19 +107,19 @@ export default function CustomerBookingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-8">
+    <div className="min-h-screen bg-dash-bg p-6 md:p-8">
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-sky-500 to-sky-700 p-7 text-white shadow-xl shadow-sky-200/60 md:p-9">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-teal-200/60 md:p-9">
         <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">My Bookings</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-sky-100">View and track all of your bookings and travel history.</p>
+            <p className="mt-2 max-w-md text-sm font-medium text-white/80">View and track all of your bookings and travel history.</p>
           </div>
           <Link
             href="/tours"
-            className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-sky-700 shadow-sm transition hover:bg-sky-50 hover:-translate-y-0.5"
+            className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-dash-brand shadow-sm transition hover:bg-[var(--portal-soft)] hover:-translate-y-0.5"
           >
             <MapPinned size={18} strokeWidth={2.5} /> Browse Tours
           </Link>

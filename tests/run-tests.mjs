@@ -13,6 +13,11 @@ const TEST_FILES = [
   "module-services.test.mjs",
   "module-permissions.test.mjs",
   "module-components.test.mjs",
+  "customer-flow.test.mjs",
+  "supplier-flow.test.mjs",
+  "agent-flow.test.mjs",
+  "admin-flow.test.mjs",
+  "overall-flow.test.mjs",
 ];
 
 let totalPassed = 0;

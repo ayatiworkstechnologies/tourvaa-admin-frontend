@@ -7,6 +7,7 @@ import { LuArrowLeft as ArrowLeft, LuCheck as Check, LuChevronDown as ChevronDow
 import PhoneInput from "@/components/ui/PhoneInput";
 import api from "@/lib/api/client";
 import { combinePhone } from "@/lib/utils/validators";
+import { useAuthContext } from "@/providers/AuthProvider";
 
 type Customer = {
   id: number;
@@ -19,11 +20,9 @@ type Customer = {
 type Tour = {
   id: number;
   title: string;
-  price?: string | number;
-  price_from?: string | number;
+  price_start_per_person?: string | number;
   currency?: string;
-  duration?: string;
-  duration_days?: number;
+  number_of_days?: number;
 };
 
 type NewCustomer = {
@@ -52,6 +51,8 @@ export default function AgentCreateBookingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const prefillTourId = searchParams.get("tour_id");
+  const prefillCustomerId = searchParams.get("customer_id");
+  const { user, dashboard } = useAuthContext();
 
   // Customer selection
   const [customerMode, setCustomerMode] = useState<"search" | "new">("search");
@@ -86,6 +87,20 @@ export default function AgentCreateBookingPage() {
   const debouncedCustomerSearch = useDebounce(customerSearch, 350);
   const debouncedTourSearch = useDebounce(tourSearch, 350);
 
+  useEffect(() => {
+    if (!prefillCustomerId) return;
+    let active = true;
+    api.get(`/customers/${prefillCustomerId}`)
+      .then((res) => {
+        if (!active) return;
+        const customer = res.data?.data ?? res.data;
+        setSelectedCustomer(customer);
+        setCustomerSearch(customer?.full_name ?? customer?.name ?? customer?.email ?? "");
+      })
+      .catch(() => { if (active) setError("The selected customer could not be loaded."); });
+    return () => { active = false; };
+  }, [prefillCustomerId]);
+
   // Search customers
   useEffect(() => {
     if (!debouncedCustomerSearch || customerMode !== "search") { setCustomerResults([]); return; }
@@ -103,29 +118,32 @@ export default function AgentCreateBookingPage() {
 
   // Search tours
   useEffect(() => {
-    if (!debouncedTourSearch && !prefillTourId) { setTourResults([]); return; }
+    if (!debouncedTourSearch) { setTourResults([]); return; }
     let active = true;
     setTourLoading(true);
-    api.get("/tours", { params: { search: debouncedTourSearch || undefined, limit: 10 } })
+    api.get("/public/tours", { params: { search: debouncedTourSearch, limit: 10 } })
       .then((res) => {
         if (!active) return;
         const items: Tour[] = res.data?.items ?? res.data?.data ?? [];
         setTourResults(items);
-        // Auto-select if prefilled tour_id
-        if (prefillTourId && !selectedTour) {
-          const found = items.find((t) => String(t.id) === prefillTourId);
-          if (found) { setSelectedTour(found); setTourSearch(found.title); }
-        }
       })
       .catch(() => { if (active) setTourResults([]); })
       .finally(() => { if (active) setTourLoading(false); });
     return () => { active = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedTourSearch, prefillTourId]);
+  }, [debouncedTourSearch]);
 
-  // Prefill tour on mount
   useEffect(() => {
-    if (prefillTourId) setTourSearch(" ");
+    if (!prefillTourId) return;
+    let active = true;
+    api.get(`/public/tours/${prefillTourId}`)
+      .then((res) => {
+        if (!active) return;
+        const tour = res.data?.data ?? res.data;
+        setSelectedTour(tour);
+        setTourSearch(tour?.title ?? "");
+      })
+      .catch(() => { if (active) setError("The selected tour is not available for booking."); });
+    return () => { active = false; };
   }, [prefillTourId]);
 
   // Close dropdowns on outside click
@@ -143,7 +161,7 @@ export default function AgentCreateBookingPage() {
   }, []);
 
   const totalPax = adults + children;
-  const unitPrice = Number(selectedTour?.price ?? selectedTour?.price_from ?? 0);
+  const unitPrice = Number(selectedTour?.price_start_per_person ?? 0);
   const estimatedTotal = unitPrice * adults;
   const currency = selectedTour?.currency ?? "AED";
 
@@ -158,26 +176,39 @@ export default function AgentCreateBookingPage() {
       setError("Please fill in the new customer's name and email.");
       return;
     }
+    const agentId = dashboard?.user?.agent_id ?? user?.agent_id;
+    if (!agentId) { setError("Agent account could not be identified. Please sign out and sign back in."); return; }
 
     setSubmitting(true);
     try {
       let customerId = selectedCustomer?.id;
+      let primaryPhone = selectedCustomer?.phone ?? "";
 
       // Create customer inline if needed
       if (customerMode === "new") {
         const customerPhone = newCustomer.phone ? combinePhone(newCustomerPhoneCountryCode, newCustomer.phone) : "";
         const res = await api.post("/customers", { ...newCustomer, phone: customerPhone });
         customerId = res.data?.data?.id ?? res.data?.id;
+        primaryPhone = customerPhone;
       }
 
       const payload = {
         customer_id: customerId,
+        agent_id: agentId,
         tour_id: selectedTour.id,
+        tour_name: selectedTour.title,
         tour_date: travelDate,
-        adults,
-        children,
-        notes,
+        no_of_adults: adults,
+        no_of_children: children,
+        customer_notes: notes || undefined,
         booking_source: "agent",
+        travellers: [{
+          traveller_type: "adult",
+          full_name: selectedCustomer?.full_name ?? selectedCustomer?.name ?? newCustomer.full_name,
+          email: selectedCustomer?.email ?? newCustomer.email,
+          phone: primaryPhone,
+          is_primary_contact: true,
+        }],
       };
 
       const res = await api.post("/bookings/", payload);
@@ -348,7 +379,7 @@ export default function AgentCreateBookingPage() {
                     <div>
                       <p className="font-bold text-dash-text">{selectedTour.title}</p>
                       <p className="text-xs text-dash-muted">
-                        {selectedTour.duration ?? (selectedTour.duration_days ? `${selectedTour.duration_days} days` : "")}
+                        {selectedTour.number_of_days ? `${selectedTour.number_of_days} days` : ""}
                         {unitPrice > 0 && ` Â· From ${money(unitPrice, currency)}`}
                       </p>
                     </div>
@@ -389,8 +420,8 @@ export default function AgentCreateBookingPage() {
                             <div>
                               <p className="font-bold text-dash-text">{t.title}</p>
                               <p className="text-xs text-dash-muted">
-                                {t.duration ?? (t.duration_days ? `${t.duration_days} days` : "")}
-                                {(t.price || t.price_from) && ` Â· From ${money(t.price ?? t.price_from, t.currency ?? "AED")}`}
+                                {t.number_of_days ? `${t.number_of_days} days` : ""}
+                                {t.price_start_per_person && ` · From ${money(t.price_start_per_person, t.currency ?? "AED")}`}
                               </p>
                             </div>
                           </button>
@@ -509,7 +540,7 @@ export default function AgentCreateBookingPage() {
               {submitting ? (
                 <><Loader2 size={16} className="animate-spin" /> Creating booking…</>
               ) : (
-                <><Check size={16} /> Confirm Booking</>
+                <><Check size={16} /> Create Booking Request</>
               )}
             </button>
             <Link

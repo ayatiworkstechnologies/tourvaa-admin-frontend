@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LuBanknote as Banknote } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -19,12 +18,12 @@ function statusCls(s: string) {
 export default function AffiliatePayoutsPage() {
   const toast = useToast();
   const { dashboard } = useAuthContext();
-  const affiliateId = (dashboard?.user as Record<string, unknown>)?.affiliate_id ?? dashboard?.user?.id;
+  const affiliateId = dashboard?.user?.affiliate_id ?? null;
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!affiliateId) return;
+    if (!affiliateId) { setLoading(false); return; }
     async function load() {
       setLoading(true);
       try {
@@ -37,7 +36,7 @@ export default function AffiliatePayoutsPage() {
       }
     }
     void load();
-  }, [affiliateId]);
+  }, [affiliateId, toast]);
 
   const columns: DataTableColumn<Payout>[] = [
     { key: "payout_code", header: "Payout Code", className: "font-mono text-xs text-dash-body", render: (p) => p.payout_code },
@@ -51,7 +50,7 @@ export default function AffiliatePayoutsPage() {
     <div className="p-6 md:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-black text-dash-text">Payout History</h1>
-        <p className="mt-1 text-sm text-dash-muted">Track your commission payout requests and payment status.</p>
+        <p className="mt-1 text-sm text-dash-muted">Track commission payouts processed by the Tourvaa administration team.</p>
       </div>
 
       <div className="rounded-xl border border-dash-border bg-white shadow-sm p-0">

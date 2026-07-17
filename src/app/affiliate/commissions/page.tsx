@@ -12,12 +12,12 @@ type CommissionSummary = { total_commission?: number; paid_commission?: number; 
 export default function CommissionsPage() {
   const toast = useToast();
   const { dashboard } = useAuthContext();
-  const affiliateId = (dashboard?.user as Record<string, unknown>)?.affiliate_id ?? dashboard?.user?.id;
+  const affiliateId = dashboard?.user?.affiliate_id ?? null;
   const [summary, setSummary] = useState<CommissionSummary>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!affiliateId) return;
+    if (!affiliateId) { setLoading(false); return; }
     async function load() {
       setLoading(true);
       try {
@@ -30,7 +30,7 @@ export default function CommissionsPage() {
       }
     }
     void load();
-  }, [affiliateId]);
+  }, [affiliateId, toast]);
 
   const cur = summary.currency || "AED";
   const fmt = (v: number | undefined) => `${cur} ${Number(v || 0).toLocaleString()}`;
@@ -70,7 +70,7 @@ export default function CommissionsPage() {
             View Conversions <ArrowRight size={14} />
           </Link>
           <Link href="/affiliate/payouts" className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-purple-700">
-            Request Payout <ArrowRight size={14} />
+            View Payouts <ArrowRight size={14} />
           </Link>
         </div>
       </div>

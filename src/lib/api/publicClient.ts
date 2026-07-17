@@ -41,9 +41,9 @@ export type PublicTourDetail = PublicTour & {
   exclusions: { text: string }[];
   gallery: { image_url: string; alt_text: string; is_banner: boolean }[];
   pricing: { persons_from: number; persons_to: number | null; price_per_person: number; currency: string }[];
-  optional_activities: { name: string; description: string; price: number | null; currency: string }[];
-  accommodations: { name: string; description: string; price: number | null }[];
-  extensions: { title: string; description: string; duration_days: number | null; price: number | null }[];
+  optional_activities: { id: number; name: string; description: string; price: number | null; currency: string }[];
+  accommodations: { id: number; name: string; description: string; price: number | null }[];
+  extensions: { id: number; title: string; description: string; duration_days: number | null; price: number | null }[];
   discounts: { label: string; discount_type: string; value: number; valid_from: string | null; valid_to: string | null }[];
   calendar: { date: string; slots: number; status: string }[];
   similar_tours: PublicTour[];

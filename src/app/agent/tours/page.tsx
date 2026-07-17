@@ -4,23 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LuClock as Clock, LuMapPin as MapPin, LuPlus as Plus, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { mediaUrl } from "@/lib/utils/mediaUrl";
 
 type Tour = {
   id: number;
   title: string;
   slug?: string;
-  duration?: string;
-  duration_days?: number;
-  price?: string | number;
-  price_from?: string | number;
+  number_of_days?: number;
+  price_start_per_person?: string | number;
   currency?: string;
-  country?: string;
-  city?: string;
-  location?: string;
-  category?: string;
+  country_name?: string;
+  city_name?: string;
   category_name?: string;
-  thumbnail?: string;
-  image_url?: string;
+  banner_image?: string;
 };
 
 function money(value: string | number | undefined, currency = "AED") {
@@ -58,14 +54,9 @@ export default function AgentToursPage() {
     async function load() {
       setLoading(true);
       try {
-        let res;
-        try {
-          res = await api.get("/public/tours", {
-            params: { limit: 12, page, search: query || undefined },
-          });
-        } catch {
-          res = await api.get("/tours", { params: { limit: 12, page, search: query || undefined } });
-        }
+        const res = await api.get("/public/tours", {
+          params: { limit: 12, page, search: query || undefined },
+        });
         if (!active) return;
         const data = res.data;
         const items: Tour[] = data?.items ?? data?.data ?? data?.tours ?? [];
@@ -159,9 +150,9 @@ export default function AgentToursPage() {
               >
                 {/* Thumbnail */}
                 <div className="relative h-44 overflow-hidden bg-orange-50">
-                  {tour.thumbnail || tour.image_url ? (
+                  {tour.banner_image ? (
                     <img
-                      src={tour.thumbnail ?? tour.image_url}
+                      src={mediaUrl(tour.banner_image)}
                       alt={tour.title}
                       className="h-full w-full object-cover transition group-hover:scale-105"
                     />
@@ -170,9 +161,9 @@ export default function AgentToursPage() {
                       <MapPin size={32} className="text-orange-300" />
                     </div>
                   )}
-                  {(tour.category_name || tour.category) && (
+                  {tour.category_name && (
                     <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-xs font-bold text-dash-text shadow-sm">
-                      {tour.category_name ?? tour.category}
+                      {tour.category_name}
                     </span>
                   )}
                 </div>
@@ -181,16 +172,16 @@ export default function AgentToursPage() {
                   <h3 className="line-clamp-2 font-bold text-dash-text">{tour.title}</h3>
 
                   <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-dash-muted">
-                    {(tour.location || tour.city || tour.country) && (
+                    {(tour.city_name || tour.country_name) && (
                       <span className="flex items-center gap-1">
                         <MapPin size={12} />
-                        {tour.location ?? [tour.city, tour.country].filter(Boolean).join(", ")}
+                        {[tour.city_name, tour.country_name].filter(Boolean).join(", ")}
                       </span>
                     )}
-                    {(tour.duration || tour.duration_days) && (
+                    {tour.number_of_days && (
                       <span className="flex items-center gap-1">
                         <Clock size={12} />
-                        {tour.duration ?? `${tour.duration_days} days`}
+                        {tour.number_of_days} days
                       </span>
                     )}
                   </div>
@@ -199,7 +190,7 @@ export default function AgentToursPage() {
                     <div>
                       <p className="text-xs text-dash-muted">From</p>
                       <p className="text-base font-black text-orange-600">
-                        {money(tour.price ?? tour.price_from, tour.currency ?? "AED")}
+                        {money(tour.price_start_per_person, tour.currency ?? "AED")}
                       </p>
                     </div>
                     <Link

@@ -46,7 +46,7 @@ function fieldInputClass(hasError: boolean, extra = "") {
   return `w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 transition-all ${extra} ${
     hasError
       ? "border-red-400 focus:border-red-400 focus:ring-red-100"
-      : "border-dash-border focus:border-dash-brand focus:ring-sky-100"
+      : "border-dash-border focus:border-dash-brand focus:ring-teal-100"
   }`;
 }
 
@@ -228,9 +228,9 @@ export default function CustomerProfilePage() {
     : "?";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-8">
+    <div className="min-h-screen bg-dash-bg p-6 md:p-8">
       {/* Hero header */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-sky-500 to-sky-700 p-7 text-white shadow-xl shadow-sky-200/60 md:p-9">
+      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-teal-200/60 md:p-9">
         <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
         <div className="relative z-10 flex items-center gap-5">
@@ -244,8 +244,8 @@ export default function CustomerProfilePage() {
           </div>
           <div>
             <h1 className="text-2xl font-black leading-tight md:text-3xl">{profile.name || "My Profile"}</h1>
-            <p className="mt-1 text-sm font-medium text-sky-100">{profile.email}</p>
-            <p className="mt-2 text-sm text-sky-100">Manage your traveller details, address info, and security credentials.</p>
+            <p className="mt-1 text-sm font-medium text-white/80">{profile.email}</p>
+            <p className="mt-2 text-sm text-white/80">Manage your traveller details, address info, and security credentials.</p>
           </div>
         </div>
       </div>
@@ -274,7 +274,7 @@ export default function CustomerProfilePage() {
                 className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 transition-all ${
                   profileErrors.name
                     ? "border-red-400 focus:border-red-400 focus:ring-red-100"
-                    : "border-dash-border focus:border-dash-brand focus:ring-sky-100"
+                    : "border-dash-border focus:border-dash-brand focus:ring-teal-100"
                 }`}
                 required
                 placeholder="Your name"

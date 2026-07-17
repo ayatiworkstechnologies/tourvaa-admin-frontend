@@ -12,8 +12,6 @@ type Payout = {
   currency?: string;
   status?: string;
   payment_method?: string;
-  bank_name?: string;
-  account_number?: string;
   notes?: string;
   created_at?: string;
   paid_at?: string;
@@ -51,8 +49,6 @@ export default function PayoutsPage() {
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("AED");
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
-  const [bankName, setBankName] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -88,15 +84,11 @@ export default function PayoutsPage() {
         amount: Number(amount),
         currency,
         payment_method: paymentMethod,
-        bank_name: bankName || undefined,
-        account_number: accountNumber || undefined,
         notes: notes || undefined,
       });
       setFormSuccess(true);
       setShowForm(false);
       setAmount("");
-      setBankName("");
-      setAccountNumber("");
       setNotes("");
       void load();
     } catch (e: unknown) {
@@ -204,24 +196,6 @@ export default function PayoutsPage() {
               </select>
             </div>
             <div>
-              <label className={labelCls}>Bank Name</label>
-              <input
-                className={inputCls}
-                placeholder="e.g. Emirates NBD"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Account Number / IBAN</label>
-              <input
-                className={inputCls}
-                placeholder="Account or IBAN"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-              />
-            </div>
-            <div>
               <label className={labelCls}>Notes</label>
               <input
                 className={inputCls}
@@ -324,7 +298,6 @@ export default function PayoutsPage() {
                   </p>
                   <p className="text-xs text-dash-muted">
                     {p.payment_method?.replace(/_/g, " ") ?? "Bank Transfer"}
-                    {p.bank_name ? ` - ${p.bank_name}` : ""}
                   </p>
                   <p className="mt-0.5 text-xs text-dash-subtle">
                     Requested:{" "}

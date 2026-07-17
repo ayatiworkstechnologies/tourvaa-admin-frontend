@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -23,11 +23,17 @@ export default function CustomerRegisterPage() {
   const [customerRoleId, setCustomerRoleId] = useState<number | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [redirect, setRedirect] = useState<string | null>(null);
 
   const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } = useForm<FormValues>({
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
   const password = useWatch({ control, name: "password" });
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("redirect");
+    setRedirect(requested?.startsWith("/") && !requested.startsWith("//") ? requested : null);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -65,7 +71,7 @@ export default function CustomerRegisterPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-zinc-50 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 pb-16 pt-32">
       <div className="w-full max-w-md">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
 
@@ -75,8 +81,8 @@ export default function CustomerRegisterPage() {
               <h2 className="mt-4 text-xl font-bold text-zinc-950">Account created!</h2>
               <p className="mt-2 text-sm text-zinc-500">Your account has been created successfully. You can now sign in.</p>
               <Link
-                href="/login"
-                className="mt-6 flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-700"
+                href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"}
+                className="mt-6 flex items-center gap-2 rounded-xl bg-teal-600 px-6 py-3 text-sm font-bold text-white hover:bg-teal-700"
               >
                 Sign In Now
               </Link>
@@ -84,7 +90,7 @@ export default function CustomerRegisterPage() {
           ) : (
             <>
               <div className="mb-6 text-center">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
                   <UserPlus size={22} />
                 </span>
                 <h1 className="mt-3 text-xl font-bold text-zinc-950">Create your account</h1>
@@ -99,7 +105,7 @@ export default function CustomerRegisterPage() {
                     <input
                       placeholder="Your full name"
                       {...register("name", { required: "Name is required." })}
-                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                     />
                   </div>
                   {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
@@ -117,7 +123,7 @@ export default function CustomerRegisterPage() {
                         required: "Email is required.",
                         validate: (v) => validateEmail(v) || "Enter a valid email address.",
                       })}
-                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                     />
                   </div>
                   {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
@@ -136,7 +142,7 @@ export default function CustomerRegisterPage() {
                         minLength: { value: 8, message: "Minimum 8 characters." },
                         validate: (v) => validatePassword(v) || passwordHelp,
                       })}
-                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-10 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-10 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                     />
                     <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-500" aria-label="Toggle password">
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -157,7 +163,7 @@ export default function CustomerRegisterPage() {
                         required: "Please confirm your password.",
                         validate: (v) => v === password || "Passwords do not match.",
                       })}
-                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-10 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-10 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                     />
                     <button type="button" onClick={() => setShowConfirm((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-500" aria-label="Toggle confirm password">
                       {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -167,7 +173,7 @@ export default function CustomerRegisterPage() {
                 </div>
 
                 {message && (
-                  <div className={`rounded-xl px-4 py-3 text-sm ${isError ? "bg-red-50 text-red-600" : "bg-indigo-50 text-indigo-600"}`}>
+                  <div className={`rounded-xl px-4 py-3 text-sm ${isError ? "bg-red-50 text-red-600" : "bg-teal-50 text-teal-600"}`}>
                     {message}
                   </div>
                 )}
@@ -175,7 +181,7 @@ export default function CustomerRegisterPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 py-3 text-sm font-bold text-white transition hover:bg-teal-700 disabled:opacity-60"
                 >
                   <UserPlus size={15} />
                   {isSubmitting ? "Creating account…" : "Create Account"}
@@ -183,13 +189,13 @@ export default function CustomerRegisterPage() {
 
                 <p className="text-center text-sm text-zinc-500">
                   Already have an account?{" "}
-                  <Link href="/login" className="font-bold text-indigo-600 hover:underline">Sign in</Link>
+                  <Link href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"} className="font-bold text-teal-600 hover:underline">Sign in</Link>
                 </p>
                 <p className="text-center text-xs text-zinc-400">
                   Are you a supplier or agent?{" "}
-                  <Link href="/join/supplier" className="font-semibold text-indigo-600 hover:underline">Join as Supplier</Link>
+                  <Link href="/join/supplier" className="font-semibold text-teal-600 hover:underline">Join as Supplier</Link>
                   {" · "}
-                  <Link href="/join/agent" className="font-semibold text-indigo-600 hover:underline">Join as Agent</Link>
+                  <Link href="/join/agent" className="font-semibold text-teal-600 hover:underline">Join as Agent</Link>
                 </p>
               </form>
             </>

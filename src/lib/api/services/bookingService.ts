@@ -30,6 +30,9 @@ export type Booking = {
   tour_date: string;
   country: string;
   supplier_name: string;
+  no_of_adults: number;
+  no_of_children: number;
+  no_of_infants: number;
   adults_count: number;
   children_count: number;
   total_travellers: number;
@@ -42,6 +45,8 @@ export type Booking = {
   payment_status: string;
   payment_type: string;
   notes?: string | null;
+  customer_notes?: string | null;
+  admin_notes?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
   travellers?: BookingTraveller[];
@@ -58,11 +63,20 @@ export type BookingLineItem = {
   title?: string;
   amount?: string;
   price?: string;
+  activity_name_snapshot?: string;
+  accommodation_name_snapshot?: string;
+  extension_name_snapshot?: string;
+  total_price?: string;
+  unit_price?: string;
+  quantity?: number;
 };
 
 export type BookingCommunication = {
   id: number;
   message: string;
+  subject?: string | null;
+  message_type?: string | null;
+  visibility?: string | null;
   sender_type?: string | null;
   created_at?: string | null;
 };
@@ -90,8 +104,10 @@ export type BookingCreate = {
   tour_id?: number;
   tour_calendar_id?: number;
   tour_date?: string;
-  adults_count: number;
-  children_count?: number;
+  no_of_adults: number;
+  no_of_children?: number;
+  no_of_infants?: number;
+  booking_source?: "admin" | "agent" | "customer";
   payment_type?: string;
   notes?: string;
   travellers?: BookingTraveller[];

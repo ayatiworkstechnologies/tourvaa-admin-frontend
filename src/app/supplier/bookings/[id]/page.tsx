@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuChevronDown as ChevronDown, LuClock as Clock, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
 
 type Traveller = {
@@ -39,6 +39,7 @@ type Booking = {
   total_travellers?: number;
   adults_count?: number;
   booking_status: string;
+  supplier_acceptance_status?: string;
   payment_status?: string;
   final_amount?: string | number;
   total_amount?: string | number;
@@ -88,21 +89,31 @@ function InfoRow({ label, value }: { label: string; value?: string | number | nu
 
 function ActionBanner({
   status,
+  paymentStatus,
+  supplierAcceptanceStatus,
   onAction,
   busy,
 }: {
   status: string;
+  paymentStatus?: string;
+  supplierAcceptanceStatus?: string;
   onAction: (type: ActionType, payload?: Record<string, string>) => void;
   busy: ActionType | null;
 }) {
   const [showCancel, setShowCancel] = useState(false);
+  const [showDecline, setShowDecline] = useState(false);
   const [showPostpone, setShowPostpone] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [declineReason, setDeclineReason] = useState("");
   const [postponeReason, setPostponeReason] = useState("");
   const [newDate, setNewDate] = useState("");
 
   const v = status.toLowerCase();
-  const isPending = ["pending", "pending_confirmation", "pending_supplier_acceptance", "pending_payment"].includes(v);
+  const payment = (paymentStatus || "").toLowerCase();
+  const acceptance = (supplierAcceptanceStatus || "").toLowerCase();
+  const paymentReady = ["authorized", "paid", "partially_paid", "partial"].includes(payment);
+  const isPending = acceptance === "pending" && paymentReady && ["pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(v);
+  const isAwaitingPayment = acceptance === "pending" && !paymentReady && v === "pending_payment";
   const isConfirmed = v === "confirmed" || v === "ongoing";
   const isPostponed = v === "postponed";
 
@@ -112,6 +123,17 @@ function ActionBanner({
         <p className="flex items-center gap-2 text-sm font-bold text-emerald-800">
           <CheckCircle2 size={16} /> This booking is already completed.
         </p>
+      </div>
+    );
+  }
+
+  if (isAwaitingPayment) {
+    return (
+      <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+        <p className="flex items-center gap-2 text-sm font-bold text-amber-800">
+          <Clock size={16} /> Waiting for customer payment authorization.
+        </p>
+        <p className="mt-1 text-sm text-amber-700">Accept and decline actions will be available after the payment hold is ready.</p>
       </div>
     );
   }
@@ -134,12 +156,12 @@ function ActionBanner({
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60 transition-all"
             >
               {busy === "confirm" ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
-              Confirm Booking
+              Accept Booking
             </button>
             <button
               type="button"
               disabled={busy !== null}
-              onClick={() => onAction("decline")}
+              onClick={() => setShowDecline(true)}
               className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-60 transition-all"
             >
               <XCircle size={15} /> Decline
@@ -177,6 +199,18 @@ function ActionBanner({
           </>
         )}
       </div>
+
+      {showDecline && (
+        <div className="mt-4 rounded-xl border border-red-100 bg-white p-4">
+          <textarea value={declineReason} onChange={(e) => setDeclineReason(e.target.value)} placeholder="Explain why this booking cannot be accepted..." rows={3} className="w-full resize-none rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-red-400" />
+          <div className="mt-3 flex gap-2">
+            <button type="button" disabled={!declineReason.trim() || busy !== null} onClick={() => onAction("decline", { reason: declineReason })} className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
+              {busy === "decline" ? "Declining..." : "Confirm Decline"}
+            </button>
+            <button type="button" onClick={() => setShowDecline(false)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-body">Close</button>
+          </div>
+        </div>
+      )}
 
       {showPostpone && (
         <div className="mt-4 rounded-xl border border-[#D9ECFF] bg-white p-4">
@@ -370,10 +404,10 @@ export default function SupplierBookingDetailPage() {
     try {
       if (type === "confirm") {
         await api.post(`/supplier/bookings/${bookingId}/accept`, {});
-        showToast("success", "Booking confirmed! Customer has been notified.");
+        showToast("success", "Booking accepted. The customer has been notified.");
       } else if (type === "decline") {
-        await api.post(`/supplier/bookings/${bookingId}/decline`, {});
-        showToast("success", "Booking declined.");
+        await api.post(`/supplier/bookings/${bookingId}/decline`, { reason: payload?.reason });
+        showToast("success", "Booking declined and the payment hold has been released.");
       } else if (type === "complete") {
         await api.patch(`/supplier/bookings/${bookingId}/complete`, {});
         showToast("success", "Booking marked as completed. Customer has been notified.");
@@ -480,7 +514,7 @@ export default function SupplierBookingDetailPage() {
       )}
 
       {/* Action banner */}
-      <ActionBanner status={booking.booking_status} onAction={handleAction} busy={busy} />
+      <ActionBanner status={booking.booking_status} paymentStatus={booking.payment_status} supplierAcceptanceStatus={booking.supplier_acceptance_status} onAction={handleAction} busy={busy} />
 
       {/* Details grid */}
       <div className="grid gap-5 lg:grid-cols-2">
@@ -496,6 +530,7 @@ export default function SupplierBookingDetailPage() {
           <InfoRow label="Travellers" value={pax ?? "-"} />
           <InfoRow label="Adults" value={booking.adults_count} />
           <InfoRow label="Booking Status" value={booking.booking_status.replace(/_/g, " ")} />
+          <InfoRow label="Supplier Decision" value={(booking.supplier_acceptance_status ?? "-").replace(/_/g, " ")} />
           <InfoRow label="Payment Status" value={booking.payment_status ?? "-"} />
           <InfoRow label="Booked On" value={dateStr(booking.created_at)} />
         </div>

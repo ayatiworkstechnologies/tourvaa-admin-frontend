@@ -15,7 +15,7 @@ export function validateSlug(value: string) {
 }
 
 export function validatePassword(value: string) {
-  return value.length >= 8 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value);
+  return value.length >= 8 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value) && /[^A-Za-z0-9]/.test(value);
 }
 
 export function validateMobile(value: string, required = false) {
@@ -48,5 +48,5 @@ export function splitPhone(value: string, countryCodes: string[] = []) {
   };
 }
 
-export const passwordHelp = "Use at least 8 characters with uppercase, lowercase, and a number.";
+export const passwordHelp = "Use at least 8 characters with uppercase, lowercase, a number, and a special character.";
 export const mobileHelp = "Select country code and enter numbers only, for example +919876543210.";

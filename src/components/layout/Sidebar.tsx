@@ -26,21 +26,107 @@ type SidebarProps = {
   mobile?: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  theme?: SidebarTheme;
 };
 
-const iconColors = [
-  "text-blue-500",
-  "text-emerald-500",
-  "text-amber-500",
-  "text-violet-500",
-  "text-pink-500",
-  "text-teal-500",
-  "text-rose-500",
-  "text-cyan-500",
-  "text-fuchsia-500",
-];
+export type SidebarTheme = "admin" | "supplier" | "agent" | "customer";
 
-void iconColors; // suppress unused warning
+const SIDEBAR_THEMES: Record<SidebarTheme, {
+  shell: string;
+  headerBorder: string;
+  logo: string;
+  title: string;
+  subtitle: string;
+  section: string;
+  active: string;
+  activeIcon: string;
+  activeDot: string;
+  inactive: string;
+  inactiveIcon: string;
+  footerBorder: string;
+  logout: string;
+  logoutIcon: string;
+  toggle: string;
+  glow: string;
+  edge: string;
+}> = {
+  admin: {
+    shell: "border-[#E1E7F0] bg-white shadow-[8px_0_32px_-20px_rgba(15,23,42,0.24)]",
+    headerBorder: "border-[#E8EDF5]",
+    logo: "bg-gradient-to-br from-[#243B6B] to-[#14264D] text-white shadow-blue-200",
+    title: "text-[#13264B]",
+    subtitle: "text-[#294C86]",
+    section: "text-[#294C86]/65",
+    active: "bg-[#1D3A6D] text-white shadow-[0_8px_20px_-10px_rgba(29,58,109,0.8)]",
+    activeIcon: "text-white",
+    activeDot: "bg-white",
+    inactive: "text-slate-600 hover:bg-slate-50 hover:text-[#14264D]",
+    inactiveIcon: "text-[#45679A]",
+    footerBorder: "border-[#E8EDF5]",
+    logout: "text-slate-600 hover:bg-rose-50 hover:text-rose-600",
+    logoutIcon: "text-rose-500",
+    toggle: "border-[#D9E1EC] bg-white text-[#294C86] hover:bg-[#F4F7FB]",
+    glow: "bg-transparent",
+    edge: "w-px bg-[#CBD6E6]",
+  },
+  supplier: {
+    shell: "border-[#DDEBE5] bg-white shadow-[8px_0_32px_-20px_rgba(5,150,105,0.22)]",
+    headerBorder: "border-[#E2EEE8]",
+    logo: "bg-gradient-to-br from-[#34A853] to-[#16833A] text-white shadow-emerald-200",
+    title: "text-[#123B24]",
+    subtitle: "text-[#188341]",
+    section: "text-[#188341]/65",
+    active: "bg-[#16833A] text-white shadow-[0_8px_20px_-10px_rgba(22,131,58,0.8)]",
+    activeIcon: "text-white",
+    activeDot: "bg-white",
+    inactive: "text-slate-600 hover:bg-emerald-50/60 hover:text-[#126B34]",
+    inactiveIcon: "text-[#3A9A59]",
+    footerBorder: "border-[#E2EEE8]",
+    logout: "text-slate-600 hover:bg-rose-50 hover:text-rose-600",
+    logoutIcon: "text-rose-500",
+    toggle: "border-[#D4E7DC] bg-white text-[#188341] hover:bg-emerald-50",
+    glow: "bg-transparent",
+    edge: "w-px bg-[#CDE3D6]",
+  },
+  agent: {
+    shell: "border-[#F2C9AA] bg-[#FFF8F2] shadow-[8px_0_32px_-20px_rgba(234,88,12,0.3)]",
+    headerBorder: "border-[#F4D9C5]",
+    logo: "bg-gradient-to-br from-[#FF8A34] to-[#E65C00] text-white shadow-orange-200",
+    title: "text-[#512708]",
+    subtitle: "text-[#D95700]",
+    section: "text-[#D95700]/65",
+    active: "bg-[#E65C00] text-white shadow-[0_8px_20px_-10px_rgba(230,92,0,0.85)]",
+    activeIcon: "text-white",
+    activeDot: "bg-white",
+    inactive: "text-slate-600 hover:bg-[#FFF0E4] hover:text-[#B94700]",
+    inactiveIcon: "text-[#E8782C]",
+    footerBorder: "border-[#F4D9C5]",
+    logout: "text-slate-600 hover:bg-rose-50 hover:text-rose-600",
+    logoutIcon: "text-rose-500",
+    toggle: "border-[#EFDFD1] bg-white text-[#D95700] hover:bg-orange-50",
+    glow: "bg-transparent",
+    edge: "w-1 bg-gradient-to-b from-[#FB923C] via-[#F97316] to-[#EA580C]",
+  },
+  customer: {
+    shell: "border-[#D9E9E6] bg-white shadow-[8px_0_32px_-20px_rgba(7,91,87,0.22)]",
+    headerBorder: "border-[#E1EEEC]",
+    logo: "bg-gradient-to-br from-[#0F8B83] to-[#075B57] text-white shadow-teal-200",
+    title: "text-[#063C42]",
+    subtitle: "text-[#075B57]",
+    section: "text-[#075B57]/60",
+    active: "bg-[#075B57] text-white shadow-[0_8px_20px_-10px_rgba(7,91,87,0.8)]",
+    activeIcon: "text-white",
+    activeDot: "bg-white",
+    inactive: "text-slate-600 hover:bg-teal-50/70 hover:text-[#075B57]",
+    inactiveIcon: "text-[#248E87]",
+    footerBorder: "border-[#E1EEEC]",
+    logout: "text-slate-600 hover:bg-rose-50 hover:text-rose-600",
+    logoutIcon: "text-rose-500",
+    toggle: "border-[#D5E7E4] bg-white text-[#075B57] hover:bg-teal-50",
+    glow: "bg-transparent",
+    edge: "w-1 bg-gradient-to-b from-[#075B57] via-[#0F8B83] to-[#F97316]",
+  },
+};
 
 type TooltipState = { label: string; y: number } | null;
 
@@ -52,11 +138,13 @@ export default function Sidebar({
   mobile = false,
   collapsed = false,
   onToggleCollapse,
+  theme = "admin",
 }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
   const [tooltip, setTooltip] = useState<TooltipState>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const colors = SIDEBAR_THEMES[theme];
 
   useLayoutEffect(() => {
     if (tooltipRef.current && tooltip) {
@@ -97,21 +185,22 @@ export default function Sidebar({
           hideTooltip();
           if (mobile) window.dispatchEvent(new Event("tourvaa:close-mobile-sidebar"));
         }}
-        className={`flex h-14 w-full items-center rounded-r-full px-6 transition ${
-          active ? "bg-blue-500 text-white shadow-md" : "text-slate-800 hover:bg-slate-100"
-        } ${collapsed ? "mx-2 w-auto justify-center rounded-xl px-0" : ""}`}
+        className={`group relative mx-3 flex h-12 items-center rounded-xl px-3.5 transition-all duration-200 ${
+          active ? colors.active : colors.inactive
+        } ${collapsed ? "mx-2 justify-center px-0" : ""}`}
       >
         <span className="flex h-6 w-6 shrink-0 items-center justify-center">
           <Icon
-            className={`h-5 w-5 ${active ? "text-white" : "text-slate-600"}`}
+            className={`h-5 w-5 transition-colors ${active ? colors.activeIcon : colors.inactiveIcon}`}
             strokeWidth={1.8}
           />
         </span>
         {!collapsed && (
-          <span className="ml-4 min-w-0 truncate text-[16px] font-medium leading-none">
+          <span className="ml-3.5 min-w-0 truncate text-[14px] font-semibold leading-none">
             {item.label}
           </span>
         )}
+        {active && !collapsed && <span className={`absolute right-3 h-1.5 w-1.5 rounded-full ${colors.activeDot}`} />}
       </Link>
     );
   }
@@ -127,7 +216,7 @@ export default function Sidebar({
       return (
         <div key={`${item.module ?? index}-${item.href}-wrap`}>
           {showSection && (
-            <div className="pb-2 pl-6 pt-5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+            <div className={`pb-2 pl-6 pt-5 text-[10px] font-black uppercase tracking-[0.16em] ${colors.section}`}>
               {section}
             </div>
           )}
@@ -140,30 +229,32 @@ export default function Sidebar({
   return (
     <>
       <aside
-        className={`left-0 top-0 z-40 h-screen flex-col border-r border-dash-border bg-white shadow-[2px_0_8px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 ${
+        className={`left-0 top-0 z-40 h-screen flex-col border-r transition-all duration-300 ${colors.shell} ${
           mobile ? "flex w-65" : `fixed hidden lg:flex ${collapsed ? "w-20" : "w-65"}`
         }`}
       >
+        <span className={`pointer-events-none absolute inset-y-0 right-0 z-10 ${colors.edge}`} />
+        <div className={`pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full blur-3xl ${colors.glow}`} />
         {/* header */}
         <div
-          className={`relative flex h-16 shrink-0 items-center border-b border-dash-border ${
-            collapsed ? "justify-center px-3" : "justify-between px-5"
+          className={`relative flex h-20 shrink-0 items-center border-b ${colors.headerBorder} ${
+            collapsed ? "justify-center px-3" : "justify-between px-4"
           }`}
         >
           {collapsed ? (
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-dash-brand text-white shadow-sm">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-lg ${colors.logo}`}>
               <LogoIcon size={18} strokeWidth={2.5} />
             </div>
           ) : (
             <Link href={dashboardHref} className="flex min-w-0 items-center gap-3 overflow-hidden">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-dash-brand text-white shadow-sm">
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-lg ${colors.logo}`}>
                 <LogoIcon size={18} strokeWidth={2.5} />
               </div>
               <div className="flex min-w-0 flex-col justify-center">
-                <h1 className="mb-0.5 truncate text-[17px] font-black leading-none tracking-tight text-dash-text">
+                <h1 className={`mb-1 truncate text-[18px] font-black leading-none tracking-tight ${colors.title}`}>
                   {title}
                 </h1>
-                <p className="text-[9px] font-bold uppercase leading-none tracking-wider text-dash-subtle">
+                <p className={`text-[9px] font-black uppercase leading-none tracking-[0.16em] ${colors.subtitle}`}>
                   {subtitle}
                 </p>
               </div>
@@ -175,8 +266,8 @@ export default function Sidebar({
               type="button"
               onClick={onToggleCollapse}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dash-border bg-white text-dash-muted shadow-sm transition-colors hover:bg-[#F3F8FC] ${
-                collapsed ? "absolute -right-3 top-6 z-50" : ""
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border shadow-sm transition-colors ${colors.toggle} ${
+                collapsed ? "absolute -right-3.5 top-6.5 z-50" : ""
               }`}
             >
               {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
@@ -185,26 +276,26 @@ export default function Sidebar({
         </div>
 
         {/* nav + logout */}
-        <div className="flex min-h-0 flex-1 flex-col pb-4 pt-4">
-          <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none pr-3">
+        <div className="relative flex min-h-0 flex-1 flex-col pb-4 pt-3">
+          <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none">
             {renderGroupedItems(mainItems)}
           </nav>
 
-          <div className="mt-2 shrink-0 space-y-1 border-t border-dash-border pr-3 pt-3">
+          <div className={`mt-2 shrink-0 space-y-1 border-t pt-3 ${colors.footerBorder}`}>
             {bottomItems.map((item, index) => renderSidebarItem(item, index))}
             <button
               type="button"
               onClick={() => logout("/")}
               onMouseEnter={(e) => showTooltip(e, "Logout")}
               onMouseLeave={hideTooltip}
-              className={`flex h-14 w-full items-center rounded-r-full px-6 text-slate-800 transition hover:bg-slate-100 ${
-                collapsed ? "mx-2 w-auto justify-center rounded-xl px-0" : ""
+              className={`flex h-12 w-full items-center rounded-xl px-3.5 transition ${colors.logout} ${
+                collapsed ? "justify-center px-0" : ""
               }`}
             >
               <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-                <LogOut className="h-5 w-5 text-slate-600" strokeWidth={1.8} />
+                <LogOut className={`h-5 w-5 ${colors.logoutIcon}`} strokeWidth={1.8} />
               </span>
-              {!collapsed && <span className="ml-4 text-[16px] font-medium leading-none">Logout</span>}
+              {!collapsed && <span className="ml-3.5 text-[14px] font-semibold leading-none">Sign out</span>}
             </button>
           </div>
         </div>

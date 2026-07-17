@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LuMousePointerClick as MousePointerClick } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -12,7 +11,7 @@ type Click = { id: number; ip_address?: string; user_agent?: string; referrer?: 
 export default function ClicksPage() {
   const toast = useToast();
   const { dashboard } = useAuthContext();
-  const affiliateId = (dashboard?.user as Record<string, unknown>)?.affiliate_id ?? dashboard?.user?.id;
+  const affiliateId = dashboard?.user?.affiliate_id ?? null;
   const [clicks, setClicks] = useState<Click[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -20,7 +19,7 @@ export default function ClicksPage() {
   const limit = 20;
 
   useEffect(() => {
-    if (!affiliateId) return;
+    if (!affiliateId) { setLoading(false); return; }
     async function load() {
       setLoading(true);
       try {
@@ -35,7 +34,7 @@ export default function ClicksPage() {
       }
     }
     void load();
-  }, [affiliateId, page]);
+  }, [affiliateId, page, toast]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 

@@ -2,22 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuHeadphones as Headphones, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuReceiptText as ReceiptText, LuUser as User, LuUsersRound as UsersRound } from "react-icons/lu";
+import { LuCalendarCheck as CalendarCheck, LuCompass as Compass, LuCreditCard as CreditCard, LuFileText as FileText, LuHeadphones as Headphones, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuReceiptText as ReceiptText, LuUser as User, LuUsersRound as UsersRound } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import { portalThemeStyles } from "@/lib/constants/portalThemes";
 
 const NAV = [
   { href: "/customer/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/tours", icon: MapPinned, label: "Browse Tours" },
-  { href: "/customer/bookings", icon: CalendarCheck, label: "My Bookings" },
-  { href: "/customer/payments", icon: CreditCard, label: "Payments" },
-  { href: "/customer/invoices", icon: ReceiptText, label: "Invoices" },
-  { href: "/customer/travellers", icon: UsersRound, label: "Travellers" },
-  { href: "/customer/cancellations", icon: FileText, label: "Cancellations" },
-  { href: "/customer/profile", icon: User, label: "My Profile" },
-  { href: "/customer/support", icon: Headphones, label: "Support" },
+  { href: "/tours", icon: MapPinned, label: "Browse Tours", section: "My Travel" },
+  { href: "/customer/bookings", icon: CalendarCheck, label: "My Bookings", section: "My Travel" },
+  { href: "/customer/travellers", icon: UsersRound, label: "Travellers", section: "My Travel" },
+  { href: "/customer/payments", icon: CreditCard, label: "Payments", section: "Billing" },
+  { href: "/customer/invoices", icon: ReceiptText, label: "Invoices", section: "Billing" },
+  { href: "/customer/cancellations", icon: FileText, label: "Cancellations", section: "Billing" },
+  { href: "/customer/support", icon: Headphones, label: "Support", placement: "bottom" as const },
+  { href: "/customer/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -80,11 +81,13 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const pageTitle = getTitle(pathname);
 
   return (
-    <div className="flex min-h-screen bg-dash-bg">
+    <div className="flex min-h-screen bg-dash-bg" style={portalThemeStyles.customer}>
       <Sidebar
         navItems={NAV}
         title="Tourvaa"
         subtitle="Traveller"
+        logoIcon={Compass}
+        theme="customer"
         mobile={false}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
@@ -94,7 +97,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
         <div className="fixed inset-0 z-50 lg:hidden">
           <button className="absolute inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />
           <div className="relative h-full w-[260px] bg-white shadow-2xl">
-            <Sidebar navItems={NAV} title="Tourvaa" subtitle="Traveller" mobile={true} collapsed={false} onToggleCollapse={() => {}} />
+            <Sidebar navItems={NAV} title="Tourvaa" subtitle="Traveller" logoIcon={Compass} theme="customer" mobile={true} collapsed={false} onToggleCollapse={() => {}} />
           </div>
         </div>
       )}
@@ -107,7 +110,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
           role="Traveller"
           profileHref="/customer/profile"
           onMenuClick={() => setSidebarOpen(true)}
-          theme="sky"
+          theme="teal"
         />
 
         <main className="flex-1">{children}</main>

@@ -1,23 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LuCalendarCheck as CalendarCheck, LuChevronDown as ChevronDown, LuFileText as FileText, LuLayoutDashboard as LayoutDashboard, LuLogOut as LogOut, LuMapPinned as MapPinned, LuMenu as Menu, LuMessageSquare as MessageSquare, LuPlus as Plus, LuUser as User, LuUsers as Users } from "react-icons/lu";
+import { LuBriefcaseBusiness as BriefcaseBusiness, LuCalendarCheck as CalendarCheck, LuFileText as FileText, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPlus as Plus, LuUser as User, LuUsers as Users } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import { portalThemeStyles } from "@/lib/constants/portalThemes";
 
 const NAV = [
   { href: "/agent/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/agent/tours", icon: MapPinned, label: "Browse Tours" },
-  { href: "/agent/bookings", icon: CalendarCheck, label: "Bookings" },
-  { href: "/agent/bookings/create", icon: Plus, label: "New Booking" },
-  { href: "/agent/customers", icon: Users, label: "My Customers" },
-  { href: "/agent/invoices", icon: FileText, label: "Invoices" },
-  { href: "/agent/messages", icon: MessageSquare, label: "Messages" },
-  { href: "/agent/profile", icon: User, label: "My Profile" },
+  { href: "/agent/tours", icon: MapPinned, label: "Browse Tours", section: "Sales Workspace" },
+  { href: "/agent/bookings", icon: CalendarCheck, label: "Bookings", section: "Sales Workspace" },
+  { href: "/agent/bookings/create", icon: Plus, label: "New Booking", section: "Sales Workspace" },
+  { href: "/agent/customers", icon: Users, label: "My Customers", section: "Sales Workspace" },
+  { href: "/agent/invoices", icon: FileText, label: "Invoices", section: "Finance" },
+  { href: "/agent/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
+  { href: "/agent/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -42,7 +42,7 @@ function getTitle(pathname: string) {
 export default function AgentLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isLoggedIn, loading, user, logout, dashboard } = useAuthContext();
+  const { isLoggedIn, loading, user, dashboard } = useAuthContext();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -79,11 +79,13 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   const pageTitle = getTitle(pathname);
 
   return (
-    <div className="flex min-h-screen bg-dash-bg">
+    <div className="flex min-h-screen bg-dash-bg" style={portalThemeStyles.agent}>
       <Sidebar
         navItems={NAV}
         title="Tourvaa"
         subtitle="Agent"
+        logoIcon={BriefcaseBusiness}
+        theme="agent"
         mobile={false}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
@@ -93,7 +95,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         <div className="fixed inset-0 z-50 lg:hidden">
           <button className="absolute inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />
           <div className="relative h-full w-[260px] bg-white shadow-2xl">
-            <Sidebar navItems={NAV} title="Tourvaa" subtitle="Agent" mobile={true} collapsed={false} onToggleCollapse={() => {}} />
+            <Sidebar navItems={NAV} title="Tourvaa" subtitle="Agent" logoIcon={BriefcaseBusiness} theme="agent" mobile={true} collapsed={false} onToggleCollapse={() => {}} />
           </div>
         </div>
       )}

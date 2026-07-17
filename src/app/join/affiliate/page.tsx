@@ -39,7 +39,16 @@ export default function JoinAffiliatePage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 700));
+    const subject = `Affiliate application - ${form.name.trim()}`;
+    const body = [
+      `Name: ${form.name.trim()}`,
+      `Email: ${form.email.trim()}`,
+      `Website / social profile: ${form.website.trim() || "Not provided"}`,
+      "",
+      "Audience:",
+      form.audience.trim(),
+    ].join("\n");
+    window.location.href = `mailto:hello@tourvaa.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     setSent(true);
     setSubmitting(false);
   };
@@ -123,7 +132,7 @@ export default function JoinAffiliatePage() {
               </div>
               <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50 p-5">
                 <p className="text-sm font-bold text-violet-800">No minimum requirement</p>
-                <p className="mt-1 text-sm text-violet-700">You earn from your very first referral. There's no minimum booking threshold to unlock payouts.</p>
+                <p className="mt-1 text-sm text-violet-700">You earn from your very first referral. There&apos;s no minimum booking threshold to unlock payouts.</p>
               </div>
             </div>
           </div>
@@ -136,8 +145,8 @@ export default function JoinAffiliatePage() {
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50">
                     <CheckCircle2 size={34} className="text-violet-500" />
                   </div>
-                  <p className="mt-4 text-xl font-black text-zinc-950">Application received!</p>
-                  <p className="mt-2 text-sm text-slate-500">Once approved, your unique affiliate link will be emailed within 1 business day.</p>
+                  <p className="mt-4 text-xl font-black text-zinc-950">Application email prepared</p>
+                  <p className="mt-2 text-sm text-slate-500">Complete and send the email in your mail application. The Tourvaa team will contact you after reviewing it.</p>
                   <Link href="/" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-600">
                     Back to Home
                   </Link>
@@ -168,7 +177,7 @@ export default function JoinAffiliatePage() {
                       <textarea required rows={4} value={form.audience} onChange={(e) => set("audience", e.target.value)} placeholder="Platform, audience size, geographic focus, travel interests…" className={`${INPUT} resize-none`} />
                     </div>
                     <button type="submit" disabled={submitting} className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-500 py-3.5 text-sm font-bold text-white transition-all hover:bg-violet-600 disabled:opacity-55">
-                      {submitting ? "Submitting…" : <><span>Apply Now</span> <ArrowRight size={15} /></>}
+                      {submitting ? "Preparing…" : <><span>Prepare Application Email</span> <ArrowRight size={15} /></>}
                     </button>
                     <p className="text-center text-xs text-slate-400">We never share your details with third parties.</p>
                   </form>

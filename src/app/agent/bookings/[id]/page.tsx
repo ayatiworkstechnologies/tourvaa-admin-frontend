@@ -13,8 +13,8 @@ type Traveller = {
   full_name?: string;
   passport_number?: string;
   nationality?: string;
-  dob?: string;
-  type?: string;
+  age?: number;
+  traveller_type?: string;
 };
 
 type Booking = {
@@ -23,17 +23,20 @@ type Booking = {
   customer_name?: string;
   customer_email?: string;
   customer_phone?: string;
+  customer?: { id: number; name?: string; email?: string };
   tour_name?: string;
   tour_date?: string | null;
   booking_status: string;
   payment_status: string;
+  supplier_acceptance_status?: string;
   final_amount?: string | number;
   amount_paid?: string | number;
   amount_pending?: string | number;
   currency?: string;
-  adults?: number;
-  children?: number;
+  no_of_adults?: number;
+  no_of_children?: number;
   notes?: string;
+  customer_notes?: string;
   booking_source?: string;
   created_at?: string;
   travellers?: Traveller[];
@@ -42,7 +45,6 @@ type Booking = {
 type Invoice = {
   id: number;
   invoice_number?: string;
-  download_url?: string;
 };
 
 function money(value: string | number | undefined, currency = "AED") {
@@ -90,6 +92,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [invoiceError, setInvoiceError] = useState("");
   const [downloadLoading, setDownloadLoading] = useState(false);
 
   useEffect(() => {
@@ -121,6 +124,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
   async function handleDownloadInvoice() {
     if (!invoice) return;
+    setInvoiceError("");
     setDownloadLoading(true);
     try {
       const res = await api.get(`/invoices/${invoice.id}/download`, { responseType: "blob" });
@@ -131,8 +135,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
-      // fallback — open in new tab
-      if (invoice.download_url) window.open(invoice.download_url, "_blank");
+      setInvoiceError("Invoice could not be downloaded.");
     } finally {
       setDownloadLoading(false);
     }
@@ -166,7 +169,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const travellerColumns: DataTableColumn<Traveller>[] = [
     { key: "index", header: "#", render: (_, idx) => idx + 1, className: "text-dash-muted" },
     { key: "name", header: "Name", className: "font-bold text-dash-text", render: (t) => t.name ?? t.full_name ?? "—" },
-    { key: "type", header: "Type", className: "hidden capitalize text-dash-muted sm:table-cell", render: (t) => t.type ?? "adult" },
+    { key: "type", header: "Type", className: "hidden capitalize text-dash-muted sm:table-cell", render: (t) => t.traveller_type ?? "adult" },
     { key: "nationality", header: "Nationality", className: "hidden text-dash-muted md:table-cell", render: (t) => t.nationality ?? "—" },
     { key: "passport", header: "Passport", className: "hidden text-dash-muted lg:table-cell", render: (t) => t.passport_number ?? "—" },
   ];
@@ -204,6 +207,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         </div>
       </div>
 
+      {invoiceError && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{invoiceError}</div>}
+
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Booking Info */}
         <div className="rounded-xl border border-dash-border bg-white p-6 shadow-sm">
@@ -214,11 +219,12 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             <InfoRow label="Booking Code" value={booking.booking_code} />
             <InfoRow label="Tour" value={booking.tour_name} />
             <InfoRow label="Travel Date" value={dateText(booking.tour_date)} />
-            <InfoRow label="Adults" value={booking.adults} />
-            <InfoRow label="Children" value={booking.children ?? 0} />
+            <InfoRow label="Adults" value={booking.no_of_adults} />
+            <InfoRow label="Children" value={booking.no_of_children ?? 0} />
+            <InfoRow label="Supplier Acceptance" value={(booking.supplier_acceptance_status ?? "-").replaceAll("_", " ")} />
             <InfoRow label="Source" value={booking.booking_source?.replaceAll("_", " ") ?? "—"} />
             <InfoRow label="Created" value={dateText(booking.created_at)} />
-            {booking.notes && <InfoRow label="Notes" value={booking.notes} />}
+            {(booking.customer_notes || booking.notes) && <InfoRow label="Notes" value={booking.customer_notes ?? booking.notes} />}
           </div>
         </div>
 
@@ -227,8 +233,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           <div className="rounded-xl border border-dash-border bg-white p-6 shadow-sm">
             <h2 className="text-base font-black text-dash-text">Customer</h2>
             <div className="mt-4">
-              <InfoRow label="Name" value={booking.customer_name} />
-              <InfoRow label="Email" value={booking.customer_email} />
+              <InfoRow label="Name" value={booking.customer_name ?? booking.customer?.name} />
+              <InfoRow label="Email" value={booking.customer_email ?? booking.customer?.email} />
               <InfoRow label="Phone" value={booking.customer_phone} />
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LuPlus as Plus, LuRefreshCcw as RefreshCcw, LuTrash2 as Trash2, LuCircleX as XCircle, LuCircleCheckBig as CheckCircle2, LuInbox as InboxIcon } from "react-icons/lu";
+import { LuPlus as Plus, LuRefreshCcw as RefreshCcw, LuTrash2 as Trash2, LuCircleX as XCircle, LuCircleCheckBig as CheckCircle2 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import StatusBadge from "@/components/operations/StatusBadge";
@@ -239,7 +239,7 @@ export default function RefundsPage() {
   ];
 
   return (
-    <ModuleWrapper title="Refunds" requiredPermission="bookings.manage">
+    <ModuleWrapper title="Refunds" requiredPermission="bookings.view">
       <div className="space-y-5">
         {/* Header */}
         <section className="flex items-center justify-between rounded-xl border border-dash-border bg-white p-6">

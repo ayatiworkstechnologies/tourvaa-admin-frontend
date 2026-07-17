@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LuCircleCheckBig as CheckCircle2, LuSquarePen as Edit, LuMail as Mail, LuPlus as Plus, LuTrash2 as Trash2, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCircleCheckBig as CheckCircle2, LuSquarePen as Edit, LuMail as Mail, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -62,7 +62,6 @@ export default function UsersPage() {
     updateUser,
     deleteUser,
     approveUser,
-    rejectUser,
     sendPasswordReset,
   } =
     useUsers({
@@ -158,19 +157,21 @@ export default function UsersPage() {
     setFieldErrors({});
 
     let result: { success: boolean; error?: unknown };
+    const phone = phoneNumber ? combinePhone(phoneCountryCode, phoneNumber) : "";
+
+    if (!validateMobile(phone)) {
+      setFieldErrors({ phone: mobileHelp });
+      setMessage(mobileHelp);
+      return;
+    }
 
     if (editingUser) {
-      const phone = phoneNumber ? combinePhone(phoneCountryCode, phoneNumber) : "";
-      if (!validateMobile(phone)) {
-        setFieldErrors({ phone: mobileHelp });
-        setMessage(mobileHelp);
-        return;
-      }
       result = await updateUser(editingUser.id, { ...form, phone });
     } else {
-      if (!form.password || form.password.length < 8) {
-        setFieldErrors({ password: "Password must be at least 8 characters." });
-        setMessage("Password must be at least 8 characters.");
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(form.password || "")) {
+        const passwordMessage = "Password must include uppercase, lowercase, number, and special character.";
+        setFieldErrors({ password: passwordMessage });
+        setMessage(passwordMessage);
         return;
       }
       if (form.password !== confirmPassword) {
@@ -178,7 +179,7 @@ export default function UsersPage() {
         setMessage("Passwords do not match.");
         return;
       }
-      result = await createUser({ ...form, phone: "" });
+      result = await createUser({ ...form, phone });
     }
 
     if (result.success) {

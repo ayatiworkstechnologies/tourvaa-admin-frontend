@@ -26,6 +26,7 @@ const PUBLIC_PAGE_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/join",
+  "/destinations",
   "/tours",
   "/blogs",
   "/about",

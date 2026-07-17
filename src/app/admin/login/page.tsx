@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
   return (
     <AuthLayout
       title="Admin Login"
-      subtitle="Sign in with your admin, supplier, or agent credentials."
+      subtitle="Sign in with an authorized administration account."
       badge="Secure login"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -86,8 +86,8 @@ export default function AdminLoginPage() {
         </div>
 
         <p className="pt-2 text-center text-sm text-gray-700">
-          Customer?{" "}
-          <Link href="/login" className="font-bold text-dash-brand">Customer login →</Link>
+          Using a customer, supplier, or agent account?{" "}
+          <Link href="/login" className="font-bold text-dash-brand">Portal login</Link>
         </p>
       </form>
     </AuthLayout>

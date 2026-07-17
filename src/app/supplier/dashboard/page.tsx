@@ -1,11 +1,10 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { LuArrowRight as ArrowRight, LuBanknote as Banknote, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuClock3 as Clock3, LuMapPinned as MapPinned, LuPackageCheck as PackageCheck, LuPlus as Plus, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuScale as Scale, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuBanknote as Banknote, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuClock3 as Clock3, LuMapPinned as MapPinned, LuPlus as Plus, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuScale as Scale, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
-import { useCurrency } from "@/hooks/useCurrency";
 
 type Summary = {
   total_tours?: number;
@@ -71,7 +70,6 @@ function dateText(value?: string) {
 
 export default function SupplierDashboardPage() {
   const { user } = useAuthContext();
-  const { formatCompact } = useCurrency();
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
@@ -79,7 +77,7 @@ export default function SupplierDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ start_date: "", end_date: "", status: "" });
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const bookParams: Record<string, string> = { limit: "5" };
@@ -88,7 +86,7 @@ export default function SupplierDashboardPage() {
       if (filters.status) bookParams.booking_status = filters.status;
       const [sumRes, bookRes, ledgerRes, payoutRes] = await Promise.allSettled([
         api.get("/dashboard/summary", { params: filters.start_date || filters.end_date ? { start_date: filters.start_date, end_date: filters.end_date } : {} }),
-        api.get("/supplier/bookings", { params: bookParams }),
+        api.get("/bookings", { params: bookParams }),
         api.get("/supplier-ledgers", { params: { limit: 50 } }),
         api.get("/supplier-payouts", { params: { limit: 20 } }),
       ]);
@@ -99,9 +97,9 @@ export default function SupplierDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [filters]);
 
-  useEffect(() => { void load(); }, [filters]);
+  useEffect(() => { void load(); }, [load]);
 
   const commission = useMemo(() => {
     const currency = ledgers.find((entry) => entry.currency)?.currency || summary.currency || "AED";
@@ -138,10 +136,10 @@ export default function SupplierDashboardPage() {
 
   return (
     <div className="space-y-6 px-5 pb-8 md:px-9">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B1120] via-[#1D3E64] to-dash-brand p-8 text-white shadow-lg md:p-10">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-8 text-white shadow-lg md:p-10">
         <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#9DD7FF] backdrop-blur-md">Supplier Portal</span>
+            <span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-100 backdrop-blur-md">Supplier Portal</span>
             <h2 className="mt-4 text-[32px] leading-tight font-black tracking-tight text-white">Commissions, payouts & tour operations</h2>
             <p className="mt-2 max-w-2xl text-sm text-white/80">Track gross sales, Tourvaa commission, net payable, and payout release status from one dashboard.</p>
           </div>
@@ -163,7 +161,7 @@ export default function SupplierDashboardPage() {
           {stats.map(({ label, value, icon: Icon, sub }) => (
             <div key={label} className="group flex items-center justify-between rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-dash-brand/30 hover:shadow-xl">
               <div className="flex items-center gap-5">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#F0F7FF] text-dash-brand shadow-sm transition-colors duration-300 group-hover:bg-dash-brand group-hover:text-white">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--portal-soft)] text-dash-brand shadow-sm transition-colors duration-300 group-hover:bg-dash-brand group-hover:text-white">
                   <Icon size={24} strokeWidth={2} />
                 </div>
                 <div>
@@ -184,7 +182,7 @@ export default function SupplierDashboardPage() {
               <h2 className="font-black text-dash-text">Commission Summary</h2>
               <p className="mt-0.5 text-sm text-dash-muted">Gross sales minus Tourvaa commission equals your net payable.</p>
             </div>
-            <Link href="/supplier/earnings" className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-body hover:bg-[#F3F8FC]">
+            <Link href="/supplier/earnings" className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-body hover:bg-[var(--portal-soft)]">
               View ledger <ArrowRight size={14} />
             </Link>
           </div>
@@ -258,15 +256,15 @@ export default function SupplierDashboardPage() {
             <h2 className="font-black text-dash-text">Dashboard Filters</h2>
             <p className="mt-0.5 text-sm text-dash-muted">Filter tour and booking data by date range and status.</p>
           </div>
-          <button type="button" onClick={() => void load()} className="inline-flex items-center gap-2 rounded-lg border border-[#D0D5DD] px-4 py-2 text-sm font-bold text-dash-muted hover:bg-[#F3F8FC]">
+          <button type="button" onClick={() => void load()} className="inline-flex items-center gap-2 rounded-lg border border-[#D0D5DD] px-4 py-2 text-sm font-bold text-dash-muted hover:bg-[var(--portal-soft)]">
             <RefreshCw size={14} /> Refresh
           </button>
         </div>
         <div className="mt-4 flex flex-wrap items-end gap-4">
           <div className="flex flex-col gap-1"><label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Start Date</label><input type="date" title="Start date" value={filters.start_date} onChange={(e) => setFilters((f) => ({ ...f, start_date: e.target.value }))} className="rounded-lg border border-[#D0D5DD] px-3 py-2 text-sm text-dash-body outline-none focus:border-dash-brand" /></div>
           <div className="flex flex-col gap-1"><label className="text-xs font-bold uppercase tracking-wide text-dash-muted">End Date</label><input type="date" title="End date" value={filters.end_date} onChange={(e) => setFilters((f) => ({ ...f, end_date: e.target.value }))} className="rounded-lg border border-[#D0D5DD] px-3 py-2 text-sm text-dash-body outline-none focus:border-dash-brand" /></div>
-          <div className="flex flex-col gap-1"><label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Booking Status</label><select title="Booking status" value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))} className="rounded-lg border border-[#D0D5DD] px-3 py-2 text-sm text-dash-body outline-none focus:border-dash-brand"><option value="">All Statuses</option><option value="confirmed">Confirmed</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div>
-          <button type="button" onClick={() => setFilters({ start_date: "", end_date: "", status: "" })} className="rounded-lg border border-[#D0D5DD] px-4 py-2 text-sm font-bold text-dash-muted hover:bg-[#F3F8FC]">Reset</button>
+          <div className="flex flex-col gap-1"><label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Booking Status</label><select title="Booking status" value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))} className="rounded-lg border border-[#D0D5DD] px-3 py-2 text-sm text-dash-body outline-none focus:border-dash-brand"><option value="">All Statuses</option><option value="pending_payment">Pending Payment</option><option value="pending_supplier_acceptance">Awaiting My Decision</option><option value="confirmed">Confirmed</option><option value="ongoing">Ongoing</option><option value="postponed">Postponed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="declined">Declined</option></select></div>
+          <button type="button" onClick={() => setFilters({ start_date: "", end_date: "", status: "" })} className="rounded-lg border border-[#D0D5DD] px-4 py-2 text-sm font-bold text-dash-muted hover:bg-[var(--portal-soft)]">Reset</button>
         </div>
       </div>
 

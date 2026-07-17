@@ -1,21 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2 } from "react-icons/lu";
+import Link from "next/link";
+import { LuDownload as Download, LuLoaderCircle as Loader2 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
 type Invoice = {
   id: number;
   invoice_number?: string;
-  booking_code?: string;
-  customer_name?: string;
-  amount?: string | number;
+  booking_id?: number;
+  customer_id?: number;
+  total_amount?: string | number;
+  amount_due?: string | number;
   currency?: string;
   status?: string;
-  issued_at?: string;
-  due_date?: string;
-  download_url?: string;
+  created_at?: string;
 };
 
 function money(value: string | number | undefined, currency = "AED") {
@@ -88,7 +88,7 @@ export default function AgentInvoicesPage() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
-      if (inv.download_url) window.open(inv.download_url, "_blank");
+      // The API did not return a downloadable PDF.
     } finally {
       setDownloading(null);
     }
@@ -96,10 +96,10 @@ export default function AgentInvoicesPage() {
 
   const columns: DataTableColumn<Invoice>[] = [
     { key: "invoice_number", header: "Invoice #", className: "font-bold text-dash-text", render: (inv) => inv.invoice_number ?? `INV-${inv.id}` },
-    { key: "booking", header: "Booking", className: "hidden text-dash-muted sm:table-cell", render: (inv) => inv.booking_code ?? "—" },
-    { key: "customer", header: "Customer", className: "hidden text-dash-muted md:table-cell", render: (inv) => inv.customer_name ?? "—" },
-    { key: "date", header: "Date", className: "hidden text-dash-muted lg:table-cell", render: (inv) => dateText(inv.issued_at) },
-    { key: "amount", header: "Amount", className: "text-right font-bold text-dash-text", render: (inv) => money(inv.amount, inv.currency) },
+    { key: "booking", header: "Booking", className: "hidden text-dash-muted sm:table-cell", render: (inv) => inv.booking_id ? <Link href={`/agent/bookings/${inv.booking_id}`} className="font-bold text-orange-600 hover:underline">Booking #{inv.booking_id}</Link> : "—" },
+    { key: "customer", header: "Customer", className: "hidden text-dash-muted md:table-cell", render: (inv) => inv.customer_id ? `Customer #${inv.customer_id}` : "—" },
+    { key: "date", header: "Date", className: "hidden text-dash-muted lg:table-cell", render: (inv) => dateText(inv.created_at) },
+    { key: "amount", header: "Amount", className: "text-right font-bold text-dash-text", render: (inv) => money(inv.total_amount, inv.currency) },
     { key: "status", header: "Status", render: (inv) => <Pill status={inv.status}>{inv.status ?? "pending"}</Pill> },
   ];
 

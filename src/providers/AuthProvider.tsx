@@ -76,7 +76,9 @@ const docsCaptureDashboard = {
 function isPublicRoute(pathname: string) {
   return (
     pathname === "/" ||
+    pathname.startsWith("/destinations") ||
     pathname.startsWith("/tours") ||
+    pathname.startsWith("/booking") ||
     pathname.startsWith("/blogs") ||
     pathname.startsWith("/about") ||
     pathname.startsWith("/contact") ||
@@ -223,7 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isPublic = isPublicRoute(pathname);
 
     if (!token && !isPublic) {
-      router.replace("/login");
+      router.replace(pathname.startsWith("/admin") ? "/admin/login" : "/login");
       return;
     }
 

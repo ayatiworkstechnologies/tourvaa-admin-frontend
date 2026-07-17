@@ -23,10 +23,11 @@ function DetailPanel({ title, children }: DetailPanelProps) {
 }
 
 function DetailField({ label, value }: DetailFieldProps) {
+  const displayValue = value === null || value === undefined || value === "" ? "-" : value;
   return (
     <div>
       <p className="text-xs font-bold uppercase text-dash-subtle">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-dash-text">{value || "-"}</p>
+      <p className="mt-1 text-sm font-semibold text-dash-text">{displayValue}</p>
     </div>
   );
 }
@@ -342,6 +343,9 @@ export default function BookingDetailPage() {
                 <DetailField label="Date" value={booking.tour_date} />
                 <DetailField label="Country" value={booking.country} />
                 <DetailField label="Supplier" value={booking.supplier_name} />
+                <DetailField label="Adults" value={booking.no_of_adults} />
+                <DetailField label="Children" value={booking.no_of_children} />
+                <DetailField label="Infants" value={booking.no_of_infants} />
               </div>
             </DetailPanel>
           </div>
@@ -379,8 +383,8 @@ export default function BookingDetailPage() {
                       <div className="grid gap-2 sm:grid-cols-2">
                         {group.items.map((item, index) => (
                           <div key={item.id ?? index} className="flex items-center justify-between rounded-xl bg-dash-bg px-3 py-2 text-sm">
-                            <span className="font-semibold text-dash-body">{item.name || item.title || "Item"}</span>
-                            <span className="font-bold text-dash-text">{item.amount || item.price || "-"}</span>
+                            <span className="font-semibold text-dash-body">{item.activity_name_snapshot || item.accommodation_name_snapshot || item.extension_name_snapshot || item.name || item.title || "Item"}</span>
+                            <span className="font-bold text-dash-text">{item.total_price || item.unit_price || item.amount || item.price || "-"}</span>
                           </div>
                         ))}
                       </div>
@@ -413,7 +417,11 @@ export default function BookingDetailPage() {
           )}
 
           <DetailPanel title="Notes">
-            <p className="text-sm text-dash-muted">{booking.notes || "No notes."}</p>
+            <div className="grid gap-4 md:grid-cols-3">
+              <DetailField label="General" value={booking.notes || "No general notes."} />
+              <DetailField label="Customer" value={booking.customer_notes || "No customer notes."} />
+              <DetailField label="Admin" value={booking.admin_notes || "No admin notes."} />
+            </div>
           </DetailPanel>
         </div>
       ) : null}

@@ -14,6 +14,7 @@ import StatusBadge from "@/components/operations/StatusBadge";
 import { approveReviewRecord, getReviewRecord, partialApproveReviewRecord, rejectReviewRecord, ReviewRecord, updateCommercialValue, updateReviewRecord } from "@/lib/api/services/operationsService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
 
 type DetailValue = string | number | boolean | null | undefined;
 type DetailObject = Record<string, DetailValue>;
@@ -130,6 +131,14 @@ export default function AgentDetailPage() {
   const contacts = (record?.contacts ?? []) as AgentContact[];
   const primaryContact = contacts.find((contact) => contact.is_primary) ?? contacts[0];
 
+  const viewDocument = async (documentId: number) => {
+    try {
+      await openPrivateDocument("agent", documentId);
+    } catch {
+      toast.error("Could not open agent document.");
+    }
+  };
+
   const tabs = useMemo(
     () => [
       { key: "business" as const, label: "Business Info", icon: Briefcase },
@@ -239,10 +248,10 @@ export default function AgentDetailPage() {
                           ["Uploaded", doc.uploaded_at],
                           ["Reason", doc.rejection_reason],
                         ]} />
-                        {(doc.file_url || doc.file_path) && (
-                          <a href={String(doc.file_url || doc.file_path)} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]">
+                        {(doc.file_url || doc.file_path) && doc.id !== undefined && (
+                          <button type="button" onClick={() => void viewDocument(doc.id!)} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]">
                             <Eye size={14} /> View document
-                          </a>
+                          </button>
                         )}
                       </div>
                     ))}

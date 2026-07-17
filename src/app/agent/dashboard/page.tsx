@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuFileText as FileText, LuMapPinned as MapPinned, LuPackageCheck as PackageCheck, LuPlus as Plus, LuUsers as Users } from "react-icons/lu";
 import api from "@/lib/api/client";
@@ -43,22 +43,25 @@ export default function AgentDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ start_date: "", end_date: "", status: "" });
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async () => {
       setLoading(true);
       try {
+        const bookingParams: Record<string, string | number> = { limit: 5 };
+        if (filters.start_date) bookingParams.start_date = filters.start_date;
+        if (filters.end_date) bookingParams.end_date = filters.end_date;
+        if (filters.status) bookingParams.booking_status = filters.status;
         const [sumRes, bookRes] = await Promise.allSettled([
-          api.get("/dashboard/summary"),
-          api.get("/bookings", { params: { limit: 5 } }),
+          api.get("/dashboard/summary", { params: filters.start_date || filters.end_date ? { start_date: filters.start_date, end_date: filters.end_date } : {} }),
+          api.get("/bookings", { params: bookingParams }),
         ]);
         if (sumRes.status === "fulfilled") setSummary(sumRes.value.data?.data ?? {});
         if (bookRes.status === "fulfilled") setBookings(bookRes.value.data?.items ?? bookRes.value.data?.data ?? []);
       } finally {
         setLoading(false);
       }
-    }
-    void load();
-  }, []);
+  }, [filters]);
+
+  useEffect(() => { void load(); }, [load]);
 
   const stats = [
     { label: "Total Bookings", value: summary.total_bookings ?? bookings.length, icon: CalendarCheck, sub: "Filtered" },
@@ -72,7 +75,7 @@ export default function AgentDashboardPage() {
   return (
     <div className="space-y-6 px-5 pb-8 md:px-9">
       {/* Gradient hero banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B1120] via-[#1D3E64] to-dash-brand p-10 text-white shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-10 text-white shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
         <div className="relative z-10">
           <span className="text-[10px] font-black uppercase tracking-widest text-dash-brand bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-md">Agent Portal</span>
           <h2 className="mt-4 text-[32px] leading-tight font-black tracking-tight text-white">Manage bookings & customers</h2>
@@ -100,7 +103,7 @@ export default function AgentDashboardPage() {
           {stats.map(({ label, value, icon: Icon, sub }) => (
             <div key={label} className="group flex items-center justify-between rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] hover:shadow-xl hover:border-dash-brand/30 transition-all duration-300 hover:-translate-y-1 cursor-pointer">
               <div className="flex items-center gap-5">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#F0F7FF] text-dash-brand group-hover:bg-dash-brand group-hover:text-white transition-colors duration-300 shadow-sm">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--portal-soft)] text-dash-brand group-hover:bg-dash-brand group-hover:text-white transition-colors duration-300 shadow-sm">
                   <Icon size={24} strokeWidth={2} />
                 </div>
                 <div>
@@ -135,13 +138,15 @@ export default function AgentDashboardPage() {
               className="rounded-lg border border-[#D0D5DD] px-3 py-2 text-sm text-dash-body outline-none focus:border-dash-brand">
               <option value="">All Statuses</option>
               <option value="confirmed">Confirmed</option>
-              <option value="pending">Pending</option>
+              <option value="pending_payment">Pending Payment</option>
+              <option value="pending_supplier_acceptance">Pending Supplier</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
+              <option value="declined">Declined</option>
             </select>
           </div>
           <button type="button" onClick={() => setFilters({ start_date: "", end_date: "", status: "" })}
-            className="flex items-center gap-2 rounded-lg border border-[#D0D5DD] px-4 py-2 text-sm font-bold text-dash-muted hover:bg-[#F3F8FC]">
+            className="flex items-center gap-2 rounded-lg border border-[#D0D5DD] px-4 py-2 text-sm font-bold text-dash-muted hover:bg-[var(--portal-soft)]">
             ⊘ Reset
           </button>
         </div>
@@ -179,18 +184,18 @@ export default function AgentDashboardPage() {
           )}
         </div>
 
-        {/* Payment Status */}
+        {/* Agent finance and operations */}
         <div className="rounded-3xl border border-dash-border/60 bg-white p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
-          <h2 className="mb-4 font-black text-dash-text">Payment Status</h2>
+          <h2 className="mb-4 font-black text-dash-text">Finance & Operations</h2>
           <div className="space-y-3">
             {[
-              { label: "Full payments", href: "/agent/invoices?status=paid" },
-              { label: "Partial payments", href: "/agent/invoices?status=partial" },
-              { label: "Pending payments", href: "/agent/invoices?status=pending" },
-              { label: "Commission payouts", href: "/agent/invoices?type=commission" },
+              { label: "Booking invoices", href: "/agent/invoices" },
+              { label: "Booking payment status", href: "/agent/bookings" },
+              { label: "Create a customer booking", href: "/agent/bookings/create" },
+              { label: "Manage customer accounts", href: "/agent/customers" },
             ].map(({ label, href }) => (
               <Link key={label} href={href}
-                className="flex items-center justify-between rounded-xl border border-dash-border px-4 py-3 text-sm font-semibold text-dash-body transition hover:bg-[#F3F8FC]">
+                className="flex items-center justify-between rounded-xl border border-dash-border px-4 py-3 text-sm font-semibold text-dash-body transition hover:bg-[var(--portal-soft)]">
                 {label} <ArrowRight size={14} className="text-dash-brand" />
               </Link>
             ))}
