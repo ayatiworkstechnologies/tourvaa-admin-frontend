@@ -17,19 +17,17 @@ function getStringValue(item: CmsItem, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-function renderImagePreview(key: string, label: string) {
-  return (item: CmsItem) => {
-    const src = getStringValue(item, key);
-    if (!src) {
-      return <span className="text-xs font-semibold text-dash-subtle">No image</span>;
-    }
+function renderImagePreview(item: CmsItem, key: string, label: string) {
+  const src = getStringValue(item, key);
+  if (!src) {
+    return <span className="text-xs font-semibold text-dash-subtle">No image</span>;
+  }
 
-    return (
-      <div className="relative h-14 w-24 overflow-hidden rounded-lg border border-dash-border bg-dash-bg">
-        <Image src={src} alt={label} fill unoptimized className="object-cover" sizes="96px" />
-      </div>
-    );
-  };
+  return (
+    <div className="relative h-14 w-24 overflow-hidden rounded-lg border border-dash-border bg-dash-bg">
+      <Image src={src} alt={label} fill unoptimized className="object-cover" sizes="96px" />
+    </div>
+  );
 }
 // ---- tab definitions -----------------------------------------------------
 type FieldOption = string | { value: string; label: string };
@@ -66,7 +64,7 @@ const TABS: TabConfig[] = [
     label: "Banners",
     endpoint: "/cms/homepage-banners",
     columns: [
-      { key: "image", header: "Preview", render: renderImagePreview("image", "Banner image"), className: "w-32" },
+      { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Banner image"), className: "w-32" },
       { key: "title", header: "Title" },
       { key: "subtitle", header: "Subtitle" },
       { key: "is_active", header: "Active", render: (item) => (item.is_active ? "Yes" : "No") },
@@ -85,7 +83,7 @@ const TABS: TabConfig[] = [
     label: "Destinations",
     endpoint: "/cms/popular-destinations",
     columns: [
-      { key: "image", header: "Preview", render: renderImagePreview("image", "Destination image"), className: "w-32" },
+      { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Destination image"), className: "w-32" },
       { key: "title", header: "Title" },
       { key: "country_id", header: "Country ID" },
       { key: "city_id", header: "City ID" },
@@ -135,7 +133,7 @@ const TABS: TabConfig[] = [
     label: "Blogs",
     endpoint: "/cms/blogs",
     columns: [
-      { key: "featured_image", header: "Preview", render: renderImagePreview("featured_image", "Blog image"), className: "w-32" },
+      { key: "featured_image", header: "Preview", render: (item) => renderImagePreview(item, "featured_image", "Blog image"), className: "w-32" },
       { key: "title", header: "Title" },
       { key: "slug", header: "Slug" },
       { key: "status", header: "Status" },
@@ -154,7 +152,7 @@ const TABS: TabConfig[] = [
     label: "Reviews",
     endpoint: "/cms/customer-reviews",
     columns: [
-      { key: "reviewer_image", header: "Photo", render: renderImagePreview("reviewer_image", "Reviewer image"), className: "w-32" },
+      { key: "reviewer_image", header: "Photo", render: (item) => renderImagePreview(item, "reviewer_image", "Reviewer image"), className: "w-32" },
       { key: "reviewer_name", header: "Reviewer" },
       { key: "rating", header: "Rating" },
       { key: "review_text", header: "Review" },
@@ -205,7 +203,7 @@ const TABS: TabConfig[] = [
     label: "Popups",
     endpoint: "/cms/promotional-popups",
     columns: [
-      { key: "image", header: "Preview", render: renderImagePreview("image", "Popup image"), className: "w-32" },
+      { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Popup image"), className: "w-32" },
       { key: "title", header: "Title" },
       { key: "is_active", header: "Active", render: (item) => (item.is_active ? "Yes" : "No") },
     ],

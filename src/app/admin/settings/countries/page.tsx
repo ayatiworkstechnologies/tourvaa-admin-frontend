@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LuSquarePen as Edit, LuGlobe as Globe, LuMapPin as MapPin, LuPlus as Plus } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
@@ -38,7 +38,7 @@ type TabProps = {
   canEdit: boolean;
 };
 
-function CrudTab({ title, endpoint, fields, columns, extraParams = {}, canCreate, canEdit }: TabProps) {
+function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, canEdit }: TabProps) {
   const toast = useToast();
   const [rows, setRows] = useState<Row[]>([]);
   const [search, setSearch] = useState("");
@@ -54,14 +54,14 @@ function CrudTab({ title, endpoint, fields, columns, extraParams = {}, canCreate
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(endpoint, { params: { page, limit: 20, search, ...extraParams } });
+      const res = await api.get(endpoint, { params: { page, limit: 20, search, ...(extraParams ?? {}) } });
       setRows(res.data?.items ?? res.data?.data ?? []);
       setTotal(res.data?.total ?? 0);
       setTotalPages(res.data?.total_pages ?? 1);
     } finally {
       setLoading(false);
     }
-  }, [endpoint, page, search, JSON.stringify(extraParams)]);
+  }, [endpoint, extraParams, page, search]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -233,6 +233,11 @@ function StatesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolea
   const [countryFilter, setCountryFilter] = useState("");
 
   const countryOptions = countries.map((c) => ({ label: c.name, value: c.id }));
+  const extraParams = useMemo<Record<string, string>>(() => {
+    const params: Record<string, string> = {};
+    if (countryFilter) params.country_id = countryFilter;
+    return params;
+  }, [countryFilter]);
 
   return (
     <div className="space-y-4">
@@ -252,7 +257,7 @@ function StatesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolea
         endpoint="/states"
         canCreate={canCreate}
         canEdit={canEdit}
-        extraParams={countryFilter ? { country_id: countryFilter } : {}}
+        extraParams={extraParams}
         fields={[
           { name: "country_id", label: "Country", type: "select", options: countryOptions },
           { name: "state_name", label: "State / Province name" },
@@ -278,9 +283,12 @@ function CitiesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolea
   const countryOptions = countries.map((c) => ({ label: c.name, value: c.id }));
   const stateOptions = states.map((s) => ({ label: s.name, value: s.id }));
 
-  const extraParams: Record<string, string> = {};
-  if (countryFilter) extraParams.country_id = String(countryFilter);
-  if (stateFilter) extraParams.state_id = String(stateFilter);
+  const extraParams = useMemo(() => {
+    const params: Record<string, string> = {};
+    if (countryFilter) params.country_id = String(countryFilter);
+    if (stateFilter) params.state_id = String(stateFilter);
+    return params;
+  }, [countryFilter, stateFilter]);
 
   return (
     <div className="space-y-4">

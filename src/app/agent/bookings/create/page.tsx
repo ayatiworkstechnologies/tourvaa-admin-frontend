@@ -1,12 +1,14 @@
 ﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LuArrowLeft as ArrowLeft, LuCheck as Check, LuChevronDown as ChevronDown, LuLoaderCircle as Loader2, LuMapPin as MapPin, LuPlus as Plus, LuSearch as Search, LuUser as User, LuX as X } from "react-icons/lu";
 import PhoneInput from "@/components/ui/PhoneInput";
 import api from "@/lib/api/client";
 import { combinePhone } from "@/lib/utils/validators";
+import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useAuthContext } from "@/providers/AuthProvider";
 
 type Customer = {
@@ -20,10 +22,22 @@ type Customer = {
 type Tour = {
   id: number;
   title: string;
+  tour_code?: string;
+  short_description?: string;
   price_start_per_person?: string | number;
   currency?: string;
   number_of_days?: number;
+  country_name?: string;
+  city_name?: string;
+  category_name?: string;
+  banner_image?: string | null;
 };
+
+const TOUR_IMAGE_FALLBACK = "/images/tour-card-fallback.jpg";
+
+function tourImage(tour: Tour) {
+  return tour.banner_image ? mediaUrl(tour.banner_image) : TOUR_IMAGE_FALLBACK;
+}
 
 type NewCustomer = {
   full_name: string;
@@ -70,6 +84,7 @@ export default function AgentCreateBookingPage() {
   const [tourSearch, setTourSearch] = useState("");
   const [tourResults, setTourResults] = useState<Tour[]>([]);
   const [tourLoading, setTourLoading] = useState(false);
+  const [tourLoadError, setTourLoadError] = useState("");
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [showTourDropdown, setShowTourDropdown] = useState(false);
   const tourRef = useRef<HTMLDivElement>(null);
@@ -118,16 +133,22 @@ export default function AgentCreateBookingPage() {
 
   // Search tours
   useEffect(() => {
-    if (!debouncedTourSearch) { setTourResults([]); return; }
     let active = true;
     setTourLoading(true);
-    api.get("/public/tours", { params: { search: debouncedTourSearch, limit: 10 } })
+    setTourLoadError("");
+    api.get("/public/tours", {
+      params: { search: debouncedTourSearch || undefined, limit: 20, page: 1 },
+    })
       .then((res) => {
         if (!active) return;
-        const items: Tour[] = res.data?.items ?? res.data?.data ?? [];
+        const items: Tour[] = res.data?.items ?? res.data?.data?.items ?? res.data?.data ?? [];
         setTourResults(items);
       })
-      .catch(() => { if (active) setTourResults([]); })
+      .catch(() => {
+        if (!active) return;
+        setTourResults([]);
+        setTourLoadError("Tours could not be loaded. Please try again.");
+      })
       .finally(() => { if (active) setTourLoading(false); });
     return () => { active = false; };
   }, [debouncedTourSearch]);
@@ -372,15 +393,18 @@ export default function AgentCreateBookingPage() {
             <div className="mt-4" ref={tourRef}>
               {selectedTour ? (
                 <div className="flex items-center justify-between rounded-xl border border-orange-300 bg-orange-50 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-600 text-orange-50">
-                      <MapPin size={16} />
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-orange-100">
+                      <Image src={tourImage(selectedTour)} alt={selectedTour.title} fill unoptimized sizes="80px" className="object-cover" />
                     </div>
-                    <div>
-                      <p className="font-bold text-dash-text">{selectedTour.title}</p>
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-dash-text">{selectedTour.title}</p>
+                      <p className="truncate text-xs text-dash-muted">
+                        {[selectedTour.city_name, selectedTour.country_name].filter(Boolean).join(", ") || selectedTour.tour_code || "Published tour"}
+                      </p>
                       <p className="text-xs text-dash-muted">
                         {selectedTour.number_of_days ? `${selectedTour.number_of_days} days` : ""}
-                        {unitPrice > 0 && ` Â· From ${money(unitPrice, currency)}`}
+                        {unitPrice > 0 && ` · From ${money(unitPrice, currency)}`}
                       </p>
                     </div>
                   </div>
@@ -395,18 +419,24 @@ export default function AgentCreateBookingPage() {
               ) : (
                 <div className="relative">
                   <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-dash-subtle" />
-                  <input
-                    value={tourSearch}
-                    onChange={(e) => { setTourSearch(e.target.value); setShowTourDropdown(true); }}
-                    onFocus={() => setShowTourDropdown(true)}
-                    placeholder="Search tours…"
-                    className="w-full rounded-xl border border-dash-border py-2.5 pl-9 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-50"
-                  />
-                  {showTourDropdown && (tourLoading || tourResults.length > 0) && (
-                    <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-dash-border bg-white shadow-lg">
+                    <input
+                      value={tourSearch}
+                      onChange={(e) => { setTourSearch(e.target.value); setShowTourDropdown(true); }}
+                      onFocus={() => setShowTourDropdown(true)}
+                      placeholder="Search tours by name or destination…"
+                      className="w-full rounded-xl border border-dash-border py-2.5 pl-9 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-50"
+                    />
+                  {showTourDropdown && (
+                    <div className="absolute z-20 mt-1 max-h-96 w-full overflow-y-auto rounded-xl border border-dash-border bg-white shadow-lg">
                       {tourLoading ? (
                         <div className="flex items-center gap-2 px-4 py-3 text-sm text-dash-muted">
-                          <Loader2 size={14} className="animate-spin" /> Searching tours…
+                          <Loader2 size={14} className="animate-spin" /> Loading published tours…
+                        </div>
+                      ) : tourLoadError ? (
+                        <div className="px-4 py-3 text-sm font-semibold text-rose-600">{tourLoadError}</div>
+                      ) : tourResults.length === 0 ? (
+                        <div className="px-4 py-4 text-sm text-dash-muted">
+                          No published tours match your search.
                         </div>
                       ) : (
                         tourResults.map((t) => (
@@ -414,14 +444,28 @@ export default function AgentCreateBookingPage() {
                             key={t.id}
                             type="button"
                             onClick={() => { setSelectedTour(t); setTourSearch(""); setShowTourDropdown(false); }}
-                            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-dash-bg-muted"
+                            className="flex w-full items-start gap-3 border-b border-dash-border px-4 py-3 text-left text-sm last:border-b-0 hover:bg-orange-50"
                           >
-                            <MapPin size={14} className="text-dash-muted" />
-                            <div>
-                              <p className="font-bold text-dash-text">{t.title}</p>
-                              <p className="text-xs text-dash-muted">
-                                {t.number_of_days ? `${t.number_of_days} days` : ""}
-                                {t.price_start_per_person && ` · From ${money(t.price_start_per_person, t.currency ?? "AED")}`}
+                            <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-orange-100">
+                              <Image src={tourImage(t)} alt={t.title} fill unoptimized sizes="96px" className="object-cover" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-start justify-between gap-2">
+                                <p className="font-bold text-dash-text">{t.title}</p>
+                                {t.category_name && (
+                                  <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">{t.category_name}</span>
+                                )}
+                              </div>
+                              <p className="mt-0.5 flex items-center gap-1 text-xs text-dash-muted">
+                                <MapPin size={11} />
+                                {[t.city_name, t.country_name].filter(Boolean).join(", ") || "Destination to be confirmed"}
+                              </p>
+                              {t.short_description && (
+                                <p className="mt-1 line-clamp-1 text-xs text-dash-muted">{t.short_description}</p>
+                              )}
+                              <p className="mt-1 text-xs font-semibold text-orange-700">
+                                {t.number_of_days ? `${t.number_of_days} days` : "Duration on request"}
+                                {t.price_start_per_person != null && ` · From ${money(t.price_start_per_person, t.currency ?? "AED")}`}
                               </p>
                             </div>
                           </button>
@@ -508,7 +552,7 @@ export default function AgentCreateBookingPage() {
                     <span className="font-bold text-dash-text">{money(unitPrice, currency)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-dash-muted">Adults Ã— {adults}</span>
+                    <span className="text-dash-muted">Adults - {adults}</span>
                     <span className="font-bold text-dash-text">{money(unitPrice * adults, currency)}</span>
                   </div>
                   <div className="border-t border-dash-border pt-3">

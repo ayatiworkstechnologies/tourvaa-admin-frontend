@@ -104,7 +104,7 @@ function hardLogout() {
         },
       })
     );
-    window.location.assign("/login");
+    window.location.assign(window.location.pathname.startsWith("/admin") ? "/admin/login" : "/login");
   }
 }
 

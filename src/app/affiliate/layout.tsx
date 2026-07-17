@@ -17,6 +17,46 @@ const NAV = [
   { href: "/affiliate/profile", icon: User, label: "Profile" },
 ];
 
+type SidebarContentProps = {
+  initials: string;
+  name: string;
+  email: string;
+  pathname: string;
+  onNavigate: () => void;
+  onLogout: () => void;
+};
+
+function SidebarContent({ initials, name, email, pathname, onNavigate, onLogout }: SidebarContentProps) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="border-b border-purple-800/30 bg-purple-700 p-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-base font-black text-white">{initials}</div>
+        <p className="mt-3 font-bold text-white">{name}</p>
+        <p className="text-xs text-purple-100">{email}</p>
+        <span className="mt-2 inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-bold text-white">Affiliate Partner</span>
+      </div>
+      <nav className="flex-1 overflow-y-auto p-3">
+        {NAV.map(({ href, icon: Icon, label }) => {
+          const active = pathname === href || (href !== "/affiliate/dashboard" && pathname.startsWith(href));
+          return (
+            <Link key={href} href={href} onClick={onNavigate}
+              className={`mb-1 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${active ? "bg-purple-50 text-purple-700" : "text-dash-body hover:bg-dash-bg-muted hover:text-dash-text"}`}>
+              <Icon size={18} className={active ? "text-purple-600" : "text-dash-muted"} />
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="border-t border-dash-border p-3">
+        <button type="button" onClick={onLogout}
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-dash-muted hover:bg-red-50 hover:text-red-600">
+          <LogOut size={16} /> Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AffiliateLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -49,43 +89,12 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
 
   const initials = (user.name || "A").split(" ").map((p: string) => p[0]).join("").toUpperCase().slice(0, 2);
 
-  function SidebarContent() {
-    return (
-      <div className="flex h-full flex-col">
-        <div className="border-b border-purple-800/30 bg-purple-700 p-5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-base font-black text-white">{initials}</div>
-          <p className="mt-3 font-bold text-white">{user?.name}</p>
-          <p className="text-xs text-purple-100">{user?.email}</p>
-          <span className="mt-2 inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-bold text-white">Affiliate Partner</span>
-        </div>
-        <nav className="flex-1 overflow-y-auto p-3">
-          {NAV.map(({ href, icon: Icon, label }) => {
-            const active = pathname === href || (href !== "/affiliate/dashboard" && pathname.startsWith(href));
-            return (
-              <Link key={href} href={href} onClick={() => setOpen(false)}
-                className={`mb-1 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${active ? "bg-purple-50 text-purple-700" : "text-dash-body hover:bg-dash-bg-muted hover:text-dash-text"}`}>
-                <Icon size={18} className={active ? "text-purple-600" : "text-dash-muted"} />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="border-t border-dash-border p-3">
-          <button type="button" onClick={() => logout("/")}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-dash-muted hover:bg-red-50 hover:text-red-600">
-            <LogOut size={16} /> Sign out
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen bg-dash-bg-muted">
       {open && <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} />}
 
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-white shadow-sm ring-1 ring-dash-border md:flex">
-        <SidebarContent />
+        <SidebarContent initials={initials} name={user.name} email={user.email} pathname={pathname} onNavigate={() => setOpen(false)} onLogout={() => logout("/")} />
       </aside>
 
       {open && (
@@ -93,7 +102,7 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
           <button type="button" onClick={() => setOpen(false)} className="absolute right-3 top-3 rounded-lg p-1.5 text-white hover:bg-white/10 z-10">
             <X size={18} />
           </button>
-          <SidebarContent />
+          <SidebarContent initials={initials} name={user.name} email={user.email} pathname={pathname} onNavigate={() => setOpen(false)} onLogout={() => logout("/")} />
         </aside>
       )}
 

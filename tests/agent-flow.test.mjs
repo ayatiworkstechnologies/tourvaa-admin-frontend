@@ -29,6 +29,11 @@ check("catalogue does not fall back to private inventory", !tours.includes('api.
 check("catalogue uses backend price and image fields", tours.includes("price_start_per_person") && tours.includes("banner_image"));
 
 const create = read("src/app/agent/bookings/create/page.tsx");
+check("booking picker preloads published tours without requiring search", create.includes("search: debouncedTourSearch || undefined") && create.includes("limit: 20"));
+check("booking picker handles the public tour response shape", create.includes("res.data?.items") && create.includes("res.data?.data?.items"));
+check("booking picker shows tour images with a local fallback", create.includes("banner_image") && create.includes("tour-card-fallback.jpg"));
+check("booking picker shows destination, category, description, duration, and price", ["city_name", "country_name", "category_name", "short_description", "number_of_days", "price_start_per_person"].every((field) => create.includes(field)));
+check("booking picker displays loading, empty, and failure states", create.includes("Loading published tours") && create.includes("No published tours match") && create.includes("Tours could not be loaded"));
 check("booking includes authenticated agent id", create.includes("agent_id: agentId"));
 check("booking uses backend traveller counts", create.includes("no_of_adults: adults") && create.includes("no_of_children: children"));
 check("booking is explicitly agent sourced", create.includes('booking_source: "agent"'));

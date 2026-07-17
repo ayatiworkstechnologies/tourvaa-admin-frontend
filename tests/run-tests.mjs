@@ -13,6 +13,8 @@ const TEST_FILES = [
   "module-services.test.mjs",
   "module-permissions.test.mjs",
   "module-components.test.mjs",
+  "dashboard.test.mjs",
+  "auth-flow.test.mjs",
   "customer-flow.test.mjs",
   "supplier-flow.test.mjs",
   "agent-flow.test.mjs",

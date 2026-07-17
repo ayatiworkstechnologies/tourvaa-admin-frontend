@@ -69,8 +69,8 @@ check("dashboardService has no /api/v1", !svcSrc.includes("/api/v1"));
 // ---------------------------------------------------------------------------
 console.log("\n=== Dashboard Page ===\n");
 
-const pageSrc = readFile("app/dashboard/page.tsx");
-check("app/dashboard/page.tsx exists", pageSrc.length > 0);
+const pageSrc = readFile("app/admin/dashboard/page.tsx");
+check("app/admin/dashboard/page.tsx exists", pageSrc.length > 0);
 check("dashboard page uses /dashboard/me or useDashboard", pageSrc.includes("/dashboard/me") || pageSrc.includes("useDashboard"));
 check("dashboard page has no /api/v1", !pageSrc.includes("/api/v1"));
 
