@@ -38,7 +38,7 @@ function statusCls(status: string) {
   return "border-slate-200 bg-slate-50 text-slate-600";
 }
 
-function money(amount: string | number | undefined, currency = "AED") {
+function money(amount: string | number | undefined, currency = "USD") {
   return `${currency} ${Number(amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
@@ -123,7 +123,7 @@ export default function SupplierPayoutsAdminPage() {
     const pendingRows = payouts.filter((p) => p.status === "pending");
     const approvedRows = payouts.filter((p) => p.status === "approved");
     const paidRows = payouts.filter((p) => p.status === "paid");
-    const currency = payouts[0]?.currency || "AED";
+    const currency = payouts[0]?.currency || "USD";
     return {
       currency,
       totalAmount: payouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),

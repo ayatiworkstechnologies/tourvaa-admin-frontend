@@ -71,7 +71,7 @@ function LoginForm() {
     defaultValues: { email: "", password: "" },
   });
 
-  // Already logged in — redirect to the right dashboard
+  // Already logged in - redirect to the right dashboard
   useEffect(() => {
     if (!sessionLoading && isLoggedIn && dashboard) {
       const roleSlug = dashboard.user?.role?.slug ?? "";

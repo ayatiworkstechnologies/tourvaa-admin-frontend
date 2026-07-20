@@ -26,7 +26,7 @@ export default function ConversionsPage() {
   const limit = 20;
 
   const totalCommission = conversions.reduce((sum, c) => sum + Number(c.commission_amount || 0), 0);
-  const currency = conversions[0]?.currency || "AED";
+  const currency = conversions[0]?.currency || "USD";
 
   useEffect(() => {
     if (!affiliateId) { setLoading(false); return; }
@@ -49,10 +49,10 @@ export default function ConversionsPage() {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   const columns: DataTableColumn<Conversion>[] = [
-    { key: "date", header: "Date", className: "text-xs text-dash-body", render: (c) => c.created_at ? new Date(c.created_at).toLocaleDateString() : "—" },
+    { key: "date", header: "Date", className: "text-xs text-dash-body", render: (c) => c.created_at ? new Date(c.created_at).toLocaleDateString() : "-" },
     { key: "booking", header: "Booking", className: "font-mono text-xs text-dash-body", render: (c) => c.booking_code || `#${c.id}` },
     { key: "booking_amount", header: "Booking Amount", className: "text-xs text-dash-body", render: (c) => `${c.currency} ${Number(c.booking_amount || 0).toLocaleString()}` },
-    { key: "commission_perc", header: "Commission %", className: "text-xs text-dash-body", render: (c) => `${c.commission_percentage ?? "—"}%` },
+    { key: "commission_perc", header: "Commission %", className: "text-xs text-dash-body", render: (c) => `${c.commission_percentage ?? "-"}%` },
     { key: "commission", header: "Commission", className: "text-sm font-bold text-purple-700", render: (c) => `${c.currency} ${Number(c.commission_amount).toLocaleString()}` },
     { key: "status", header: "Status", render: (c) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusCls(c.status)}`}>{c.status}</span> },
   ];

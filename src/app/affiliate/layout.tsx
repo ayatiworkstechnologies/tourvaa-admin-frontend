@@ -94,7 +94,7 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
       {open && <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} />}
 
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-white shadow-sm ring-1 ring-dash-border md:flex">
-        <SidebarContent initials={initials} name={user.name} email={user.email} pathname={pathname} onNavigate={() => setOpen(false)} onLogout={() => logout("/")} />
+        <SidebarContent initials={initials} name={user.name} email={user.email} pathname={pathname} onNavigate={() => setOpen(false)} onLogout={() => logout()} />
       </aside>
 
       {open && (
@@ -102,7 +102,7 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
           <button type="button" onClick={() => setOpen(false)} className="absolute right-3 top-3 rounded-lg p-1.5 text-white hover:bg-white/10 z-10">
             <X size={18} />
           </button>
-          <SidebarContent initials={initials} name={user.name} email={user.email} pathname={pathname} onNavigate={() => setOpen(false)} onLogout={() => logout("/")} />
+          <SidebarContent initials={initials} name={user.name} email={user.email} pathname={pathname} onNavigate={() => setOpen(false)} onLogout={() => logout()} />
         </aside>
       )}
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LuDownload as Download, LuLoaderCircle as Loader2 } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuDownload as Download, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
@@ -11,6 +11,8 @@ type Invoice = {
   invoice_number?: string;
   booking_id?: number;
   customer_id?: number;
+  customer_name?: string;
+  booking_code?: string;
   total_amount?: string | number;
   amount_due?: string | number;
   currency?: string;
@@ -18,15 +20,15 @@ type Invoice = {
   created_at?: string;
 };
 
-function money(value: string | number | undefined, currency = "AED") {
-  if (!value && value !== 0) return "—";
+function money(value: string | number | undefined, currency = "USD") {
+  if (!value && value !== 0) return "-";
   const amount = Number(value);
   if (Number.isNaN(amount)) return String(value);
   return `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)}`;
 }
 
 function dateText(value?: string | null) {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
@@ -54,26 +56,33 @@ export default function AgentInvoicesPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [downloading, setDownloading] = useState<number | null>(null);
+  const [error, setError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
   const limit = 10;
 
   useEffect(() => {
     let active = true;
     async function load() {
       setLoading(true);
+      setError("");
       try {
         const res = await api.get("/invoices", { params: { limit, page } });
         if (!active) return;
         setInvoices(res.data?.items ?? res.data?.data ?? []);
         setTotal(res.data?.total ?? 0);
       } catch {
-        if (active) setInvoices([]);
+        if (active) {
+          setInvoices([]);
+          setTotal(0);
+          setError("Invoices could not be loaded. Please retry.");
+        }
       } finally {
         if (active) setLoading(false);
       }
     }
     load();
     return () => { active = false; };
-  }, [page]);
+  }, [page, retryKey]);
 
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -88,7 +97,7 @@ export default function AgentInvoicesPage() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
-      // The API did not return a downloadable PDF.
+      setError("The invoice PDF could not be downloaded.");
     } finally {
       setDownloading(null);
     }
@@ -96,8 +105,8 @@ export default function AgentInvoicesPage() {
 
   const columns: DataTableColumn<Invoice>[] = [
     { key: "invoice_number", header: "Invoice #", className: "font-bold text-dash-text", render: (inv) => inv.invoice_number ?? `INV-${inv.id}` },
-    { key: "booking", header: "Booking", className: "hidden text-dash-muted sm:table-cell", render: (inv) => inv.booking_id ? <Link href={`/agent/bookings/${inv.booking_id}`} className="font-bold text-orange-600 hover:underline">Booking #{inv.booking_id}</Link> : "—" },
-    { key: "customer", header: "Customer", className: "hidden text-dash-muted md:table-cell", render: (inv) => inv.customer_id ? `Customer #${inv.customer_id}` : "—" },
+    { key: "booking", header: "Booking", className: "hidden text-dash-muted sm:table-cell", render: (inv) => inv.booking_id ? <Link href={`/agent/bookings/${inv.booking_id}`} className="font-bold text-dash-brand hover:underline">{inv.booking_code ?? `Booking #${inv.booking_id}`}</Link> : "-" },
+    { key: "customer", header: "Customer", className: "hidden text-dash-muted md:table-cell", render: (inv) => inv.customer_name ?? (inv.customer_id ? `Customer #${inv.customer_id}` : "-") },
     { key: "date", header: "Date", className: "hidden text-dash-muted lg:table-cell", render: (inv) => dateText(inv.created_at) },
     { key: "amount", header: "Amount", className: "text-right font-bold text-dash-text", render: (inv) => money(inv.total_amount, inv.currency) },
     { key: "status", header: "Status", render: (inv) => <Pill status={inv.status}>{inv.status ?? "pending"}</Pill> },
@@ -106,17 +115,23 @@ export default function AgentInvoicesPage() {
   return (
     <div className="p-6 md:p-8">
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-orange-500 to-orange-700 p-7 text-white shadow-xl shadow-orange-200/60 md:p-9">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-blue-200/40 md:p-9">
         <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
         <div className="relative z-10">
           <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Invoices</h1>
-          <p className="mt-2 max-w-md text-sm font-medium text-orange-100">Download and review invoices for all bookings.</p>
+          <p className="mt-2 max-w-md text-sm font-medium text-blue-100">Download and review invoices for all bookings.</p>
         </div>
       </div>
 
       {/* Table */}
       <div className="mt-6 rounded-xl border border-dash-border bg-white shadow-sm p-0">
+        {error && (
+          <div className="m-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+            <span className="flex items-center gap-2"><AlertCircle size={16} />{error}</span>
+            <button type="button" onClick={() => setRetryKey((value) => value + 1)} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs shadow-sm"><RefreshCw size={13} />Retry</button>
+          </div>
+        )}
         <DataTable
           ariaLabel="Invoices"
           columns={columns}
@@ -135,7 +150,7 @@ export default function AgentInvoicesPage() {
                 type="button"
                 onClick={() => downloadInvoice(inv)}
                 disabled={downloading === inv.id}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-orange-700 disabled:cursor-wait disabled:opacity-70"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-1.5 text-xs font-bold text-white transition hover:bg-dash-brand-hover disabled:cursor-wait disabled:opacity-70"
               >
                 {downloading === inv.id ? (
                   <Loader2 size={12} className="animate-spin" />

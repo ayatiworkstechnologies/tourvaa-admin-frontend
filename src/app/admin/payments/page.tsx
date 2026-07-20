@@ -201,7 +201,7 @@ function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => voi
       await api.patch(`/payments/${payment.id}/status`, { payment_status: s });
       onDone();
     } catch {
-      // silent — DataTable will refresh on done anyway
+      // silent - DataTable will refresh on done anyway
     } finally {
       setSaving(false);
       setOpen(false);
@@ -287,7 +287,7 @@ export default function PaymentsPage() {
         refunded: refundedRes.total ?? 0,
       });
     } catch {
-      // Non-critical — stat cards just stay at zero.
+      // Non-critical - stat cards just stay at zero.
     }
   }, []);
 

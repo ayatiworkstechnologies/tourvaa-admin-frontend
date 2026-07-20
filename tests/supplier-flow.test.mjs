@@ -27,6 +27,11 @@ const bookingList = read("src/app/supplier/bookings/page.tsx");
 check("booking filter uses backend booking_status contract", bookingList.includes("params.booking_status = statusFilter"));
 check("supplier list remains scoped through authenticated bookings API", bookingList.includes('api.get("/bookings"'));
 check("supplier decision status is filterable", bookingList.includes("pending_supplier_acceptance"));
+check("booking summary cards use server-wide status counts", bookingList.includes("status_counts") && bookingList.includes("statusCounts.ongoing"));
+
+const dashboard = read("src/app/supplier/dashboard/page.tsx");
+check("dashboard exposes recoverable partial-load errors", dashboard.includes("Some dashboard data could not be loaded") && dashboard.includes("Retry"));
+check("dashboard excludes reserved ledger rows from available payout", dashboard.includes('=== "reserved"') && dashboard.includes('["pending", "partial"]'));
 
 const bookingDetail = read("src/app/supplier/bookings/[id]/page.tsx");
 check("acceptance waits for payment readiness", bookingDetail.includes("paymentReady") && bookingDetail.includes("isAwaitingPayment"));
@@ -34,6 +39,8 @@ check("decline includes a required reason", bookingDetail.includes('{ reason: de
 check("supplier acceptance status is displayed", bookingDetail.includes("Supplier Decision"));
 check("accept endpoint is connected", bookingDetail.includes("/accept"));
 check("decline endpoint is connected", bookingDetail.includes("/decline"));
+check("supplier can move confirmed tours to ongoing", bookingDetail.includes("/ongoing") && bookingDetail.includes("Start Tour"));
+check("only ongoing tours show the completion action", bookingDetail.includes("isOngoing") && bookingDetail.includes("Mark Completed"));
 
 const tours = read("src/app/supplier/tours/page.tsx");
 const preview = read("src/app/supplier/tours/[id]/preview/page.tsx");
@@ -47,6 +54,10 @@ check("supplier support compose is connected", messages.includes('api.post("/sup
 
 const payouts = read("src/app/supplier/payouts/page.tsx");
 check("payout payload omits unsupported bank fields", !payouts.includes("bank_name:") && !payouts.includes("account_number:"));
+check("payout requests validate the available ledger balance", payouts.includes("availableBalance") && payouts.includes("cannot exceed the available balance"));
+
+const documents = read("src/components/supplier/profile/DocumentsTab.tsx");
+check("supplier documents expose retryable loading failures", documents.includes("Documents could not be loaded") && documents.includes("Retry"));
 
 console.log(`\nSupplier flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

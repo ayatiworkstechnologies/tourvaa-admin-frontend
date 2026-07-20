@@ -19,7 +19,7 @@ function check(label, condition, detail = "") {
     console.log(`  ✓ ${label}`);
     passed++;
   } else {
-    console.error(`  ✗ ${label}${detail ? " — " + detail : ""}`);
+    console.error(`  ✗ ${label}${detail ? " - " + detail : ""}`);
     failed++;
     errors.push(label);
   }

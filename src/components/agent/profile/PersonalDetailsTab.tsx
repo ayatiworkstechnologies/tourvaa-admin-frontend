@@ -166,7 +166,7 @@ export default function PersonalDetailsTab() {
           <button
             type="submit"
             disabled={savingProfile}
-            className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-60 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60 transition-colors"
           >
             {savingProfile ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
             Save Profile
@@ -179,7 +179,7 @@ export default function PersonalDetailsTab() {
             <input
               value={profile.name}
               onChange={(event) => setProfile((current) => ({ ...current, name: event.target.value }))}
-              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all"
+              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all"
               required
               placeholder="Your name"
             />
@@ -216,7 +216,7 @@ export default function PersonalDetailsTab() {
             <input
               value={profile.address}
               onChange={(event) => setProfile((current) => ({ ...current, address: event.target.value }))}
-              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all"
+              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all"
               required
               placeholder="Home address"
             />
@@ -244,7 +244,7 @@ export default function PersonalDetailsTab() {
           <button
             type="submit"
             disabled={savingPassword}
-            className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-60 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60 transition-colors"
           >
             {savingPassword ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
             Update Password
@@ -259,14 +259,14 @@ export default function PersonalDetailsTab() {
                 type={showCurrentPassword ? "text" : "password"}
                 value={passwordForm.current_password}
                 onChange={(event) => setPasswordForm((current) => ({ ...current, current_password: event.target.value }))}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 pr-11 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all"
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 pr-11 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all"
                 required
                 placeholder="Current password"
               />
               <button
                 type="button"
                 onClick={() => setShowCurrentPassword((value) => !value)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-orange-500"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-dash-brand"
                 aria-label={showCurrentPassword ? "Hide password" : "Show password"}
               >
                 {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -281,7 +281,7 @@ export default function PersonalDetailsTab() {
                 type={showNewPassword ? "text" : "password"}
                 value={passwordForm.new_password}
                 onChange={(event) => setPasswordForm((current) => ({ ...current, new_password: event.target.value }))}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 pr-11 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all"
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 pr-11 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all"
                 minLength={8}
                 required
                 placeholder="New password"
@@ -289,7 +289,7 @@ export default function PersonalDetailsTab() {
               <button
                 type="button"
                 onClick={() => setShowNewPassword((value) => !value)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-orange-500"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-dash-brand"
                 aria-label={showNewPassword ? "Hide password" : "Show password"}
               >
                 {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -304,7 +304,7 @@ export default function PersonalDetailsTab() {
               type={showNewPassword ? "text" : "password"}
               value={passwordForm.confirm_password}
               onChange={(event) => setPasswordForm((current) => ({ ...current, confirm_password: event.target.value }))}
-              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all"
+              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all"
               minLength={8}
               required
               placeholder="Confirm new password"

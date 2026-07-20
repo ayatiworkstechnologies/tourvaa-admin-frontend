@@ -137,7 +137,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
             </label>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">
-                Custom title <span className="normal-case font-normal">(optional — defaults to the tour name above)</span>
+                Custom title <span className="normal-case font-normal">(optional - defaults to the tour name above)</span>
               </span>
               <input
                 value={editing.extension_title ?? ""}

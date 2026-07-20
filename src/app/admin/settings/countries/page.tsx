@@ -322,7 +322,7 @@ function CitiesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolea
         extraParams={extraParams}
         fields={[
           { name: "country_id", label: "Country", type: "select", options: countryOptions },
-          { name: "state_id", label: "State / Province", type: "select", options: [{ label: "— None —", value: "" }, ...stateOptions] },
+          { name: "state_id", label: "State / Province", type: "select", options: [{ label: "- None -", value: "" }, ...stateOptions] },
           { name: "city_name", label: "City name" },
         ]}
         columns={[

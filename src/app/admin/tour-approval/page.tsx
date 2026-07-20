@@ -110,7 +110,7 @@ export default function TourApprovalPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <h3 className="text-lg font-bold text-dash-text">{v.snapshot?.title || `Tour #${v.tour_id}`}</h3>
-                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">v{v.version_number} — Pending</span>
+                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">v{v.version_number} - Pending</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-4 text-sm text-dash-muted">
                       {v.snapshot?.category_name && <span>Category: {v.snapshot.category_name}</span>}

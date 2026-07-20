@@ -24,7 +24,7 @@ export default function CancellationPolicyPage() {
           <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
             <h2 className="mb-4 font-bold text-zinc-950">Standard Cancellation Schedule</h2>
             <p className="mb-5 text-sm leading-6 text-zinc-500">
-              The following cancellation schedule applies to most Tourvaa bookings. Individual tours may have more restrictive policies — always check the specific policy shown on the tour detail page before booking.
+              The following cancellation schedule applies to most Tourvaa bookings. Individual tours may have more restrictive policies - always check the specific policy shown on the tour detail page before booking.
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

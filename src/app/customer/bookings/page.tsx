@@ -19,7 +19,7 @@ type Booking = {
 
 const STATUSES = ["all", "pending_payment", "payment_authorized", "pending_supplier_acceptance", "confirmed", "completed", "cancelled"];
 
-function money(value: string | number | undefined, currency = "AED") {
+function money(value: string | number | undefined, currency = "USD") {
   if (!value && value !== 0) return "-";
   const amount = Number(value);
   if (Number.isNaN(amount)) return String(value);

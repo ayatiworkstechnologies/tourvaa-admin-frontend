@@ -66,7 +66,7 @@ export default function AboutPage() {
           <SectionTitle>Our Story</SectionTitle>
           <div className="grid gap-12 lg:grid-cols-[1fr_1.05fr] lg:items-center">
             <div className="space-y-5 text-sm leading-7 text-slate-600">
-              <p>Tourvaa was born from a simple belief—travel should be personal, seamless, and accessible to everyone.</p>
+              <p>Tourvaa was born from a simple belief-travel should be personal, seamless, and accessible to everyone.</p>
               <p>We bring together verified travel partners, smart technology, and genuine travel expertise to help you explore the world with confidence.</p>
               <p>Whether it is a weekend getaway or a once-in-a-lifetime journey, we are here to make every moment special.</p>
               <div className="grid grid-cols-3 gap-4 pt-5">

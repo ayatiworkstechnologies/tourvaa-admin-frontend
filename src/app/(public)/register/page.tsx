@@ -94,7 +94,7 @@ export default function CustomerRegisterPage() {
                   <UserPlus size={22} />
                 </span>
                 <h1 className="mt-3 text-xl font-bold text-zinc-950">Create your account</h1>
-                <p className="mt-1 text-sm text-zinc-500">Join Tourvaa as a traveller — free forever</p>
+                <p className="mt-1 text-sm text-zinc-500">Join Tourvaa as a traveller - free forever</p>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

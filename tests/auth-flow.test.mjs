@@ -25,17 +25,18 @@ check("protected requests attach the bearer token", client.includes("config.head
 check("public API requests do not receive the bearer token", client.includes("!isPublicApiPath(config.url)"));
 check("concurrent 401 responses share one refresh operation", client.includes("isRefreshing") && client.includes("refreshQueue"));
 check("retried requests use the refreshed token", client.includes("originalRequest.headers.Authorization = `Bearer ${newToken}`"));
-check("failed admin sessions return to admin login", client.includes('pathname.startsWith("/admin") ? "/admin/login" : "/login"'));
+check("expired sessions always return to the shared login", client.includes('window.location.assign("/login")'));
 check("failed refresh clears stored authentication", client.includes("clearSession()"));
 
 const auth = read("src/providers/AuthProvider.tsx");
 check("session restoration loads dashboard identity", auth.includes('api.get("/dashboard/me")'));
 check("invalid restored sessions clear local state", auth.includes("clearSession()") && auth.includes("setDashboard(null)"));
 check("authenticated login pages redirect by role", auth.includes("getDashboardPath(roleSlug)"));
+check("explicit logout always uses the shared login", auth.includes('router.replace("/login")') && auth.includes("const logout = useCallback(()"));
 
 const adminGuard = read("src/components/admin/AdminRouteGuard.tsx");
 check("admin guard rejects non-admin dashboard types", adminGuard.includes("ADMIN_DASHBOARD_TYPES.has(dashboard.dashboard_type)"));
-check("admin guard preserves the dedicated login route", adminGuard.includes('router.replace("/admin/login")'));
+check("admin guard sends signed-out users to the shared login", adminGuard.includes('router.replace("/login")'));
 
 console.log(`\nAuthentication flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

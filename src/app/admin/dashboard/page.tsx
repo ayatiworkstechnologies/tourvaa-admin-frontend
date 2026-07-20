@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
 import { ReportSnapshot } from "@/lib/api/services/reportService";
+import DatePicker from "@/components/ui/DatePicker";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -72,7 +73,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   const [fStart,   setFStart]   = useState("");
   const [fEnd,     setFEnd]     = useState("");
   const [fCountry, setFCountry] = useState("");
-  // active filters — what the load() actually uses
+  // active filters - what the load() actually uses
   const [activeFilters, setActiveFilters] = useState({ start: "", end: "", country: "" });
 
   const load = useCallback(async () => {
@@ -248,29 +249,9 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         </div>
         <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Start date */}
-          <div>
-            <label htmlFor="filter-start" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-dash-muted">Start Date</label>
-            <input
-              id="filter-start"
-              type="date"
-              value={fStart}
-              onChange={(e) => setFStart(e.target.value)}
-              title="Filter start date"
-              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand focus:ring-1 focus:ring-dash-brand"
-            />
-          </div>
+          <DatePicker label="Start date" value={fStart} maxDate={fEnd || undefined} onChange={setFStart} />
           {/* End date */}
-          <div>
-            <label htmlFor="filter-end" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-dash-muted">End Date</label>
-            <input
-              id="filter-end"
-              type="date"
-              value={fEnd}
-              onChange={(e) => setFEnd(e.target.value)}
-              title="Filter end date"
-              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand focus:ring-1 focus:ring-dash-brand"
-            />
-          </div>
+          <DatePicker label="End date" value={fEnd} minDate={fStart || undefined} onChange={setFEnd} />
           {/* Country */}
           <div>
             <label htmlFor="filter-country" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-dash-muted">Country</label>
@@ -449,9 +430,9 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         <div className="flex flex-col gap-4">
           <div className="flex divide-x divide-dash-border rounded-2xl border border-dash-border bg-white">
             {[
-              { num: snapshot?.meta.report_types ?? "—", label: "Reports" },
-              { num: snapshot?.meta.scheduled     ?? "—", label: "Scheduled" },
-              { num: snapshot?.meta.total_exports ?? "—", label: "Exports" },
+              { num: snapshot?.meta.report_types ?? "-", label: "Reports" },
+              { num: snapshot?.meta.scheduled     ?? "-", label: "Scheduled" },
+              { num: snapshot?.meta.total_exports ?? "-", label: "Exports" },
             ].map(({ num, label }) => (
               <div key={label} className="flex flex-1 flex-col items-center py-4">
                 <span className="text-xl font-black text-dash-text">{num}</span>
@@ -501,7 +482,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
             <div className="h-16 animate-pulse rounded-xl bg-slate-100" />
           ) : pendingSuppliers.length === 0 ? (
             <div className="flex items-center gap-2 rounded-xl bg-dash-bg p-4 text-sm font-semibold text-dash-muted">
-              <CheckCircle2 size={16} className="text-emerald-500" /> All clear — no pending approvals.
+              <CheckCircle2 size={16} className="text-emerald-500" /> All clear - no pending approvals.
             </div>
           ) : (
             <ul className="space-y-2">
@@ -540,7 +521,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
             <div className="h-16 animate-pulse rounded-xl bg-slate-100" />
           ) : pendingAgents.length === 0 ? (
             <div className="flex items-center gap-2 rounded-xl bg-dash-bg p-4 text-sm font-semibold text-dash-muted">
-              <CheckCircle2 size={16} className="text-emerald-500" /> All clear — no pending approvals.
+              <CheckCircle2 size={16} className="text-emerald-500" /> All clear - no pending approvals.
             </div>
           ) : (
             <ul className="space-y-2">

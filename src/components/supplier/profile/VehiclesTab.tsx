@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LuBus as Bus, LuCircleCheckBig as CheckCircle2, LuChevronDown as ChevronDown, LuChevronUp as ChevronUp, LuLoaderCircle as Loader2, LuPlus as Plus, LuTrash2 as Trash2, LuUpload as Upload, LuX as X } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuBus as Bus, LuCircleCheckBig as CheckCircle2, LuChevronDown as ChevronDown, LuChevronUp as ChevronUp, LuLoaderCircle as Loader2, LuPlus as Plus, LuRefreshCw as RefreshCw, LuTrash2 as Trash2, LuUpload as Upload, LuX as X } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
@@ -63,6 +63,7 @@ export default function VehiclesTab() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState("");
 
   // File upload state per vehicle
   const fitnessRef = useRef<HTMLInputElement | null>(null);
@@ -73,11 +74,13 @@ export default function VehiclesTab() {
 
   async function load() {
     setLoading(true);
+    setLoadError("");
     try {
       const res = await api.get("/suppliers/me/vehicles");
       setVehicles(res.data?.data ?? []);
     } catch {
       setVehicles([]);
+      setLoadError("Vehicles could not be loaded. Please retry.");
     } finally {
       setLoading(false);
     }
@@ -212,6 +215,13 @@ export default function VehiclesTab() {
           <Plus size={15} /> Add Vehicle
         </button>
       </div>
+
+      {loadError && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <span className="flex items-center gap-2"><AlertCircle size={16} />{loadError}</span>
+          <button type="button" onClick={() => void load()} className="inline-flex items-center gap-1.5 font-bold underline"><RefreshCw size={14} />Retry</button>
+        </div>
+      )}
 
       {/* Add new vehicle form */}
       {expandedId === "new" && (

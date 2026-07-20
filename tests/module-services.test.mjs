@@ -1,7 +1,7 @@
 /**
  * Frontend Module Services Test
  * Verifies that all service files exist and export the expected functions.
- * Parses the TypeScript source as text — no transpilation needed.
+ * Parses the TypeScript source as text - no transpilation needed.
  */
 import { readFileSync, existsSync } from "fs";
 import { resolve, dirname } from "path";
@@ -91,7 +91,7 @@ console.log("── paymentService");
 const paymentSrc = readService("paymentService.ts");
 check("paymentService.ts exists", paymentSrc.length > 0);
 
-// tourDetailService — Week 9 & 10
+// tourDetailService - Week 9 & 10
 console.log("── tourDetailService (Week 9 + 10)");
 const tdSrc = readService("tourDetailService.ts");
 check("tourDetailService.ts exists", tdSrc.length > 0);

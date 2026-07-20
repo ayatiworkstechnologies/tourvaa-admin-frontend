@@ -6,6 +6,7 @@ import { LuPercent as Percent, LuPencil as Pencil, LuPlus as Plus, LuSave as Sav
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import TourPicker from "@/components/tours/TourPicker";
+import DatePicker from "@/components/ui/DatePicker";
 import { listCms } from "@/lib/api/services/cmsService";
 import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
@@ -206,7 +207,7 @@ export default function DiscountsPage() {
                       <Percent size={13} className="text-dash-subtle" />
                       {item.discount_value}
                       {item.discount_type === "percentage" ? "%" : ""} off
-                      {item.minimum_booking_amount > 0 ? ` — min. ${item.minimum_booking_amount}` : ""}
+                      {item.minimum_booking_amount > 0 ? ` - min. ${item.minimum_booking_amount}` : ""}
                     </p>
                     {(item.start_date || item.end_date) && (
                       <p className="text-xs text-dash-subtle">
@@ -297,7 +298,7 @@ export default function DiscountsPage() {
                       onChange={(e) => setEditing((p) => (p ? { ...p, category_id: e.target.value ? Number(e.target.value) : null } : p))}
                       className={inputClass}
                     >
-                      <option value="">— Select —</option>
+                      <option value="">- Select -</option>
                       {categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.label}
@@ -315,7 +316,7 @@ export default function DiscountsPage() {
                       onChange={(e) => setEditing((p) => (p ? { ...p, country_id: e.target.value ? Number(e.target.value) : null } : p))}
                       className={inputClass}
                     >
-                      <option value="">— Select —</option>
+                      <option value="">- Select -</option>
                       {countries.map((country) => (
                         <option key={country.id} value={country.id}>
                           {country.name}
@@ -373,24 +374,8 @@ export default function DiscountsPage() {
                     className={inputClass}
                   />
                 </label>
-                <label>
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Start date</span>
-                  <input
-                    type="date"
-                    value={editing.start_date?.slice(0, 10) ?? ""}
-                    onChange={(e) => setEditing((p) => (p ? { ...p, start_date: e.target.value || null } : p))}
-                    className={inputClass}
-                  />
-                </label>
-                <label>
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">End date</span>
-                  <input
-                    type="date"
-                    value={editing.end_date?.slice(0, 10) ?? ""}
-                    onChange={(e) => setEditing((p) => (p ? { ...p, end_date: e.target.value || null } : p))}
-                    className={inputClass}
-                  />
-                </label>
+                <DatePicker label="Start date" value={editing.start_date?.slice(0, 10) ?? ""} maxDate={editing.end_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, start_date: date || null } : previous)} />
+                <DatePicker label="End date" value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, end_date: date || null } : previous)} />
                 <label>
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
                   <select value={editing.status} onChange={(e) => setEditing((p) => (p ? { ...p, status: e.target.value } : p))} className={inputClass}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuEyeOff as EyeOff, LuLoaderCircle as Loader2 } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuEyeOff as EyeOff, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -62,6 +62,8 @@ export default function CompanyInfoTab() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedStateId, setSelectedStateId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
 
   const { countries } = useGeoCountries();
   const { states } = useGeoStates(form.country_id ? Number(form.country_id) : null);
@@ -71,6 +73,7 @@ export default function CompanyInfoTab() {
   );
 
   useEffect(() => {
+    setLoadError("");
     Promise.all([api.get("/profile/me"), api.get("/suppliers/me")])
       .then(([profileRes, supplierRes]) => {
         const p = profileRes.data?.data ?? profileRes.data ?? {};
@@ -94,8 +97,8 @@ export default function CompanyInfoTab() {
           city_id: String(s.city_id || ""),
         });
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => setLoadError("Company details could not be loaded. Please retry before editing."));
+  }, [retryKey]);
 
   const set = (k: keyof CompanyForm, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -175,6 +178,12 @@ export default function CompanyInfoTab() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+      {loadError && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 lg:col-span-2">
+          <span className="flex items-center gap-2"><AlertCircle size={16} />{loadError}</span>
+          <button type="button" onClick={() => setRetryKey((key) => key + 1)} className="inline-flex items-center gap-1.5 font-bold underline"><RefreshCw size={14} />Retry</button>
+        </div>
+      )}
       {/* company details */}
       <form onSubmit={saveCompany} className="rounded-2xl border border-dash-border bg-white p-6 shadow-sm">
         <div className="mb-5 flex items-center justify-between">

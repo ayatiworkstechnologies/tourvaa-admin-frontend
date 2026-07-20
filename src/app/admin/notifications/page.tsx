@@ -147,11 +147,11 @@ export default function NotificationsPage() {
         </div>
       ),
     },
-    { key: "user_id", header: "User", render: (n) => (n.user_id ? `#${n.user_id}` : "—") },
+    { key: "user_id", header: "User", render: (n) => (n.user_id ? `#${n.user_id}` : "-") },
     {
       key: "entity_type",
       header: "Entity",
-      render: (n) => (n.entity_type ? `${n.entity_type} #${n.entity_id ?? "-"}` : "—"),
+      render: (n) => (n.entity_type ? `${n.entity_type} #${n.entity_id ?? "-"}` : "-"),
     },
     { key: "notification_type", header: "Type", className: "capitalize" },
     { key: "channel", header: "Channel", className: "capitalize" },

@@ -32,7 +32,7 @@ export default function CustomerSupportPage() {
       const res = await api.get("/customer/messages");
       setHistory(res.data?.items ?? res.data?.data ?? []);
     } catch {
-      // Non-fatal — the contact form still works even if history fails to load.
+      // Non-fatal - the contact form still works even if history fails to load.
     } finally {
       setLoadingHistory(false);
     }

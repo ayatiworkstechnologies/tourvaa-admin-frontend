@@ -19,7 +19,7 @@ type Payment = {
   created_at?: string;
 };
 
-function money(value?: string | number, currency = "AED") {
+function money(value?: string | number, currency = "USD") {
   if (value == null || value === "") return "-";
   const amount = Number(value);
   if (Number.isNaN(amount)) return String(value);

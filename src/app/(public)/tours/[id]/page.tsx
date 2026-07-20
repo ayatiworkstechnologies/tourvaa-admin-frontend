@@ -14,6 +14,7 @@ import { fetchPublicTourDetail, PublicTourDetail } from "@/lib/api/publicClient"
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useAuthContext } from "@/providers/AuthProvider";
 import DatePicker from "@/components/ui/DatePicker";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=80";
 
@@ -71,7 +72,7 @@ function EnquiryForm({ tourTitle }: { tourTitle: string }) {
       <input required value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Your Name" className={INPUT} />
       <input required type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="Email Address" className={INPUT} />
       <PhoneInput countryCode={phoneCountryCode} number={form.phone} onCountryCodeChange={setPhoneCountryCode} onNumberChange={(v) => set("phone", v)} label="Phone (optional)" />
-      <input type="date" title="Preferred travel date" value={form.date} onChange={(e) => set("date", e.target.value)} className={INPUT} />
+      <DatePicker value={form.date} onChange={(date) => set("date", date)} minDate={new Date().toISOString().split("T")[0]} placeholder="Preferred travel date" accent="teal" />
       <textarea value={form.message} onChange={(e) => set("message", e.target.value)} placeholder="Special requirements?" rows={3} className={`${INPUT} resize-none`} />
       <button type="submit" className="w-full rounded-xl bg-[#063c42] py-3.5 text-sm font-bold text-white transition-all hover:bg-teal-600 hover:shadow-lg mt-2">
         Send Enquiry
@@ -117,6 +118,7 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
   initialTravelDate: string; initialAdults: number; initialChildren: number; onClose: () => void;
 }) {
   const router = useRouter();
+  const { format: displayMoney } = useCurrency();
   const [step, setStep] = useState<BookingStep>("details");
   const [submitting, setSubmitting] = useState(false);
   const [bookingCode, setBookingCode] = useState("");
@@ -149,7 +151,7 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
   const paymentType = watched.paymentType ?? "partial";
   const agreed = watched.agreed ?? false;
 
-  const pricing = calcPrice(tour.pricing, adults, children, tour.currency || "AED", tour.price_start_per_person || 0);
+  const pricing = calcPrice(tour.pricing, adults, children, tour.currency || "USD", tour.price_start_per_person || 0);
   const totalPax = adults + children;
   const today = new Date().toISOString().split("T")[0];
   const phoneValue = phone ? combinePhone(phoneCountryCode, phone) : "";
@@ -186,7 +188,7 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
         customer_id: customerId, tour_id: tour.id, tour_name: tour.title,
         tour_date: values.travelDate, tour_start_date: values.travelDate,
         no_of_adults: values.adults, no_of_children: values.children,
-        currency: tour.currency || "AED", booking_source: "customer",
+        currency: tour.currency || "USD", booking_source: "customer",
         payment_type: values.paymentType, total_cost: pricing.total,
         customer_notes: values.notes || undefined,
         travellers: values.travellers.map((traveller, index) => ({
@@ -199,7 +201,7 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
         })),
       });
       const booking = res.data?.data ?? res.data;
-      setBookingCode(booking?.booking_code ?? "—");
+      setBookingCode(booking?.booking_code ?? "-");
       if (!booking?.id) throw new Error("Booking ID was not returned");
       onClose();
       router.push(`/customer/bookings/${booking.id}?new=1&pay=1`);
@@ -250,18 +252,18 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
                      </div>
                      <div className="flex justify-between">
                        <span>Adults ({adults})</span>
-                       <span className="text-white">{pricing.perPerson > 0 ? `${pricing.currency} ${(pricing.perPerson * adults).toLocaleString()}` : "TBD"}</span>
+                       <span className="text-white">{pricing.perPerson > 0 ? displayMoney(pricing.perPerson * adults, pricing.currency) : "TBD"}</span>
                      </div>
                      {children > 0 && (
                        <div className="flex justify-between">
                          <span>Children ({children})</span>
-                         <span className="text-white">{pricing.perPerson > 0 ? `${pricing.currency} ${(pricing.perPerson * children).toLocaleString()}` : "TBD"}</span>
+                         <span className="text-white">{pricing.perPerson > 0 ? displayMoney(pricing.perPerson * children, pricing.currency) : "TBD"}</span>
                        </div>
                      )}
                      <div className="my-3 h-px w-full bg-white/20" />
                      <div className="flex items-center justify-between">
                        <span className="text-base font-bold">Total</span>
-                       <span className="text-xl font-black text-white">{pricing.total > 0 ? `${pricing.currency} ${pricing.total.toLocaleString()}` : "Price on request"}</span>
+                       <span className="text-xl font-black text-white">{pricing.total > 0 ? displayMoney(pricing.total, pricing.currency) : "Price on request"}</span>
                      </div>
                    </div>
                 </div>
@@ -317,6 +319,8 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
                          minDate={today}
                          label="Select Travel Date *"
                          availableDates={tour.calendar.filter((c) => c.status === "available").map((c) => c.date)}
+                         restrictToAvailableDates={tour.calendar.length > 0}
+                         accent="teal"
                        />
                      )}
                    />
@@ -360,8 +364,8 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
                     <div className="block rounded-2xl border border-teal-100 bg-teal-50/50 px-5 py-5 lg:hidden">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-teal-600/70">{totalPax} traveller{totalPax > 1 ? "s" : ""} × {pricing.perPerson > 0 ? `${pricing.currency} ${pricing.perPerson.toLocaleString()}` : "TBD"}</p>
-                          <p className="text-2xl font-black text-teal-600">{pricing.total > 0 ? `${pricing.currency} ${pricing.total.toLocaleString()}` : "Price on request"}</p>
+                          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-teal-600/70">{totalPax} traveller{totalPax > 1 ? "s" : ""} × {pricing.perPerson > 0 ? displayMoney(pricing.perPerson, pricing.currency) : "TBD"}</p>
+                          <p className="text-2xl font-black text-teal-600">{pricing.total > 0 ? displayMoney(pricing.total, pricing.currency) : "Price on request"}</p>
                         </div>
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
                           <Users size={20} className="text-teal-600" />
@@ -459,7 +463,7 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
                      <div>
                        <p className="mb-1 text-xs font-bold uppercase tracking-widest text-teal-600/70">Total Amount Due</p>
                        <p className="text-3xl font-black text-teal-600">
-                         {pricing.total > 0 ? `${pricing.currency} ${pricing.total.toLocaleString()}` : "Price on request"}
+                         {pricing.total > 0 ? displayMoney(pricing.total, pricing.currency) : "Price on request"}
                        </p>
                      </div>
                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-xl font-black text-teal-600 shadow-sm">{totalPax}</span>
@@ -494,7 +498,7 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
                            value: "partial" as const,
                            label: "Pay 30% now",
                            amount: depositAmount,
-                           description: `Reserve your place. Pay the remaining ${pricing.currency} ${(pricing.total - depositAmount).toLocaleString()} later.`,
+                           description: `Reserve your place. Pay the remaining ${displayMoney(pricing.total - depositAmount, pricing.currency)} later.`,
                          },
                          {
                            value: "full" as const,
@@ -516,14 +520,14 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
                                  {selected && <span className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
                                </span>
                              </span>
-                             <span className="mt-3 block text-lg font-black text-teal-700">{pricing.currency} {option.amount.toLocaleString()}</span>
+                             <span className="mt-3 block text-lg font-black text-teal-700">{displayMoney(option.amount, pricing.currency)}</span>
                            </label>
                          );
                        })}
                      </div>
                      <div className="mt-3 flex items-center justify-between rounded-xl bg-zinc-950 px-4 py-3 text-white">
                        <span className="text-xs font-bold">Pay securely now</span>
-                       <span className="text-base font-black">{pricing.currency} {paymentAmount.toLocaleString()}</span>
+                       <span className="text-base font-black">{displayMoney(paymentAmount, pricing.currency)}</span>
                      </div>
                    </fieldset>
                  )}
@@ -607,7 +611,7 @@ function BookingModal({ tour, customerId, customerName, customerEmail, initialTr
                )}
                {step === "confirm" && (
                  <button type="submit" disabled={!agreed || submitting} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-teal-600 py-4 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition-all hover:bg-teal-700 disabled:shadow-none disabled:opacity-50">
-                   {submitting ? "Creating request..." : `Continue to Pay ${pricing.currency} ${paymentAmount.toLocaleString()}`}
+                   {submitting ? "Creating request..." : `Continue to Pay ${displayMoney(paymentAmount, pricing.currency)}`}
                  </button>
                )}
              </div>
@@ -663,6 +667,7 @@ function GuestPrompt({ onClose, returnPath, isLoggedIn }: { onClose: () => void;
 
 // main page
 export default function TourDetailPage() {
+  const { formatCompact: displayMoney } = useCurrency();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -942,7 +947,7 @@ export default function TourDetailPage() {
                     <div key={i} className="rounded-2xl border border-slate-100 bg-slate-50 p-5 transition-colors hover:bg-white hover:shadow-sm">
                       <p className="font-bold text-zinc-950">{a.name}</p>
                       {a.description && <p className="mt-2 text-sm leading-relaxed text-zinc-500">{a.description}</p>}
-                      {a.price && <p className="mt-3 text-sm font-black text-teal-600">+{a.currency || "AED"} {a.price.toLocaleString()}</p>}
+                      {a.price && <p className="mt-3 text-sm font-black text-teal-600">+{displayMoney(a.price, a.currency || tour.currency || "USD")}</p>}
                     </div>
                   ))}
                 </div>
@@ -958,21 +963,21 @@ export default function TourDetailPage() {
                       <p className="font-bold text-zinc-950">{e.title}</p>
                       {e.duration_days && <p className="mt-1 text-xs font-bold uppercase tracking-widest text-teal-600/70">{e.duration_days} extra days</p>}
                       {e.description && <p className="mt-2 text-sm leading-relaxed text-zinc-500">{e.description}</p>}
-                      {e.price && <p className="mt-3 text-sm font-black text-teal-600">+{tour.currency || "AED"} {e.price.toLocaleString()}</p>}
+                      {e.price && <p className="mt-3 text-sm font-black text-teal-600">+{displayMoney(e.price, tour.currency || "USD")}</p>}
                     </div>
                   ))}
                 </div>
               </Section>
             )}
 
-            <div id="reviews" className="scroll-mt-40 pt-6"><Section title="Traveller Reviews" icon={<Star size={18} />}><div className="grid gap-5 sm:grid-cols-2"><div><p className="text-4xl font-black text-[#0b2845]">4.8</p><div className="mt-2 flex gap-1 text-orange-500">{Array.from({ length: 5 }).map((_, index) => <Star key={index} size={14} className="fill-current" />)}</div><p className="mt-2 text-xs text-slate-500">Based on verified traveller feedback</p></div><blockquote className="rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">“Beautifully planned, responsive support, and a perfectly paced itinerary. We would happily book with Tourvaa again.”<footer className="mt-3 text-xs font-black text-slate-800">— Verified traveller</footer></blockquote></div></Section></div>
+            <div id="reviews" className="scroll-mt-40 pt-6"><Section title="Traveller Reviews" icon={<Star size={18} />}><div className="grid gap-5 sm:grid-cols-2"><div><p className="text-4xl font-black text-[#0b2845]">4.8</p><div className="mt-2 flex gap-1 text-orange-500">{Array.from({ length: 5 }).map((_, index) => <Star key={index} size={14} className="fill-current" />)}</div><p className="mt-2 text-xs text-slate-500">Based on verified traveller feedback</p></div><blockquote className="rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">“Beautifully planned, responsive support, and a perfectly paced itinerary. We would happily book with Tourvaa again.”<footer className="mt-3 text-xs font-black text-slate-800">- Verified traveller</footer></blockquote></div></Section></div>
             <div id="faqs" className="scroll-mt-40 pt-6"><Section title="Frequently Asked Questions" icon={<MessageSquare size={18} />}><div className="divide-y divide-slate-200">{[["Can this tour be customised?", "Yes. Dates, hotels, activities, and transfers can be adjusted with help from our travel team."], ["Are flights included?", "Flights are included only when explicitly listed under inclusions. Our team can help arrange them separately."], ["How will I receive confirmation?", "Your booking dashboard will contain confirmation, vouchers, payment information, and supplier updates."]].map(([question, answer]) => <details key={question} className="group py-4"><summary className="cursor-pointer list-none text-sm font-black text-slate-900">{question}<Plus size={15} className="float-right transition group-open:rotate-45" /></summary><p className="mt-3 pr-8 text-sm leading-6 text-slate-600">{answer}</p></details>)}</div></Section></div>
           </div>
 
           {/* Right sidebar */}
           <aside className="space-y-4">
             <div className="sticky top-24 z-10 rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
-              <div className="flex items-start justify-between"><div><p className="text-[11px] font-semibold text-slate-500">Price (Per Person)</p>{tour.price_start_per_person ? <p className="mt-2 text-4xl font-black text-[#0b2845]">{tour.currency || "AED"} {Number(tour.price_start_per_person).toLocaleString()}</p> : <p className="mt-2 text-xl font-black">Price on request</p>}</div>{tour.discounts[0] && <span className="mt-5 rounded-md bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">{tour.discounts[0].discount_type === "percentage" ? `${tour.discounts[0].value}% OFF` : "SPECIAL OFFER"}</span>}</div>
+              <div className="flex items-start justify-between"><div><p className="text-[11px] font-semibold text-slate-500">Price (Per Person)</p>{tour.price_start_per_person ? <p className="mt-2 text-4xl font-black text-[#0b2845]">{displayMoney(tour.price_start_per_person, tour.currency || "USD")}</p> : <p className="mt-2 text-xl font-black">Price on request</p>}</div>{tour.discounts[0] && <span className="mt-5 rounded-md bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">{tour.discounts[0].discount_type === "percentage" ? `${tour.discounts[0].value}% OFF` : "SPECIAL OFFER"}</span>}</div>
               <div className="mt-6 space-y-3"><button type="button" onClick={handleBookClick} className="flex w-full items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 text-left"><Calendar size={16} className="text-slate-500" /><span><span className="block text-[10px] font-black text-slate-600">Select Date</span><span className="text-xs text-slate-400">{initialTravelDate || "Choose travel date"}</span></span></button><button type="button" onClick={handleBookClick} className="flex w-full items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 text-left"><Users size={16} className="text-slate-500" /><span><span className="block text-[10px] font-black text-slate-600">Travellers</span><span className="text-xs text-slate-500">{initialAdults} Adult{initialAdults === 1 ? "" : "s"}{initialChildren ? `, ${initialChildren} Children` : ""}</span></span></button></div>
               {tour.discounts.length > 0 && <div className="mt-4 space-y-2">{tour.discounts.slice(0, 2).map((discount, index) => <p key={index} className="flex items-center gap-2 rounded-lg bg-teal-50 px-3 py-2 text-[11px] font-bold text-teal-800"><PartyPopper size={13} />{discount.label}</p>)}</div>}
               <button type="button" onClick={handleBookClick} disabled={checkingAccount} className="mt-5 w-full rounded-lg bg-orange-500 py-3.5 text-sm font-black text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600 disabled:opacity-60">{checkingAccount ? "Checking…" : "Check Availability"}</button>
@@ -984,7 +989,7 @@ export default function TourDetailPage() {
 
             <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><Headphones size={26} className="text-teal-700" /><h3 className="mt-3 font-black text-[#0b2845]">Need Help Planning?</h3><p className="mt-1 max-w-[14rem] text-xs leading-5 text-slate-500">Let our travel experts customise this tour for you.</p><Link href="/contact" className="mt-4 inline-flex rounded-lg border border-teal-800 px-4 py-2 text-xs font-black text-teal-900">Talk to an Expert</Link></div>
 
-            {tour.similar_tours.length > 0 && <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><h3 className="text-lg font-black text-[#0b2845]">Related Tours</h3><div className="mt-4 space-y-3">{tour.similar_tours.slice(0, 3).map((related) => <Link key={related.id} href={`/tours/${related.id}`} className="flex gap-3"><div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg"><img src={related.banner_image ? mediaUrl(related.banner_image) : PLACEHOLDER} alt={related.title} className="h-full w-full object-cover" /></div><div className="min-w-0"><p className="line-clamp-2 text-xs font-black text-slate-900">{related.title}</p><p className="mt-1 text-[10px] text-slate-500">{related.number_of_days} days · {related.country_name}</p>{related.price_start_per_person && <p className="mt-1 text-xs font-black text-teal-800">{related.currency} {related.price_start_per_person.toLocaleString()}</p>}</div></Link>)}</div><Link href="/tours" className="mt-4 block rounded-lg border border-teal-800 py-2 text-center text-xs font-black text-teal-900">View All Tours</Link></div>}
+            {tour.similar_tours.length > 0 && <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><h3 className="text-lg font-black text-[#0b2845]">Related Tours</h3><div className="mt-4 space-y-3">{tour.similar_tours.slice(0, 3).map((related) => <Link key={related.id} href={`/tours/${related.id}`} className="flex gap-3"><div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg"><img src={related.banner_image ? mediaUrl(related.banner_image) : PLACEHOLDER} alt={related.title} className="h-full w-full object-cover" /></div><div className="min-w-0"><p className="line-clamp-2 text-xs font-black text-slate-900">{related.title}</p><p className="mt-1 text-[10px] text-slate-500">{related.number_of_days} days · {related.country_name}</p>{related.price_start_per_person && <p className="mt-1 text-xs font-black text-teal-800">{displayMoney(related.price_start_per_person, related.currency || "USD")}</p>}</div></Link>)}</div><Link href="/tours" className="mt-4 block rounded-lg border border-teal-800 py-2 text-center text-xs font-black text-teal-900">View All Tours</Link></div>}
           </aside>
         </div>
       </div>

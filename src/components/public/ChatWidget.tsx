@@ -6,6 +6,8 @@ import Image from "next/image";
 import { useAuthContext } from "@/providers/AuthProvider";
 import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { useCurrency } from "@/hooks/useCurrency";
+import SharedDatePicker from "@/components/ui/DatePicker";
 
 type TourCard = { id: number; title: string; duration_days?: number; price?: number | null; currency: string; cover_image?: string | null; slug: string };
 type ActionData = {
@@ -36,6 +38,7 @@ const INITIAL_MESSAGE: Message = {
 const QUICK_QUESTIONS = ["Show me tour options", "How do I book a tour?", "Cancellation policy?", "How do payments work?"];
 
 function TourCards({ tours, onSelect }: { tours: TourCard[]; onSelect: (t: TourCard) => void }) {
+  const { formatCompact } = useCurrency();
   return (
     <div className="mt-2 grid gap-2">
       {tours.map(tour => (
@@ -48,7 +51,7 @@ function TourCards({ tours, onSelect }: { tours: TourCard[]; onSelect: (t: TourC
             <div className="mt-1 flex items-center justify-between">
               <div>
                 {tour.duration_days && <p className="text-xs text-dash-muted">{tour.duration_days} days</p>}
-                {tour.price && <p className="text-xs font-bold text-[#0284C7]">{tour.currency} {tour.price.toLocaleString()}</p>}
+                {tour.price && <p className="text-xs font-bold text-[#0284C7]">{formatCompact(tour.price, tour.currency || "USD")}</p>}
               </div>
               <button type="button" onClick={() => onSelect(tour)}
                 className="rounded-xl bg-[#0284C7] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0369A1]">
@@ -62,15 +65,14 @@ function TourCards({ tours, onSelect }: { tours: TourCard[]; onSelect: (t: TourC
   );
 }
 
-function DatePicker({ onSelect }: { onSelect: (date: string) => void }) {
+function ChatDatePicker({ onSelect }: { onSelect: (date: string) => void }) {
   const [value, setValue] = useState("");
   const today = new Date().toISOString().split("T")[0];
   return (
     <div className="mt-2 rounded-xl border border-dash-border bg-white p-3 shadow-sm">
       <p className="mb-2 text-xs font-bold text-dash-body">Select travel date</p>
       <div className="flex gap-2">
-        <input type="date" min={today} value={value} onChange={e => setValue(e.target.value)} aria-label="Travel date"
-          className="flex-1 rounded-xl border border-[#D9DEE8] bg-dash-bg px-3 py-2 text-sm outline-none focus:border-[#0284C7]" />
+        <SharedDatePicker value={value} onChange={setValue} minDate={today} placeholder="Travel date" className="min-w-0 flex-1" />
         <button type="button" aria-label="Confirm date" disabled={!value} onClick={() => value && onSelect(value)}
           className="rounded-xl bg-[#0284C7] px-3 py-2 text-xs font-bold text-white hover:bg-[#0369A1] disabled:opacity-40">
           <Calendar size={14} />
@@ -249,7 +251,7 @@ export default function ChatWidget() {
                     <TourCards tours={msg.action_data.tours} onSelect={handleSelectTour} />
                   )}
                   {msg.role === "assistant" && msg.action_type === "select_date" && msg.action_data?.tour_id && (
-                    <DatePicker onSelect={date => handleSelectDate(msg.action_data!.tour_id!, date)} />
+                    <ChatDatePicker onSelect={date => handleSelectDate(msg.action_data!.tour_id!, date)} />
                   )}
                   {msg.role === "assistant" && msg.action_type === "select_travellers" && msg.action_data?.tour_id && msg.action_data?.date && (
                     <TravellerPicker onSelect={n => handleSelectTravellers(msg.action_data!.tour_id!, msg.action_data!.date!, n)} />

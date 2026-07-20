@@ -7,6 +7,7 @@ import Link from "next/link";
 import { LuArrowRight as ArrowRight } from "react-icons/lu";
 import { fetchFeaturedTours, PublicTour } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=75";
 
@@ -19,6 +20,7 @@ const STATIC_FALLBACK = [
 
 function TourCard({ tour, isStatic }: { tour: Partial<PublicTour>; isStatic?: boolean }) {
   const href = isStatic ? "/tours" : `/tours/${tour.id}`;
+  const { formatCompact } = useCurrency();
   return (
     <Link href={href} className="group overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       <div className="relative aspect-[4/3] overflow-hidden">
@@ -34,7 +36,7 @@ function TourCard({ tour, isStatic }: { tour: Partial<PublicTour>; isStatic?: bo
         <p className="mt-1 text-xs font-semibold text-zinc-500">{[tour.city_name, tour.country_name].filter(Boolean).join(", ")} · {tour.number_of_days} Days</p>
         <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
           {tour.price_start_per_person
-            ? <p className="text-lg font-black text-zinc-950">{tour.currency} {Number(tour.price_start_per_person).toLocaleString()}<span className="text-xs font-semibold text-zinc-400"> /person</span></p>
+            ? <p className="text-lg font-black text-zinc-950">{formatCompact(tour.price_start_per_person, tour.currency || "USD")}<span className="text-xs font-semibold text-zinc-400"> /person</span></p>
             : <p className="text-sm font-semibold text-zinc-400">Price on request</p>}
           <span aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-50 text-teal-700 transition-colors group-hover:bg-teal-700 group-hover:text-white">
             <ArrowRight size={14} />

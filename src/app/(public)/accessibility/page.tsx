@@ -1,7 +1,7 @@
 ﻿import Link from "next/link";
 
 const features = [
-  ["Keyboard navigation", "All interactive elements — menus, forms, buttons, and links — are fully operable using a keyboard alone. Focus states are visible at all times."],
+  ["Keyboard navigation", "All interactive elements - menus, forms, buttons, and links - are fully operable using a keyboard alone. Focus states are visible at all times."],
   ["Screen reader support", "We use semantic HTML5 elements and ARIA labels where necessary to ensure compatibility with assistive technologies such as NVDA, VoiceOver, and JAWS."],
   ["Text contrast", "All text meets WCAG 2.1 AA contrast requirements, with a minimum contrast ratio of 4.5:1 for body text and 3:1 for large text and interface components."],
   ["Resizable text", "The platform remains usable when text is scaled up to 200% using browser zoom without loss of functionality or content."],

@@ -1,5 +1,5 @@
 /**
- * Frontend test runner — executes all module test files sequentially.
+ * Frontend test runner - executes all module test files sequentially.
  * Usage: node frontend/tests/run-tests.mjs
  */
 import { spawnSync } from "child_process";
@@ -15,6 +15,9 @@ const TEST_FILES = [
   "module-components.test.mjs",
   "dashboard.test.mjs",
   "auth-flow.test.mjs",
+  "currency-flow.test.mjs",
+  "calendar-flow.test.mjs",
+  "metadata-flow.test.mjs",
   "customer-flow.test.mjs",
   "supplier-flow.test.mjs",
   "agent-flow.test.mjs",

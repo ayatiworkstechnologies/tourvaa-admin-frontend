@@ -32,7 +32,7 @@ export default function CommissionsPage() {
     void load();
   }, [affiliateId, toast]);
 
-  const cur = summary.currency || "AED";
+  const cur = summary.currency || "USD";
   const fmt = (v: number | undefined) => `${cur} ${Number(v || 0).toLocaleString()}`;
 
   const cards = [

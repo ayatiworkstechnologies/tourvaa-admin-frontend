@@ -2,6 +2,7 @@
 
 import { LuSearch as Search } from "react-icons/lu";
 import { useGeoCountries } from "@/hooks/useGeo";
+import DatePicker from "@/components/ui/DatePicker";
 
 export type CustomerFilterState = {
   search: string;
@@ -81,19 +82,8 @@ export default function CustomerFilters({ filters, onChange }: Props) {
           <option value="refunded">Refunded</option>
         </select>
 
-        <input
-          type="date"
-          value={filters.start_date}
-          onChange={(event) => onChange("start_date", event.target.value)}
-          className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand"
-        />
-
-        <input
-          type="date"
-          value={filters.end_date}
-          onChange={(event) => onChange("end_date", event.target.value)}
-          className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand"
-        />
+        <DatePicker value={filters.start_date} maxDate={filters.end_date || undefined} onChange={(date) => onChange("start_date", date)} placeholder="Start date" />
+        <DatePicker value={filters.end_date} minDate={filters.start_date || undefined} onChange={(date) => onChange("end_date", date)} placeholder="End date" align="right" />
 
         <select
           value={filters.sort_by}

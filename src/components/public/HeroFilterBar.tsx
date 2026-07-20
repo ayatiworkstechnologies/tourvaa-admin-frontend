@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  LuCalendarDays as Calendar,
   LuChevronDown as ChevronDown,
   LuClock3 as Clock,
   LuMapPin as MapPin,
@@ -14,6 +13,7 @@ import {
   LuX as X,
 } from "react-icons/lu";
 import { fetchPublicCountries, PublicCountry } from "@/lib/api/publicClient";
+import DatePicker from "@/components/ui/DatePicker";
 
 type OpenField = "destination" | "travellers" | null;
 type DurationValue = "" | "short" | "week" | "extended" | "long";
@@ -248,13 +248,7 @@ export default function HeroFilterBar() {
             </span>
           </label>
 
-          <label className="flex min-h-16 min-w-0 items-center gap-3 rounded-xl px-3 transition hover:bg-slate-50 focus-within:bg-teal-50 focus-within:ring-1 focus-within:ring-inset focus-within:ring-teal-200">
-            <Calendar size={18} className="shrink-0 text-teal-700" />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Travel date</span>
-              <input type="date" value={travelDate} onChange={(event) => setTravelDate(event.target.value)} min={new Date().toISOString().split("T")[0]} className="mt-1 block w-full bg-transparent text-sm font-black text-slate-900 outline-none" />
-            </span>
-          </label>
+          <DatePicker value={travelDate} onChange={setTravelDate} minDate={new Date().toISOString().split("T")[0]} placeholder="Travel date" accent="teal" className="min-w-0" buttonClassName="min-h-16 border-0 bg-transparent shadow-none hover:bg-slate-50" />
 
           <div className="flex items-center p-1 sm:col-span-2 lg:col-span-1">
             <button type="submit" className="flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 text-sm font-black text-white shadow-lg shadow-orange-500/25 transition hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 lg:whitespace-nowrap">

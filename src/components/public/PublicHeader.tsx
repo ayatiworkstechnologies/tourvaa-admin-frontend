@@ -6,6 +6,7 @@ import { LuChevronDown as ChevronDown, LuHeart as Heart, LuLayoutDashboard as La
 import { useState, useRef, useEffect } from "react";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import { useAuthContext } from "@/providers/AuthProvider";
+import CurrencySelector from "@/components/public/CurrencySelector";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -54,7 +55,7 @@ export default function PublicHeader() {
   const handleLogout = () => {
     setOpen(false);
     setDropOpen(false);
-    logout("/");
+    logout();
   };
 
   const initials = user?.name
@@ -101,6 +102,7 @@ export default function PublicHeader() {
 
         {/* Auth */}
         <div className="flex items-center gap-3">
+          <CurrencySelector inverse={isHome && !scrolled} />
           <div className={`hidden items-center gap-1 lg:flex ${headerText}`}>
             <Link href="/tours" className={`flex items-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition ${scrolled || !isHome ? "hover:bg-slate-100" : "hover:bg-white/10"}`}><Search size={14} /> Search</Link>
             <Link href={isPortalUser ? dashboardPath : "/login"} className={`flex items-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition ${scrolled || !isHome ? "hover:bg-slate-100" : "hover:bg-white/10"}`}><Heart size={14} /> Wishlist</Link>

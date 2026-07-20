@@ -79,7 +79,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   const pageTitle = getTitle(pathname);
 
   return (
-    <div className="flex min-h-screen bg-dash-bg" style={portalThemeStyles.agent}>
+    <div className="agent-portal flex min-h-screen bg-dash-bg" style={portalThemeStyles.agent}>
       <Sidebar
         navItems={NAV}
         title="Tourvaa"
@@ -108,7 +108,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
           role="Agent / Reseller"
           profileHref="/agent/profile"
           onMenuClick={() => setSidebarOpen(true)}
-          theme="orange"
+          theme="navy"
         />
         <main className="flex-1">{children}</main>
       </div>

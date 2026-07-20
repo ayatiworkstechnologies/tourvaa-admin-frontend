@@ -15,7 +15,7 @@ const sections = [
   },
   {
     title: "4. Bookings and Payments",
-    content: "All bookings are subject to availability and confirmation by the relevant supplier. Payment terms, including deposit and balance schedules, will be specified at the time of booking. Prices displayed are inclusive of applicable taxes unless stated otherwise. Payment is processed in AED unless a different currency is shown.",
+    content: "All bookings are subject to availability and confirmation by the relevant supplier. Payment terms, including deposit and balance schedules, will be specified at the time of booking. Converted display prices are indicative. Payment is processed in the booking currency shown at checkout.",
   },
   {
     title: "5. Cancellations and Refunds",
@@ -27,7 +27,7 @@ const sections = [
   },
   {
     title: "7. Intellectual Property",
-    content: "All content on the Tourvaa platform — including text, images, logos, and software — is the property of Tourvaa NZ LLC or its licensors and is protected by copyright law. You may not reproduce, distribute, or create derivative works without express written permission.",
+    content: "All content on the Tourvaa platform - including text, images, logos, and software - is the property of Tourvaa NZ LLC or its licensors and is protected by copyright law. You may not reproduce, distribute, or create derivative works without express written permission.",
   },
   {
     title: "8. Limitation of Liability",

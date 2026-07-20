@@ -61,6 +61,7 @@ export default function SupplierBookingsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const limit = 10;
 
   const load = useCallback(async () => {
@@ -73,11 +74,8 @@ export default function SupplierBookingsPage() {
       const data = res.data;
       setBookings(data?.items ?? data?.data ?? data ?? []);
       setTotal(data?.total ?? 0);
-      if (data?.total && data?.limit) {
-        setTotalPages(Math.ceil(data.total / data.limit));
-      } else {
-        setTotalPages(1);
-      }
+      setStatusCounts(data?.status_counts ?? {});
+      setTotalPages(data?.total_pages ?? Math.max(1, Math.ceil(Number(data?.total ?? 0) / Number(data?.limit ?? limit))));
     } catch {
       setError("Failed to load bookings. Please try again.");
     } finally {
@@ -95,20 +93,20 @@ export default function SupplierBookingsPage() {
   };
 
   const stats = [
-    { label: "Total Bookings", value: total, icon: CalendarCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "Confirmed", value: bookings.filter((b) => ["confirmed", "ongoing"].includes(b.booking_status.toLowerCase())).length, icon: CheckCircle2, color: "text-sky-600", bg: "bg-sky-50" },
-    { label: "Awaiting Action", value: bookings.filter((b) => ["payment_authorized", "pending_supplier_acceptance"].includes(b.booking_status.toLowerCase())).length, icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Cancelled / Declined", value: bookings.filter((b) => ["cancelled", "declined"].includes(b.booking_status.toLowerCase())).length, icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" },
+    { label: "Total Bookings", value: Object.keys(statusCounts).length ? Object.values(statusCounts).reduce((sum, count) => sum + count, 0) : total, icon: CalendarCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Confirmed / Ongoing", value: (statusCounts.confirmed ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, color: "text-sky-600", bg: "bg-sky-50" },
+    { label: "Awaiting Action", value: (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0), icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Cancelled / Declined", value: (statusCounts.cancelled ?? 0) + (statusCounts.declined ?? 0), icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" },
   ];
 
   const columns: DataTableColumn<Booking>[] = [
     { key: "booking_code", header: "Booking", className: "font-mono text-xs text-dash-muted", render: (b) => b.booking_code },
-    { key: "tour", header: "Tour", className: "max-w-[200px]", render: (b) => <p className="truncate font-semibold text-dash-text">{b.tour_name ?? b.tour_title ?? "—"}</p> },
-    { key: "travel_date", header: "Travel Date", className: "whitespace-nowrap text-dash-muted", render: (b) => b.tour_date ?? b.travel_date ?? "—" },
-    { key: "travellers", header: "Travellers", className: "text-center text-dash-muted", render: (b) => b.num_travellers ?? b.total_pax ?? "—" },
+    { key: "tour", header: "Tour", className: "max-w-[200px]", render: (b) => <p className="truncate font-semibold text-dash-text">{b.tour_name ?? b.tour_title ?? "-"}</p> },
+    { key: "travel_date", header: "Travel Date", className: "whitespace-nowrap text-dash-muted", render: (b) => b.tour_date ?? b.travel_date ?? "-" },
+    { key: "travellers", header: "Travellers", className: "text-center text-dash-muted", render: (b) => b.num_travellers ?? b.total_pax ?? "-" },
     { key: "status", header: "Status", render: (b) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(b.booking_status)}`}>{b.booking_status.replaceAll("_", " ")}</span> },
-    { key: "payment", header: "Payment", render: (b) => b.payment_status ? <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(b.payment_status)}`}>{b.payment_status}</span> : <span className="text-xs text-dash-subtle">—</span> },
-    { key: "amount", header: "Amount", className: "whitespace-nowrap font-semibold text-dash-text", render: (b) => `${b.currency ?? "AED"} ${Number(b.final_amount ?? b.total_amount ?? 0).toLocaleString()}` },
+    { key: "payment", header: "Payment", render: (b) => b.payment_status ? <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(b.payment_status)}`}>{b.payment_status}</span> : <span className="text-xs text-dash-subtle">-</span> },
+    { key: "amount", header: "Amount", className: "whitespace-nowrap font-semibold text-dash-text", render: (b) => `${b.currency ?? "USD"} ${Number(b.final_amount ?? b.total_amount ?? 0).toLocaleString()}` },
   ];
 
   return (

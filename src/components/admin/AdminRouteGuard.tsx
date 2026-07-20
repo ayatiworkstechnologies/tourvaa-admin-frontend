@@ -21,7 +21,7 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!docsMode && !loading && !isLoggedIn && !isAdminLogin) {
-      router.replace("/admin/login");
+      router.replace("/login");
       return;
     }
     if (!docsMode && isWrongPortal && dashboard) {
@@ -31,7 +31,7 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
 
   if (docsMode || isAdminLogin) return <>{children}</>;
   if (loading) return <LoadingState label="Checking admin access..." fullPage />;
-  if (!isLoggedIn) return <LoadingState label="Redirecting to admin login..." fullPage />;
+  if (!isLoggedIn) return <LoadingState label="Redirecting to login..." fullPage />;
   if (isWrongPortal) return <LoadingState label="Redirecting to your portal..." fullPage />;
 
   return <>{children}</>;

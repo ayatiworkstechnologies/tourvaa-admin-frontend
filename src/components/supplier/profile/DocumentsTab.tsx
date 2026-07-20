@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { LuCircleCheckBig as CheckCircle2, LuFileText as FileText, LuLoaderCircle as Loader2, LuUpload as Upload } from "react-icons/lu";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuUpload as Upload } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -32,32 +32,40 @@ export default function DocumentsTab() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // Resolve supplier record ID from /suppliers/me (not user.id)
   useEffect(() => {
+    setError("");
     api.get("/suppliers/me")
       .then(res => {
         const id = res.data?.data?.id ?? res.data?.id;
         if (id) setSupplierId(Number(id));
       })
-      .catch(() => {});
-  }, [dashboard]);
+      .catch(() => {
+        setLoading(false);
+        setError("Supplier account details could not be loaded.");
+      });
+  }, [dashboard, retryKey]);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!supplierId) return;
     setLoading(true);
+    setError("");
     try {
       const res = await api.get(`/suppliers/${supplierId}/documents`);
       setDocs(res.data?.data ?? res.data ?? []);
     } catch {
       setDocs([]);
+      setError("Documents could not be loaded. Please retry.");
     } finally {
       setLoading(false);
     }
-  }
+  }, [supplierId]);
 
-  useEffect(() => { void load(); }, [supplierId]);
+  useEffect(() => { void load(); }, [load]);
 
   async function upload(docType: string, file: File) {
     if (!supplierId) return;
@@ -79,7 +87,7 @@ export default function DocumentsTab() {
 
   async function viewDocument(fileUrl: string) {
     if (fileUrl.startsWith("/api/private-documents/") || fileUrl.includes("/private-documents/")) {
-      // Private document — fetch with auth header, open as blob
+      // Private document - fetch with auth header, open as blob
       try {
         const res = await api.get(fileUrl.replace(/^\/api/, ""), { responseType: "blob" });
         const contentType = String(res.headers["content-type"] || "application/octet-stream");
@@ -125,6 +133,13 @@ export default function DocumentsTab() {
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <span className="flex items-center gap-2"><AlertCircle size={16} />{error}</span>
+          <button type="button" onClick={() => supplierId ? void load() : setRetryKey((key) => key + 1)} className="inline-flex items-center gap-1.5 font-bold underline"><RefreshCw size={14} />Retry</button>
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="animate-pulse h-20 rounded-xl border border-dash-border bg-white" />)}</div>

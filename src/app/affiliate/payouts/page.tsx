@@ -43,7 +43,7 @@ export default function AffiliatePayoutsPage() {
     { key: "amount", header: "Amount", className: "font-bold text-purple-700", render: (p) => `${p.currency} ${Number(p.total_amount).toLocaleString()}` },
     { key: "payment_method", header: "Payment Method", className: "text-xs capitalize text-dash-muted", render: (p) => p.payment_method },
     { key: "status", header: "Status", render: (p) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusCls(p.status)}`}>{p.status}</span> },
-    { key: "date", header: "Date", className: "text-xs text-dash-muted", render: (p) => (p.paid_at || p.created_at) ? new Date(p.paid_at || p.created_at!).toLocaleDateString() : "—" },
+    { key: "date", header: "Date", className: "text-xs text-dash-muted", render: (p) => (p.paid_at || p.created_at) ? new Date(p.paid_at || p.created_at!).toLocaleDateString() : "-" },
   ];
 
   return (

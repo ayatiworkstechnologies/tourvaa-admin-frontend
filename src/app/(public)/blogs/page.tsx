@@ -20,7 +20,7 @@ const posts = [
     category: "Guide",
     readTime: "8 min read",
     img: "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=900&q=75",
-    excerpt: "Everything you need to know about planning a safe, rewarding solo journey through South Asia — from budgeting and packing to booking and staying connected.",
+    excerpt: "Everything you need to know about planning a safe, rewarding solo journey through South Asia - from budgeting and packing to booking and staying connected.",
   },
   {
     slug: "wildlife-photography-tips",
@@ -47,7 +47,7 @@ const posts = [
     category: "Guide",
     readTime: "4 min read",
     img: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=75",
-    excerpt: "After hundreds of mountain departures, our team shares exactly what makes it into the bag — and what stays home.",
+    excerpt: "After hundreds of mountain departures, our team shares exactly what makes it into the bag - and what stays home.",
   },
   {
     slug: "heritage-walks-india",
@@ -56,7 +56,7 @@ const posts = [
     category: "Culture",
     readTime: "6 min read",
     img: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=900&q=75",
-    excerpt: "From Ahmedabad's old city lanes to Kolkata's colonial quarters — the best heritage walks across India and how to do them properly.",
+    excerpt: "From Ahmedabad's old city lanes to Kolkata's colonial quarters - the best heritage walks across India and how to do them properly.",
   },
 ];
 
@@ -73,7 +73,7 @@ export default function BlogsPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-teal-400">Blog</p>
           <h1 className="mt-4 text-5xl font-black drop-shadow-sm md:text-6xl">Travel stories & guides</h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/70">
-            Expert travel advice, destination guides, and stories from the road — written by our team and partner naturalists.
+            Expert travel advice, destination guides, and stories from the road - written by our team and partner naturalists.
           </p>
         </div>
       </section>

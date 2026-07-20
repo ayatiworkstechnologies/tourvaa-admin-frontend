@@ -89,23 +89,23 @@ const SIDEBAR_THEMES: Record<SidebarTheme, {
     edge: "w-px bg-[#CDE3D6]",
   },
   agent: {
-    shell: "border-[#F2C9AA] bg-[#FFF8F2] shadow-[8px_0_32px_-20px_rgba(234,88,12,0.3)]",
-    headerBorder: "border-[#F4D9C5]",
-    logo: "bg-gradient-to-br from-[#FF8A34] to-[#E65C00] text-white shadow-orange-200",
-    title: "text-[#512708]",
-    subtitle: "text-[#D95700]",
-    section: "text-[#D95700]/65",
-    active: "bg-[#E65C00] text-white shadow-[0_8px_20px_-10px_rgba(230,92,0,0.85)]",
+    shell: "border-[#DBE5F2] bg-[#F8FAFD] shadow-[8px_0_32px_-20px_rgba(37,99,235,0.24)]",
+    headerBorder: "border-[#E2EAF4]",
+    logo: "bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] text-white shadow-blue-200",
+    title: "text-[#172554]",
+    subtitle: "text-[#2563EB]",
+    section: "text-[#2563EB]/65",
+    active: "bg-[#2563EB] text-white shadow-[0_8px_20px_-10px_rgba(37,99,235,0.75)]",
     activeIcon: "text-white",
     activeDot: "bg-white",
-    inactive: "text-slate-600 hover:bg-[#FFF0E4] hover:text-[#B94700]",
-    inactiveIcon: "text-[#E8782C]",
-    footerBorder: "border-[#F4D9C5]",
+    inactive: "text-slate-600 hover:bg-[#EFF6FF] hover:text-[#1E3A8A]",
+    inactiveIcon: "text-[#4F7EDC]",
+    footerBorder: "border-[#E2EAF4]",
     logout: "text-slate-600 hover:bg-rose-50 hover:text-rose-600",
     logoutIcon: "text-rose-500",
-    toggle: "border-[#EFDFD1] bg-white text-[#D95700] hover:bg-orange-50",
+    toggle: "border-[#D8E3F1] bg-white text-[#2563EB] hover:bg-blue-50",
     glow: "bg-transparent",
-    edge: "w-1 bg-gradient-to-b from-[#FB923C] via-[#F97316] to-[#EA580C]",
+    edge: "w-1 bg-gradient-to-b from-[#60A5FA] via-[#2563EB] to-[#1E3A8A]",
   },
   customer: {
     shell: "border-[#D9E9E6] bg-white shadow-[8px_0_32px_-20px_rgba(7,91,87,0.22)]",
@@ -285,7 +285,7 @@ export default function Sidebar({
             {bottomItems.map((item, index) => renderSidebarItem(item, index))}
             <button
               type="button"
-              onClick={() => logout("/")}
+              onClick={() => logout()}
               onMouseEnter={(e) => showTooltip(e, "Logout")}
               onMouseLeave={hideTooltip}
               className={`flex h-12 w-full items-center rounded-xl px-3.5 transition ${colors.logout} ${
@@ -301,7 +301,7 @@ export default function Sidebar({
         </div>
       </aside>
 
-      {/* Portal tooltip — renders outside the sidebar overflow context */}
+      {/* Portal tooltip - renders outside the sidebar overflow context */}
       {collapsed && tooltip && typeof window !== "undefined" &&
         createPortal(
           <div

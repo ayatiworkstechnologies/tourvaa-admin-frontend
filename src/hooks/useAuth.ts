@@ -40,8 +40,8 @@ export function useAuth() {
     }
   };
 
-  const logout = (redirectTo?: string) => {
-    auth.logout(redirectTo);
+  const logout = () => {
+    auth.logout();
   };
 
   return {

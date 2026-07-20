@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuPlus as Plus, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuPlus as Plus, LuRefreshCw as RefreshCw, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
@@ -20,15 +20,15 @@ type Booking = {
 
 const STATUSES = ["all", "pending_payment", "payment_authorized", "pending_supplier_acceptance", "confirmed", "ongoing", "completed", "cancelled", "declined"];
 
-function money(value: string | number | undefined, currency = "AED") {
-  if (!value && value !== 0) return "—";
+function money(value: string | number | undefined, currency = "USD") {
+  if (!value && value !== 0) return "-";
   const amount = Number(value);
   if (Number.isNaN(amount)) return String(value);
   return `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)}`;
 }
 
 function dateText(value?: string | null) {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
@@ -56,12 +56,16 @@ export default function AgentBookingsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [error, setError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
   const limit = 10;
 
   useEffect(() => {
     let active = true;
     async function load() {
       setLoading(true);
+      setError("");
       try {
         const params: Record<string, unknown> = { limit, page };
         if (statusFilter !== "all") params.booking_status = statusFilter;
@@ -69,15 +73,19 @@ export default function AgentBookingsPage() {
         if (!active) return;
         setBookings(res.data?.items ?? res.data?.data ?? []);
         setTotal(res.data?.total ?? 0);
+        setStatusCounts(res.data?.status_counts ?? {});
       } catch {
-        if (active) setBookings([]);
+        if (active) {
+          setBookings([]);
+          setError("Bookings could not be loaded. Please try again.");
+        }
       } finally {
         if (active) setLoading(false);
       }
     }
     load();
     return () => { active = false; };
-  }, [page, statusFilter]);
+  }, [page, statusFilter, retryKey]);
 
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -87,16 +95,16 @@ export default function AgentBookingsPage() {
   }
 
   const stats = [
-    { label: "Total Bookings", value: total, icon: CalendarCheck, color: "text-orange-600", bg: "bg-orange-50" },
-    { label: "Confirmed", value: bookings.filter((b) => ["confirmed", "ongoing"].includes(b.booking_status.toLowerCase())).length, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "Pending", value: bookings.filter((b) => ["pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(b.booking_status.toLowerCase())).length, icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Cancelled", value: bookings.filter((b) => ["cancelled", "declined"].includes(b.booking_status.toLowerCase())).length, icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" },
+    { label: "Total Bookings", value: Object.values(statusCounts).reduce((sum, count) => sum + count, 0), icon: CalendarCheck, color: "text-dash-brand", bg: "bg-[var(--portal-soft)]" },
+    { label: "Confirmed", value: (statusCounts.confirmed ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Pending", value: (statusCounts.pending_payment ?? 0) + (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0), icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Cancelled", value: (statusCounts.cancelled ?? 0) + (statusCounts.declined ?? 0) + (statusCounts.refunded ?? 0), icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" },
   ];
 
   const columns: DataTableColumn<Booking>[] = [
-    { key: "code", header: "Code", render: (b) => <Link href={`/agent/bookings/${b.id}`} className="hover:text-orange-600 hover:underline">{b.booking_code}</Link>, className: "font-bold text-dash-text" },
-    { key: "customer", header: "Customer", render: (b) => b.customer_name ?? "—", className: "hidden text-dash-muted sm:table-cell" },
-    { key: "tour", header: "Tour", render: (b) => b.tour_name ?? "—", className: "hidden max-w-[180px] truncate text-dash-muted md:table-cell" },
+    { key: "code", header: "Code", render: (b) => <Link href={`/agent/bookings/${b.id}`} className="hover:text-dash-brand hover:underline">{b.booking_code}</Link>, className: "font-bold text-dash-text" },
+    { key: "customer", header: "Customer", render: (b) => b.customer_name ?? "-", className: "hidden text-dash-muted sm:table-cell" },
+    { key: "tour", header: "Tour", render: (b) => b.tour_name ?? "-", className: "hidden max-w-[180px] truncate text-dash-muted md:table-cell" },
     { key: "date", header: "Date", render: (b) => dateText(b.tour_date), className: "hidden text-dash-muted lg:table-cell" },
     { key: "status", header: "Status", render: (b) => <Pill status={b.booking_status}>{b.booking_status.replaceAll("_", " ")}</Pill> },
     { key: "payment", header: "Payment", render: (b) => <Pill status={b.payment_status}>{b.payment_status.replaceAll("_", " ")}</Pill>, className: "hidden xl:table-cell" },
@@ -106,17 +114,17 @@ export default function AgentBookingsPage() {
   return (
     <div className="p-6 md:p-8">
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-orange-500 to-orange-700 p-7 text-white shadow-xl shadow-orange-200/60 md:p-9">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-blue-200/40 md:p-9">
         <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Bookings</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-orange-100">All bookings created on behalf of your customers.</p>
+            <p className="mt-2 max-w-md text-sm font-medium text-blue-100">All bookings created on behalf of your customers.</p>
           </div>
           <Link
             href="/agent/bookings/create"
-            className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-orange-700 shadow-sm transition hover:bg-orange-50 hover:-translate-y-0.5"
+            className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-dash-brand-dark shadow-sm transition hover:bg-[var(--portal-soft)] hover:-translate-y-0.5"
           >
             <Plus size={18} strokeWidth={2.5} /> New Booking
           </Link>
@@ -160,6 +168,7 @@ export default function AgentBookingsPage() {
 
       {/* Table */}
       <div className="mt-6">
+        {error && <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700"><span>{error}</span><button type="button" onClick={() => setRetryKey((value) => value + 1)} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs shadow-sm ring-1 ring-rose-200"><RefreshCw size={13} />Retry</button></div>}
         <DataTable
           ariaLabel="Bookings"
           columns={columns}

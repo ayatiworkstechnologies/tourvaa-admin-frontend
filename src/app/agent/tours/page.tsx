@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { LuClock as Clock, LuMapPin as MapPin, LuPlus as Plus, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuClock as Clock, LuMapPin as MapPin, LuPlus as Plus, LuRefreshCw as RefreshCw, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 
@@ -19,8 +20,8 @@ type Tour = {
   banner_image?: string;
 };
 
-function money(value: string | number | undefined, currency = "AED") {
-  if (!value) return "—";
+function money(value: string | number | undefined, currency = "USD") {
+  if (!value) return "-";
   const amount = Number(value);
   if (Number.isNaN(amount)) return String(value);
   return `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)}`;
@@ -48,11 +49,14 @@ export default function AgentToursPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
+  const [error, setError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let active = true;
     async function load() {
       setLoading(true);
+      setError("");
       try {
         const res = await api.get("/public/tours", {
           params: { limit: 12, page, search: query || undefined },
@@ -64,14 +68,18 @@ export default function AgentToursPage() {
         setTotal(data?.total ?? items.length);
         setHasMore(items.length === 12);
       } catch {
-        if (active) setTours([]);
+        if (active) {
+          if (page === 1) setTours([]);
+          setHasMore(false);
+          setError("Tours could not be loaded. Please retry.");
+        }
       } finally {
         if (active) setLoading(false);
       }
     }
     load();
     return () => { active = false; };
-  }, [query, page]);
+  }, [query, page, retryKey]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -82,19 +90,19 @@ export default function AgentToursPage() {
   return (
     <div className="p-6 md:p-8">
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-orange-500 to-orange-700 p-7 text-white shadow-xl shadow-orange-200/60 md:p-9">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-blue-200/40 md:p-9">
         <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Browse Tours</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-orange-100">
+            <p className="mt-2 max-w-md text-sm font-medium text-blue-100">
               Find and book tours for your customers.{total > 0 && ` ${total} tours available.`}
             </p>
           </div>
           <Link
             href="/agent/bookings/create"
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-orange-700 shadow-sm transition hover:bg-orange-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-dash-brand-dark shadow-sm transition hover:bg-[var(--portal-soft)]"
           >
             <Plus size={16} /> Create Booking
           </Link>
@@ -109,16 +117,23 @@ export default function AgentToursPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tours by name, destination…"
-            className="w-full rounded-xl border border-dash-border bg-white py-2.5 pl-9 pr-4 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-50"
+            className="w-full rounded-xl border border-dash-border bg-white py-2.5 pl-9 pr-4 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-blue-50"
           />
         </div>
         <button
           type="submit"
-          className="flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-700"
+          className="flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white transition hover:bg-dash-brand-hover"
         >
           <SlidersHorizontal size={15} /> Search
         </button>
       </form>
+
+      {error && (
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+          <span className="flex items-center gap-2"><AlertCircle size={16} />{error}</span>
+          <button type="button" onClick={() => setRetryKey((value) => value + 1)} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs shadow-sm"><RefreshCw size={13} />Retry</button>
+        </div>
+      )}
 
       {/* Tours Grid */}
       {loading && page === 1 ? (
@@ -149,16 +164,19 @@ export default function AgentToursPage() {
                 className="group overflow-hidden rounded-xl border border-dash-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 {/* Thumbnail */}
-                <div className="relative h-44 overflow-hidden bg-orange-50">
+                <div className="relative h-44 overflow-hidden bg-[var(--portal-soft)]">
                   {tour.banner_image ? (
-                    <img
+                    <Image
                       src={mediaUrl(tour.banner_image)}
                       alt={tour.title}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      unoptimized
                       className="h-full w-full object-cover transition group-hover:scale-105"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <MapPin size={32} className="text-orange-300" />
+                      <MapPin size={32} className="text-blue-300" />
                     </div>
                   )}
                   {tour.category_name && (
@@ -189,13 +207,13 @@ export default function AgentToursPage() {
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs text-dash-muted">From</p>
-                      <p className="text-base font-black text-orange-600">
-                        {money(tour.price_start_per_person, tour.currency ?? "AED")}
+                      <p className="text-base font-black text-dash-brand">
+                        {money(tour.price_start_per_person, tour.currency ?? "USD")}
                       </p>
                     </div>
                     <Link
                       href={`/agent/bookings/create?tour_id=${tour.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-orange-700"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white transition hover:bg-dash-brand-hover"
                     >
                       <Plus size={13} /> Book This
                     </Link>

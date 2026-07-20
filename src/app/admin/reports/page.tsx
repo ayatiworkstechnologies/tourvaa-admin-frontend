@@ -5,6 +5,7 @@ import { LuDownload as Download, LuLoaderCircle as Loader2, LuTrendingUp as Tren
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import DatePicker from "@/components/ui/DatePicker";
 import {
   exportReportCsv,
   getAgentReport,
@@ -107,7 +108,7 @@ const PERIOD_OPTIONS: { value: ReportPeriod; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
-// report row types (loose — different report types have different shapes)
+// report row types (loose - different report types have different shapes)
 type ReportRow = Record<string, string | number | null>;
 
 function money(value: unknown) {
@@ -447,23 +448,9 @@ export default function ReportsPage() {
 
               {period === "custom" && (
                 <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    title="Start date"
-                    aria-label="Start date"
-                    value={customStart}
-                    onChange={(e) => setCustomStart(e.target.value)}
-                    className="rounded-xl border border-dash-border px-3 py-1.5 text-xs outline-none focus:border-dash-brand"
-                  />
+                  <DatePicker value={customStart} maxDate={customEnd || undefined} onChange={setCustomStart} placeholder="Start date" className="w-48" />
                   <span className="text-xs text-dash-subtle">to</span>
-                  <input
-                    type="date"
-                    title="End date"
-                    aria-label="End date"
-                    value={customEnd}
-                    onChange={(e) => setCustomEnd(e.target.value)}
-                    className="rounded-xl border border-dash-border px-3 py-1.5 text-xs outline-none focus:border-dash-brand"
-                  />
+                  <DatePicker value={customEnd} minDate={customStart || undefined} onChange={setCustomEnd} placeholder="End date" className="w-48" align="right" />
                 </div>
               )}
             </div>

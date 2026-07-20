@@ -6,6 +6,7 @@ import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleD
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";
+import DatePicker from "@/components/ui/DatePicker";
 
 type Summary = {
   total_bookings?: number;
@@ -41,21 +42,31 @@ export default function AgentDashboardPage() {
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [filters, setFilters] = useState({ start_date: "", end_date: "", status: "" });
 
   const load = useCallback(async () => {
       setLoading(true);
+      setError("");
       try {
         const bookingParams: Record<string, string | number> = { limit: 5 };
         if (filters.start_date) bookingParams.start_date = filters.start_date;
         if (filters.end_date) bookingParams.end_date = filters.end_date;
         if (filters.status) bookingParams.booking_status = filters.status;
+        const summaryParams = {
+          start_date: filters.start_date || undefined,
+          end_date: filters.end_date || undefined,
+          booking_status: filters.status || undefined,
+        };
         const [sumRes, bookRes] = await Promise.allSettled([
-          api.get("/dashboard/summary", { params: filters.start_date || filters.end_date ? { start_date: filters.start_date, end_date: filters.end_date } : {} }),
+          api.get("/dashboard/summary", { params: summaryParams }),
           api.get("/bookings", { params: bookingParams }),
         ]);
         if (sumRes.status === "fulfilled") setSummary(sumRes.value.data?.data ?? {});
         if (bookRes.status === "fulfilled") setBookings(bookRes.value.data?.items ?? bookRes.value.data?.data ?? []);
+        if (sumRes.status === "rejected" || bookRes.status === "rejected") {
+          setError("Some dashboard data could not be loaded. Retry to refresh the figures.");
+        }
       } finally {
         setLoading(false);
       }
@@ -64,12 +75,12 @@ export default function AgentDashboardPage() {
   useEffect(() => { void load(); }, [load]);
 
   const stats = [
-    { label: "Total Bookings", value: summary.total_bookings ?? bookings.length, icon: CalendarCheck, sub: "Filtered" },
-    { label: "Active Customers", value: summary.active_customers ?? 0, icon: Users, sub: "Platform" },
-    { label: "Upcoming Bookings", value: summary.upcoming_bookings ?? bookings.filter((b) => b.booking_status === "confirmed").length, icon: PackageCheck, sub: "Confirmed" },
-    { label: "Monthly Revenue", value: formatCompact(summary.monthly_revenue), icon: CircleDollarSign, sub: "Revenue" },
-    { label: "Commission Earned", value: formatCompact(summary.commission_earned), icon: CircleDollarSign, sub: "All time" },
-    { label: "Completed", value: summary.completed_bookings ?? bookings.filter((b) => b.booking_status === "completed").length, icon: PackageCheck, sub: "Finished" },
+    { label: "Total Bookings", value: summary.total_bookings ?? bookings.length, icon: CalendarCheck, sub: "Filtered", href: "/agent/bookings" },
+    { label: "Active Customers", value: summary.active_customers ?? 0, icon: Users, sub: "Filtered", href: "/agent/customers" },
+    { label: "Active Bookings", value: summary.upcoming_bookings ?? bookings.filter((b) => b.booking_status === "confirmed").length, icon: PackageCheck, sub: "In progress", href: "/agent/bookings" },
+    { label: "Paid Revenue", value: formatCompact(summary.monthly_revenue), icon: CircleDollarSign, sub: "Filtered", href: "/agent/bookings" },
+    { label: "Est. Commission", value: formatCompact(summary.commission_earned), icon: CircleDollarSign, sub: "Filtered", href: "/agent/invoices" },
+    { label: "Completed", value: summary.completed_bookings ?? bookings.filter((b) => b.booking_status === "completed").length, icon: PackageCheck, sub: "Finished", href: "/agent/bookings" },
   ];
 
   return (
@@ -77,7 +88,7 @@ export default function AgentDashboardPage() {
       {/* Gradient hero banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-10 text-white shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
         <div className="relative z-10">
-          <span className="text-[10px] font-black uppercase tracking-widest text-dash-brand bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-md">Agent Portal</span>
+          <span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-blue-100 backdrop-blur-md">Agent Portal</span>
           <h2 className="mt-4 text-[32px] leading-tight font-black tracking-tight text-white">Manage bookings & customers</h2>
           <p className="mt-2 text-sm text-white/80 max-w-lg">Create bookings, track commissions, and manage your customer relationships.</p>
         </div>
@@ -92,6 +103,12 @@ export default function AgentDashboardPage() {
       </div>
 
       {/* Stat cards */}
+      {error && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          <span>{error}</span>
+          <button type="button" onClick={() => void load()} className="rounded-lg bg-white px-3 py-1.5 font-bold shadow-sm ring-1 ring-amber-200 hover:bg-amber-100">Retry</button>
+        </div>
+      )}
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -100,8 +117,8 @@ export default function AgentDashboardPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map(({ label, value, icon: Icon, sub }) => (
-            <div key={label} className="group flex items-center justify-between rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] hover:shadow-xl hover:border-dash-brand/30 transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+          {stats.map(({ label, value, icon: Icon, sub, href }) => (
+            <Link key={label} href={href} className="group flex items-center justify-between rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] hover:shadow-xl hover:border-dash-brand/30 transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center gap-5">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--portal-soft)] text-dash-brand group-hover:bg-dash-brand group-hover:text-white transition-colors duration-300 shadow-sm">
                   <Icon size={24} strokeWidth={2} />
@@ -112,7 +129,7 @@ export default function AgentDashboardPage() {
                 </div>
               </div>
               <span className="rounded-md bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-dash-muted border border-slate-100">{sub}</span>
-            </div>
+            </Link>
           ))}
         </div>
       )}
@@ -122,16 +139,8 @@ export default function AgentDashboardPage() {
         <h2 className="font-black text-dash-text">Dashboard Filters</h2>
         <p className="mt-0.5 text-sm text-dash-muted">Filter booking data by date range and status.</p>
         <div className="mt-4 flex flex-wrap items-end gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Start Date</label>
-            <input type="date" title="Start date" value={filters.start_date} onChange={(e) => setFilters((f) => ({ ...f, start_date: e.target.value }))}
-              className="rounded-lg border border-[#D0D5DD] px-3 py-2 text-sm text-dash-body outline-none focus:border-dash-brand" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">End Date</label>
-            <input type="date" title="End date" value={filters.end_date} onChange={(e) => setFilters((f) => ({ ...f, end_date: e.target.value }))}
-              className="rounded-lg border border-[#D0D5DD] px-3 py-2 text-sm text-dash-body outline-none focus:border-dash-brand" />
-          </div>
+          <DatePicker label="Start date" value={filters.start_date} maxDate={filters.end_date || undefined} onChange={(date) => setFilters((filters) => ({ ...filters, start_date: date }))} className="min-w-52" />
+          <DatePicker label="End date" value={filters.end_date} minDate={filters.start_date || undefined} onChange={(date) => setFilters((filters) => ({ ...filters, end_date: date }))} className="min-w-52" />
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Booking Status</label>
             <select title="Booking status" value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
@@ -170,7 +179,7 @@ export default function AgentDashboardPage() {
                 <div key={b.id} className="flex items-center justify-between rounded-xl border border-dash-border px-4 py-3">
                   <div>
                     <p className="font-semibold text-dash-text">{b.booking_code}</p>
-                    <p className="text-xs text-dash-muted">{b.customer_name ?? b.tour_name ?? "—"}</p>
+                    <p className="text-xs text-dash-muted">{b.customer_name ?? b.tour_name ?? "-"}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusColors(b.booking_status)}`}>

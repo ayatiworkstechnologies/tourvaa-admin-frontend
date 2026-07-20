@@ -27,7 +27,7 @@ type AuthContextValue = {
   isLoggedIn: boolean;
   loginWithToken: (token: string) => Promise<void>;
   refreshSession: () => Promise<DashboardData | null>;
-  logout: (redirectTo?: string) => void;
+  logout: () => void;
   hasPermission: (permission: string) => boolean;
 };
 
@@ -225,7 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isPublic = isPublicRoute(pathname);
 
     if (!token && !isPublic) {
-      router.replace(pathname.startsWith("/admin") ? "/admin/login" : "/login");
+      router.replace("/login");
       return;
     }
 
@@ -244,11 +244,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [refreshSession]
   );
 
-  const logout = useCallback((redirectTo = "/login") => {
+  const logout = useCallback(() => {
     clearSession();
     setTokenState(null);
     setDashboard(null);
-    router.push(redirectTo);
+    router.replace("/login");
   }, [router]);
 
   const hasPermission = useCallback(

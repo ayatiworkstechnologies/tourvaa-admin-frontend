@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LuPlus as Plus, LuSearch as Search, LuUserPlus as UserPlus, LuX as X } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuPlus as Plus, LuRefreshCw as RefreshCw, LuSearch as Search, LuUserPlus as UserPlus, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/useToast";
@@ -14,6 +14,10 @@ type Customer = {
   full_name?: string;
   email: string;
   phone?: string;
+  country?: string;
+  country_name?: string;
+  city?: string;
+  city_name?: string;
   booking_count?: number;
   total_bookings?: number;
   status?: string;
@@ -29,7 +33,7 @@ function statusClass(status?: string) {
 }
 
 function dateText(value?: string | null) {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -43,7 +47,10 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-const BLANK = { first_name: "", last_name: "", email: "", phone: "", phone_country_code: "" };
+const BLANK = {
+  first_name: "", last_name: "", email: "", phone: "", phone_country_code: "+91",
+  country: "", state: "", city: "", postal_code: "", address_line_1: "", address_line_2: "",
+};
 
 export default function AgentCustomersPage() {
   const router = useRouter();
@@ -56,6 +63,8 @@ export default function AgentCustomersPage() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(BLANK);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
   const limit = 10;
 
   const debouncedSearch = useDebounce(search, 350);
@@ -69,19 +78,27 @@ export default function AgentCustomersPage() {
     abortRef.current = ctrl;
 
     setLoading(true);
+    setError("");
     const params: Record<string, unknown> = { limit, page };
     if (debouncedSearch) params.search = debouncedSearch;
 
     api.get("/customers", { params, signal: ctrl.signal })
       .then((r) => {
+        if (ctrl.signal.aborted) return;
         setCustomers(r.data?.items ?? r.data?.data ?? []);
         setTotal(r.data?.total ?? 0);
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!ctrl.signal.aborted) {
+          setCustomers([]);
+          setTotal(0);
+          setError("Customers could not be loaded. Please retry.");
+        }
+      })
+      .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });
 
     return () => ctrl.abort();
-  }, [page, debouncedSearch]);
+  }, [page, debouncedSearch, retryKey]);
 
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -103,6 +120,12 @@ export default function AgentCustomersPage() {
         full_name: fullName,
         email: form.email,
         phone,
+        country: form.country,
+        state: form.state,
+        city: form.city,
+        postal_code: form.postal_code,
+        address_line_1: form.address_line_1,
+        address_line_2: form.address_line_2,
       });
       const customerId = response.data?.data?.id ?? response.data?.id;
       toast.success("Customer created. Continue with their first booking.");
@@ -122,19 +145,20 @@ export default function AgentCustomersPage() {
       header: "Customer",
       render: (c) => (
         <>
-          <p className="font-bold text-dash-text">{c.full_name ?? "—"}</p>
+          <p className="font-bold text-dash-text">{c.full_name ?? "-"}</p>
           <p className="text-xs text-dash-muted">{c.email}</p>
         </>
       ),
     },
-    { key: "phone", header: "Phone", className: "hidden text-dash-muted sm:table-cell", render: (c) => c.phone ?? "—" },
+    { key: "phone", header: "Phone", className: "hidden text-dash-muted sm:table-cell", render: (c) => c.phone ?? "-" },
+    { key: "location", header: "Location", className: "hidden text-dash-muted lg:table-cell", render: (c) => [c.city_name ?? c.city, c.country_name ?? c.country].filter(Boolean).join(", ") || "-" },
     {
       key: "bookings",
       header: "Bookings",
       className: "hidden text-center font-bold text-dash-text md:table-cell",
       render: (c) => c.total_bookings ?? c.booking_count ?? 0,
     },
-    { key: "joined", header: "Joined", className: "hidden text-dash-muted lg:table-cell", render: (c) => dateText(c.created_at) },
+    { key: "joined", header: "Joined", className: "hidden text-dash-muted xl:table-cell", render: (c) => dateText(c.created_at) },
     {
       key: "status",
       header: "Status",
@@ -149,20 +173,20 @@ export default function AgentCustomersPage() {
   return (
     <div className="p-6 md:p-8">
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-orange-500 to-orange-700 p-7 text-white shadow-xl shadow-orange-200/60 md:p-9">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-blue-200/40 md:p-9">
         <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">My Customers</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-orange-100">
+            <p className="mt-2 max-w-md text-sm font-medium text-blue-100">
               Customers linked to your bookings.{total > 0 && ` ${total} total.`}
             </p>
           </div>
           <button
             type="button"
             onClick={() => { setForm(BLANK); setShowModal(true); }}
-            className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-orange-700 shadow-sm transition hover:bg-orange-50 hover:-translate-y-0.5"
+            className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-dash-brand-dark shadow-sm transition hover:bg-[var(--portal-soft)] hover:-translate-y-0.5"
           >
             <UserPlus size={16} strokeWidth={2.5} /> New Customer
           </button>
@@ -182,6 +206,12 @@ export default function AgentCustomersPage() {
 
       {/* Table */}
       <div className="mt-6">
+        {error && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+            <span className="flex items-center gap-2"><AlertCircle size={16} />{error}</span>
+            <button type="button" onClick={() => setRetryKey((value) => value + 1)} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs shadow-sm"><RefreshCw size={13} />Retry</button>
+          </div>
+        )}
         <DataTable
           ariaLabel="My Customers"
           columns={columns}
@@ -210,7 +240,7 @@ export default function AgentCustomersPage() {
       {/* New Customer Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-dash-border bg-white shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-dash-border bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-dash-border px-6 py-4">
               <h2 className="text-base font-bold text-dash-text">New Customer</h2>
               <button type="button" title="Close" onClick={() => setShowModal(false)} className="rounded-lg p-1.5 hover:bg-[#F3F8FC]">
@@ -245,6 +275,34 @@ export default function AgentCustomersPage() {
                   <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Phone</label>
                   <input value={form.phone} onChange={field("phone")} placeholder="555 000 0000"
                     className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Country</label>
+                  <input value={form.country} onChange={field("country")} placeholder="Country" autoComplete="country-name" className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">State / Province</label>
+                  <input value={form.state} onChange={field("state")} placeholder="State" autoComplete="address-level1" className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">City</label>
+                  <input value={form.city} onChange={field("city")} placeholder="City" autoComplete="address-level2" className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Address Line 1</label>
+                <input value={form.address_line_1} onChange={field("address_line_1")} placeholder="Street address" autoComplete="address-line1" className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Address Line 2</label>
+                  <input value={form.address_line_2} onChange={field("address_line_2")} placeholder="Apartment, suite, landmark" autoComplete="address-line2" className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Postal Code</label>
+                  <input value={form.postal_code} onChange={field("postal_code")} placeholder="Postal code" autoComplete="postal-code" className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
                 </div>
               </div>
               <div className="flex gap-3 pt-1">

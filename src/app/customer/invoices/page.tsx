@@ -18,7 +18,7 @@ type Invoice = {
   due_date?: string;
 };
 
-function money(value?: string | number, currency = "AED") {
+function money(value?: string | number, currency = "USD") {
   if (value == null || value === "") return "-";
   const amount = Number(value);
   return Number.isNaN(amount) ? String(value) : `${currency} ${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;

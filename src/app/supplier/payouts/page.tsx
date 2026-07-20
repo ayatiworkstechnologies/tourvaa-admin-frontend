@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus } from "react-icons/lu";
 import api from "@/lib/api/client";
 
@@ -17,6 +17,12 @@ type Payout = {
   paid_at?: string;
 };
 
+type LedgerEntry = {
+  amount_pending?: number | string;
+  currency?: string;
+  status?: string;
+};
+
 function statusColors(s: string) {
   const v = (s || "").toLowerCase();
   if (["paid", "completed", "settled"].includes(v))
@@ -28,7 +34,7 @@ function statusColors(s: string) {
   return "bg-slate-50 text-slate-600";
 }
 
-function money(v: number | string | undefined, cur = "AED") {
+function money(v: number | string | undefined, cur = "USD") {
   return `${cur} ${Number(v || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -41,13 +47,14 @@ const labelCls = "block text-xs font-bold text-dash-body mb-1.5";
 
 export default function PayoutsPage() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
 
   // Form state
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("AED");
+  const [currency, setCurrency] = useState("USD");
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -58,8 +65,12 @@ export default function PayoutsPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await api.get("/supplier-payouts", { params: { limit: 20 } });
-      setPayouts(res.data?.items ?? res.data?.data ?? res.data ?? []);
+      const [payoutRes, ledgerRes] = await Promise.all([
+        api.get("/supplier-payouts", { params: { limit: 20 } }),
+        api.get("/supplier-ledgers", { params: { limit: 100 } }),
+      ]);
+      setPayouts(payoutRes.data?.items ?? payoutRes.data?.data ?? payoutRes.data ?? []);
+      setLedgers(ledgerRes.data?.items ?? ledgerRes.data?.data ?? []);
     } catch {
       setError("Failed to load payouts. Please try again.");
     } finally {
@@ -71,9 +82,17 @@ export default function PayoutsPage() {
     void load();
   }, []);
 
+  const availableBalance = useMemo(() => ledgers
+    .filter((entry) => ["pending", "partial"].includes((entry.status || "").toLowerCase()) && (entry.currency || "USD") === currency)
+    .reduce((sum, entry) => sum + Number(entry.amount_pending || 0), 0), [ledgers, currency]);
+
   const handleRequestPayout = async () => {
     if (!amount || Number(amount) <= 0) {
       setFormError("Please enter a valid amount.");
+      return;
+    }
+    if (Number(amount) > availableBalance) {
+      setFormError(`Requested amount cannot exceed the available balance of ${money(availableBalance, currency)}.`);
       return;
     }
     setSubmitting(true);
@@ -146,6 +165,7 @@ export default function PayoutsPage() {
           <h2 className="mb-4 text-base font-black text-dash-text">
             Request Payout
           </h2>
+          <p className="mb-4 text-sm text-dash-muted">Available to request: <strong className="text-emerald-700">{money(availableBalance, currency)}</strong>. Amounts already reserved in another request are excluded.</p>
           {formError && (
             <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
               <AlertCircle size={16} />
@@ -160,6 +180,7 @@ export default function PayoutsPage() {
               <input
                 type="number"
                 min={0}
+                max={availableBalance}
                 step={0.01}
                 className={inputCls}
                 placeholder="e.g. 5000"
@@ -209,7 +230,7 @@ export default function PayoutsPage() {
             <button
               type="button"
               onClick={handleRequestPayout}
-              disabled={submitting}
+              disabled={submitting || availableBalance <= 0}
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
             >
               {submitting ? (

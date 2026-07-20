@@ -2,12 +2,12 @@
 
 /*
  * Semantic tokens for the dashboard portals (admin/customer/supplier/agent/
- * affiliate) — distinct from the public marketing site's --primary/--accent
+ * affiliate) - distinct from the public marketing site's --primary/--accent
  * indigo/violet palette below. Values match the colors already in de facto
  * use across those portals (measured by frequency across src/), so adopting
  * these tokens in a component is a pure rename, not a visual change.
  *
- * These are intentionally not yet applied anywhere — components still use
+ * These are intentionally not yet applied anywhere - components still use
  * arbitrary hex values like `text-[#667085]`. Migrating ~2,100 occurrences
  * across ~140 files is a large, visually-sensitive change that needs
  * browser-based verification to do safely; this block only establishes the
@@ -15,7 +15,7 @@
  * `border-dash`, `bg-dash-subtle`, etc. instead of inventing new hex values.
  */
 @theme {
-  /* Public marketing site — travel/tourism palette (sky blue + adventure
+  /* Public marketing site - travel/tourism palette (sky blue + adventure
    * orange), distinct from the --color-dash-* dashboard tokens above. */
   --color-pub-primary: #0EA5E9;
   --color-pub-primary-dark: #0369A1;
@@ -218,7 +218,7 @@ button {
 .delay-800 { animation-delay: 0.8s; }
 .delay-900 { animation-delay: 0.9s; }
 
-/* Aurora CTA gradient — sky blue to adventure orange */
+/* Aurora CTA gradient - sky blue to adventure orange */
 .cta-gradient {
   background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 45%, #EA580C 100%);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuEyeOff as EyeOff, LuLoaderCircle as Loader2 } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuEyeOff as EyeOff, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -64,6 +64,8 @@ export default function AgencyDetailsTab() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedStateId, setSelectedStateId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
 
   const { countries } = useGeoCountries();
   const { states } = useGeoStates(form.country_id ? Number(form.country_id) : null);
@@ -73,6 +75,7 @@ export default function AgencyDetailsTab() {
   );
 
   useEffect(() => {
+    setLoadError("");
     Promise.all([api.get("/profile/me"), api.get("/agents/me")])
       .then(([profileRes, agentRes]) => {
         const p = profileRes.data?.data ?? profileRes.data ?? {};
@@ -96,8 +99,8 @@ export default function AgencyDetailsTab() {
           city_id: String(a.city_id || ""),
         });
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => setLoadError("Agency details could not be loaded. Please retry before editing."));
+  }, [retryKey]);
 
   const set = (k: keyof AgencyForm, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -171,12 +174,18 @@ export default function AgencyDetailsTab() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+      {loadError && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 lg:col-span-2">
+          <span className="flex items-center gap-2"><AlertCircle size={16} />{loadError}</span>
+          <button type="button" onClick={() => setRetryKey((value) => value + 1)} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs shadow-sm"><RefreshCw size={13} />Retry</button>
+        </div>
+      )}
       {/* agency details */}
       <form onSubmit={saveAgency} className="rounded-2xl border border-dash-border bg-white p-6 shadow-sm">
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-lg font-bold text-dash-text">Agency Details</h3>
           <button type="submit" disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-60 transition-colors">
+            className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60 transition-colors">
             {saving ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
             Save Changes
           </button>
@@ -198,7 +207,7 @@ export default function AgencyDetailsTab() {
             <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Agency Name <span className="text-red-500">*</span></span>
             <input required value={form.agent_name} onChange={e => set("agent_name", e.target.value)}
               placeholder="Your agency name"
-              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all" />
           </label>
 
           {/* Email (read-only) */}
@@ -224,7 +233,7 @@ export default function AgencyDetailsTab() {
             <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Agency Address <span className="text-red-500">*</span></span>
             <input required value={form.address} onChange={e => set("address", e.target.value)}
               placeholder="Full business address"
-              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all" />
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -232,7 +241,7 @@ export default function AgencyDetailsTab() {
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Agency Type</span>
               <select value={form.agent_type} onChange={e => set("agent_type", e.target.value)}
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-orange-400">
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand">
                 <option value="">Select type</option>
                 {AGENT_TYPES.map(t => (
                   <option key={t} value={t}>
@@ -246,7 +255,7 @@ export default function AgencyDetailsTab() {
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Years in Operation</span>
               <input type="number" min="0" value={form.years_in_operation} onChange={e => set("years_in_operation", e.target.value)}
                 placeholder="e.g. 5"
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
 
             {/* IATA */}
@@ -254,14 +263,14 @@ export default function AgencyDetailsTab() {
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">IATA Number</span>
               <input value={form.iata_registration_number} onChange={e => set("iata_registration_number", e.target.value)}
                 placeholder="IATA registration number"
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
 
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">GST / Tax Number</span>
               <input value={form.gst_tax_number} onChange={e => set("gst_tax_number", e.target.value)}
                 placeholder="Tax ID"
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
 
             {/* Country */}
@@ -269,7 +278,7 @@ export default function AgencyDetailsTab() {
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country</span>
               <select value={form.country_id}
                 onChange={e => { setSelectedStateId(""); setForm(f => ({ ...f, country_id: e.target.value, city_id: "" })); }}
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-orange-400">
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand">
                 <option value="">Select country</option>
                 {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -280,7 +289,7 @@ export default function AgencyDetailsTab() {
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">State</span>
               <select value={selectedStateId} disabled={!form.country_id}
                 onChange={e => { setSelectedStateId(e.target.value); setForm(f => ({ ...f, city_id: "" })); }}
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-orange-400 disabled:bg-dash-bg">
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand disabled:bg-dash-bg">
                 <option value="">{form.country_id ? "Select state" : "Select country first"}</option>
                 {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
@@ -290,7 +299,7 @@ export default function AgencyDetailsTab() {
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">City</span>
               <select value={form.city_id} disabled={!form.country_id}
                 onChange={e => set("city_id", e.target.value)}
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-orange-400 disabled:bg-dash-bg">
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand disabled:bg-dash-bg">
                 <option value="">{form.country_id ? "Select city" : "Select country first"}</option>
                 {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -300,14 +309,14 @@ export default function AgencyDetailsTab() {
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Target Market</span>
               <input value={form.target_market} onChange={e => set("target_market", e.target.value)}
                 placeholder="e.g. Corporate travelers"
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
 
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Destinations Sold</span>
               <input value={form.destinations_sold} onChange={e => set("destinations_sold", e.target.value)}
                 placeholder="e.g. UAE, India, Europe"
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
           </div>
         </div>
@@ -318,7 +327,7 @@ export default function AgencyDetailsTab() {
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-lg font-bold text-dash-text">Security & Password</h3>
           <button type="submit" disabled={savingPw}
-            className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-60 transition-colors">
+            className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60 transition-colors">
             {savingPw ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
             Update
           </button>
@@ -331,9 +340,9 @@ export default function AgencyDetailsTab() {
               <input type={showCurrent ? "text" : "password"} required value={pwForm.current_password}
                 onChange={e => setPwForm(f => ({ ...f, current_password: e.target.value }))}
                 placeholder="Current password"
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 pr-11 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 pr-11 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all" />
               <button type="button" onClick={() => setShowCurrent(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-orange-500"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-dash-brand"
                 aria-label={showCurrent ? "Hide password" : "Show password"}>
                 {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -346,9 +355,9 @@ export default function AgencyDetailsTab() {
               <input type={showNew ? "text" : "password"} required minLength={8} value={pwForm.new_password}
                 onChange={e => setPwForm(f => ({ ...f, new_password: e.target.value }))}
                 placeholder="New password"
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 pr-11 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 pr-11 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all" />
               <button type="button" onClick={() => setShowNew(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-orange-500"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-dash-brand"
                 aria-label={showNew ? "Hide password" : "Show password"}>
                 {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -361,7 +370,7 @@ export default function AgencyDetailsTab() {
             <input type={showNew ? "text" : "password"} required minLength={8} value={pwForm.confirm_password}
               onChange={e => setPwForm(f => ({ ...f, confirm_password: e.target.value }))}
               placeholder="Confirm new password"
-              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all" />
           </label>
         </div>
       </form>

@@ -181,7 +181,7 @@ export default function ChatbotFAQPage() {
                 <div>
                   <h2 className="text-2xl font-bold text-dash-text">Chatbot FAQ</h2>
                   <p className="text-sm text-dash-muted mt-0.5">
-                    Manage AI knowledge base — these Q&amp;As are injected into the AI assistant&apos;s context.
+                    Manage AI knowledge base - these Q&amp;As are injected into the AI assistant&apos;s context.
                   </p>
                 </div>
               </div>

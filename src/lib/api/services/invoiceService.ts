@@ -76,8 +76,8 @@ export async function regenerateInvoicePdf(invoiceId: number | string) {
  * Downloads an invoice PDF and saves it via the browser.
  *
  * A plain `<a href="/api/invoices/{id}/download">` cannot carry the
- * Authorization header the API requires — it's a raw navigation, not an
- * authenticated request — so the download always 401s. Fetching the file
+ * Authorization header the API requires - it's a raw navigation, not an
+ * authenticated request - so the download always 401s. Fetching the file
  * as a blob through the authenticated `api` client (which injects the
  * Bearer token via its request interceptor) and saving it client-side is
  * the correct fix.

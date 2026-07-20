@@ -6,6 +6,7 @@ import { TourDiscount, getDiscounts, createDiscount, updateDiscount, deleteDisco
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
+import DatePicker from "@/components/ui/DatePicker";
 
 const empty = (): TourDiscount => ({
   discount_name: "", discount_code: null, discount_type: "percentage",
@@ -96,7 +97,7 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
                 )}
                 <p className="mt-1.5 text-sm text-dash-body">
                   {item.discount_value}{item.discount_type === "percentage" ? "%" : ""} off
-                  {item.minimum_booking_amount > 0 ? ` — min. ${item.minimum_booking_amount}` : ""}
+                  {item.minimum_booking_amount > 0 ? ` - min. ${item.minimum_booking_amount}` : ""}
                 </p>
                 {(item.start_date || item.end_date) && (
                   <p className="text-xs text-dash-subtle">
@@ -156,18 +157,8 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
                 placeholder="Unlimited"
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
             </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Start date</span>
-              <input type="date" value={editing.start_date?.slice(0, 10) ?? ""}
-                onChange={(e) => setEditing((p) => p ? { ...p, start_date: e.target.value || null } : p)}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">End date</span>
-              <input type="date" value={editing.end_date?.slice(0, 10) ?? ""}
-                onChange={(e) => setEditing((p) => p ? { ...p, end_date: e.target.value || null } : p)}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            </label>
+            <DatePicker label="Start date" value={editing.start_date?.slice(0, 10) ?? ""} maxDate={editing.end_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, start_date: date || null } : previous)} />
+            <DatePicker label="End date" value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, end_date: date || null } : previous)} />
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
               <select value={editing.status} onChange={(e) => setEditing((p) => p ? { ...p, status: e.target.value } : p)}

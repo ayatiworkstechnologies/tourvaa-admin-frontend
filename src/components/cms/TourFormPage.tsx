@@ -208,12 +208,12 @@ export default function TourFormPage({ tourId }: Props) {
     payload.banner_image = form.banner_image?.trim() ?? "";
     payload.map_image = form.map_image?.trim() ?? "";
 
-    // Simple number fields — use default if blank
+    // Simple number fields - use default if blank
     payload.price_start_per_person = form.price_start_per_person ? Number(form.price_start_per_person) : 0;
     payload.number_of_days = form.number_of_days ? Number(form.number_of_days) : 1;
     payload.number_of_hours = form.number_of_hours ? Number(form.number_of_hours) : null;
 
-    // FK fields — null when not selected
+    // FK fields - null when not selected
     payload.supplier_id = form.supplier_id ? Number(form.supplier_id) : null;
     payload.country_id = form.country_id ? Number(form.country_id) : null;
     payload.city_id = form.city_id ? Number(form.city_id) : null;
@@ -315,7 +315,7 @@ export default function TourFormPage({ tourId }: Props) {
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier</span>
               <select value={form.supplier_id ?? ""} onChange={(e) => update("supplier_id", e.target.value)} className={inputClass}>
-                <option value="">— None —</option>
+                <option value="">- None -</option>
                 {suppliers.map((s) => (
                   <option key={s.id} value={String(s.id)}>{s.label}</option>
                 ))}
@@ -329,7 +329,7 @@ export default function TourFormPage({ tourId }: Props) {
                 onChange={(e) => update("category_id", e.target.value)}
                 className={inputClass}
               >
-                <option value="">— None —</option>
+                <option value="">- None -</option>
                 {categories.map((c) => (
                   <option key={c.id} value={String(c.id)}>{c.label}</option>
                 ))}
@@ -347,7 +347,7 @@ export default function TourFormPage({ tourId }: Props) {
                 }}
                 className={inputClass}
               >
-                <option value="">— None —</option>
+                <option value="">- None -</option>
                 {countries.map((c) => (
                   <option key={c.id} value={String(c.id)}>{c.name}</option>
                 ))}

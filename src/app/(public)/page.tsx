@@ -23,6 +23,7 @@ import {
   LuUsers as Users,
   LuWaves as Waves,
 } from "react-icons/lu";
+import { useCurrency } from "@/hooks/useCurrency";
 import FeaturedTours from "@/components/public/FeaturedTours";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
 
@@ -60,12 +61,12 @@ const travelStyles = [
 ];
 
 const destinations = [
-  { name: "Maldives", price: "AED 4,599", packages: "120+ packages", image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1200&q=85", className: "md:row-span-2" },
-  { name: "Dubai", price: "AED 2,099", packages: "95+ packages", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1000&q=85", className: "md:col-span-2" },
-  { name: "Kashmir", price: "AED 1,999", packages: "85+ packages", image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1000&q=85", className: "md:col-span-2" },
-  { name: "Bali", price: "AED 3,899", packages: "60+ packages", image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=85", className: "" },
-  { name: "Kerala", price: "AED 1,699", packages: "110+ packages", image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=900&q=85", className: "" },
-  { name: "Singapore", price: "AED 4,999", packages: "75+ packages", image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=900&q=85", className: "md:col-span-2" },
+  { name: "Maldives", price: 4599, currency: "AED", packages: "120+ packages", image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1200&q=85", className: "md:row-span-2" },
+  { name: "Dubai", price: 2099, currency: "AED", packages: "95+ packages", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1000&q=85", className: "md:col-span-2" },
+  { name: "Kashmir", price: 1999, currency: "AED", packages: "85+ packages", image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1000&q=85", className: "md:col-span-2" },
+  { name: "Bali", price: 3899, currency: "AED", packages: "60+ packages", image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=85", className: "" },
+  { name: "Kerala", price: 1699, currency: "AED", packages: "110+ packages", image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=900&q=85", className: "" },
+  { name: "Singapore", price: 4999, currency: "AED", packages: "75+ packages", image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=900&q=85", className: "md:col-span-2" },
 ];
 
 const benefits = [
@@ -117,6 +118,7 @@ function SectionHeading({ title, subtitle, action }: { title: string; subtitle?:
 }
 
 export default function Home() {
+  const { formatCompact } = useCurrency();
   return (
     <main className="overflow-x-hidden bg-white text-slate-950">
       <section className="relative z-20 min-h-screen bg-slate-950 pt-28 text-white">
@@ -182,7 +184,7 @@ export default function Home() {
                   <img src={destination.image} alt={destination.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
                   <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-5 text-white">
-                    <div><h3 className="text-xl font-black">{destination.name}</h3><p className="mt-1 text-[11px]">Packages from {destination.price}</p><p className="text-[10px] text-white/70">{destination.packages}</p></div>
+                    <div><h3 className="text-xl font-black">{destination.name}</h3><p className="mt-1 text-[11px]">Packages from {formatCompact(destination.price, destination.currency)}</p><p className="text-[10px] text-white/70">{destination.packages}</p></div>
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-900"><ChevronRight size={15} /></span>
                   </div>
                 </Link>

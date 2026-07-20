@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { MenuItem } from "@/types/auth";
 import { getMenuHref } from "@/lib/constants/navigation";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import CurrencySelector from "@/components/public/CurrencySelector";
 
 type HeaderProps = {
   title?: string;
@@ -102,6 +103,8 @@ export default function Header({
         {/* right */}
         <div className="flex shrink-0 items-center gap-2">
 
+          <CurrencySelector />
+
           {canSettings && (
             <button
               type="button"
@@ -127,7 +130,7 @@ export default function Header({
                 open ? "border-dash-brand/50 shadow-md ring-2 ring-dash-brand/15" : "border-[#E8ECF3] shadow-sm hover:border-[#C5D2DF]"
               }`}
             >
-              {/* Avatar — same height as title block */}
+              {/* Avatar - same height as title block */}
               {profileImage && !imageFailed ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -142,7 +145,7 @@ export default function Header({
                 </div>
               )}
 
-              {/* Name + role — same rhythm as left title block */}
+              {/* Name + role - same rhythm as left title block */}
               <div className="hidden flex-col text-left md:flex">
                 <span className="text-[15px] font-bold leading-tight text-[#0C1524]">{name}</span>
                 <span className="mt-0.5 text-[12px] font-medium leading-tight text-[#94A3B8]">{role}</span>

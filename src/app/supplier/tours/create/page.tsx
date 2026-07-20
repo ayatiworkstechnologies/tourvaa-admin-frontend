@@ -102,7 +102,7 @@ export default function CreateTourPage() {
 
   // Step 3: Pricing
   const [slabs, setSlabs] = useState<PriceSlab[]>([
-    { persons_from: 1, persons_to: 1, price_per_person: "", currency: "AED" },
+    { persons_from: 1, persons_to: 1, price_per_person: "", currency: "USD" },
   ]);
 
   useEffect(() => {
@@ -119,7 +119,7 @@ export default function CreateTourPage() {
   const addSlab = () =>
     setSlabs((prev) => [
       ...prev,
-      { persons_from: 1, persons_to: 1, price_per_person: "", currency: slabs[0]?.currency || "AED" },
+      { persons_from: 1, persons_to: 1, price_per_person: "", currency: slabs[0]?.currency || "USD" },
     ]);
 
   const removeSlab = (i: number) =>

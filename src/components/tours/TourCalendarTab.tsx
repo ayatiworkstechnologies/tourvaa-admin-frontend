@@ -6,6 +6,7 @@ import { CalendarEntry, getCalendar, createCalendarEntry, updateCalendarEntry, d
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import DatePicker from "@/components/ui/DatePicker";
 
 const STATUSES = ["available", "unavailable", "sold_out", "blocked"];
 const emptyEntry = (): CalendarEntry => ({ tour_date: "", start_date: null, end_date: null, available_seats: 10, booked_seats: 0, status: "available" });
@@ -153,12 +154,17 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               {[["tour_date", "Tour date"], ["start_date", "Start date"], ["end_date", "End date"]].map(([key, lbl]) => (
-                <label key={key}>
+                <div key={key}>
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
-                  <input type="date" value={(editing as Record<string, unknown>)[key]?.toString().slice(0, 10) ?? ""}
-                    onChange={(e) => setEditing((p) => p ? { ...p, [key]: e.target.value || null } : p)}
-                    className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-                </label>
+                  <DatePicker
+                    value={(editing as Record<string, unknown>)[key]?.toString().slice(0, 10) ?? ""}
+                    onChange={(date) => setEditing((previous) => previous ? { ...previous, [key]: date || null } : previous)}
+                    minDate={key === "end_date" ? editing.start_date?.toString().slice(0, 10) || undefined : undefined}
+                    maxDate={key === "start_date" ? editing.end_date?.toString().slice(0, 10) || undefined : undefined}
+                    placeholder={`Select ${lbl.toLowerCase()}`}
+                    clearable={key !== "tour_date"}
+                  />
+                </div>
               ))}
               {[["available_seats", "Available seats"], ["booked_seats", "Booked seats"]].map(([key, lbl]) => (
                 <label key={key}>
@@ -190,8 +196,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       <div className="rounded-xl border border-dash-border bg-white p-6">
         <h3 className="mb-4 font-bold text-dash-text">Blocked / Unavailable Dates</h3>
         <div className="flex gap-3 mb-4">
-          <input type="date" value={newBlockDate} onChange={(e) => setNewBlockDate(e.target.value)}
-            className="flex-1 rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+          <DatePicker value={newBlockDate} onChange={setNewBlockDate} placeholder="Select date to block" className="min-w-56 flex-1" />
           <input placeholder="Reason" value={newBlockReason} onChange={(e) => setNewBlockReason(e.target.value)}
             className="flex-1 rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
           <button type="button" onClick={addBlock}
@@ -206,7 +211,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
             {blocked.map((d) => (
               <div key={d.id} className="flex items-center gap-2 rounded-full bg-red-50 border border-red-200 px-3 py-1.5 text-sm">
                 <span className="text-red-700 font-semibold">{d.unavailable_date?.toString().slice(0, 10)}</span>
-                {d.reason && <span className="text-red-500">— {d.reason}</span>}
+                {d.reason && <span className="text-red-500">- {d.reason}</span>}
                 <button type="button" onClick={() => removeBlock(d.id!)} className="text-red-400 hover:text-red-700"><X size={12} /></button>
               </div>
             ))}

@@ -77,7 +77,7 @@ export default function FAQSection({ faqs }: { faqs: FAQ[] }) {
             Frequently Asked Questions
           </h2>
           <p className="text-gray-500">
-            Can&apos;t find your answer? Ask our AI assistant — it&apos;s available 24/7.
+            Can&apos;t find your answer? Ask our AI assistant - it&apos;s available 24/7.
           </p>
         </div>
 

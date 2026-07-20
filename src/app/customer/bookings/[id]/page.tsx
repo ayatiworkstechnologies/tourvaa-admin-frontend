@@ -52,7 +52,7 @@ type Booking = {
   status_history?: StatusHistory[];
 };
 
-function fmt(v?: string | number, currency = "AED") {
+function fmt(v?: string | number, currency = "USD") {
   if (v == null) return "-";
   return `${currency} ${Number(v).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
@@ -616,7 +616,7 @@ export default function CustomerBookingDetailPage() {
           totalAmount={Number(booking.final_amount ?? pendingAmount)}
           amountPaid={Number(booking.amount_paid ?? 0)}
           preferredPaymentType={booking.payment_type}
-          currency={booking.currency || "AED"}
+          currency={booking.currency || "USD"}
           onClose={() => setShowPayModal(false)}
           onSuccess={() => {
             setShowPayModal(false);

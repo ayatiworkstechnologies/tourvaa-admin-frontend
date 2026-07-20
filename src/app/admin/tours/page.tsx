@@ -67,7 +67,7 @@ export default function ToursPage() {
         disabled: disabledRes.total || 0,
       });
     } catch {
-      // Non-critical — stat cards just stay at zero.
+      // Non-critical - stat cards just stay at zero.
     }
   }, []);
 
@@ -204,7 +204,7 @@ export default function ToursPage() {
                   <div className="flex flex-1 flex-col gap-3 p-5">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wide text-dash-subtle">
-                        {row.tour_code || "—"}
+                        {row.tour_code || "-"}
                       </p>
                       <h3 className="mt-0.5 line-clamp-1 text-base font-black text-dash-text">{String(row.title || "Untitled tour")}</h3>
                       {row.subtitle ? (
@@ -234,7 +234,7 @@ export default function ToursPage() {
                     </div>
 
                     <p className="text-xs font-semibold text-dash-subtle">
-                      Supplier: <span className="text-dash-body">{String(row.supplier_name || "—")}</span>
+                      Supplier: <span className="text-dash-body">{String(row.supplier_name || "-")}</span>
                     </p>
 
                     <div className="mt-auto flex items-center justify-between border-t border-[#F0F3F8] pt-3">

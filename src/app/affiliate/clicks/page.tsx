@@ -39,9 +39,9 @@ export default function ClicksPage() {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   const columns: DataTableColumn<Click>[] = [
-    { key: "date", header: "Date", className: "text-xs text-dash-body", render: (c) => c.clicked_at ? new Date(c.clicked_at).toLocaleString() : "—" },
-    { key: "link", header: "Link / Code", className: "font-mono text-xs text-purple-600", render: (c) => c.link_label || c.ref_code || "—" },
-    { key: "ip", header: "IP Address", className: "text-xs text-dash-muted", render: (c) => c.ip_address || "—" },
+    { key: "date", header: "Date", className: "text-xs text-dash-body", render: (c) => c.clicked_at ? new Date(c.clicked_at).toLocaleString() : "-" },
+    { key: "link", header: "Link / Code", className: "font-mono text-xs text-purple-600", render: (c) => c.link_label || c.ref_code || "-" },
+    { key: "ip", header: "IP Address", className: "text-xs text-dash-muted", render: (c) => c.ip_address || "-" },
     { key: "referrer", header: "Referrer", className: "max-w-xs truncate text-xs text-dash-muted", render: (c) => c.referrer || "Direct" },
   ];
 

@@ -1,4 +1,4 @@
-# Tourvaa Frontend — End-to-End Documentation
+# Tourvaa Frontend - End-to-End Documentation
 
 ---
 
@@ -12,8 +12,8 @@
 6. [Authentication System](#6-authentication-system)
 7. [Permission System](#7-permission-system)
 8. [API Layer](#8-api-layer)
-9. [Page Reference — Public Routes](#9-page-reference--public-routes)
-10. [Page Reference — Admin Routes](#10-page-reference--admin-routes)
+9. [Page Reference - Public Routes](#9-page-reference--public-routes)
+10. [Page Reference - Admin Routes](#10-page-reference--admin-routes)
 11. [Component Library](#11-component-library)
 12. [Hooks Reference](#12-hooks-reference)
 13. [Service Layer](#13-service-layer)
@@ -53,7 +53,7 @@ The Tourvaa frontend is a **Next.js 16 App Router** application that serves as t
 ```
 tourvaa-admin-frontend/
 ├── app/                          # Next.js App Router pages
-│   ├── layout.tsx                # Root layout — wraps ToastProvider + AuthProvider
+│   ├── layout.tsx                # Root layout - wraps ToastProvider + AuthProvider
 │   ├── globals.css               # Global styles
 │   ├── (public)/                 # Public route group
 │   │   ├── layout.tsx            # Uses PublicLayout
@@ -159,9 +159,9 @@ tourvaa-admin-frontend/
 | `react-hook-form` | ^7.78.0 | Form state management |
 | `eslint` + `eslint-config-next` | ^9 / 16.2.7 | Linting |
 
-**No state management library** (Redux, Zustand, Jotai) — all state via React Context + local `useState`.
+**No state management library** (Redux, Zustand, Jotai) - all state via React Context + local `useState`.
 
-**No CSS-in-JS** — pure Tailwind CSS 4 utility classes.
+**No CSS-in-JS** - pure Tailwind CSS 4 utility classes.
 
 ---
 
@@ -173,7 +173,7 @@ tourvaa-admin-frontend/
 # .env.local (development)
 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
 
-# Server-side only (required in production — crashes build if missing)
+# Server-side only (required in production - crashes build if missing)
 API_PROXY_TARGET=http://127.0.0.1:8000
 ```
 
@@ -183,9 +183,9 @@ API_PROXY_TARGET=http://127.0.0.1:8000
 
 ### next.config.ts
 
-**API Proxy rewrites** — The browser calls `/api/*` on port 3000; Next.js forwards them to the FastAPI backend at `API_PROXY_TARGET`. This means:
+**API Proxy rewrites** - The browser calls `/api/*` on port 3000; Next.js forwards them to the FastAPI backend at `API_PROXY_TARGET`. This means:
 - No CORS issues during development
-- Production works the same way — just point `API_PROXY_TARGET` to the real backend URL
+- Production works the same way - just point `API_PROXY_TARGET` to the real backend URL
 
 **Special-cased rewrites** (trailing slash normalization for FastAPI strict matching):
 ```
@@ -232,7 +232,7 @@ admin/      → layout uses AdminLayout (sidebar + header)
 |---|---|---|
 | `(public)` | `/` | No |
 | (root) | `/login`, `/register`, `/forgot-password`, `/reset-password` | No |
-| `admin/` | All `/admin/*` routes | Yes — JWT + permission |
+| `admin/` | All `/admin/*` routes | Yes - JWT + permission |
 
 ### Auth Guards
 
@@ -342,7 +342,7 @@ When any API call returns `401`:
 3. If another refresh is already in flight → queue this request and wait
 4. Call `POST /api/auth/refresh-token` with current token in header
 5. On success → store new token, replay all queued requests
-6. On failure → `hardLogout()` — clears localStorage, dispatches `tourvaa:toast` warning event, redirects to `/login`
+6. On failure → `hardLogout()` - clears localStorage, dispatches `tourvaa:toast` warning event, redirects to `/login`
 
 ```
 Request → 401 → refresh token → retry original request
@@ -353,7 +353,7 @@ Request → 401 → refresh token → retry original request
 
 ## 7. Permission System
 
-### `hasPermission(slug)` — `AuthProvider`
+### `hasPermission(slug)` - `AuthProvider`
 
 Checks whether the current user holds a given permission. Supports **both dotted and legacy slug formats** through alias expansion.
 
@@ -418,7 +418,7 @@ Built dynamically from `dashboard.sidebar_menu` returned by `/api/dashboard/me`.
 const api = axios.create({ baseURL: "/api" });
 ```
 
-`baseURL` is `/api` — relative to the current host. Next.js rewrites forward to the backend.
+`baseURL` is `/api` - relative to the current host. Next.js rewrites forward to the backend.
 
 **Request interceptor:** Reads token from localStorage and sets `Authorization: Bearer <token>` header on every request.
 
@@ -458,9 +458,9 @@ Used everywhere in catch blocks to show toasts.
 
 ---
 
-## 9. Page Reference — Public Routes
+## 9. Page Reference - Public Routes
 
-### `/` — Landing Page
+### `/` - Landing Page
 
 **File:** `app/(public)/page.tsx`  
 **Layout:** `PublicLayout` (PublicHeader + footer)
@@ -474,7 +474,7 @@ Content:
 
 ---
 
-### `/login` — Login Page
+### `/login` - Login Page
 
 **File:** `app/login/page.tsx`  
 **Layout:** `AuthLayout`
@@ -486,34 +486,34 @@ Form fields:
 Behavior:
 - Calls `POST /api/auth/login`
 - On success → `loginWithToken()` → redirect to `/admin/dashboard`
-- Shows inline error state on failure (no toast — uses `useAuth().error`)
+- Shows inline error state on failure (no toast - uses `useAuth().error`)
 - Info chip: "Menus load from your role permissions"
 - Links to `/forgot-password` and `/register`
 - If already logged in → renders nothing (`return null`) while `AuthProvider` handles redirect
 
 ---
 
-### `/register` — Registration Page
+### `/register` - Registration Page
 
 **File:** `app/register/page.tsx`  
 **Layout:** `AuthLayout`
 
 Form fields:
 
-- Account Type (dropdown — fetched from `GET /api/roles/public/options`; supports `customer`, `supplier`, `agent-reseller`)
+- Account Type (dropdown - fetched from `GET /api/roles/public/options`; supports `customer`, `supplier`, `agent-reseller`)
 - Name, Email
-- Password (min 8 chars, uppercase + lowercase + digit — validated via `validatePassword`)
+- Password (min 8 chars, uppercase + lowercase + digit - validated via `validatePassword`)
 - Confirm Password (must match)
 
 Role-specific behavior after `POST /api/auth/register`:
 
-- **Customer** → success message: "Registered successfully. You can log in now." — no auto-login, user must go to `/login`
+- **Customer** → success message: "Registered successfully. You can log in now." - no auto-login, user must go to `/login`
 - **Supplier** / **Agent** → success message: "Registered successfully. Please wait for admin approval."
 - On success: form resets, message shown inline. No redirect.
 
 ---
 
-### `/forgot-password` — Forgot Password
+### `/forgot-password` - Forgot Password
 
 **File:** `app/forgot-password/page.tsx`  
 **Layout:** `AuthLayout`
@@ -527,7 +527,7 @@ Form fields: Email only
 
 ---
 
-### `/reset-password` — Reset Password
+### `/reset-password` - Reset Password
 
 **File:** `app/reset-password/page.tsx`  
 **Layout:** `AuthLayout`
@@ -535,21 +535,21 @@ Form fields: Email only
 Reads `?token=` from URL query string.
 
 - On mount: validates token via `GET /api/auth/reset-password/validate?token=...`; shows "Checking reset link..." while in flight
-- If token missing or invalid/expired → shows error, submit button disabled — form is visible but inoperable
+- If token missing or invalid/expired → shows error, submit button disabled - form is visible but inoperable
 - Form fields: New Password + Confirm Password (shared show/hide toggle); client-side validates match and `validatePassword` before submitting
 - On submit: `POST /api/auth/reset-password` with `{ token, password }`
-- On success: shows success message inline and disables the form — **no redirect to `/login`** (user clicks the "Back to Login" link)
+- On success: shows success message inline and disables the form - **no redirect to `/login`** (user clicks the "Back to Login" link)
 - Wrapped in `<Suspense>` for async `useSearchParams()`
 
 ---
 
-## 10. Page Reference — Admin Routes
+## 10. Page Reference - Admin Routes
 
 All admin routes require a valid JWT. Access is denied (shows `AccessDenied`) if the user lacks the required permission (see [§18 Page-Permission Map](#18-page-permission-map)).
 
 ---
 
-### `/admin/dashboard` — Dashboard
+### `/admin/dashboard` - Dashboard
 
 **File:** `app/admin/dashboard/page.tsx`  
 **Permission:** `dashboard.view`
@@ -579,13 +579,13 @@ All endpoints accept optional `?start_date`, `?end_date`, `?country_id` filters 
 - Reports snapshot panel (total, scheduled, exported counts + report cards + recent exports)
 - Alerts aside: pending admin approvals, supplier approvals, payment counts needing attention
 - Recent admin activity aside (last 5 actions from `recent_admin_actions`)
-- **User approvals** — inline Approve / Reject; requires `update-users` permission (legacy slug, not `users.update`). Reject opens native `confirm()` dialog — no reason prompt.
-- **Supplier approvals** — inline Approve / Reject via `PATCH /suppliers/{id}/approve` and `PATCH /suppliers/{id}/reject`. Reject opens `window.prompt()` for reason text.
-- **Agent approvals** — inline Approve / Reject via `PATCH /agents/{id}/approve` and `PATCH /agents/{id}/reject`. Reject opens `window.prompt()` for reason text.
+- **User approvals** - inline Approve / Reject; requires `update-users` permission (legacy slug, not `users.update`). Reject opens native `confirm()` dialog - no reason prompt.
+- **Supplier approvals** - inline Approve / Reject via `PATCH /suppliers/{id}/approve` and `PATCH /suppliers/{id}/reject`. Reject opens `window.prompt()` for reason text.
+- **Agent approvals** - inline Approve / Reject via `PATCH /agents/{id}/approve` and `PATCH /agents/{id}/reject`. Reject opens `window.prompt()` for reason text.
 
 **Sub Admin view:**
 
-- Permission-filtered stat cards (Pending Suppliers, Pending Agents, Pending Affiliates, Published Tours — only shown if user holds the matching `.view` permission)
+- Permission-filtered stat cards (Pending Suppliers, Pending Agents, Pending Affiliates, Published Tours - only shown if user holds the matching `.view` permission)
 - Same supplier/agent approval widgets as admin (filtered by permission)
 - "Pending Actions" alert aside listing counts
 
@@ -606,15 +606,15 @@ All endpoints accept optional `?start_date`, `?end_date`, `?country_id` filters 
 
 ---
 
-### `/admin/users` — User Management
+### `/admin/users` - User Management
 
 **File:** `app/admin/users/page.tsx`  
 **Permission:** `users.view`
 
 Features:
 - Paginated table (10 per page) with search
-- **Create user modal** — fields: Name, Email, Phone (country code + number), Address, Country, State, City, Pincode, Password, Role, Active status, Approval status
-- **Edit user modal** — same fields, password optional
+- **Create user modal** - fields: Name, Email, Phone (country code + number), Address, Country, State, City, Pincode, Password, Role, Active status, Approval status
+- **Edit user modal** - same fields, password optional
 - **Delete** with confirmation dialog
 - **Approve / Reject** pending users inline
 - **Send password reset email** button
@@ -623,7 +623,7 @@ Features:
 
 ---
 
-### `/admin/customers` — Customer List
+### `/admin/customers` - Customer List
 
 **File:** `app/admin/customers/page.tsx`  
 **Permission:** `customers.view`
@@ -640,7 +640,7 @@ Features:
 
 ---
 
-### `/admin/customers/[id]` — Customer Detail
+### `/admin/customers/[id]` - Customer Detail
 
 **File:** `app/admin/customers/[id]/page.tsx`  
 **Permission:** `customers.view`
@@ -656,7 +656,7 @@ Sections:
 
 ---
 
-### `/admin/bookings` — Booking List
+### `/admin/bookings` - Booking List
 
 **File:** `app/admin/bookings/page.tsx`  
 **Permission:** `bookings.view`
@@ -669,24 +669,24 @@ Features:
 
 ---
 
-### `/admin/bookings/[id]` — Booking Detail
+### `/admin/bookings/[id]` - Booking Detail
 
 **File:** `app/admin/bookings/[id]/page.tsx`  
 **Permission:** `bookings.view`
 
 Sections:
-- **Summary card** — Booking code, dates, customer, supplier, status badges
-- **Customer info card** — contact details
-- **Traveller table** — adults + children with passport/visa info
-- **Tour/calendar details** — tour name, start date, pricing breakdown
-- **Add-ons card** — optional activities, accommodations, extensions selected
-- **Payment card** — base amount, discounts, taxes, final amount, paid/pending
-- **Status timeline** — history of all status changes with timestamps and actor
-- **Communication history** — booking messages thread with reply support
+- **Summary card** - Booking code, dates, customer, supplier, status badges
+- **Customer info card** - contact details
+- **Traveller table** - adults + children with passport/visa info
+- **Tour/calendar details** - tour name, start date, pricing breakdown
+- **Add-ons card** - optional activities, accommodations, extensions selected
+- **Payment card** - base amount, discounts, taxes, final amount, paid/pending
+- **Status timeline** - history of all status changes with timestamps and actor
+- **Communication history** - booking messages thread with reply support
 
 ---
 
-### `/admin/tours` — Tour List
+### `/admin/tours` - Tour List
 
 **File:** `app/admin/tours/page.tsx`  
 **Permission:** `tours.view`
@@ -695,12 +695,12 @@ Table columns: Tour code, Title, Country, City, Category, Price, Status
 
 Actions:
 - Edit → `/admin/tours/{id}/edit`
-- Toggle status (published ↔ disabled) — requires `tours.disable`
-- Create button → `/admin/tours/create` — requires `tours.create`
+- Toggle status (published ↔ disabled) - requires `tours.disable`
+- Create button → `/admin/tours/create` - requires `tours.create`
 
 ---
 
-### `/admin/tours/create` & `/admin/tours/[id]/edit` — Tour Form
+### `/admin/tours/create` & `/admin/tours/[id]/edit` - Tour Form
 
 **Files:** `app/admin/tours/create/page.tsx`, `app/admin/tours/[id]/edit/page.tsx`  
 **Component:** `TourFormPage` → `TourEditPage`  
@@ -726,7 +726,7 @@ Each tab has its own `TourXxxTab` component. Saves independently per tab via sub
 
 ---
 
-### `/admin/tours/categories` & `/admin/tours/subcategories` — CMS CRUD
+### `/admin/tours/categories` & `/admin/tours/subcategories` - CMS CRUD
 
 **Files:** `app/admin/tours/categories/page.tsx`, `app/admin/tours/subcategories/page.tsx`  
 **Component:** `CmsCrudPage`  
@@ -736,7 +736,7 @@ Standard CRUD: list, search, create, edit, delete, status toggle.
 
 ---
 
-### `/admin/suppliers` — Supplier List
+### `/admin/suppliers` - Supplier List
 
 **File:** `app/admin/suppliers/page.tsx`  
 **Component:** `ReviewListPage`  
@@ -750,7 +750,7 @@ Features:
 
 ---
 
-### `/admin/suppliers/[id]` — Supplier Detail
+### `/admin/suppliers/[id]` - Supplier Detail
 
 **File:** `app/admin/suppliers/[id]/page.tsx`  
 **Component:** `ReviewDetailPage`  
@@ -766,7 +766,7 @@ Shows full supplier profile:
 
 ---
 
-### `/admin/agents/[id]` & `/admin/affiliates/[id]` — Agent / Affiliate Detail
+### `/admin/agents/[id]` & `/admin/affiliates/[id]` - Agent / Affiliate Detail
 
 Same structure as Supplier Detail via shared `ReviewDetailPage` component.
 
@@ -775,7 +775,7 @@ Same structure as Supplier Detail via shared `ReviewDetailPage` component.
 
 ---
 
-### `/admin/roles` — Role Management
+### `/admin/roles` - Role Management
 
 **File:** `app/admin/roles/page.tsx`  
 **Permission:** `roles.view`
@@ -785,11 +785,11 @@ Features:
 - **Create role** (name, slug, active status)
 - **Edit role** (name, active status only for system roles)
 - **Delete role** (blocked if `is_system = true`)
-- **Manage permissions modal** — checkbox grid grouped by module with "Select All" / "Deselect All" per module
+- **Manage permissions modal** - checkbox grid grouped by module with "Select All" / "Deselect All" per module
 
 ---
 
-### `/admin/permissions` — Permission Management
+### `/admin/permissions` - Permission Management
 
 **File:** `app/admin/permissions/page.tsx`  
 **Permission:** `permissions.view`
@@ -801,7 +801,7 @@ Features:
 
 ---
 
-### `/admin/payments` — Payment List
+### `/admin/payments` - Payment List
 
 **File:** `app/admin/payments/page.tsx`  
 **Permission:** `payments.view`
@@ -813,18 +813,18 @@ Features:
 
 ---
 
-### `/admin/invoices` — Invoice List
+### `/admin/invoices` - Invoice List
 
 **File:** `app/admin/invoices/page.tsx`  
 **Permission:** `invoices.view`
 
 - Invoice list with search and pagination
-- Download option (PDF — backend stub, not yet generated)
+- Download option (PDF - backend stub, not yet generated)
 - View invoice detail
 
 ---
 
-### `/admin/reports` — Reports
+### `/admin/reports` - Reports
 
 **File:** `app/admin/reports/page.tsx`  
 **Permission:** `reports.view`
@@ -836,7 +836,7 @@ Features:
 
 ---
 
-### `/admin/chatbot` — FAQ/Chatbot Admin
+### `/admin/chatbot` - FAQ/Chatbot Admin
 
 **File:** `app/admin/chatbot/page.tsx`  
 **Permission:** Bearer (any logged-in user)
@@ -850,7 +850,7 @@ Features:
 
 ---
 
-### `/admin/notifications` — Notification Center
+### `/admin/notifications` - Notification Center
 
 **File:** `app/admin/notifications/page.tsx`  
 **Permission:** `notifications.view`
@@ -862,7 +862,7 @@ Features:
 
 ---
 
-### `/admin/sessions` — Session Management
+### `/admin/sessions` - Session Management
 
 **File:** `app/admin/sessions/page.tsx`  
 **Permission:** `sessions.view`
@@ -873,7 +873,7 @@ Features:
 
 ---
 
-### `/admin/activity-logs` — Audit Trail
+### `/admin/activity-logs` - Audit Trail
 
 **File:** `app/admin/activity-logs/page.tsx`  
 **Permission:** `activity_logs.view`
@@ -885,7 +885,7 @@ Features:
 
 ---
 
-### `/admin/email-templates` — Email Templates
+### `/admin/email-templates` - Email Templates
 
 **File:** `app/admin/email-templates/page.tsx`  
 **Permission:** `email_templates.view`
@@ -896,7 +896,7 @@ Features:
 
 ---
 
-### `/admin/profile` — User Profile
+### `/admin/profile` - User Profile
 
 **File:** `app/admin/profile/page.tsx`  
 **Permission:** `profile.view`
@@ -907,14 +907,14 @@ Features:
 
 ---
 
-### `/admin/settings` — Settings
+### `/admin/settings` - Settings
 
 **Files:** `app/admin/settings/page.tsx`, `settings/payment/page.tsx`, `settings/api/page.tsx`  
 **Permission:** `settings.view`
 
-- **General settings** — Platform-level config
-- **Payment settings** — Gateway credentials, currency config
-- **API settings** — API keys, webhook endpoints
+- **General settings** - Platform-level config
+- **Payment settings** - Gateway credentials, currency config
+- **API settings** - API keys, webhook endpoints
 
 ---
 
@@ -933,9 +933,9 @@ Standard CRUD via `CmsCrudPage` component. Cities are filterable by country.
 
 | Component | File | Purpose |
 |---|---|---|
-| `DashboardLayout` | `layout/DashboardLayout.tsx` | Main admin shell — sidebar + header + content area |
-| `Header` | `layout/Header.tsx` | Top bar — user menu, notification bell, logout |
-| `Sidebar` | `layout/Sidebar.tsx` | Left nav — permission-filtered menu items |
+| `DashboardLayout` | `layout/DashboardLayout.tsx` | Main admin shell - sidebar + header + content area |
+| `Header` | `layout/Header.tsx` | Top bar - user menu, notification bell, logout |
+| `Sidebar` | `layout/Sidebar.tsx` | Left nav - permission-filtered menu items |
 | `AdminLayout` | `admin/AdminLayout.tsx` | Thin wrapper with `data-route-scope="admin"` |
 | `AdminHeader` | `admin/AdminHeader.tsx` | Admin header variant |
 | `AdminSidebar` | `admin/AdminSidebar.tsx` | Admin sidebar variant |
@@ -945,8 +945,8 @@ Standard CRUD via `CmsCrudPage` component. Cities are filterable by country.
 
 | Component | Purpose |
 |---|---|
-| `ProtectedRoute` | Wraps a page — shows `AccessDenied` if `hasPermission(requiredPermission)` fails |
-| `AuthLayout` | Centered card container for auth pages — logo, title, subtitle |
+| `ProtectedRoute` | Wraps a page - shows `AccessDenied` if `hasPermission(requiredPermission)` fails |
+| `AuthLayout` | Centered card container for auth pages - logo, title, subtitle |
 | `AuthInput` | Reusable `<input>` with icon prefix support |
 
 ### UI Primitives (`components/ui/`)
@@ -956,15 +956,15 @@ Standard CRUD via `CmsCrudPage` component. Cities are filterable by country.
 | `Button` | Styled button with variants (primary, secondary, danger, ghost) |
 | `Card` | White rounded container with optional padding/shadow |
 | `Input` | Styled `<input>` field with label and error state |
-| `DataTable` | Reusable table — columns config, pagination, search, empty state |
-| `Pagination` | Page navigation — prev/next + page number buttons |
+| `DataTable` | Reusable table - columns config, pagination, search, empty state |
+| `Pagination` | Page navigation - prev/next + page number buttons |
 | `Loader` | Centered spinner (full-page or inline) |
-| `StatCard` | Metric card — icon, label, value, optional trend |
-| `ConfirmDialog` | Modal confirmation prompt — title, message, confirm/cancel |
+| `StatCard` | Metric card - icon, label, value, optional trend |
+| `ConfirmDialog` | Modal confirmation prompt - title, message, confirm/cancel |
 | `ProfileImageUpload` | Avatar upload with file picker and preview |
 | `NotificationInbox` | Dropdown notification list |
 | `PageCard` | Page-level wrapper with title bar and content area |
-| `ToastProvider` | Global toast system — listens to `tourvaa:toast` custom events |
+| `ToastProvider` | Global toast system - listens to `tourvaa:toast` custom events |
 
 ### Booking Components (`components/bookings/`)
 
@@ -975,7 +975,7 @@ Standard CRUD via `CmsCrudPage` component. Cities are filterable by country.
 | `BookingStatusBadge` | Colored badge for booking/payment/supplier status |
 | `BookingStatusTimeline` | Vertical timeline of status change history |
 | `BookingSummaryCard` | Header card with booking overview |
-| `BookingPaymentCard` | Payment breakdown — base, discounts, taxes, totals |
+| `BookingPaymentCard` | Payment breakdown - base, discounts, taxes, totals |
 | `BookingAddonsCard` | Optional activities, accommodations, extensions |
 | `BookingTravellerTable` | Passenger list with passport details |
 | `BookingActionMenu` | Contextual action dropdown (confirm, cancel, assign supplier) |
@@ -998,7 +998,7 @@ Standard CRUD via `CmsCrudPage` component. Cities are filterable by country.
 
 | Component | Purpose |
 |---|---|
-| `TourEditPage` | Outer wrapper — tab navigation + save logic |
+| `TourEditPage` | Outer wrapper - tab navigation + save logic |
 | `TourOverviewTab` | Basic tour info (title, description, SEO) |
 | `TourPricingTab` | Pricing slabs per passenger count |
 | `TourCalendarTab` | Availability calendar and departure dates |
@@ -1024,7 +1024,7 @@ Standard CRUD via `CmsCrudPage` component. Cities are filterable by country.
 
 | Component | Purpose |
 |---|---|
-| `CmsCrudPage` | Generic CRUD page — configurable for categories, subcategories, countries, cities |
+| `CmsCrudPage` | Generic CRUD page - configurable for categories, subcategories, countries, cities |
 | `TourFormPage` | Wrapper that initializes the tour form with data and passes to `TourEditPage` |
 
 ### Common Components (`components/common/`)
@@ -1049,7 +1049,7 @@ Standard CRUD via `CmsCrudPage` component. Cities are filterable by country.
 
 ## 12. Hooks Reference
 
-### `useAuth()` — `hooks/useAuth.ts`
+### `useAuth()` - `hooks/useAuth.ts`
 
 Primary hook for auth actions in components.
 
@@ -1060,7 +1060,7 @@ login({ email, password })   // POST /auth/login → loginWithToken → redirect
 logout()                     // clears session → /login
 ```
 
-### `useAuthContext()` — from `AuthProvider`
+### `useAuthContext()` - from `AuthProvider`
 
 Low-level context hook for reading auth state:
 
@@ -1069,7 +1069,7 @@ const { hasPermission, user, dashboard, token, isLoggedIn } = useAuthContext();
 hasPermission("bookings.view")  // checks with alias expansion
 ```
 
-### `useApi<T>()` — `hooks/useApi.ts`
+### `useApi<T>()` - `hooks/useApi.ts`
 
 Generic hook for API calls with loading/error state:
 
@@ -1079,29 +1079,29 @@ await request("get", "/customers", { page: 1 });
 await request("post", "/customers", payload);
 ```
 
-### `useUsers()` — `hooks/useUsers.ts`
+### `useUsers()` - `hooks/useUsers.ts`
 
 User list + CRUD with pagination state built in.
 
-### `useRoles()` — `hooks/useRoles.ts`
+### `useRoles()` - `hooks/useRoles.ts`
 
 Role list + permission assignment operations.
 
-### `useDashboard()` — `hooks/useDashboard.ts`
+### `useDashboard()` - `hooks/useDashboard.ts`
 
 Fetches dashboard-specific data (summary, charts, activities) with caching.
 
-### `useAdminModules()` — `hooks/useAdminModules.ts`
+### `useAdminModules()` - `hooks/useAdminModules.ts`
 
 Loads available admin modules for the sidebar.
 
-### `usePagination()` — `hooks/usePagination.ts`
+### `usePagination()` - `hooks/usePagination.ts`
 
 ```typescript
 const { page, setPage, limit, setLimit, resetPage } = usePagination();
 ```
 
-### `useDebounce()` — `hooks/useDebounce.ts`
+### `useDebounce()` - `hooks/useDebounce.ts`
 
 ```typescript
 const debouncedSearch = useDebounce(searchValue, 400);
@@ -1109,7 +1109,7 @@ const debouncedSearch = useDebounce(searchValue, 400);
 
 Used on all search inputs to avoid firing an API call on every keystroke.
 
-### `useToast()` — `hooks/useToast.ts`
+### `useToast()` - `hooks/useToast.ts`
 
 ```typescript
 const toast = useToast();
@@ -1120,7 +1120,7 @@ toast.warning("Please verify your email");
 
 Dispatches `tourvaa:toast` custom events that `ToastProvider` listens to.
 
-### `useConfirm()` — `hooks/useConfirm.tsx`
+### `useConfirm()` - `hooks/useConfirm.tsx`
 
 ```typescript
 const { confirm, ConfirmDialog } = useConfirm();
@@ -1128,7 +1128,7 @@ const confirmed = await confirm("Are you sure you want to delete this?");
 // renders <ConfirmDialog /> in JSX
 ```
 
-### `usePushNotifications()` — `hooks/usePushNotifications.ts`
+### `usePushNotifications()` - `hooks/usePushNotifications.ts`
 
 Handles VAPID web push subscription. Calls `POST /api/notifications/push/subscribe`.
 
@@ -1148,7 +1148,7 @@ getDashboardRecentActivities(filters?)    // GET /dashboard/recent-activities
 getDashboardAlerts(filters?)              // GET /dashboard/alerts
 ```
 
-> **Note:** The dashboard page (`app/admin/dashboard/page.tsx`) calls analytics endpoints directly via `api.get()` rather than using this service — it calls `/dashboard/bookings`, `/dashboard/payments`, `/dashboard/reports`, and `/dashboard/recent-activities` in a single `Promise.all`. The service functions exist for reuse elsewhere.
+> **Note:** The dashboard page (`app/admin/dashboard/page.tsx`) calls analytics endpoints directly via `api.get()` rather than using this service - it calls `/dashboard/bookings`, `/dashboard/payments`, `/dashboard/reports`, and `/dashboard/recent-activities` in a single `Promise.all`. The service functions exist for reuse elsewhere.
 
 ### `customerService.ts`
 
@@ -1160,7 +1160,7 @@ unblockCustomer(id)                       // POST /customers/{id}/unblock
 resetCustomerPassword(id)                 // POST /customers/{id}/reset-password
 ```
 
-Type: `Customer` — id, first_name, last_name, full_name, email, phone, status, total_bookings, amount_paid, amount_pending
+Type: `Customer` - id, first_name, last_name, full_name, email, phone, status, total_bookings, amount_paid, amount_pending
 
 ### `bookingService.ts`
 
@@ -1171,7 +1171,7 @@ updateBookingStatus(id, status, reason)   // PATCH /bookings/{id}/status
 cancelBooking(id, reason)                 // PATCH /bookings/{id}/cancel
 ```
 
-Type: `Booking` — includes travellers[], optional_activities[], accommodations[], extensions[], status_history[], communications[]
+Type: `Booking` - includes travellers[], optional_activities[], accommodations[], extensions[], status_history[], communications[]
 
 ### `cmsService.ts`
 
@@ -1399,9 +1399,9 @@ Converts relative storage paths (e.g., `storage/images/photo.jpg`) to full URLs 
 
 ### `lib/location-options.ts`
 
-- `phoneCountryCodes` — array of `{ label: "India (+91)", value: "+91" }` objects for dropdowns
-- `getStates(country)` — states list for a given country name
-- `getCities(country, state)` — city list
+- `phoneCountryCodes` - array of `{ label: "India (+91)", value: "+91" }` objects for dropdowns
+- `getStates(country)` - states list for a given country name
+- `getCities(country, state)` - city list
 
 ### `lib/navigation.ts`
 
@@ -1444,7 +1444,7 @@ npm run dev
 # → http://localhost:3000
 ```
 
-No `.env.local` is required for development — `API_PROXY_TARGET` defaults to `http://127.0.0.1:8000` in `next.config.ts`.
+No `.env.local` is required for development - `API_PROXY_TARGET` defaults to `http://127.0.0.1:8000` in `next.config.ts`.
 
 If backend is on a different port, create `.env.local`:
 ```env

@@ -188,7 +188,7 @@ export default function RefundsPage() {
       key: "customer",
       header: "Customer",
       className: "text-dash-body",
-      render: (req) => req.customer_name || "—",
+      render: (req) => req.customer_name || "-",
     },
     {
       key: "reason",
@@ -200,7 +200,7 @@ export default function RefundsPage() {
       key: "refund",
       header: "Refund %",
       className: "text-dash-body",
-      render: (req) => (req.refund_percentage != null ? `${req.refund_percentage}%` : "—"),
+      render: (req) => (req.refund_percentage != null ? `${req.refund_percentage}%` : "-"),
     },
     {
       key: "status",
@@ -214,7 +214,7 @@ export default function RefundsPage() {
       key: "scope",
       header: "Scope",
       className: "font-semibold text-dash-text",
-      render: (rule) => rule.tour_id ? `Tour #${rule.tour_id}${rule.tour_title ? ` — ${rule.tour_title}` : ""}` : "Global",
+      render: (rule) => rule.tour_id ? `Tour #${rule.tour_id}${rule.tour_title ? ` - ${rule.tour_title}` : ""}` : "Global",
     },
     {
       key: "days",
@@ -234,7 +234,7 @@ export default function RefundsPage() {
       key: "desc",
       header: "Description",
       className: "text-dash-body",
-      render: (rule) => rule.description || "—",
+      render: (rule) => rule.description || "-",
     },
   ];
 

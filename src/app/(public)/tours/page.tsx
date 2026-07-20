@@ -8,6 +8,8 @@ import { useSearchParams } from "next/navigation";
 import { LuArrowRight as ArrowRight, LuCalendarDays as CalendarDays, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuClock as Clock, LuHeart as Heart, LuHotel as Hotel, LuLayoutGrid as LayoutGrid, LuList as List, LuMapPin as MapPin, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal, LuSparkles as Sparkles, LuUsers as Users, LuUtensils as Utensils, LuX as X } from "react-icons/lu";
 import { fetchPublicCategories, fetchPublicCountries, fetchPublicTours, PublicCategory, PublicCountry, PublicTour } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { useCurrency } from "@/hooks/useCurrency";
+import DatePicker from "@/components/ui/DatePicker";
 
 const PLACEHOLDER = "/images/tour-card-fallback.jpg";
 type SortOption = "popular" | "price-asc" | "price-desc" | "duration";
@@ -50,6 +52,7 @@ function filtersFromParams(params: Pick<URLSearchParams, "get">): TourFilters {
 
 function TourCard({ tour, index, view = "grid", bookingQuery = "" }: { tour: PublicTour; index: number; view?: "grid" | "list"; bookingQuery?: string }) {
   const isList = view === "list";
+  const { formatCompact } = useCurrency();
   return (
     <Link
       href={`/tours/${tour.id}${bookingQuery ? `?${bookingQuery}` : ""}`}
@@ -111,8 +114,7 @@ function TourCard({ tour, index, view = "grid", bookingQuery = "" }: { tour: Pub
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">From</p>
               <p className="text-base font-black text-zinc-950">
-                {tour.currency || "AED"}{" "}
-                <span className="text-lg">{Number(tour.price_start_per_person).toLocaleString()}</span>
+                <span className="text-lg">{formatCompact(tour.price_start_per_person, tour.currency || "USD")}</span>
                 <span className="text-xs font-semibold text-zinc-400"> /person</span>
               </p>
             </div>
@@ -297,7 +299,7 @@ function ToursPageInner() {
           <div className="mt-10 grid w-full max-w-5xl grid-cols-1 gap-2 rounded-xl bg-white p-2 shadow-2xl sm:grid-cols-2 lg:grid-cols-[1.25fr_.8fr_1fr_auto]">
             <label className="flex min-h-14 items-center gap-3 rounded-lg px-3 hover:bg-slate-50"><MapPin size={16} className="text-teal-700" /><span className="min-w-0 flex-1"><span className="block text-[9px] font-bold text-slate-400">Destination</span><select value={filters.country} onChange={(event) => setFilter("country", event.target.value)} className="w-full bg-transparent text-sm font-black text-slate-900 outline-none"><option value="">Any Destination</option>{countries.map((country) => <option key={country.id} value={country.country_name}>{country.country_name}</option>)}</select></span></label>
             <label className="flex min-h-14 items-center gap-3 rounded-lg px-3 hover:bg-slate-50"><Users size={16} className="text-teal-700" /><span className="flex-1"><span className="block text-[9px] font-bold text-slate-400">Travellers</span><select value={heroAdults} onChange={(event) => setHeroAdults(event.target.value)} className="w-full bg-transparent text-sm font-black text-slate-900 outline-none">{[1,2,3,4,5,6].map((count) => <option key={count} value={count}>{count} Adult{count > 1 ? "s" : ""}</option>)}</select></span></label>
-            <label className="flex min-h-14 items-center gap-3 rounded-lg px-3 hover:bg-slate-50"><CalendarDays size={16} className="text-teal-700" /><span className="flex-1"><span className="block text-[9px] font-bold text-slate-400">Date</span><input type="date" value={heroDate} min={new Date().toISOString().split("T")[0]} onChange={(event) => setHeroDate(event.target.value)} className="w-full bg-transparent text-sm font-black text-slate-900 outline-none" /></span></label>
+            <DatePicker value={heroDate} minDate={new Date().toISOString().split("T")[0]} onChange={setHeroDate} placeholder="Travel date" accent="teal" buttonClassName="min-h-14 border-0 bg-transparent shadow-none hover:bg-slate-50" />
             <button type="button" onClick={searchFromHero} className="flex min-h-14 items-center justify-center gap-2 rounded-lg bg-orange-500 px-7 text-sm font-black text-white transition hover:bg-orange-600 sm:col-span-2 lg:col-span-1"><Search size={15} /> Search Tours</button>
           </div>
         </div>

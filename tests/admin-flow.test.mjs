@@ -27,10 +27,10 @@ check(
     guard.includes("ADMIN_DASHBOARD_TYPES.has(dashboard.dashboard_type)"),
 );
 check("portal users return to their own dashboard", guard.includes("getDashboardPath"));
-check("unauthenticated admin routes use admin login", guard.includes('router.replace("/admin/login")'));
+check("unauthenticated admin routes use shared login", guard.includes('router.replace("/login")'));
 
 const auth = read("src/providers/AuthProvider.tsx");
-check("global auth preserves the admin login entry point", auth.includes('pathname.startsWith("/admin") ? "/admin/login"'));
+check("global auth sends signed-out users to shared login", auth.includes('router.replace("/login")'));
 
 const users = read("src/app/admin/users/page.tsx");
 check("admin-created users retain normalized phone", users.includes("createUser({ ...form, phone })"));
@@ -44,6 +44,7 @@ const suppliers = read("src/app/admin/suppliers/[id]/page.tsx");
 const agents = read("src/app/admin/agents/[id]/page.tsx");
 check("supplier document review uses private document service", suppliers.includes('openPrivateDocument("supplier"'));
 check("agent document review uses private document service", agents.includes('openPrivateDocument("agent"'));
+check("admin can approve and reject individual agent documents", agents.includes("reviewAgentDocument") && agents.includes("Reject agent document"));
 
 const bookingService = read("src/lib/api/services/bookingService.ts");
 check("admin booking create contract uses backend traveller counts", bookingService.includes("no_of_adults: number") && bookingService.includes("no_of_children?: number"));

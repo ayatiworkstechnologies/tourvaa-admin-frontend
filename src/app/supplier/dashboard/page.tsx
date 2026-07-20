@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LuArrowRight as ArrowRight, LuBanknote as Banknote, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuClock3 as Clock3, LuMapPinned as MapPinned, LuPlus as Plus, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuScale as Scale, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
+import DatePicker from "@/components/ui/DatePicker";
 
 type Summary = {
   total_tours?: number;
@@ -57,7 +58,7 @@ function statusColors(s: string) {
   return "bg-slate-50 text-slate-600";
 }
 
-function money(value: string | number | undefined, currency = "AED") {
+function money(value: string | number | undefined, currency = "USD") {
   return `${currency} ${Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
@@ -75,17 +76,19 @@ export default function SupplierDashboardPage() {
   const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [filters, setFilters] = useState({ start_date: "", end_date: "", status: "" });
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
       const bookParams: Record<string, string> = { limit: "5" };
       if (filters.start_date) bookParams.start_date = filters.start_date;
       if (filters.end_date) bookParams.end_date = filters.end_date;
       if (filters.status) bookParams.booking_status = filters.status;
       const [sumRes, bookRes, ledgerRes, payoutRes] = await Promise.allSettled([
-        api.get("/dashboard/summary", { params: filters.start_date || filters.end_date ? { start_date: filters.start_date, end_date: filters.end_date } : {} }),
+        api.get("/dashboard/summary", { params: bookParams }),
         api.get("/bookings", { params: bookParams }),
         api.get("/supplier-ledgers", { params: { limit: 50 } }),
         api.get("/supplier-payouts", { params: { limit: 20 } }),
@@ -94,6 +97,9 @@ export default function SupplierDashboardPage() {
       if (bookRes.status === "fulfilled") setBookings(bookRes.value.data?.items ?? bookRes.value.data?.data ?? []);
       if (ledgerRes.status === "fulfilled") setLedgers(ledgerRes.value.data?.items ?? ledgerRes.value.data?.data ?? []);
       if (payoutRes.status === "fulfilled") setPayouts(payoutRes.value.data?.items ?? payoutRes.value.data?.data ?? []);
+      if ([sumRes, bookRes, ledgerRes, payoutRes].some((result) => result.status === "rejected")) {
+        setError("Some dashboard data could not be loaded. The available sections are shown below.");
+      }
     } finally {
       setLoading(false);
     }
@@ -102,12 +108,17 @@ export default function SupplierDashboardPage() {
   useEffect(() => { void load(); }, [load]);
 
   const commission = useMemo(() => {
-    const currency = ledgers.find((entry) => entry.currency)?.currency || summary.currency || "AED";
+    const currency = ledgers.find((entry) => entry.currency)?.currency || summary.currency || "USD";
     const gross = ledgers.reduce((sum, entry) => sum + Number(entry.gross_amount || 0), 0);
     const commissionAmount = ledgers.reduce((sum, entry) => sum + Number(entry.commission_amount || 0), 0);
     const net = ledgers.reduce((sum, entry) => sum + Number(entry.net_payable || 0), 0);
     const paid = ledgers.reduce((sum, entry) => sum + Number(entry.amount_paid || 0), 0);
-    const pending = ledgers.reduce((sum, entry) => sum + Number(entry.amount_pending || 0), 0);
+    const pending = ledgers
+      .filter((entry) => ["pending", "partial"].includes((entry.status || "").toLowerCase()))
+      .reduce((sum, entry) => sum + Number(entry.amount_pending || 0), 0);
+    const reserved = ledgers
+      .filter((entry) => (entry.status || "").toLowerCase() === "reserved")
+      .reduce((sum, entry) => sum + Number(entry.amount_pending || 0), 0);
     const avgRate = gross > 0 ? (commissionAmount / gross) * 100 : 0;
     const pendingPayouts = payouts.filter((p) => ["pending", "approved"].includes((p.status || "").toLowerCase()));
     const paidPayouts = payouts.filter((p) => (p.status || "").toLowerCase() === "paid");
@@ -118,6 +129,7 @@ export default function SupplierDashboardPage() {
       net,
       paid,
       pending,
+      reserved,
       avgRate,
       pendingPayoutTotal: pendingPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
       paidPayoutTotal: paidPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
@@ -151,6 +163,13 @@ export default function SupplierDashboardPage() {
         </div>
         <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
       </div>
+
+      {error && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          <span>{error}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-bold underline">Retry</button>
+        </div>
+      )}
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -211,8 +230,8 @@ export default function SupplierDashboardPage() {
               <p className="mt-1 text-lg font-black text-dash-text">{money(commission.pending, commission.currency)}</p>
             </div>
             <div className="rounded-2xl bg-dash-bg p-4">
-              <p className="text-xs font-bold uppercase text-dash-subtle">Avg commission</p>
-              <p className="mt-1 text-lg font-black text-dash-text">{commission.avgRate.toFixed(2)}%</p>
+              <p className="text-xs font-bold uppercase text-dash-subtle">Reserved in requests</p>
+              <p className="mt-1 text-lg font-black text-dash-text">{money(commission.reserved, commission.currency)}</p>
             </div>
           </div>
         </div>
@@ -261,8 +280,8 @@ export default function SupplierDashboardPage() {
           </button>
         </div>
         <div className="mt-4 flex flex-wrap items-end gap-4">
-          <div className="flex flex-col gap-1"><label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Start Date</label><input type="date" title="Start date" value={filters.start_date} onChange={(e) => setFilters((f) => ({ ...f, start_date: e.target.value }))} className="rounded-lg border border-[#D0D5DD] px-3 py-2 text-sm text-dash-body outline-none focus:border-dash-brand" /></div>
-          <div className="flex flex-col gap-1"><label className="text-xs font-bold uppercase tracking-wide text-dash-muted">End Date</label><input type="date" title="End date" value={filters.end_date} onChange={(e) => setFilters((f) => ({ ...f, end_date: e.target.value }))} className="rounded-lg border border-[#D0D5DD] px-3 py-2 text-sm text-dash-body outline-none focus:border-dash-brand" /></div>
+          <DatePicker label="Start date" value={filters.start_date} maxDate={filters.end_date || undefined} onChange={(date) => setFilters((filters) => ({ ...filters, start_date: date }))} className="min-w-52" />
+          <DatePicker label="End date" value={filters.end_date} minDate={filters.start_date || undefined} onChange={(date) => setFilters((filters) => ({ ...filters, end_date: date }))} className="min-w-52" />
           <div className="flex flex-col gap-1"><label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Booking Status</label><select title="Booking status" value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))} className="rounded-lg border border-[#D0D5DD] px-3 py-2 text-sm text-dash-body outline-none focus:border-dash-brand"><option value="">All Statuses</option><option value="pending_payment">Pending Payment</option><option value="pending_supplier_acceptance">Awaiting My Decision</option><option value="confirmed">Confirmed</option><option value="ongoing">Ongoing</option><option value="postponed">Postponed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="declined">Declined</option></select></div>
           <button type="button" onClick={() => setFilters({ start_date: "", end_date: "", status: "" })} className="rounded-lg border border-[#D0D5DD] px-4 py-2 text-sm font-bold text-dash-muted hover:bg-[var(--portal-soft)]">Reset</button>
         </div>

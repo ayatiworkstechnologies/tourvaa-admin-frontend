@@ -44,7 +44,7 @@ function statusColors(s: string) {
   return "bg-slate-50 text-slate-600 border border-slate-100";
 }
 
-function money(v: number | string | undefined, cur = "AED") {
+function money(v: number | string | undefined, cur = "USD") {
   return `${cur} ${Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
@@ -81,7 +81,7 @@ export default function EarningsPage() {
       ]);
       if (ledgerRes.status === "fulfilled") setEntries(ledgerRes.value.data?.items ?? ledgerRes.value.data?.data ?? []);
       if (payoutRes.status === "fulfilled") setPayouts(payoutRes.value.data?.items ?? payoutRes.value.data?.data ?? []);
-      if (ledgerRes.status === "rejected") setError("Failed to load earnings. Please try again.");
+      if (ledgerRes.status === "rejected" || payoutRes.status === "rejected") setError("Some finance data could not be loaded. Please retry.");
     } finally {
       setLoading(false);
     }
@@ -90,12 +90,17 @@ export default function EarningsPage() {
   useEffect(() => { void load(); }, []);
 
   const summary = useMemo(() => {
-    const currency = entries.find((e) => e.currency)?.currency ?? payouts.find((p) => p.currency)?.currency ?? "AED";
+    const currency = entries.find((e) => e.currency)?.currency ?? payouts.find((p) => p.currency)?.currency ?? "USD";
     const gross = entries.reduce((sum, e) => sum + Number(e.gross_amount ?? 0), 0);
     const commission = entries.reduce((sum, e) => sum + Number(e.commission_amount ?? 0), 0);
     const net = entries.reduce((sum, e) => sum + Number(e.net_payable ?? 0), 0);
     const paid = entries.reduce((sum, e) => sum + Number(e.amount_paid ?? 0), 0);
-    const pending = entries.reduce((sum, e) => sum + Number(e.amount_pending ?? 0), 0);
+    const available = entries
+      .filter((e) => ["pending", "partial"].includes((e.status || "").toLowerCase()))
+      .reduce((sum, e) => sum + Number(e.amount_pending ?? 0), 0);
+    const reserved = entries
+      .filter((e) => (e.status || "").toLowerCase() === "reserved")
+      .reduce((sum, e) => sum + Number(e.amount_pending ?? 0), 0);
     const avgCommission = gross > 0 ? (commission / gross) * 100 : 0;
     const pendingPayouts = payouts.filter((p) => ["pending", "approved"].includes((p.status || "").toLowerCase()));
     const paidPayouts = payouts.filter((p) => (p.status || "").toLowerCase() === "paid");
@@ -105,7 +110,8 @@ export default function EarningsPage() {
       commission,
       net,
       paid,
-      pending,
+      pending: available,
+      reserved,
       avgCommission,
       pendingPayoutTotal: pendingPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
       paidPayoutTotal: paidPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
@@ -161,6 +167,7 @@ export default function EarningsPage() {
     { label: "Net Payable", value: money(summary.net, summary.currency), icon: Wallet, color: "text-emerald-600 bg-emerald-50" },
     { label: "Paid", value: money(summary.paid, summary.currency), icon: Banknote, color: "text-purple-600 bg-purple-50" },
     { label: "Available Payout", value: money(summary.pending, summary.currency), icon: Clock3, color: "text-rose-600 bg-rose-50" },
+    { label: "Reserved in Requests", value: money(summary.reserved, summary.currency), icon: ReceiptText, color: "text-indigo-600 bg-indigo-50" },
   ];
 
   const columns: DataTableColumn<LedgerEntry>[] = [

@@ -11,7 +11,7 @@ Single Next.js 16 (App Router) application serving both the public marketing/boo
 | Framework | Next.js 16 (App Router) |
 | Language | TypeScript 5 |
 | UI | Tailwind CSS 4 (`@theme` design tokens) |
-| Fonts | `next/font/google` — Outfit (headings) + Work Sans (body), scoped to public pages |
+| Fonts | `next/font/google` - Outfit (headings) + Work Sans (body), scoped to public pages |
 | Icons | Lucide React |
 | HTTP Client | Axios |
 | Forms | React Hook Form |
@@ -61,7 +61,7 @@ npm run start
 ## Authentication
 
 - JWT stored in memory (not localStorage) with an Axios interceptor (`src/lib/api/client.ts`)
-- Silent token refresh on 401 — queues concurrent requests until refresh completes
+- Silent token refresh on 401 - queues concurrent requests until refresh completes
 - Forced logout clears all sessions server-side
 - Authenticated file downloads (e.g. invoice PDFs) use a blob-fetch through the authenticated client rather than a plain `<a href>`, since Bearer tokens can't ride on raw browser navigation
 
@@ -80,12 +80,12 @@ The app is fully role and permission aware. Each user is routed to their own por
 
 | Portal | Route Group | Access |
 | --- | --- | --- |
-| Public site | `(public)` | Anyone — homepage, tours, destinations, blogs, about/contact/legal, agent/supplier landing + registration |
+| Public site | `(public)` | Anyone - homepage, tours, destinations, blogs, about/contact/legal, agent/supplier landing + registration |
 | Admin | `admin/` | Super Admin, Admin, Sub-Admin (permission-scoped) |
-| Customer | `customer/` | Customers — own bookings, invoices, payments, travellers, support |
-| Supplier | `supplier/` | Suppliers — own tours, bookings, earnings, payouts |
-| Agent | `agent/` | Agents/Resellers — own bookings, customers, commission, invoices |
-| Affiliate | `affiliate/` | Affiliates — referral links, clicks, conversions, commissions, payouts |
+| Customer | `customer/` | Customers - own bookings, invoices, payments, travellers, support |
+| Supplier | `supplier/` | Suppliers - own tours, bookings, earnings, payouts |
+| Agent | `agent/` | Agents/Resellers - own bookings, customers, commission, invoices |
+| Affiliate | `affiliate/` | Affiliates - referral links, clicks, conversions, commissions, payouts |
 
 Protected routes use `<ProtectedRoute requiredPermission="...">`. Each portal's sidebar is built dynamically from the logged-in user's permissions.
 
@@ -93,11 +93,11 @@ Protected routes use `<ProtectedRoute requiredPermission="...">`. Each portal's 
 
 ## Project Structure
 
-Industry-standard `src/`-based layout — routing, UI, and application logic are cleanly separated:
+Industry-standard `src/`-based layout - routing, UI, and application logic are cleanly separated:
 
 ```text
 src/
-├── app/                        Next.js App Router — routing only
+├── app/                        Next.js App Router - routing only
 │   ├── (public)/               Public marketing + booking site (own layout, fonts, palette)
 │   ├── admin/                  Admin/Sub-Admin portal
 │   ├── customer/                Customer self-service portal
@@ -121,7 +121,7 @@ src/
 │   ├── constants/                Shared enums/config values
 │   └── utils/                    errorHandler, formatting, misc helpers
 ├── hooks/                      Data-fetching and UI hooks (useDashboard, useUsers, etc.)
-├── providers/                  AuthProvider — user, permissions, menus
+├── providers/                  AuthProvider - user, permissions, menus
 ├── config/                     App-level configuration
 └── types/                      Shared TypeScript types (auth.ts, etc.)
 ```
@@ -132,7 +132,7 @@ src/
 
 | Service | Covers |
 | --- | --- |
-| `dashboardService.ts` | `getDashboardMe/Summary/Charts/RecentActivities/Alerts` — all hit `/api/dashboard/*` |
+| `dashboardService.ts` | `getDashboardMe/Summary/Charts/RecentActivities/Alerts` - all hit `/api/dashboard/*` |
 | `bookingService.ts` | Booking CRUD, calculate-price, calendar, status history |
 | `paymentService.ts` | Payment authorize/capture/refund/status |
 | `invoiceService.ts` | Invoice list/detail, `downloadInvoicePdf()` (authenticated blob download), `regenerateInvoicePdf()` |
@@ -149,7 +149,7 @@ src/
 
 ## Public Site Highlights
 
-- Sky-blue / orange design system, distinct from the dashboard palette, scoped entirely to the `(public)` route group via CSS variables — no bleed into admin/portal styling.
+- Sky-blue / orange design system, distinct from the dashboard palette, scoped entirely to the `(public)` route group via CSS variables - no bleed into admin/portal styling.
 - Homepage hero includes a 4-field filter bar (`components/public/HeroFilterBar.tsx`): destination (flag-icon country list, wired to `/tours?country=`), flexible/specific date range picker, duration presets + custom slider (wired to `/tours?min_days=&max_days=`), and traveller count.
 - `/tours` reads all filters from URL search params on load (shareable/bookmarkable filtered URLs).
 
@@ -172,11 +172,11 @@ The test file (`tests/dashboard.test.mjs`) verifies:
 - `AuthUser` type has `user_type` and `approval_status`
 - No `/api/v1` references anywhere in dashboard files
 
-No automated browser/E2E suite exists yet — UI/flow verification is currently manual (API-contract + reachability checks). Consider adding Playwright for real browser-level coverage.
+No automated browser/E2E suite exists yet - UI/flow verification is currently manual (API-contract + reachability checks). Consider adding Playwright for real browser-level coverage.
 
 ---
 
 ## Known Gaps
 
-- **Affiliate self-service portal** (`app/affiliate/*`) has UI pages but no working self-registration or scoped permissions on the backend yet — treat as non-functional until the backend affiliate-auth work lands.
+- **Affiliate self-service portal** (`app/affiliate/*`) has UI pages but no working self-registration or scoped permissions on the backend yet - treat as non-functional until the backend affiliate-auth work lands.
 - `/admin/reports` is a UI stub with no real data wired up.

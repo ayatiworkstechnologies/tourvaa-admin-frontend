@@ -68,7 +68,7 @@ export default function JoinAffiliatePage() {
             <span className="text-violet-400">Earn while you do.</span>
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-7 text-white/55">
-            Share Tourvaa tours with your audience — on your blog, social media, or email list — and earn 5% commission on every booking that comes through your unique link.
+            Share Tourvaa tours with your audience - on your blog, social media, or email list - and earn 5% commission on every booking that comes through your unique link.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a href="#apply" className="inline-flex items-center gap-2 rounded-xl bg-violet-500 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-violet-400">

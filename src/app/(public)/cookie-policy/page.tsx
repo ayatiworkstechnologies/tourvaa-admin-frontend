@@ -9,7 +9,7 @@ const cookieTypes = [
   },
   {
     name: "Analytical Cookies",
-    purpose: "These help us understand how visitors interact with our website — which pages are visited most, where users drop off, and how the platform performs. This data is aggregated and anonymous.",
+    purpose: "These help us understand how visitors interact with our website - which pages are visited most, where users drop off, and how the platform performs. This data is aggregated and anonymous.",
     examples: "Page views, session duration, referral source",
     duration: "Up to 13 months",
   },
@@ -70,8 +70,8 @@ export default function CookiePolicyPage() {
           </div>
 
           {[
-            ["Managing your cookie preferences", "Most web browsers allow you to control cookies through their settings. You can typically find cookie controls under Privacy or Security settings. Note that disabling certain cookies may affect the functionality of the Tourvaa platform — in particular, essential cookies cannot be disabled without preventing you from logging in or making bookings."],
-            ["Third-party cookies", "Some features of our platform may use third-party services that set their own cookies. These include payment processors, analytics providers (such as Google Analytics), and marketing platforms. We do not have control over these cookies — please refer to the respective provider's privacy policies for details."],
+            ["Managing your cookie preferences", "Most web browsers allow you to control cookies through their settings. You can typically find cookie controls under Privacy or Security settings. Note that disabling certain cookies may affect the functionality of the Tourvaa platform - in particular, essential cookies cannot be disabled without preventing you from logging in or making bookings."],
+            ["Third-party cookies", "Some features of our platform may use third-party services that set their own cookies. These include payment processors, analytics providers (such as Google Analytics), and marketing platforms. We do not have control over these cookies - please refer to the respective provider's privacy policies for details."],
             ["Changes to this policy", "We may update this Cookie Policy from time to time to reflect changes in technology or regulation. We will notify registered users of significant changes. The date at the top of this page always shows the most recent version."],
           ].map(([title, text]) => (
             <div key={String(title)} className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">

@@ -25,7 +25,7 @@ function check(label, condition, detail = "") {
     console.log(`  ✓ ${label}`);
     passed++;
   } else {
-    console.error(`  ✗ ${label}${detail ? " — " + detail : ""}`);
+    console.error(`  ✗ ${label}${detail ? " - " + detail : ""}`);
     failed++;
     errors.push(label);
   }
@@ -75,7 +75,7 @@ check("dashboard page uses /dashboard/me or useDashboard", pageSrc.includes("/da
 check("dashboard page has no /api/v1", !pageSrc.includes("/api/v1"));
 
 // ---------------------------------------------------------------------------
-// Auth Provider — dashboard_type and allowed_modules
+// Auth Provider - dashboard_type and allowed_modules
 // ---------------------------------------------------------------------------
 console.log("\n=== Auth Provider Types ===\n");
 
@@ -105,7 +105,7 @@ check("hooks/useDashboard.ts exists", hookSrc.length > 0);
 check("useDashboard hook exported", hookSrc.includes("export function useDashboard") || hookSrc.includes("export const useDashboard"));
 
 // ---------------------------------------------------------------------------
-// Protected Route — permission check
+// Protected Route - permission check
 // ---------------------------------------------------------------------------
 console.log("\n=== Protected Route ===\n");
 

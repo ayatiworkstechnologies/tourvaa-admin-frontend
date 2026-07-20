@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuPlay as Play, LuSend as Send, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
+import DatePicker from "@/components/ui/DatePicker";
 
 type Traveller = {
   id?: number;
@@ -55,7 +56,7 @@ type Booking = {
   cancellation_reason?: string;
 };
 
-type ActionType = "confirm" | "decline" | "complete" | "cancel" | "postpone";
+type ActionType = "confirm" | "decline" | "ongoing" | "complete" | "cancel" | "postpone";
 
 function statusDot(s: string) {
   const v = (s || "").toLowerCase();
@@ -114,7 +115,8 @@ function ActionBanner({
   const paymentReady = ["authorized", "paid", "partially_paid", "partial"].includes(payment);
   const isPending = acceptance === "pending" && paymentReady && ["pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(v);
   const isAwaitingPayment = acceptance === "pending" && !paymentReady && v === "pending_payment";
-  const isConfirmed = v === "confirmed" || v === "ongoing";
+  const isConfirmed = v === "confirmed";
+  const isOngoing = v === "ongoing";
   const isPostponed = v === "postponed";
 
   if (v === "completed") {
@@ -138,12 +140,12 @@ function ActionBanner({
     );
   }
 
-  if (!isPending && !isConfirmed && !isPostponed) return null;
+  if (!isPending && !isConfirmed && !isOngoing && !isPostponed) return null;
 
   return (
     <div className="mb-5 rounded-2xl border border-[#D9ECFF] bg-[#F0F7FF] p-5">
       <p className="mb-4 text-sm font-bold text-dash-text">
-        {isPending ? "This booking requires your action:" : isPostponed ? "This booking is postponed - you can reschedule or cancel:" : "Manage this confirmed booking:"}
+        {isPending ? "This booking requires your action:" : isPostponed ? "This booking is postponed - resume it when the tour starts:" : isOngoing ? "This tour is ongoing:" : "This booking is confirmed and ready to start:"}
       </p>
 
       <div className="flex flex-wrap gap-3">
@@ -170,7 +172,18 @@ function ActionBanner({
         )}
 
         {(isConfirmed || isPostponed) && (
-          <>
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() => onAction("ongoing")}
+            className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-60 transition-all"
+          >
+            {busy === "ongoing" ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
+            {isPostponed ? "Resume Tour" : "Start Tour"}
+          </button>
+        )}
+
+        {isOngoing && (
             <button
               type="button"
               disabled={busy !== null}
@@ -180,6 +193,10 @@ function ActionBanner({
               {busy === "complete" ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
               Mark Completed
             </button>
+        )}
+
+        {(isConfirmed || isOngoing || isPostponed) && (
+          <>
             <button
               type="button"
               disabled={busy !== null}
@@ -215,7 +232,7 @@ function ActionBanner({
       {showPostpone && (
         <div className="mt-4 rounded-xl border border-[#D9ECFF] bg-white p-4">
           <div className="grid gap-3 md:grid-cols-2">
-            <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-dash-brand" />
+            <DatePicker value={newDate} onChange={setNewDate} minDate={new Date().toISOString().split("T")[0]} placeholder="Select new tour date" />
             <input value={postponeReason} onChange={(e) => setPostponeReason(e.target.value)} placeholder="Reason for postponement" className="rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-dash-brand" />
           </div>
           <div className="mt-3 flex gap-2">
@@ -390,6 +407,8 @@ export default function SupplierBookingDetailPage() {
       ]);
       if (bookRes.status === "fulfilled") setBooking(bookRes.value.data?.data ?? bookRes.value.data);
       if (histRes.status === "fulfilled") setHistory(histRes.value.data?.data ?? []);
+      if (bookRes.status === "rejected") setError("Failed to load booking details.");
+      else if (histRes.status === "rejected") setError("Booking loaded, but status history could not be loaded.");
     } catch {
       setError("Failed to load booking details.");
     } finally {
@@ -408,6 +427,9 @@ export default function SupplierBookingDetailPage() {
       } else if (type === "decline") {
         await api.post(`/supplier/bookings/${bookingId}/decline`, { reason: payload?.reason });
         showToast("success", "Booking declined and the payment hold has been released.");
+      } else if (type === "ongoing") {
+        await api.patch(`/supplier/bookings/${bookingId}/ongoing`, { reason: payload?.reason || "Tour started by supplier" });
+        showToast("success", "Tour marked as ongoing. Customer and agent have been notified.");
       } else if (type === "complete") {
         await api.patch(`/supplier/bookings/${bookingId}/complete`, {});
         showToast("success", "Booking marked as completed. Customer has been notified.");
@@ -543,7 +565,7 @@ export default function SupplierBookingDetailPage() {
           </div>
           <InfoRow
             label="Total Amount"
-            value={`${booking.currency ?? "AED"} ${Number(booking.final_amount ?? booking.total_amount ?? 0).toLocaleString()}`}
+            value={`${booking.currency ?? "USD"} ${Number(booking.final_amount ?? booking.total_amount ?? 0).toLocaleString()}`}
           />
           <InfoRow label="Payment Status" value={booking.payment_status ?? "-"} />
           {booking.cancellation_reason && (

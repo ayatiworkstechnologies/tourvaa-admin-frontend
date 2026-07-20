@@ -1,9 +1,9 @@
 import { Outfit, Work_Sans } from "next/font/google";
 import PublicFooter from "@/components/public/PublicFooter";
 import PublicHeader from "@/components/public/PublicHeader";
-// import ChatWidget from "@/components/public/ChatWidget"; // Hidden for now — uncomment to re-enable
+// import ChatWidget from "@/components/public/ChatWidget"; // Hidden for now - uncomment to re-enable
 
-// Scoped to the public marketing site only — the dashboard portals keep
+// Scoped to the public marketing site only - the dashboard portals keep
 // their existing font. --font-heading/--font-body are consumed via
 // arbitrary-value Tailwind utilities (font-[family-name:var(--font-*)]).
 const outfit = Outfit({

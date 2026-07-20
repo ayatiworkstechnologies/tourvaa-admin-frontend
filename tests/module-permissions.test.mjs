@@ -22,7 +22,7 @@ function check(label, condition, detail = "") {
     console.log(`  ✓ ${label}`);
     passed++;
   } else {
-    console.error(`  ✗ ${label}${detail ? " — " + detail : ""}`);
+    console.error(`  ✗ ${label}${detail ? " - " + detail : ""}`);
     failed++;
     errors.push(label);
   }
@@ -50,7 +50,7 @@ const allFiles = [...getAllTsxFiles(COMPONENTS_DIR), ...getAllTsxFiles(APP_DIR)]
 const hyphenFound = [];
 
 // Known legacy hyphen-style permissions that are allowed for backward compat
-// (the backend API returns these slugs for old menu entries — frontend mirrors them)
+// (the backend API returns these slugs for old menu entries - frontend mirrors them)
 const ALLOWED_LEGACY_HYPHEN = new Set([
   "view-dashboard",
   "manage-users",

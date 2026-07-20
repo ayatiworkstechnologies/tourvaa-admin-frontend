@@ -65,7 +65,7 @@ export default function AuditLogsPage() {
       key: "timestamp",
       header: "Timestamp",
       className: "text-xs text-dash-muted whitespace-nowrap",
-      render: (log) => log.created_at ? new Date(log.created_at).toLocaleString() : "—",
+      render: (log) => log.created_at ? new Date(log.created_at).toLocaleString() : "-",
     },
     {
       key: "user",
@@ -73,7 +73,7 @@ export default function AuditLogsPage() {
       className: "text-xs",
       render: (log) => (
         <>
-          <p className="font-semibold text-dash-body">{log.user_name || "—"}</p>
+          <p className="font-semibold text-dash-body">{log.user_name || "-"}</p>
           {log.user_email && <p className="text-dash-subtle">{log.user_email}</p>}
         </>
       ),
@@ -91,19 +91,19 @@ export default function AuditLogsPage() {
       key: "entity",
       header: "Entity",
       className: "text-xs text-dash-muted",
-      render: (log) => log.entity_type ? <span>{log.entity_type}{log.entity_id ? ` #${log.entity_id}` : ""}</span> : "—",
+      render: (log) => log.entity_type ? <span>{log.entity_type}{log.entity_id ? ` #${log.entity_id}` : ""}</span> : "-",
     },
     {
       key: "ip",
       header: "IP",
       className: "font-mono text-xs text-dash-subtle",
-      render: (log) => log.ip_address || "—",
+      render: (log) => log.ip_address || "-",
     },
     {
       key: "details",
       header: "Details",
       className: "max-w-xs truncate text-xs text-dash-muted",
-      render: (log) => log.details || "—",
+      render: (log) => log.details || "-",
     },
   ];
 

@@ -253,7 +253,7 @@ export default function SupplierToursPage() {
 
                 {/* Price */}
                 <p className="mt-3 text-sm font-bold text-dash-text">
-                  {tour.currency || "AED"}{" "}
+                  {tour.currency || "USD"}{" "}
                   {Number(tour.price_start_per_person || 0).toLocaleString()}{" "}
                   <span className="text-xs font-normal text-dash-subtle">
                     / person

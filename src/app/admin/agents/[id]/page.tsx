@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
 import ActionModal from "@/components/operations/ActionModal";
 import CompletionChecklist from "@/components/operations/CompletionChecklist";
@@ -11,7 +12,7 @@ import ReviewProfileHero from "@/components/operations/ReviewProfileHero";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import StatusBadge from "@/components/operations/StatusBadge";
-import { approveReviewRecord, getReviewRecord, partialApproveReviewRecord, rejectReviewRecord, ReviewRecord, updateCommercialValue, updateReviewRecord } from "@/lib/api/services/operationsService";
+import { approveReviewRecord, getReviewRecord, partialApproveReviewRecord, rejectReviewRecord, reviewAgentDocument, ReviewRecord, updateCommercialValue, updateReviewRecord } from "@/lib/api/services/operationsService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
@@ -20,6 +21,11 @@ type DetailValue = string | number | boolean | null | undefined;
 type DetailObject = Record<string, DetailValue>;
 type AgentDocument = DetailObject & { id?: number; file_url?: string; file_path?: string };
 type AgentContact = DetailObject & { id?: number; email?: string; phone?: string; is_primary?: boolean };
+
+function apiError(error: unknown, fallback: string) {
+  if (!axios.isAxiosError(error)) return fallback;
+  return error.response?.data?.message || error.response?.data?.detail || fallback;
+}
 
 function valueText(value: DetailValue) {
   if (value === null || value === undefined || value === "") return "-";
@@ -86,8 +92,9 @@ export default function AgentDetailPage() {
   const [record, setRecord] = useState<ReviewRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [modal, setModal] = useState<"reject" | "partial" | "commercial" | "block" | null>(null);
+  const [modal, setModal] = useState<"reject" | "partial" | "commercial" | "block" | "reject-document" | null>(null);
   const [activeTab, setActiveTab] = useState<"business" | "invoicing" | "documents">("business");
+  const [reviewDocumentId, setReviewDocumentId] = useState<number | null>(null);
 
   const approvalStatus = String(record?.approval_status || "").toLowerCase();
   const accountStatus = String(record?.status || "").toLowerCase();
@@ -99,6 +106,7 @@ export default function AgentDetailPage() {
   const canPartial = !isApproved && !isBlocked && (hasPermission("agents.partial_approve") || canApprove);
   const canCommercial = hasPermission("agents.manage_discount");
   const canBlock = hasPermission("agents.edit") || hasPermission("agents.approve");
+  const canReviewDocuments = hasPermission("agents.approve") || hasPermission("agents.reject");
 
   const fetchRecord = useCallback(async () => {
     setLoading(true);
@@ -120,8 +128,8 @@ export default function AgentDetailPage() {
       toast.success(message);
       setModal(null);
       await fetchRecord();
-    } catch {
-      toast.error("Action failed.");
+    } catch (error) {
+      toast.error(apiError(error, "Action failed."));
     } finally {
       setSaving(false);
     }
@@ -137,6 +145,17 @@ export default function AgentDetailPage() {
     } catch {
       toast.error("Could not open agent document.");
     }
+  };
+
+  const approveDocument = (documentId: number) =>
+    void run(() => reviewAgentDocument(id, documentId, { status: "approved" }), "Document approved.");
+
+  const rejectDocument = (payload: Record<string, string | number>) => {
+    if (reviewDocumentId === null) return;
+    void run(
+      () => reviewAgentDocument(id, reviewDocumentId, { status: "rejected", rejection_reason: String(payload.rejection_reason || "") }),
+      "Document rejected and re-upload requested."
+    );
   };
 
   const tabs = useMemo(
@@ -248,11 +267,19 @@ export default function AgentDetailPage() {
                           ["Uploaded", doc.uploaded_at],
                           ["Reason", doc.rejection_reason],
                         ]} />
-                        {(doc.file_url || doc.file_path) && doc.id !== undefined && (
-                          <button type="button" onClick={() => void viewDocument(doc.id!)} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]">
-                            <Eye size={14} /> View document
-                          </button>
-                        )}
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {(doc.file_url || doc.file_path) && doc.id !== undefined && (
+                            <button type="button" onClick={() => void viewDocument(doc.id!)} className="inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]">
+                              <Eye size={14} /> View document
+                            </button>
+                          )}
+                          {canReviewDocuments && doc.status !== "approved" && doc.id !== undefined && (
+                            <button type="button" onClick={() => approveDocument(doc.id!)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"><Check size={14} />Accept</button>
+                          )}
+                          {canReviewDocuments && doc.status !== "rejected" && doc.id !== undefined && (
+                            <button type="button" onClick={() => { setReviewDocumentId(doc.id!); setModal("reject-document"); }} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50"><X size={14} />Reject</button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -264,6 +291,7 @@ export default function AgentDetailPage() {
           <ActionModal open={modal === "partial"} title="Request agent changes" saving={saving} submitLabel="Send request" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => partialApproveReviewRecord("agents", id, { admin_comments: String(payload.admin_comments || ""), pending_requirements: String(payload.pending_requirements || "") }), "Agent change request sent.")} fields={[{ name: "pending_requirements", label: "Required changes", type: "textarea" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "block"} title="Block agent" saving={saving} submitLabel="Block" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateReviewRecord("agents", id, { status: "blocked", admin_comments: String(payload.admin_comments || "") }), "Agent blocked.")} fields={[{ name: "admin_comments", label: "Block reason / admin note", type: "textarea" }]} />
           <ActionModal open={modal === "commercial"} title="Update discount" saving={saving} submitLabel="Save" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateCommercialValue("agents", id, { discount_type: payload.value_type, discount_value: payload.value }), "Discount updated.")} fields={[{ name: "value_type", label: "Discount type", type: "select", options: [{ label: "Percentage", value: "percentage" }, { label: "Fixed", value: "fixed" }] }, { name: "value", label: "Discount value", type: "number" }]} />
+          <ActionModal open={modal === "reject-document"} title="Reject agent document" saving={saving} submitLabel="Reject and request re-upload" onClose={() => { setModal(null); setReviewDocumentId(null); }} onSubmit={rejectDocument} fields={[{ name: "rejection_reason", label: "Reason and re-upload instructions", type: "textarea" }]} />
         </div>
       ) : (
         <section className="rounded-xl border border-dash-border bg-white p-10 text-center text-dash-muted">Agent not found.</section>
