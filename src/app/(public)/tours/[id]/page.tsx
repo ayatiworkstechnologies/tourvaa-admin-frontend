@@ -6,15 +6,19 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 
 /* eslint-disable @next/next/no-img-element */
-import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuBadgeDollarSign as BadgeDollarSign, LuBed as Bed, LuBus as Bus, LuCalendar as Calendar, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuDownload as Download, LuHeadphones as Headphones, LuHeart as Heart, LuLogIn as LogIn, LuMapPin as MapPin, LuMessageSquare as MessageSquare, LuMinus as Minus, LuPartyPopper as PartyPopper, LuPlay as Play, LuPlus as Plus, LuShare2 as Share2, LuShieldCheck as ShieldCheck, LuStar as Star, LuUsers as Users, LuUtensils as Utensils, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuBadgeDollarSign as BadgeDollarSign, LuBed as Bed, LuBus as Bus, LuCalendar as Calendar, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuDownload as Download, LuHeadphones as Headphones, LuHeart as Heart, LuLogIn as LogIn, LuMapPin as MapPin, LuMessageSquare as MessageSquare, LuMinus as Minus, LuPartyPopper as PartyPopper, LuPlay as Play, LuPlus as Plus, LuShare2 as Share2, LuShieldCheck as ShieldCheck, LuShoppingCart as ShoppingCart, LuStar as Star, LuUsers as Users, LuUtensils as Utensils, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 import PhoneInput from "@/components/ui/PhoneInput";
 import api from "@/lib/api/client";
 import { combinePhone } from "@/lib/utils/validators";
-import { fetchPublicTourDetail, PublicTourDetail } from "@/lib/api/publicClient";
+import { fetchPublicCountries, fetchPublicTourDetail, fetchPublicTours, PublicTour, PublicTourDetail } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useAuthContext } from "@/providers/AuthProvider";
 import DatePicker from "@/components/ui/DatePicker";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useTravelStore } from "@/providers/TravelStoreProvider";
+import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
+import CountryTourListing from "@/components/public/CountryTourListing";
+import TourDetailExperience from "@/components/public/TourDetailExperience";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=80";
 
@@ -665,10 +669,39 @@ function GuestPrompt({ onClose, returnPath, isLoggedIn }: { onClose: () => void;
   );
 }
 
+function CountryToursPage({ countrySlug }: { countrySlug: string }) {
+  const { formatCompact } = useCurrency();
+  const [countryName, setCountryName] = useState("");
+  const [tours, setTours] = useState<PublicTour[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchPublicCountries()
+      .then((countries) => {
+        const country = countries.find((item) => slugifyTourSegment(item.country_name) === countrySlug);
+        if (!country) throw new Error("Country not found");
+        if (active) setCountryName(country.country_name);
+        return fetchPublicTours({ country: country.country_name, limit: 50 });
+      })
+      .then((result) => { if (active) setTours(result.items); })
+      .catch(() => { if (active) setNotFound(true); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [countrySlug]);
+
+  if (loading) return <div className="flex min-h-screen items-center justify-center bg-slate-50"><div className="h-12 w-12 animate-spin rounded-full border-[3px] border-slate-200 border-t-blue-600" /></div>;
+  if (notFound) return <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50"><MapPin size={40} className="text-slate-300" /><h1 className="text-2xl font-black">Destination not found</h1><Link href="/destinations" className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white">Browse destinations</Link></div>;
+
+  return <main className="min-h-screen bg-slate-50 pb-20 pt-20"><section className="relative overflow-hidden bg-blue-950 py-20 text-white"><div className="absolute inset-0 opacity-35">{tours[0]?.banner_image && <img src={mediaUrl(tours[0].banner_image)} alt="" className="h-full w-full object-cover" />}</div><div className="absolute inset-0 bg-gradient-to-r from-blue-950 via-blue-950/80 to-blue-900/35" /><div className="relative mx-auto max-w-7xl px-5 md:px-8"><nav className="text-xs text-white/60"><Link href="/">Home</Link> / <Link href="/destinations">Destinations</Link> / {countryName}</nav><h1 className="mt-5 text-4xl font-black md:text-6xl">Tours in {countryName}</h1><p className="mt-3 max-w-xl text-sm text-white/75">Explore curated holidays, experiences and guided journeys across {countryName}.</p></div></section><section className="mx-auto max-w-7xl px-5 py-12 md:px-8"><div className="mb-7 flex items-center justify-between"><h2 className="text-2xl font-black">Available tour packages</h2><span className="rounded-full bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700">{tours.length} tour{tours.length === 1 ? "" : "s"}</span></div>{tours.length === 0 ? <div className="rounded-2xl border border-slate-200 bg-white py-20 text-center"><h2 className="text-xl font-black">No published tours yet</h2><p className="mt-2 text-sm text-slate-500">New {countryName} experiences are coming soon.</p><Link href="/tours" className="mt-6 inline-flex rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white">Explore all tours</Link></div> : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{tours.map((tour) => <Link href={publicTourUrl(tour)} key={tour.id} className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="relative h-56 overflow-hidden"><img src={tour.banner_image ? mediaUrl(tour.banner_image) : PLACEHOLDER} alt={tour.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />{tour.number_of_days && <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-black text-slate-700">{tour.number_of_days} days</span>}</div><div className="p-5"><p className="text-[10px] font-bold text-blue-600">{tour.city_name || tour.country_name}</p><h2 className="mt-2 line-clamp-2 text-lg font-black transition group-hover:text-blue-600">{tour.title}</h2><p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{tour.short_description || "A thoughtfully curated Tourvaa experience."}</p><div className="mt-5 flex items-end justify-between border-t border-slate-100 pt-4"><span className="text-[10px] text-slate-400">From<br /><b className="text-lg text-slate-950">{tour.price_start_per_person == null ? "On request" : formatCompact(tour.price_start_per_person, tour.currency || "USD")}</b></span><span className="text-xs font-bold text-blue-600">View tour →</span></div></div></Link>)}</div>}</section></main>;
+}
+
 // main page
 export default function TourDetailPage() {
   const { formatCompact: displayMoney } = useCurrency();
-  const params = useParams<{ id: string }>();
+  const { isWishlisted, toggleWishlist, addToCart, cart } = useTravelStore();
+  const params = useParams<{ id?: string; country?: string; slug?: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isLoggedIn, loading: authLoading, user, dashboard, refreshSession } = useAuthContext();
@@ -678,11 +711,16 @@ export default function TourDetailPage() {
   const [showModal, setShowModal] = useState(false);
   const [checkingAccount, setCheckingAccount] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const countryOnlySlug = params?.id && !params.slug && !/^\d+$/.test(params.id) ? params.id : null;
 
   useEffect(() => {
-    const id = Number(params?.id);
-    if (!id) { setNotFound(true); setLoading(false); return; }
-    fetchPublicTourDetail(id)
+    const routeId = params?.id;
+    const routeSlug = params?.slug;
+    const isCountryListing = routeId && !routeSlug && !/^\d+$/.test(routeId);
+    if (isCountryListing) { setLoading(false); setNotFound(false); return; }
+    const tourKey = routeSlug || routeId;
+    if (!tourKey) { setNotFound(true); setLoading(false); return; }
+    fetchPublicTourDetail(tourKey, routeSlug ? routeId : undefined)
       .then((data) => setTour({
         ...data,
         itineraries: data.itineraries ?? [],
@@ -699,7 +737,16 @@ export default function TourDetailPage() {
       }))
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [params?.id]);
+  }, [params?.id, params?.slug]);
+
+  useEffect(() => {
+    if (tour && params?.id && /^\d+$/.test(params.id)) router.replace(publicTourUrl(tour), { scroll: false });
+  }, [tour, params?.id, router]);
+
+  if (countryOnlySlug) {
+    if (process.env.NEXT_PUBLIC_COUNTRY_LISTING_DESIGN === "legacy") return <CountryToursPage countrySlug={countryOnlySlug} />;
+    return <CountryTourListing countrySlug={countryOnlySlug} />;
+  }
 
   if (loading) {
     return (
@@ -756,6 +803,30 @@ export default function TourDetailPage() {
   const allImages = tour.gallery.length > 0
     ? tour.gallery.map((g) => mediaUrl(g.image_url))
     : [tour.banner_image ? mediaUrl(tour.banner_image) : PLACEHOLDER];
+  const travelItem = { id: tour.id, title: tour.title, place: [tour.city_name, tour.country_name].filter(Boolean).join(", ") || "Worldwide", image: allImages[0], price: tour.price_start_per_person, currency: tour.currency || "USD", duration: tour.number_of_days ? `${tour.number_of_days} days` : tour.number_of_hours ? `${tour.number_of_hours} hours` : "Flexible", href: publicTourUrl(tour) };
+  const wishlisted = isWishlisted(tour.id);
+  const inCart = cart.some((item) => item.id === tour.id);
+
+  if (process.env.NEXT_PUBLIC_TOUR_DETAIL_DESIGN !== "legacy") {
+    return (
+      <TourDetailExperience
+        tour={tour}
+        images={allImages}
+        initialAdults={initialAdults}
+        initialChildren={initialChildren}
+        onBook={handleBookClick}
+        onWishlist={() => toggleWishlist(travelItem)}
+        onCart={() => addToCart(travelItem, initialAdults + initialChildren)}
+        wishlisted={wishlisted}
+        inCart={inCart}
+        modal={showModal && !authLoading && (
+          isLoggedIn && isCustomer
+            ? <BookingModal tour={tour} customerId={customerId ?? null} customerName={user?.name ?? ""} customerEmail={user?.email ?? ""} initialTravelDate={initialTravelDate} initialAdults={initialAdults} initialChildren={initialChildren} onClose={() => setShowModal(false)} />
+            : <GuestPrompt onClose={() => setShowModal(false)} returnPath={returnPath} isLoggedIn={isLoggedIn} />
+        )}
+      />
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 pb-32">
@@ -778,7 +849,7 @@ export default function TourDetailPage() {
             <div className="mt-4 flex flex-wrap items-center gap-4 text-sm"><span className="flex items-center gap-1.5 font-semibold text-slate-600"><MapPin size={14} /> {[tour.city_name, tour.country_name].filter(Boolean).join(", ")}</span><span className="flex items-center gap-1 text-orange-500">{Array.from({ length: 5 }).map((_, index) => <Star key={index} size={13} className="fill-current" />)}<b className="ml-1 text-slate-700">4.8</b><span className="text-slate-400">(126 Reviews)</span></span></div>
             <p className="mt-6 max-w-xl text-sm leading-7 text-slate-600">{tour.short_description || tour.subtitle || "Experience an expertly curated journey with memorable stays, seamless transfers, and thoughtful local experiences."}</p>
             <div className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-xs font-bold text-slate-700">{tour.number_of_days && <span className="flex items-center gap-1.5"><Calendar size={14} /> {tour.number_of_days - 1 > 0 ? `${tour.number_of_days - 1} Nights / ` : ""}{tour.number_of_days} Days</span>}<span className="flex items-center gap-1.5"><Bed size={14} /> Hotel</span><span className="flex items-center gap-1.5"><Utensils size={14} /> Meals</span><span className="flex items-center gap-1.5"><Bus size={14} /> Transfers</span></div>
-            <div className="mt-7 flex flex-wrap gap-3"><button type="button" onClick={handleBookClick} className="rounded-lg bg-[#075b57] px-6 py-3 text-sm font-black text-white hover:bg-teal-700">Customise Trip</button><button type="button" className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-black text-slate-700 hover:bg-slate-50"><Heart size={15} /> Add to Wishlist</button><button type="button" aria-label="Share tour" className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-600"><Share2 size={16} /></button></div>
+            <div className="mt-7 flex flex-wrap gap-3"><button type="button" onClick={handleBookClick} className="rounded-lg bg-[#075b57] px-6 py-3 text-sm font-black text-white hover:bg-teal-700">Customise Trip</button><button type="button" onClick={() => toggleWishlist(travelItem)} className={`flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-black transition ${wishlisted ? "border-red-200 bg-red-50 text-red-600" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}><Heart size={15} className={wishlisted ? "fill-current" : ""} />{wishlisted ? "Saved" : "Add to Wishlist"}</button><button type="button" onClick={() => addToCart(travelItem, initialAdults + initialChildren)} className={`flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-black transition ${inCart ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"}`}><ShoppingCart size={15} />{inCart ? "Added to Cart" : "Add to Cart"}</button><button type="button" aria-label="Share tour" className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-600"><Share2 size={16} /></button></div>
           </div>
           <div className="relative min-h-[360px] overflow-hidden bg-slate-100 lg:min-h-[430px]"><img src={allImages[activeImage]} alt={tour.title} className="h-full w-full object-cover transition duration-700" /><div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" /><button type="button" className="absolute bottom-8 right-8 flex items-center gap-3 rounded-full bg-white/90 py-2 pl-2 pr-5 text-sm font-black text-slate-800 shadow-xl backdrop-blur"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-teal-700 shadow"><Play size={17} className="ml-0.5 fill-current" /></span>Watch Video</button></div>
         </div>

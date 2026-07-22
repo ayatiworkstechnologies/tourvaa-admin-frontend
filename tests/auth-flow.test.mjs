@@ -21,12 +21,16 @@ function check(label, condition) {
 console.log("\n=== Authentication and Session Flow ===\n");
 
 const client = read("src/lib/api/client.ts");
-check("protected requests attach the bearer token", client.includes("config.headers.Authorization = `Bearer ${token}`"));
-check("public API requests do not receive the bearer token", client.includes("!isPublicApiPath(config.url)"));
+check("API requests include secure cookie credentials", (client.match(/withCredentials: true/g) || []).length >= 2);
+check("browser requests never attach JavaScript bearer tokens", !client.includes("config.headers.Authorization"));
 check("concurrent 401 responses share one refresh operation", client.includes("isRefreshing") && client.includes("refreshQueue"));
-check("retried requests use the refreshed token", client.includes("originalRequest.headers.Authorization = `Bearer ${newToken}`"));
+check("retried requests rely on the refreshed httpOnly cookie", client.includes('client_type: "web-cookie"') && !client.includes("newToken"));
 check("expired sessions always return to the shared login", client.includes('window.location.assign("/login")'));
 check("failed refresh clears stored authentication", client.includes("clearSession()"));
+
+const session = read("src/lib/api/session.ts");
+check("access tokens are never read from localStorage", !session.includes("localStorage.getItem(TOKEN_KEY)"));
+check("access tokens are never written to localStorage", !session.includes("localStorage.setItem(TOKEN_KEY"));
 
 const auth = read("src/providers/AuthProvider.tsx");
 check("session restoration loads dashboard identity", auth.includes('api.get("/dashboard/me")'));

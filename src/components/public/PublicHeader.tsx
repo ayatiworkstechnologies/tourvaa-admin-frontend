@@ -1,257 +1,69 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { LuChevronDown as ChevronDown, LuHeart as Heart, LuLayoutDashboard as LayoutDashboard, LuLogOut as LogOut, LuMenu as Menu, LuSearch as Search, LuUser as User, LuX as X } from "react-icons/lu";
-import { useState, useRef, useEffect } from "react";
-import { getDashboardPath } from "@/lib/utils/dashboardPath";
+import { LuBriefcaseBusiness as Briefcase, LuBuilding2 as Building, LuCalendarCheck as CalendarCheck, LuChevronDown as ChevronDown, LuGlobe as Globe, LuHeart as Heart, LuLayoutDashboard as LayoutDashboard, LuLogOut as LogOut, LuMenu as Menu, LuPlane as Plane, LuShoppingCart as Cart, LuUserRound as User, LuX as X } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
+import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import CurrencySelector from "@/components/public/CurrencySelector";
+import { useTravelStore } from "@/providers/TravelStoreProvider";
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/destinations", label: "Destinations" },
-  { href: "/tours", label: "Tour Packages" },
-  { href: "/#experiences", label: "Experiences" },
-  { href: "/about", label: "About Us" },
-];
+const links = [["Destinations", "/destinations"], ["Tour Packages", "/tours"], ["Experiences", "/#experiences"], ["About Us", "/about"]] as const;
 
 export default function PublicHeader() {
-  const [open, setOpen] = useState(false);
-  const [dropOpen, setDropOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
-  const dropRef = useRef<HTMLDivElement>(null);
-
-  const { isLoggedIn, loading: sessionLoading, user, logout, dashboard } = useAuthContext();
-  const roleSlug = dashboard?.user?.role?.slug ?? "";
-  const dashboardPath = getDashboardPath(roleSlug);
-
-  const NON_ADMIN_ROLES = ["customer", "agent-reseller", "supplier", "affiliate"];
-  const isPortalUser = isLoggedIn && NON_ADMIN_ROLES.includes(roleSlug);
-
-  function profilePath() {
-    if (roleSlug === "customer") return "/customer/profile";
-    if (roleSlug === "agent-reseller") return "/agent/profile";
-    if (roleSlug === "supplier") return "/supplier/profile";
-    if (roleSlug === "affiliate") return "/affiliate/profile";
-    return "/";
-  }
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setDropOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const handleLogout = () => {
-    setOpen(false);
-    setDropOpen(false);
-    logout();
-  };
-
-  const initials = user?.name
-    ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
-    : "?";
-
   const isHome = pathname === "/";
-  const headerText = isHome && !scrolled ? "text-white" : "text-zinc-950";
-
+  const [open, setOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const { isLoggedIn, dashboard, user, logout } = useAuthContext();
+  const { wishlistCount, cartCount } = useTravelStore();
+  const dashboardPath = getDashboardPath(dashboard?.user?.role?.slug ?? "");
+  const roleSlug = dashboard?.user?.role?.slug ?? "";
+  const profilePath = roleSlug === "customer" ? "/customer/profile" : `${dashboardPath.replace(/\/dashboard$/, "")}/profile`;
+  useEffect(() => { const listen = () => setScrolled(window.scrollY > 24); listen(); window.addEventListener("scroll", listen, { passive: true }); return () => window.removeEventListener("scroll", listen); }, []);
+  useEffect(() => {
+    const close = (event: MouseEvent) => { if (profileRef.current && !profileRef.current.contains(event.target as Node)) setProfileOpen(false); };
+    const escape = (event: KeyboardEvent) => event.key === "Escape" && setProfileOpen(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", escape); };
+  }, []);
+  const transparent = isHome && !scrolled;
   return (
-    <div className="fixed top-0 z-50 w-full px-4 pt-3 sm:px-6 lg:px-8 transition-all duration-500">
-      <header
-        className={`mx-auto flex max-w-7xl items-center justify-between gap-5 rounded-xl px-4 py-2.5 transition-all duration-500 ${
-          scrolled || !isHome
-            ? "bg-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.08)] backdrop-blur-xl border border-white/20"
-            : "bg-transparent border border-transparent"
-        }`}
-      >
-        {/* Logo */}
-        <Link href="/" className="group flex shrink-0 flex-col leading-none">
-          <span className={`font-heading text-xl font-black uppercase tracking-[0.08em] transition-colors ${headerText}`}>Tourvaa</span>
-          <span className={`mt-1 text-[8px] font-semibold tracking-wide transition-colors ${isHome && !scrolled ? "text-white/75" : "text-slate-500"}`}>Your World. Your Way.</span>
-        </Link>
-
-        {/* Desktop nav */}
-        <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
-          {navLinks.map((l) => {
-            const active = pathname === l.href || (l.href !== "/" && !!pathname?.startsWith(l.href));
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`relative rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${
-                  active
-                    ? scrolled || !isHome ? "text-sky-600 bg-sky-50/80" : "text-white bg-white/10"
-                    : scrolled || !isHome ? "text-zinc-600 hover:text-zinc-950 hover:bg-slate-50" : "text-white/80 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                {l.label}
-              </Link>
-            );
-          })}
+    <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${transparent ? "bg-transparent text-slate-900" : "border-b border-slate-100 bg-white/95 text-slate-900 shadow-sm backdrop-blur-xl"}`}>
+      <div className="mx-auto flex h-20 max-w-[1480px] items-center justify-between px-5 sm:px-9 lg:px-12">
+        <Link href="/" className="text-2xl font-black tracking-tight text-[#1478f2]">Tourvaa</Link>
+        {!isHome && <nav className="hidden items-center gap-7 md:flex">{links.map(([label, href]) => <Link key={label} href={href} className="text-sm font-semibold text-slate-600 transition hover:text-blue-600">{label}</Link>)}</nav>}
+        <nav className="hidden items-center gap-7 sm:flex">
+          <Link href="/wishlist" className="group relative flex flex-col items-center gap-1 text-[9px] font-semibold"><Heart size={17} className="transition group-hover:-translate-y-1 group-hover:text-blue-600" />Wishlist{wishlistCount > 0 && <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">{wishlistCount > 99 ? "99+" : wishlistCount}</span>}</Link>
+          <Link href="/cart" className="group relative flex flex-col items-center gap-1 text-[9px] font-semibold"><Cart size={17} className="transition group-hover:-translate-y-1 group-hover:text-blue-600" />Cart{cartCount > 0 && <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">{cartCount > 99 ? "99+" : cartCount}</span>}</Link>
+          <span className="flex flex-col items-center gap-0.5 text-[9px] font-semibold"><Globe size={17} /><span className="flex items-center gap-1 [&_select]:border-0 [&_select]:bg-transparent [&_select]:p-0 [&_select]:text-[9px]">EN | <CurrencySelector inverse={transparent} /></span></span>
+          <div ref={profileRef} className="relative"><button type="button" onClick={() => setProfileOpen((value) => !value)} aria-expanded={profileOpen} aria-haspopup="menu" className="group flex flex-col items-center gap-0.5 text-[9px] font-semibold"><User size={17} className="transition group-hover:-translate-y-1 group-hover:text-blue-600" /><span className="flex items-center gap-0.5">Profile <ChevronDown size={9} className={`transition ${profileOpen ? "rotate-180" : ""}`} /></span></button>{profileOpen && (isLoggedIn ? <AuthenticatedProfileMenu name={user?.name} dashboardPath={dashboardPath} profilePath={profilePath} customer={roleSlug === "customer"} onClose={() => setProfileOpen(false)} onLogout={logout} /> : <ProfileLoginMenu onClose={() => setProfileOpen(false)} />)}</div>
         </nav>
-
-        {/* Auth */}
-        <div className="flex items-center gap-3">
-          <CurrencySelector inverse={isHome && !scrolled} />
-          <div className={`hidden items-center gap-1 lg:flex ${headerText}`}>
-            <Link href="/tours" className={`flex items-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition ${scrolled || !isHome ? "hover:bg-slate-100" : "hover:bg-white/10"}`}><Search size={14} /> Search</Link>
-            <Link href={isPortalUser ? dashboardPath : "/login"} className={`flex items-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition ${scrolled || !isHome ? "hover:bg-slate-100" : "hover:bg-white/10"}`}><Heart size={14} /> Wishlist</Link>
-          </div>
-          {!sessionLoading && isPortalUser ? (
-            <div className="relative hidden sm:block" ref={dropRef}>
-              <button
-                type="button"
-                onClick={() => setDropOpen((v) => !v)}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-sm font-semibold transition-all ${
-                  scrolled || !isHome
-                    ? "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-slate-50"
-                    : "border-white/20 bg-white/10 text-white backdrop-blur-md hover:bg-white/20"
-                }`}
-              >
-                <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${scrolled || !isHome ? "bg-sky-50 text-sky-600" : "bg-white/20 text-white"}`}>
-                  {initials}
-                </span>
-                <span className="max-w-28 truncate">{user?.name?.split(" ")[0] ?? "Account"}</span>
-                <ChevronDown size={14} className={`shrink-0 transition-transform ${dropOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              {dropOpen && (
-                <div className="absolute right-0 mt-3 w-56 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-                  <div className="border-b border-slate-100 px-4 py-3 bg-slate-50/50">
-                    <p className="truncate text-sm font-bold text-zinc-950">{user?.name}</p>
-                    <p className="truncate text-xs text-zinc-500">{user?.email}</p>
-                  </div>
-                  <Link
-                    href={dashboardPath}
-                    onClick={() => setDropOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-600 transition-colors hover:bg-slate-50 hover:text-zinc-950"
-                  >
-                    <LayoutDashboard size={16} className="text-sky-500" /> My Dashboard
-                  </Link>
-                  <Link
-                    href={profilePath()}
-                    onClick={() => setDropOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-600 transition-colors hover:bg-slate-50 hover:text-zinc-950"
-                  >
-                    <User size={16} className="text-sky-500" /> My Profile
-                  </Link>
-                  <div className="border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-rose-500 transition-colors hover:bg-rose-50"
-                    >
-                      <LogOut size={16} /> Sign out
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : !sessionLoading && !isPortalUser ? (
-            <div className="hidden sm:flex sm:items-center sm:gap-2">
-              <Link
-                href="/login"
-                className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition-all ${
-                  scrolled || !isHome
-                    ? "text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100"
-                    : "text-white/90 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <User size={14} /> Login
-              </Link>
-              <Link
-                href="/contact"
-                className="rounded-xl bg-orange-500 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-orange-950/10 transition-all hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md"
-              >
-                Plan My Trip
-              </Link>
-            </div>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors md:hidden ${
-              scrolled || !isHome ? "text-zinc-600 hover:bg-zinc-100" : "text-white hover:bg-white/20"
-            }`}
-            aria-label="Toggle menu"
-          >
-            {open ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
-      </header>
-
-      {/* Mobile menu */}
-      {open && (
-        <div className="absolute inset-x-4 top-20 rounded-2xl border border-slate-100 bg-white/95 px-5 pb-6 pt-4 shadow-[0_20px_40px_rgba(0,0,0,0.1)] backdrop-blur-xl md:hidden">
-          <nav className="flex flex-col gap-1">
-            {navLinks.map((l) => {
-              const active = pathname === l.href || (l.href !== "/" && !!pathname?.startsWith(l.href));
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-                    active ? "bg-sky-50 text-sky-600" : "text-zinc-600 hover:bg-slate-50 hover:text-zinc-950"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {!sessionLoading && isPortalUser ? (
-            <div className="mt-4 flex flex-col gap-1 border-t border-slate-100 pt-4">
-              <p className="px-4 pb-2 text-xs font-semibold text-zinc-400">
-                Hi, {user?.name?.split(" ")[0]}
-              </p>
-              <Link
-                href={dashboardPath}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-600 hover:bg-slate-50 hover:text-zinc-950"
-              >
-                <LayoutDashboard size={16} className="text-sky-500" /> My Dashboard
-              </Link>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-rose-500 hover:bg-rose-50"
-              >
-                <LogOut size={16} /> Sign out
-              </button>
-            </div>
-          ) : (
-            <div className="mt-4 flex gap-3 border-t border-slate-100 pt-4">
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="flex-1 rounded-xl border border-zinc-200 py-3 text-center text-sm font-semibold text-zinc-600 hover:bg-slate-50"
-              >
-                Login
-              </Link>
-              <Link
-                href="/contact"
-                onClick={() => setOpen(false)}
-                className="flex-1 rounded-xl bg-orange-500 py-3 text-center text-sm font-bold text-white shadow-sm hover:bg-orange-600"
-              >
-                Plan My Trip
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+        <button onClick={() => setOpen(!open)} aria-label="Toggle navigation" className="sm:hidden">{open ? <X /> : <Menu />}</button>
+      </div>
+      {open && <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg sm:hidden"><div className="grid grid-cols-2 gap-2">{links.map(([label, href]) => <Link key={label} href={href} onClick={() => setOpen(false)} className="rounded-lg bg-slate-50 px-4 py-3 text-sm font-semibold">{label}</Link>)}</div><div className="mt-3 grid grid-cols-2 gap-2"><Link href="/wishlist" onClick={() => setOpen(false)} className="flex items-center justify-center gap-2 rounded-lg bg-blue-50 px-3 py-3 text-xs font-bold text-blue-700"><Heart size={15} />Wishlist {wishlistCount > 0 && `(${wishlistCount})`}</Link><Link href="/cart" onClick={() => setOpen(false)} className="flex items-center justify-center gap-2 rounded-lg bg-blue-50 px-3 py-3 text-xs font-bold text-blue-700"><Cart size={15} />Cart {cartCount > 0 && `(${cartCount})`}</Link></div><p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">{isLoggedIn ? "Your account" : "Account login"}</p><div className="mt-2 grid gap-2">{isLoggedIn ? <><Link href={dashboardPath} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white"><LayoutDashboard size={17} />Open My Dashboard</Link>{roleSlug === "customer" && <Link href="/customer/bookings" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl border border-blue-100 px-4 py-3 text-sm font-bold text-slate-700"><CalendarCheck size={17} className="text-blue-600" />My Bookings</Link>}<Link href={profilePath} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl border border-blue-100 px-4 py-3 text-sm font-bold text-slate-700"><User size={17} className="text-blue-600" />My Profile</Link><button type="button" onClick={() => { setOpen(false); logout(); }} className="flex items-center gap-3 rounded-xl bg-rose-50 px-4 py-3 text-left text-sm font-bold text-rose-600"><LogOut size={17} />Sign out</button></> : profileOptions.map(({ label, href, icon: Icon }) => <Link key={label} href={href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 text-sm font-bold text-slate-700"><Icon size={17} className="text-blue-600" />{label}</Link>)}</div></div>}
+    </header>
   );
+}
+
+const profileOptions = [
+  { label: "Traveller Login", note: "Bookings, wishlist and trips", href: "/login?role=traveller", icon: Plane },
+  { label: "Agent Login", note: "Customers, bookings and earnings", href: "/login?role=agent", icon: Briefcase },
+  { label: "Supplier Login", note: "Tours, inventory and payouts", href: "/login?role=supplier", icon: Building },
+] as const;
+
+function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
+  return <div role="menu" className="hero-filter-panel absolute right-0 top-[calc(100%+14px)] w-72 overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 text-slate-900 shadow-[0_20px_55px_rgba(15,23,42,.18)]"><div className="px-3 pb-2 pt-2"><p className="text-sm font-black">Welcome to Tourvaa</p><p className="mt-0.5 text-[10px] text-slate-400">Choose your account type to continue</p></div>{profileOptions.map(({ label, note, href, icon: Icon }) => <Link role="menuitem" key={label} href={href} onClick={onClose} className="group flex items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-blue-50"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white"><Icon size={18} /></span><span className="min-w-0 flex-1"><b className="block text-xs">{label}</b><span className="mt-0.5 block text-[9px] text-slate-400">{note}</span></span><span className="text-blue-500 transition group-hover:translate-x-1">›</span></Link>)}</div>;
+}
+
+function AuthenticatedProfileMenu({ name, dashboardPath, profilePath, customer, onClose, onLogout }: { name?: string; dashboardPath: string; profilePath: string; customer: boolean; onClose: () => void; onLogout: () => void }) {
+  return <div role="menu" className="hero-filter-panel absolute right-0 top-[calc(100%+14px)] w-72 overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 text-slate-900 shadow-[0_20px_55px_rgba(15,23,42,.18)]"><div className="border-b border-slate-100 px-3 pb-3 pt-2"><p className="truncate text-sm font-black">{name || "My Tourvaa"}</p><p className="mt-0.5 text-[10px] text-slate-400">Manage your account and journeys</p></div><div className="pt-2"><AccountMenuLink href={dashboardPath} label="My dashboard" icon={LayoutDashboard} onClose={onClose} />{customer && <AccountMenuLink href="/customer/bookings" label="My bookings" icon={CalendarCheck} onClose={onClose} />}<AccountMenuLink href={profilePath} label="My profile" icon={User} onClose={onClose} /><button type="button" role="menuitem" onClick={() => { onClose(); onLogout(); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-bold text-rose-600 transition hover:bg-rose-50"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50"><LogOut size={16} /></span>Sign out</button></div></div>;
+}
+
+function AccountMenuLink({ href, label, icon: Icon, onClose }: { href: string; label: string; icon: React.ElementType; onClose: () => void }) {
+  return <Link role="menuitem" href={href} onClick={onClose} className="group flex items-center gap-3 rounded-xl px-3 py-3 text-xs font-bold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white"><Icon size={16} /></span>{label}</Link>;
 }

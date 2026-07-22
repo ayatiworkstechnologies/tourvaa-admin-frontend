@@ -8,6 +8,7 @@ import { LuArrowRight as ArrowRight } from "react-icons/lu";
 import { fetchFeaturedTours, PublicTour } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
+import { publicTourUrl } from "@/lib/utils/tourUrl";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=75";
 
@@ -19,7 +20,7 @@ const STATIC_FALLBACK = [
 ];
 
 function TourCard({ tour, isStatic }: { tour: Partial<PublicTour>; isStatic?: boolean }) {
-  const href = isStatic ? "/tours" : `/tours/${tour.id}`;
+  const href = isStatic ? "/tours" : publicTourUrl({ country_name: tour.country_name, title: tour.title || "Tour", slug: tour.slug });
   const { formatCompact } = useCurrency();
   return (
     <Link href={href} className="group overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">

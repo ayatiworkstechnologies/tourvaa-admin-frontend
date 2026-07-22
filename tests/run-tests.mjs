@@ -15,6 +15,7 @@ const TEST_FILES = [
   "module-components.test.mjs",
   "dashboard.test.mjs",
   "auth-flow.test.mjs",
+  "api-contract.test.mjs",
   "currency-flow.test.mjs",
   "calendar-flow.test.mjs",
   "metadata-flow.test.mjs",

@@ -157,6 +157,63 @@ button {
   to   { transform: scale(1.12) translate3d(-1.5%, -1%, 0); }
 }
 
+.animate-tourvaa-hero {
+  animation: tourvaaHero 16s ease-in-out infinite alternate;
+}
+
+@keyframes heroFilterEnter {
+  from { opacity: 0; transform: translateY(22px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes filterPanelDrop {
+  from { opacity: 0; transform: translateY(-8px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes datePanelIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes selectedDatePulse {
+  0% { transform: scale(.82); box-shadow: 0 0 0 0 rgb(37 99 235 / .35); }
+  70% { transform: scale(1.06); box-shadow: 0 0 0 7px rgb(37 99 235 / 0); }
+  100% { transform: scale(1); }
+}
+
+@keyframes counterPop {
+  0% { opacity: .35; transform: translateY(4px) scale(.82); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.hero-filter-enter { animation: heroFilterEnter .75s cubic-bezier(.22,1,.36,1) .15s both; }
+.hero-filter-bar { transition: box-shadow .35s ease, transform .35s ease; }
+.hero-filter-bar:focus-within { box-shadow: 0 20px 55px rgb(15 23 42 / .34); }
+.hero-filter-field svg { transition: transform .3s cubic-bezier(.22,1,.36,1), color .3s ease; }
+.hero-filter-field:hover svg,
+.hero-filter-field.is-active svg { transform: translateY(-2px) scale(1.08); }
+.hero-filter-field.is-active { box-shadow: inset 0 -2px 0 #2563eb; }
+.hero-filter-panel { transform-origin: top center; animation: filterPanelDrop .28s cubic-bezier(.22,1,.36,1) both; }
+.date-panel-content { animation: datePanelIn .3s cubic-bezier(.22,1,.36,1) both; }
+.calendar-days button { transition: transform .18s ease, background-color .18s ease, color .18s ease; }
+.calendar-days button:hover { transform: translateY(-2px) scale(1.06); }
+.calendar-days button.is-selected { animation: selectedDatePulse .45s cubic-bezier(.22,1,.36,1) both; }
+.counter-motion { transition: transform .15s ease, background-color .15s ease; }
+.counter-motion:active { transform: scale(.76); }
+.counter-value { animation: counterPop .2s cubic-bezier(.22,1,.36,1) both; }
+.hero-search-button::after {
+  content: "";
+  position: absolute;
+  inset: -60% auto -60% -45%;
+  width: 30%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / .5), transparent);
+  transition: left .6s ease;
+}
+.hero-search-button:hover::after { left: 120%; }
+.hero-search-button > * { position: relative; z-index: 1; }
+
 @keyframes heroImg {
   from { transform: scale(1.08); }
   to   { transform: scale(1); }
@@ -342,6 +399,58 @@ button {
 .nav-primary:hover { background: #115e59; }
 .nav-primary:disabled { opacity: .5; }
 .nav-secondary { border: 1px solid #cbd5e1; background: #fff; color: #334155; }
+
+/* Shared public theme: keeps every marketing route visually connected to the homepage. */
+.public-site {
+  --public-primary: #1478f2;
+  --public-primary-hover: #0b63ce;
+  --public-primary-soft: #eff6ff;
+  --public-ink: #0f172a;
+  background: #fff;
+  color: var(--public-ink);
+}
+.public-site h1, .public-site h2, .public-site h3, .public-site h4 {
+  font-family: var(--font-heading), sans-serif;
+}
+.public-page-enter { animation: publicPageFade .45s ease both; }
+@keyframes publicPageFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Legacy public screens used teal for branding. Scope the homepage blue mapping
+   to the public shell so admin, agent, and supplier portals remain unchanged. */
+.public-site .bg-teal-500,
+.public-site .bg-teal-600,
+.public-site .bg-teal-700,
+.public-site .bg-teal-800 { background-color: var(--public-primary); }
+.public-site .text-teal-400,
+.public-site .text-teal-500,
+.public-site .text-teal-600,
+.public-site .text-teal-700,
+.public-site .text-teal-800,
+.public-site .text-teal-900 { color: var(--public-primary); }
+.public-site .border-teal-200,
+.public-site .border-teal-500,
+.public-site .border-teal-600,
+.public-site .border-teal-700,
+.public-site .border-teal-800 { border-color: var(--public-primary); }
+.public-site .bg-teal-50,
+.public-site .bg-teal-100 { background-color: var(--public-primary-soft); }
+.public-site .hover\:bg-teal-700:hover,
+.public-site .hover\:bg-teal-800:hover { background-color: var(--public-primary-hover); }
+.public-site .hover\:text-teal-600:hover,
+.public-site .hover\:text-teal-700:hover { color: var(--public-primary); }
+.public-site .field:focus {
+  border-color: var(--public-primary);
+  box-shadow: 0 0 0 4px rgb(20 120 242 / .1);
+}
+.public-site .nav-primary {
+  background: var(--public-primary);
+  box-shadow: 0 8px 22px rgb(20 120 242 / .18);
+}
+.public-site .nav-primary:hover { background: var(--public-primary-hover); }
+.public-site :where(button, a):focus-visible {
+  outline: 3px solid rgb(20 120 242 / .3);
+  outline-offset: 2px;
+}
 
 /* Respect the user's OS-level motion preference: shorten/disable animations
    and transitions instead of removing them outright, so state changes (e.g.

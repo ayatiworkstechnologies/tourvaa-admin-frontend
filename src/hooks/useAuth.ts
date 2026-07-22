@@ -27,10 +27,10 @@ export function useAuth() {
       const response = await api.post("/auth/login", {
         email: normalizeEmail(payload.email),
         password: payload.password,
+        client_type: "web-cookie",
       });
-      const data = response.data.data;
-
-      await auth.loginWithToken(data.access_token);
+      void response.data;
+      await auth.loginWithToken();
     } catch (error: unknown) {
       const message = getApiErrorMessage(error);
       setError(message);

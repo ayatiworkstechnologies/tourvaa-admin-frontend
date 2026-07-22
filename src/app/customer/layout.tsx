@@ -5,9 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { LuCalendarCheck as CalendarCheck, LuCompass as Compass, LuCreditCard as CreditCard, LuFileText as FileText, LuHeadphones as Headphones, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuReceiptText as ReceiptText, LuUser as User, LuUsersRound as UsersRound } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
+import PublicHeader from "@/components/public/PublicHeader";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
+import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
 
 const NAV = [
   { href: "/customer/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -21,24 +23,15 @@ const NAV = [
   { href: "/customer/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
 
-const PAGE_TITLES: Record<string, string> = {
-  "/customer/dashboard": "Dashboard",
-  "/tours": "Browse Tours",
-  "/customer/bookings": "My Bookings",
-  "/customer/payments": "Payments",
-  "/customer/invoices": "Invoices",
-  "/customer/travellers": "Travellers",
-  "/customer/cancellations": "Cancellations",
-  "/customer/profile": "My Profile",
-  "/customer/support": "Support",
+const TITLES: Record<string, string> = {
+  "/customer/dashboard": "Dashboard", "/customer/bookings": "My Bookings", "/customer/travellers": "Travellers",
+  "/customer/payments": "Payments", "/customer/invoices": "Invoices", "/customer/cancellations": "Cancellations",
+  "/customer/support": "Support", "/customer/profile": "My Profile",
 };
 
-function getTitle(pathname: string) {
-  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
-  for (const [base, title] of Object.entries(PAGE_TITLES)) {
-    if (base !== "/tours" && pathname.startsWith(base + "/")) return title;
-  }
-  return "My Account";
+function pageTitle(pathname: string) {
+  const match = Object.entries(TITLES).find(([path]) => pathname === path || pathname.startsWith(`${path}/`));
+  return match?.[1] || "My Tourvaa";
 }
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
@@ -67,54 +60,37 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-dash-bg">
-        <div className="flex items-center gap-3 rounded-xl bg-white px-5 py-4 text-sm font-semibold text-dash-muted shadow ring-1 ring-dash-border">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-dash-brand border-t-transparent" />
-          Loading...
+      <TravelStoreProvider>
+        <div className="min-h-screen bg-[#F7FAFF]" style={portalThemeStyles.customer}>
+          <PublicHeader />
+          <div className="flex min-h-screen items-center justify-center pt-20">
+            <div className="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-sm font-semibold text-dash-muted shadow-lg ring-1 ring-dash-border">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-dash-brand border-t-transparent" />
+              Loading your trips...
+            </div>
+          </div>
         </div>
-      </div>
+      </TravelStoreProvider>
     );
   }
 
   if (!isLoggedIn || !user) return null;
 
-  const pageTitle = getTitle(pathname);
-
   return (
-    <div className="flex min-h-screen bg-dash-bg" style={portalThemeStyles.customer}>
-      <Sidebar
-        navItems={NAV}
-        title="Tourvaa"
-        subtitle="Traveller"
-        logoIcon={Compass}
-        theme="customer"
-        mobile={false}
-        collapsed={collapsed}
-        onToggleCollapse={() => setCollapsed(!collapsed)}
-      />
+    <TravelStoreProvider>
+      <div className="customer-public-portal min-h-screen bg-dash-bg" style={portalThemeStyles.customer}>
+        <PublicHeader />
+        <div className="flex min-h-screen pt-20">
+          <Sidebar navItems={NAV} title="My Tourvaa" subtitle="Traveller Portal" logoIcon={Compass} theme="customer" collapsed={collapsed} onToggleCollapse={() => setCollapsed((value) => !value)} headerOffset />
 
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button className="absolute inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />
-          <div className="relative h-full w-[260px] bg-white shadow-2xl">
-            <Sidebar navItems={NAV} title="Tourvaa" subtitle="Traveller" logoIcon={Compass} theme="customer" mobile={true} collapsed={false} onToggleCollapse={() => {}} />
+          {sidebarOpen && <div className="fixed inset-x-0 bottom-0 top-20 z-40 lg:hidden"><button type="button" className="absolute inset-0 bg-slate-950/35 backdrop-blur-[2px]" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" /><div className="relative h-full w-[260px] bg-white shadow-2xl"><Sidebar navItems={NAV} title="My Tourvaa" subtitle="Traveller Portal" logoIcon={Compass} theme="customer" mobile /></div></div>}
+
+          <div className={`flex min-w-0 flex-1 flex-col transition-[margin] duration-300 ${collapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"}`}>
+            <Header title={pageTitle(pathname)} name={user.name} profileImage={user.profile_image} role="Traveller" profileHref="/customer/profile" onMenuClick={() => setSidebarOpen(true)} theme="sky" spacious headerOffset />
+            <main className="flex-1">{children}</main>
           </div>
         </div>
-      )}
-
-      <div className={`flex flex-1 flex-col transition-all duration-300 ${collapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"}`}>
-        <Header
-          title={pageTitle}
-          name={user.name}
-          profileImage={user.profile_image}
-          role="Traveller"
-          profileHref="/customer/profile"
-          onMenuClick={() => setSidebarOpen(true)}
-          theme="teal"
-        />
-
-        <main className="flex-1">{children}</main>
       </div>
-    </div>
+    </TravelStoreProvider>
   );
 }

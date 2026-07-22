@@ -2,13 +2,7 @@ const TOKEN_KEY = "tourvaa_token";
 const LEGACY_USER_KEY = "tourvaa_user";
 
 export function getStoredTokenSafe() {
-  if (typeof window === "undefined") return null;
-
-  try {
-    return localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 export function getToken() {
@@ -16,9 +10,8 @@ export function getToken() {
 }
 
 export function setToken(token: string) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.removeItem(LEGACY_USER_KEY);
+  void token;
+  clearSession();
 }
 
 export function clearSession() {
@@ -28,5 +21,5 @@ export function clearSession() {
 }
 
 export function isAuthenticated() {
-  return Boolean(getStoredTokenSafe());
+  return false;
 }

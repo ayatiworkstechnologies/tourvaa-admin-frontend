@@ -1,286 +1,399 @@
-﻿"use client";
+"use client";
 
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  LuBadgeCheck as BadgeCheck,
-  LuBookOpen as BookOpen,
-  LuBuilding2 as Building2,
-  LuCalendarCheck as CalendarCheck,
-  LuChevronRight as ChevronRight,
+  LuArrowLeft as ArrowLeft,
+  LuArrowRight as ArrowRight,
+  LuCalendarDays as Calendar,
+  LuClock3 as Clock,
+  LuCheck as Check,
+  LuChevronDown as ChevronDown,
   LuHeart as Heart,
-  LuHeadphones as Headphones,
-  LuLandmark as Landmark,
-  LuMountain as Mountain,
+  LuMapPin as MapPin,
+  LuMinus as Minus,
+  LuPlus as Plus,
   LuQuote as Quote,
-  LuShieldCheck as ShieldCheck,
-  LuShipWheel as ShipWheel,
-  LuSparkles as Sparkles,
+  LuSearch as Search,
   LuStar as Star,
-  LuTags as Tags,
   LuUsers as Users,
-  LuWaves as Waves,
 } from "react-icons/lu";
-import { useCurrency } from "@/hooks/useCurrency";
-import FeaturedTours from "@/components/public/FeaturedTours";
-import HeroFilterBar from "@/components/public/HeroFilterBar";
+import {
+  CmsBanner,
+  CmsDestination,
+  CmsReview,
+  fetchCustomerReviews,
+  fetchFeaturedTours,
+  fetchHomepageBanners,
+  fetchPopularDestinations,
+  PublicTour,
+} from "@/lib/api/publicClient";
+import { useTravelStore } from "@/providers/TravelStoreProvider";
+import { publicTourUrl } from "@/lib/utils/tourUrl";
+
+type Tour = {
+  id?: number;
+  title: string;
+  place: string;
+  image: string;
+  price: string;
+  days: string;
+  reviews: string;
+  features: string[];
+  rawPrice?: number | null;
+  currency?: string;
+  slug?: string;
+};
+
+const trending: Tour[] = [
+  { title: "New Zealand Explorer", place: "New Zealand", image: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=900&q=85", price: "$1,182", days: "9D | 8N", reviews: "2,466", features: ["Auckland + Queenstown", "Age Range: 12–70", "Max Group Size: 24"] },
+  { title: "Golden Triangle Escape", place: "India", image: "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=900&q=85", price: "$839", days: "7D | 6N", reviews: "1,888", features: ["Delhi + Agra + Jaipur", "Age Range: 10–75", "Max Group Size: 20"] },
+  { title: "Swiss Alpine Adventure", place: "Switzerland", image: "https://images.unsplash.com/photo-1527668752968-14dc70a27c95?auto=format&fit=crop&w=900&q=85", price: "$1,575", days: "8D | 7N", reviews: "3,692", features: ["Zurich + Lucerne", "Age Range: 15–70", "Max Group Size: 18"] },
+  { title: "Cherry Blossom Japan", place: "Japan", image: "https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=900&q=85", price: "$1,869", days: "10D | 9N", reviews: "2,989", features: ["Tokyo + Kyoto", "Age Range: 12–70", "Max Group Size: 16"] },
+  { title: "Bali Island Escape", place: "Indonesia", image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=85", price: "$969", days: "6D | 5N", reviews: "2,104", features: ["Ubud + Seminyak", "Age Range: 12–70", "Max Group Size: 20"] },
+];
+
+const handpicked: Tour[] = [
+  { title: "South Island Explorer", place: "New Zealand", image: "https://images.unsplash.com/photo-1469521669194-babb45599def?auto=format&fit=crop&w=900&q=85", price: "$2,699", days: "10D | 9N", reviews: "2,466", features: ["Including Accommodation", "Milford Sound Cruise", "Airport pickup available"] },
+  { title: "Golden Triangle Escape", place: "India", image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=900&q=85", price: "$799", days: "7D | 6N", reviews: "2,466", features: ["Premium accommodation", "Guided heritage tour", "Daily breakfast included"] },
+  { title: "Swiss Alps Escape", place: "Switzerland", image: "https://images.unsplash.com/photo-1502784444187-359ac186c5bb?auto=format&fit=crop&w=900&q=85", price: "$780", days: "6D | 5N", reviews: "1,328", features: ["Mountain-view accommodation", "Scenic train experience", "Daily breakfast included"] },
+  { title: "Paris & Provence", place: "France", image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=85", price: "$670", days: "7D | 6N", reviews: "2,466", features: ["Central hotel accommodation", "Guided city sightseeing", "Seine river cruise included"] },
+  { title: "Amalfi Coast Dreams", place: "Italy", image: "https://images.unsplash.com/photo-1533104816931-20fa691ff6ca?auto=format&fit=crop&w=900&q=85", price: "$1,250", days: "8D | 7N", reviews: "1,806", features: ["Boutique accommodation", "Coastal boat tour", "Daily breakfast included"] },
+];
+
+const places = [
+  { name: "New Zealand", count: "95 Packages", rating: "4.9", image: "https://images.unsplash.com/photo-1469521669194-babb45599def?auto=format&fit=crop&w=900&q=85" },
+  { name: "India", count: "73 Packages", rating: "4.9", image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=900&q=85" },
+  { name: "Switzerland", count: "85 Packages", rating: "4.8", image: "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=900&q=85" },
+  { name: "France", count: "62 Packages", rating: "4.8", image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=85" },
+  { name: "Greece", count: "48 Packages", rating: "4.9", image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=900&q=85" },
+];
+
+const reviews = [
+  { quote: "Booked a 7-day Rajasthan tour through Tourvaa. Everything was flawless — hotels, transport, guides. I didn’t have to think once.", name: "Priya Menon", city: "Kerala, India", initials: "PM" },
+  { quote: "The Golden Triangle package was absolutely worth every dirham. The team was responsive and the itinerary was perfectly paced.", name: "Khalid Al-Rashid", city: "Dubai, UAE", initials: "KA" },
+  { quote: "Discovered Tourvaa on Instagram and booked a Kerala houseboat trip on a whim. Genuinely the best holiday I’ve ever had.", name: "Anjali Sharma", city: "Bengaluru, India", initials: "AS" },
+];
+
+function mapPublicTour(tour: PublicTour, index: number): Tour {
+  const fallback = trending[index % trending.length];
+  let price = fallback.price;
+  if (tour.price_start_per_person != null) {
+    try {
+      price = new Intl.NumberFormat("en-US", { style: "currency", currency: tour.currency || "USD", maximumFractionDigits: 0 }).format(tour.price_start_per_person);
+    } catch { price = `${tour.currency || "$"} ${tour.price_start_per_person.toLocaleString()}`; }
+  }
+  return {
+    id: tour.id,
+    title: tour.title,
+    place: tour.country_name || tour.city_name || "Worldwide",
+    image: tour.banner_image || fallback.image,
+    price,
+    days: tour.number_of_days ? `${tour.number_of_days}D | ${Math.max(0, tour.number_of_days - 1)}N` : tour.number_of_hours ? `${tour.number_of_hours} Hours` : "Flexible",
+    reviews: "Verified",
+    features: [tour.city_name || tour.country_name || "Curated itinerary", tour.category_name || "Guided experience", tour.short_description || "Flexible booking available"],
+    rawPrice: tour.price_start_per_person,
+    currency: tour.currency || "USD",
+    slug: tour.slug,
+  };
+}
+
+function mapDestination(item: CmsDestination, index: number) {
+  const fallback = places[index % places.length];
+  return { name: item.title, count: item.description || "Explore packages", rating: "4.9", image: item.image || fallback.image };
+}
+
+function mapReview(item: CmsReview) {
+  const initials = item.reviewer_name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  return { quote: item.review_text, name: item.reviewer_name, city: item.country || item.tour_name || "Verified traveller", initials, rating: Math.max(1, Math.min(5, item.rating || 5)) };
+}
 
 function Reveal({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          element.classList.add("is-visible");
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.08 },
-    );
-    observer.observe(element);
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(([entry]) => entry.isIntersecting && node.classList.add("is-visible"), { threshold: 0.08 });
+    observer.observe(node);
     return () => observer.disconnect();
   }, []);
-
   return <div ref={ref} className={`reveal-block ${className}`}>{children}</div>;
 }
 
-const travelStyles = [
-  { label: "Beach Holidays", icon: Waves, tone: "bg-cyan-50 text-cyan-700" },
-  { label: "Adventure Tours", icon: Mountain, tone: "bg-emerald-50 text-emerald-700" },
-  { label: "Honeymoon", icon: Heart, tone: "bg-rose-50 text-rose-600" },
-  { label: "Family Trips", icon: Users, tone: "bg-amber-50 text-amber-700" },
-  { label: "Pilgrimage", icon: Landmark, tone: "bg-orange-50 text-orange-700" },
-  { label: "City Breaks", icon: Building2, tone: "bg-sky-50 text-sky-700" },
-  { label: "Wellness", icon: Sparkles, tone: "bg-orange-50 text-orange-700" },
-  { label: "Cruises", icon: ShipWheel, tone: "bg-blue-50 text-blue-700" },
-];
+function HomeSearch() {
+  const router = useRouter();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState<"destination" | "date" | "duration" | "passengers" | null>(null);
+  const [destination, setDestination] = useState("India");
+  const [travelDate, setTravelDate] = useState("02 Jul 2026");
+  const [duration, setDuration] = useState("7 - 10 Days");
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(1);
 
-const destinations = [
-  { name: "Maldives", price: 4599, currency: "AED", packages: "120+ packages", image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1200&q=85", className: "md:row-span-2" },
-  { name: "Dubai", price: 2099, currency: "AED", packages: "95+ packages", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1000&q=85", className: "md:col-span-2" },
-  { name: "Kashmir", price: 1999, currency: "AED", packages: "85+ packages", image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1000&q=85", className: "md:col-span-2" },
-  { name: "Bali", price: 3899, currency: "AED", packages: "60+ packages", image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=85", className: "" },
-  { name: "Kerala", price: 1699, currency: "AED", packages: "110+ packages", image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=900&q=85", className: "" },
-  { name: "Singapore", price: 4999, currency: "AED", packages: "75+ packages", image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=900&q=85", className: "md:col-span-2" },
-];
+  useEffect(() => {
+    const close = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) setOpen(null);
+    };
+    const escape = (event: KeyboardEvent) => event.key === "Escape" && setOpen(null);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", escape); };
+  }, []);
 
-const benefits = [
-  { icon: BadgeCheck, title: "Verified Partners", text: "Every supplier and travel agent is reviewed." },
-  { icon: Tags, title: "Transparent Pricing", text: "Clear package inclusions with no surprises." },
-  { icon: ShieldCheck, title: "Secure Booking", text: "Protected transactions and verified bookings." },
-  { icon: Headphones, title: "Personalised Support", text: "Help before, during, and after your journey." },
-  { icon: CalendarCheck, title: "Flexible Packages", text: "Customise stays, activities, and extensions." },
-  { icon: Star, title: "Trusted Reviews", text: "Feedback from travellers who completed their trips." },
-];
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const params = new URLSearchParams({ country: destination, travel_date: travelDate, duration, adults: String(adults), children: String(children) });
+    router.push(`/tours?${params.toString()}`);
+    setOpen(null);
+  };
 
-const experiences = [
-  { title: "Desert Safari", image: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=700&q=80" },
-  { title: "Scuba Diving", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=700&q=80" },
-  { title: "Mountain Trekking", image: "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=700&q=80" },
-  { title: "Heritage Walk", image: "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=700&q=80" },
-  { title: "Wildlife Safari", image: "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=700&q=80" },
-  { title: "Romantic Dinner", image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=700&q=80" },
-];
+  const fieldClass = (name: typeof open) => `hero-filter-field flex min-h-14 w-full items-center gap-3 px-4 text-left transition hover:bg-blue-50/70 ${open === name ? "is-active bg-blue-50" : "bg-white"}`;
 
-const steps = [
-  { number: "01", title: "Discover", text: "Browse destinations, packages, and experiences." },
-  { number: "02", title: "Customise", text: "Modify hotels, activities, dates, and details." },
-  { number: "03", title: "Book Securely", text: "Confirm your trip with safe and complete payment." },
-  { number: "04", title: "Travel Confidently", text: "Receive vouchers, updates, and continuous support." },
-];
-
-const stories = [
-  { title: "Best International Destinations for Families", meta: "6 min read", image: "https://images.unsplash.com/photo-1504150558240-0b4fd8946624?auto=format&fit=crop&w=700&q=80" },
-  { title: "A 7-Day Kerala Travel Itinerary", meta: "8 min read", image: "https://images.unsplash.com/photo-1593693411515-c20261bcad6e?auto=format&fit=crop&w=700&q=80" },
-  { title: "How to Plan a Maldives Honeymoon", meta: "6 min read", image: "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=700&q=80" },
-  { title: "The Best Time to Visit Kashmir", meta: "7 min read", image: "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=700&q=80" },
-];
-
-function SectionHeading({ title, subtitle, action }: { title: string; subtitle?: string; action?: string }) {
   return (
-    <div className="mb-7 flex items-end justify-between gap-4">
-      <div>
-        <h2 className="font-heading text-2xl font-black tracking-tight text-slate-950 md:text-3xl">{title}</h2>
-        {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+    <div ref={wrapperRef} className="hero-filter-enter relative z-40 mx-auto w-full max-w-[1060px] text-slate-900">
+      <form onSubmit={submit} className="hero-filter-bar grid overflow-visible rounded-xl border-4 border-white/90 bg-white shadow-[0_15px_45px_rgba(15,23,42,.28)] md:grid-cols-[1.15fr_1fr_1fr_1.15fr_1.05fr]">
+        <div className="relative border-b border-slate-200 md:border-b-0 md:border-r">
+          <button type="button" onClick={() => setOpen(open === "destination" ? null : "destination")} className={fieldClass("destination")} aria-expanded={open === "destination"}>
+            <MapPin size={17} className="shrink-0 text-blue-600" /><span className="min-w-0 flex-1"><b className="block text-[10px] text-blue-600">Destination</b><span className="block truncate text-xs text-slate-500">{destination}</span></span><ChevronDown size={12} className="text-slate-300" />
+          </button>
+          {open === "destination" && <DestinationPanel selected={destination} onSelect={(value) => { setDestination(value); setOpen(null); }} />}
+        </div>
+
+        <div className="relative border-b border-slate-200 md:border-b-0 md:border-r">
+          <button type="button" onClick={() => setOpen(open === "date" ? null : "date")} className={fieldClass("date")} aria-expanded={open === "date"}>
+            <Calendar size={17} className="shrink-0 text-blue-600" /><span className="min-w-0 flex-1"><b className="block text-[10px] text-blue-600">Travel date</b><span className="block truncate text-xs text-slate-500">{travelDate}</span></span><ChevronDown size={12} className="text-slate-300" />
+          </button>
+          {open === "date" && <DatePanel selected={travelDate} onApply={(value) => { setTravelDate(value); setOpen(null); }} />}
+        </div>
+
+        <div className="relative border-b border-slate-200 md:border-b-0 md:border-r">
+          <button type="button" onClick={() => setOpen(open === "duration" ? null : "duration")} className={fieldClass("duration")} aria-expanded={open === "duration"}>
+            <Clock size={17} className="shrink-0 text-blue-600" /><span className="min-w-0 flex-1"><b className="block text-[10px] text-blue-600">Duration</b><span className="block truncate text-xs text-slate-500">{duration}</span></span><ChevronDown size={12} className="text-slate-300" />
+          </button>
+          {open === "duration" && <DurationPanel selected={duration} onSelect={setDuration} />}
+        </div>
+
+        <div className="relative border-b border-slate-200 md:border-b-0 md:border-r">
+          <button type="button" onClick={() => setOpen(open === "passengers" ? null : "passengers")} className={fieldClass("passengers")} aria-expanded={open === "passengers"}>
+            <Users size={17} className="shrink-0 text-blue-600" /><span className="min-w-0 flex-1"><b className="block text-[10px] text-blue-600">Passengers</b><span className="block truncate text-xs text-slate-500">{adults} Adult{adults !== 1 ? "s" : ""}, {children} Child{children !== 1 ? "ren" : ""}</span></span><ChevronDown size={12} className="text-slate-300" />
+          </button>
+          {open === "passengers" && <PassengerPanel adults={adults} childCount={children} setAdults={setAdults} setChildren={setChildren} onApply={() => setOpen(null)} />}
+        </div>
+
+        <button className="hero-search-button relative m-1.5 flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-lg bg-[#1478f2] px-8 text-sm font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg"><Search size={17} /> <span>Search</span></button>
+      </form>
+    </div>
+  );
+}
+
+const panelClass = "hero-filter-panel absolute left-0 top-[calc(100%+10px)] z-50 w-full min-w-64 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-[0_18px_45px_rgba(15,23,42,.28)] md:left-0";
+
+function DestinationPanel({ selected, onSelect }: { selected: string; onSelect: (value: string) => void }) {
+  const countries = [["🇮🇳", "India"], ["🇬🇧", "United Kingdom"], ["🇦🇪", "UAE"], ["🇹🇷", "Türkiye"]];
+  return <div className={panelClass}><p className="rounded-md bg-slate-50 px-3 py-2 text-center text-[10px] font-semibold text-blue-600">Other popular destinations</p><div className="mt-2 space-y-1">{countries.map(([flag, name]) => <button key={name} type="button" onClick={() => onSelect(name)} className={`flex w-full items-center gap-3 rounded-md border px-3 py-2 text-[11px] font-semibold transition ${selected === name ? "border-blue-400 bg-blue-50" : "border-transparent hover:bg-slate-50"}`}><span className="text-base">{flag}</span>{name}</button>)}</div></div>;
+}
+
+function DatePanel({ selected, onApply }: { selected: string; onApply: (value: string) => void }) {
+  const [mode, setMode] = useState<"flexible" | "specific">("flexible");
+  const [year, setYear] = useState(2026);
+  const [month, setMonth] = useState("Jul");
+  const [anytime, setAnytime] = useState(false);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  return (
+    <div className={`${panelClass} min-w-[min(92vw,620px)] p-3 md:-left-36`}>
+      <div className="mb-3 grid grid-cols-2 rounded-md bg-slate-50 p-1 text-[10px] font-semibold">
+        <button type="button" onClick={() => setMode("flexible")} className={`rounded py-2 transition ${mode === "flexible" ? "bg-white text-blue-600 shadow-sm" : "hover:text-blue-600"}`}>Flexible Dates</button>
+        <button type="button" onClick={() => setMode("specific")} className={`rounded py-2 transition ${mode === "specific" ? "bg-white text-blue-600 shadow-sm" : "hover:text-blue-600"}`}>Specific Date</button>
       </div>
-      {action && (
-        <Link href="/tours" className="hidden shrink-0 rounded-lg border border-teal-700 px-4 py-2 text-xs font-bold text-teal-800 transition hover:bg-teal-700 hover:text-white sm:inline-flex">
-          {action}
-        </Link>
+
+      {mode === "flexible" ? (
+        <div key="flexible" className="date-panel-content grid gap-4 sm:grid-cols-2">
+          <CalendarMonth month="July 2026" start={3} selected={selected} onSelect={onApply} />
+          <CalendarMonth month="August 2026" start={6} selected={selected} onSelect={onApply} />
+        </div>
+      ) : (
+        <div key="specific" className="date-panel-content">
+          <div className="mb-3 flex items-center justify-between">
+            <div><p className="text-[11px] font-bold">When do you want to go?</p><p className="text-[8px] text-slate-400">Choose a month or stay flexible</p></div>
+            <div className="flex items-center rounded border border-slate-200"><button type="button" aria-label="Previous year" onClick={() => setYear((value) => value - 1)} className="flex h-7 w-8 items-center justify-center hover:bg-slate-50">‹</button><span className="border-x border-slate-200 px-2 text-[10px] font-bold">{year}</span><button type="button" aria-label="Next year" onClick={() => setYear((value) => value + 1)} className="flex h-7 w-8 items-center justify-center hover:bg-slate-50">›</button></div>
+          </div>
+          <div className="grid grid-cols-6 gap-2">
+            {months.map((item) => <button key={item} type="button" onClick={() => { setMonth(item); setAnytime(false); }} className={`rounded-md border py-2 text-center transition ${!anytime && month === item ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-100 hover:border-blue-300"}`}><b className="block text-[9px]">{item}</b><span className="text-[7px] text-slate-400">{year}</span></button>)}
+          </div>
+          <p className="mt-4 text-[11px] font-bold">I’m flexible</p>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <button type="button" onClick={() => setAnytime(true)} className={`rounded-md border px-8 py-2 text-[10px] font-semibold transition ${anytime ? "border-blue-500 bg-blue-50 text-blue-700" : "border-blue-300 hover:bg-blue-50"}`}>Anytime</button>
+            <button type="button" onClick={() => onApply(anytime ? "Anytime" : `${month} ${year}`)} className="rounded-md bg-blue-600 px-8 py-2 text-[10px] font-bold text-white shadow-md transition hover:bg-blue-700">Select date</button>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-export default function Home() {
-  const { formatCompact } = useCurrency();
+function CalendarMonth({ month, start, selected, onSelect }: { month: string; start: number; selected: string; onSelect: (value: string) => void }) {
+  const days = month.startsWith("July") ? 31 : 31;
+  const shortMonth = month.slice(0, 3);
+  return <div><div className="mb-3 flex items-center justify-between"><b className="text-xs">{month}</b><span className="flex gap-1"><button type="button" className="h-6 w-6 rounded transition hover:-translate-x-0.5 hover:bg-slate-100">‹</button><button type="button" className="h-6 w-6 rounded transition hover:translate-x-0.5 hover:bg-slate-100">›</button></span></div><div className="grid grid-cols-7 text-center text-[9px] text-slate-400">{["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => <span key={day} className="py-1">{day}</span>)}</div><div className="calendar-days grid grid-cols-7 gap-1 text-center text-[10px] font-semibold">{Array.from({ length: start }).map((_, i) => <span key={`blank-${i}`} />)}{Array.from({ length: days }).map((_, i) => { const value = `${String(i + 1).padStart(2, "0")} ${shortMonth} 2026`; const active = selected === value; return <button type="button" key={value} onClick={() => onSelect(value)} className={`aspect-square rounded transition hover:bg-blue-100 hover:text-blue-700 ${active ? "is-selected bg-blue-600 text-white" : "text-slate-700"}`}>{String(i + 1).padStart(2, "0")}</button>; })}</div></div>;
+}
+
+function DurationPanel({ selected, onSelect }: { selected: string; onSelect: (value: string) => void }) {
+  const options = ["Day Tours", "2 - 6 Days", "7 - 10 Days", "11 - 14 Days", "15+ Days", "Any Duration"];
+  return <div className={`${panelClass} min-w-72`}><p className="rounded-md bg-slate-50 px-3 py-2 text-center text-[10px] font-semibold text-blue-600">Duration</p><div className="mt-2 grid grid-cols-2 gap-1">{options.map((option) => <button type="button" key={option} onClick={() => onSelect(option)} className={`flex items-center gap-2 rounded px-2 py-2.5 text-[10px] font-semibold transition ${selected === option ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50"}`}><Calendar size={12} className="text-sky-500" />{option}</button>)}</div><p className="mt-2 rounded-md bg-slate-50 px-3 py-2 text-center text-[10px] font-semibold text-blue-600">Custom Range</p><div className="px-2 py-3"><div className="flex justify-between text-[9px] font-semibold"><span>7 Days</span><span>10 Days</span></div><input aria-label="Custom duration" type="range" min="1" max="30" defaultValue="10" className="mt-2 w-full accent-blue-600" /></div></div>;
+}
+
+function PassengerPanel({ adults, childCount, setAdults, setChildren, onApply }: { adults: number; childCount: number; setAdults: (value: number) => void; setChildren: (value: number) => void; onApply: () => void }) {
+  return <div className={`${panelClass} right-0 left-auto min-w-64`}><p className="rounded-md bg-slate-50 px-3 py-2 text-center text-[10px] font-semibold text-blue-600">Passengers</p><div className="space-y-4 px-2 py-4"><Counter label="Adult" value={adults} min={1} onChange={setAdults} /><Counter label="Children" note="0 - 17 Years Old" value={childCount} min={0} onChange={setChildren} /></div><button type="button" onClick={onApply} className="w-full rounded-md bg-blue-600 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700">Apply</button></div>;
+}
+
+function Counter({ label, note, value, min, onChange }: { label: string; note?: string; value: number; min: number; onChange: (value: number) => void }) {
+  return <div className="flex items-center justify-between"><span><b className="block text-[11px]">{label}</b>{note && <small className="text-[8px] text-slate-400">{note}</small>}</span><div className="flex items-center gap-2"><button type="button" aria-label={`Decrease ${label}`} onClick={() => onChange(Math.max(min, value - 1))} className="counter-motion flex h-6 w-6 items-center justify-center rounded hover:bg-slate-100"><Minus size={11} /></button><b key={value} className="counter-value w-4 text-center text-[11px]">{String(value).padStart(2, "0")}</b><button type="button" aria-label={`Increase ${label}`} onClick={() => onChange(Math.min(20, value + 1))} className="counter-motion flex h-6 w-6 items-center justify-center rounded hover:bg-slate-100"><Plus size={11} /></button></div></div>;
+}
+
+function Stars({ reviews: count }: { reviews?: string }) {
+  return <div className="mt-1 flex items-center gap-1 text-[10px]"><span className="flex text-amber-400">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={10} className="fill-current" />)}</span><b className="text-slate-700">4.8</b>{count && <span className="text-slate-400">{count} reviews</span>}</div>;
+}
+
+function TourCard({ tour, discount }: { tour: Tour; discount?: boolean }) {
+  const { isWishlisted, toggleWishlist } = useTravelStore();
+  const fallbackId = -Math.abs(Array.from(tour.title).reduce((total, character) => total + character.charCodeAt(0), 0));
+  const itemId = tour.id ?? fallbackId;
+  const wishlisted = isWishlisted(itemId);
+  const href = tour.id ? publicTourUrl(tour) : `/tours?search=${encodeURIComponent(tour.title)}`;
+  const travelItem = { id: itemId, title: tour.title, place: tour.place, image: tour.image, price: tour.rawPrice ?? null, currency: tour.currency || "USD", duration: tour.days, href };
   return (
-    <main className="overflow-x-hidden bg-white text-slate-950">
-      <section className="relative z-20 min-h-screen bg-slate-950 pt-28 text-white">
-        <img
-          src="https://images.unsplash.com/photo-1439066615861-d1af74d74000?auto=format&fit=crop&w=2200&q=90"
-          alt="Tropical island resort surrounded by clear blue water"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#052e3b]/95 via-[#07556c]/45 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#042f35]/70 via-transparent to-[#063b58]/25" />
+    <article className="group relative w-[275px] shrink-0 overflow-hidden rounded-xl border border-slate-100 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,.07)] transition duration-500 hover:-translate-y-2 hover:shadow-xl sm:w-[310px] lg:w-[calc((100vw-7rem)/4)] xl:w-[306px]">
+      <button type="button" onClick={() => toggleWishlist(travelItem)} aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`} className={`absolute right-5 top-5 z-20 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur transition hover:scale-110 ${wishlisted ? "bg-red-500 text-white" : "bg-black/15 text-white hover:bg-white hover:text-red-500"}`}><Heart size={17} className={wishlisted ? "fill-current" : ""} /></button>
+      <Link href={href} aria-label={`View ${tour.title}`} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+        <div className="relative h-44 overflow-hidden rounded-lg">
+          <img src={tour.image} alt={tour.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
+          <span className="absolute left-2 top-2 rounded-full bg-sky-400/80 px-2 py-1 text-[9px] font-semibold text-white">⌾ {tour.place}</span>
+          {discount && <span className="absolute bottom-0 right-0 rounded-tl-md bg-[#1478f2] px-2.5 py-1.5 text-[10px] font-bold text-white">Save 25%</span>}
+        </div>
+        <div className="pt-3">
+          <div className="flex items-start justify-between gap-2"><h3 className="truncate text-sm font-bold text-slate-900 transition group-hover:text-blue-600">{tour.title}</h3><span className="shrink-0 rounded border border-blue-300 px-1 text-[8px] font-bold text-blue-600">{tour.days}</span></div>
+          <Stars reviews={tour.reviews} />
+          <div className="mt-3 space-y-1 border-t border-slate-100 pt-2 text-[9px] text-slate-500">{tour.features.map((feature) => <p key={feature} className="flex items-center gap-1.5"><Check size={10} className="text-blue-500" />{feature}</p>)}</div>
+          <div className="mt-3 flex items-end gap-2 border-t border-slate-100 pt-2 text-xs"><b>From</b><span className="text-[9px] text-slate-300 line-through">$1,599</span><strong className="text-lg text-slate-950">{tour.price}</strong><span className="text-[8px] text-slate-400">pp</span></div>
+        </div>
+      </Link>
+    </article>
+  );
+}
 
-        <div className="relative z-10 mx-auto flex min-h-[calc(100svh-7rem)] max-w-7xl flex-col px-5 pb-10 pt-12 sm:pt-16 md:px-8 lg:px-10 lg:pt-20">
-          <div className="max-w-xl">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.24em] text-cyan-200">Curated journeys, made personal</p>
-            <h1 className="font-heading text-5xl font-black leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
-              Your World.<br />Your Journey.
-              <span className="mt-2 block font-serif text-4xl font-normal italic text-orange-400 sm:text-5xl">Your Way.</span>
-            </h1>
-            <p className="mt-6 max-w-lg text-sm leading-7 text-white/85 sm:text-base">
-              Discover carefully curated tours, unique experiences, and personalised holiday packages designed by verified travel experts.
-            </p>
-          </div>
+function CarouselSection({ title, tours, discount }: { title: string; tours: Tour[]; discount?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const move = (direction: number) => ref.current?.scrollBy({ left: direction * 340, behavior: "smooth" });
+  return (
+    <section className="py-10">
+      <div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-bold text-slate-950 sm:text-2xl">{title}</h2><div className="flex gap-2"><button aria-label="Previous tours" onClick={() => move(-1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 bg-white transition hover:border-blue-500 hover:text-blue-600"><ArrowLeft size={15} /></button><button aria-label="Next tours" onClick={() => move(1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 bg-white transition hover:border-blue-500 hover:text-blue-600"><ArrowRight size={15} /></button></div></div>
+      <div ref={ref} className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-5">{tours.map((tour, index) => <div className="snap-start" key={`${tour.title}-${index}`}><TourCard tour={tour} discount={discount} /></div>)}</div>
+    </section>
+  );
+}
 
-          <div className="absolute right-10 top-24 hidden rounded-2xl bg-white/90 p-5 text-slate-800 shadow-2xl backdrop-blur lg:block xl:top-1/3">
-            {["Verified Travel Partners", "Secure Payments", "24/7 Trip Assistance"].map((item) => (
-              <p key={item} className="flex items-center gap-2 py-1.5 text-xs font-bold">
-                <BadgeCheck size={15} className="text-teal-600" /> {item}
-              </p>
-            ))}
-          </div>
+export default function Home() {
+  const [banners, setBanners] = useState<CmsBanner[]>([]);
+  const [bannerIndex, setBannerIndex] = useState(0);
+  const [trendingTours, setTrendingTours] = useState<Tour[]>(trending);
+  const [handpickedTours, setHandpickedTours] = useState<Tour[]>(handpicked);
+  const [dynamicPlaces, setDynamicPlaces] = useState(places);
+  const [dynamicReviews, setDynamicReviews] = useState(reviews.map((item) => ({ ...item, rating: 5 })));
 
-          <div className="relative z-20 mt-10 w-full sm:mt-12 lg:mt-16">
-            <HeroFilterBar />
-            <div className="mx-auto mt-4 flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-2 text-[11px] font-semibold text-white/80">
-              <span className="font-black text-white">Popular:</span>
-              {['Maldives', 'Dubai', 'Kashmir', 'Bali', 'Kerala', 'Singapore'].map((place) => <Link key={place} href={`/tours?country=${place}`}>{place}</Link>)}
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([fetchHomepageBanners(), fetchFeaturedTours(10), fetchPopularDestinations(), fetchCustomerReviews()]).then(([bannerResult, tourResult, destinationResult, reviewResult]) => {
+      if (!active) return;
+      if (bannerResult.status === "fulfilled" && bannerResult.value.length) setBanners(bannerResult.value);
+      if (tourResult.status === "fulfilled" && tourResult.value.length) {
+        const mapped = tourResult.value.map(mapPublicTour);
+        setTrendingTours(mapped.slice(0, 5));
+        setHandpickedTours((mapped.length > 5 ? mapped.slice(5, 10) : mapped).slice(0, 5));
+      }
+      if (destinationResult.status === "fulfilled" && destinationResult.value.length) setDynamicPlaces(destinationResult.value.slice(0, 10).map(mapDestination));
+      if (reviewResult.status === "fulfilled" && reviewResult.value.length) setDynamicReviews(reviewResult.value.slice(0, 6).map(mapReview));
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (banners.length < 2) return;
+    const timer = window.setInterval(() => setBannerIndex((index) => (index + 1) % banners.length), 7000);
+    return () => window.clearInterval(timer);
+  }, [banners.length]);
+
+  const banner = banners[bannerIndex];
+  const heroImage = banner?.image || "https://images.unsplash.com/photo-1464278533981-50106e6176b1?auto=format&fit=crop&w=2200&q=90";
+  const heroTitle = banner?.title || "Endless destinations. One easy search.";
+
+  return (
+    <main className="overflow-x-clip bg-white text-slate-950">
+      <section className="relative z-30 flex min-h-[550px] items-center justify-center overflow-visible pt-20 text-center text-white">
+        <div className="absolute inset-0 overflow-hidden">
+          <img key={heroImage} src={heroImage} alt={banner?.title || "Dramatic green mountain landscape"} className="animate-hero-img h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-sky-900/10 via-slate-900/5 to-slate-950/35" />
+        </div>
+        <div className="relative z-10 w-full px-4">
+          <h1 key={heroTitle} className="animate-fade-up text-2xl font-semibold tracking-tight sm:text-3xl">{heroTitle}</h1>
+          {banner?.subtitle && <p className="animate-fade-up delay-100 mx-auto mt-2 max-w-xl text-sm text-white/85">{banner.subtitle}</p>}
+          <div className="animate-fade-up delay-200 mt-10"><HomeSearch /></div>
+          <p className="animate-fade-up delay-400 relative z-0 mt-10 text-[11px] font-medium text-white/90">Tourvaa travellers rate us <b>Excellent</b> <span className="text-blue-400">★★★★★</span> 4.5 out of 5 based on 12,8k reviews on Ayatiworks</p>
+        </div>
+      </section>
+
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5 sm:px-8 lg:px-12">
+        <Reveal><CarouselSection title="Trending Tour Packages" tours={trendingTours} discount /></Reveal>
+        <Reveal><CarouselSection title="Handpicked Tours for You" tours={handpickedTours} /></Reveal>
+
+        <Reveal className="py-12 lg:px-16">
+          <section className="grid overflow-hidden rounded-lg border border-slate-100 bg-white p-2 shadow-[0_8px_26px_rgba(15,23,42,.08)] md:grid-cols-2">
+            <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=1200&q=85" alt="Friends hiking through a mountain landscape" className="h-72 w-full rounded-md object-cover sm:h-96" />
+            <div className="flex flex-col items-center justify-center px-8 py-12 text-center">
+              <h2 className="max-w-lg text-3xl font-bold leading-tight text-[#1478f2] sm:text-4xl">Travel stories, guides and inspiration for every journey</h2>
+              <p className="mt-7 max-w-sm text-xs leading-relaxed text-slate-500">Explore travel guides, insider tips and inspiring stories from destinations around the world.</p>
+              <Link href="/blogs" className="mt-6 rounded-lg bg-[#1478f2] px-10 py-3 text-sm font-bold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-1 hover:bg-blue-700">Read Stories</Link>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        </Reveal>
 
-      <section className="border-b border-slate-100 bg-white py-10">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <h2 className="text-center font-heading text-2xl font-black text-slate-950">Explore Your Travel Style</h2>
-          <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-            {travelStyles.map(({ label, icon: Icon, tone }) => (
-              <Link key={label} href={`/tours?category=${encodeURIComponent(label)}`} className="group rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-                <span className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl ${tone}`}><Icon size={23} /></span>
-                <span className="mt-3 block text-xs font-extrabold text-slate-700 group-hover:text-teal-700">{label}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-slate-50/60 py-16">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <Reveal>
-            <SectionHeading title="Trending Destinations" subtitle="Explore the places travellers are loving right now." action="View All Destinations" />
-            <div className="grid auto-rows-[190px] grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-5">
-              {destinations.map((destination) => (
-                <Link key={destination.name} href={`/tours?country=${destination.name}`} className={`group relative overflow-hidden rounded-2xl shadow-sm ${destination.className}`}>
-                  <img src={destination.image} alt={destination.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-5 text-white">
-                    <div><h3 className="text-xl font-black">{destination.name}</h3><p className="mt-1 text-[11px]">Packages from {formatCompact(destination.price, destination.currency)}</p><p className="text-[10px] text-white/70">{destination.packages}</p></div>
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-900"><ChevronRight size={15} /></span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <Reveal>
-            <div className="mb-7 text-center">
-              <h2 className="font-heading text-2xl font-black md:text-3xl">Handpicked Tours for Every Traveller</h2>
-              <p className="mt-1 text-sm text-slate-500">Carefully selected holidays from trusted travel partners.</p>
-              <div className="mt-5 flex flex-wrap justify-center gap-2">
-                {['All', 'International', 'India', 'Honeymoon', 'Family', 'Adventure', 'Luxury'].map((item, index) => <span key={item} className={`rounded-full px-4 py-1.5 text-xs font-bold ${index === 0 ? 'bg-teal-700 text-white' : 'border border-slate-200 text-slate-500'}`}>{item}</span>)}
-              </div>
-            </div>
-            <FeaturedTours />
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="pb-16">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <Reveal className="overflow-hidden rounded-3xl bg-[#064e4a] text-white shadow-lg">
-            <div className="grid md:grid-cols-[1.05fr_.95fr]">
-              <div className="flex flex-col justify-center p-8 md:p-12">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-teal-200">Made for you</p>
-                <h2 className="mt-3 font-heading text-3xl font-black">Have a destination in mind?</h2>
-                <p className="mt-3 max-w-lg text-sm leading-6 text-white/75">Let our verified travel experts create a personalised itinerary based on your budget, interests, and preferred travel dates.</p>
-                <div className="mt-7 flex flex-wrap gap-3">
-                  <Link href="/contact" className="rounded-lg bg-orange-500 px-6 py-3 text-sm font-black text-white transition hover:bg-orange-600">Plan My Trip</Link>
-                  <Link href="/contact" className="rounded-lg border border-white/60 px-6 py-3 text-sm font-bold transition hover:bg-white hover:text-teal-900">Talk to an Expert</Link>
-                </div>
-              </div>
-              <div className="min-h-72"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=85" alt="Traveller looking across a mountain valley" className="h-full w-full object-cover" /></div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="border-y border-slate-100 bg-slate-50 py-14">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <h2 className="text-center font-heading text-2xl font-black">Why Travellers Choose Tourvaa</h2>
-          <div className="mt-9 grid grid-cols-2 gap-7 md:grid-cols-3 lg:grid-cols-6">
-            {benefits.map(({ icon: Icon, title, text }) => (
-              <div key={title} className="text-center"><Icon size={24} className="mx-auto text-teal-700" /><h3 className="mt-3 text-xs font-black">{title}</h3><p className="mt-2 text-[11px] leading-5 text-slate-500">{text}</p></div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="experiences" className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <SectionHeading title="Travel for the Experience" />
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-            {experiences.map((experience) => (
-              <Link href="/tours" key={experience.title} className="group relative aspect-[1.55] overflow-hidden rounded-xl">
-                <img src={experience.image} alt={experience.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" /><p className="absolute inset-x-0 bottom-3 text-center text-sm font-black text-white">{experience.title}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-[#fffaf6] py-14">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <SectionHeading title="Limited-Time Travel Deals" action="View All Offers" />
-          <div className="grid gap-5 md:grid-cols-2">
-            <article className="grid overflow-hidden rounded-2xl bg-white shadow-sm sm:grid-cols-[.9fr_1.1fr]"><img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80" alt="Tropical beach deal" className="h-full min-h-52 w-full object-cover" /><div className="relative p-7"><span className="absolute right-5 top-5 flex h-20 w-20 items-center justify-center rounded-full bg-teal-500 text-center text-xl font-black text-white">25%<br /><small className="text-xs">OFF</small></span><p className="text-xs font-black uppercase text-orange-500">Summer Escape</p><h3 className="mt-2 max-w-[12rem] text-xl font-black">Save on selected beach packages</h3><p className="mt-5 text-sm text-slate-500">Use code: <b className="text-orange-500">SUMMER25</b></p></div></article>
-            <article className="grid overflow-hidden rounded-2xl bg-white shadow-sm sm:grid-cols-[.9fr_1.1fr]"><img src="https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=900&q=80" alt="Honeymoon deal" className="h-full min-h-52 w-full object-cover" /><div className="relative p-7"><span className="absolute right-5 top-5 flex h-20 w-20 items-center justify-center rounded-full bg-orange-500 text-center text-xl font-black text-white">20%<br /><small className="text-xs">OFF</small></span><p className="text-xs font-black uppercase text-rose-500">Honeymoon Special</p><h3 className="mt-2 max-w-[12rem] text-xl font-black">Romantic holidays designed for two</h3><p className="mt-5 text-sm text-slate-500">Use code: <b className="text-rose-500">LOVE20</b></p></div></article>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <h2 className="text-center font-heading text-2xl font-black">Plan Your Holiday in Four Simple Steps</h2>
-          <div className="mt-10 grid gap-7 md:grid-cols-4">
-            {steps.map((step, index) => (
-              <div key={step.number} className="relative flex gap-4"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-xs font-black text-teal-700">{step.number}</span><div><h3 className="text-sm font-black">{step.title}</h3><p className="mt-1 text-xs leading-5 text-slate-500">{step.text}</p></div>{index < 3 && <span className="absolute -right-3 top-5 hidden h-px w-6 bg-teal-200 md:block" />}</div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-slate-50 py-16">
-        <div className="mx-auto grid max-w-7xl gap-8 px-5 md:px-8 lg:grid-cols-[.85fr_2fr]">
-          <article className="rounded-2xl bg-white p-7 shadow-sm"><Quote size={28} className="text-teal-200" /><p className="mt-4 text-sm leading-7 text-slate-600">Tourvaa made our Maldives honeymoon completely stress-free. Everything from the hotel to airport transfers was perfectly organised.</p><div className="mt-5 flex gap-1 text-amber-400">{Array.from({ length: 5 }).map((_, index) => <Star key={index} size={14} className="fill-current" />)}</div><p className="mt-3 text-xs font-black">Priya &amp; Arjun</p><p className="text-[11px] text-slate-400">Chennai · Verified booking</p></article>
-          <div><SectionHeading title="Ideas for Your Next Journey" /><div className="grid grid-cols-2 gap-4 md:grid-cols-4">{stories.map((story) => <Link href="/blogs" key={story.title} className="group"><div className="aspect-[1.45] overflow-hidden rounded-xl"><img src={story.image} alt={story.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /></div><h3 className="mt-3 text-sm font-black leading-5 group-hover:text-teal-700">{story.title}</h3><p className="mt-1 text-[11px] text-slate-400"><BookOpen size={11} className="mr-1 inline" />{story.meta}</p></Link>)}</div></div>
-        </div>
-      </section>
-
+        <Reveal><PlacesCarousel places={dynamicPlaces} /></Reveal>
+        <Reveal><Testimonials reviews={dynamicReviews} /></Reveal>
+        <Reveal><DestinationDirectory /></Reveal>
+      </div>
     </main>
+  );
+}
+
+function PlacesCarousel({ places: items }: { places: { name: string; count: string; rating: string; image: string }[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const move = (direction: number) => ref.current?.scrollBy({ left: direction * 320, behavior: "smooth" });
+  return (
+    <section className="py-10">
+      <div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-bold sm:text-2xl">Places Worth Exploring</h2><div className="flex gap-2"><button onClick={() => move(-1)} aria-label="Previous places" className="flex h-8 w-8 items-center justify-center rounded border border-slate-200"><ArrowLeft size={15} /></button><button onClick={() => move(1)} aria-label="Next places" className="flex h-8 w-8 items-center justify-center rounded border border-slate-200"><ArrowRight size={15} /></button></div></div>
+      <div ref={ref} className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-5">{items.map((place) => <Link href={`/tours?country=${place.name}`} key={place.name} className="group w-[275px] shrink-0 snap-start rounded-xl border border-slate-100 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,.07)] transition hover:-translate-y-1"><div className="h-44 overflow-hidden rounded-lg"><img src={place.image} alt={place.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /></div><div className="mt-3 flex items-center justify-between"><h3 className="font-bold">{place.name}</h3><span className="flex items-center gap-1 text-xs font-bold"><Star size={10} className="fill-amber-400 text-amber-400" />{place.rating}</span></div><p className="mt-1 text-[10px] text-slate-400">▣ {place.count}</p></Link>)}</div>
+    </section>
+  );
+}
+
+function Testimonials({ reviews: items }: { reviews: { quote: string; name: string; city: string; initials: string; rating: number }[] }) {
+  return (
+    <section className="py-12 text-center">
+      <h2 className="text-2xl font-bold sm:text-3xl">What Tourvaa travellers are saying</h2>
+      <div className="mt-10 grid gap-5 text-left md:grid-cols-3">{items.map((review) => <article key={review.name} className="rounded-2xl border border-slate-100 bg-white p-7 shadow-[0_8px_24px_rgba(15,23,42,.07)] transition hover:-translate-y-1"><Quote size={25} className="text-slate-200" /><p className="mt-4 min-h-24 text-xs leading-relaxed text-slate-700">“{review.quote}”</p><div className="mt-5 flex items-center border-t border-slate-100 pt-4"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">{review.initials}</span><div className="ml-3"><h3 className="text-[11px] font-bold">{review.name}</h3><p className="text-[9px] text-slate-400">{review.city}</p></div><span className="ml-auto flex text-amber-400">{Array.from({ length: review.rating }).map((_, i) => <Star key={i} size={11} className="fill-current" />)}</span></div></article>)}</div>
+    </section>
+  );
+}
+
+function DestinationDirectory() {
+  const columns = [["New Zealand", "Prague", "Albufeira", "Seville"], ["Barcelona", "Marrakesh", "New York City", "Porto"], ["Krakow", "York", "Budapest", "Malaga"], ["Paris", "London", "Tokyo", "Lisbon"]];
+  return (
+    <section className="my-14 rounded-xl border border-slate-100 bg-white p-7 shadow-[0_8px_24px_rgba(15,23,42,.06)] sm:p-10">
+      <div className="flex gap-8 border-b border-slate-200 pb-4 text-[11px] font-semibold"><button className="text-slate-950">Destinations</button><button className="text-slate-400">Top countries to visit</button><button className="hidden text-slate-400 sm:block">Top attraction categories</button></div>
+      <div className="mt-7 grid grid-cols-2 gap-8 md:grid-cols-4">{columns.map((column, i) => <div key={i} className="space-y-5">{column.map((city, j) => <Link href={`/tours?search=${city}`} key={city} className="block"><b className="block text-xs">{city}</b><span className="mt-1 block text-[9px] text-slate-400">{978 + i * 214 + j * 233} tours &amp; activities</span></Link>)}</div>)}</div>
+    </section>
   );
 }

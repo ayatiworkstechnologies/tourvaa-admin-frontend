@@ -27,6 +27,7 @@ type SidebarProps = {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   theme?: SidebarTheme;
+  headerOffset?: boolean;
 };
 
 export type SidebarTheme = "admin" | "supplier" | "agent" | "customer";
@@ -108,23 +109,23 @@ const SIDEBAR_THEMES: Record<SidebarTheme, {
     edge: "w-1 bg-gradient-to-b from-[#60A5FA] via-[#2563EB] to-[#1E3A8A]",
   },
   customer: {
-    shell: "border-[#D9E9E6] bg-white shadow-[8px_0_32px_-20px_rgba(7,91,87,0.22)]",
-    headerBorder: "border-[#E1EEEC]",
-    logo: "bg-gradient-to-br from-[#0F8B83] to-[#075B57] text-white shadow-teal-200",
-    title: "text-[#063C42]",
-    subtitle: "text-[#075B57]",
-    section: "text-[#075B57]/60",
-    active: "bg-[#075B57] text-white shadow-[0_8px_20px_-10px_rgba(7,91,87,0.8)]",
+    shell: "border-[#DFEAF8] bg-white shadow-[8px_0_32px_-20px_rgba(20,120,242,0.24)]",
+    headerBorder: "border-[#E6EEF9]",
+    logo: "bg-gradient-to-br from-[#56B4FF] to-[#1478F2] text-white shadow-blue-200",
+    title: "text-[#0B3266]",
+    subtitle: "text-[#1478F2]",
+    section: "text-[#1478F2]/65",
+    active: "bg-[#1478F2] text-white shadow-[0_8px_20px_-10px_rgba(20,120,242,0.8)]",
     activeIcon: "text-white",
     activeDot: "bg-white",
-    inactive: "text-slate-600 hover:bg-teal-50/70 hover:text-[#075B57]",
-    inactiveIcon: "text-[#248E87]",
-    footerBorder: "border-[#E1EEEC]",
+    inactive: "text-slate-600 hover:bg-blue-50/80 hover:text-[#0B63CE]",
+    inactiveIcon: "text-[#438DE9]",
+    footerBorder: "border-[#E6EEF9]",
     logout: "text-slate-600 hover:bg-rose-50 hover:text-rose-600",
     logoutIcon: "text-rose-500",
-    toggle: "border-[#D5E7E4] bg-white text-[#075B57] hover:bg-teal-50",
+    toggle: "border-[#D8E7FA] bg-white text-[#1478F2] hover:bg-blue-50",
     glow: "bg-transparent",
-    edge: "w-1 bg-gradient-to-b from-[#075B57] via-[#0F8B83] to-[#F97316]",
+    edge: "w-1 bg-gradient-to-b from-[#56B4FF] via-[#1478F2] to-[#0B4FAA]",
   },
 };
 
@@ -139,6 +140,7 @@ export default function Sidebar({
   collapsed = false,
   onToggleCollapse,
   theme = "admin",
+  headerOffset = false,
 }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
@@ -229,7 +231,7 @@ export default function Sidebar({
   return (
     <>
       <aside
-        className={`left-0 top-0 z-40 h-screen flex-col border-r transition-all duration-300 ${colors.shell} ${
+        className={`left-0 z-40 flex-col border-r transition-all duration-300 ${headerOffset ? "top-20 h-[calc(100vh-5rem)]" : "top-0 h-screen"} ${colors.shell} ${
           mobile ? "flex w-65" : `fixed hidden lg:flex ${collapsed ? "w-20" : "w-65"}`
         }`}
       >

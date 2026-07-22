@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 /* eslint-disable @next/next/no-img-element */
-import { LuArrowRight as ArrowRight, LuCalendarDays as CalendarDays, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuClock as Clock, LuHeart as Heart, LuHotel as Hotel, LuLayoutGrid as LayoutGrid, LuList as List, LuMapPin as MapPin, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal, LuSparkles as Sparkles, LuUsers as Users, LuUtensils as Utensils, LuX as X } from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuClock as Clock, LuHeart as Heart, LuHotel as Hotel, LuLayoutGrid as LayoutGrid, LuList as List, LuMapPin as MapPin, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal, LuSparkles as Sparkles, LuUsers as Users, LuUtensils as Utensils, LuX as X } from "react-icons/lu";
 import { fetchPublicCategories, fetchPublicCountries, fetchPublicTours, PublicCategory, PublicCountry, PublicTour } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import DatePicker from "@/components/ui/DatePicker";
+import CountryTourListing from "@/components/public/CountryTourListing";
 
 const PLACEHOLDER = "/images/tour-card-fallback.jpg";
 type SortOption = "popular" | "price-asc" | "price-desc" | "duration";
@@ -55,7 +57,7 @@ function TourCard({ tour, index, view = "grid", bookingQuery = "" }: { tour: Pub
   const { formatCompact } = useCurrency();
   return (
     <Link
-      href={`/tours/${tour.id}${bookingQuery ? `?${bookingQuery}` : ""}`}
+      href={`${publicTourUrl(tour)}${bookingQuery ? `?${bookingQuery}` : ""}`}
       className={`tour-card group flex h-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isList ? "flex-col sm:flex-row" : "flex-col"}`}
       style={{ animationDelay: `${(index % 6) * 60}ms` }}
     >
@@ -136,7 +138,7 @@ const INPUT_CLS = SELECT_CLS;
 export default function ToursPage() {
   return (
     <Suspense fallback={null}>
-      <ToursPageInner />
+      {process.env.NEXT_PUBLIC_TOURS_DESIGN === "legacy" ? <ToursPageInner /> : <CountryTourListing />}
     </Suspense>
   );
 }

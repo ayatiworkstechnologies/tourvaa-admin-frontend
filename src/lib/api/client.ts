@@ -1,5 +1,5 @@
 import axios from "axios";
-import { clearSession, getStoredTokenSafe, setToken } from "@/lib/api/session";
+import { clearSession } from "@/lib/api/session";
 
 const API_PATH_PREFIX = "/api";
 const PUBLIC_API_PATHS = [
@@ -72,19 +72,21 @@ function isPublicPagePath(pathname: string) {
 
 const api = axios.create({
   baseURL: API_PATH_PREFIX,
+  withCredentials: true,
 });
 
 // Separate instance used only for token refresh - no interceptors, so it
 // cannot trigger the retry loop.
 const authAxios = axios.create({
   baseURL: API_PATH_PREFIX,
+  withCredentials: true,
 });
 
 let isRefreshing = false;
-let refreshQueue: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = [];
+let refreshQueue: Array<{ resolve: () => void; reject: (error: unknown) => void }> = [];
 
-function drainQueue(token: string) {
-  refreshQueue.forEach(({ resolve }) => resolve(token));
+function drainQueue() {
+  refreshQueue.forEach(({ resolve }) => resolve());
   refreshQueue = [];
 }
 
@@ -113,11 +115,6 @@ api.interceptors.request.use((config) => {
     config.baseURL = API_PATH_PREFIX;
     config.url = normalizeApiUrl(config.url);
 
-    const token = getStoredTokenSafe();
-
-    if (token && !isPublicApiPath(config.url)) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
   }
 
   return config;
@@ -147,8 +144,7 @@ api.interceptors.response.use(
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           refreshQueue.push({
-            resolve: (newToken: string) => {
-              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            resolve: () => {
               resolve(api(originalRequest));
             },
             reject,
@@ -159,21 +155,10 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const currentToken = getStoredTokenSafe();
-        const response = await authAxios.post(
-          "/auth/refresh-token",
-          {},
-          { headers: { Authorization: `Bearer ${currentToken}` } }
-        );
-        const newToken: string = response.data?.data?.access_token;
-
-        if (!newToken) throw new Error("no token in refresh response");
-
-        setToken(newToken);
-        drainQueue(newToken);
+        await authAxios.post("/auth/refresh-token", { client_type: "web-cookie" });
+        drainQueue();
         isRefreshing = false;
 
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         rejectQueue(refreshError);

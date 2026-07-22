@@ -1,6 +1,7 @@
 import { Outfit, Work_Sans } from "next/font/google";
 import PublicFooter from "@/components/public/PublicFooter";
 import PublicHeader from "@/components/public/PublicHeader";
+import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
 // import ChatWidget from "@/components/public/ChatWidget"; // Hidden for now - uncomment to re-enable
 
 // Scoped to the public marketing site only - the dashboard portals keep
@@ -19,11 +20,13 @@ const workSans = Work_Sans({
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${outfit.variable} ${workSans.variable} min-h-screen bg-dash-bg font-[family-name:var(--font-body)]`}>
-      <PublicHeader />
-      {children}
-      <PublicFooter />
-      {/* <ChatWidget /> */}
-    </div>
+    <TravelStoreProvider>
+      <div className={`${outfit.variable} ${workSans.variable} public-site min-h-screen bg-white font-[family-name:var(--font-body)] text-slate-950`}>
+        <PublicHeader />
+        <div className="public-page-enter">{children}</div>
+        <PublicFooter />
+        {/* <ChatWidget /> */}
+      </div>
+    </TravelStoreProvider>
   );
 }

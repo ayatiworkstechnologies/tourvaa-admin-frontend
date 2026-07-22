@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { usePathname, useRouter } from "next/navigation";
 import api from "@/lib/api/client";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
-import { clearSession, getStoredTokenSafe, setToken as storeToken } from "@/lib/api/session";
+import { clearSession } from "@/lib/api/session";
 import { AuthUser, DashboardStats, MenuItem, PendingApproval, Permission } from "@/types/auth";
 
 type DashboardData = {
@@ -25,7 +25,7 @@ type AuthContextValue = {
   loading: boolean;
   error: string;
   isLoggedIn: boolean;
-  loginWithToken: (token: string) => Promise<void>;
+  loginWithToken: (token?: string) => Promise<void>;
   refreshSession: () => Promise<DashboardData | null>;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
@@ -153,23 +153,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   })();
-  const [token, setTokenState] = useState<string | null>(() => docsInitialDashboard ? (getStoredTokenSafe() || "docs-capture-token") : null);
+  const [token, setTokenState] = useState<string | null>(() => docsInitialDashboard ? "docs-capture-session" : null);
   const [dashboard, setDashboard] = useState<DashboardData | null>(() => docsInitialDashboard);
   const [loading, setLoading] = useState(() => DOCS_CAPTURE_MODE ? false : !docsInitialDashboard);
   const [error, setError] = useState("");
 
   const refreshSession = useCallback(async () => {
-    const currentToken = getStoredTokenSafe();
-
-    if (!currentToken) {
-      setTokenState(null);
-      setDashboard(null);
-      return null;
-    }
-
     try {
       const response = await api.get("/dashboard/me");
-      setTokenState(currentToken);
+      setTokenState("cookie-session");
       setDashboard(response.data.data);
       setError("");
       return response.data.data as DashboardData;
@@ -195,9 +187,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (docsDashboard) {
         try {
           const parsed = JSON.parse(docsDashboard) as DashboardData;
-          const docsToken = getStoredTokenSafe();
           if (active) {
-            setTokenState(docsToken);
+            setTokenState("docs-capture-session");
             setDashboard(parsed);
             setError("");
             setLoading(false);
@@ -236,15 +227,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loading, pathname, router, token, dashboard]);
 
   const loginWithToken = useCallback(
-    async (newToken: string) => {
-      storeToken(newToken);
-      setTokenState(newToken);
+    async () => {
       await refreshSession();
     },
     [refreshSession]
   );
 
   const logout = useCallback(() => {
+    void api.post("/auth/logout").catch(() => undefined);
     clearSession();
     setTokenState(null);
     setDashboard(null);

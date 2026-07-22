@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuChevronDown as ChevronDown, LuLogOut as LogOut, LuMenu as Menu, LuSettings as Settings, LuUser as User } from "react-icons/lu";
+import { LuChevronDown as ChevronDown, LuCompass as Compass, LuHouse as House, LuLogOut as LogOut, LuMenu as Menu, LuSettings as Settings, LuUser as User } from "react-icons/lu";
 import NotificationInbox from "@/components/ui/NotificationInbox";
 import { useAuth } from "@/hooks/useAuth";
 import { MenuItem } from "@/types/auth";
@@ -20,6 +20,10 @@ type HeaderProps = {
   profileHref?: string;
   settingsHref?: string;
   theme?: "sky" | "navy" | "emerald" | "orange" | "violet" | "teal";
+  websiteHref?: string;
+  browseHref?: string;
+  spacious?: boolean;
+  headerOffset?: boolean;
 };
 
 
@@ -42,6 +46,10 @@ export default function Header({
   profileHref,
   settingsHref,
   theme = "sky",
+  websiteHref,
+  browseHref,
+  spacious = false,
+  headerOffset = false,
 }: HeaderProps) {
   const { logout } = useAuth();
   const router = useRouter();
@@ -78,8 +86,8 @@ export default function Header({
   const initial = name?.charAt(0)?.toUpperCase() ?? "A";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#E8ECF3] bg-white shadow-[0_1px_6px_-1px_rgba(15,23,42,0.06)]">
-      <div className="flex h-[70px] items-center justify-between px-6 md:px-9">
+    <header className={`sticky z-30 border-b border-[#E8ECF3] bg-white/95 shadow-[0_1px_6px_-1px_rgba(15,23,42,0.06)] backdrop-blur-xl ${headerOffset ? "top-20" : "top-0"}`}>
+      <div className={`flex items-center justify-between px-4 sm:px-6 md:px-9 ${spacious ? "h-20" : "h-[70px]"}`}>
 
         {/* left */}
         <div className="flex min-w-0 items-center gap-3">
@@ -103,7 +111,19 @@ export default function Header({
         {/* right */}
         <div className="flex shrink-0 items-center gap-2">
 
-          <CurrencySelector />
+          {websiteHref && (
+            <button type="button" onClick={() => router.push(websiteHref)} className="hidden h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-slate-500 transition hover:bg-blue-50 hover:text-blue-700 xl:flex">
+              <House size={16} /> Website
+            </button>
+          )}
+
+          {browseHref && (
+            <button type="button" onClick={() => router.push(browseHref)} className="hidden h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700 md:flex">
+              <Compass size={16} /> Explore tours
+            </button>
+          )}
+
+          <div className="hidden sm:block"><CurrencySelector /></div>
 
           {canSettings && (
             <button

@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body>
+      <body suppressHydrationWarning>
         <ToastProvider>
           <AuthProvider>{children}</AuthProvider>
         </ToastProvider>
