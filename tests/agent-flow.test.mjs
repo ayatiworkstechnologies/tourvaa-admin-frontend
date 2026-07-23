@@ -30,32 +30,24 @@ check("catalogue uses backend price and image fields", tours.includes("price_sta
 check("catalogue exposes retryable API failures", tours.includes("Tours could not be loaded") && tours.includes("Retry"));
 
 const create = read("src/app/agent/bookings/create/page.tsx");
-check("booking picker preloads published tours without requiring search", create.includes("search: debouncedTourSearch || undefined") && create.includes("limit: 20"));
-check("booking picker handles the public tour response shape", create.includes("res.data?.items") && create.includes("res.data?.data?.items"));
-check("booking picker shows tour images with a local fallback", create.includes("banner_image") && create.includes("tour-card-fallback.jpg"));
-check("booking picker shows destination, category, description, duration, and price", ["city_name", "country_name", "category_name", "short_description", "number_of_days", "price_start_per_person"].every((field) => create.includes(field)));
-check("booking picker displays loading, empty, and failure states", create.includes("Loading published tours") && create.includes("No published tours match") && create.includes("Tours could not be loaded"));
-check("booking includes authenticated agent id", create.includes("agent_id: agentId"));
-check("booking uses backend traveller counts", create.includes("no_of_adults: adults") && create.includes("no_of_children: children"));
-check("booking is explicitly agent sourced", create.includes('booking_source: "agent"'));
-check("booking loads live departure availability", create.includes("calendar") && create.includes("slots >= totalPax"));
-check("booking sends the selected calendar and validates live pricing", create.includes("tour_calendar_id: selectedCalendar?.id") && create.includes('api.post("/bookings/calculate-price"'));
-check("booking captures every adult and child traveller", create.includes("Traveller Manifest") && create.includes("travellers.map((traveller, index)"));
-check("booking validates traveller names and ages", create.includes("adults 12–120, children 2–11") && create.includes("age: Number(traveller.age)"));
-check("booking offers deposit and full payment plans", create.includes('setPaymentType') && create.includes('payment_type: paymentType') && create.includes("30% deposit"));
-check("booking shows execution readiness stages", create.includes("1. Customer") && create.includes("4. Review") && create.includes("5. Payment"));
-check("new booking continues directly to payment", create.includes("?new=1&pay=1") && create.includes("Create & Continue to Payment"));
-check("customer preselection is loaded", create.includes("prefillCustomerId") && create.includes("/customers/${prefillCustomerId}"));
-check("tour preselection uses published detail", create.includes("/public/tours/${prefillTourId}"));
+const publicBooking = read("src/app/(public)/booking/[id]/page.tsx");
+check("retired agent booking wizard redirects to the booking list", create.includes('redirect("/agent/bookings")'));
+check("agent booking list is the only booking workspace", !read("src/app/agent/layout.tsx").includes('href: "/agent/bookings/create"'));
+check("agent tour cards open the shared public tour booking flow", read("src/app/agent/tours/page.tsx").includes("publicTourUrl(tour)"));
+check("agents can book from the shared public booking page", publicBooking.includes('["agent", "agent-reseller"]') && publicBooking.includes('isAgent ? "/bookings" : "/customer/bookings"'));
+check("shared booking page keeps agent-only customer and commercial controls gated", publicBooking.includes("AgentCustomerSelector") && publicBooking.includes("isAgent && <div") && publicBooking.includes("<AgentCommercialFields"));
+check("public agent booking uses the selected customer as primary traveller", publicBooking.includes('setValue("travellers.0.full_name", name') && publicBooking.includes("selectedCustomerName"));
+check("public agent booking never prefills the agent as the traveller", publicBooking.includes('const selfBookingName = isCustomer ? user?.name || "" : ""'));
+check("agent booking submits commercial controls only through the agent payload branch", publicBooking.includes("...(isAgent ? {") && publicBooking.includes("agent_markup:") && publicBooking.includes("agent_reference:") && publicBooking.includes("agent_payment_method:"));
+check("existing customer email can be linked to the agent", publicBooking.includes('api.post("/customers/link"'));
 
 const customers = read("src/app/agent/customers/page.tsx");
 check("agent customer create supplies full_name", customers.includes("full_name: fullName"));
 check("agent customer phone is normalized", customers.includes("combinePhone"));
 check("agent customer create captures address and location", ["country", "state", "city", "address_line_1", "address_line_2", "postal_code"].every((field) => customers.includes(field)));
-check("new customer continues to first booking", customers.includes("/agent/bookings/create?customer_id="));
+check("new customer remains in customer management", !customers.includes("/agent/bookings/create?customer_id="));
 check("customer list exposes retryable API failures", customers.includes("Customers could not be loaded") && customers.includes("Retry"));
-check("inline booking customer create uses the POST customer route", create.includes('api.post("/customers/"'));
-check("inline booking customer create captures address and location", ["country", "state", "city", "address_line_1", "address_line_2", "postal_code"].every((field) => create.includes(field)));
+check("shared booking customer create uses the POST customer route", publicBooking.includes('api.post("/customers/"'));
 
 const bookings = read("src/app/agent/bookings/page.tsx");
 check("booking filter uses booking_status", bookings.includes("params.booking_status = statusFilter"));
@@ -66,6 +58,7 @@ check("booking list failures can be retried", bookings.includes("setRetryKey") &
 const dashboard = read("src/app/agent/dashboard/page.tsx");
 check("dashboard sends all visible filters to the summary API", dashboard.includes("booking_status: filters.status") && dashboard.includes("start_date: filters.start_date"));
 check("dashboard exposes recoverable partial-load errors", dashboard.includes("Some dashboard data could not be loaded") && dashboard.includes("Retry"));
+check("commission requests are managed from the agent dashboard", dashboard.includes('api.post("/agents/me/commission-request"') && dashboard.includes("Commission Setup"));
 
 const detail = read("src/app/agent/bookings/[id]/page.tsx");
 check("detail uses serialized traveller counts", detail.includes("booking.no_of_adults") && detail.includes("booking.no_of_children"));
@@ -95,7 +88,15 @@ check("rejected agent documents show re-upload instructions", verificationDocume
 
 const layout = read("src/app/agent/layout.tsx");
 const portalTheme = read("src/lib/constants/portalThemes.ts");
-const agentUi = [tours, create, customers, bookings, dashboard, detail, invoices, messages, layout].join("\n");
+const agentPage = read("src/components/agent/AgentPage.tsx");
+const agentInnerPages = [dashboard, tours, bookings, detail, customers, invoices, messages, profile];
+check("agent inner pages share the upgraded page shell", agentInnerPages.every((page) => page.includes("AgentPageShell")));
+check("agent inner pages share consistent workspace headers", agentInnerPages.every((page) => page.includes("AgentPageHeader")));
+check("agent page system retains the calm blue visual identity", agentPage.includes("#2563EB") && agentPage.includes("#F5F8FD"));
+check("agent dashboard prioritizes list and catalogue actions", ["Browse Tours", "My Customers", "Invoices"].every((label) => dashboard.includes(label)) && !dashboard.includes('href: "/agent/bookings/create"'));
+check("agent catalogue books directly from polished tour cards", tours.includes("AgentSection") && tours.includes("Book This"));
+check("agent booking creation uses the shared public booking workflow", publicBooking.includes("PublicBookingPage") && publicBooking.includes("AgentCustomerSelector"));
+const agentUi = [...agentInnerPages, layout, agentPage].join("\n");
 check("agent portal uses the calm blue theme", portalTheme.includes('"--color-dash-brand": "#2563EB"') && layout.includes('theme="navy"'));
 check("agent primary UI no longer uses saturated orange", !agentUi.includes("from-orange-500") && !agentUi.includes("bg-orange-600") && !agentUi.includes("text-orange-700"));
 

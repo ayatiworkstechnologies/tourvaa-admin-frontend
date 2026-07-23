@@ -12,6 +12,12 @@ type LoginPayload = {
   password: string;
 };
 
+type LoginOptions = {
+  requiredDashboardTypes?: string[];
+  unauthorizedMessage?: string;
+  unauthorizedRedirect?: string;
+};
+
 export function useAuth() {
   const auth = useAuthContext();
   const toast = useToast();
@@ -19,7 +25,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const login = async (payload: LoginPayload) => {
+  const login = async (payload: LoginPayload, options?: LoginOptions) => {
     setLoading(true);
     setError("");
 
@@ -30,7 +36,17 @@ export function useAuth() {
         client_type: "web-cookie",
       });
       void response.data;
-      await auth.loginWithToken();
+      const dashboard = await auth.loginWithToken();
+      if (
+        dashboard &&
+        options?.requiredDashboardTypes &&
+        !options.requiredDashboardTypes.includes(dashboard.dashboard_type)
+      ) {
+        const message = options.unauthorizedMessage ?? "This account cannot access this login.";
+        auth.logout(options.unauthorizedRedirect);
+        setError(message);
+        toast.error(message);
+      }
     } catch (error: unknown) {
       const message = getApiErrorMessage(error);
       setError(message);

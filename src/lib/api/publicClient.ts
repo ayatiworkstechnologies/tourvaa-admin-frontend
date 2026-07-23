@@ -49,7 +49,7 @@ export type PublicTourDetail = PublicTour & {
   accommodations: { id: number; name: string; description: string; price: number | null }[];
   extensions: { id: number; title: string; description: string; duration_days: number | null; price: number | null }[];
   discounts: { label: string; discount_type: string; value: number; valid_from: string | null; valid_to: string | null }[];
-  calendar: { date: string; slots: number; status: string }[];
+  calendar: { id: number; date: string; slots: number; status: string }[];
   similar_tours: PublicTour[];
 };
 

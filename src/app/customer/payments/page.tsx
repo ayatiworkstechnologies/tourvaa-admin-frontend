@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LuCreditCard as CreditCard, LuExternalLink as ExternalLink } from "react-icons/lu";
+import { LuCreditCard as CreditCard, LuExternalLink as ExternalLink, LuShieldCheck as ShieldCheck } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
 
 type Payment = {
   id: number;
@@ -71,17 +72,31 @@ export default function CustomerPaymentsPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-dash-text">Payments</h1>
-          <p className="mt-1 text-sm text-dash-muted">Track customer portal payments and gateway status.</p>
-        </div>
-        <Link href="/customer/bookings" className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-dark">
-          <CreditCard size={16} /> Pay Pending Bookings
-        </Link>
+    <CustomerPageShell>
+      <CustomerPageHeader
+        title="Payments"
+        description="Track every transaction, pending balance, and gateway status in one secure place."
+        icon={CreditCard}
+        action={{ label: "Pay Pending Bookings", href: "/customer/bookings", icon: CreditCard }}
+      />
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <PaymentMetric label="Total Transactions" value={total} />
+        <PaymentMetric label="Successful" value={rows.filter((row) => ["paid", "captured", "completed", "success"].includes((row.payment_status || "").toLowerCase())).length} tone="green" />
+        <PaymentMetric label="Secure Checkout" value="Protected" icon={ShieldCheck} tone="blue" />
       </div>
-      <DataTable ariaLabel="Customer payments" columns={columns} rows={rows} loading={loading} page={page} pageSize={limit} total={total} totalPages={Math.ceil(total / limit) || 1} onPageChange={setPage} emptyTitle="No payments found" emptyDescription="Payments will appear here once a booking payment is recorded." actions={(p) => p.booking_id ? <Link href={`/customer/bookings/${p.booking_id}`} className="inline-flex items-center gap-1 rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-body hover:text-dash-brand"><ExternalLink size={13} /> Booking</Link> : null} />
+      <div className="mt-4">
+        <DataTable ariaLabel="Customer payments" columns={columns} rows={rows} loading={loading} page={page} pageSize={limit} total={total} totalPages={Math.ceil(total / limit) || 1} onPageChange={setPage} emptyTitle="No payments found" emptyDescription="Payments will appear here once a booking payment is recorded." actions={(p) => p.booking_id ? <Link href={`/customer/bookings/${p.booking_id}`} className="inline-flex items-center gap-1 rounded-lg border border-[#D5E1EF] bg-white px-3 py-1.5 text-xs font-bold text-[#315174] hover:border-blue-300 hover:text-[#0865D9]"><ExternalLink size={13} /> Booking</Link> : null} />
+      </div>
+    </CustomerPageShell>
+  );
+}
+
+function PaymentMetric({ label, value, icon: Icon, tone = "slate" }: { label: string; value: string | number; icon?: React.ElementType; tone?: "slate" | "green" | "blue" }) {
+  const colors = tone === "green" ? "bg-emerald-50 text-emerald-700" : tone === "blue" ? "bg-blue-50 text-blue-700" : "bg-slate-50 text-[#27496F]";
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-[#DDE7F3] bg-white px-4 py-3">
+      <span><small className="block text-[10px] font-bold uppercase tracking-wide text-[#7184A0]">{label}</small><b className="mt-1 block text-lg text-[#0C2043]">{value}</b></span>
+      {Icon && <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${colors}`}><Icon size={19} /></span>}
     </div>
   );
 }

@@ -241,8 +241,8 @@ export default function DynamicModulePage({
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4">
+          <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
             <div className="mb-5 flex items-center justify-between">
               <h3 className="text-xl font-bold text-dash-text">
                 {editingItem ? `Edit ${title}` : `Add ${title}`}
@@ -295,18 +295,18 @@ export default function DynamicModulePage({
                 </label>
               ))}
 
-              <div className="flex justify-end gap-3 pt-3">
+              <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg"
+                  className="w-full rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg sm:w-auto"
                 >
                   Cancel
                 </button>
 
                 <button
                   disabled={saving}
-                  className="rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover"
+                  className="w-full rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover sm:w-auto"
                 >
                   {saving ? "Saving..." : editingItem ? "Update" : "Create"}
                 </button>

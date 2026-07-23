@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuUpload as Upload } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { IMAGE_DOCUMENT_ACCEPT } from "@/lib/uploads/imageFormats";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 
@@ -168,7 +169,7 @@ export default function DocumentsTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input ref={el => { fileRefs.current[key] = el; }} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="hidden"
+                    <input ref={el => { fileRefs.current[key] = el; }} type="file" accept={IMAGE_DOCUMENT_ACCEPT} className="hidden"
                       aria-label={`Upload ${label}`}
                       onChange={e => { if (e.target.files?.[0]) void upload(key, e.target.files[0]); }} />
                     <button type="button" onClick={() => fileRefs.current[key]?.click()} disabled={uploading === key}

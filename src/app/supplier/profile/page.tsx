@@ -6,6 +6,7 @@ import CompanyInfoTab from "@/components/supplier/profile/CompanyInfoTab";
 import DocumentsTab from "@/components/supplier/profile/DocumentsTab";
 import CommissionRequestTab from "@/components/supplier/profile/CommissionRequestTab";
 import VehiclesTab from "@/components/supplier/profile/VehiclesTab";
+import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 
 const TABS = [
   { id: "company", label: "Company & Security", icon: Building },
@@ -18,18 +19,10 @@ export default function UnifiedSupplierProfilePage() {
   const [activeTab, setActiveTab] = useState("company");
 
   return (
-    <div className="p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-7 text-white shadow-xl shadow-emerald-200/60 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10">
-          <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">My Profile</h1>
-          <p className="mt-2 max-w-md text-sm font-medium text-emerald-100">Manage your company details, password, and verification documents.</p>
-        </div>
-      </div>
+    <SupplierPageShell>
+      <SupplierPageHeader title="My Profile" description="Manage your company identity, account security, fleet, commercial request, and verification documents." icon={Building} eyebrow="Supplier Account" />
 
-      <div className="mb-6 flex overflow-x-auto rounded-2xl border border-transparent bg-white px-3 shadow-sm ring-1 ring-slate-100">
+      <div className="mt-4 flex overflow-x-auto rounded-2xl border border-[#DCEBE2] bg-white p-2 shadow-[0_8px_24px_-22px_rgba(15,82,48,.7)]">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -38,25 +31,25 @@ export default function UnifiedSupplierProfilePage() {
               type="button"
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 border-b-2 px-4 pt-3.5 pb-3.5 text-sm font-bold transition-all duration-200 whitespace-nowrap ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200 whitespace-nowrap ${
                 isActive
-                  ? "border-emerald-600 text-emerald-600"
-                  : "border-transparent text-dash-muted hover:text-dash-text"
+                  ? "bg-[#16833A] text-white shadow-sm"
+                  : "text-dash-muted hover:bg-[#F0F8F3] hover:text-dash-text"
               }`}
             >
-              <Icon size={18} className={isActive ? "text-emerald-600" : "text-dash-subtle"} />
+              <Icon size={18} className={isActive ? "text-white" : "text-dash-subtle"} />
               {tab.label}
             </button>
           );
         })}
       </div>
 
-      <div className="w-full">
+      <div className="mt-4 w-full rounded-2xl border border-[#DCEBE2] bg-white p-5 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)] sm:p-6">
         {activeTab === "company" && <CompanyInfoTab />}
         {activeTab === "vehicles" && <VehiclesTab />}
         {activeTab === "commission" && <CommissionRequestTab />}
         {activeTab === "documents" && <DocumentsTab />}
       </div>
-    </div>
+    </SupplierPageShell>
   );
 }

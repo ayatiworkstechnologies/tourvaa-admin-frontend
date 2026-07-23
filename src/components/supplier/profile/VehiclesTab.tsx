@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { LuCircleAlert as AlertCircle, LuBus as Bus, LuCircleCheckBig as CheckCircle2, LuChevronDown as ChevronDown, LuChevronUp as ChevronUp, LuLoaderCircle as Loader2, LuPlus as Plus, LuRefreshCw as RefreshCw, LuTrash2 as Trash2, LuUpload as Upload, LuX as X } from "react-icons/lu";
+import { useEffect, useState } from "react";
+import { LuCircleAlert as AlertCircle, LuBus as Bus, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus, LuRefreshCw as RefreshCw, LuTrash2 as Trash2, LuUpload as Upload, LuX as X } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api/client";
+import {
+  IMAGE_ACCEPT,
+  IMAGE_AND_PDF_EXTENSIONS_ACCEPT,
+} from "@/lib/uploads/imageFormats";
 import { useToast } from "@/hooks/useToast";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 
@@ -65,12 +69,7 @@ export default function VehiclesTab() {
   const [deleting, setDeleting] = useState<number | null>(null);
   const [loadError, setLoadError] = useState("");
 
-  // File upload state per vehicle
-  const fitnessRef = useRef<HTMLInputElement | null>(null);
-  const insuranceRef = useRef<HTMLInputElement | null>(null);
-  const photosRef = useRef<HTMLInputElement | null>(null);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
-  const [activeVehicleId, setActiveVehicleId] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
@@ -93,7 +92,6 @@ export default function VehiclesTab() {
   function openNew() {
     setForm(emptyForm);
     setExpandedId("new");
-    setActiveVehicleId(null);
   }
 
   function openEdit(v: Vehicle) {
@@ -106,12 +104,10 @@ export default function VehiclesTab() {
       capacity: v.capacity != null ? String(v.capacity) : "",
     });
     setExpandedId(v.id);
-    setActiveVehicleId(v.id);
   }
 
   function cancelEdit() {
     setExpandedId(null);
-    setActiveVehicleId(null);
     setForm(emptyForm);
   }
 
@@ -289,7 +285,7 @@ export default function VehiclesTab() {
                       label="Fitness Certificate"
                       currentUrl={v.fitness_certificate}
                       uploading={uploadingField === "fitness_certificate"}
-                      accept=".pdf,.jpg,.jpeg,.png"
+                      accept={IMAGE_AND_PDF_EXTENSIONS_ACCEPT}
                       onFile={file => uploadDoc(v.id, "fitness_certificate", file)}
                     />
                     {/* Insurance Document */}
@@ -297,7 +293,7 @@ export default function VehiclesTab() {
                       label="Insurance Document"
                       currentUrl={v.insurance_document}
                       uploading={uploadingField === "insurance_document"}
-                      accept=".pdf,.jpg,.jpeg,.png"
+                      accept={IMAGE_AND_PDF_EXTENSIONS_ACCEPT}
                       onFile={file => uploadDoc(v.id, "insurance_document", file)}
                     />
                     {/* Vehicle Photos */}
@@ -307,6 +303,7 @@ export default function VehiclesTab() {
                         <div className="mb-2 flex flex-wrap gap-2">
                           {v.vehicle_photos.map((url, i) => (
                             <div key={i} className="relative">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={mediaUrl(url)} alt={`photo-${i}`} className="h-14 w-14 rounded-lg object-cover border border-dash-border" />
                               <button type="button" onClick={() => removePhoto(v.id, url)}
                                 className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600">
@@ -317,7 +314,7 @@ export default function VehiclesTab() {
                         </div>
                       )}
                       <label className="cursor-pointer">
-                        <input type="file" accept="image/*" multiple className="hidden"
+                        <input type="file" accept={IMAGE_ACCEPT} multiple className="hidden"
                           aria-label="Upload vehicle photos"
                           disabled={uploadingField === "photos"}
                           onChange={e => { if (e.target.files?.length) void uploadPhotos(v.id, e.target.files); }} />

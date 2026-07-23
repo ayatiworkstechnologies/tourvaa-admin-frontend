@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { LuEye as Eye, LuEyeOff as EyeOff, LuLoaderCircle as Loader2, LuCircleCheckBig as CheckCircle2 } from "react-icons/lu";
+import { LuEye as Eye, LuEyeOff as EyeOff, LuLoaderCircle as Loader2, LuCircleCheckBig as CheckCircle2, LuUserRound as UserRound } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { getFieldErrors } from "@/lib/utils/errorHandler";
 import PhoneInput from "@/components/ui/PhoneInput";
 import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
+import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
 import {
   combinePhone,
   mobileHelp,
@@ -223,36 +224,18 @@ export default function CustomerProfilePage() {
     }
   };
 
-  const initials = profile.name
-    ? profile.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-    : "?";
-
   return (
-    <div className="min-h-screen bg-dash-bg p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-teal-200/60 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex items-center gap-5">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/20 text-xl font-black backdrop-blur-sm ring-4 ring-white/20">
-            {profile.profile_image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={profile.profile_image} alt={profile.name} className="h-full w-full object-cover" />
-            ) : (
-              initials
-            )}
-          </div>
-          <div>
-            <h1 className="text-2xl font-black leading-tight md:text-3xl">{profile.name || "My Profile"}</h1>
-            <p className="mt-1 text-sm font-medium text-white/80">{profile.email}</p>
-            <p className="mt-2 text-sm text-white/80">Manage your traveller details, address info, and security credentials.</p>
-          </div>
-        </div>
-      </div>
+    <CustomerPageShell>
+      <CustomerPageHeader
+        title={profile.name || "My Profile"}
+        description={profile.email ? `${profile.email} · Manage your traveller details, address, and account security.` : "Manage your traveller details, address, and account security."}
+        icon={UserRound}
+        eyebrow="Traveller Profile"
+      />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Profile/Account Form */}
-        <form onSubmit={saveProfile} className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100">
+        <form onSubmit={saveProfile} className="rounded-2xl border border-[#DDE7F3] bg-white p-6 shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
           <div className="mb-5 flex items-center justify-between">
             <h3 className="text-lg font-bold text-dash-text">Account Details</h3>
             <button
@@ -400,7 +383,7 @@ export default function CustomerProfilePage() {
         </form>
 
         {/* Change Password Form */}
-        <form onSubmit={savePassword} className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100 self-start">
+        <form onSubmit={savePassword} className="self-start rounded-2xl border border-[#DDE7F3] bg-white p-6 shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
           <div className="mb-5 flex items-center justify-between">
             <h3 className="text-lg font-bold text-dash-text">Security & Password</h3>
             <button
@@ -491,6 +474,6 @@ export default function CustomerProfilePage() {
           </div>
         </form>
       </div>
-    </div>
+    </CustomerPageShell>
   );
 }

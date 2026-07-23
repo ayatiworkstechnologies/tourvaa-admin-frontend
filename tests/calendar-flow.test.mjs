@@ -27,7 +27,7 @@ const datePicker = read("src/components/ui/DatePicker.tsx");
 const allSource = sourceFiles(sourceRoot).map((file) => readFileSync(file, "utf8")).join("\n");
 const tourCalendar = read("src/components/tours/TourCalendarTab.tsx");
 const discounts = `${read("src/components/tours/TourDiscountsTab.tsx")}\n${read("src/app/admin/discounts/page.tsx")}`;
-const agentBooking = read("src/app/agent/bookings/create/page.tsx");
+const agentBooking = read("src/app/(public)/booking/[id]/page.tsx");
 
 check("no native browser date inputs remain", !/type=["']date["']/.test(allSource));
 check("calendar renders in a portal above clipped containers", datePicker.includes("createPortal") && datePicker.includes('className="fixed z-[200]'));
@@ -36,7 +36,7 @@ check("calendar exposes disabled and availability states", datePicker.includes("
 check("calendar closes with Escape and outside click", datePicker.includes('event.key === "Escape"') && datePicker.includes("closeOutside"));
 check("tour availability editor uses shared calendars", tourCalendar.includes("<DatePicker") && !tourCalendar.includes('type="date"'));
 check("discount date ranges constrain start and end", discounts.includes("maxDate={editing.end_date") && discounts.includes("minDate={editing.start_date"));
-check("agent booking restricts selection to live departures", agentBooking.includes("restrictToAvailableDates") && agentBooking.includes("availableDates.map"));
+check("agent booking restricts selection to live departures", agentBooking.includes("restrictToAvailableDates") && agentBooking.includes('x.status === "available" && x.slots > 0'));
 
 console.log(`\nCalendar flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

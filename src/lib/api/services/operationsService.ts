@@ -27,6 +27,11 @@ export type ReviewRecord = {
   markup_value?: number;
   discount_type?: string | null;
   discount_value?: number;
+  commission_request_type?: string | null;
+  commission_request_value?: number | null;
+  commission_request_status?: string | null;
+  commission_requested_at?: string | null;
+  commission_reviewed_at?: string | null;
   api_link?: string;
   number_of_tours?: number;
   completed_tours?: number;

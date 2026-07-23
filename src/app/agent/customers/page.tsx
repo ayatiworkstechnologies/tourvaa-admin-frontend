@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { LuCircleAlert as AlertCircle, LuPlus as Plus, LuRefreshCw as RefreshCw, LuSearch as Search, LuUserPlus as UserPlus, LuX as X } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuRefreshCw as RefreshCw, LuSearch as Search, LuUserPlus as UserPlus, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/useToast";
 import { combinePhone } from "@/lib/utils/validators";
+import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 
 type Customer = {
   id: number;
@@ -53,7 +52,6 @@ const BLANK = {
 };
 
 export default function AgentCustomersPage() {
-  const router = useRouter();
   const toast = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +112,7 @@ export default function AgentCustomersPage() {
     try {
       const fullName = `${form.first_name} ${form.last_name}`.trim();
       const phone = form.phone ? combinePhone(form.phone_country_code || "+91", form.phone) : "";
-      const response = await api.post("/customers/", {
+      await api.post("/customers/", {
         first_name: form.first_name,
         last_name: form.last_name,
         full_name: fullName,
@@ -127,11 +125,9 @@ export default function AgentCustomersPage() {
         address_line_1: form.address_line_1,
         address_line_2: form.address_line_2,
       });
-      const customerId = response.data?.data?.id ?? response.data?.id;
-      toast.success("Customer created. Continue with their first booking.");
+      toast.success("Customer created successfully.");
       setShowModal(false);
       setForm(BLANK);
-      if (customerId) router.push(`/agent/bookings/create?customer_id=${customerId}`);
     } catch {
       toast.error("Could not create customer");
     } finally {
@@ -171,30 +167,23 @@ export default function AgentCustomersPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-blue-200/40 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">My Customers</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-blue-100">
-              Customers linked to your bookings.{total > 0 && ` ${total} total.`}
-            </p>
-          </div>
+    <AgentPageShell>
+      <AgentPageHeader title="My Customers" description="Manage traveller contacts used by bookings created from the public tour catalogue." icon={UserPlus} eyebrow="Customer Workspace">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="rounded-full bg-blue-50 px-3 py-2 text-[11px] font-black text-blue-700">{total} customer{total === 1 ? "" : "s"}</span>
           <button
             type="button"
             onClick={() => { setForm(BLANK); setShowModal(true); }}
-            className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-dash-brand-dark shadow-sm transition hover:bg-[var(--portal-soft)] hover:-translate-y-0.5"
+            className="flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-xs font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#1D4ED8]"
           >
             <UserPlus size={16} strokeWidth={2.5} /> New Customer
           </button>
         </div>
-      </div>
+      </AgentPageHeader>
 
       {/* Search */}
-      <div className="relative mt-6 max-w-md">
+      <AgentSection className="mt-4">
+      <div className="relative max-w-md p-4">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-dash-subtle" />
         <input
           value={search}
@@ -205,7 +194,7 @@ export default function AgentCustomersPage() {
       </div>
 
       {/* Table */}
-      <div className="mt-6">
+      <div>
         {error && (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
             <span className="flex items-center gap-2"><AlertCircle size={16} />{error}</span>
@@ -224,18 +213,9 @@ export default function AgentCustomersPage() {
           onPageChange={setPage}
           emptyTitle="No customers yet"
           emptyDescription={search ? "Try a different search term." : "Customers from your bookings will appear here. Create one to get started."}
-          actions={(c) => (
-            <div className="flex justify-end gap-2">
-              <Link
-                href={`/agent/bookings/create?customer_id=${c.id}`}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-dash-border/80 bg-white px-3 py-1.5 text-xs font-bold text-dash-body hover:bg-[#F3F8FC] hover:text-dash-brand transition-all"
-              >
-                <Plus size={12} /> Book
-              </Link>
-            </div>
-          )}
         />
       </div>
+      </AgentSection>
 
       {/* New Customer Modal */}
       {showModal && (
@@ -319,6 +299,6 @@ export default function AgentCustomersPage() {
           </div>
         </div>
       )}
-    </div>
+    </AgentPageShell>
   );
 }

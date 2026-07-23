@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { LuReceiptText as ReceiptText } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
 
 type Invoice = {
   id: number;
@@ -60,12 +62,16 @@ export default function CustomerInvoicesPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-dash-text">Invoices</h1>
-        <p className="mt-1 text-sm text-dash-muted">View invoices generated for your bookings.</p>
+    <CustomerPageShell>
+      <CustomerPageHeader
+        title="Invoices"
+        description="View and access invoices generated for your confirmed Tourvaa bookings."
+        icon={ReceiptText}
+        action={{ label: "View Bookings", href: "/customer/bookings" }}
+      />
+      <div className="mt-4">
+        <DataTable ariaLabel="Customer invoices" columns={columns} rows={rows} loading={loading} page={page} pageSize={limit} total={total} totalPages={Math.ceil(total / limit) || 1} onPageChange={setPage} emptyTitle="No invoices found" emptyDescription="Invoices will appear here after booking confirmation." actions={(i) => i.booking_id ? <Link href={`/customer/bookings/${i.booking_id}`} className="inline-flex items-center gap-1 rounded-lg border border-[#D5E1EF] bg-white px-3 py-1.5 text-xs font-bold text-[#315174] hover:border-blue-300 hover:text-[#0865D9]">Booking</Link> : null} />
       </div>
-      <DataTable ariaLabel="Customer invoices" columns={columns} rows={rows} loading={loading} page={page} pageSize={limit} total={total} totalPages={Math.ceil(total / limit) || 1} onPageChange={setPage} emptyTitle="No invoices found" emptyDescription="Invoices will appear here after booking confirmation." actions={(i) => i.booking_id ? <Link href={`/customer/bookings/${i.booking_id}`} className="inline-flex items-center gap-1 rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-body hover:text-dash-brand">Booking</Link> : null} />
-    </div>
+    </CustomerPageShell>
   );
 }

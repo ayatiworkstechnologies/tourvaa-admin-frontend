@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LuCircleCheckBig as CheckCircle2, LuSquarePen as Edit, LuMail as Mail, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
+import Link from "next/link";
+import { LuSquarePen as Edit, LuMail as Mail, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -49,6 +50,8 @@ const emptyForm: UserFormData = {
 export default function UsersPage() {
   const { dashboard, loading: dashboardLoading } = useDashboard();
   const pagination = usePagination(10);
+  const [accountStatusFilter, setAccountStatusFilter] = useState("");
+  const [userTypeFilter, setUserTypeFilter] = useState("");
   const { setTotal, setTotalPages } = pagination;
   const toast = useToast();
   const canLoadProtectedData = Boolean(dashboard);
@@ -61,7 +64,6 @@ export default function UsersPage() {
     createUser,
     updateUser,
     deleteUser,
-    approveUser,
     sendPasswordReset,
   } =
     useUsers({
@@ -69,6 +71,8 @@ export default function UsersPage() {
       page: pagination.page,
       limit: pagination.limit,
       search: pagination.debouncedSearch,
+      accountStatus: accountStatusFilter,
+      userType: userTypeFilter,
     });
   const { roles } = useRoles({ enabled: canLoadProtectedData });
 
@@ -203,14 +207,11 @@ export default function UsersPage() {
   if (!dashboard) return null;
 
   const pendingUsers = users.filter(
-    (user) => user.approval_status === "pending"
-  );
-  const approvedUsers = users.filter(
-    (user) => user.approval_status !== "pending"
+    (user) => user.account_status === "PENDING_ADMIN_VERIFICATION"
   );
   const pageSize = pagination.limit;
   const totalPages = pagination.totalPages;
-  const paginatedUsers = approvedUsers;
+  const paginatedUsers = users;
 
   const resolveRoleName = (user: User) =>
     user.role?.name ||
@@ -276,14 +277,14 @@ export default function UsersPage() {
     },
     {
       key: "approval",
-      header: "Approval",
+      header: "Account status",
       render: (user) => (
         <span
           className={`rounded-full px-3 py-1 text-xs font-bold ${approvalClass(
-            user.approval_status
+            user.account_status === "ACTIVE" ? "approved" : user.account_status === "INACTIVE" ? "rejected" : "pending"
           )}`}
         >
-          {user.approval_status}
+          {(user.account_status || user.approval_status).replaceAll("_", " ")}
         </span>
       ),
     },
@@ -363,6 +364,20 @@ export default function UsersPage() {
           </p>
         )}
         <div className="mt-5">
+          <div className="mb-4 flex flex-wrap gap-2">
+            {[
+              ["", "All Users"],
+              ["PENDING_ADMIN_VERIFICATION", "Pending Verification"],
+              ["ACTIVE", "Active Users"],
+              ["INACTIVE", "Inactive Users"],
+            ].map(([value, label]) => <button key={label} type="button" onClick={() => { setAccountStatusFilter(value); pagination.setPage(1); }} className={`rounded-lg px-3 py-2 text-xs font-bold ${accountStatusFilter === value ? "bg-dash-brand text-white" : "bg-dash-bg text-dash-muted"}`}>{label}</button>)}
+            <span className="mx-1 hidden h-8 w-px bg-dash-border sm:block" />
+            {[
+              ["CUSTOMER", "Customers"],
+              ["AGENT", "Travel Agents"],
+              ["SUPPLIER", "Suppliers"],
+            ].map(([value, label]) => <button key={label} type="button" onClick={() => { setUserTypeFilter(userTypeFilter === value ? "" : value); pagination.setPage(1); }} className={`rounded-lg px-3 py-2 text-xs font-bold ${userTypeFilter === value ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"}`}>{label}</button>)}
+          </div>
           <DataTable
             ariaLabel="All users table"
             columns={columns}
@@ -379,17 +394,7 @@ export default function UsersPage() {
             emptyDescription="There are currently no approved or rejected users."
             actions={(user) => (
               <div className="flex justify-end gap-2">
-                {user.approval_status === "rejected" && (
-                  <button
-                    disabled={saving}
-                    onClick={() => approveUser(user.id, user.role_id || "")}
-                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-dash-border text-emerald-600 hover:bg-emerald-50"
-                    aria-label={`Approve ${user.name}`}
-                    title="Approve user"
-                  >
-                    <CheckCircle2 size={15} />
-                  </button>
-                )}
+                <Link href={`/admin/users/${user.id}`} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-dash-border px-3 text-xs font-bold text-blue-600 hover:bg-blue-50">View</Link>
                 <button
                   disabled={saving}
                   onClick={() => handleSendReset(user.id)}
@@ -655,29 +660,9 @@ export default function UsersPage() {
                     </select>
                   </label>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="block">
-                      <span className="mb-1 block text-xs font-semibold text-gray-500">Approval</span>
-                      <select
-                        value={form.approval_status || "pending"}
-                        onChange={(e) => updateForm("approval_status", e.target.value as "pending" | "approved" | "rejected")}
-                        className="w-full rounded-md border border-[#E6E8F0] px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
-                    </label>
-
-                    <label className="flex items-center gap-2 pt-6 text-sm text-gray-600">
-                      <input
-                        type="checkbox"
-                        checked={form.is_active}
-                        onChange={(e) => updateForm("is_active", e.target.checked)}
-                      />
-                      Active User
-                    </label>
-                  </div>
+                  <p className="rounded-xl bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-700">
+                    Account activation and deactivation are managed from the user detail page and recorded in account history.
+                  </p>
                 </>
               )}
 

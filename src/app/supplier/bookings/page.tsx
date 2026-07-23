@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuFilter as Filter, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { SupplierMetric, SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
 
 type Booking = {
   id: number;
@@ -58,6 +59,7 @@ export default function SupplierBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [initialQueryApplied, setInitialQueryApplied] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -84,8 +86,16 @@ export default function SupplierBookingsPage() {
   }, [statusFilter, page]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    const requestedStatus = new URLSearchParams(window.location.search).get("status") || "";
+    if (STATUS_OPTIONS.some((option) => option.value === requestedStatus)) {
+      setStatusFilter(requestedStatus);
+    }
+    setInitialQueryApplied(true);
+  }, []);
+
+  useEffect(() => {
+    if (initialQueryApplied) void load();
+  }, [initialQueryApplied, load]);
 
   const handleFilterChange = (val: string) => {
     setStatusFilter(val);
@@ -93,10 +103,10 @@ export default function SupplierBookingsPage() {
   };
 
   const stats = [
-    { label: "Total Bookings", value: Object.keys(statusCounts).length ? Object.values(statusCounts).reduce((sum, count) => sum + count, 0) : total, icon: CalendarCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "Confirmed / Ongoing", value: (statusCounts.confirmed ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, color: "text-sky-600", bg: "bg-sky-50" },
-    { label: "Awaiting Action", value: (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0), icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Cancelled / Declined", value: (statusCounts.cancelled ?? 0) + (statusCounts.declined ?? 0), icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" },
+    { label: "Total Bookings", value: Object.keys(statusCounts).length ? Object.values(statusCounts).reduce((sum, count) => sum + count, 0) : total, icon: CalendarCheck, tone: "bg-emerald-50 text-emerald-700", note: "All supplier bookings" },
+    { label: "Confirmed / Ongoing", value: (statusCounts.confirmed ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, tone: "bg-sky-50 text-sky-700", note: "Active operations" },
+    { label: "Awaiting Action", value: (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0), icon: Clock3, tone: "bg-amber-50 text-amber-700", note: "Review required" },
+    { label: "Cancelled / Declined", value: (statusCounts.cancelled ?? 0) + (statusCounts.declined ?? 0), icon: XCircle, tone: "bg-rose-50 text-rose-700", note: "Closed without travel" },
   ];
 
   const columns: DataTableColumn<Booking>[] = [
@@ -110,44 +120,30 @@ export default function SupplierBookingsPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-7 text-white shadow-xl shadow-emerald-200/60 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10">
-          <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Bookings</h1>
-          <p className="mt-2 max-w-md text-sm font-medium text-emerald-100">
-            Manage all bookings for your tours.
-          </p>
-        </div>
-      </div>
+    <SupplierPageShell>
+      <SupplierPageHeader
+        title="Bookings"
+        description="Review new requests, confirm paid bookings, and manage every active traveller departure."
+        icon={CalendarCheck}
+        eyebrow="Booking Operations"
+      />
 
       {/* Stats */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="group relative overflow-hidden rounded-2xl border border-transparent bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-500">{label}</p>
-                <p className={`mt-2 text-3xl font-black tracking-tight ${color}`}>{value}</p>
-              </div>
-              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg}`}>
-                <Icon size={20} className={color} />
-              </div>
-            </div>
-          </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map(({ label, value, icon, tone, note }) => (
+          <SupplierMetric key={label} label={label} value={value} icon={icon} tone={tone} note={note} />
         ))}
       </div>
 
       {/* Filters */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <SupplierSection className="mt-4">
+      <div className="flex flex-col gap-3 border-b border-[#E5EFE9] p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Filter size={18} className="text-dash-subtle" />
           <select
             value={statusFilter}
             onChange={(e) => handleFilterChange(e.target.value)}
-            className="rounded-2xl border border-dash-border/80 bg-white px-4 py-2.5 text-sm font-bold text-dash-body shadow-[0_2px_8px_rgb(0,0,0,0.02)] outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10 transition-all cursor-pointer"
+            className="rounded-xl border border-[#D5E6DB] bg-white px-4 py-2.5 text-sm font-bold text-[#365545] outline-none focus:border-[#16833A] focus:ring-4 focus:ring-emerald-50"
           > 
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -157,7 +153,7 @@ export default function SupplierBookingsPage() {
           </select>
         </div>
         {total > 0 && (
-          <div className="flex items-center gap-2 rounded-xl bg-[#F0F7FF] px-4 py-2 text-sm font-bold text-dash-brand">
+          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
             <span>{total} booking{total !== 1 ? "s" : ""}</span>
           </div>
         )}
@@ -165,7 +161,7 @@ export default function SupplierBookingsPage() {
 
       {/* Error */}
       {error && (
-        <div className="mb-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+        <div className="m-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
           <span className="flex items-center gap-2">
             <AlertCircle size={16} />
             {error}
@@ -181,8 +177,15 @@ export default function SupplierBookingsPage() {
       )}
 
       {/* Table */}
+      {loading && (
+        <div className="space-y-3 p-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+          ))}
+        </div>
+      )}
       {!loading && !error && (
-        <div className="mt-2">
+        <div>
           <DataTable
             ariaLabel="Bookings table"
             columns={columns}
@@ -207,6 +210,7 @@ export default function SupplierBookingsPage() {
           />
         </div>
       )}
-    </div>
+      </SupplierSection>
+    </SupplierPageShell>
   );
 }

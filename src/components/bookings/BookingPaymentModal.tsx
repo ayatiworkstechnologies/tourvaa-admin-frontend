@@ -98,8 +98,8 @@ export default function BookingPaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-dash-border bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 backdrop-blur-sm sm:p-4">
+      <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-dash-border bg-white p-4 shadow-2xl sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-orange-600">Step 5 · Payment</p>
@@ -112,7 +112,7 @@ export default function BookingPaymentModal({
         {error && <div className="mt-4 flex gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700"><AlertCircle size={16} className="mt-0.5 shrink-0" />{error}</div>}
 
         {partialAvailable && (
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {[
               { value: "partial" as const, label: "30% deposit", amount: depositDue },
               { value: "full" as const, label: "Full payment", amount: outstandingAmount },

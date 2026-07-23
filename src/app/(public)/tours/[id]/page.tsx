@@ -6,7 +6,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 
 /* eslint-disable @next/next/no-img-element */
-import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuBadgeDollarSign as BadgeDollarSign, LuBed as Bed, LuBus as Bus, LuCalendar as Calendar, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuDownload as Download, LuHeadphones as Headphones, LuHeart as Heart, LuLogIn as LogIn, LuMapPin as MapPin, LuMessageSquare as MessageSquare, LuMinus as Minus, LuPartyPopper as PartyPopper, LuPlay as Play, LuPlus as Plus, LuShare2 as Share2, LuShieldCheck as ShieldCheck, LuShoppingCart as ShoppingCart, LuStar as Star, LuUsers as Users, LuUtensils as Utensils, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuBadgeDollarSign as BadgeDollarSign, LuBed as Bed, LuBus as Bus, LuCalendar as Calendar, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuDownload as Download, LuHeadphones as Headphones, LuHeart as Heart, LuLogIn as LogIn, LuMapPin as MapPin, LuMessageSquare as MessageSquare, LuMinus as Minus, LuPartyPopper as PartyPopper, LuPlay as Play, LuPlus as Plus, LuShare2 as Share2, LuShieldCheck as ShieldCheck, LuStar as Star, LuUsers as Users, LuUtensils as Utensils, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 import PhoneInput from "@/components/ui/PhoneInput";
 import api from "@/lib/api/client";
 import { combinePhone } from "@/lib/utils/validators";
@@ -641,28 +641,29 @@ function GuestPrompt({ onClose, returnPath, isLoggedIn }: { onClose: () => void;
           <LogIn size={22} className="text-sky-400" />
         </div>
         <h3 className="mt-4 text-lg font-black text-zinc-950">
-          {isLoggedIn ? "Customer account required" : "Sign in to book"}
+          {isLoggedIn ? "Booking account required" : "Sign in to book"}
         </h3>
         <p className="mt-1 text-sm text-slate-500">
           {isLoggedIn
-            ? "Bookings require a customer account. Switch to customer login to continue."
-            : "Create a free account or sign in to complete your booking."}
+            ? "This booking is available to customer and agent accounts."
+            : "Continue as a customer or book for a customer using an agent account."}
         </p>
         <div className="mt-5 flex flex-col gap-2">
           <button
             type="button"
-            onClick={() => { onClose(); router.push(`/login?redirect=${encodeURIComponent(returnPath)}`); }}
+            onClick={() => { onClose(); router.push(`/login?role=traveller&redirect=${encodeURIComponent(returnPath)}`); }}
             className="flex items-center justify-center gap-2 rounded-xl bg-teal-500 py-3 text-sm font-bold text-white hover:bg-sky-600"
           >
-            <LogIn size={15} /> {isLoggedIn ? "Customer Sign In" : "Sign In"}
+            <LogIn size={15} /> Customer login
           </button>
           <button
             type="button"
-            onClick={() => { onClose(); router.push(`/register?redirect=${encodeURIComponent(returnPath)}`); }}
+            onClick={() => { onClose(); router.push(`/login?role=agent&redirect=${encodeURIComponent(returnPath)}`); }}
             className="rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
           >
-            Create Free Account
+            Agent login
           </button>
+          {!isLoggedIn && <Link href={`/register?redirect=${encodeURIComponent(returnPath)}`} onClick={onClose} className="py-2 text-center text-xs font-bold text-teal-700">Create customer account</Link>}
         </div>
       </div>
     </div>
@@ -700,7 +701,7 @@ function CountryToursPage({ countrySlug }: { countrySlug: string }) {
 // main page
 export default function TourDetailPage() {
   const { formatCompact: displayMoney } = useCurrency();
-  const { isWishlisted, toggleWishlist, addToCart, cart } = useTravelStore();
+  const { isWishlisted, toggleWishlist } = useTravelStore();
   const params = useParams<{ id?: string; country?: string; slug?: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -709,6 +710,7 @@ export default function TourDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [pendingBookingPath, setPendingBookingPath] = useState("");
   const [checkingAccount, setCheckingAccount] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const countryOnlySlug = params?.id && !params.slug && !/^\d+$/.test(params.id) ? params.id : null;
@@ -784,17 +786,29 @@ export default function TourDetailPage() {
     { key: "faqs", label: "FAQs" },
   ] as const;
 
-  const roleSlug = dashboard?.user?.role?.slug;
-  const customerId = dashboard?.user?.customer_id ?? user?.customer_id ?? null;
+  const bookingUser = dashboard?.user ?? user;
+  const roleSlug = bookingUser?.role?.slug;
+  const customerId = bookingUser?.customer_id ?? null;
   const isCustomer = isLoggedIn && roleSlug === "customer";
+  const isAgent = isLoggedIn && ["agent", "agent-reseller"].includes(roleSlug ?? "");
+  const canBookFromPublic = isCustomer || isAgent;
   const initialTravelDate = searchParams.get("travel_date") ?? "";
   const initialAdults = Math.max(1, Number(searchParams.get("adults") || 1));
   const initialChildren = Math.max(0, Number(searchParams.get("children") || 0));
   const returnQuery = searchParams.toString();
   const returnPath = `/booking/${tour.id}${returnQuery ? `?${returnQuery}` : ""}`;
 
-  const handleBookClick = async () => {
-    if (isCustomer) { router.push(returnPath); return; }
+  const handleBookClick = async (selection?: { travelDate: string; adults: number; children: number }) => {
+    const bookingQuery = new URLSearchParams(searchParams.toString());
+    if (selection?.travelDate) bookingQuery.set("travel_date", selection.travelDate);
+    if (selection) {
+      bookingQuery.set("adults", String(selection.adults));
+      bookingQuery.set("children", String(selection.children));
+    }
+    const query = bookingQuery.toString();
+    const bookingPath = `/booking/${tour.id}${query ? `?${query}` : ""}`;
+    setPendingBookingPath(bookingPath);
+    if (canBookFromPublic) { router.push(bookingPath); return; }
     if (!isLoggedIn) { setShowModal(true); return; }
     setCheckingAccount(true);
     try { await refreshSession(); } finally { setCheckingAccount(false); setShowModal(true); }
@@ -805,24 +819,21 @@ export default function TourDetailPage() {
     : [tour.banner_image ? mediaUrl(tour.banner_image) : PLACEHOLDER];
   const travelItem = { id: tour.id, title: tour.title, place: [tour.city_name, tour.country_name].filter(Boolean).join(", ") || "Worldwide", image: allImages[0], price: tour.price_start_per_person, currency: tour.currency || "USD", duration: tour.number_of_days ? `${tour.number_of_days} days` : tour.number_of_hours ? `${tour.number_of_hours} hours` : "Flexible", href: publicTourUrl(tour) };
   const wishlisted = isWishlisted(tour.id);
-  const inCart = cart.some((item) => item.id === tour.id);
-
   if (process.env.NEXT_PUBLIC_TOUR_DETAIL_DESIGN !== "legacy") {
     return (
       <TourDetailExperience
         tour={tour}
         images={allImages}
+        initialTravelDate={initialTravelDate}
         initialAdults={initialAdults}
         initialChildren={initialChildren}
         onBook={handleBookClick}
         onWishlist={() => toggleWishlist(travelItem)}
-        onCart={() => addToCart(travelItem, initialAdults + initialChildren)}
         wishlisted={wishlisted}
-        inCart={inCart}
         modal={showModal && !authLoading && (
           isLoggedIn && isCustomer
             ? <BookingModal tour={tour} customerId={customerId ?? null} customerName={user?.name ?? ""} customerEmail={user?.email ?? ""} initialTravelDate={initialTravelDate} initialAdults={initialAdults} initialChildren={initialChildren} onClose={() => setShowModal(false)} />
-            : <GuestPrompt onClose={() => setShowModal(false)} returnPath={returnPath} isLoggedIn={isLoggedIn} />
+            : <GuestPrompt onClose={() => setShowModal(false)} returnPath={pendingBookingPath || returnPath} isLoggedIn={isLoggedIn} />
         )}
       />
     );
@@ -834,7 +845,7 @@ export default function TourDetailPage() {
       {showModal && !authLoading && (
         isLoggedIn && isCustomer
           ? <BookingModal tour={tour} customerId={customerId ?? null} customerName={user?.name ?? ""} customerEmail={user?.email ?? ""} initialTravelDate={initialTravelDate} initialAdults={initialAdults} initialChildren={initialChildren} onClose={() => setShowModal(false)} />
-          : <GuestPrompt onClose={() => setShowModal(false)} returnPath={returnPath} isLoggedIn={isLoggedIn} />
+          : <GuestPrompt onClose={() => setShowModal(false)} returnPath={pendingBookingPath || returnPath} isLoggedIn={isLoggedIn} />
       )}
 
       {/* Split hero */}
@@ -849,7 +860,7 @@ export default function TourDetailPage() {
             <div className="mt-4 flex flex-wrap items-center gap-4 text-sm"><span className="flex items-center gap-1.5 font-semibold text-slate-600"><MapPin size={14} /> {[tour.city_name, tour.country_name].filter(Boolean).join(", ")}</span><span className="flex items-center gap-1 text-orange-500">{Array.from({ length: 5 }).map((_, index) => <Star key={index} size={13} className="fill-current" />)}<b className="ml-1 text-slate-700">4.8</b><span className="text-slate-400">(126 Reviews)</span></span></div>
             <p className="mt-6 max-w-xl text-sm leading-7 text-slate-600">{tour.short_description || tour.subtitle || "Experience an expertly curated journey with memorable stays, seamless transfers, and thoughtful local experiences."}</p>
             <div className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-xs font-bold text-slate-700">{tour.number_of_days && <span className="flex items-center gap-1.5"><Calendar size={14} /> {tour.number_of_days - 1 > 0 ? `${tour.number_of_days - 1} Nights / ` : ""}{tour.number_of_days} Days</span>}<span className="flex items-center gap-1.5"><Bed size={14} /> Hotel</span><span className="flex items-center gap-1.5"><Utensils size={14} /> Meals</span><span className="flex items-center gap-1.5"><Bus size={14} /> Transfers</span></div>
-            <div className="mt-7 flex flex-wrap gap-3"><button type="button" onClick={handleBookClick} className="rounded-lg bg-[#075b57] px-6 py-3 text-sm font-black text-white hover:bg-teal-700">Customise Trip</button><button type="button" onClick={() => toggleWishlist(travelItem)} className={`flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-black transition ${wishlisted ? "border-red-200 bg-red-50 text-red-600" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}><Heart size={15} className={wishlisted ? "fill-current" : ""} />{wishlisted ? "Saved" : "Add to Wishlist"}</button><button type="button" onClick={() => addToCart(travelItem, initialAdults + initialChildren)} className={`flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-black transition ${inCart ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"}`}><ShoppingCart size={15} />{inCart ? "Added to Cart" : "Add to Cart"}</button><button type="button" aria-label="Share tour" className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-600"><Share2 size={16} /></button></div>
+            <div className="mt-7 flex flex-wrap gap-3"><button type="button" onClick={() => void handleBookClick()} className="rounded-lg bg-[#075b57] px-6 py-3 text-sm font-black text-white hover:bg-teal-700">Book Now</button><button type="button" onClick={() => toggleWishlist(travelItem)} className={`flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-black transition ${wishlisted ? "border-red-200 bg-red-50 text-red-600" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}><Heart size={15} className={wishlisted ? "fill-current" : ""} />{wishlisted ? "Saved" : "Add to Wishlist"}</button><button type="button" aria-label="Share tour" className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-600"><Share2 size={16} /></button></div>
           </div>
           <div className="relative min-h-[360px] overflow-hidden bg-slate-100 lg:min-h-[430px]"><img src={allImages[activeImage]} alt={tour.title} className="h-full w-full object-cover transition duration-700" /><div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" /><button type="button" className="absolute bottom-8 right-8 flex items-center gap-3 rounded-full bg-white/90 py-2 pl-2 pr-5 text-sm font-black text-slate-800 shadow-xl backdrop-blur"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-teal-700 shadow"><Play size={17} className="ml-0.5 fill-current" /></span>Watch Video</button></div>
         </div>
@@ -1049,9 +1060,9 @@ export default function TourDetailPage() {
           <aside className="space-y-4">
             <div className="sticky top-24 z-10 rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
               <div className="flex items-start justify-between"><div><p className="text-[11px] font-semibold text-slate-500">Price (Per Person)</p>{tour.price_start_per_person ? <p className="mt-2 text-4xl font-black text-[#0b2845]">{displayMoney(tour.price_start_per_person, tour.currency || "USD")}</p> : <p className="mt-2 text-xl font-black">Price on request</p>}</div>{tour.discounts[0] && <span className="mt-5 rounded-md bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">{tour.discounts[0].discount_type === "percentage" ? `${tour.discounts[0].value}% OFF` : "SPECIAL OFFER"}</span>}</div>
-              <div className="mt-6 space-y-3"><button type="button" onClick={handleBookClick} className="flex w-full items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 text-left"><Calendar size={16} className="text-slate-500" /><span><span className="block text-[10px] font-black text-slate-600">Select Date</span><span className="text-xs text-slate-400">{initialTravelDate || "Choose travel date"}</span></span></button><button type="button" onClick={handleBookClick} className="flex w-full items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 text-left"><Users size={16} className="text-slate-500" /><span><span className="block text-[10px] font-black text-slate-600">Travellers</span><span className="text-xs text-slate-500">{initialAdults} Adult{initialAdults === 1 ? "" : "s"}{initialChildren ? `, ${initialChildren} Children` : ""}</span></span></button></div>
+              <div className="mt-6 space-y-3"><button type="button" onClick={() => void handleBookClick()} className="flex w-full items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 text-left"><Calendar size={16} className="text-slate-500" /><span><span className="block text-[10px] font-black text-slate-600">Select Date</span><span className="text-xs text-slate-400">{initialTravelDate || "Choose travel date"}</span></span></button><button type="button" onClick={() => void handleBookClick()} className="flex w-full items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 text-left"><Users size={16} className="text-slate-500" /><span><span className="block text-[10px] font-black text-slate-600">Travellers</span><span className="text-xs text-slate-500">{initialAdults} Adult{initialAdults === 1 ? "" : "s"}{initialChildren ? `, ${initialChildren} Children` : ""}</span></span></button></div>
               {tour.discounts.length > 0 && <div className="mt-4 space-y-2">{tour.discounts.slice(0, 2).map((discount, index) => <p key={index} className="flex items-center gap-2 rounded-lg bg-teal-50 px-3 py-2 text-[11px] font-bold text-teal-800"><PartyPopper size={13} />{discount.label}</p>)}</div>}
-              <button type="button" onClick={handleBookClick} disabled={checkingAccount} className="mt-5 w-full rounded-lg bg-orange-500 py-3.5 text-sm font-black text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600 disabled:opacity-60">{checkingAccount ? "Checking…" : "Check Availability"}</button>
+              <button type="button" onClick={() => void handleBookClick()} disabled={checkingAccount} className="mt-5 w-full rounded-lg bg-orange-500 py-3.5 text-sm font-black text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600 disabled:opacity-60">{checkingAccount ? "Checking…" : "Check Availability"}</button>
               <details className="mt-3"><summary className="cursor-pointer list-none rounded-lg border border-teal-800 py-3 text-center text-sm font-black text-teal-900">Enquire Now</summary><div className="mt-5"><EnquiryForm tourTitle={tour.title} /></div></details>
               <p className="mt-4 flex items-center justify-center gap-2 text-[11px] font-semibold text-slate-500"><ShieldCheck size={14} className="text-teal-700" /> Secure &amp; Easy Booking</p>
             </div>

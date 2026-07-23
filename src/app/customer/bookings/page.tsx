@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuEye as Eye, LuMapPinned as MapPinned, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
 
 type Booking = {
   id: number;
@@ -17,7 +18,25 @@ type Booking = {
   currency?: string;
 };
 
-const STATUSES = ["all", "pending_payment", "payment_authorized", "pending_supplier_acceptance", "confirmed", "completed", "cancelled"];
+const STATUSES = [
+  "all",
+  "pending_payment",
+  "pending_credit_approval",
+  "pending_supplier_assignment",
+  "payment_authorized",
+  "pending_supplier_acceptance",
+  "supplier_reassignment_required",
+  "confirmed",
+  "ready_to_travel",
+  "upcoming",
+  "ongoing",
+  "postponed",
+  "cancellation_requested",
+  "completed",
+  "cancelled",
+  "declined",
+  "refunded",
+];
 
 function money(value: string | number | undefined, currency = "USD") {
   if (!value && value !== 0) return "-";
@@ -37,7 +56,8 @@ function statusClass(status?: string) {
   const v = (status || "").toLowerCase();
   if (["paid", "completed", "confirmed", "active"].includes(v)) return "bg-emerald-50 text-emerald-700 border border-emerald-200/50";
   if (["pending", "partial", "partially_paid", "pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(v)) return "bg-amber-50 text-amber-700 border border-amber-200/50";
-  if (["cancelled", "failed"].includes(v)) return "bg-rose-50 text-rose-700 border border-rose-200/50";
+  if (["cancelled", "failed", "declined", "refunded"].includes(v)) return "bg-rose-50 text-rose-700 border border-rose-200/50";
+  if (["pending_credit_approval", "bank_transfer_pending", "credit_approval_pending", "pending_supplier_assignment", "supplier_reassignment_required", "cancellation_requested", "postponed", "ready_to_travel", "upcoming", "ongoing"].includes(v)) return "bg-amber-50 text-amber-700 border border-amber-200/50";
   return "bg-slate-50 text-slate-700 border border-slate-200/50";
 }
 
@@ -55,7 +75,13 @@ export default function CustomerBookingsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const limit = 10;
+
+  useEffect(() => {
+    const requestedStatus = new URLSearchParams(window.location.search).get("status");
+    if (requestedStatus && STATUSES.includes(requestedStatus)) setStatusFilter(requestedStatus);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -68,6 +94,7 @@ export default function CustomerBookingsPage() {
         if (!active) return;
         setBookings(res.data?.items ?? res.data?.data ?? []);
         setTotal(res.data?.total ?? 0);
+        setStatusCounts(res.data?.status_counts ?? {});
       } catch {
         if (active) setBookings([]);
       } finally {
@@ -86,16 +113,17 @@ export default function CustomerBookingsPage() {
   }
 
   const stats = useMemo(() => {
-    const confirmed = bookings.filter((b) => ["confirmed", "ongoing"].includes(b.booking_status.toLowerCase())).length;
-    const completed = bookings.filter((b) => b.booking_status.toLowerCase() === "completed").length;
-    const pending = bookings.filter((b) => ["pending", "pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(b.booking_status.toLowerCase())).length;
+    const allBookings = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
+    const confirmed = (statusCounts.confirmed ?? 0) + (statusCounts.ready_to_travel ?? 0) + (statusCounts.upcoming ?? 0) + (statusCounts.ongoing ?? 0);
+    const completed = statusCounts.completed ?? 0;
+    const pending = (statusCounts.pending_payment ?? 0) + (statusCounts.pending_credit_approval ?? 0) + (statusCounts.pending_supplier_assignment ?? 0) + (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0) + (statusCounts.supplier_reassignment_required ?? 0) + (statusCounts.cancellation_requested ?? 0);
     return [
-      { label: "Total Bookings", value: total || bookings.length, icon: CalendarCheck, color: "text-dash-brand", bg: "bg-[var(--portal-soft)]" },
+      { label: "Total Bookings", value: allBookings || total, icon: CalendarCheck, color: "text-dash-brand", bg: "bg-[var(--portal-soft)]" },
       { label: "Active / Upcoming", value: confirmed, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
       { label: "Completed", value: completed, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
       { label: "Pending Requests", value: pending, icon: Wallet, color: "text-amber-600", bg: "bg-amber-50" },
     ];
-  }, [bookings, total]);
+  }, [statusCounts, total]);
 
   const columns: DataTableColumn<Booking>[] = [
     { key: "code", header: "Code", render: (b) => <Link href={`/customer/bookings/${b.id}`} className="hover:text-dash-brand hover:underline">{b.booking_code}</Link>, className: "font-bold text-dash-text" },
@@ -107,35 +135,24 @@ export default function CustomerBookingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-dash-bg p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-teal-200/60 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">My Bookings</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-white/80">View and track all of your bookings and travel history.</p>
-          </div>
-          <Link
-            href="/tours"
-            className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-dash-brand shadow-sm transition hover:bg-[var(--portal-soft)] hover:-translate-y-0.5"
-          >
-            <MapPinned size={18} strokeWidth={2.5} /> Browse Tours
-          </Link>
-        </div>
-      </div>
+    <CustomerPageShell>
+      <CustomerPageHeader
+        title="My Bookings"
+        description="View upcoming journeys, track requests, and manage every Tourvaa booking."
+        icon={CalendarCheck}
+        action={{ label: "Browse Tours", href: "/tours", icon: MapPinned }}
+      />
 
       {/* Stats */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="group relative overflow-hidden rounded-2xl border border-transparent bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
+          <div key={label} className="group relative overflow-hidden rounded-xl border border-[#DDE7F3] bg-white p-4 shadow-[0_6px_20px_-18px_rgba(24,68,126,.7)] transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-500">{label}</p>
-                <p className={`mt-2 text-3xl font-black tracking-tight ${color}`}>{value}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[#7184A0]">{label}</p>
+                <p className={`mt-2 text-[25px] font-black tracking-tight ${color}`}>{value}</p>
               </div>
-              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg}`}>
+              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${bg}`}>
                 <Icon size={20} className={color} />
               </div>
             </div>
@@ -144,16 +161,16 @@ export default function CustomerBookingsPage() {
       </div>
 
       {/* Status Filter */}
-      <div className="mt-8 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2 rounded-xl border border-[#DDE7F3] bg-white p-3">
         {STATUSES.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => handleStatus(s)}
-            className={`rounded-2xl px-5 py-2.5 text-sm font-bold capitalize transition-all shadow-[0_2px_8px_rgb(0,0,0,0.02)] ${
+            className={`rounded-lg px-4 py-2 text-[11px] font-bold capitalize transition-all ${
               statusFilter === s
-                ? "bg-dash-brand text-white shadow-dash-brand/20"
-                : "border border-dash-border/80 bg-white text-dash-muted hover:border-dash-brand/30 hover:text-dash-brand"
+                ? "bg-[#0868E8] text-white shadow-md shadow-blue-100"
+                : "border border-[#DCE5F0] bg-white text-[#5C7190] hover:border-blue-300 hover:text-[#0865D9]"
             }`}
           >
             {s === "all" ? "All" : s.replaceAll("_", " ")}
@@ -162,7 +179,7 @@ export default function CustomerBookingsPage() {
       </div>
 
       {/* Table */}
-      <div className="mt-6">
+      <div className="mt-4">
         <DataTable
           ariaLabel="Bookings"
           columns={columns}
@@ -195,6 +212,6 @@ export default function CustomerBookingsPage() {
           )}
         />
       </div>
-    </div>
+    </CustomerPageShell>
   );
 }

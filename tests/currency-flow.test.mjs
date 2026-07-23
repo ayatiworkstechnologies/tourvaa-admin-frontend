@@ -28,10 +28,9 @@ check("public header exposes the selector", publicHeader.includes("<CurrencySele
 check("portal header exposes the selector", portalHeader.includes("<CurrencySelector"));
 check("tour listing converts from each tour currency", tours.includes("formatCompact(tour.price_start_per_person, tour.currency"));
 check("tour details convert price and add-ons", detail.includes("displayMoney(tour.price_start_per_person") && detail.includes("displayMoney(a.price"));
-check("booking review converts display amounts", booking.includes("const { format: money") && booking.includes("money(pricing.total, currency)"));
+check("booking review converts display amounts", booking.includes("const { format: money") && booking.includes("money(customerTotal, currency)"));
 check("gateway still receives immutable booking currency", booking.includes("currency: booking.currency"));
 check("checkout explains indicative conversion", booking.includes("displayed conversion is indicative"));
 
 console.log(`\nCurrency flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);
-

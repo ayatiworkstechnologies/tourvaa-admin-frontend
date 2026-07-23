@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useMemo, useState } from "react";
-import { LuBedDouble as Bed, LuBriefcase as Suitcase, LuBus as Bus, LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuHeart as Heart, LuHouse as House, LuMapPin as MapPin, LuMinus as Minus, LuPlus as Plus, LuShoppingCart as ShoppingCart, LuStar as Star, LuUserRound as User, LuUsers as Users, LuUtensils as Utensils } from "react-icons/lu";
+import { LuBedDouble as Bed, LuBriefcase as Suitcase, LuBus as Bus, LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuHeart as Heart, LuHouse as House, LuMapPin as MapPin, LuMinus as Minus, LuPlus as Plus, LuStar as Star, LuUserRound as User, LuUsers as Users, LuUtensils as Utensils } from "react-icons/lu";
 import { PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 
@@ -12,23 +12,22 @@ const FALLBACK = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?a
 type Props = {
   tour: PublicTourDetail;
   images: string[];
+  initialTravelDate: string;
   initialAdults: number;
   initialChildren: number;
-  onBook: () => void;
+  onBook: (selection: { travelDate: string; adults: number; children: number }) => void;
   onWishlist: () => void;
-  onCart: () => void;
   wishlisted: boolean;
-  inCart: boolean;
   modal?: React.ReactNode;
 };
 
-export default function TourDetailExperience({ tour, images, initialAdults, initialChildren, onBook, onWishlist, onCart, wishlisted, inCart, modal }: Props) {
+export default function TourDetailExperience({ tour, images, initialTravelDate, initialAdults, initialChildren, onBook, onWishlist, wishlisted, modal }: Props) {
   const { format } = useCurrency();
   const gallery = images.length ? images : [FALLBACK];
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
   const departures = useMemo(() => tour.calendar.filter((entry) => entry.status !== "cancelled").slice(0, 5), [tour.calendar]);
-  const [selectedDate, setSelectedDate] = useState(departures[0]?.date || "");
+  const [selectedDate, setSelectedDate] = useState(initialTravelDate || departures[0]?.date || "");
   const unitPrice = Number(tour.price_start_per_person || 0);
   const total = unitPrice * Math.max(1, adults + children);
   const dayCount = tour.number_of_days || 9;
@@ -96,8 +95,8 @@ export default function TourDetailExperience({ tour, images, initialAdults, init
             <div className="mt-5 space-y-2">{(departures.length ? departures : [{ date: "2026-09-12", slots: 8, status: "available" }, { date: "2026-09-20", slots: 12, status: "available" }, { date: "2026-09-26", slots: 5, status: "available" }]).map((entry, index) => <button type="button" key={entry.date} onClick={() => setSelectedDate(entry.date)} className={`flex w-full items-center justify-between rounded-lg border p-3 text-left transition ${selectedDate === entry.date || (!selectedDate && index === 0) ? "border-blue-400 bg-blue-50" : "border-slate-200 hover:border-blue-300"}`}><span><b className="block text-xs">{dateLabel(entry.date)}</b><small className={entry.slots <= 5 ? "font-bold text-amber-500" : "text-slate-500"}>{entry.slots} Seats Left</small></span><span className="text-right"><b className="block text-xs text-blue-600">{format(unitPrice + index * 28, tour.currency || "USD")}</b><small className="text-[9px] text-slate-400">per traveller</small></span></button>)}</div>
             <div className="mt-6 border-t pt-5"><h4 className="text-xs font-black uppercase">Who&apos;s travelling?</h4><Counter label="Adults" note="Ages 18 years and above" value={adults} setValue={setAdults} min={1} /><Counter label="Children" note="Ages 5–17" value={children} setValue={setChildren} min={0} /></div>
             <div className="mt-5 border-t pt-5 text-xs"><h4 className="font-black uppercase">Booking summary</h4><Summary label={`Tour Price (${adults + children} Guests)`} value={format(total, tour.currency || "USD")} /><Summary label="Taxes & Service Fees" value="Included" accent /><Summary label="Booking Fee" value="Free" accent /><div className="mt-4 flex items-end justify-between border-t pt-4"><span><b className="block">Total Amount</b><small className="text-slate-400">per booking</small></span><b className="text-xl">{format(total, tour.currency || "USD")}</b></div></div>
-            <button type="button" onClick={onBook} className="mt-5 w-full rounded-lg bg-blue-600 py-3.5 text-sm font-black text-white transition hover:bg-blue-700">Proceed to Payment</button>
-            <div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={onWishlist} className={`flex items-center justify-center gap-2 rounded-lg border py-2.5 text-xs font-bold ${wishlisted ? "border-red-200 bg-red-50 text-red-600" : "border-slate-200"}`}><Heart size={14} className={wishlisted ? "fill-current" : ""} />{wishlisted ? "Saved" : "Wishlist"}</button><button type="button" onClick={onCart} className={`flex items-center justify-center gap-2 rounded-lg border py-2.5 text-xs font-bold ${inCart ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200"}`}><ShoppingCart size={14} />{inCart ? "In cart" : "Add to cart"}</button></div>
+            <button type="button" onClick={() => onBook({ travelDate: selectedDate, adults, children })} className="mt-5 w-full rounded-lg bg-blue-600 py-3.5 text-sm font-black text-white transition hover:bg-blue-700">Book Now</button>
+            <button type="button" onClick={onWishlist} className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-xs font-bold ${wishlisted ? "border-red-200 bg-red-50 text-red-600" : "border-slate-200"}`}><Heart size={14} className={wishlisted ? "fill-current" : ""} />{wishlisted ? "Saved" : "Add to Wishlist"}</button>
           </aside>
         </div>
       </div>

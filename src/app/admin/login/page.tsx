@@ -20,7 +20,14 @@ export default function AdminLoginPage() {
   });
 
   const onSubmit = (values: LoginFormValues) => {
-    login({ ...values, email: normalizeEmail(values.email) });
+    void login(
+      { ...values, email: normalizeEmail(values.email) },
+      {
+        requiredDashboardTypes: ["admin", "super_admin", "sub_admin"],
+        unauthorizedMessage: "This login is only for authorized admin accounts.",
+        unauthorizedRedirect: "/admin/login",
+      },
+    );
   };
 
   if (!sessionLoading && isLoggedIn) return null;

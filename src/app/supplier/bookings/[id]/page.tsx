@@ -6,6 +6,10 @@ import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuPlay as Play, LuSend as Send, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DatePicker from "@/components/ui/DatePicker";
+import {
+  SupplierPageHeader,
+  SupplierPageShell,
+} from "@/components/supplier/SupplierPage";
 
 type Traveller = {
   id?: number;
@@ -463,7 +467,7 @@ export default function SupplierBookingDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-6 md:p-8">
+      <SupplierPageShell>
         <div className="mb-6 h-5 w-24 animate-pulse rounded bg-dash-border" />
         <div className="mb-6 h-8 w-64 animate-pulse rounded-lg bg-dash-border" />
         <div className="grid gap-5 lg:grid-cols-2">
@@ -471,13 +475,13 @@ export default function SupplierBookingDetailPage() {
             <div key={i} className="h-48 animate-pulse rounded-xl border border-dash-border bg-white" />
           ))}
         </div>
-      </div>
+      </SupplierPageShell>
     );
   }
 
   if (error || !booking) {
     return (
-      <div className="p-6 md:p-8">
+      <SupplierPageShell>
         <Link href="/supplier/bookings" className="inline-flex items-center gap-1.5 text-sm font-semibold text-dash-muted hover:text-dash-text">
           <ArrowLeft size={15} /> Bookings
         </Link>
@@ -489,40 +493,37 @@ export default function SupplierBookingDetailPage() {
             Retry
           </button>
         </div>
-      </div>
+      </SupplierPageShell>
     );
   }
 
   const pax = booking.total_travellers ?? booking.num_travellers ?? booking.total_pax;
 
   return (
-    <div className="p-6 md:p-8">
-      <Link href="/supplier/bookings" className="mb-5 inline-flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3 py-2 text-sm font-bold text-dash-body hover:bg-[#F3F8FC] transition-all">
-        <ArrowLeft size={15} /> Back to bookings
-      </Link>
-
-      {/* Hero header */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-7 text-white shadow-xl shadow-emerald-200/60 md:p-8">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-mono text-sm font-bold text-emerald-100">{booking.booking_code}</p>
-            <h1 className="mt-1 text-2xl font-black leading-tight md:text-3xl">{booking.tour_name ?? booking.tour_title ?? "Tour booking"}</h1>
-            <span className="mt-3 inline-flex items-center rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold capitalize text-slate-700">
-              {booking.booking_status.replace(/_/g, " ")}
-            </span>
-          </div>
+    <SupplierPageShell>
+      <SupplierPageHeader
+        eyebrow={`Booking ${booking.booking_code}`}
+        title={booking.tour_name ?? booking.tour_title ?? "Tour booking"}
+        description="Review traveller details, payment status and every booking update from one workspace."
+        icon={CalendarCheck}
+        actions={[
+          { label: "Back to bookings", href: "/supplier/bookings", icon: ArrowLeft },
+        ]}
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black capitalize text-emerald-700">
+            {booking.booking_status.replace(/_/g, " ")}
+          </span>
           <button
             type="button"
             onClick={() => setShowNotify(true)}
-            className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50 transition-all"
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-emerald-700"
           >
             <MessageSquare size={14} />
             Send Update
           </button>
         </div>
-      </div>
+      </SupplierPageHeader>
 
       {/* Toast */}
       {toast && (
@@ -629,7 +630,7 @@ export default function SupplierBookingDetailPage() {
           onSend={handleNotify}
         />
       )}
-    </div>
+    </SupplierPageShell>
   );
 }
 

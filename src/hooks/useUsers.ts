@@ -9,9 +9,11 @@ type UseUsersOptions = {
   page?: number;
   limit?: number;
   search?: string;
+  accountStatus?: string;
+  userType?: string;
 };
 
-export function useUsers({ enabled = true, page = 1, limit = 10, search = "" }: UseUsersOptions = {}) {
+export function useUsers({ enabled = true, page = 1, limit = 10, search = "", accountStatus = "", userType = "" }: UseUsersOptions = {}) {
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -28,7 +30,7 @@ export function useUsers({ enabled = true, page = 1, limit = 10, search = "" }: 
 
     try {
       const response = await api.get("/users/", {
-        params: { page, limit, search },
+        params: { page, limit, search, account_status: accountStatus, user_type: userType },
       });
       const items = response.data.items || response.data.data || [];
       setUsers(items);
@@ -39,7 +41,7 @@ export function useUsers({ enabled = true, page = 1, limit = 10, search = "" }: 
     } finally {
       setLoading(false);
     }
-  }, [enabled, limit, page, search]);
+  }, [accountStatus, enabled, limit, page, search, userType]);
 
   const createUser = async (data: UserFormData) => {
     setSaving(true);
@@ -83,8 +85,6 @@ export function useUsers({ enabled = true, page = 1, limit = 10, search = "" }: 
         city: data.city,
         pincode: data.pincode,
         role_id: data.role_id || null,
-        is_active: data.is_active,
-        approval_status: data.approval_status,
       });
 
       await fetchUsers();
@@ -107,40 +107,6 @@ export function useUsers({ enabled = true, page = 1, limit = 10, search = "" }: 
       return true;
     } catch {
       return false;
-    }
-  };
-
-  const approveUser = async (id: number, roleId?: number | "") => {
-    setSaving(true);
-
-    try {
-      await api.post(`/users/${id}/approve`, {
-        role_id: roleId || undefined,
-      });
-      await fetchUsers();
-      return true;
-    } catch {
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const rejectUser = async (id: number) => {
-    const confirmReject = confirm("Reject this user registration?");
-
-    if (!confirmReject) return false;
-
-    setSaving(true);
-
-    try {
-      await api.post(`/users/${id}/reject`);
-      await fetchUsers();
-      return true;
-    } catch {
-      return false;
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -172,8 +138,6 @@ export function useUsers({ enabled = true, page = 1, limit = 10, search = "" }: 
     createUser,
     updateUser,
     deleteUser,
-    approveUser,
-    rejectUser,
     sendPasswordReset,
   };
 }

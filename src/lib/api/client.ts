@@ -12,6 +12,10 @@ const PUBLIC_API_PATHS = [
   "/auth/reset-password",
   "/auth/reset-password/validate",
   "/auth/verify-email",
+  "/auth/complete-registration",
+  "/auth/resend-verification",
+  "/auth/change-registration-email",
+  "/auth/account-status",
   "/roles/public/options",
   "/countries",
   "/states",
@@ -22,9 +26,12 @@ const PUBLIC_API_PATHS = [
 const PUBLIC_PAGE_PATHS = [
   "/",
   "/login",
+  "/admin/login",
   "/register",
   "/forgot-password",
   "/reset-password",
+  "/auth/verify-email",
+  "/account-status",
   "/join",
   "/destinations",
   "/tours",
@@ -106,7 +113,7 @@ function hardLogout() {
         },
       })
     );
-    window.location.assign("/login");
+    window.location.assign(window.location.pathname.startsWith("/admin") ? "/admin/login" : "/login");
   }
 }
 

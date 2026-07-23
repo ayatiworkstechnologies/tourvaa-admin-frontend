@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuBell as Bell, LuBellRing as BellRing, LuCheckCheck as CheckCheck, LuVolume2 as Volume2, LuVolumeX as VolumeX } from "react-icons/lu";
+import { LuBell as Bell, LuBellRing as BellRing, LuCheckCheck as CheckCheck, LuRefreshCw as RefreshCw, LuVolume2 as Volume2, LuVolumeX as VolumeX } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import {
@@ -13,9 +13,12 @@ import {
 import { playNotificationSound, unlockNotificationSound } from "@/lib/utils/notificationSound";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/useToast";
+import {
+  isNotificationPushMessage,
+  NOTIFICATION_REFRESH_EVENT,
+} from "@/lib/notifications/events";
 
 const PAGE_SIZE = 15;
-const POLL_INTERVAL_MS = 30000;
 
 const READ_OPTIONS = [
   { label: "All", value: "" },
@@ -53,6 +56,11 @@ export default function NotificationsPage() {
 
   const knownIdsRef = useRef<Set<number>>(new Set());
   const initializedRef = useRef(false);
+  const soundEnabledRef = useRef(soundEnabled);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
 
   const fetchNotifications = useCallback(async () => {
     setIsLoading(true);
@@ -70,7 +78,7 @@ export default function NotificationsPage() {
       const nextIds = new Set(items.map((item) => item.id));
       const hasNewUnread = items.some((item) => !item.is_read && !knownIdsRef.current.has(item.id));
 
-      if (initializedRef.current && hasNewUnread && soundEnabled) {
+      if (initializedRef.current && hasNewUnread && soundEnabledRef.current) {
         playNotificationSound();
       }
       knownIdsRef.current = nextIds;
@@ -85,7 +93,7 @@ export default function NotificationsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, debouncedUserId, debouncedEntityType, debouncedEntityId, readFilter, soundEnabled]);
+  }, [currentPage, debouncedUserId, debouncedEntityType, debouncedEntityId, readFilter]);
 
   useEffect(() => {
     void fetchNotifications();
@@ -96,8 +104,17 @@ export default function NotificationsPage() {
   }, [debouncedUserId, debouncedEntityType, debouncedEntityId, readFilter]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => void fetchNotifications(), POLL_INTERVAL_MS);
-    return () => window.clearInterval(timer);
+    const refresh = () => void fetchNotifications();
+    const onServiceWorkerMessage = (event: MessageEvent) => {
+      if (isNotificationPushMessage(event.data)) refresh();
+    };
+
+    window.addEventListener(NOTIFICATION_REFRESH_EVENT, refresh);
+    navigator.serviceWorker?.addEventListener("message", onServiceWorkerMessage);
+    return () => {
+      window.removeEventListener(NOTIFICATION_REFRESH_EVENT, refresh);
+      navigator.serviceWorker?.removeEventListener("message", onServiceWorkerMessage);
+    };
   }, [fetchNotifications]);
 
   useEffect(() => {
@@ -191,6 +208,15 @@ export default function NotificationsPage() {
             <p className="mt-1 text-sm font-medium text-dash-muted">In-app and queued notification events across all users.</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void fetchNotifications()}
+              disabled={isLoading}
+              className="inline-flex items-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg disabled:opacity-60"
+            >
+              <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+              Refresh
+            </button>
             <button
               type="button"
               onClick={() => setSoundEnabled((v) => !v)}

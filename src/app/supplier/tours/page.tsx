@@ -2,8 +2,25 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuClock as Clock, LuEye as Eye, LuMapPinned as MapPinned, LuPencil as Pencil, LuPlus as Plus, LuSearch as Search, LuSendHorizontal as SendHorizonal } from "react-icons/lu";
+import {
+  LuArrowRight as ArrowRight,
+  LuCalendarDays as CalendarDays,
+  LuChevronLeft as ChevronLeft,
+  LuChevronRight as ChevronRight,
+  LuCircleAlert as AlertCircle,
+  LuCircleCheckBig as CheckCircle2,
+  LuClock3 as Clock,
+  LuEye as Eye,
+  LuMapPin as MapPin,
+  LuMapPinned as MapPinned,
+  LuPencil as Pencil,
+  LuPlus as Plus,
+  LuSearch as Search,
+  LuSendHorizontal as SendHorizontal,
+} from "react-icons/lu";
+import { SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
 import api from "@/lib/api/client";
+import { mediaUrl } from "@/lib/utils/mediaUrl";
 
 type Tour = {
   id: number;
@@ -16,49 +33,50 @@ type Tour = {
   country_name?: string;
   city_name?: string;
   category_name?: string;
+  banner_image?: string;
 };
 
-function statusColors(s: string) {
-  const v = (s || "").toLowerCase();
-  if (["active", "confirmed", "published"].includes(v))
-    return "bg-emerald-50 text-emerald-700";
-  if (["pending", "pending_approval", "submitted", "draft"].includes(v))
-    return "bg-amber-50 text-amber-700";
-  if (["rejected", "cancelled", "declined", "inactive"].includes(v))
-    return "bg-red-50 text-red-600";
-  return "bg-slate-50 text-slate-600";
+const STATUS_FILTERS = [
+  { value: "", label: "All Tours" },
+  { value: "draft", label: "Drafts" },
+  { value: "pending_approval", label: "In Review" },
+  { value: "published", label: "Published" },
+  { value: "rejected", label: "Needs Changes" },
+];
+
+function humanize(value: string) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function statusIcon(s: string) {
-  const v = (s || "").toLowerCase();
-  if (["active", "published"].includes(v))
-    return <CheckCircle2 size={12} className="text-emerald-600" />;
-  if (["pending", "pending_approval", "submitted", "draft"].includes(v))
-    return <Clock size={12} className="text-amber-600" />;
-  if (["rejected", "cancelled"].includes(v))
-    return <AlertCircle size={12} className="text-red-500" />;
-  return null;
+function statusColors(status: string) {
+  const value = (status || "").toLowerCase();
+  if (["active", "published"].includes(value)) return "bg-emerald-50 text-emerald-700 ring-emerald-100";
+  if (["pending", "pending_approval", "submitted", "draft"].includes(value)) return "bg-amber-50 text-amber-700 ring-amber-100";
+  if (["rejected", "cancelled", "inactive"].includes(value)) return "bg-rose-50 text-rose-600 ring-rose-100";
+  return "bg-slate-50 text-slate-600 ring-slate-100";
 }
 
 export default function SupplierToursPage() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<number | null>(null);
   const limit = 12;
 
-  // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
     }, 400);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [search]);
 
   const load = useCallback(async () => {
@@ -67,269 +85,190 @@ export default function SupplierToursPage() {
     try {
       const params: Record<string, string | number> = { limit, page };
       if (debouncedSearch) params.search = debouncedSearch;
-      const res = await api.get("/tours", { params });
-      const data = res.data;
+      if (status) params.status = status;
+      const response = await api.get("/tours", { params });
+      const data = response.data;
       setTours(data?.items ?? data?.data ?? data ?? []);
-      if (data?.total && data?.limit) {
-        setTotalPages(Math.ceil(data.total / data.limit));
-      } else {
-        setTotalPages(1);
-      }
+      setTotal(Number(data?.total ?? 0));
+      setTotalPages(Number(data?.total_pages ?? Math.max(1, Math.ceil(Number(data?.total ?? 0) / limit))));
     } catch {
-      setError("Failed to load tours. Please try again.");
+      setError("Tours could not be loaded. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, page]);
+  }, [debouncedSearch, page, status]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const handleSubmitForApproval = async (tourId: number) => {
+  async function handleSubmitForApproval(tourId: number) {
     setSubmittingId(tourId);
+    setActionError("");
     try {
       await api.post(`/tours/${tourId}/submit-for-approval`);
       setSubmitSuccess(tourId);
-      setTimeout(() => setSubmitSuccess(null), 3000);
-      void load();
+      window.setTimeout(() => setSubmitSuccess(null), 3000);
+      await load();
     } catch {
-      // silent
+      setActionError("This tour could not be submitted. Complete the required tour details and try again.");
     } finally {
       setSubmittingId(null);
     }
-  };
+  }
 
   return (
-    <div className="p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative mb-8 overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-7 text-white shadow-xl shadow-emerald-200/60 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">My Tours</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-emerald-100">
-              Manage and publish your tour offerings.
-            </p>
+    <SupplierPageShell>
+      <SupplierPageHeader
+        title="My Tours"
+        description="Create, improve, preview, and submit every package from one organised catalogue."
+        icon={MapPinned}
+        eyebrow="Tour Workspace"
+        actions={[{ label: "Create New Tour", href: "/supplier/tours/create", icon: Plus }]}
+      >
+        <div className="flex flex-wrap items-center gap-3 text-[11px]">
+          <span className="rounded-full bg-emerald-50 px-3 py-2 font-bold text-emerald-700">{total} tour{total === 1 ? "" : "s"} in this view</span>
+          <span className="rounded-full bg-slate-50 px-3 py-2 font-bold text-[#61776A]">Edit drafts anytime · Published changes return to review</span>
+        </div>
+      </SupplierPageHeader>
+
+      {(submitSuccess || actionError || error) && (
+        <div className={`mt-4 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${
+          submitSuccess ? "border-emerald-200 bg-emerald-50 text-emerald-700" : actionError ? "border-amber-200 bg-amber-50 text-amber-800" : "border-rose-200 bg-rose-50 text-rose-700"
+        }`}>
+          <span className="flex items-center gap-2">{submitSuccess ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}{submitSuccess ? "Tour submitted for approval successfully." : actionError || error}</span>
+          {error && <button type="button" onClick={() => void load()} className="text-xs font-black underline">Retry</button>}
+        </div>
+      )}
+
+      <SupplierSection className="mt-4">
+        <div className="border-b border-[#E5EFE9] p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative max-w-lg flex-1">
+              <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7B9084]" />
+              <input
+                type="search"
+                placeholder="Search by tour name or code..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="h-11 w-full rounded-xl border border-[#D5E6DB] bg-white pl-11 pr-4 text-sm outline-none transition focus:border-[#16833A] focus:ring-4 focus:ring-emerald-50"
+              />
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {STATUS_FILTERS.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => { setStatus(item.value); setPage(1); }}
+                  className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-black transition ${
+                    status === item.value ? "bg-[#16833A] text-white shadow-sm" : "border border-[#D8E7DE] bg-white text-[#5F776A] hover:bg-[#F0F8F3]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <Link
-            href="/supplier/tours/create"
-            className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50 transition-all hover:-translate-y-0.5"
-          >
-            <Plus size={18} strokeWidth={2.5} />
-            Create Tour
-          </Link>
         </div>
-      </div>
 
-      {/* Search */}
-      <div className="mb-6 relative max-w-md">
-        <Search
-          size={18}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-dash-subtle"
-        />
-        <input
-          type="text"
-          placeholder="Search tours by name..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-2xl border border-dash-border/80 bg-white py-3 pl-11 pr-4 text-sm font-medium shadow-[0_2px_8px_rgb(0,0,0,0.02)] outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10 transition-all"
-        />
-      </div>
-
-      {/* Success message */}
-      {submitSuccess && (
-        <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-          <CheckCircle2 size={16} />
-          Tour submitted for approval successfully!
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="mb-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
-          <span className="flex items-center gap-2">
-            <AlertCircle size={16} />
-            {error}
-          </span>
-          <button
-            type="button"
-            onClick={load}
-            className="text-xs font-bold underline"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      {/* Loading skeleton */}
-      {loading && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-48 animate-pulse rounded-xl border border-dash-border bg-white"
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Empty state */}
-      {!loading && !error && tours.length === 0 && (
-        <div className="rounded-xl border border-dashed border-[#D0D5DD] py-16 text-center">
-          <MapPinned size={36} className="mx-auto text-[#D0D5DD]" />
-          <p className="mt-4 text-base font-bold text-dash-muted">
-            {debouncedSearch ? "No tours found" : "No tours yet"}
-          </p>
-          <p className="mt-1 text-sm text-dash-subtle">
-            {debouncedSearch
-              ? "Try a different search term."
-              : "Create your first tour to get started."}
-          </p>
-          {!debouncedSearch && (
-            <Link
-              href="/supplier/tours/create"
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
-            >
-              <Plus size={16} />
-              Create Tour
-            </Link>
-          )}
-        </div>
-      )}
-
-      {/* Tours grid */}
-      {!loading && tours.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tours.map((tour) => {
-            const canSubmit = ["draft", "rejected"].includes(
-              tour.status?.toLowerCase()
-            );
-            const isPending = ["pending_approval", "submitted"].includes(
-              tour.status?.toLowerCase()
-            );
-            return (
-              <div
-                key={tour.id}
-                className="group flex flex-col rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] hover:shadow-xl hover:border-dash-brand/30 transition-all duration-300 hover:-translate-y-1"
-              >
-                {/* Title & status */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-dash-text leading-snug line-clamp-2">
-                      {tour.title}
-                    </p>
-                    <p className="mt-1 text-xs text-dash-subtle">
-                      {tour.tour_code}
-                    </p>
+        {loading ? (
+          <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-80 animate-pulse rounded-2xl bg-slate-100" />)}
+          </div>
+        ) : !error && tours.length === 0 ? (
+          <EmptyTours
+            filtered={Boolean(debouncedSearch || status)}
+            onClear={() => {
+              setSearch("");
+              setStatus("");
+              setPage(1);
+            }}
+          />
+        ) : (
+          <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
+            {tours.map((tour) => {
+              const normalizedStatus = tour.status?.toLowerCase();
+              const canSubmit = ["draft", "rejected"].includes(normalizedStatus);
+              const isPending = ["pending_approval", "submitted"].includes(normalizedStatus);
+              return (
+                <article key={tour.id} className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#DCE8E0] bg-white shadow-[0_10px_30px_-25px_rgba(15,82,48,.75)] transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_18px_38px_-25px_rgba(15,82,48,.65)]">
+                  <div className="relative h-40 overflow-hidden bg-[#EAF7EF]">
+                    {tour.banner_image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={mediaUrl(tour.banner_image)} alt={tour.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center"><MapPinned size={38} className="text-emerald-300" /></div>
+                    )}
+                    <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[9px] font-black ring-1 backdrop-blur ${statusColors(tour.status)}`}>
+                      {humanize(tour.status)}
+                    </span>
                   </div>
-                  <span
-                    className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${statusColors(tour.status)}`}
-                  >
-                    {statusIcon(tour.status)}
-                    {tour.status}
-                  </span>
-                </div>
 
-                {/* Meta */}
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-dash-muted">
-                  {tour.country_name && (
-                    <span className="rounded-lg bg-dash-bg-muted px-2 py-1">
-                      {tour.country_name}
-                    </span>
-                  )}
-                  {tour.city_name && (
-                    <span className="rounded-lg bg-dash-bg-muted px-2 py-1">
-                      {tour.city_name}
-                    </span>
-                  )}
-                  {tour.number_of_days > 0 && (
-                    <span className="rounded-lg bg-dash-bg-muted px-2 py-1">
-                      {tour.number_of_days} days
-                    </span>
-                  )}
-                </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    <p className="text-[9px] font-black uppercase tracking-[.12em] text-[#16833A]">{tour.tour_code || `Tour #${tour.id}`}</p>
+                    <h2 className="mt-2 line-clamp-2 text-base font-black leading-snug text-[#123024]">{tour.title}</h2>
 
-                {/* Price */}
-                <p className="mt-3 text-sm font-bold text-dash-text">
-                  {tour.currency || "USD"}{" "}
-                  {Number(tour.price_start_per_person || 0).toLocaleString()}{" "}
-                  <span className="text-xs font-normal text-dash-subtle">
-                    / person
-                  </span>
-                </p>
+                    <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-[#647A6E]">
+                      {(tour.city_name || tour.country_name) && <span className="inline-flex items-center gap-1 rounded-lg bg-[#F2F8F4] px-2 py-1.5"><MapPin size={11} /> {[tour.city_name, tour.country_name].filter(Boolean).join(", ")}</span>}
+                      {tour.number_of_days > 0 && <span className="inline-flex items-center gap-1 rounded-lg bg-[#F2F8F4] px-2 py-1.5"><CalendarDays size={11} /> {tour.number_of_days} days</span>}
+                    </div>
 
-                {/* Pending notice */}
-                {isPending && (
-                  <p className="mt-2 text-xs text-amber-600 font-semibold">
-                    Awaiting admin review
-                  </p>
-                )}
+                    <div className="mt-4 flex items-end justify-between gap-3 border-t border-[#E8F0EB] pt-4">
+                      <span>
+                        <span className="block text-[9px] text-[#788C80]">Starting from</span>
+                        <b className="mt-0.5 block text-lg text-[#123024]">{tour.currency || "USD"} {Number(tour.price_start_per_person || 0).toLocaleString()}</b>
+                      </span>
+                      {isPending && <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700"><Clock size={11} /> Admin review</span>}
+                    </div>
 
-                {/* Actions */}
-                <div className="mt-auto flex gap-2 pt-6">
-                  <Link
-                    href={`/supplier/tours/${tour.id}/edit`}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-dash-border/80 bg-white px-3 py-2 text-xs font-bold text-dash-body shadow-sm hover:bg-[#F3F8FC] hover:text-dash-brand transition-all"
-                  >
-                    <Pencil size={14} />
-                    Edit
-                  </Link>
-                  <Link
-                    href={`/supplier/tours/${tour.id}/preview`}
-                    target="_blank"
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-dash-border/80 bg-white px-3 py-2 text-xs font-bold text-dash-body shadow-sm hover:bg-[#F3F8FC] hover:text-dash-brand transition-all"
-                  >
-                    <Eye size={14} />
-                  </Link>
-                  {canSubmit && (
-                    <button
-                      type="button"
-                      disabled={submittingId === tour.id}
-                      onClick={() => handleSubmitForApproval(tour.id)}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-dash-brand px-3 py-2 text-xs font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] hover:bg-dash-brand-hover disabled:opacity-60 transition-all"
-                    >
-                      {submittingId === tour.id ? (
-                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      ) : (
-                        <SendHorizonal size={14} />
+                    <div className="mt-auto grid grid-cols-[1fr_auto] gap-2 pt-5">
+                      <Link href={`/supplier/tours/${tour.id}/edit`} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#16833A] px-3 py-2.5 text-xs font-black text-white hover:bg-[#117331]">
+                        <Pencil size={14} /> Edit Tour
+                      </Link>
+                      <Link href={`/supplier/tours/${tour.id}/preview`} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D5E6DB] text-[#527060] hover:bg-[#F0F8F3] hover:text-[#16833A]" aria-label={`Preview ${tour.title}`}>
+                        <Eye size={15} />
+                      </Link>
+                      {canSubmit && (
+                        <button
+                          type="button"
+                          disabled={submittingId === tour.id}
+                          onClick={() => void handleSubmitForApproval(tour.id)}
+                          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-[#CFE3D6] bg-[#F0F8F3] px-3 py-2.5 text-xs font-black text-[#16833A] hover:bg-[#E4F4E9] disabled:opacity-60"
+                        >
+                          {submittingId === tour.id ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#16833A] border-t-transparent" /> : <SendHorizontal size={14} />}
+                          Submit for Approval
+                        </button>
                       )}
-                      Submit
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </SupplierSection>
+
+      {!loading && totalPages > 1 && (
+        <div className="mt-5 flex items-center justify-center gap-3">
+          <button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)} className="inline-flex items-center gap-1 rounded-xl border border-[#D5E6DB] bg-white px-3 py-2 text-xs font-black text-[#527060] disabled:opacity-40"><ChevronLeft size={14} /> Previous</button>
+          <span className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-[#647A6E] ring-1 ring-[#DCEBE2]">Page {page} of {totalPages}</span>
+          <button type="button" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)} className="inline-flex items-center gap-1 rounded-xl border border-[#D5E6DB] bg-white px-3 py-2 text-xs font-black text-[#527060] disabled:opacity-40">Next <ChevronRight size={14} /></button>
         </div>
       )}
+    </SupplierPageShell>
+  );
+}
 
-      {/* Pagination */}
-      {!loading && totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="flex items-center gap-1 rounded-xl border border-dash-border bg-white px-3 py-2 text-sm font-semibold text-dash-body disabled:opacity-40 hover:bg-dash-bg-muted"
-          >
-            <ChevronLeft size={15} />
-            Prev
-          </button>
-          <span className="text-sm font-semibold text-dash-muted">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            type="button"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="flex items-center gap-1 rounded-xl border border-dash-border bg-white px-3 py-2 text-sm font-semibold text-dash-body disabled:opacity-40 hover:bg-dash-bg-muted"
-          >
-            Next
-            <ChevronRight size={15} />
-          </button>
-        </div>
+function EmptyTours({ filtered, onClear }: { filtered: boolean; onClear: () => void }) {
+  return (
+    <div className="flex min-h-[420px] flex-col items-center justify-center px-5 py-16 text-center">
+      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#EAF7EF] text-[#16833A]"><MapPinned size={34} /></span>
+      <h2 className="mt-5 text-xl font-black text-[#123024]">{filtered ? "No tours match this view" : "Create your first tour"}</h2>
+      <p className="mt-2 max-w-md text-sm leading-6 text-[#6B8074]">{filtered ? "Try another status or search term." : "Build your catalogue with pricing, itinerary, availability, and polished traveller-facing content."}</p>
+      {filtered ? (
+        <button type="button" onClick={onClear} className="mt-6 text-sm font-black text-[#16833A]">Clear filters <ArrowRight size={14} className="ml-1 inline" /></button>
+      ) : (
+        <Link href="/supplier/tours/create" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#16833A] px-5 py-3 text-sm font-black text-white"><Plus size={16} /> Create New Tour</Link>
       )}
     </div>
   );

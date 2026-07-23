@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuBriefcaseBusiness as BriefcaseBusiness, LuCalendarCheck as CalendarCheck, LuFileText as FileText, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPlus as Plus, LuUser as User, LuUsers as Users } from "react-icons/lu";
+import { LuBriefcaseBusiness as BriefcaseBusiness, LuCalendarCheck as CalendarCheck, LuFileText as FileText, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuUser as User, LuUsers as Users } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
@@ -13,7 +13,6 @@ const NAV = [
   { href: "/agent/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/agent/tours", icon: MapPinned, label: "Browse Tours", section: "Sales Workspace" },
   { href: "/agent/bookings", icon: CalendarCheck, label: "Bookings", section: "Sales Workspace" },
-  { href: "/agent/bookings/create", icon: Plus, label: "New Booking", section: "Sales Workspace" },
   { href: "/agent/customers", icon: Users, label: "My Customers", section: "Sales Workspace" },
   { href: "/agent/invoices", icon: FileText, label: "Invoices", section: "Finance" },
   { href: "/agent/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
@@ -24,7 +23,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/agent/dashboard": "Dashboard",
   "/agent/tours": "Browse Tours",
   "/agent/bookings": "Bookings",
-  "/agent/bookings/create": "New Booking",
   "/agent/customers": "My Customers",
   "/agent/invoices": "Invoices",
   "/agent/messages": "Messages",

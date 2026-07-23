@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuFileText as FileText, LuMapPinned as MapPinned, LuPackageCheck as PackageCheck, LuPlus as Plus, LuUsers as Users } from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuFileText as FileText, LuMapPinned as MapPinned, LuPackageCheck as PackageCheck, LuUsers as Users } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";
 import DatePicker from "@/components/ui/DatePicker";
+import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 
 type Summary = {
   total_bookings?: number;
@@ -28,10 +29,18 @@ type Booking = {
   currency?: string;
 };
 
+type AgentProfile = {
+  discount_type?: "percentage" | "fixed" | null;
+  discount_value?: number;
+  commission_request_type?: "percentage" | "fixed" | null;
+  commission_request_value?: number | null;
+  commission_request_status?: "pending" | "approved" | "rejected" | null;
+};
+
 function statusColors(s: string) {
   const v = (s || "").toLowerCase();
   if (["active", "confirmed", "paid", "completed", "published"].includes(v)) return "bg-emerald-50 text-emerald-700";
-  if (["pending", "pending_payment", "submitted", "draft"].includes(v)) return "bg-amber-50 text-amber-700";
+  if (["pending", "pending_payment", "pending_credit_approval", "pending_supplier_acceptance", "supplier_reassignment_required", "submitted", "draft"].includes(v)) return "bg-amber-50 text-amber-700";
   if (["rejected", "cancelled", "declined", "failed"].includes(v)) return "bg-red-50 text-red-600";
   return "bg-slate-50 text-slate-600";
 }
@@ -41,6 +50,11 @@ export default function AgentDashboardPage() {
   const { formatCompact } = useCurrency();
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [agentProfile, setAgentProfile] = useState<AgentProfile | null>(null);
+  const [commissionType, setCommissionType] = useState<"percentage" | "fixed">("percentage");
+  const [commissionValue, setCommissionValue] = useState("");
+  const [commissionMessage, setCommissionMessage] = useState("");
+  const [commissionSubmitting, setCommissionSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({ start_date: "", end_date: "", status: "" });
@@ -58,13 +72,15 @@ export default function AgentDashboardPage() {
           end_date: filters.end_date || undefined,
           booking_status: filters.status || undefined,
         };
-        const [sumRes, bookRes] = await Promise.allSettled([
+        const [sumRes, bookRes, agentRes] = await Promise.allSettled([
           api.get("/dashboard/summary", { params: summaryParams }),
           api.get("/bookings", { params: bookingParams }),
+          api.get("/agents/me"),
         ]);
         if (sumRes.status === "fulfilled") setSummary(sumRes.value.data?.data ?? {});
         if (bookRes.status === "fulfilled") setBookings(bookRes.value.data?.items ?? bookRes.value.data?.data ?? []);
-        if (sumRes.status === "rejected" || bookRes.status === "rejected") {
+        if (agentRes.status === "fulfilled") setAgentProfile(agentRes.value.data?.data ?? null);
+        if (sumRes.status === "rejected" || bookRes.status === "rejected" || agentRes.status === "rejected") {
           setError("Some dashboard data could not be loaded. Retry to refresh the figures.");
         }
       } finally {
@@ -73,6 +89,26 @@ export default function AgentDashboardPage() {
   }, [filters]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const requestCommission = async () => {
+    const value = Number(commissionValue);
+    if (!Number.isFinite(value) || value <= 0 || (commissionType === "percentage" && value > 100)) {
+      setCommissionMessage(commissionType === "percentage" ? "Enter a percentage between 0 and 100." : "Enter a valid fixed amount.");
+      return;
+    }
+    setCommissionSubmitting(true);
+    setCommissionMessage("");
+    try {
+      const response = await api.post("/agents/me/commission-request", { discount_type: commissionType, discount_value: value });
+      setAgentProfile(response.data?.data ?? null);
+      setCommissionValue("");
+      setCommissionMessage("Commission request sent for admin approval.");
+    } catch {
+      setCommissionMessage("Commission request could not be submitted.");
+    } finally {
+      setCommissionSubmitting(false);
+    }
+  };
 
   const stats = [
     { label: "Total Bookings", value: summary.total_bookings ?? bookings.length, icon: CalendarCheck, sub: "Filtered", href: "/agent/bookings" },
@@ -84,23 +120,14 @@ export default function AgentDashboardPage() {
   ];
 
   return (
-    <div className="space-y-6 px-5 pb-8 md:px-9">
-      {/* Gradient hero banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-10 text-white shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
-        <div className="relative z-10">
-          <span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-blue-100 backdrop-blur-md">Agent Portal</span>
-          <h2 className="mt-4 text-[32px] leading-tight font-black tracking-tight text-white">Manage bookings & customers</h2>
-          <p className="mt-2 text-sm text-white/80 max-w-lg">Create bookings, track commissions, and manage your customer relationships.</p>
-        </div>
-        <div className="relative z-10 mt-6 md:mt-0 flex flex-col items-center justify-center rounded-2xl bg-white/10 px-8 py-5 backdrop-blur-md border border-white/20 shadow-xl hidden sm:flex">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">SIGNED IN AS</span>
-          <span className="text-xl font-black text-white leading-none">{user?.name}</span>
-          <span className="text-xs text-white/70 mt-1">Agent / Reseller</span>
-        </div>
-        
-        {/* Subtle background flare */}
-        <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
-      </div>
+    <AgentPageShell>
+      <AgentPageHeader
+        title={`Welcome back, ${user?.name || "Agent"}`}
+        description="Create customer bookings, track sales performance, and manage every traveller relationship."
+        icon={PackageCheck}
+        eyebrow="Agent Dashboard"
+        actions={[{ label: "Browse Tours", href: "/agent/tours", icon: MapPinned }]}
+      />
 
       {/* Stat cards */}
       {error && (
@@ -110,35 +137,47 @@ export default function AgentDashboardPage() {
         </div>
       )}
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-24 animate-pulse rounded-xl border border-dash-border bg-white" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map(({ label, value, icon: Icon, sub, href }) => (
-            <Link key={label} href={href} className="group flex items-center justify-between rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] hover:shadow-xl hover:border-dash-brand/30 transition-all duration-300 hover:-translate-y-1">
-              <div className="flex items-center gap-5">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--portal-soft)] text-dash-brand group-hover:bg-dash-brand group-hover:text-white transition-colors duration-300 shadow-sm">
-                  <Icon size={24} strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-dash-muted uppercase tracking-wider">{label}</p>
-                  <p className="mt-1 text-2xl font-black text-dash-text">{value}</p>
-                </div>
-              </div>
-              <span className="rounded-md bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-dash-muted border border-slate-100">{sub}</span>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {stats.map(({ label, value, icon, sub, href }) => (
+            <Link key={label} href={href} className="transition hover:-translate-y-0.5">
+              <AgentMetric label={label} value={value} icon={icon} note={sub} />
             </Link>
           ))}
         </div>
       )}
 
+      <AgentSection className="mt-4" title="Commission Setup" description="Commission is managed in your agent dashboard and is never shown in the public booking checkout.">
+        <div className="grid gap-5 p-5 lg:grid-cols-[1fr_1.4fr]">
+          <div className="rounded-xl border border-dash-border bg-[var(--portal-soft)] p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-dash-muted">Approved commission</p>
+            <p className="mt-2 text-2xl font-black text-dash-text">{Number(agentProfile?.discount_value || 0).toLocaleString()}{agentProfile?.discount_type === "percentage" ? "%" : " fixed"}</p>
+            <p className="mt-2 text-xs text-dash-muted">Applied by the backend to eligible completed agent bookings.</p>
+            {agentProfile?.commission_request_status && <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold ${agentProfile.commission_request_status === "pending" ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-700"}`}>Request {agentProfile.commission_request_status}</span>}
+          </div>
+          <div>
+            <p className="text-sm font-bold text-dash-text">Request a commission rate</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-[160px_1fr_auto]">
+              <select value={commissionType} onChange={(event) => setCommissionType(event.target.value as "percentage" | "fixed")} className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand">
+                <option value="percentage">Percentage</option>
+                <option value="fixed">Fixed amount</option>
+              </select>
+              <input type="number" min="0" max={commissionType === "percentage" ? 100 : undefined} step="0.01" value={commissionValue} onChange={(event) => setCommissionValue(event.target.value)} placeholder={commissionType === "percentage" ? "Requested %" : "Requested amount"} className="rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+              <button type="button" disabled={commissionSubmitting || agentProfile?.commission_request_status === "pending"} onClick={() => void requestCommission()} className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-50">{commissionSubmitting ? "Sending…" : agentProfile?.commission_request_status === "pending" ? "Pending approval" : "Send request"}</button>
+            </div>
+            {commissionMessage && <p className="mt-2 text-xs font-semibold text-dash-muted">{commissionMessage}</p>}
+          </div>
+        </div>
+      </AgentSection>
+
       {/* Dashboard Filters */}
-      <div className="rounded-3xl border border-dash-border/60 bg-white p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
-        <h2 className="font-black text-dash-text">Dashboard Filters</h2>
-        <p className="mt-0.5 text-sm text-dash-muted">Filter booking data by date range and status.</p>
-        <div className="mt-4 flex flex-wrap items-end gap-4">
+      <AgentSection className="mt-4" title="Dashboard Filters" description="Filter booking data by date range and status.">
+        <div className="flex flex-wrap items-end gap-4 p-5">
           <DatePicker label="Start date" value={filters.start_date} maxDate={filters.end_date || undefined} onChange={(date) => setFilters((filters) => ({ ...filters, start_date: date }))} className="min-w-52" />
           <DatePicker label="End date" value={filters.end_date} minDate={filters.start_date || undefined} onChange={(date) => setFilters((filters) => ({ ...filters, end_date: date }))} className="min-w-52" />
           <div className="flex flex-col gap-1">
@@ -148,7 +187,9 @@ export default function AgentDashboardPage() {
               <option value="">All Statuses</option>
               <option value="confirmed">Confirmed</option>
               <option value="pending_payment">Pending Payment</option>
+              <option value="pending_credit_approval">Pending Credit Approval</option>
               <option value="pending_supplier_acceptance">Pending Supplier</option>
+              <option value="supplier_reassignment_required">Supplier Reassignment</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
               <option value="declined">Declined</option>
@@ -159,18 +200,13 @@ export default function AgentDashboardPage() {
             ⊘ Reset
           </button>
         </div>
-      </div>
+      </AgentSection>
 
       {/* Two-column panels */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Booking Analytics */}
-        <div className="rounded-3xl border border-dash-border/60 bg-white p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-black text-dash-text">Booking Analytics</h2>
-            <Link href="/agent/bookings" className="flex items-center gap-1 text-sm font-bold text-dash-brand hover:underline">
-              View all <ArrowRight size={13} />
-            </Link>
-          </div>
+        <AgentSection title="Booking Analytics" action={{ label: "View all", href: "/agent/bookings", icon: ArrowRight }}>
+          <div className="p-5">
           {bookings.length === 0 ? (
             <p className="py-6 text-center text-sm text-dash-muted">No bookings yet.</p>
           ) : (
@@ -191,16 +227,16 @@ export default function AgentDashboardPage() {
               ))}
             </div>
           )}
-        </div>
+          </div>
+        </AgentSection>
 
         {/* Agent finance and operations */}
-        <div className="rounded-3xl border border-dash-border/60 bg-white p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
-          <h2 className="mb-4 font-black text-dash-text">Finance & Operations</h2>
-          <div className="space-y-3">
+        <AgentSection title="Finance & Operations" description="Common sales and finance actions.">
+          <div className="space-y-3 p-5">
             {[
               { label: "Booking invoices", href: "/agent/invoices" },
               { label: "Booking payment status", href: "/agent/bookings" },
-              { label: "Create a customer booking", href: "/agent/bookings/create" },
+              { label: "Browse tours to book", href: "/agent/tours" },
               { label: "Manage customer accounts", href: "/agent/customers" },
             ].map(({ label, href }) => (
               <Link key={label} href={href}
@@ -209,13 +245,12 @@ export default function AgentDashboardPage() {
               </Link>
             ))}
           </div>
-        </div>
+        </AgentSection>
       </div>
 
       {/* Quick nav */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { href: "/agent/bookings/create", label: "New Booking", icon: Plus },
           { href: "/agent/tours", label: "Browse Tours", icon: MapPinned },
           { href: "/agent/customers", label: "My Customers", icon: Users },
           { href: "/agent/invoices", label: "Invoices", icon: FileText },
@@ -225,6 +260,6 @@ export default function AgentDashboardPage() {
           </Link>
         ))}
       </div>
-    </div>
+    </AgentPageShell>
   );
 }

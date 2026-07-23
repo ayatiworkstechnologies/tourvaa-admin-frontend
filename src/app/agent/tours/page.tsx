@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuClock as Clock, LuMapPin as MapPin, LuPlus as Plus, LuRefreshCw as RefreshCw, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuClock as Clock, LuMapPin as MapPin, LuRefreshCw as RefreshCw, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
+import { publicTourUrl } from "@/lib/utils/tourUrl";
 
 type Tour = {
   id: number;
@@ -88,29 +90,19 @@ export default function AgentToursPage() {
   }
 
   return (
-    <div className="p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-blue-200/40 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Browse Tours</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-blue-100">
-              Find and book tours for your customers.{total > 0 && ` ${total} tours available.`}
-            </p>
-          </div>
-          <Link
-            href="/agent/bookings/create"
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-dash-brand-dark shadow-sm transition hover:bg-[var(--portal-soft)]"
-          >
-            <Plus size={16} /> Create Booking
-          </Link>
-        </div>
-      </div>
+    <AgentPageShell>
+      <AgentPageHeader
+        title="Browse Tours"
+        description="Explore live Tourvaa inventory and start a customer booking directly from any package."
+        icon={MapPin}
+        eyebrow="Sales Catalogue"
+      >
+        <span className="rounded-full bg-blue-50 px-3 py-2 text-[11px] font-black text-blue-700">{total} published tour{total === 1 ? "" : "s"} available</span>
+      </AgentPageHeader>
 
       {/* Search */}
-      <form onSubmit={handleSearch} className="mt-6 flex gap-3">
+      <AgentSection className="mt-4">
+      <form onSubmit={handleSearch} className="flex gap-3 border-b border-[#E7EDF6] p-4">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dash-subtle" />
           <input
@@ -137,11 +129,11 @@ export default function AgentToursPage() {
 
       {/* Tours Grid */}
       {loading && page === 1 ? (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => <TourSkeleton key={i} />)}
         </div>
       ) : tours.length === 0 ? (
-        <div className="mt-10 flex flex-col items-center justify-center rounded-xl border border-dashed border-[#D9DEE8] py-16 text-center">
+        <div className="flex min-h-96 flex-col items-center justify-center py-16 text-center">
           <MapPin size={36} className="text-dash-subtle" />
           <p className="mt-3 font-bold text-dash-text">No tours found</p>
           <p className="mt-1 text-sm text-dash-muted">Try a different search term or clear the filter.</p>
@@ -157,11 +149,11 @@ export default function AgentToursPage() {
         </div>
       ) : (
         <>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {tours.map((tour) => (
               <div
                 key={tour.id}
-                className="group overflow-hidden rounded-xl border border-dash-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className="group overflow-hidden rounded-2xl border border-[#DFE7F2] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
               >
                 {/* Thumbnail */}
                 <div className="relative h-44 overflow-hidden bg-[var(--portal-soft)]">
@@ -212,10 +204,10 @@ export default function AgentToursPage() {
                       </p>
                     </div>
                     <Link
-                      href={`/agent/bookings/create?tour_id=${tour.id}`}
+                      href={publicTourUrl(tour)}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white transition hover:bg-dash-brand-hover"
                     >
-                      <Plus size={13} /> Book This
+                      Book This
                     </Link>
                   </div>
                 </div>
@@ -237,6 +229,7 @@ export default function AgentToursPage() {
           )}
         </>
       )}
-    </div>
+      </AgentSection>
+    </AgentPageShell>
   );
 }

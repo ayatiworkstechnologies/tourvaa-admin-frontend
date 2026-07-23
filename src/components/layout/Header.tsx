@@ -87,7 +87,7 @@ export default function Header({
 
   return (
     <header className={`sticky z-30 border-b border-[#E8ECF3] bg-white/95 shadow-[0_1px_6px_-1px_rgba(15,23,42,0.06)] backdrop-blur-xl ${headerOffset ? "top-20" : "top-0"}`}>
-      <div className={`flex items-center justify-between px-4 sm:px-6 md:px-9 ${spacious ? "h-20" : "h-[70px]"}`}>
+      <div className={`flex min-w-0 items-center justify-between gap-2 px-3 sm:px-6 md:px-9 ${spacious ? "h-20" : "h-[70px]"}`}>
 
         {/* left */}
         <div className="flex min-w-0 items-center gap-3">
@@ -101,10 +101,10 @@ export default function Header({
           </button>
 
           <div className="min-w-0">
-            <h1 className="truncate text-[20px] font-extrabold leading-tight tracking-tight text-[#0C1524]">
+            <h1 className="truncate text-[17px] font-extrabold leading-tight tracking-tight text-[#0C1524] sm:text-[20px]">
               {headerTitle}
             </h1>
-            <p className="mt-0.5 text-[12px] font-medium text-[#94A3B8]">{role}</p>
+            <p className="mt-0.5 hidden truncate text-[12px] font-medium text-[#94A3B8] sm:block">{role}</p>
           </div>
         </div>
 
@@ -146,7 +146,7 @@ export default function Header({
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
-              className={`flex items-center gap-3 rounded-2xl border bg-white py-1.5 pl-1.5 pr-3 transition-all duration-200 hover:shadow-md ${
+              className={`flex items-center gap-1 rounded-2xl border bg-white py-1.5 pl-1.5 pr-1.5 transition-all duration-200 hover:shadow-md sm:gap-3 sm:pr-3 ${
                 open ? "border-dash-brand/50 shadow-md ring-2 ring-dash-brand/15" : "border-[#E8ECF3] shadow-sm hover:border-[#C5D2DF]"
               }`}
             >
@@ -171,13 +171,13 @@ export default function Header({
                 <span className="mt-0.5 text-[12px] font-medium leading-tight text-[#94A3B8]">{role}</span>
               </div>
 
-              <ChevronDown size={14} className={`ml-0.5 text-[#94A3B8] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+              <ChevronDown size={14} className={`ml-0.5 hidden text-[#94A3B8] transition-transform duration-200 sm:block ${open ? "rotate-180" : ""}`} />
             </button>
 
             {open && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-                <div className="absolute right-0 top-14.5 z-50 w-60 overflow-hidden rounded-2xl border border-[#E8ECF3] bg-white shadow-[0_16px_48px_-8px_rgba(15,23,42,0.16)]">
+                <div className="absolute right-0 top-14.5 z-50 w-[min(15rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-[#E8ECF3] bg-white shadow-[0_16px_48px_-8px_rgba(15,23,42,0.16)]">
                   {/* identity header */}
                   <div className="flex items-center gap-3 border-b border-[#F0F4F8] px-4 py-3.5">
                     {profileImage && !imageFailed ? (

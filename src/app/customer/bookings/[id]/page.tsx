@@ -6,6 +6,7 @@ import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCreditCard as CreditCard, LuFileText as FileText, LuHistory as History, LuLoaderCircle as Loader2, LuMapPinned as MapPinned, LuReceipt as Receipt, LuUsers as Users, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api/client";
+import { CustomerPageShell } from "@/components/customer/CustomerPage";
 
 type Traveller = {
   id: number;
@@ -387,14 +388,18 @@ export default function CustomerBookingDetailPage() {
     }
   }
 
-  const canCancel = booking && !["cancelled", "completed", "refunded", "declined"].includes(booking.booking_status);
+  const canCancel = booking && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
   const pendingAmount = Number(booking?.amount_pending ?? 0);
-  const canPay = booking && pendingAmount > 0 && !["cancelled", "declined", "completed"].includes(booking.booking_status);
+  const canPay = booking && pendingAmount > 0 && !["cancelled", "declined", "completed", "cancellation_requested", "postponed"].includes(booking.booking_status);
+
+  useEffect(() => {
+    if (searchParams.get("action") === "pay" && canPay) setShowPayModal(true);
+  }, [canPay, searchParams]);
 
   return (
-    <div className="min-h-screen bg-dash-bg p-6 md:p-8">
+    <CustomerPageShell>
       <button type="button" onClick={() => router.push("/customer/bookings")}
-        className="mb-5 flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3 py-2 text-sm font-bold text-dash-body hover:bg-[#F3F8FC] transition-all">
+        className="mb-4 flex items-center gap-1.5 rounded-xl border border-[#D5E1EF] bg-white px-3 py-2 text-sm font-bold text-[#315174] hover:border-blue-300 hover:text-[#0865D9] transition-all">
         <ArrowLeft size={16} /> Back to bookings
       </button>
 
@@ -442,21 +447,20 @@ export default function CustomerBookingDetailPage() {
 
       {!loading && booking && (
         <>
-          {/* Hero header */}
-          <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-teal-200/60 md:p-8">
-            <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-            <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+          {/* Booking header */}
+          <div className="relative mb-4 overflow-hidden rounded-2xl border border-[#DCE7F5] bg-white p-6 shadow-[0_12px_40px_-32px_rgba(21,77,151,.55)] md:p-7">
+            <div className="pointer-events-none absolute -right-12 -top-20 h-52 w-52 rounded-full bg-[#E9F3FF] blur-2xl" />
             <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-mono text-sm font-bold text-white/80">{booking.booking_code}</p>
-                <h2 className="mt-1 text-2xl font-black leading-tight md:text-3xl">{booking.tour_name || "Tour Booking"}</h2>
+                <p className="font-mono text-[11px] font-bold uppercase tracking-wide text-[#2475E8]">{booking.booking_code}</p>
+                <h2 className="mt-1 text-2xl font-black leading-tight text-[#0C2043] md:text-3xl">{booking.tour_name || "Tour Booking"}</h2>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-slate-700">
+                  <span className="flex items-center gap-1 rounded-full border border-[#DCE5F0] bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">
                     <StatusIcon status={booking.booking_status} />
                     {booking.booking_status.replaceAll("_", " ")}
                   </span>
                   {booking.payment_status && (
-                    <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-sm">
+                    <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-bold text-[#0865D9]">
                       {booking.payment_status.replaceAll("_", " ")}
                     </span>
                   )}
@@ -465,14 +469,14 @@ export default function CustomerBookingDetailPage() {
               <div className="flex flex-wrap items-center gap-3">
                 {canPay && (
                   <button type="button" onClick={() => setShowPayModal(true)}
-                    className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50 transition-all">
+                    className="flex items-center gap-2 rounded-xl bg-[#0868E8] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-100 hover:bg-[#075AC9] transition-all">
                     <CreditCard size={16} />
                     Pay Now ({booking.currency} {pendingAmount.toLocaleString()})
                   </button>
                 )}
                 {canCancel && !showCancel && (
                   <button type="button" onClick={() => setShowCancel(true)}
-                    className="flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-bold text-white backdrop-blur-sm hover:bg-white/20 transition-all">
+                    className="flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-all">
                     <XCircle size={16} /> Request Cancellation
                   </button>
                 )}
@@ -625,6 +629,6 @@ export default function CustomerBookingDetailPage() {
           }}
         />
       )}
-    </div>
+    </CustomerPageShell>
   );
 }

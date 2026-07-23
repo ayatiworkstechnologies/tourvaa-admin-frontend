@@ -24,6 +24,7 @@ const TEST_FILES = [
   "agent-flow.test.mjs",
   "admin-flow.test.mjs",
   "overall-flow.test.mjs",
+  "responsive-flow.test.mjs",
 ];
 
 let totalPassed = 0;

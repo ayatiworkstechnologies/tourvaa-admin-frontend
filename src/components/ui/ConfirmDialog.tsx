@@ -40,17 +40,17 @@ export default function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
         <h2 id="confirm-title" className="text-xl font-bold text-dash-text">
           {title}
         </h2>
         <p className="mt-2 text-sm leading-6 text-dash-muted">{message}</p>
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg"
+            className="w-full rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg sm:w-auto"
           >
             {cancelLabel}
           </button>
@@ -58,7 +58,7 @@ export default function ConfirmDialog({
             ref={confirmRef}
             type="button"
             onClick={onConfirm}
-            className={`rounded-xl px-4 py-2 text-sm font-bold text-white ${
+            className={`w-full rounded-xl px-4 py-2 text-sm font-bold text-white sm:w-auto ${
               danger ? "bg-red-600 hover:bg-red-700" : "bg-dash-brand hover:bg-dash-brand-hover"
             }`}
           >

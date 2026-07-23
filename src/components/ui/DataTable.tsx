@@ -67,7 +67,7 @@ export default function DataTable<T extends { id?: number | string }>({
     <div className="space-y-3">
       {/* search bar (standalone, above card) */}
       {onSearchChange && (
-        <label className="relative block max-w-xs">
+        <label className="relative block w-full sm:max-w-xs">
           <span className="sr-only">Search</span>
           <Search
             size={15}
@@ -86,7 +86,7 @@ export default function DataTable<T extends { id?: number | string }>({
 
       {/* table card */}
       <div className="overflow-hidden rounded-2xl border border-dash-border-soft bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <table
             className="w-full min-w-170 border-collapse text-left text-sm"
             aria-label={ariaLabel}
@@ -171,12 +171,12 @@ export default function DataTable<T extends { id?: number | string }>({
                 : <>Showing <strong className="text-dash-body">{start}</strong>–<strong className="text-dash-body">{end}</strong> of <strong className="text-dash-body">{total}</strong></>}
             </span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex w-full items-center gap-2 sm:w-auto">
               <button
                 type="button"
                 onClick={() => onPageChange!(Math.max(1, page! - 1))}
                 disabled={page! <= 1}
-                className="inline-flex h-8 items-center gap-1 rounded-lg border border-dash-border-soft px-3 text-xs font-bold text-dash-body hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border border-dash-border-soft px-3 text-xs font-bold text-dash-body transition-colors hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
               >
                 <ChevronLeft size={14} />
                 Prev
@@ -190,7 +190,7 @@ export default function DataTable<T extends { id?: number | string }>({
                 type="button"
                 onClick={() => onPageChange!(Math.min(safeTotalPages, page! + 1))}
                 disabled={page! >= safeTotalPages}
-                className="inline-flex h-8 items-center gap-1 rounded-lg border border-dash-border-soft px-3 text-xs font-bold text-dash-body hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border border-dash-border-soft px-3 text-xs font-bold text-dash-body transition-colors hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
               >
                 Next
                 <ChevronRight size={14} />

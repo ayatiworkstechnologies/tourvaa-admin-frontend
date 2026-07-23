@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LuFileText as FileText } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
 
 type Cancellation = {
   id: number;
@@ -54,15 +55,16 @@ export default function CustomerCancellationsPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-dash-text">Cancellations</h1>
-          <p className="mt-1 text-sm text-dash-muted">Track cancellation and refund requests.</p>
-        </div>
-        <Link href="/customer/bookings" className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-dark"><FileText size={16} /> Request from Booking</Link>
+    <CustomerPageShell>
+      <CustomerPageHeader
+        title="Cancellations"
+        description="Track cancellation requests, review progress, and follow refund decisions."
+        icon={FileText}
+        action={{ label: "Request from Booking", href: "/customer/bookings", icon: FileText }}
+      />
+      <div className="mt-4">
+        <DataTable ariaLabel="Customer cancellations" columns={columns} rows={rows} loading={loading} page={1} pageSize={rows.length || 10} total={rows.length} totalPages={1} emptyTitle="No cancellation requests" emptyDescription="Cancellation requests submitted from booking details will appear here." />
       </div>
-      <DataTable ariaLabel="Customer cancellations" columns={columns} rows={rows} loading={loading} page={1} pageSize={rows.length || 10} total={rows.length} totalPages={1} emptyTitle="No cancellation requests" emptyDescription="Cancellation requests submitted from booking details will appear here." />
-    </div>
+    </CustomerPageShell>
   );
 }

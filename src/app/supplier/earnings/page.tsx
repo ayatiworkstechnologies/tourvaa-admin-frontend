@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuLoaderCircle as Loader2, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 
 type LedgerEntry = {
   id: number;
@@ -185,33 +186,26 @@ export default function EarningsPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-7 text-white shadow-xl shadow-emerald-200/60 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-sm">Supplier Finance</span>
-            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight md:text-4xl">Earnings & Commission</h1>
-            <p className="mt-2 max-w-lg text-sm font-medium text-emerald-100">Track gross booking value, Tourvaa commission, net payable, and payout requests.</p>
-          </div>
+    <SupplierPageShell>
+      <SupplierPageHeader title="Earnings & Commission" description="Understand every booking value, Tourvaa commission deduction, net earning, and payout balance." icon={Wallet} eyebrow="Supplier Finance">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-[11px] text-[#657C6F]">Ledger values remain in their original booking currency.</span>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-bold text-white backdrop-blur-sm hover:bg-white/20 disabled:opacity-60 transition-all">
+            <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-[#D5E6DB] bg-white px-4 py-2.5 text-xs font-black text-[#526C5D] hover:bg-[#F0F8F3] disabled:opacity-60">
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh
             </button>
-            <button type="button" onClick={openAutoRequest} disabled={summary.pending <= 0} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50 disabled:opacity-50 transition-all">
+            <button type="button" onClick={openAutoRequest} disabled={summary.pending <= 0} className="inline-flex items-center gap-2 rounded-xl bg-[#16833A] px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-[#117331] disabled:opacity-50">
               <Banknote size={16} /> Auto Request Payout
             </button>
           </div>
         </div>
-      </div>
+      </SupplierPageHeader>
 
-      {requestSuccess && <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700"><CheckCircle2 size={16} /> {requestSuccess}</div>}
-      {requestError && <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600"><AlertCircle size={16} /> {requestError}</div>}
+      {requestSuccess && <div className="mt-4 mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700"><CheckCircle2 size={16} /> {requestSuccess}</div>}
+      {requestError && <div className="mt-4 mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600"><AlertCircle size={16} /> {requestError}</div>}
 
       {requestOpen && (
-        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
+        <div className="mt-4 mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-black text-dash-text">Auto payout request</h2>
@@ -231,7 +225,7 @@ export default function EarningsPage() {
         </div>
       )}
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-4 mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {summaryCards.map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="group relative overflow-hidden rounded-2xl border border-transparent bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-start justify-between">
@@ -254,6 +248,6 @@ export default function EarningsPage() {
       {error && <div className="mb-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600"><span className="flex items-center gap-2"><AlertCircle size={16} />{error}</span><button type="button" onClick={load} className="text-xs font-bold underline">Retry</button></div>}
 
       {loading ? <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl border border-dash-border bg-white" />)}</div> : !error && <div className="rounded-xl border border-dash-border bg-white p-0 shadow-sm"><div className="border-b border-dash-border px-5 py-4"><h2 className="font-black text-dash-text">Ledger Entries</h2><p className="mt-0.5 text-sm text-dash-muted">Each row shows gross value, commission deduction, net payable, and remaining payout balance.</p></div><DataTable ariaLabel="Earnings table" columns={columns} rows={entries} emptyTitle="No ledger entries yet" emptyDescription="Earnings from confirmed bookings will appear here." /></div>}
-    </div>
+    </SupplierPageShell>
   );
 }

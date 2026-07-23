@@ -14,13 +14,13 @@ import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
 import { useAuthContext } from "@/providers/AuthProvider";
 
-type FormValues = { email: string; password: string };
+type FormValues = { identifier: string; password: string };
 type LoginRole = "traveller" | "agent" | "supplier";
 
 const loginRoles = {
   traveller: { label: "Traveller", title: "Welcome back, traveller", subtitle: "Access your bookings, saved tours and upcoming journeys.", icon: Plane, join: "/register", points: ["Manage all your bookings", "Save tours to your wishlist", "Get live trip updates"] },
-  agent: { label: "Agent", title: "Agent partner login", subtitle: "Manage customers, create bookings and track your commissions.", icon: Briefcase, join: "/join/agent", points: ["Book tours for customers", "Track leads and commissions", "Access agent-only tools"] },
-  supplier: { label: "Supplier", title: "Supplier portal login", subtitle: "Manage your tours, availability, bookings and payouts.", icon: Building, join: "/join/supplier", points: ["Manage tours and inventory", "Respond to booking requests", "Track earnings and payouts"] },
+  agent: { label: "Agent", title: "Agent partner login", subtitle: "Manage customers, create bookings and track your commissions.", icon: Briefcase, join: "/register?type=agent", points: ["Book tours for customers", "Track leads and commissions", "Access agent-only tools"] },
+  supplier: { label: "Supplier", title: "Supplier portal login", subtitle: "Manage your tours, availability, bookings and payouts.", icon: Building, join: "/register?type=supplier", points: ["Manage tours and inventory", "Respond to booking requests", "Track earnings and payouts"] },
 } satisfies Record<LoginRole, { label: string; title: string; subtitle: string; icon: typeof Plane; join: string; points: string[] }>;
 
 const EMAIL_DOMAIN_CORRECTIONS: Record<string, string> = {
@@ -52,8 +52,9 @@ function redirectForRole(roleSlug: string, requested: string | null) {
     affiliate: "/affiliate/",
   };
   const prefix = allowedPrefixes[roleSlug.toLowerCase()];
-  const isCustomerBooking = roleSlug.toLowerCase() === "customer" && requested?.startsWith("/booking/");
-  return requested && ((prefix && requested.startsWith(prefix)) || isCustomerBooking) ? requested : getDashboardPath(roleSlug);
+  const normalizedRole = roleSlug.toLowerCase();
+  const isSharedBooking = ["customer", "agent", "agent-reseller"].includes(normalizedRole) && requested?.startsWith("/booking/");
+  return requested && ((prefix && requested.startsWith(prefix)) || isSharedBooking) ? requested : getDashboardPath(roleSlug);
 }
 
 function LoginForm() {
@@ -69,7 +70,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({ defaultValues: { email: "", password: "" } });
+  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({ defaultValues: { identifier: "", password: "" } });
 
   useEffect(() => {
     if (!sessionLoading && isLoggedIn && dashboard) {
@@ -82,8 +83,13 @@ function LoginForm() {
     setLoading(true);
     setError("");
     try {
-      const res = await api.post("/auth/login", { email: normalizeEmail(values.email), password: values.password, client_type: "web-cookie" });
+      const identifier = values.identifier.includes("@") ? normalizeEmail(values.identifier) : values.identifier.trim();
+      const res = await api.post("/auth/login", { identifier, password: values.password, client_type: "web-cookie" });
       const data = res.data.data;
+      if (data.account_restricted) {
+        router.push("/account-status");
+        return;
+      }
       await loginWithToken();
       const roleSlug = data.user?.role?.slug ?? "";
       router.push(redirectForRole(roleSlug, safeRedirect));
@@ -124,7 +130,7 @@ function LoginForm() {
             <div role="tablist" aria-label="Choose login type" className="mb-6 grid grid-cols-3 rounded-xl bg-slate-100 p-1.5">{(Object.entries(loginRoles) as [LoginRole, typeof roleDetails][]).map(([key, item]) => { const Icon = item.icon; const active = role === key; return <button key={key} role="tab" aria-selected={active} type="button" onClick={() => selectRole(key)} className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-[11px] font-bold transition ${active ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"}`}><Icon size={14} />{item.label}</button>; })}</div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div><label className="mb-1.5 block text-xs font-bold text-slate-700">Email address</label><div className="relative"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="email" autoComplete="email" placeholder="you@example.com" {...register("email", { required: "Email is required.", validate: (value) => !validateEmail(value) ? "Enter a valid email address." : emailTypoMessage(value) || true })} className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-3 pl-10 pr-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50" /></div>{errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}</div>
+              <div><label className="mb-1.5 block text-xs font-bold text-slate-700">Email or mobile number</label><div className="relative"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input autoComplete="username" placeholder="you@example.com or +919876543210" {...register("identifier", { required: "Email or mobile number is required.", validate: (value) => value.includes("@") ? (!validateEmail(value) ? "Enter a valid email address." : emailTypoMessage(value) || true) : (/^\+?\d{8,20}$/.test(value.trim()) || "Enter a valid mobile number.") })} className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-3 pl-10 pr-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50" /></div>{errors.identifier && <p className="mt-1 text-xs text-red-600">{errors.identifier.message}</p>}</div>
 
               <div><label className="mb-1.5 block text-xs font-bold text-slate-700">Password</label><div className="relative"><Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="Your password" {...register("password", { required: "Password is required." })} className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-3 pl-10 pr-11 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50" /><button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>{errors.password && <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>}</div>
 

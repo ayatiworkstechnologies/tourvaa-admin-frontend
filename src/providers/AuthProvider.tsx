@@ -25,15 +25,23 @@ type AuthContextValue = {
   loading: boolean;
   error: string;
   isLoggedIn: boolean;
-  loginWithToken: (token?: string) => Promise<void>;
+  loginWithToken: (token?: string) => Promise<DashboardData | null>;
   refreshSession: () => Promise<DashboardData | null>;
-  logout: () => void;
+  logout: (redirectTo?: string) => void;
   hasPermission: (permission: string) => boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/admin/login"];
+const publicRoutes = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/auth/verify-email",
+  "/account-status",
+  "/admin/login",
+];
 
 // Role-based portal paths are self-guarded -- exclude from global redirect
 const portalPaths = ["/customer", "/agent", "/supplier", "/affiliate"];
@@ -216,7 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isPublic = isPublicRoute(pathname);
 
     if (!token && !isPublic) {
-      router.replace("/login");
+      router.replace(pathname.startsWith("/admin") ? "/admin/login" : "/login");
       return;
     }
 
@@ -228,18 +236,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithToken = useCallback(
     async () => {
-      await refreshSession();
+      return refreshSession();
     },
     [refreshSession]
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback((redirectTo?: string) => {
     void api.post("/auth/logout").catch(() => undefined);
     clearSession();
     setTokenState(null);
     setDashboard(null);
-    router.replace("/login");
-  }, [router]);
+    router.replace(redirectTo ?? (pathname.startsWith("/admin") ? "/admin/login" : "/login"));
+  }, [pathname, router]);
 
   const hasPermission = useCallback(
     (permission: string) => {

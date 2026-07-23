@@ -8,6 +8,7 @@ import { LuArrowLeft as ArrowLeft, LuCreditCard as CreditCard, LuDownload as Dow
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import BookingPaymentModal from "@/components/bookings/BookingPaymentModal";
+import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
 
 type Traveller = {
   id: number;
@@ -40,6 +41,11 @@ type Booking = {
   no_of_children?: number;
   total_travellers?: number;
   payment_type?: "partial" | "full";
+  agent_payment_method?: string | null;
+  agent_reference?: string | null;
+  agent_net_price?: string | number;
+  agent_markup?: string | number;
+  customer_selling_price?: string | number;
   notes?: string;
   customer_notes?: string;
   booking_source?: string;
@@ -80,7 +86,7 @@ function dateText(value?: string | null) {
 function statusClass(status?: string) {
   const v = (status || "").toLowerCase();
   if (["paid", "completed", "confirmed", "active"].includes(v)) return "bg-emerald-50 text-emerald-700";
-  if (["pending", "partial", "partially_paid", "pending_payment"].includes(v)) return "bg-amber-50 text-amber-700";
+  if (["pending", "partial", "partially_paid", "pending_payment", "pending_credit_approval", "bank_transfer_pending", "credit_approval_pending"].includes(v)) return "bg-amber-50 text-amber-700";
   if (["cancelled", "failed"].includes(v)) return "bg-rose-50 text-rose-700";
   return "bg-slate-50 text-slate-700";
 }
@@ -216,17 +222,17 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <AgentPageShell className="flex min-h-[60vh] items-center justify-center">
         <div className="flex items-center gap-2 text-sm text-dash-muted">
           <Loader2 size={18} className="animate-spin text-dash-brand" /> Loading booking…
         </div>
-      </div>
+      </AgentPageShell>
     );
   }
 
   if (error || !booking) {
     return (
-      <div className="p-6 md:p-8">
+      <AgentPageShell>
         <Link href="/agent/bookings" className="flex items-center gap-2 text-sm font-bold text-dash-muted hover:text-dash-brand">
           <ArrowLeft size={15} /> Back to Bookings
         </Link>
@@ -234,18 +240,19 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           <p className="font-bold text-rose-700">{error || "Booking not found."}</p>
           <button type="button" onClick={() => setRefreshKey((value) => value + 1)} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-rose-700 shadow-sm ring-1 ring-rose-200 hover:bg-rose-100"><RefreshCw size={14} />Retry</button>
         </div>
-      </div>
+      </AgentPageShell>
     );
   }
 
   const travellers = booking.travellers ?? [];
-  const paymentComplete = ["paid", "partially_refunded"].includes((booking.payment_status || "").toLowerCase());
+  const paymentComplete = ["paid", "authorized", "partially_paid", "partially_refunded"].includes((booking.payment_status || "").toLowerCase());
+  const paymentValidationPending = ["credit_approval_pending", "bank_transfer_pending"].includes((booking.payment_status || "").toLowerCase());
   const supplierAccepted = booking.supplier_acceptance_status === "accepted";
   const bookingConfirmed = ["confirmed", "ongoing", "completed"].includes((booking.booking_status || "").toLowerCase());
   const workflow = [
-    { label: "Payment", detail: paymentComplete ? "Payment completed" : `${booking.payment_type === "partial" ? "Deposit" : "Full payment"} pending`, done: paymentComplete, active: !paymentComplete },
+    { label: "Payment / credit", detail: paymentComplete ? "Payment validated" : paymentValidationPending ? booking.payment_status.replaceAll("_", " ") : `${booking.payment_type === "partial" ? "Deposit" : "Full payment"} pending`, done: paymentComplete, active: !paymentComplete },
     { label: "Supplier decision", detail: supplierAccepted ? "Supplier accepted" : (booking.supplier_acceptance_status ?? "not assigned").replaceAll("_", " "), done: supplierAccepted, active: paymentComplete && !supplierAccepted },
-    { label: "Confirmed", detail: bookingConfirmed ? booking.booking_status.replaceAll("_", " ") : "Waiting for payment and supplier", done: bookingConfirmed, active: paymentComplete && supplierAccepted && !bookingConfirmed },
+    { label: "Confirmed", detail: bookingConfirmed ? booking.booking_status.replaceAll("_", " ") : "Waiting for validation and supplier", done: bookingConfirmed, active: paymentComplete && supplierAccepted && !bookingConfirmed },
   ];
   const completedStepStyles = [
     { card: "border-sky-200 bg-sky-50/80", label: "text-sky-700" },
@@ -262,27 +269,22 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/70 p-6 md:p-8">
-      <Link href="/agent/bookings" className="mb-5 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition-all hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">
-        <ArrowLeft size={15} /> Back to bookings
-      </Link>
-
-      {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950 via-blue-950 to-indigo-900 p-7 text-white shadow-[0_20px_55px_-25px_rgba(30,41,59,0.65)] md:p-8">
-        <div className="pointer-events-none absolute -right-10 -top-20 h-64 w-64 rounded-full bg-sky-400/20 blur-3xl" />
-        <div className="pointer-events-none absolute -left-12 bottom-[-5rem] h-56 w-56 rounded-full bg-violet-400/20 blur-3xl" />
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="font-mono text-sm font-bold uppercase tracking-wider text-sky-200">Booking details</p>
-            <h1 className="mt-1 text-2xl font-black leading-tight md:text-3xl">{booking.booking_code}</h1>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Pill status={booking.booking_status}>{booking.booking_status.replaceAll("_", " ")}</Pill>
-              <Pill status={booking.payment_status}>{booking.payment_status.replaceAll("_", " ")}</Pill>
-            </div>
+    <AgentPageShell>
+      <AgentPageHeader
+        title={booking.booking_code}
+        description={`${booking.tour_name || "Tour booking"} for ${booking.customer_name || booking.customer?.name || "your customer"}.`}
+        icon={FileText}
+        eyebrow="Booking Details"
+        actions={[{ label: "Back to Bookings", href: "/agent/bookings", icon: ArrowLeft, variant: "secondary" }]}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Pill status={booking.booking_status}>{booking.booking_status.replaceAll("_", " ")}</Pill>
+            <Pill status={booking.payment_status}>{booking.payment_status.replaceAll("_", " ")}</Pill>
           </div>
           <div className="flex flex-wrap gap-2">
             {Number(booking.amount_pending ?? 0) > 0 && (
-              <button type="button" onClick={() => setShowPayment(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-cyan-300">
+              <button type="button" onClick={() => setShowPayment(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-[#2563EB] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1D4ED8]">
                 <CreditCard size={15} /> Pay Now
               </button>
             )}
@@ -291,7 +293,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
                 type="button"
                 onClick={handleDownloadInvoice}
                 disabled={downloadLoading}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/95 px-4 py-2.5 text-sm font-bold text-indigo-800 shadow-sm transition hover:bg-white disabled:cursor-wait disabled:opacity-70"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#D7E2F2] bg-white px-4 py-2.5 text-sm font-bold text-[#274A7A] shadow-sm transition hover:bg-blue-50 disabled:cursor-wait disabled:opacity-70"
               >
                 {downloadLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                 Download Invoice
@@ -299,7 +301,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             )}
           </div>
         </div>
-      </div>
+      </AgentPageHeader>
 
       {invoiceError && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{invoiceError}</div>}
       {paymentBanner && (
@@ -312,7 +314,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h2 className="text-base font-black text-dash-text">Booking Execution Flow</h2>
-            <p className="mt-1 text-xs text-dash-muted">Payment must complete before supplier acceptance and final confirmation.</p>
+            <p className="mt-1 text-xs text-dash-muted">Online payment, approved credit, wallet settlement, or verified bank transfer makes the booking eligible for supplier processing.</p>
           </div>
           <span className="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold capitalize text-indigo-700">Current: {booking.booking_status.replaceAll("_", " ")}</span>
         </div>
@@ -334,6 +336,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           </h2>
           <div className="mt-4">
             <InfoRow label="Booking Code" value={booking.booking_code} />
+            <InfoRow label="Agent Reference" value={booking.agent_reference} />
             <InfoRow label="Tour" value={booking.tour_name} />
             <InfoRow label="Travel Date" value={dateText(booking.tour_date)} />
             <InfoRow label="Adults" value={booking.no_of_adults} />
@@ -372,6 +375,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
                 }
               />
               <InfoRow label="Payment Status" value={<Pill status={booking.payment_status}>{booking.payment_status.replaceAll("_", " ")}</Pill>} />
+              <InfoRow label="Payment Method" value={booking.agent_payment_method?.replaceAll("_", " ") ?? "Online"} />
               <InfoRow label="Payment Plan" value={booking.payment_type === "partial" ? "30% deposit" : "Full payment"} />
             </div>
           </div>
@@ -385,7 +389,9 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
                 <InfoRow label="Accommodation" value={money(booking.price_breakdown.accommodation_amount, booking.currency)} />
                 <InfoRow label="Extensions" value={money(booking.price_breakdown.extension_amount, booking.currency)} />
                 <InfoRow label="Discount" value={money(booking.price_breakdown.discount_amount, booking.currency)} />
-                <InfoRow label="Final total" value={money(booking.price_breakdown.final_amount, booking.currency)} />
+                <InfoRow label="Agent net price" value={money(booking.agent_net_price, booking.currency)} />
+                <InfoRow label="Agent markup" value={money(booking.agent_markup, booking.currency)} />
+                <InfoRow label="Customer selling price" value={money(booking.customer_selling_price ?? booking.price_breakdown.final_amount, booking.currency)} />
               </div>
             </div>
           )}
@@ -442,6 +448,6 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           }}
         />
       )}
-    </div>
+    </AgentPageShell>
   );
 }

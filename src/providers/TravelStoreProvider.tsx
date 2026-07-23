@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import api from "@/lib/api/client";
+import { useAuthContext } from "@/providers/AuthProvider";
 
 export type TravelItem = {
   id: number;
@@ -13,63 +15,90 @@ export type TravelItem = {
   href?: string;
 };
 
-export type CartItem = TravelItem & { travellers: number };
-
 type TravelStore = {
   hydrated: boolean;
   wishlist: TravelItem[];
-  cart: CartItem[];
   wishlistCount: number;
-  cartCount: number;
   isWishlisted: (id: number) => boolean;
   toggleWishlist: (item: TravelItem) => void;
-  addToCart: (item: TravelItem, travellers?: number) => void;
-  removeFromCart: (id: number) => void;
-  updateTravellers: (id: number, travellers: number) => void;
-  clearCart: () => void;
 };
 
-const WISHLIST_KEY = "tourvaa_public_wishlist";
-const CART_KEY = "tourvaa_public_cart";
+type WishlistResponse = {
+  items?: TravelItem[];
+  data?: TravelItem[];
+};
+
 const TravelStoreContext = createContext<TravelStore | null>(null);
 
-function readStored<T>(key: string): T[] {
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(key) || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch { return []; }
-}
-
 export function TravelStoreProvider({ children }: { children: React.ReactNode }) {
+  const { isLoggedIn, loading: authLoading, user } = useAuthContext();
   const [hydrated, setHydrated] = useState(false);
   const [wishlist, setWishlist] = useState<TravelItem[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const roleSlug = user?.role?.slug ?? "";
+  const canUseWishlist = isLoggedIn && roleSlug === "customer";
 
   useEffect(() => {
-    setWishlist(readStored<TravelItem>(WISHLIST_KEY));
-    setCart(readStored<CartItem>(CART_KEY));
-    setHydrated(true);
-  }, []);
-  useEffect(() => { if (hydrated) window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist)); }, [hydrated, wishlist]);
-  useEffect(() => { if (hydrated) window.localStorage.setItem(CART_KEY, JSON.stringify(cart)); }, [hydrated, cart]);
+    if (authLoading) return;
+
+    if (!canUseWishlist) {
+      setWishlist([]);
+      setHydrated(true);
+      return;
+    }
+
+    let active = true;
+    setHydrated(false);
+    api.get<WishlistResponse>("/customer/wishlist")
+      .then((response) => {
+        if (!active) return;
+        setWishlist(response.data.items ?? response.data.data ?? []);
+      })
+      .catch(() => {
+        if (active) setWishlist([]);
+      })
+      .finally(() => {
+        if (active) setHydrated(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, canUseWishlist, user?.id]);
+
+  const toggleWishlist = useCallback((item: TravelItem) => {
+    if (!canUseWishlist) {
+      const returnPath = `${window.location.pathname}${window.location.search}`;
+      window.location.assign(`/login?role=traveller&redirect=${encodeURIComponent(returnPath)}`);
+      return;
+    }
+
+    const wasSaved = wishlist.some((saved) => saved.id === item.id);
+    setWishlist((current) => (
+      wasSaved
+        ? current.filter((saved) => saved.id !== item.id)
+        : [item, ...current.filter((saved) => saved.id !== item.id)]
+    ));
+
+    const request = wasSaved
+      ? api.delete(`/customer/wishlist/${item.id}`)
+      : api.post(`/customer/wishlist/${item.id}`);
+
+    void request.catch(() => {
+      setWishlist((current) => (
+        wasSaved
+          ? current.some((saved) => saved.id === item.id) ? current : [item, ...current]
+          : current.filter((saved) => saved.id !== item.id)
+      ));
+    });
+  }, [canUseWishlist, wishlist]);
 
   const value = useMemo<TravelStore>(() => ({
     hydrated,
     wishlist,
-    cart,
     wishlistCount: wishlist.length,
-    cartCount: cart.reduce((total, item) => total + item.travellers, 0),
     isWishlisted: (id) => wishlist.some((item) => item.id === id),
-    toggleWishlist: (item) => setWishlist((current) => current.some((saved) => saved.id === item.id) ? current.filter((saved) => saved.id !== item.id) : [item, ...current]),
-    addToCart: (item, travellers = 1) => setCart((current) => {
-      const existing = current.find((saved) => saved.id === item.id);
-      if (!existing) return [{ ...item, travellers: Math.max(1, travellers) }, ...current];
-      return current.map((saved) => saved.id === item.id ? { ...saved, travellers: Math.min(20, saved.travellers + Math.max(1, travellers)) } : saved);
-    }),
-    removeFromCart: (id) => setCart((current) => current.filter((item) => item.id !== id)),
-    updateTravellers: (id, travellers) => setCart((current) => current.map((item) => item.id === id ? { ...item, travellers: Math.max(1, Math.min(20, travellers)) } : item)),
-    clearCart: () => setCart([]),
-  }), [hydrated, wishlist, cart]);
+    toggleWishlist,
+  }), [hydrated, toggleWishlist, wishlist]);
 
   return <TravelStoreContext.Provider value={value}>{children}</TravelStoreContext.Provider>;
 }

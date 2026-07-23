@@ -41,6 +41,12 @@ check("public pages capture affiliate referral codes", tracker.includes('get("re
 check("affiliate clicks use the backend public tracking endpoint", tracker.includes("/api/affiliates/track/${encodeURIComponent(refCode)}"));
 check("duplicate referral clicks are suppressed per browser session", tracker.includes("sessionStorage"));
 
+for (const route of ["forgot-password", "reset-password"]) {
+  const layout = read(`src/app/${route}/layout.tsx`);
+  check(`${route} uses the shared public header layout`, layout.includes("<PublicLayout>"));
+  check(`${route} clears the fixed public header`, layout.includes('className="pt-20"'));
+}
+
 const referralLinks = read("src/app/affiliate/referral-links/page.tsx");
 check("affiliate links use their configured destination", referralLinks.includes("new URL(link.destination_url"));
 check("affiliate links retain their referral code", referralLinks.includes('url.searchParams.set("ref", link.ref_code)'));
@@ -66,6 +72,25 @@ check("affiliate self-edit is disabled when backend permission is unavailable", 
 const affiliateJoin = read("src/app/join/affiliate/page.tsx");
 check("affiliate application no longer reports a fake API submission", affiliateJoin.includes("mailto:hello@tourvaa.com"));
 check("affiliate application clearly requires the user to send the email", affiliateJoin.includes("Complete and send the email"));
+
+const imageFormats = read("src/lib/uploads/imageFormats.ts");
+const adminAssetUpload = read("src/components/operations/AdminAssetUpload.tsx");
+const profileImageUpload = read("src/components/ui/ProfileImageUpload.tsx");
+const supplierDocuments = read("src/components/supplier/profile/DocumentsTab.tsx");
+const supplierVehicles = read("src/components/supplier/profile/VehiclesTab.tsx");
+const agentDocuments = read("src/components/agent/profile/VerificationDocumentsTab.tsx");
+check("shared image uploads accept AVIF", imageFormats.includes("image/avif") && imageFormats.includes(".avif"));
+check("admin asset uploads preview and explain AVIF", adminAssetUpload.includes("avif") && adminAssetUpload.includes("IMAGE_AND_PDF_FORMAT_LABEL"));
+check("profile image uploads use shared AVIF formats", profileImageUpload.includes("IMAGE_ACCEPT") && profileImageUpload.includes("IMAGE_FORMAT_LABEL"));
+check("supplier and agent uploads share AVIF acceptance", [supplierDocuments, supplierVehicles, agentDocuments].every((source) => source.includes("imageFormats")));
+
+const notificationInbox = read("src/components/ui/NotificationInbox.tsx");
+const notificationAdmin = read("src/app/admin/notifications/page.tsx");
+const notificationWorker = read("public/sw.js");
+check("header notifications load once without polling or duplicate requests", !notificationInbox.includes("setInterval") && notificationInbox.includes("inboxCache") && notificationInbox.includes("inboxRequests"));
+check("admin notifications no longer poll on a timer", !notificationAdmin.includes("setInterval") && !notificationAdmin.includes("POLL_INTERVAL_MS"));
+check("notification refresh is driven by explicit app and push events", [notificationInbox, notificationAdmin].every((source) => source.includes("NOTIFICATION_REFRESH_EVENT") && source.includes("isNotificationPushMessage")));
+check("push worker tells open pages when a notification arrives", notificationWorker.includes("client.postMessage") && notificationWorker.includes("tourvaa:notification-received"));
 
 console.log(`\nOverall flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

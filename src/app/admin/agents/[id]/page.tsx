@@ -210,6 +210,17 @@ export default function AgentDetailPage() {
             </div>
           )}
 
+          {record.commission_request_status === "pending" && (
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Commission request pending</p>
+                <p className="mt-1 text-lg font-black text-dash-text">{record.commission_request_type}: {record.commission_request_value ?? 0}</p>
+                <p className="mt-1 text-xs text-dash-muted">Submitted from the agent dashboard for administration approval.</p>
+              </div>
+              {canCommercial && <button type="button" disabled={saving} onClick={() => void run(() => updateCommercialValue("agents", id, { discount_type: String(record.commission_request_type || "percentage"), discount_value: Number(record.commission_request_value || 0) }), "Commission request approved.")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Check size={16} />Approve request</button>}
+            </div>
+          )}
+
           <CompletionCard record={record} />
 
           <section className="rounded-2xl border border-dash-border-soft bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">

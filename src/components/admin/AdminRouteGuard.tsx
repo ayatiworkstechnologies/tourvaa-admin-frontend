@@ -21,7 +21,7 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!docsMode && !loading && !isLoggedIn && !isAdminLogin) {
-      router.replace("/login");
+      router.replace("/admin/login");
       return;
     }
     if (!docsMode && isWrongPortal && dashboard) {

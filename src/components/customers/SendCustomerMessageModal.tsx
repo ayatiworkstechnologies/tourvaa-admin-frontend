@@ -30,8 +30,8 @@ export default function SendCustomerMessageModal({ open, saving, onClose, onSend
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-xl rounded-xl bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4">
+      <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-xl bg-white p-4 shadow-2xl sm:p-6">
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-xl font-bold text-dash-text">Send Message</h3>
           <button type="button" onClick={onClose} className="rounded-lg p-2 text-dash-muted hover:bg-dash-bg">
@@ -72,17 +72,17 @@ export default function SendCustomerMessageModal({ open, saving, onClose, onSend
             />
           </label>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg"
+              className="w-full rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg sm:w-auto"
             >
               Cancel
             </button>
             <button
               disabled={saving}
-              className="rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
+              className="w-full rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60 sm:w-auto"
             >
               {saving ? "Sending..." : "Send"}
             </button>

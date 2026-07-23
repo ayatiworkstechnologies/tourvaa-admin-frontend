@@ -14,6 +14,7 @@ import {
 } from "react-icons/lu";
 
 import api from "@/lib/api/client";
+import { IMAGE_AND_PDF_EXTENSIONS_ACCEPT, IMAGE_FORMAT_LABEL } from "@/lib/uploads/imageFormats";
 import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
 import { useToast } from "@/hooks/useToast";
 
@@ -193,7 +194,7 @@ export default function VerificationDocumentsTab() {
                           <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ring-1 ring-inset ${statusClass(document.status)}`}>{document.status}</span>
                           <p className="truncate text-xs text-slate-500">{document.document_name}</p>
                         </div>
-                      ) : <p className="mt-1 text-xs text-slate-500">PDF, JPG or PNG · maximum 10 MB</p>}
+                      ) : <p className="mt-1 text-xs text-slate-500">PDF or {IMAGE_FORMAT_LABEL} · maximum 10 MB</p>}
                     </div>
                   </div>
                 </div>
@@ -202,7 +203,7 @@ export default function VerificationDocumentsTab() {
                   <input
                     ref={(element) => { fileInputs.current[requirement.document_type] = element; }}
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
+                    accept={IMAGE_AND_PDF_EXTENSIONS_ACCEPT}
                     className="hidden"
                     aria-label={`Upload ${requirement.label}`}
                     onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(requirement.document_type, file); }}

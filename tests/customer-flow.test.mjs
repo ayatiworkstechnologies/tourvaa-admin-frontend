@@ -43,11 +43,13 @@ check("booking uses React Hook Form end to end", detail.includes("useForm<Bookin
 check("dynamic travellers use a field array", detail.includes("useFieldArray") && detail.includes('name: "travellers"'));
 check("custom booking inputs use controllers", detail.includes("<Controller") && detail.includes('name="travelDate"') && detail.includes('name="phone"'));
 check("tour CTA opens dedicated public booking flow", detail.includes('`/booking/${tour.id}'));
+check("tour detail uses Book Now without cart actions", detail.includes("Book Now") && !detail.includes("addToCart") && !detail.includes("ShoppingCart"));
 
 const publicBooking = read("src/app/(public)/booking/[id]/page.tsx");
 check("public booking has six visible stages", publicBooking.includes("Confirmation") && publicBooking.includes("Secure checkout"));
 check("public booking uses React Hook Form", publicBooking.includes("useForm<FormValues>") && publicBooking.includes("useFieldArray"));
-check("public booking creates a customer booking", publicBooking.includes('api.post("/customer/bookings"'));
+check("public booking retains the customer-scoped booking endpoint", publicBooking.includes('isAgent ? "/bookings" : "/customer/bookings"'));
+check("public booking allows customer and agent login", publicBooking.includes("Customer login") && publicBooking.includes("Agent login"));
 check("public booking connects Stripe and PayPal", publicBooking.includes('"/payments/stripe/create-session"') && publicBooking.includes('"/payments/paypal/create-order"'));
 check("public booking handles gateway returns", publicBooking.includes('"/payments/stripe/confirm-return"') && publicBooking.includes('"/payments/paypal/capture"'));
 
@@ -57,12 +59,36 @@ check("payment copy remains pending supplier acceptance", customerBooking.includ
 check("pending supplier banner is rendered", customerBooking.includes("Pending supplier acceptance"));
 check("gateway charges the selected payment amount", customerBooking.includes("amount: paymentAmount"));
 check("gateway modal offers deposit and full balance", customerBooking.includes("Pay 30% deposit") && customerBooking.includes("Pay in full"));
+check("dashboard payment actions open checkout directly", customerBooking.includes('searchParams.get("action") === "pay"'));
+
+const customerDashboard = read("src/app/customer/dashboard/page.tsx");
+check("dashboard exposes the main traveller quick actions", ["Book a Tour", "Make a Payment", "Add Traveller", "View Invoices", "Contact Support"].every((label) => customerDashboard.includes(label)));
+check("dashboard links pending balances to checkout", customerDashboard.includes("?action=pay"));
+check("dashboard referral action uses native share with clipboard fallback", customerDashboard.includes("navigator.share") && customerDashboard.includes("navigator.clipboard.writeText"));
+
+const customerBookings = read("src/app/customer/bookings/page.tsx");
+check("dashboard request links apply the bookings status filter", customerBookings.includes('new URLSearchParams(window.location.search).get("status")'));
+
+const publicHeader = read("src/components/public/PublicHeader.tsx");
+const customerHeader = read("src/components/customer/CustomerPortalHeader.tsx");
+const wishlist = read("src/app/customer/wishlist/page.tsx");
+const wishlistStore = read("src/providers/TravelStoreProvider.tsx");
+const legacyWishlist = read("src/app/(public)/wishlist/page.tsx");
+const retiredCart = read("src/app/(public)/cart/page.tsx");
+check("public and customer headers no longer expose cart", !publicHeader.includes('href="/cart"') && !customerHeader.includes('href="/cart"'));
+check("wishlist books tours directly", wishlist.includes('href={`/booking/${item.id}`}') && !wishlist.includes("addToCart"));
+check("wishlist lives inside the customer portal", publicHeader.includes('href="/customer/wishlist"') && customerHeader.includes('href="/customer/wishlist"'));
+check("wishlist is loaded from the authenticated customer API", wishlistStore.includes('api.get<WishlistResponse>("/customer/wishlist")'));
+check("wishlist mutations persist to the customer API", wishlistStore.includes('api.post(`/customer/wishlist/${item.id}`)') && wishlistStore.includes('api.delete(`/customer/wishlist/${item.id}`)'));
+check("wishlist no longer uses browser local storage", !wishlistStore.includes("localStorage"));
+check("legacy wishlist redirects into the customer portal", legacyWishlist.includes('redirect("/customer/wishlist")'));
+check("retired cart route redirects to tours", retiredCart.includes('redirect("/tours")'));
 
 const login = read("src/app/(public)/login/page.tsx");
 const register = read("src/app/(public)/register/page.tsx");
 check(
-  "login honors safe customer redirect",
-  login.includes('customer: "/customer/"') && login.includes("redirectForRole(roleSlug, safeRedirect)"),
+  "login honors safe shared booking redirects",
+  login.includes("isSharedBooking") && login.includes("redirectForRole(roleSlug, safeRedirect)"),
 );
 check("registration preserves login redirect", register.includes("encodeURIComponent(redirect)"));
 

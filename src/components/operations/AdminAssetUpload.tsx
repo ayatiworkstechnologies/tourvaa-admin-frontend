@@ -4,6 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import { LuFileText as FileText, LuLoaderCircle as Loader2, LuTrash2 as Trash2, LuCloudUpload as UploadCloud } from "react-icons/lu";
 import api from "@/lib/api/client";
+import {
+  IMAGE_AND_PDF_ACCEPT,
+  IMAGE_AND_PDF_FORMAT_LABEL,
+} from "@/lib/uploads/imageFormats";
 
 type Props = {
   label: string;
@@ -12,7 +16,7 @@ type Props = {
 };
 
 function isImageUrl(value: string) {
-  return /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(value) || value.startsWith("https://ik.imagekit.io/");
+  return /\.(png|jpe?g|webp|avif|gif|svg)(\?.*)?$/i.test(value) || value.startsWith("https://ik.imagekit.io/");
 }
 
 export default function AdminAssetUpload({ label, value, onChange }: Props) {
@@ -31,8 +35,9 @@ export default function AdminAssetUpload({ label, value, onChange }: Props) {
         headers: { "Content-Type": "multipart/form-data" },
       });
       onChange(response.data.data.url);
-    } catch {
-      setError("Upload failed. Try a JPG, PNG, WEBP, or PDF under 10MB.");
+    } catch (uploadError: unknown) {
+      const detail = (uploadError as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(typeof detail === "string" ? detail : `Upload failed. Try ${IMAGE_AND_PDF_FORMAT_LABEL} under 10MB.`);
     } finally {
       setUploading(false);
     }
@@ -90,12 +95,12 @@ export default function AdminAssetUpload({ label, value, onChange }: Props) {
                 <UploadCloud size={18} />
               </span>
               <span className="text-xs font-bold text-dash-body">Click to upload or drag & drop</span>
-              <span className="text-[11px] text-dash-subtle">JPG, PNG, WEBP, or PDF - up to 10MB</span>
+              <span className="text-[11px] text-dash-subtle">{IMAGE_AND_PDF_FORMAT_LABEL} - up to 10MB</span>
             </>
           )}
           <input
             type="file"
-            accept="image/png,image/jpeg,image/webp,application/pdf"
+            accept={IMAGE_AND_PDF_ACCEPT}
             onChange={(event) => void upload(event.target.files?.[0] || null)}
             className="hidden"
             disabled={uploading}

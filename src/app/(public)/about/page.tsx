@@ -69,7 +69,7 @@ export default function AboutPage() {
               <p>Tourvaa was born from a simple belief-travel should be personal, seamless, and accessible to everyone.</p>
               <p>We bring together verified travel partners, smart technology, and genuine travel expertise to help you explore the world with confidence.</p>
               <p>Whether it is a weekend getaway or a once-in-a-lifetime journey, we are here to make every moment special.</p>
-              <div className="grid grid-cols-3 gap-4 pt-5">
+              <div className="grid gap-4 pt-5 min-[430px]:grid-cols-3">
                 {[["10K+", "Happy Travellers", Users], ["500+", "Travel Partners", Handshake], ["50+", "Destinations", MapPin]].map(([value, label, Icon]) => { const I = Icon as typeof Users; return <div key={String(label)}><I size={20} className="mb-2 text-teal-700" /><p className="text-2xl font-black text-[#073b3f]">{String(value)}</p><p className="mt-1 text-xs text-slate-500">{String(label)}</p></div>; })}
               </div>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import AccessDenied from "@/components/common/AccessDenied";
 import LoadingState from "@/components/common/LoadingState";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -15,14 +15,15 @@ const DOCS_CAPTURE_MODE = typeof window !== "undefined" && Boolean(window.localS
 
 export default function ProtectedRoute({ children, requiredPermission }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const { loading, isLoggedIn, hasPermission } = useAuthContext();
   const docsMode = typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
 
   useEffect(() => {
     if (!docsMode && !loading && !isLoggedIn) {
-      router.replace("/login");
+      router.replace(pathname.startsWith("/admin") ? "/admin/login" : "/login");
     }
-  }, [docsMode, isLoggedIn, loading, router]);
+  }, [docsMode, isLoggedIn, loading, pathname, router]);
 
   if (DOCS_CAPTURE_MODE) return <>{children}</>;
   if (!docsMode && loading) return <LoadingState label="Restoring session..." fullPage />;

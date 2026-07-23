@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuPlus as Plus, LuRefreshCw as RefreshCw, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 
 type Booking = {
   id: number;
@@ -18,7 +19,26 @@ type Booking = {
   currency?: string;
 };
 
-const STATUSES = ["all", "pending_payment", "payment_authorized", "pending_supplier_acceptance", "confirmed", "ongoing", "completed", "cancelled", "declined"];
+const STATUSES = [
+  "all",
+  "draft",
+  "pending_payment",
+  "pending_credit_approval",
+  "pending_supplier_assignment",
+  "payment_authorized",
+  "pending_supplier_acceptance",
+  "supplier_reassignment_required",
+  "confirmed",
+  "ready_to_travel",
+  "upcoming",
+  "ongoing",
+  "postponed",
+  "cancellation_requested",
+  "completed",
+  "cancelled",
+  "declined",
+  "refunded",
+];
 
 function money(value: string | number | undefined, currency = "USD") {
   if (!value && value !== 0) return "-";
@@ -37,7 +57,7 @@ function dateText(value?: string | null) {
 function statusClass(status?: string) {
   const v = (status || "").toLowerCase();
   if (["paid", "completed", "confirmed", "active"].includes(v)) return "bg-emerald-50 text-emerald-700";
-  if (["pending", "partial", "partially_paid", "pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(v)) return "bg-amber-50 text-amber-700";
+  if (["pending", "partial", "partially_paid", "pending_payment", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required", "cancellation_requested", "bank_transfer_pending", "credit_approval_pending"].includes(v)) return "bg-amber-50 text-amber-700";
   if (["cancelled", "declined", "failed"].includes(v)) return "bg-rose-50 text-rose-700";
   return "bg-slate-50 text-slate-700";
 }
@@ -95,10 +115,10 @@ export default function AgentBookingsPage() {
   }
 
   const stats = [
-    { label: "Total Bookings", value: Object.values(statusCounts).reduce((sum, count) => sum + count, 0), icon: CalendarCheck, color: "text-dash-brand", bg: "bg-[var(--portal-soft)]" },
-    { label: "Confirmed", value: (statusCounts.confirmed ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "Pending", value: (statusCounts.pending_payment ?? 0) + (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0), icon: Clock3, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Cancelled", value: (statusCounts.cancelled ?? 0) + (statusCounts.declined ?? 0) + (statusCounts.refunded ?? 0), icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" },
+    { label: "Total Bookings", value: Object.values(statusCounts).reduce((sum, count) => sum + count, 0), icon: CalendarCheck, tone: "bg-blue-50 text-blue-700" },
+    { label: "Confirmed", value: (statusCounts.confirmed ?? 0) + (statusCounts.ready_to_travel ?? 0) + (statusCounts.upcoming ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-700" },
+    { label: "Pending", value: (statusCounts.pending_payment ?? 0) + (statusCounts.pending_credit_approval ?? 0) + (statusCounts.pending_supplier_assignment ?? 0) + (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0) + (statusCounts.supplier_reassignment_required ?? 0) + (statusCounts.cancellation_requested ?? 0), icon: Clock3, tone: "bg-amber-50 text-amber-700" },
+    { label: "Cancelled", value: (statusCounts.cancelled ?? 0) + (statusCounts.declined ?? 0) + (statusCounts.refunded ?? 0), icon: XCircle, tone: "bg-rose-50 text-rose-700" },
   ];
 
   const columns: DataTableColumn<Booking>[] = [
@@ -112,50 +132,27 @@ export default function AgentBookingsPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-blue-200/40 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Bookings</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-blue-100">All bookings created on behalf of your customers.</p>
-          </div>
-          <Link
-            href="/agent/bookings/create"
-            className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-dash-brand-dark shadow-sm transition hover:bg-[var(--portal-soft)] hover:-translate-y-0.5"
-          >
-            <Plus size={18} strokeWidth={2.5} /> New Booking
-          </Link>
-        </div>
-      </div>
+    <AgentPageShell>
+      <AgentPageHeader
+        title="Bookings"
+        description="Track every customer booking from payment through supplier acceptance and travel completion."
+        icon={CalendarCheck}
+        eyebrow="Booking Operations"
+      />
 
       {/* Stats */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="group relative overflow-hidden rounded-2xl border border-transparent bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-500">{label}</p>
-                <p className={`mt-2 text-3xl font-black tracking-tight ${color}`}>{value}</p>
-              </div>
-              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg}`}>
-                <Icon size={20} className={color} />
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map(({ label, value, icon, tone }) => <AgentMetric key={label} label={label} value={value} icon={icon} tone={tone} />)}
       </div>
 
-      {/* Status Filter */}
-      <div className="mt-8 flex flex-wrap gap-2">
+      <AgentSection className="mt-4">
+      <div className="flex gap-2 overflow-x-auto border-b border-[#E7EDF6] p-4">
         {STATUSES.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => handleStatus(s)}
-            className={`rounded-2xl px-5 py-2.5 text-sm font-bold capitalize transition-all shadow-[0_2px_8px_rgb(0,0,0,0.02)] ${
+            className={`shrink-0 rounded-xl px-4 py-2.5 text-xs font-bold capitalize transition-all ${
               statusFilter === s
                 ? "bg-dash-brand text-white shadow-dash-brand/20"
                 : "border border-dash-border/80 bg-white text-dash-muted hover:border-dash-brand/30 hover:text-dash-brand"
@@ -167,7 +164,7 @@ export default function AgentBookingsPage() {
       </div>
 
       {/* Table */}
-      <div className="mt-6">
+      <div>
         {error && <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700"><span>{error}</span><button type="button" onClick={() => setRetryKey((value) => value + 1)} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs shadow-sm ring-1 ring-rose-200"><RefreshCw size={13} />Retry</button></div>}
         <DataTable
           ariaLabel="Bookings"
@@ -180,13 +177,13 @@ export default function AgentBookingsPage() {
           totalPages={totalPages}
           onPageChange={setPage}
           emptyTitle="No bookings found"
-          emptyDescription="Create a booking for a customer to see it here."
+          emptyDescription="Bookings created from the public tour checkout will appear here."
           emptyAction={
               <Link
-                href="/agent/bookings/create"
+                href="/agent/tours"
                 className="mt-4 inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover transition-all shadow-sm"
               >
-                <Plus size={16} strokeWidth={2.5} /> Create Booking
+                Browse Tours
               </Link>
           }
           actions={(b) => (
@@ -201,6 +198,7 @@ export default function AgentBookingsPage() {
           )}
         />
       </div>
-    </div>
+      </AgentSection>
+    </AgentPageShell>
   );
 }

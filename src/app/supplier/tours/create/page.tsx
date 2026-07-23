@@ -3,9 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus, LuTrash2 as Trash2 } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuMapPinned as MapPinned, LuPlus as Plus, LuTrash2 as Trash2 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
+import { SupplierPageShell } from "@/components/supplier/SupplierPage";
+import {
+  TourWorkspaceHeader,
+  TourWorkspaceProgress,
+} from "@/components/tours/TourWorkspace";
 
 type SelectOption = { id: number; name: string };
 type ApiOption = { id: number; name?: string; category_name?: string };
@@ -26,50 +31,6 @@ const STEPS = [
 const inputCls =
   "w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
 const labelCls = "block text-xs font-bold text-dash-body mb-1.5";
-
-function StepIndicator({
-  current,
-  steps,
-}: {
-  current: number;
-  steps: string[];
-}) {
-  return (
-    <div className="flex items-center gap-0 mb-8">
-      {steps.map((s, i) => (
-        <div key={s} className="flex items-center flex-1 last:flex-none">
-          <div className="flex flex-col items-center">
-            <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${
-                i < current
-                  ? "bg-emerald-600 text-white"
-                  : i === current
-                  ? "bg-emerald-600 text-white ring-4 ring-emerald-100"
-                  : "bg-dash-border text-dash-subtle"
-              }`}
-            >
-              {i < current ? <CheckCircle2 size={14} /> : i + 1}
-            </div>
-            <p
-              className={`mt-1 hidden text-[10px] font-bold sm:block whitespace-nowrap ${
-                i === current ? "text-emerald-700" : "text-dash-subtle"
-              }`}
-            >
-              {s}
-            </p>
-          </div>
-          {i < steps.length - 1 && (
-            <div
-              className={`mx-1 h-0.5 flex-1 rounded ${
-                i < current ? "bg-emerald-500" : "bg-dash-border"
-              }`}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export default function CreateTourPage() {
   const router = useRouter();
@@ -202,27 +163,24 @@ export default function CreateTourPage() {
   };
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-6">
-        <Link
-          href="/supplier/tours"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-dash-muted hover:text-dash-text"
-        >
-          <ArrowLeft size={15} />
-          My Tours
-        </Link>
-        <h1 className="mt-3 text-2xl font-black text-dash-text">
-          Create New Tour
-        </h1>
-        <p className="mt-1 text-sm text-dash-muted">
-          Fill in the details to create your tour listing.
-        </p>
-      </div>
+    <SupplierPageShell>
+      <TourWorkspaceHeader
+        role="supplier"
+        title="Create New Tour"
+        description="Start with the essentials, set your pricing, then continue in the full editor for itinerary, gallery, inclusions, and availability."
+        icon={MapPinned}
+        eyebrow="Tour Builder"
+        actions={[{ label: "Back to My Tours", href: "/supplier/tours", icon: ArrowLeft, variant: "secondary" }]}
+      >
+        <TourWorkspaceProgress
+          role="supplier"
+          currentIndex={step}
+          stages={STEPS.map((label) => ({ label }))}
+        />
+      </TourWorkspaceHeader>
 
-      <div className="mx-auto max-w-2xl">
-        <StepIndicator current={step} steps={STEPS} />
-
-        <div className="rounded-xl border border-dash-border bg-white p-6 shadow-sm">
+      <div className="mx-auto mt-4 max-w-4xl">
+        <div className="rounded-2xl border border-[#DCEBE2] bg-white p-5 shadow-[0_12px_34px_-28px_rgba(15,82,48,.7)] sm:p-7">
           {/* Error */}
           {error && (
             <div className="mb-5 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
@@ -592,7 +550,7 @@ export default function CreateTourPage() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg-muted"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#D5E6DB] px-4 py-2.5 text-sm font-bold text-[#526C5D] hover:bg-[#F0F8F3]"
               >
                 <ArrowLeft size={15} />
                 Back
@@ -600,7 +558,7 @@ export default function CreateTourPage() {
             ) : (
               <Link
                 href="/supplier/tours"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-dash-muted hover:text-dash-text"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#667D70] hover:text-[#123024]"
               >
                 <ArrowLeft size={15} />
                 Cancel
@@ -610,7 +568,7 @@ export default function CreateTourPage() {
               <button
                 type="button"
                 onClick={handleNext}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#16833A] px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-100 hover:bg-[#117331]"
               >
                 Next
                 <ArrowRight size={15} />
@@ -620,7 +578,7 @@ export default function CreateTourPage() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#16833A] px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-100 hover:bg-[#117331] disabled:opacity-60"
               >
                 {saving ? (
                   <Loader2 size={15} className="animate-spin" />
@@ -633,7 +591,7 @@ export default function CreateTourPage() {
           </div>
         </div>
       </div>
-    </div>
+    </SupplierPageShell>
   );
 }
 

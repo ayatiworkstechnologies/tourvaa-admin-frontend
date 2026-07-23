@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuCheck as Check } from "react-icons/lu";
+import { LuMapPinned as MapPinned } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
+import {
+  TourWorkspaceContent,
+  TourWorkspaceHeader,
+  TourWorkspaceStepFooter,
+  TourWorkspaceTabs,
+} from "@/components/tours/TourWorkspace";
 import TourFormPage from "@/components/cms/TourFormPage";
 import TourOverviewTab from "@/components/tours/TourOverviewTab";
 import TourItineraryTab from "@/components/tours/TourItineraryTab";
@@ -30,78 +35,64 @@ const STEPS: Step[] = [
   { key: "inclusions", label: "Inclusions" },
   { key: "exclusions", label: "Exclusions" },
   { key: "highlights", label: "Highlights" },
-  { key: "similar", label: "Similar Tours" },
-  { key: "extensions", label: "Extensions" },
   { key: "gallery", label: "Gallery" },
   { key: "pricing", label: "Pricing" },
   { key: "calendar", label: "Calendar" },
+  { key: "extensions", label: "Extensions" },
   { key: "discounts", label: "Discounts" },
+  { key: "similar", label: "Similar Tours" },
 ];
 
 export default function TourEditPage({ tourId }: { tourId: string }) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
-  const [visited, setVisited] = useState<Set<number>>(new Set([0]));
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
   const activeTab = STEPS[stepIndex].key;
-  const isFirst = stepIndex === 0;
-  const isLast = stepIndex === STEPS.length - 1;
 
-  const goTo = (index: number) => {
-    setStepIndex(index);
-    setVisited((prev) => new Set(prev).add(index));
+  const completeAndNext = () => {
+    setCompletedSteps((current) => new Set(current).add(stepIndex));
+    setStepIndex((current) => Math.min(current + 1, STEPS.length - 1));
+  };
+
+  const finishReview = () => {
+    setCompletedSteps((current) => new Set(current).add(stepIndex));
+    router.push("/admin/tours");
   };
 
   return (
     <ModuleWrapper title="Edit Tour" requiredPermission="tours.edit">
-      <div className="mb-4 flex items-center gap-3">
-        <Link href="/admin/tours" className="inline-flex items-center gap-1 text-sm font-bold text-dash-brand-hover">
-          <ArrowLeft size={15} /> Tours
-        </Link>
-        <span className="text-dash-subtle">/</span>
-        <span className="text-sm text-dash-body">Edit</span>
-      </div>
-
-      {/* Step indicator */}
-      <div className="mb-6 overflow-x-auto rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
-        <div className="flex min-w-max items-center">
-          {STEPS.map((step, index) => {
-            const isActive = index === stepIndex;
-            const isDone = visited.has(index) && index !== stepIndex;
-            return (
-              <div key={step.key} className="flex items-center">
-                <button
-                  type="button"
-                  onClick={() => goTo(index)}
-                  className="flex flex-col items-center gap-1.5 px-2"
-                >
-                  <span
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                      isActive
-                        ? "bg-dash-brand text-white shadow-[0_4px_10px_rgb(67,169,246,0.35)]"
-                        : isDone
-                        ? "bg-[#EDF5FF] text-dash-brand-hover"
-                        : "bg-[#F0F3F8] text-dash-subtle"
-                    }`}
-                  >
-                    {isDone ? <Check size={14} /> : index + 1}
-                  </span>
-                  <span className={`whitespace-nowrap text-xs font-semibold ${isActive ? "text-dash-text" : "text-dash-subtle"}`}>
-                    {step.label}
-                  </span>
-                </button>
-                {index < STEPS.length - 1 && (
-                  <span className={`mx-1 h-0.5 w-8 rounded-full ${visited.has(index + 1) || isDone ? "bg-dash-brand" : "bg-[#F0F3F8]"}`} />
-                )}
-              </div>
-            );
-          })}
+      <TourWorkspaceHeader
+        role="admin"
+        title="Edit Tour"
+        description="Manage the complete tour package across content, itinerary, media, pricing, availability, and promotion sections."
+        icon={MapPinned}
+        eyebrow={`Admin Tour Editor · Tour #${tourId}`}
+        actions={[{ label: "Back to Tours", href: "/admin/tours", variant: "secondary" }]}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-[#1F5DA8]">
+              Administrator access
+            </span>
+            <span className="text-[11px] text-dash-muted">Changes save inside each section below.</span>
+          </div>
+          <span className="text-[11px] font-bold text-dash-muted">
+            {STEPS[stepIndex].label} · {stepIndex + 1} of {STEPS.length}
+          </span>
         </div>
-      </div>
+      </TourWorkspaceHeader>
 
-      {/* Step content */}
-      <div>
-        {activeTab === "basic" && <TourFormPage tourId={tourId} />}
+      <TourWorkspaceTabs
+        role="admin"
+        tabs={STEPS}
+        activeIndex={stepIndex}
+        onSelect={setStepIndex}
+        completedIndices={completedSteps}
+      />
+
+      <TourWorkspaceContent role="admin">
+        {activeTab === "basic" && <TourFormPage tourId={tourId} embedded />}
         {activeTab === "overview" && <TourOverviewTab tourId={tourId} />}
         {activeTab === "itinerary" && <TourItineraryTab tourId={tourId} />}
         {activeTab === "inclusions" && <TourItemsTab tourId={tourId} segment="inclusions" label="Inclusion" />}
@@ -113,41 +104,17 @@ export default function TourEditPage({ tourId }: { tourId: string }) {
         {activeTab === "pricing" && <TourPricingTab tourId={tourId} />}
         {activeTab === "calendar" && <TourCalendarTab tourId={tourId} />}
         {activeTab === "discounts" && <TourDiscountsTab tourId={tourId} />}
-      </div>
+      </TourWorkspaceContent>
 
-      {/* Step navigation */}
-      <div className="mt-6 flex items-center justify-between border-t border-[#F0F3F8] pt-5">
-        <button
-          type="button"
-          onClick={() => !isFirst && goTo(stepIndex - 1)}
-          disabled={isFirst}
-          className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body transition hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <ArrowLeft size={15} /> Back
-        </button>
-
-        <span className="text-xs font-semibold text-dash-subtle">
-          Step {stepIndex + 1} of {STEPS.length}
-        </span>
-
-        {isLast ? (
-          <button
-            type="button"
-            onClick={() => router.push("/admin/tours")}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
-          >
-            <Check size={15} /> Done
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => goTo(stepIndex + 1)}
-            className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] transition hover:-translate-y-0.5 hover:bg-dash-brand-hover"
-          >
-            Next <ArrowRight size={15} />
-          </button>
-        )}
-      </div>
+      <TourWorkspaceStepFooter
+        role="admin"
+        activeIndex={stepIndex}
+        total={STEPS.length}
+        completedCount={completedSteps.size}
+        onBack={() => setStepIndex((current) => Math.max(0, current - 1))}
+        onNext={completeAndNext}
+        onFinish={finishReview}
+      />
     </ModuleWrapper>
   );
 }

@@ -5,6 +5,7 @@ import axios from "axios";
 import { LuImageUp as ImageUp, LuLoaderCircle as Loader2, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { IMAGE_ACCEPT, IMAGE_FORMAT_LABEL } from "@/lib/uploads/imageFormats";
 
 type ProfileImageUploadProps = {
   value: string;
@@ -104,7 +105,7 @@ export default function ProfileImageUpload({
           {uploading ? "Uploading..." : "Upload Image"}
           <input
             type="file"
-            accept="image/png,image/jpeg,image/webp"
+            accept={IMAGE_ACCEPT}
             onChange={upload}
             className="sr-only"
             disabled={uploading}
@@ -113,7 +114,7 @@ export default function ProfileImageUpload({
         </label>
       </div>
 
-      <p className="text-xs text-dash-muted">JPG, PNG, or WEBP. Maximum 2MB.</p>
+      <p className="text-xs text-dash-muted">{IMAGE_FORMAT_LABEL}. Maximum 2MB.</p>
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>}
     </div>
   );

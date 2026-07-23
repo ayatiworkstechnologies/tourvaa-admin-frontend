@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { LuCircleCheckBig as CheckCircle2, LuHeadphones as Headphones, LuLoaderCircle as Loader2, LuMail as Mail, LuMessageSquare as MessageSquare, LuPhone as Phone, LuSend as Send } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
 
 type SupportMessage = {
   id: number;
@@ -60,30 +61,19 @@ export default function CustomerSupportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-dash-bg p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-[var(--portal-hero-from)] via-[var(--portal-hero-via)] to-[var(--portal-hero-to)] p-7 text-white shadow-xl shadow-teal-200/60 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex items-center gap-5">
-          <div className="hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm ring-4 ring-white/20 sm:flex">
-            <Headphones size={28} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Support</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-white/80">
-              Get help with your bookings, payments, or any other queries.
-            </p>
-          </div>
-        </div>
-      </div>
+    <CustomerPageShell>
+      <CustomerPageHeader
+        title="Support"
+        description="Get help with bookings, payments, travel documents, or any other journey questions."
+        icon={Headphones}
+      />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_360px]">
         {/* Left column: contact form + message history */}
-        <div className="space-y-6">
+        <div className="space-y-4">
         {/* Contact form */}
-        <div className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100">
-          <h2 className="mb-5 font-black text-dash-text">Send us a message</h2>
+        <div className="rounded-2xl border border-[#DDE7F3] bg-white p-6 shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
+          <div className="mb-5 border-b border-[#E6EDF6] pb-4"><h2 className="font-black text-[#0C2043]">Send us a message</h2><p className="mt-1 text-[11px] text-[#6B7F9D]">Tell us what you need and our travel team will respond.</p></div>
 
           {sent ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -119,7 +109,7 @@ export default function CustomerSupportPage() {
                   value={form.subject}
                   onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
                   placeholder="e.g. Booking query, Refund request, Tour information"
-                  className="w-full rounded-xl border border-dash-border bg-white px-4 py-3 text-sm text-dash-body outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10 transition-all"
+                  className="customer-input w-full"
                 />
               </div>
               <div>
@@ -132,13 +122,13 @@ export default function CustomerSupportPage() {
                   value={form.message}
                   onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                   placeholder="Describe your issue or question in detail. Include your booking reference number if relevant."
-                  className="w-full resize-none rounded-xl border border-dash-border bg-white px-4 py-3 text-sm text-dash-body outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10 transition-all"
+                  className="customer-input w-full resize-none"
                 />
               </div>
               <button
                 type="submit"
                 disabled={sending}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-dash-brand py-3 text-sm font-bold text-white hover:bg-dash-brand-dark disabled:opacity-60 transition-all"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0868E8] py-3 text-sm font-bold text-white shadow-md shadow-blue-100 hover:bg-[#075AC9] disabled:opacity-60 transition-all"
               >
                 {sending ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
                 {sending ? "Sending…" : "Send Message"}
@@ -148,7 +138,7 @@ export default function CustomerSupportPage() {
         </div>
 
         {/* Message history */}
-        <div className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100">
+        <div className="rounded-2xl border border-[#DDE7F3] bg-white p-6 shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
           <h2 className="mb-5 font-black text-dash-text">Your messages</h2>
           {loadingHistory ? (
             <div className="flex items-center justify-center py-8">
@@ -174,7 +164,7 @@ export default function CustomerSupportPage() {
 
         {/* Contact info */}
         <div className="space-y-4">
-          <div className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <div className="rounded-2xl border border-[#DDE7F3] bg-white p-6 shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
             <h3 className="mb-4 font-black text-dash-text">Contact Details</h3>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
@@ -210,7 +200,7 @@ export default function CustomerSupportPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <div className="rounded-2xl border border-[#DDE7F3] bg-white p-6 shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
             <h3 className="mb-3 font-black text-dash-text">Common Issues</h3>
             <ul className="space-y-2 text-sm text-dash-muted">
               {[
@@ -229,6 +219,6 @@ export default function CustomerSupportPage() {
           </div>
         </div>
       </div>
-    </div>
+    </CustomerPageShell>
   );
 }

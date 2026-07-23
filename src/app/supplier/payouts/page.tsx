@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 
 type Payout = {
   id: number;
@@ -124,18 +125,10 @@ export default function PayoutsPage() {
   };
 
   return (
-    <div className="p-6 md:p-8">
-      {/* Hero header */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-7 text-white shadow-xl shadow-emerald-200/60 md:p-9">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-4xl">Payouts</h1>
-            <p className="mt-2 max-w-md text-sm font-medium text-emerald-100">
-              Request and track your payout batches.
-            </p>
-          </div>
+    <SupplierPageShell>
+      <SupplierPageHeader title="Payouts" description="Request available supplier earnings and track every approval, release, and payment reference." icon={Banknote} eyebrow="Supplier Finance">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-[11px] text-[#657C6F]">Only available, unreserved ledger balances can be requested.</span>
           <button
             type="button"
             onClick={() => {
@@ -143,17 +136,17 @@ export default function PayoutsPage() {
               setFormError("");
               setFormSuccess(false);
             }}
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50 transition-all"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#16833A] px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-[#117331]"
           >
             <Plus size={16} />
             Request Payout
           </button>
         </div>
-      </div>
+      </SupplierPageHeader>
 
       {/* Success message */}
       {formSuccess && (
-        <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+        <div className="mt-4 mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
           <CheckCircle2 size={16} />
           Payout request submitted successfully!
         </div>
@@ -161,7 +154,7 @@ export default function PayoutsPage() {
 
       {/* Payout request form */}
       {showForm && (
-        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
+        <div className="mt-4 mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
           <h2 className="mb-4 text-base font-black text-dash-text">
             Request Payout
           </h2>
@@ -350,7 +343,7 @@ export default function PayoutsPage() {
           ))}
         </div>
       )}
-    </div>
+    </SupplierPageShell>
   );
 }
 
