@@ -11,6 +11,7 @@ import ActionModal from "@/components/operations/ActionModal";
 import { createReviewRecord, listReviewRecords, ReviewModule, ReviewRecord } from "@/lib/api/services/operationsService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type Props = {
   module: ReviewModule;
@@ -84,12 +85,12 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
       setRows(response.items || response.data || []);
       setTotal(response.total || 0);
       setTotalPages(response.total_pages || 1);
-    } catch {
-      toast.error(`Could not load ${title.toLowerCase()}.`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
-  }, [module, page, search, supplierView, title, toast]);
+  }, [module, page, search, supplierView, toast]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchRows(), 200);
@@ -103,8 +104,8 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
       toast.success(`${title.slice(0, -1)} created.`);
       setOpen(false);
       await fetchRows();
-    } catch {
-      toast.error("Could not create record.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }

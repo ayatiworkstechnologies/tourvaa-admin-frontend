@@ -25,6 +25,7 @@ import {
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type DetailValue = string | number | boolean | null | undefined;
 type DetailObject = Record<string, DetailValue>;
@@ -106,13 +107,15 @@ export default function SupplierDetailPage() {
   const approvalStatus = String(record?.approval_status || "").toLowerCase();
   const accountStatus = String(record?.status || "").toLowerCase();
   const isApproved = ["approved", "approved_live"].includes(approvalStatus);
-  const isRejected = approvalStatus === "rejected";
+  // Suppliers have no terminal "rejected" state -- reject/reject-item both
+  // resolve to more_information_required (see suppliers.py's reject_supplier).
+  const isRejected = approvalStatus === "more_information_required";
   const isBlocked = ["inactive", "blocked", "suspended"].includes(accountStatus) || ["blocked", "suspended"].includes(approvalStatus);
   const canApprove = hasPermission("suppliers.approve") && !isApproved && !isBlocked;
   const canReject = hasPermission("suppliers.reject") && !isRejected && !isBlocked;
   const canPartial = !isApproved && !isBlocked && (hasPermission("suppliers.partial_approve") || canApprove);
   const canCommercial = hasPermission("suppliers.manage_markup");
-  const hasCommissionRequest = String(record?.pending_requirements || "").toLowerCase().includes("commission request");
+  const hasCommissionRequest = record?.commission_request_status === "pending";
   const canBlock = hasPermission("suppliers.edit") || hasPermission("suppliers.approve");
   const canReviewItems = hasPermission("suppliers.approve") || hasPermission("suppliers.reject");
 
@@ -120,8 +123,8 @@ export default function SupplierDetailPage() {
     setLoading(true);
     try {
       setRecord(await getReviewRecord("suppliers", id));
-    } catch {
-      toast.error("Could not load supplier detail.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -136,8 +139,8 @@ export default function SupplierDetailPage() {
       toast.success(message);
       setModal(null);
       await fetchRecord();
-    } catch {
-      toast.error("Action failed.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -157,8 +160,8 @@ export default function SupplierDetailPage() {
   const viewDocument = async (documentId: number) => {
     try {
       await openPrivateDocument("supplier", documentId);
-    } catch {
-      toast.error("Could not open supplier document.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -210,7 +213,7 @@ export default function SupplierDetailPage() {
               {canBlock && isBlocked && <button onClick={() => void run(() => setSupplierAccountState(id, "reactivate"), "Supplier account reactivated.")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><CheckCircle2 size={16} /> Reactivate</button>}
               {canBlock && !isBlocked && <button onClick={() => setModal("deactivate")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><Ban size={16} /> Deactivate</button>}
               {canBlock && !isBlocked && <button onClick={() => setModal("suspend")} className="inline-flex items-center gap-2 rounded-xl border border-amber-200 px-4 py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-50"><Ban size={16} /> Suspend</button>}
-              {canCommercial && <button onClick={() => setModal("commercial")} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold ${hasCommissionRequest ? "bg-amber-500 text-white hover:bg-amber-600" : "border border-dash-border text-dash-text hover:bg-dash-bg"}`}><Percent size={16} /> {hasCommissionRequest ? "Approve Commission" : "Commission"}</button>}
+              {canCommercial && <button onClick={() => setModal("commercial")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><Percent size={16} /> Commission</button>}
             </div>
           </div>
 
@@ -235,6 +238,17 @@ export default function SupplierDetailPage() {
               <p className="mt-1 text-lg font-black text-dash-text">
                 {record.markup_type}: {record.markup_value ?? 0}
               </p>
+            </div>
+          )}
+
+          {hasCommissionRequest && (
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Commission request pending</p>
+                <p className="mt-1 text-lg font-black text-dash-text">{record.commission_request_type}: {record.commission_request_value ?? 0}</p>
+                <p className="mt-1 text-xs text-dash-muted">Submitted from the supplier dashboard for administration approval.</p>
+              </div>
+              {canCommercial && <button type="button" disabled={saving} onClick={() => void run(() => updateCommercialValue("suppliers", id, { markup_type: String(record.commission_request_type || "percentage"), markup_value: Number(record.commission_request_value || 0) }), "Commission request approved.")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Check size={16} />Approve request</button>}
             </div>
           )}
 
@@ -396,11 +410,11 @@ export default function SupplierDetailPage() {
           <ActionModal open={modal === "accept"} title="Accept supplier" saving={saving} submitLabel="Accept and unlock operations" onClose={() => setModal(null)} onSubmit={() => void run(() => acceptSupplier(id), "Supplier approved and operational modules unlocked.")}>
             <p className="text-sm leading-6 text-dash-muted">Accepting this supplier immediately unlocks tour creation, departures, bookings, calendar, payments, payouts and operational reports.</p>
           </ActionModal>
-          <ActionModal open={modal === "reject"} title="Reject supplier" saving={saving} submitLabel="Reject" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => rejectReviewRecord("suppliers", id, { rejection_reason: String(payload.rejection_reason || ""), admin_comments: String(payload.admin_comments || "") }), "Supplier rejected.")} fields={[{ name: "rejection_reason", label: "Rejection reason" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
+          <ActionModal open={modal === "reject"} title="Reject supplier" saving={saving} submitLabel="Reject" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => rejectReviewRecord("suppliers", id, { rejection_reason: String(payload.rejection_reason || ""), admin_comments: String(payload.admin_comments || "") }), "Supplier rejected.")} fields={[{ name: "rejection_reason", label: "Rejection reason", required: true }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "partial"} title="Request supplier changes" saving={saving} submitLabel="Send request" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => partialApproveReviewRecord("suppliers", id, { admin_comments: String(payload.admin_comments || ""), pending_requirements: String(payload.pending_requirements || "") }), "Supplier change request sent.")} fields={[{ name: "pending_requirements", label: "Required changes", type: "textarea" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "deactivate"} title="Deactivate supplier account" saving={saving} submitLabel="Deactivate" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => setSupplierAccountState(id, "deactivate", String(payload.reason || "")), "Supplier account deactivated.")} fields={[{ name: "reason", label: "Reason", type: "textarea" }]} />
           <ActionModal open={modal === "suspend"} title="Suspend supplier account" saving={saving} submitLabel="Suspend" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => setSupplierAccountState(id, "suspend", String(payload.reason || "")), "Supplier account suspended.")} fields={[{ name: "reason", label: "Reason", type: "textarea" }]} />
-          <ActionModal open={modal === "commercial"} title={hasCommissionRequest ? "Approve commission request" : "Update commission / markup"} saving={saving} submitLabel={hasCommissionRequest ? "Approve Commission" : "Save"} onClose={() => setModal(null)} initialValues={{ value_type: record.markup_type || "percentage", value: record.markup_value ?? 0 }} onSubmit={(payload) => void run(() => updateCommercialValue("suppliers", id, { markup_type: payload.value_type, markup_value: payload.value }), hasCommissionRequest ? "Commission request approved." : "Commission updated.")} fields={[{ name: "value_type", label: "Commission type", type: "select", options: [{ label: "Percentage", value: "percentage" }, { label: "Fixed", value: "fixed" }] }, { name: "value", label: "Commission / markup value", type: "number" }]} />
+          <ActionModal open={modal === "commercial"} title="Update commission / markup" saving={saving} submitLabel="Save" onClose={() => setModal(null)} initialValues={{ value_type: record.markup_type || "percentage", value: record.markup_value ?? 0 }} onSubmit={(payload) => void run(() => updateCommercialValue("suppliers", id, { markup_type: payload.value_type, markup_value: payload.value }), "Commission updated.")} fields={[{ name: "value_type", label: "Commission type", type: "select", options: [{ label: "Percentage", value: "percentage" }, { label: "Fixed", value: "fixed" }] }, { name: "value", label: "Commission / markup value", type: "number" }]} />
           <ActionModal
             open={modal === "reject-item"}
             title={reviewTarget?.type === "vehicle" ? "Reject vehicle" : "Reject document"}
@@ -411,7 +425,7 @@ export default function SupplierDetailPage() {
               setReviewTarget(null);
             }}
             onSubmit={submitRejectItem}
-            fields={[{ name: "rejection_reason", label: "Rejection reason" }]}
+            fields={[{ name: "rejection_reason", label: "Rejection reason", required: true }]}
           />
         </div>
       ) : (

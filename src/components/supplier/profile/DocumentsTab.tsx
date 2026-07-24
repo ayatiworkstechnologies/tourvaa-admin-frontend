@@ -6,6 +6,7 @@ import api from "@/lib/api/client";
 import { IMAGE_DOCUMENT_ACCEPT } from "@/lib/uploads/imageFormats";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type Document = { id: number; document_type: string; file_url: string; status: string; uploaded_at?: string; notes?: string };
 
@@ -78,8 +79,8 @@ export default function DocumentsTab() {
       await api.post(`/suppliers/${supplierId}/documents`, fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Document uploaded successfully.");
       await load();
-    } catch {
-      toast.error("Upload failed. Please try again.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setUploading(null);
       if (fileRefs.current[docType]) fileRefs.current[docType]!.value = "";

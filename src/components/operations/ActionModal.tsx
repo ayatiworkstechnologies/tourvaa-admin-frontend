@@ -6,6 +6,7 @@ type Field = {
   label: string;
   type?: "text" | "number" | "textarea" | "select";
   options?: { label: string; value: string }[];
+  required?: boolean;
 };
 
 type Props = {
@@ -90,14 +91,14 @@ export default function ActionModal({
               <label key={field.name} className="block">
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{field.label}</span>
                 {field.type === "textarea" ? (
-                  <textarea value={form[field.name] || ""} onChange={(event) => setForm((prev) => ({ ...prev, [field.name]: event.target.value }))} className="min-h-28 w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                  <textarea required={field.required} value={form[field.name] || ""} onChange={(event) => setForm((prev) => ({ ...prev, [field.name]: event.target.value }))} className="min-h-28 w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
                 ) : field.type === "select" ? (
-                  <select value={form[field.name] || ""} onChange={(event) => setForm((prev) => ({ ...prev, [field.name]: event.target.value }))} className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand">
+                  <select required={field.required} value={form[field.name] || ""} onChange={(event) => setForm((prev) => ({ ...prev, [field.name]: event.target.value }))} className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand">
                     <option value="">Select</option>
                     {field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 ) : (
-                  <input type={field.type || "text"} value={form[field.name] || ""} onChange={(event) => setForm((prev) => ({ ...prev, [field.name]: event.target.value }))} className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                  <input required={field.required} type={field.type || "text"} value={form[field.name] || ""} onChange={(event) => setForm((prev) => ({ ...prev, [field.name]: event.target.value }))} className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
                 )}
               </label>
             ))}
