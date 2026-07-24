@@ -66,6 +66,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [supplierView, setSupplierView] = useState<"all" | "pending" | "approved" | "inactive">("all");
 
   const canCreate = hasPermission(`${module}.create`) || (module === "affiliates" && hasPermission("affiliates.approve"));
   const fields = moduleNameFields[module];
@@ -73,7 +74,13 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await listReviewRecords(module, { page, limit: 10, search });
+      const supplierFilters: Record<string, string | number> = {};
+      if (module === "suppliers") {
+        if (supplierView === "pending") supplierFilters.approval_status = "PENDING";
+        if (supplierView === "approved") supplierFilters.approval_status = "APPROVED";
+        if (supplierView === "inactive") supplierFilters.status = "inactive";
+      }
+      const response = await listReviewRecords(module, { page, limit: 10, search, ...supplierFilters });
       setRows(response.items || response.data || []);
       setTotal(response.total || 0);
       setTotalPages(response.total_pages || 1);
@@ -82,7 +89,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     } finally {
       setLoading(false);
     }
-  }, [module, page, search, title, toast]);
+  }, [module, page, search, supplierView, title, toast]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchRows(), 200);
@@ -231,6 +238,23 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
             )}
           </div>
         </section>
+        {module === "suppliers" && (
+          <nav className="flex flex-wrap gap-2 rounded-xl border border-dash-border bg-white p-2" aria-label="Supplier status filters">
+            {(["all", "pending", "approved", "inactive"] as const).map((view) => (
+              <button
+                key={view}
+                type="button"
+                onClick={() => {
+                  setSupplierView(view);
+                  setPage(1);
+                }}
+                className={`rounded-lg px-4 py-2 text-sm font-bold capitalize ${supplierView === view ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
+              >
+                {view}
+              </button>
+            ))}
+          </nav>
+        )}
         <DataTable
           ariaLabel={title}
           columns={columns}

@@ -12,15 +12,15 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import StatusBadge from "@/components/operations/StatusBadge";
 import {
-  approveReviewRecord,
+  acceptSupplier,
   getReviewRecord,
   partialApproveReviewRecord,
   rejectReviewRecord,
   reviewSupplierDocument,
   reviewSupplierVehicle,
+  setSupplierAccountState,
   ReviewRecord,
   updateCommercialValue,
-  updateReviewRecord,
 } from "@/lib/api/services/operationsService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -99,7 +99,7 @@ export default function SupplierDetailPage() {
   const [record, setRecord] = useState<ReviewRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [modal, setModal] = useState<"reject" | "partial" | "commercial" | "block" | "reject-item" | null>(null);
+  const [modal, setModal] = useState<"accept" | "reject" | "partial" | "commercial" | "deactivate" | "suspend" | "reject-item" | null>(null);
   const [activeTab, setActiveTab] = useState<"business" | "invoicing" | "documents" | "vehicles">("business");
   const [reviewTarget, setReviewTarget] = useState<{ type: "document" | "vehicle"; id: number } | null>(null);
 
@@ -107,7 +107,7 @@ export default function SupplierDetailPage() {
   const accountStatus = String(record?.status || "").toLowerCase();
   const isApproved = ["approved", "approved_live"].includes(approvalStatus);
   const isRejected = approvalStatus === "rejected";
-  const isBlocked = ["blocked", "suspended"].includes(accountStatus) || ["blocked", "suspended"].includes(approvalStatus);
+  const isBlocked = ["inactive", "blocked", "suspended"].includes(accountStatus) || ["blocked", "suspended"].includes(approvalStatus);
   const canApprove = hasPermission("suppliers.approve") && !isApproved && !isBlocked;
   const canReject = hasPermission("suppliers.reject") && !isRejected && !isBlocked;
   const canPartial = !isApproved && !isBlocked && (hasPermission("suppliers.partial_approve") || canApprove);
@@ -204,10 +204,12 @@ export default function SupplierDetailPage() {
               <ArrowLeft size={16} /> Back to suppliers
             </Link>
             <div className="flex flex-wrap gap-2">
-              {canApprove && <button onClick={() => void run(() => approveReviewRecord("suppliers", id), "Supplier approved.")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"><CheckCircle2 size={16} /> Approve</button>}
+              {canApprove && <button onClick={() => setModal("accept")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"><CheckCircle2 size={16} /> Accept Supplier</button>}
               {canPartial && <button onClick={() => setModal("partial")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><ShieldHalf size={16} /> Request Changes</button>}
               {canReject && <button onClick={() => setModal("reject")} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700"><XCircle size={16} /> Reject</button>}
-              {canBlock && <button onClick={() => isBlocked ? void run(() => updateReviewRecord("suppliers", id, { status: "active" }), "Supplier unblocked.") : setModal("block")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><Ban size={16} /> {isBlocked ? "Unblock" : "Block"}</button>}
+              {canBlock && isBlocked && <button onClick={() => void run(() => setSupplierAccountState(id, "reactivate"), "Supplier account reactivated.")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><CheckCircle2 size={16} /> Reactivate</button>}
+              {canBlock && !isBlocked && <button onClick={() => setModal("deactivate")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><Ban size={16} /> Deactivate</button>}
+              {canBlock && !isBlocked && <button onClick={() => setModal("suspend")} className="inline-flex items-center gap-2 rounded-xl border border-amber-200 px-4 py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-50"><Ban size={16} /> Suspend</button>}
               {canCommercial && <button onClick={() => setModal("commercial")} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold ${hasCommissionRequest ? "bg-amber-500 text-white hover:bg-amber-600" : "border border-dash-border text-dash-text hover:bg-dash-bg"}`}><Percent size={16} /> {hasCommissionRequest ? "Approve Commission" : "Commission"}</button>}
             </div>
           </div>
@@ -237,6 +239,23 @@ export default function SupplierDetailPage() {
           )}
 
           <CompletionCard record={record} />
+
+          {record.approval_history && record.approval_history.length > 0 && (
+            <section className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+              <h2 className="font-black text-dash-text">Approval history</h2>
+              <div className="mt-4 space-y-3">
+                {record.approval_history.map((entry) => (
+                  <div key={entry.id} className="flex flex-col gap-1 rounded-xl bg-dash-bg p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <StatusBadge value={entry.to_status} />
+                      {entry.notes && <p className="mt-2 text-sm text-dash-muted">{entry.notes}</p>}
+                    </div>
+                    <time className="text-xs font-semibold text-dash-subtle">{entry.created_at ? new Date(entry.created_at).toLocaleString() : ""}</time>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="rounded-2xl border border-dash-border-soft bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
             <div className="flex flex-wrap gap-1 border-b border-[#F0F3F8] p-2">
@@ -374,9 +393,13 @@ export default function SupplierDetailPage() {
             </div>
           </section>
 
+          <ActionModal open={modal === "accept"} title="Accept supplier" saving={saving} submitLabel="Accept and unlock operations" onClose={() => setModal(null)} onSubmit={() => void run(() => acceptSupplier(id), "Supplier approved and operational modules unlocked.")}>
+            <p className="text-sm leading-6 text-dash-muted">Accepting this supplier immediately unlocks tour creation, departures, bookings, calendar, payments, payouts and operational reports.</p>
+          </ActionModal>
           <ActionModal open={modal === "reject"} title="Reject supplier" saving={saving} submitLabel="Reject" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => rejectReviewRecord("suppliers", id, { rejection_reason: String(payload.rejection_reason || ""), admin_comments: String(payload.admin_comments || "") }), "Supplier rejected.")} fields={[{ name: "rejection_reason", label: "Rejection reason" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "partial"} title="Request supplier changes" saving={saving} submitLabel="Send request" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => partialApproveReviewRecord("suppliers", id, { admin_comments: String(payload.admin_comments || ""), pending_requirements: String(payload.pending_requirements || "") }), "Supplier change request sent.")} fields={[{ name: "pending_requirements", label: "Required changes", type: "textarea" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
-          <ActionModal open={modal === "block"} title="Block supplier" saving={saving} submitLabel="Block" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateReviewRecord("suppliers", id, { status: "blocked", admin_comments: String(payload.admin_comments || "") }), "Supplier blocked.")} fields={[{ name: "admin_comments", label: "Block reason / admin note", type: "textarea" }]} />
+          <ActionModal open={modal === "deactivate"} title="Deactivate supplier account" saving={saving} submitLabel="Deactivate" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => setSupplierAccountState(id, "deactivate", String(payload.reason || "")), "Supplier account deactivated.")} fields={[{ name: "reason", label: "Reason", type: "textarea" }]} />
+          <ActionModal open={modal === "suspend"} title="Suspend supplier account" saving={saving} submitLabel="Suspend" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => setSupplierAccountState(id, "suspend", String(payload.reason || "")), "Supplier account suspended.")} fields={[{ name: "reason", label: "Reason", type: "textarea" }]} />
           <ActionModal open={modal === "commercial"} title={hasCommissionRequest ? "Approve commission request" : "Update commission / markup"} saving={saving} submitLabel={hasCommissionRequest ? "Approve Commission" : "Save"} onClose={() => setModal(null)} initialValues={{ value_type: record.markup_type || "percentage", value: record.markup_value ?? 0 }} onSubmit={(payload) => void run(() => updateCommercialValue("suppliers", id, { markup_type: payload.value_type, markup_value: payload.value }), hasCommissionRequest ? "Commission request approved." : "Commission updated.")} fields={[{ name: "value_type", label: "Commission type", type: "select", options: [{ label: "Percentage", value: "percentage" }, { label: "Fixed", value: "fixed" }] }, { name: "value", label: "Commission / markup value", type: "number" }]} />
           <ActionModal
             open={modal === "reject-item"}

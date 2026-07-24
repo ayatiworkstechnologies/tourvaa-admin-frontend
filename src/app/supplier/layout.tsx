@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuBanknote as Banknote, LuCalendarCheck as CalendarCheck, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
+import { LuBanknote as Banknote, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuFileCheck2 as FileCheck, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
+import { canAccessSupplierRoute, isApprovedSupplier, isSupplierOperationalRoute } from "@/lib/auth/supplierAccess";
 
 const NAV = [
   { href: "/supplier/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -17,6 +18,8 @@ const NAV = [
   { href: "/supplier/earnings", icon: Wallet, label: "Earnings", section: "Operations" },
   { href: "/supplier/payouts", icon: Banknote, label: "Payouts", section: "Operations" },
   { href: "/supplier/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
+  { href: "/supplier/notifications", icon: Bell, label: "Notifications", section: "Communication" },
+  { href: "/supplier/profile#documents", icon: FileCheck, label: "Documents", placement: "bottom" as const },
   { href: "/supplier/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
 
@@ -28,6 +31,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/supplier/earnings": "Earnings",
   "/supplier/payouts": "Payouts",
   "/supplier/messages": "Messages",
+  "/supplier/notifications": "Notifications",
   "/supplier/profile": "My Profile",
 };
 
@@ -45,6 +49,7 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   const { isLoggedIn, loading, user, dashboard } = useAuthContext();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [approvalNotice, setApprovalNotice] = useState(false);
 
   useEffect(() => {
     const close = () => setSidebarOpen(false);
@@ -62,6 +67,24 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
       if (slug && slug !== "supplier") router.replace(getDashboardPath(slug));
     }
   }, [loading, isLoggedIn, dashboard, router]);
+
+  const approved = isApprovedSupplier(user);
+  const navItems = NAV.map((item) => ({
+    ...item,
+    locked: !approved && isSupplierOperationalRoute(item.href),
+    badge: item.href === "/supplier/dashboard" && !approved ? "Pending" : undefined,
+  }));
+
+  useEffect(() => {
+    if (!loading && user && !canAccessSupplierRoute(user, pathname)) {
+      if (isSupplierOperationalRoute(pathname)) {
+        setApprovalNotice(true);
+        router.replace("/supplier/dashboard");
+      } else {
+        router.replace("/login");
+      }
+    }
+  }, [loading, pathname, router, user]);
 
   if (loading) {
     return (
@@ -81,7 +104,7 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   return (
     <div className="flex min-h-screen bg-dash-bg" style={portalThemeStyles.supplier}>
       <Sidebar
-        navItems={NAV}
+        navItems={navItems}
         title="Tourvaa"
         subtitle="Supplier"
         logoIcon={Store}
@@ -89,13 +112,14 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
         mobile={false}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
+        onLockedItemClick={() => setApprovalNotice(true)}
       />
       
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button className="absolute inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />
           <div className="relative h-full w-[260px] bg-white shadow-2xl">
-            <Sidebar navItems={NAV} title="Tourvaa" subtitle="Supplier" logoIcon={Store} theme="supplier" mobile={true} collapsed={false} onToggleCollapse={() => {}} />
+            <Sidebar navItems={navItems} title="Tourvaa" subtitle="Supplier" logoIcon={Store} theme="supplier" mobile={true} collapsed={false} onToggleCollapse={() => {}} onLockedItemClick={() => setApprovalNotice(true)} />
           </div>
         </div>
       )}
@@ -112,6 +136,15 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
         />
         <main className="flex-1">{children}</main>
       </div>
+      {approvalNotice && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true" aria-labelledby="supplier-approval-title">
+          <section className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 id="supplier-approval-title" className="text-lg font-black text-slate-950">Admin approval required</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">This feature will become available after Tourvaa approves your supplier account.</p>
+            <button type="button" onClick={() => setApprovalNotice(false)} className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">Understood</button>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

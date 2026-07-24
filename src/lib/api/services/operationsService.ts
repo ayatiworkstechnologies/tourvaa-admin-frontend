@@ -44,6 +44,14 @@ export type ReviewRecord = {
   contacts?: unknown[];
   vehicles?: unknown[];
   documents?: unknown[];
+  approval_history?: Array<{
+    id: number;
+    from_status?: string | null;
+    to_status: string;
+    notes?: string | null;
+    changed_by?: number | null;
+    created_at?: string;
+  }>;
   business_info?: Record<string, unknown> | null;
   marketing_info?: Record<string, unknown> | null;
   invoicing?: Record<string, unknown> | null;
@@ -114,6 +122,20 @@ export async function reviewSupplierDocument(
   payload: { status: "approved" | "rejected"; rejection_reason?: string }
 ) {
   const response = await api.patch(`/suppliers/${supplierId}/documents/${documentId}/review`, payload);
+  return response.data.data;
+}
+
+export async function acceptSupplier(id: string | number) {
+  const response = await api.post<{ data: ReviewRecord }>(`/suppliers/${id}/accept`);
+  return response.data.data;
+}
+
+export async function setSupplierAccountState(
+  id: string | number,
+  action: "deactivate" | "reactivate" | "suspend",
+  reason = "",
+) {
+  const response = await api.post<{ data: ReviewRecord }>(`/suppliers/${id}/${action}`, { reason });
   return response.data.data;
 }
 

@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuLogOut as LogOut, LuMapPinned as MapPinned } from "react-icons/lu";
+import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuLock as Lock, LuLogOut as LogOut, LuMapPinned as MapPinned } from "react-icons/lu";
 import type { IconType as LucideIcon } from "react-icons";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -16,6 +16,8 @@ export type SidebarNavItem = {
   section?: string;
   placement?: "main" | "bottom";
   matchHrefs?: string[];
+  locked?: boolean;
+  badge?: string;
 };
 
 type SidebarProps = {
@@ -28,6 +30,7 @@ type SidebarProps = {
   onToggleCollapse?: () => void;
   theme?: SidebarTheme;
   headerOffset?: boolean;
+  onLockedItemClick?: (item: SidebarNavItem) => void;
 };
 
 export type SidebarTheme = "admin" | "supplier" | "agent" | "customer";
@@ -141,6 +144,7 @@ export default function Sidebar({
   onToggleCollapse,
   theme = "admin",
   headerOffset = false,
+  onLockedItemClick,
 }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
@@ -176,6 +180,44 @@ export default function Sidebar({
   function renderSidebarItem(item: SidebarNavItem, index: number) {
     const Icon = item.icon;
     const active = isActiveItem(item);
+    const content = (
+      <>
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+          <Icon
+            className={`h-5 w-5 transition-colors ${active ? colors.activeIcon : colors.inactiveIcon}`}
+            strokeWidth={1.8}
+          />
+        </span>
+        {!collapsed && (
+          <span className="ml-3.5 min-w-0 truncate text-[14px] font-semibold leading-none">
+            {item.label}
+          </span>
+        )}
+        {!collapsed && item.badge && (
+          <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase text-amber-700">
+            {item.badge}
+          </span>
+        )}
+        {item.locked && <Lock className={`${collapsed ? "absolute bottom-1 right-1" : "ml-auto"} h-3.5 w-3.5 text-amber-500`} />}
+        {active && !collapsed && !item.locked && <span className={`absolute right-3 h-1.5 w-1.5 rounded-full ${colors.activeDot}`} />}
+      </>
+    );
+
+    if (item.locked) {
+      return (
+        <button
+          key={`${item.module ?? index}-${item.href}`}
+          type="button"
+          aria-label={`${item.label}, admin approval required`}
+          onMouseEnter={(e) => showTooltip(e, `${item.label} · Approval required`)}
+          onMouseLeave={hideTooltip}
+          onClick={() => onLockedItemClick?.(item)}
+          className={`group relative mx-3 flex h-12 w-[calc(100%-1.5rem)] items-center rounded-xl px-3.5 text-left opacity-65 transition hover:bg-amber-50 ${colors.inactive} ${collapsed ? "mx-2 w-[calc(100%-1rem)] justify-center px-0" : ""}`}
+        >
+          {content}
+        </button>
+      );
+    }
 
     return (
       <Link
@@ -191,18 +233,7 @@ export default function Sidebar({
           active ? colors.active : colors.inactive
         } ${collapsed ? "mx-2 justify-center px-0" : ""}`}
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-          <Icon
-            className={`h-5 w-5 transition-colors ${active ? colors.activeIcon : colors.inactiveIcon}`}
-            strokeWidth={1.8}
-          />
-        </span>
-        {!collapsed && (
-          <span className="ml-3.5 min-w-0 truncate text-[14px] font-semibold leading-none">
-            {item.label}
-          </span>
-        )}
-        {active && !collapsed && <span className={`absolute right-3 h-1.5 w-1.5 rounded-full ${colors.activeDot}`} />}
+        {content}
       </Link>
     );
   }

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { clearSession } from "@/lib/api/session";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 const API_PATH_PREFIX = "/api";
 const PUBLIC_API_PATHS = [
@@ -181,7 +182,7 @@ api.interceptors.response.use(
         new CustomEvent("tourvaa:toast", {
           detail: {
             type: "error",
-            message: "Access denied. You do not have permission for this action.",
+            message: getApiErrorMessage(error),
           },
         })
       );

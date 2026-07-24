@@ -9,7 +9,9 @@ import api from "@/lib/api/client";
 import { passwordHelp, validatePassword } from "@/lib/utils/validators";
 
 function message(error: unknown) {
-  return axios.isAxiosError(error) ? error.response?.data?.detail || "This verification link is invalid or expired." : "This verification link is invalid or expired.";
+  return axios.isAxiosError(error)
+    ? error.response?.data?.message || error.response?.data?.detail || "This verification link is invalid or expired."
+    : "This verification link is invalid or expired.";
 }
 
 function VerifyEmailContent() {
@@ -61,7 +63,7 @@ function VerifyEmailContent() {
       {complete ? <div className="text-center">
         <Check className="mx-auto text-emerald-600" size={52} />
         <h1 className="mt-4 text-2xl font-black text-slate-950">Password created</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-500">Your account is now pending administrator verification. Redirecting you to sign in so you can check its status.</p>
+        <p className="mt-3 text-sm leading-6 text-slate-500">Your email is verified and your account is active. Redirecting you to sign in.</p>
         <Link href={loginHref} className="mt-6 inline-flex rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white">Go to sign in</Link>
       </div> : linkError ? <ErrorState text={linkError} /> : <form onSubmit={submit}>
         <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Lock size={22} /></span>
@@ -101,7 +103,7 @@ function ErrorState({ text }: { text: string }) {
     <h1 className="text-xl font-black text-slate-950">Link unavailable</h1>
     <p className="mt-3 text-sm text-red-700">{text}</p>
     <form onSubmit={resend} className="mt-6">
-      <label htmlFor="registration-email" className="block text-left text-xs font-bold text-slate-700">Registration email</label>
+      <label htmlFor="registration-email" className="block text-left text-xs font-bold text-slate-700">Supplier registration email</label>
       <input id="registration-email" name="email" autoComplete="email" required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-blue-600" />
       <button disabled={sending} className="mt-3 w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white disabled:opacity-60">{sending ? "Sending…" : "Send a new verification link"}</button>
     </form>

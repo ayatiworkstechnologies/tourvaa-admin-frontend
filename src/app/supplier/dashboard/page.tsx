@@ -10,6 +10,11 @@ import {
   LuCircleAlert as AlertCircle,
   LuCircleDollarSign as CircleDollarSign,
   LuClock3 as Clock3,
+  LuFileCheck2 as FileCheck,
+  LuHeadphones as Headphones,
+  LuLock as Lock,
+  LuLogOut as LogOut,
+  LuMailCheck as MailCheck,
   LuMapPinned as MapPinned,
   LuMessageSquare as MessageSquare,
   LuPlus as Plus,
@@ -26,6 +31,7 @@ import {
 import DatePicker from "@/components/ui/DatePicker";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
+import { isApprovedSupplier, supplierApprovalStatus } from "@/lib/auth/supplierAccess";
 
 type Summary = {
   total_bookings?: number;
@@ -113,7 +119,109 @@ function dateText(value?: string) {
   return date.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+type PendingSupplierProfile = {
+  supplier_name?: string;
+  supplier_type?: string;
+  country_id?: number;
+  city_id?: number;
+  years_in_operation?: number;
+  pending_requirements?: string | null;
+  documents?: Array<{ id: number; status?: string }>;
+};
+
 export default function SupplierDashboardPage() {
+  const { user } = useAuthContext();
+  return isApprovedSupplier(user) ? <ApprovedSupplierDashboard /> : <PendingSupplierDashboard />;
+}
+
+function PendingSupplierDashboard() {
+  const { user, logout } = useAuthContext();
+  const [profile, setProfile] = useState<PendingSupplierProfile>({});
+
+  useEffect(() => {
+    api.get("/suppliers/me")
+      .then((response) => setProfile(response.data?.data ?? {}))
+      .catch(() => setProfile({}));
+  }, []);
+
+  const checks = [
+    Boolean(profile.supplier_name),
+    Boolean(profile.supplier_type),
+    Boolean(profile.country_id),
+    Boolean(profile.city_id),
+    Boolean(profile.documents?.length),
+  ];
+  const completion = Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  const missingDocuments = !profile.documents?.length;
+  const status = supplierApprovalStatus(user);
+  const lockedModules = ["Tours", "Bookings", "Calendar", "Earnings", "Payouts", "Reports"];
+
+  return (
+    <div className="min-h-screen bg-[#F5FAF7] px-4 py-6 sm:px-6 xl:px-8">
+      <div className="mx-auto max-w-6xl space-y-5">
+        <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#073A23] via-[#0C6D3A] to-[#1D9150] p-6 text-white shadow-xl sm:p-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-bold"><MailCheck size={15} /> Email verified</span>
+              <h1 className="mt-4 text-2xl font-black sm:text-3xl">Welcome, {user?.name?.split(" ")[0] || "Supplier"}</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-50/80">Your account is active. Tourvaa is reviewing your supplier profile before unlocking operational tools.</p>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur">
+              <p className="text-[10px] font-black uppercase tracking-[.14em] text-emerald-100">Approval status</p>
+              <p className="mt-2 text-xl font-black">{status.replaceAll("_", " ")}</p>
+            </div>
+          </div>
+        </section>
+
+        {profile.pending_requirements && (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
+            <h2 className="font-black">More information required</h2>
+            <p className="mt-1 text-sm leading-6">{profile.pending_requirements}</p>
+          </section>
+        )}
+
+        <div className="grid gap-5 lg:grid-cols-[1.2fr_.8fr]">
+          <section className="rounded-2xl border border-[#DCEBE2] bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-[#123024]">Complete your supplier profile</h2>
+                <p className="mt-1 text-sm text-slate-500">A complete profile helps the review team approve you faster.</p>
+              </div>
+              <span className="text-2xl font-black text-emerald-700">{completion}%</span>
+            </div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-emerald-100"><div className="h-full rounded-full bg-emerald-600" style={{ width: `${completion}%` }} /></div>
+            {missingDocuments && <p className="mt-4 flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-sm font-semibold text-amber-800"><AlertCircle size={17} /> Verification documents are still missing.</p>}
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Link href="/supplier/profile" className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white"><Store size={16} /> Complete profile</Link>
+              <Link href="/supplier/profile#documents" className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 px-5 py-3 text-sm font-bold text-emerald-700"><FileCheck size={16} /> Upload documents</Link>
+              <Link href="/supplier/messages" className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700"><Headphones size={16} /> Contact support</Link>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-[#DCEBE2] bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-black text-[#123024]">What happens next?</h2>
+            <ol className="mt-4 space-y-4 text-sm text-slate-600">
+              <li><b className="text-slate-900">1. Submit details.</b> Complete your profile and documents.</li>
+              <li><b className="text-slate-900">2. Tourvaa reviews.</b> We may request more information.</li>
+              <li><b className="text-slate-900">3. Operations unlock.</b> You will receive an email and notification.</li>
+            </ol>
+          </section>
+        </div>
+
+        <section className="rounded-2xl border border-[#DCEBE2] bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-black text-[#123024]">Operational modules</h2>
+          <p className="mt-1 text-sm text-slate-500">These features unlock automatically after approval.</p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {lockedModules.map((module) => <div key={module} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500"><Lock size={16} className="text-amber-500" /> {module}</div>)}
+          </div>
+          <button type="button" onClick={() => logout()} className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-rose-600"><LogOut size={16} /> Sign out</button>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function ApprovedSupplierDashboard() {
   const { user } = useAuthContext();
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -133,9 +241,14 @@ export default function SupplierDashboardPage() {
     if (filters.start_date) bookingParams.start_date = filters.start_date;
     if (filters.end_date) bookingParams.end_date = filters.end_date;
     if (filters.status) bookingParams.booking_status = filters.status;
+    const summaryParams = {
+      start_date: filters.start_date || undefined,
+      end_date: filters.end_date || undefined,
+      booking_status: filters.status || undefined,
+    };
 
     const results = await Promise.allSettled([
-      api.get("/dashboard/summary"),
+      api.get("/dashboard/summary", { params: summaryParams }),
       api.get("/bookings", { params: bookingParams }),
       api.get("/supplier-ledgers", { params: { limit: 100 } }),
       api.get("/supplier-payouts", { params: { limit: 20 } }),

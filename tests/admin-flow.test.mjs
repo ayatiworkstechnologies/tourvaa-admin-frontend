@@ -39,6 +39,10 @@ check("global auth separates admin and portal login routes", auth.includes('path
 const users = read("src/app/admin/users/page.tsx");
 check("admin-created users retain normalized phone", users.includes("createUser({ ...form, phone })"));
 check("admin user password validation matches backend strength", users.includes("(?=.*[^A-Za-z0-9])"));
+const userDetail = read("src/app/admin/users/[id]/page.tsx");
+check("admin user reactivation uses its dedicated endpoint", userDetail.includes("`/users/${id}/reactivate`"));
+check("admin user activation errors remain visible", userDetail.includes("getApiErrorMessage(error)"));
+check("reactivation control is not silently disabled by stale verification data", !userDetail.includes("disabled={saving || !user.password_created || !user.email_verified}"));
 
 const documentService = read("src/lib/api/services/privateDocumentService.ts");
 check("private documents are fetched with authenticated API client", documentService.includes("/private-documents/${ownerType}/${documentId}"));

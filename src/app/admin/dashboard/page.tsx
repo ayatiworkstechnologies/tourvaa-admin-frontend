@@ -66,6 +66,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   const [snapshot,         setSnapshot]         = useState<ReportSnapshot | null>(null);
   const [countries,        setCountries]        = useState<Country[]>([]);
   const [loading,          setLoading]          = useState(true);
+  const [loadError,        setLoadError]        = useState("");
   const [savingId,         setSavingId]         = useState<string | null>(null);
   const [msg,              setMsg]              = useState("");
 
@@ -78,6 +79,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError("");
     const p: Record<string, string> = {};
     if (activeFilters.start)   p.start_date  = activeFilters.start;
     if (activeFilters.end)     p.end_date    = activeFilters.end;
@@ -86,7 +88,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
     try {
       const [sumRes, suppRes, agentRes, chartRes, actRes, snapRes, countryRes] =
         await Promise.allSettled([
-          api.get("/dashboard/summary"),
+          api.get("/dashboard/summary", { params: p }),
           api.get("/suppliers",  { params: { limit: 1000 } }),
           api.get("/agents",     { params: { limit: 1000 } }),
           api.get("/dashboard/charts",           { params: p }),
@@ -109,6 +111,9 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
       if (actRes.status     === "fulfilled") setActivities(actRes.value.data?.data?.recent_admin_actions ?? []);
       if (snapRes.status    === "fulfilled") setSnapshot(snapRes.value.data?.data ?? null);
       if (countryRes.status === "fulfilled") setCountries(countryRes.value.data?.items ?? countryRes.value.data?.data ?? []);
+      if ([sumRes, suppRes, agentRes, chartRes, actRes, snapRes, countryRes].some((result) => result.status === "rejected")) {
+        setLoadError("Some dashboard data could not be loaded. Available sections are shown below.");
+      }
     } finally {
       setLoading(false);
     }
@@ -197,6 +202,15 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
       {msg && (
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm font-semibold text-emerald-700">
           {msg}
+        </div>
+      )}
+
+      {loadError && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          <span>{loadError}</span>
+          <button type="button" onClick={() => void load()} className="rounded-lg bg-white px-3 py-1.5 font-bold shadow-sm ring-1 ring-amber-200 hover:bg-amber-100">
+            Retry
+          </button>
         </div>
       )}
 

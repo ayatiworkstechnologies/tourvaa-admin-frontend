@@ -49,8 +49,18 @@ export function getFieldErrors(error: unknown): Record<string, string> {
 export function getApiErrorMessage(error: unknown) {
   if (!axios.isAxiosError(error)) return "Something went wrong. Please try again.";
 
+  const responseData = error.response?.data;
+  const detail = responseData?.detail;
+  const serverMessage =
+    (typeof responseData?.message === "string" && responseData.message) ||
+    (typeof detail === "string" && detail) ||
+    (typeof detail?.message === "string" && detail.message) ||
+    "";
+
   if (error.response?.status === 401) return "Your session has expired. Please log in again.";
-  if (error.response?.status === 403) return "Access denied. You do not have permission for this action.";
+  if (error.response?.status === 403) {
+    return serverMessage || "Access denied. You do not have permission for this action.";
+  }
   if (error.response?.status === 422) {
     const validationErrors = getValidationErrors(error);
     return validationErrors[0] || "Please check the submitted fields.";
@@ -60,8 +70,7 @@ export function getApiErrorMessage(error: unknown) {
   }
 
   return (
-    error.response?.data?.detail ||
-    error.response?.data?.message ||
+    serverMessage ||
     error.message ||
     "Something went wrong. Please try again."
   );

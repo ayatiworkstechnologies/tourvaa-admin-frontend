@@ -1,5 +1,6 @@
 export type Permission = {
   name: string;
+  first_name?: string;
   slug: string;
   module: string;
   action?: "get" | "post" | "put" | "delete";
@@ -19,6 +20,10 @@ export type AuthUser = {
   profile_image?: string;
   profile_status?: string | null;
   approval_status?: string | null;
+  supplier_approval_status?: "NOT_REQUIRED" | "PENDING" | "APPROVED" | "MORE_INFORMATION_REQUIRED" | string;
+  account_status?: string;
+  email_verified?: boolean;
+  dashboard_route?: string;
   customer_id?: number | null;
   supplier_id?: number | null;
   agent_id?: number | null;
