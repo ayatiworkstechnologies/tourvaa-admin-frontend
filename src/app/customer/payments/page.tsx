@@ -6,6 +6,7 @@ import { LuCreditCard as CreditCard, LuExternalLink as ExternalLink, LuShieldChe
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Payment = {
   id: number;
@@ -19,13 +20,6 @@ type Payment = {
   currency?: string;
   created_at?: string;
 };
-
-function money(value?: string | number, currency = "USD") {
-  if (value == null || value === "") return "-";
-  const amount = Number(value);
-  if (Number.isNaN(amount)) return String(value);
-  return `${currency} ${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-}
 
 function dateText(value?: string) {
   if (!value) return "-";
@@ -42,6 +36,9 @@ function statusClass(status?: string) {
 }
 
 export default function CustomerPaymentsPage() {
+  const { format } = useCurrency();
+  const money = (value: string | number | undefined, currency = "USD") =>
+    value == null || value === "" ? "-" : format(value, currency);
   const [rows, setRows] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

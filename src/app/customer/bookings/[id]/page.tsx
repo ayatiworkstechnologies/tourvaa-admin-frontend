@@ -7,6 +7,8 @@ import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck
 import axios from "axios";
 import api from "@/lib/api/client";
 import { CustomerPageShell } from "@/components/customer/CustomerPage";
+import { useCurrency } from "@/hooks/useCurrency";
+import { formatCurrency } from "@/lib/utils/currency";
 
 type Traveller = {
   id: number;
@@ -52,11 +54,6 @@ type Booking = {
   travellers?: Traveller[];
   status_history?: StatusHistory[];
 };
-
-function fmt(v?: string | number, currency = "USD") {
-  if (v == null) return "-";
-  return `${currency} ${Number(v).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-}
 
 function StatusIcon({ status }: { status: string }) {
   const v = (status || "").toLowerCase();
@@ -185,7 +182,7 @@ function PayNowModal({
           <div>
             <h3 className="text-lg font-black text-dash-text">Choose your payment</h3>
             <p className="text-sm text-dash-muted">
-              Booking balance: <strong className="text-dash-text">{currency} {amount.toLocaleString()}</strong>
+              Booking balance: <strong className="text-dash-text">{formatCurrency(amount, currency)}</strong>
             </p>
           </div>
           <button type="button" onClick={onClose} disabled={!!loading} aria-label="Close payment modal"
@@ -212,7 +209,7 @@ function PayNowModal({
                 <button key={option.value} type="button" role="radio" aria-checked={selected} onClick={() => setPaymentType(option.value)} disabled={!!loading}
                   className={`rounded-2xl border-2 p-3 text-left transition disabled:opacity-60 ${selected ? "border-emerald-600 bg-emerald-50" : "border-slate-200 bg-white hover:border-emerald-200"}`}>
                   <span className="block text-xs font-black text-dash-text">{option.label}</span>
-                  <span className="mt-1 block text-lg font-black text-emerald-700">{currency} {option.amount.toLocaleString()}</span>
+                  <span className="mt-1 block text-lg font-black text-emerald-700">{formatCurrency(option.amount, currency)}</span>
                   <span className="mt-0.5 block text-[11px] text-dash-subtle">{option.note}</span>
                 </button>
               );
@@ -222,7 +219,7 @@ function PayNowModal({
 
         <div className="mb-4 flex items-center justify-between rounded-2xl bg-slate-950 px-4 py-3 text-white">
           <span className="text-xs font-bold">Pay securely now</span>
-          <span className="text-lg font-black">{currency} {paymentAmount.toLocaleString()}</span>
+          <span className="text-lg font-black">{formatCurrency(paymentAmount, currency)}</span>
         </div>
 
         {gwLoading ? (
@@ -236,7 +233,7 @@ function PayNowModal({
             title={!gw?.stripe ? "Stripe is not configured" : undefined}
             className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-[#635BFF] bg-[#635BFF] px-5 py-3.5 text-sm font-bold text-white hover:bg-[#4f49cc] disabled:cursor-not-allowed disabled:opacity-40 transition-colors">
             {loading === "stripe" ? <Loader2 size={18} className="animate-spin" /> : <CreditCard size={18} />}
-            Pay {currency} {paymentAmount.toLocaleString()} with Stripe
+            Pay {formatCurrency(paymentAmount, currency)} with Stripe
             {!gw?.stripe && <span className="ml-auto text-[10px] font-bold opacity-70">Not configured</span>}
           </button>
 
@@ -247,7 +244,7 @@ function PayNowModal({
             {loading === "paypal" ? <Loader2 size={18} className="animate-spin" /> : (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.59 3.025-2.566 6.082-8.558 6.082H9.825l-1.073 6.815h3.267c.524 0 .968-.382 1.05-.9l.983-6.228c.082-.518.526-.9 1.05-.9h1.876c4.298 0 7.664-1.747 8.647-6.797.237-1.218.17-2.227-.403-2.985z"/></svg>
             )}
-            Pay {currency} {paymentAmount.toLocaleString()} with PayPal
+            Pay {formatCurrency(paymentAmount, currency)} with PayPal
             {!gw?.paypal && <span className="ml-auto text-[10px] font-bold opacity-70">Not configured</span>}
           </button>
 
@@ -268,7 +265,7 @@ function PayNowModal({
                     <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
                   </svg>
                 )}
-                Simulate {currency} {paymentAmount.toLocaleString()} Payment
+                Simulate {formatCurrency(paymentAmount, currency)} Payment
               </button>
             </>
           )}
@@ -290,6 +287,7 @@ export default function CustomerBookingDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { format } = useCurrency();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -471,7 +469,7 @@ export default function CustomerBookingDetailPage() {
                   <button type="button" onClick={() => setShowPayModal(true)}
                     className="flex items-center gap-2 rounded-xl bg-[#0868E8] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-100 hover:bg-[#075AC9] transition-all">
                     <CreditCard size={16} />
-                    Pay Now ({booking.currency} {pendingAmount.toLocaleString()})
+                    Pay Now ({format(pendingAmount, booking.currency)})
                   </button>
                 )}
                 {canCancel && !showCancel && (
@@ -537,11 +535,11 @@ export default function CustomerBookingDetailPage() {
 
             <Panel title="Payment" icon={Receipt} iconColor="text-emerald-600" iconBg="bg-emerald-50">
               <div className="space-y-3">
-                <Field label="Total Amount" value={fmt(booking.final_amount, booking.currency)} />
-                <Field label="Amount Paid" value={<span className="text-emerald-700">{fmt(booking.amount_paid, booking.currency)}</span>} />
+                <Field label="Total Amount" value={format(booking.final_amount, booking.currency)} />
+                <Field label="Amount Paid" value={<span className="text-emerald-700">{format(booking.amount_paid, booking.currency)}</span>} />
                 <Field label="Amount Pending" value={
                   <span className={pendingAmount > 0 ? "text-red-600 font-bold" : "text-emerald-700"}>
-                    {fmt(booking.amount_pending, booking.currency)}
+                    {format(booking.amount_pending, booking.currency)}
                   </span>
                 } />
                 <Field label="Payment Status" value={booking.payment_status?.replaceAll("_", " ")} />

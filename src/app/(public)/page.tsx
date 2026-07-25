@@ -29,6 +29,7 @@ import {
   fetchFeaturedTours,
   fetchHomepageBanners,
   fetchPopularDestinations,
+  fetchPublicCountries,
   PublicTour,
 } from "@/lib/api/publicClient";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
@@ -66,8 +67,10 @@ function mapPublicTour(tour: PublicTour): Tour {
   };
 }
 
-function mapDestination(item: CmsDestination) {
-  return { name: item.title, count: item.description || "Explore packages", rating: "4.9", image: item.image || PLACEHOLDER_IMAGE };
+function mapDestination(item: CmsDestination, tourCounts: Map<string, number>) {
+  const matchedCount = tourCounts.get(item.title.trim().toLowerCase());
+  const count = matchedCount != null ? `${matchedCount} package${matchedCount === 1 ? "" : "s"}` : item.description || "Explore packages";
+  return { name: item.title, count, rating: "4.9", image: item.image || PLACEHOLDER_IMAGE };
 }
 
 function mapReview(item: CmsReview) {
@@ -290,7 +293,7 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([fetchHomepageBanners(), fetchFeaturedTours(10), fetchPopularDestinations(), fetchCustomerReviews()]).then(([bannerResult, tourResult, destinationResult, reviewResult]) => {
+    Promise.allSettled([fetchHomepageBanners(), fetchFeaturedTours(10), fetchPopularDestinations(), fetchCustomerReviews(), fetchPublicCountries()]).then(([bannerResult, tourResult, destinationResult, reviewResult, countryResult]) => {
       if (!active) return;
       if (bannerResult.status === "fulfilled" && bannerResult.value.length) setBanners(bannerResult.value);
       if (tourResult.status === "fulfilled" && tourResult.value.length) {
@@ -298,7 +301,13 @@ export default function Home() {
         setTrendingTours(mapped.slice(0, 5));
         setHandpickedTours((mapped.length > 5 ? mapped.slice(5, 10) : mapped).slice(0, 5));
       }
-      if (destinationResult.status === "fulfilled" && destinationResult.value.length) setDynamicPlaces(destinationResult.value.slice(0, 10).map(mapDestination));
+      if (destinationResult.status === "fulfilled" && destinationResult.value.length) {
+        const tourCounts = new Map<string, number>();
+        if (countryResult.status === "fulfilled") {
+          countryResult.value.forEach((country) => tourCounts.set(country.country_name.trim().toLowerCase(), country.tour_count || 0));
+        }
+        setDynamicPlaces(destinationResult.value.slice(0, 10).map((item) => mapDestination(item, tourCounts)));
+      }
       if (reviewResult.status === "fulfilled" && reviewResult.value.length) setDynamicReviews(reviewResult.value.slice(0, 6).map(mapReview));
       setLoadingHome(false);
     });

@@ -568,7 +568,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
               { icon: Shield,   title: "Roles",          desc: "Manage role access and module permissions.",         href: "/admin/roles" },
               { icon: Warehouse,title: "Suppliers",      desc: "Review and manage supplier accounts.",               href: "/admin/suppliers" },
               { icon: Users,    title: "Agents",         desc: "Review and manage agent registrations.",             href: "/admin/agents" },
-              { icon: Headset,  title: "Email Templates",desc: "Update system email communication.",                href: "/admin/email" },
+              { icon: Headset,  title: "Email Templates",desc: "Update system email communication.",                href: "/admin/email-templates" },
               { icon: TrendingUp,title:"Reports",        desc: "View analytics, exports, and data insights.",        href: "/admin/reports" },
             ].map((act) => (
               <Link

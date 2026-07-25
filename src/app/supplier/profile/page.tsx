@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck, LuPercent as Percent } from "react-icons/lu";
 import CompanyInfoTab from "@/components/supplier/profile/CompanyInfoTab";
 import DocumentsTab from "@/components/supplier/profile/DocumentsTab";
@@ -17,6 +17,13 @@ const TABS = [
 
 export default function UnifiedSupplierProfilePage() {
   const [activeTab, setActiveTab] = useState("company");
+
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (TABS.some((tab) => tab.id === hash)) {
+      setActiveTab(hash);
+    }
+  }, []);
 
   return (
     <SupplierPageShell>

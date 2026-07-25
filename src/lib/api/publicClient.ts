@@ -55,7 +55,7 @@ export type PublicTourDetail = PublicTour & {
 
 export type PublicCategory = { id: number; category_name: string; slug: string; description: string; image: string | null };
 export type PublicSubcategory = { id: number; subcategory_name: string; slug: string; category_name: string };
-export type PublicCountry = { id: number; country_name: string; country_code: string };
+export type PublicCountry = { id: number; country_name: string; country_code: string; tour_count?: number };
 export type PublicCity = { id: number; city_name: string; country_id: number };
 export type CmsBanner = { id: number; title: string; subtitle: string | null; image: string; cta_text: string | null; cta_url: string | null; sort_order: number; is_active: boolean };
 export type CmsDestination = { id: number; title: string; image: string | null; description: string | null; sort_order: number; is_active: boolean };

@@ -6,6 +6,7 @@ import { LuReceiptText as ReceiptText } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Invoice = {
   id: number;
@@ -20,12 +21,6 @@ type Invoice = {
   due_date?: string;
 };
 
-function money(value?: string | number, currency = "USD") {
-  if (value == null || value === "") return "-";
-  const amount = Number(value);
-  return Number.isNaN(amount) ? String(value) : `${currency} ${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-}
-
 function dateText(value?: string) {
   if (!value) return "-";
   const date = new Date(value);
@@ -33,6 +28,9 @@ function dateText(value?: string) {
 }
 
 export default function CustomerInvoicesPage() {
+  const { format } = useCurrency();
+  const money = (value: string | number | undefined, currency = "USD") =>
+    value == null || value === "" ? "-" : format(value, currency);
   const [rows, setRows] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

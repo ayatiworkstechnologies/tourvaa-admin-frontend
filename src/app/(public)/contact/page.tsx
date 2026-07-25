@@ -7,6 +7,7 @@ import {
   LuArrowRight as ArrowRight,
   LuCalendarDays as CalendarDays,
   LuCheck as Check,
+  LuCircleAlert as AlertCircle,
   LuCircleCheckBig as CheckCircle2,
   LuClock3 as Clock3,
   LuHeadphones as Headphones,
@@ -18,6 +19,7 @@ import {
   LuShieldCheck as ShieldCheck,
   LuSparkles as Sparkles,
 } from "react-icons/lu";
+import publicApi from "@/lib/api/publicClient";
 
 const INPUT_CLASS = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:bg-white focus:ring-4 focus:ring-teal-600/10";
 
@@ -31,15 +33,32 @@ export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", enquiryType: "Trip planning", subject: "", message: "" });
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    setSent(true);
-    setSubmitting(false);
+    setError("");
+    try {
+      await publicApi.post("/contact", {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        enquiry_type: form.enquiryType,
+        subject: form.subject,
+        message: form.message,
+      });
+      setSent(true);
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        "Could not send your message. Please try again or email us directly.";
+      setError(typeof message === "string" ? message : "Could not send your message. Please try again or email us directly.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const reset = () => {
@@ -103,6 +122,13 @@ export default function ContactPage() {
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-500">Send an enquiry</p>
                 <h2 className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">How can we help?</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">Share a few details and the right specialist will contact you.</p>
+
+                {error && (
+                  <div className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                    <AlertCircle size={16} className="shrink-0" />
+                    {error}
+                  </div>
+                )}
 
                 <form onSubmit={submit} className="mt-8 space-y-5">
                   <div className="grid gap-5 sm:grid-cols-2">

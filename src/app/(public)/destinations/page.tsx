@@ -130,6 +130,9 @@ export default function DestinationsPage() {
                       <div className="min-w-0">
                         <p className="mb-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-teal-200"><MapPin size={12} /> Destination</p>
                         <h3 className="truncate text-2xl font-black text-white">{country.country_name}</h3>
+                        <p className="mt-1 text-xs font-bold text-white/75">
+                          {country.tour_count ? `${country.tour_count} package${country.tour_count === 1 ? "" : "s"}` : "Coming soon"}
+                        </p>
                       </div>
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white transition group-hover:translate-x-1 group-hover:bg-orange-600"><ArrowRight size={17} /></span>
                     </div>

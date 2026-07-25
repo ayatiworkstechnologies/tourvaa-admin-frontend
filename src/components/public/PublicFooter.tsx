@@ -6,7 +6,7 @@ import { LuFacebook as Facebook, LuInstagram as Instagram, LuLinkedin as Linkedi
 import CurrencySelector from "@/components/public/CurrencySelector";
 import { CmsExternalLink, fetchFooterLinks, fetchPublicSettings } from "@/lib/api/publicClient";
 
-const supportLinks = [["Contact", "/contact"], ["Legal Notice", "/terms"], ["Privacy Policy", "/cookie-policy"], ["General Terms and Conditions", "/terms"], ["Plan Your Trip", "/contact"]] as const;
+const supportLinks = [["Contact", "/contact"], ["Legal Notice", "/terms"], ["Privacy Policy", "/privacy-policy"], ["General Terms and Conditions", "/terms"], ["Plan Your Trip", "/contact"]] as const;
 const loginLinks = [["Travellers Login", "/login"], ["Agents login", "/login"]] as const;
 const companyFallback = [["About us", "/about"], ["Blog", "/blogs"], ["Explore Tourvaa", "/tours"], ["Tours", "/tours"], ["Traveller’s Choice", "/tours"]] as const;
 
