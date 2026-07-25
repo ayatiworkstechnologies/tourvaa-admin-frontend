@@ -8,6 +8,7 @@ import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Tour = {
   id: number;
@@ -21,13 +22,6 @@ type Tour = {
   category_name?: string;
   banner_image?: string;
 };
-
-function money(value: string | number | undefined, currency = "USD") {
-  if (!value) return "-";
-  const amount = Number(value);
-  if (Number.isNaN(amount)) return String(value);
-  return `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)}`;
-}
 
 function TourSkeleton() {
   return (
@@ -44,6 +38,9 @@ function TourSkeleton() {
 }
 
 export default function AgentToursPage() {
+  const { format } = useCurrency();
+  const money = (value: string | number | undefined, currency = "USD") =>
+    value || value === 0 ? format(value, currency) : "-";
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

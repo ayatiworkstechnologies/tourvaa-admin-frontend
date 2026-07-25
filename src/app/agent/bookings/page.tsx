@@ -6,6 +6,7 @@ import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuC
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Booking = {
   id: number;
@@ -40,13 +41,6 @@ const STATUSES = [
   "refunded",
 ];
 
-function money(value: string | number | undefined, currency = "USD") {
-  if (!value && value !== 0) return "-";
-  const amount = Number(value);
-  if (Number.isNaN(amount)) return String(value);
-  return `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)}`;
-}
-
 function dateText(value?: string | null) {
   if (!value) return "-";
   const d = new Date(value);
@@ -71,6 +65,9 @@ function Pill({ status, children }: { status?: string; children: React.ReactNode
 }
 
 export default function AgentBookingsPage() {
+  const { format } = useCurrency();
+  const money = (value: string | number | undefined, currency = "USD") =>
+    value || value === 0 ? format(value, currency) : "-";
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");

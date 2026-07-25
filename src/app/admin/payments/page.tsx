@@ -10,6 +10,7 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { Payment, capturePayment, getPayments, processRefund, voidPayment } from "@/lib/api/services/paymentService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useCurrency } from "@/hooks/useCurrency";
 import api from "@/lib/api/client";
 
 const PAGE_SIZE = 15;
@@ -238,6 +239,7 @@ function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => voi
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function PaymentsPage() {
   const { hasPermission } = useAuthContext();
+  const { format } = useCurrency();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -346,22 +348,22 @@ export default function PaymentsPage() {
     {
       key: "total_amount",
       header: "Total",
-      render: p => <span className="font-mono text-xs">{Number(p.total_amount).toLocaleString()}</span>,
+      render: p => <span className="font-mono text-xs">{format(p.total_amount, p.currency)}</span>,
     },
     {
       key: "captured_amount",
       header: "Captured",
-      render: p => <span className="font-mono text-xs text-emerald-700">{Number(p.captured_amount ?? 0).toLocaleString()}</span>,
+      render: p => <span className="font-mono text-xs text-emerald-700">{format(p.captured_amount ?? 0, p.currency)}</span>,
     },
     {
       key: "refunded_amount",
       header: "Refunded",
-      render: p => <span className="font-mono text-xs text-purple-700">{Number(p.refunded_amount ?? 0).toLocaleString()}</span>,
+      render: p => <span className="font-mono text-xs text-purple-700">{format(p.refunded_amount ?? 0, p.currency)}</span>,
     },
     {
       key: "pending_amount",
       header: "Pending",
-      render: p => <span className={`font-mono text-xs ${Number(p.pending_amount) > 0 ? "font-bold text-red-600" : "text-dash-muted"}`}>{Number(p.pending_amount).toLocaleString()}</span>,
+      render: p => <span className={`font-mono text-xs ${Number(p.pending_amount) > 0 ? "font-bold text-red-600" : "text-dash-muted"}`}>{format(p.pending_amount, p.currency)}</span>,
     },
     {
       key: "id",

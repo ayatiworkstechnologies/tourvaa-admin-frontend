@@ -3,9 +3,11 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useMemo, useState } from "react";
-import { LuBedDouble as Bed, LuBriefcase as Suitcase, LuBus as Bus, LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuHeart as Heart, LuHouse as House, LuMapPin as MapPin, LuMinus as Minus, LuPlus as Plus, LuStar as Star, LuUserRound as User, LuUsers as Users, LuUtensils as Utensils } from "react-icons/lu";
-import { PublicTourDetail } from "@/lib/api/publicClient";
+import { LuBedDouble as Bed, LuBriefcase as Suitcase, LuBus as Bus, LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuCheck as Check, LuCircleCheckBig as CheckCircle, LuHeart as Heart, LuHouse as House, LuMapPin as MapPin, LuMinus as Minus, LuPlus as Plus, LuSparkles as Sparkles, LuStar as Star, LuTag as Tag, LuUserRound as User, LuUsers as Users, LuUtensils as Utensils, LuX as X } from "react-icons/lu";
+import { PublicTour, PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
+import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { publicTourUrl } from "@/lib/utils/tourUrl";
 
 const FALLBACK = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85";
 
@@ -32,6 +34,10 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
   const total = unitPrice * Math.max(1, adults + children);
   const dayCount = tour.number_of_days || 9;
   const destination = tour.country_name || "Your destination";
+  const baseCurrency = tour.currency || "USD";
+  const accommodationItems = tour.accommodations.map((item) => ({ id: item.id, name: item.name, description: item.description, priceLabel: item.price != null ? format(item.price, baseCurrency) : "Included" }));
+  const activityItems = tour.optional_activities.map((item) => ({ id: item.id, name: item.name, description: item.description, priceLabel: item.price != null ? format(item.price, item.currency || baseCurrency) : "Included" }));
+  const extensionItems = tour.extensions.map((item) => ({ id: item.id, name: item.title, description: item.description, priceLabel: item.price != null ? format(item.price, baseCurrency) : "Included" }));
 
   return (
     <main className="min-h-screen bg-white pb-24 pt-20 text-slate-950">
@@ -59,13 +65,22 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
               <img src={gallery[0]} alt={tour.title} className="h-full w-full rounded-xl object-cover" />
               <div className="grid min-h-0 grid-rows-2 gap-4"><img src={gallery[1] || gallery[0]} alt="Tour view" className="h-full min-h-0 w-full rounded-xl object-cover" /><div className="grid min-h-0 grid-cols-2 gap-4"><img src={gallery[2] || gallery[0]} alt="Tour view" className="h-full min-h-0 w-full rounded-xl object-cover" /><img src={gallery[3] || gallery[1] || gallery[0]} alt="Tour view" className="h-full min-h-0 w-full rounded-xl object-cover" /></div></div>
             </section>
-            <p className="border-b border-slate-200 py-7 text-sm font-semibold leading-6">{tour.short_description || `Don't miss ${destination}'s breathtaking landscapes, iconic landmarks, and unforgettable adventures—all in one perfectly planned journey.`}</p>
+            <p className="border-b border-slate-200 py-7 text-sm font-semibold leading-6">{tour.short_description || `Don't miss ${destination}'s breathtaking landscapes, iconic landmarks, and unforgettable adventures-all in one perfectly planned journey.`}</p>
 
             <section id="overview" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
               <h3 className="text-2xl font-black">{tour.title} <span className="text-xl">{flagFor(tour.country_name)}</span></h3>
               <span className="mt-3 inline-block rounded border border-blue-300 px-2 py-1 text-xs font-bold">{dayCount} Days | {Math.max(1, dayCount - 1)} Nights</span>
               <p className="mt-6 text-sm leading-6 text-slate-700">{tour.long_description || tour.short_description || `Embark on an unforgettable journey through ${destination}, with thoughtfully curated stays, local experiences and seamless transfers.`}</p>
             </section>
+
+            {tour.highlights.length > 0 && (
+              <section id="highlights" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <h3 className="flex items-center gap-3 text-2xl font-black"><Star className="text-blue-600" />Tour Highlights</h3>
+                <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {tour.highlights.map((item, index) => <li key={index} className="flex items-start gap-3 text-sm leading-6 text-slate-700"><Star size={14} className="mt-1 shrink-0 fill-amber-400 text-amber-400" />{item.text}</li>)}
+                </ul>
+              </section>
+            )}
 
             <section id="essentials" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
               <h3 className="flex items-center gap-3 text-2xl font-black"><Suitcase className="text-blue-600" />Travel Essentials</h3>
@@ -83,11 +98,72 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
               </div>
             </section>
 
-            <div className="mt-5 flex gap-8 overflow-x-auto rounded-xl border border-slate-200 px-5 py-5 text-xs font-bold"><a href="#overview">What&apos;s Included</a><a href="#itinerary">Journey Plan</a><a href="#overview">Extras</a><a href="#overview">Where You&apos;ll Stay</a><a href="#booking">Availability & Pricing</a><a href="#itinerary">Discover More</a></div>
+            {(tour.inclusions.length > 0 || tour.exclusions.length > 0) && (
+              <section id="inclusions" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <h3 className="flex items-center gap-3 text-2xl font-black"><CheckCircle className="text-blue-600" />What&apos;s Included</h3>
+                <div className="mt-6 grid gap-8 sm:grid-cols-2">
+                  {tour.inclusions.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-black uppercase text-emerald-700">Included</h4>
+                      <ul className="mt-3 space-y-2">{tour.inclusions.map((item, index) => <li key={index} className="flex items-start gap-2 text-sm text-slate-700"><Check size={14} className="mt-1 shrink-0 text-emerald-600" />{item.text}</li>)}</ul>
+                    </div>
+                  )}
+                  {tour.exclusions.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-black uppercase text-red-600">Not Included</h4>
+                      <ul className="mt-3 space-y-2">{tour.exclusions.map((item, index) => <li key={index} className="flex items-start gap-2 text-sm text-slate-700"><X size={14} className="mt-1 shrink-0 text-red-500" />{item.text}</li>)}</ul>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {tour.pricing.length > 0 && (
+              <section id="pricing" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <h3 className="flex items-center gap-3 text-2xl font-black"><Tag className="text-blue-600" />Group Pricing</h3>
+                <div className="mt-6 divide-y divide-slate-100">
+                  {tour.pricing.map((slab, index) => (
+                    <div key={index} className="flex items-center justify-between py-3 text-sm">
+                      <span className="font-semibold text-slate-700">{slab.persons_from}{slab.persons_to ? `–${slab.persons_to}` : "+"} travellers</span>
+                      <b className="text-blue-700">{format(slab.price_per_person, slab.currency || baseCurrency)} <span className="font-normal text-slate-400">/ person</span></b>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <div className="mt-5 flex gap-8 overflow-x-auto rounded-xl border border-slate-200 px-5 py-5 text-xs font-bold"><a href="#inclusions">What&apos;s Included</a><a href="#itinerary">Journey Plan</a><a href="#addons">Extras</a><a href="#essentials">Where You&apos;ll Stay</a><a href="#booking">Availability & Pricing</a><a href="#itinerary">Discover More</a></div>
 
             <section id="itinerary" className="mt-5 space-y-5">
               {(tour.itineraries.length ? tour.itineraries : [{ day: 1, title: `Welcome to ${tour.city_name || destination}`, description: `Arrive and meet your Tourvaa representative. Transfer to your hotel, check in, and enjoy the rest of the day at leisure.`, accommodation: tour.city_name || destination, meals: "Breakfast" }]).map((item, index) => <article key={`${item.day}-${item.title}`} className="grid gap-8 rounded-2xl border border-slate-200 p-7 shadow-sm md:grid-cols-[1fr_.9fr]"><div><div className="flex items-center justify-between text-[10px] font-black uppercase text-blue-600"><span>Tourvaa / {destination}</span><span className="rounded bg-blue-50 px-3 py-1">Day {item.day}</span></div><h3 className="mt-7 text-3xl font-medium">{item.title}</h3><p className="mt-7 text-sm leading-7 text-slate-600">{item.description}</p><div className="mt-7 rounded-xl bg-slate-50 p-5 text-xs leading-6"><b>Please note</b><p>Airport pickup is included. Hotel check-in begins at 2:00 PM.</p></div><div className="mt-7 grid grid-cols-2 border-t pt-5 text-xs"><span><Bed size={15} className="mb-2" />Overnight<br /><b>{item.accommodation || destination}</b></span><span><Utensils size={15} className="mb-2" />Meals<br /><b>{item.meals || "Breakfast"}</b></span></div></div><div className="relative min-h-80 overflow-hidden rounded-2xl"><img src={gallery[(index + 1) % gallery.length]} alt={item.title} className="h-full w-full object-cover" /><div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20 text-white"><small>DESTINATIONS</small><p className="text-2xl">{item.accommodation || destination}</p></div></div></article>)}
             </section>
+
+            {(accommodationItems.length > 0 || activityItems.length > 0 || extensionItems.length > 0) && (
+              <section id="addons" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <h3 className="flex items-center gap-3 text-2xl font-black"><Sparkles className="text-blue-600" />Available Add-ons</h3>
+                <div className="mt-6 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                  <AddOnGroup title="Accommodation" icon={<House size={14} />} items={accommodationItems} />
+                  <AddOnGroup title="Activities" icon={<Star size={14} />} items={activityItems} />
+                  <AddOnGroup title="Extensions" icon={<Calendar size={14} />} items={extensionItems} />
+                </div>
+              </section>
+            )}
+
+            {tour.discounts.length > 0 && (
+              <section id="offers" className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-6">
+                <h3 className="flex items-center gap-3 text-xl font-black text-amber-900"><Tag className="text-amber-600" />Special Offers</h3>
+                <ul className="mt-4 space-y-2">
+                  {tour.discounts.map((discount, index) => (
+                    <li key={index} className="flex items-center gap-3 text-sm font-semibold text-amber-900">
+                      <span className="shrink-0 rounded-full bg-amber-600 px-3 py-1 text-xs font-black text-white">
+                        {discount.discount_type === "percentage" ? `${discount.value}% OFF` : `${format(discount.value, baseCurrency)} OFF`}
+                      </span>
+                      {discount.label}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
 
           <aside id="booking" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_15px_40px_rgba(15,23,42,.12)] lg:sticky lg:top-24">
@@ -100,6 +176,15 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
           </aside>
         </div>
       </div>
+
+      {tour.similar_tours.length > 0 && (
+        <section className="mx-auto mt-14 max-w-7xl px-5 md:px-8">
+          <h3 className="text-2xl font-black">You Might Also Like</h3>
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {tour.similar_tours.slice(0, 3).map((related) => <SimilarTourCard key={related.id} tour={related} format={format} />)}
+          </div>
+        </section>
+      )}
     </main>
   );
 }
@@ -109,3 +194,34 @@ function Counter({ label, note, value, setValue, min }: { label: string; note: s
 function Summary({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) { return <div className="mt-3 flex justify-between"><span>{label}</span><b className={accent ? "text-emerald-500" : ""}>{value}</b></div>; }
 function dateLabel(value: string) { const date = new Date(`${value}T00:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", weekday: "long" }).format(date); }
 function flagFor(country: string) { const key = country.trim().toLowerCase(); return key === "new zealand" ? "🇳🇿" : key === "india" ? "🇮🇳" : key === "switzerland" ? "🇨🇭" : "🌍"; }
+
+function AddOnGroup({ title, icon, items }: { title: string; icon: React.ReactNode; items: { id: number; name: string; description: string; priceLabel: string }[] }) {
+  if (!items.length) return null;
+  return (
+    <div>
+      <h4 className="flex items-center gap-2 text-xs font-black uppercase text-slate-500">{icon}{title}</h4>
+      <ul className="mt-3 space-y-3">
+        {items.map((item) => (
+          <li key={item.id} className="flex items-start justify-between gap-4 rounded-xl border border-slate-100 p-3 text-sm">
+            <span className="min-w-0"><b className="block text-slate-900">{item.name}</b>{item.description && <span className="mt-0.5 block text-xs text-slate-500">{item.description}</span>}</span>
+            <b className="shrink-0 text-blue-700">{item.priceLabel}</b>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SimilarTourCard({ tour, format }: { tour: PublicTour; format: (amount: number | string | null | undefined, currency?: string) => string }) {
+  const image = tour.banner_image ? mediaUrl(tour.banner_image) : FALLBACK;
+  return (
+    <a href={publicTourUrl(tour)} className="group overflow-hidden rounded-2xl border border-slate-100 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+      <div className="h-48 overflow-hidden"><img src={image} alt={tour.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /></div>
+      <div className="p-5">
+        <p className="text-[10px] font-bold text-blue-600">{tour.city_name || tour.country_name}</p>
+        <h4 className="mt-2 line-clamp-2 text-base font-black">{tour.title}</h4>
+        {tour.price_start_per_person != null && <p className="mt-3 text-sm font-black text-slate-900">{format(tour.price_start_per_person, tour.currency || "USD")} <span className="text-xs font-normal text-slate-400">pp</span></p>}
+      </div>
+    </a>
+  );
+}

@@ -6,6 +6,7 @@ import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } 
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import DataTable from "@/components/ui/DataTable";
+import CurrencySelect from "@/components/ui/CurrencySelect";
 
 const empty = (): PricingSlab => ({
   passenger_from: 1, passenger_to: 4, adult_price: 0, child_price: 0,
@@ -154,8 +155,7 @@ export default function TourPricingTab({ tourId }: { tourId: string }) {
             {numField("final_price", "Final price")}
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
-              <input value={editing.currency} onChange={(e) => setEditing((p) => p ? { ...p, currency: e.target.value } : p)}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+              <CurrencySelect value={editing.currency} onChange={(code) => setEditing((p) => p ? { ...p, currency: code } : p)} />
             </label>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>

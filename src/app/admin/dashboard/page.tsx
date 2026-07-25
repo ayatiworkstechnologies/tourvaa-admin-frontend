@@ -36,13 +36,6 @@ type Charts           = { booking_status_chart?: ChartRow[]; payment_status_char
 type ActivityLog      = { action: string; entity_type: string; entity_id: number };
 
 // helpers
-function formatRevenue(raw: number): string {
-  if (raw >= 10_000_000) return `₹${(raw / 10_000_000).toFixed(1)}Cr`;
-  if (raw >= 100_000)    return `₹${(raw / 100_000).toFixed(1)}L`;
-  if (raw >= 1_000)      return `₹${(raw / 1_000).toFixed(1)}K`;
-  return `₹${raw.toFixed(0)}`;
-}
-
 function changeBadge(pct: number) {
   if (pct === 0) return <span className="text-dash-muted">No change</span>;
   const up = pct > 0;
@@ -392,7 +385,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
                 },
                 {
                   label: "Revenue Summary",
-                  value: formatRevenue(snapshot.revenue_summary.total_raw),
+                  value: formatCompact(snapshot.revenue_summary.total_raw),
                   sub: changeBadge(snapshot.revenue_summary.change_pct),
                   status: "ready" as const,
                 },

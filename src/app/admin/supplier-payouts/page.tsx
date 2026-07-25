@@ -5,6 +5,7 @@ import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig 
 import api from "@/lib/api/client";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import { useToast } from "@/hooks/useToast";
+import { useCurrency } from "@/hooks/useCurrency";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
 type Payout = {
@@ -38,10 +39,6 @@ function statusCls(status: string) {
   return "border-slate-200 bg-slate-50 text-slate-600";
 }
 
-function money(amount: string | number | undefined, currency = "USD") {
-  return `${currency} ${Number(amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
 function dateText(value?: string | null) {
   if (!value) return "-";
   const date = new Date(value);
@@ -51,6 +48,7 @@ function dateText(value?: string | null) {
 
 export default function SupplierPayoutsAdminPage() {
   const toast = useToast();
+  const { format: money } = useCurrency();
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");

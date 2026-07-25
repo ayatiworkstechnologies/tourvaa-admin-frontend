@@ -31,6 +31,7 @@ import {
 import DatePicker from "@/components/ui/DatePicker";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 import { isApprovedSupplier, supplierApprovalStatus } from "@/lib/auth/supplierAccess";
 
 type Summary = {
@@ -102,14 +103,6 @@ function statusColors(value?: string) {
     return "bg-rose-50 text-rose-600 ring-rose-100";
   }
   return "bg-slate-50 text-slate-600 ring-slate-100";
-}
-
-function money(value: string | number | undefined, currency = "USD") {
-  const amount = Number(value || 0);
-  return `${currency} ${amount.toLocaleString("en-US", {
-    minimumFractionDigits: amount % 1 ? 2 : 0,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 function dateText(value?: string) {
@@ -223,6 +216,7 @@ function PendingSupplierDashboard() {
 
 function ApprovedSupplierDashboard() {
   const { user } = useAuthContext();
+  const { format: money } = useCurrency();
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});

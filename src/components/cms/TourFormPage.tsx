@@ -13,6 +13,7 @@ import {
 } from "react-icons/lu";
 
 import Loader from "@/components/ui/Loader";
+import CurrencySelect from "@/components/ui/CurrencySelect";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import {
   TourWorkspaceHeader,
@@ -27,7 +28,7 @@ type Props = {
   tourId?: string;
   embedded?: boolean;
   role?: "admin" | "supplier";
-  onSaved?: () => void | Promise<void>;
+  onSaved?: (saved?: Record<string, unknown>) => void | Promise<void>;
   initialData?: Record<string, unknown>;
 };
 
@@ -46,7 +47,6 @@ function normalizeTourForm(data: Record<string, unknown>) {
 const textFields: [string, string][] = [
   ["title", "Tour title *"],
   ["subtitle", "Subtitle"],
-  ["currency", "Currency"],
   ["start_location", "Start location"],
   ["finish_location", "Finish location"],
 ];
@@ -264,9 +264,9 @@ export default function TourFormPage({
         complete: Boolean(form.short_description?.trim() && form.banner_image?.trim()),
       },
       {
-        label: "SEO & Publish",
-        note: "Search data and status",
-        complete: Boolean(form.seo_title?.trim() && form.status),
+        label: "SEO",
+        note: "Search data",
+        complete: Boolean(form.seo_title?.trim()),
       },
     ],
     [form]
@@ -281,13 +281,14 @@ export default function TourFormPage({
     }
 
     setSaving(true);
-    const payload: Record<string, unknown> = { status: form.status || "draft" };
+    const payload: Record<string, unknown> = {};
 
     for (const [key] of [...textFields, ...descriptionFields, ...seoFields]) {
       payload[key] = form[key]?.trim() ?? "";
     }
     payload.banner_image = form.banner_image?.trim() ?? "";
     payload.map_image = form.map_image?.trim() ?? "";
+    payload.currency = form.currency || "USD";
 
     // Simple number fields - use default if blank
     payload.price_start_per_person = form.price_start_per_person ? Number(form.price_start_per_person) : 0;
@@ -303,10 +304,11 @@ export default function TourFormPage({
     payload.subcategory_ids = selectedSubcategoryIds;
 
     try {
-      if (tourId) await updateCms("/tours", tourId, payload);
-      else await createCms("/tours", payload);
+      const saved = tourId
+        ? await updateCms("/tours", tourId, payload)
+        : await createCms("/tours", payload);
       toast.success("Tour saved successfully.");
-      await onSaved?.();
+      await onSaved?.(saved);
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
@@ -321,14 +323,23 @@ export default function TourFormPage({
     <div className="animate-in fade-in zoom-in-95 duration-200">
       {!embedded && (
         <TourWorkspaceHeader
-          role="admin"
-          title="Create New Tour"
-          description="Build the complete tour record, assign its supplier and location, add media, then choose when it should be published."
+          role={role}
+          title={tourId ? "Edit Tour" : "Create New Tour"}
+          description={
+            isSupplier
+              ? "Start with the essentials, set your pricing, then continue in the full editor for itinerary, gallery, inclusions, and availability."
+              : "Build the complete tour record, assign its supplier and location, add media, then choose when it should be published."
+          }
           icon={MapPinned}
-          eyebrow="Admin Tour Builder"
-          actions={[{ label: "Back to Tours", href: "/admin/tours", icon: ArrowLeft, variant: "secondary" }]}
+          eyebrow={isSupplier ? "Tour Builder" : "Admin Tour Builder"}
+          actions={[{
+            label: isSupplier ? "Back to My Tours" : "Back to Tours",
+            href: isSupplier ? "/supplier/tours" : "/admin/tours",
+            icon: ArrowLeft,
+            variant: "secondary",
+          }]}
         >
-          <TourWorkspaceProgress role="admin" stages={setupStages} />
+          <TourWorkspaceProgress role={role} stages={setupStages} />
         </TourWorkspaceHeader>
       )}
 
@@ -367,6 +378,11 @@ export default function TourFormPage({
               </label>
             ))}
 
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
+              <CurrencySelect value={form.currency ?? "USD"} onChange={(code) => update("currency", code)} className={inputClass} />
+            </label>
+
             {simpleNumberFields.map(([key, label]) => (
               <label key={key}>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
@@ -379,20 +395,6 @@ export default function TourFormPage({
               </label>
             ))}
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
-              <select
-                value={form.status ?? "draft"}
-                onChange={(e) => update("status", e.target.value)}
-                disabled={isSupplier}
-                className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-500`}
-              >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="unpublished">Unpublished</option>
-                <option value="disabled">Disabled</option>
-              </select>
-            </label>
           </FormSection>
 
           <FormSection role={role} icon={AlignLeft} title="Descriptions" description="Shown on the public tour page.">
@@ -557,7 +559,7 @@ export default function TourFormPage({
               <p className="mt-0.5 text-[11px] text-dash-subtle">
                 {isSupplier
                   ? "Your current publishing status is preserved. Submit the tour for approval from the editor header."
-                  : "Your status selection controls whether the tour is immediately visible."}
+                  : "Publishing status is controlled by the Tour Approval workflow and the Publish/Disable toggle on the Tours list, not from this form."}
               </p>
             </div>
             <button

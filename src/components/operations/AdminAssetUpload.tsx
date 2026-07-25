@@ -16,7 +16,11 @@ type Props = {
 };
 
 function isImageUrl(value: string) {
-  return /\.(png|jpe?g|webp|avif|gif|svg)(\?.*)?$/i.test(value) || value.startsWith("https://ik.imagekit.io/");
+  // Cloudinary delivery URLs always carry the real file extension (it
+  // auto-appends the detected format), including for PDFs served under the
+  // same /image/upload/ path - so this must stay extension-based rather than
+  // matching on the Cloudinary domain, or PDFs would wrongly render as images.
+  return /\.(png|jpe?g|webp|avif|gif|svg)(\?.*)?$/i.test(value);
 }
 
 export default function AdminAssetUpload({ label, value, onChange }: Props) {

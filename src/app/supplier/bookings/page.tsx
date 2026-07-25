@@ -6,6 +6,7 @@ import { LuCircleAlert as AlertCircle, LuCalendarCheck as CalendarCheck, LuCircl
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { SupplierMetric, SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Booking = {
   id: number;
@@ -55,6 +56,7 @@ function paymentColors(s: string) {
 }
 
 export default function SupplierBookingsPage() {
+  const { format } = useCurrency();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -116,7 +118,7 @@ export default function SupplierBookingsPage() {
     { key: "travellers", header: "Travellers", className: "text-center text-dash-muted", render: (b) => b.num_travellers ?? b.total_pax ?? "-" },
     { key: "status", header: "Status", render: (b) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(b.booking_status)}`}>{b.booking_status.replaceAll("_", " ")}</span> },
     { key: "payment", header: "Payment", render: (b) => b.payment_status ? <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(b.payment_status)}`}>{b.payment_status}</span> : <span className="text-xs text-dash-subtle">-</span> },
-    { key: "amount", header: "Amount", className: "whitespace-nowrap font-semibold text-dash-text", render: (b) => `${b.currency ?? "USD"} ${Number(b.final_amount ?? b.total_amount ?? 0).toLocaleString()}` },
+    { key: "amount", header: "Amount", className: "whitespace-nowrap font-semibold text-dash-text", render: (b) => format(b.final_amount ?? b.total_amount ?? 0, b.currency) },
   ];
 
   return (

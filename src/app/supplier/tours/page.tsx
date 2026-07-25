@@ -21,6 +21,7 @@ import {
 import { SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
 import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Tour = {
   id: number;
@@ -57,6 +58,7 @@ function statusColors(status: string) {
 }
 
 export default function SupplierToursPage() {
+  const { format } = useCurrency();
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -216,7 +218,7 @@ export default function SupplierToursPage() {
                     <div className="mt-4 flex items-end justify-between gap-3 border-t border-[#E8F0EB] pt-4">
                       <span>
                         <span className="block text-[9px] text-[#788C80]">Starting from</span>
-                        <b className="mt-0.5 block text-lg text-[#123024]">{tour.currency || "USD"} {Number(tour.price_start_per_person || 0).toLocaleString()}</b>
+                        <b className="mt-0.5 block text-lg text-[#123024]">{format(tour.price_start_per_person || 0, tour.currency)}</b>
                       </span>
                       {isPending && <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700"><Clock size={11} /> Admin review</span>}
                     </div>

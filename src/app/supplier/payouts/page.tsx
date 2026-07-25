@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Payout = {
   id: number;
@@ -35,18 +36,12 @@ function statusColors(s: string) {
   return "bg-slate-50 text-slate-600";
 }
 
-function money(v: number | string | undefined, cur = "USD") {
-  return `${cur} ${Number(v || 0).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 const inputCls =
   "w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
 const labelCls = "block text-xs font-bold text-dash-body mb-1.5";
 
 export default function PayoutsPage() {
+  const { format: money } = useCurrency();
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);

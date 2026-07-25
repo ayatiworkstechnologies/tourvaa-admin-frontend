@@ -25,14 +25,7 @@ import {
   ReportType,
 } from "@/lib/api/services/reportService";
 import { useToast } from "@/hooks/useToast";
-
-// helpers
-function formatRevenue(raw: number): string {
-  if (raw >= 10_000_000) return `₹${(raw / 10_000_000).toFixed(1)}Cr`;
-  if (raw >= 100_000)    return `₹${(raw / 100_000).toFixed(1)}L`;
-  if (raw >= 1_000)      return `₹${(raw / 1_000).toFixed(1)}K`;
-  return `₹${raw.toFixed(0)}`;
-}
+import { useCurrency } from "@/hooks/useCurrency";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -111,12 +104,9 @@ const PERIOD_OPTIONS: { value: ReportPeriod; label: string }[] = [
 // report row types (loose - different report types have different shapes)
 type ReportRow = Record<string, string | number | null>;
 
-function money(value: unknown) {
-  const num = Number(value ?? 0);
-  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+type FormatMoney = (value: number | string | null | undefined, fromCurrency?: string) => string;
 
-function buildColumns(reportType: ReportType): DataTableColumn<ReportRow>[] {
+function buildColumns(reportType: ReportType, money: FormatMoney): DataTableColumn<ReportRow>[] {
   switch (reportType) {
     case "bookings":
       return [
@@ -210,6 +200,7 @@ async function fetchReportRows(reportType: ReportType, periodParams: { period: R
 // page
 export default function ReportsPage() {
   const toast = useToast();
+  const { format: money, formatCompact } = useCurrency();
   const [data, setData] = useState<ReportSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -224,7 +215,7 @@ export default function ReportsPage() {
   const [exporting, setExporting] = useState(false);
 
   const reportMeta = REPORT_TYPES.find((r) => r.value === reportType)!;
-  const columns = useMemo(() => buildColumns(reportType), [reportType]);
+  const columns = useMemo(() => buildColumns(reportType, money), [reportType, money]);
 
   useEffect(() => {
     let active = true;
@@ -304,7 +295,7 @@ export default function ReportsPage() {
                 <SnapshotCard
                   title="Revenue Summary"
                   status="ready"
-                  value={formatRevenue(data.revenue_summary.total_raw)}
+                  value={formatCompact(data.revenue_summary.total_raw)}
                   sub={changeBadge(data.revenue_summary.change_pct) ?? "No change this month"}
                 />
 

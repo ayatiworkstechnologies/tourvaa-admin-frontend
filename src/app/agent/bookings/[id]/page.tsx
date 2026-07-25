@@ -9,6 +9,7 @@ import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import BookingPaymentModal from "@/components/bookings/BookingPaymentModal";
 import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Traveller = {
   id: number;
@@ -69,13 +70,6 @@ type Invoice = {
   invoice_number?: string;
 };
 
-function money(value: string | number | undefined, currency = "USD") {
-  if (!value && value !== 0) return "-";
-  const amount = Number(value);
-  if (Number.isNaN(amount)) return String(value);
-  return `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)}`;
-}
-
 function dateText(value?: string | null) {
   if (!value) return "-";
   const d = new Date(value);
@@ -112,6 +106,9 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { format } = useCurrency();
+  const money = (value: string | number | undefined, currency = "USD") =>
+    value || value === 0 ? format(value, currency) : "-";
   const [booking, setBooking] = useState<Booking | null>(null);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);

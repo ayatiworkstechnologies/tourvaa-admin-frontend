@@ -26,9 +26,9 @@ function dateText(value?: string) {
 
 function statusClass(status?: string) {
   const value = (status || "").toLowerCase();
-  if (["approved", "refunded", "completed"].includes(value)) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (["requested", "under_review", "refund_processing"].includes(value)) return "bg-amber-50 text-amber-700 border-amber-200";
-  if (["rejected", "cancelled"].includes(value)) return "bg-rose-50 text-rose-700 border-rose-200";
+  if (["approved", "refund_processed"].includes(value)) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (["pending"].includes(value)) return "bg-amber-50 text-amber-700 border-amber-200";
+  if (["rejected"].includes(value)) return "bg-rose-50 text-rose-700 border-rose-200";
   return "bg-slate-50 text-slate-700 border-slate-200";
 }
 
@@ -50,7 +50,7 @@ export default function CustomerCancellationsPage() {
     { key: "booking", header: "Booking", render: (c) => <Link className="font-bold text-dash-brand hover:underline" href={`/customer/bookings/${c.booking_id}`}>{c.booking_code || `Booking #${c.booking_id}`}</Link> },
     { key: "tour", header: "Tour", render: (c) => c.tour_name || "-", className: "text-dash-muted" },
     { key: "reason", header: "Reason", render: (c) => c.reason || "-", className: "hidden max-w-xs truncate text-dash-muted md:table-cell" },
-    { key: "status", header: "Status", render: (c) => <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold capitalize ${statusClass(c.status)}`}>{(c.status || "requested").replaceAll("_", " ")}</span> },
+    { key: "status", header: "Status", render: (c) => <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold capitalize ${statusClass(c.status)}`}>{(c.status || "pending").replaceAll("_", " ")}</span> },
     { key: "date", header: "Requested", render: (c) => dateText(c.created_at), className: "hidden text-dash-muted sm:table-cell" },
   ];
 

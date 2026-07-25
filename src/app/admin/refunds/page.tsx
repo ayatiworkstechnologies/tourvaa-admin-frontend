@@ -129,15 +129,14 @@ export default function RefundsPage() {
   };
 
   const processRefund = async (req: CancellationRequest) => {
-    const gateway = window.prompt("Payment gateway (e.g. stripe, paypal):", "stripe");
-    if (!gateway) return;
+    if (!window.confirm("This will issue a real refund through the original payment gateway (Stripe/PayPal) for the approved amount. Continue?")) return;
     setProcessingId(req.id);
     try {
-      await api.post(`/cancellations/${req.id}/process-refund`, { gateway });
+      await api.post(`/cancellations/${req.id}/process-refund`, {});
       toast.success("Refund processed successfully.");
       void fetchRequests(reqPage);
     } catch {
-      toast.error("Could not process refund.");
+      toast.error("Could not process refund. The payment gateway may have declined the request.");
     } finally {
       setProcessingId(null);
     }

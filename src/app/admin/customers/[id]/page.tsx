@@ -17,6 +17,7 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import { useToast } from "@/hooks/useToast";
 import { useAuthContext } from "@/providers/AuthProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 import {
   blockCustomer,
   BookingHistory,
@@ -37,6 +38,7 @@ export default function CustomerDetailPage() {
   const customerId = params.id;
   const toast = useToast();
   const { hasPermission } = useAuthContext();
+  const { format } = useCurrency();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [bookings, setBookings] = useState<BookingHistory[]>([]);
   const [payments, setPayments] = useState<PaymentHistory[]>([]);
@@ -203,8 +205,8 @@ export default function CustomerDetailPage() {
               { label: "Completed", value: customer.booking_summary?.completed ?? customer.completed_tours, icon: CheckCircle2, accent: "text-emerald-600 bg-emerald-50" },
               { label: "Cancelled", value: customer.booking_summary?.cancelled ?? customer.cancelled_tours, icon: XCircle, accent: "text-red-600 bg-red-50" },
               { label: "Upcoming", value: customer.booking_summary?.upcoming ?? customer.upcoming_tours, icon: CalendarCheck, accent: "text-violet-600 bg-violet-50" },
-              { label: "Paid", value: `$${Number(customer.payment_summary?.paid ?? customer.amount_paid).toLocaleString()}`, icon: Wallet, accent: "text-emerald-600 bg-emerald-50" },
-              { label: "Pending", value: `$${Number(customer.payment_summary?.pending ?? customer.amount_pending).toLocaleString()}`, icon: CalendarX, accent: "text-amber-700 bg-amber-50" },
+              { label: "Paid", value: format(customer.payment_summary?.paid ?? customer.amount_paid), icon: Wallet, accent: "text-emerald-600 bg-emerald-50" },
+              { label: "Pending", value: format(customer.payment_summary?.pending ?? customer.amount_pending), icon: CalendarX, accent: "text-amber-700 bg-amber-50" },
             ].map(({ label, value, icon: Icon, accent }) => (
               <div
                 key={label}

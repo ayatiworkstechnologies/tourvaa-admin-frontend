@@ -10,6 +10,7 @@ import {
   SupplierPageHeader,
   SupplierPageShell,
 } from "@/components/supplier/SupplierPage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Traveller = {
   id?: number;
@@ -387,6 +388,7 @@ function StatusHistory({ history }: { history: StatusHistory[] }) {
 export default function SupplierBookingDetailPage() {
   const params = useParams();
   const bookingId = params.id as string;
+  const { format } = useCurrency();
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [history, setHistory] = useState<StatusHistory[]>([]);
@@ -566,7 +568,7 @@ export default function SupplierBookingDetailPage() {
           </div>
           <InfoRow
             label="Total Amount"
-            value={`${booking.currency ?? "USD"} ${Number(booking.final_amount ?? booking.total_amount ?? 0).toLocaleString()}`}
+            value={format(booking.final_amount ?? booking.total_amount ?? 0, booking.currency)}
           />
           <InfoRow label="Payment Status" value={booking.payment_status ?? "-"} />
           {booking.cancellation_reason && (

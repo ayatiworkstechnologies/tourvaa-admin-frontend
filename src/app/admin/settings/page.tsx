@@ -7,7 +7,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 import { invalidateCurrencyCache } from "@/hooks/useCurrency";
-import { CURRENCY_LIST } from "@/lib/utils/currency";
+import CurrencySelect from "@/components/ui/CurrencySelect";
 
 const groupLabels: Record<string, string> = {
   general: "System Settings",
@@ -51,11 +51,16 @@ export default function SettingsPage() {
   const [activeGroup, setActiveGroup] = useState("general");
 
   const grouped = useMemo(() => {
-    return settings.reduce<Record<string, Setting[]>>((groups, setting) => {
-      groups[setting.group] = groups[setting.group] || [];
-      groups[setting.group].push(setting);
-      return groups;
-    }, {});
+    return settings
+      // "default_currency" is a legacy duplicate of "currency" (Booking
+      // Defaults) -- the backend keeps them mirrored automatically, so only
+      // show the one currency picker to avoid a confusing second field.
+      .filter((setting) => setting.key !== "default_currency")
+      .reduce<Record<string, Setting[]>>((groups, setting) => {
+        groups[setting.group] = groups[setting.group] || [];
+        groups[setting.group].push(setting);
+        return groups;
+      }, {});
   }, [settings]);
 
   const groupEntries = useMemo(() => Object.entries(grouped), [grouped]);
@@ -188,22 +193,15 @@ export default function SettingsPage() {
                       <option value="live">Live</option>
                     </select>
                   ) : setting.key === "currency" ? (
-                    <select
+                    <CurrencySelect
                       value={form[setting.key] || "USD"}
-                      onChange={(event) =>
+                      onChange={(code) =>
                         setForm((current) => ({
                           ...current,
-                          [setting.key]: event.target.value,
+                          [setting.key]: code,
                         }))
                       }
-                      className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-                    >
-                      {CURRENCY_LIST.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.symbol} - {c.code} - {c.name}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   ) : (
                     <input
                       type={secretSettingKeys.has(setting.key) ? "password" : "text"}

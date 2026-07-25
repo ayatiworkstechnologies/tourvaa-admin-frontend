@@ -5,6 +5,7 @@ import { LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuClock as Clock, L
 import api from "@/lib/api/client";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import { useToast } from "@/hooks/useToast";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type TourVersion = {
   id: number;
@@ -27,6 +28,7 @@ type TourVersion = {
 
 export default function TourApprovalPage() {
   const toast = useToast();
+  const { format } = useCurrency();
   const [versions, setVersions] = useState<TourVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
@@ -119,7 +121,7 @@ export default function TourApprovalPage() {
                       )}
                       {v.snapshot?.number_of_days && <span>Duration: {v.snapshot.number_of_days} days</span>}
                       {v.snapshot?.price_start_per_person && (
-                        <span>From: {v.snapshot.currency} {Number(v.snapshot.price_start_per_person).toLocaleString()}</span>
+                        <span>From: {format(v.snapshot.price_start_per_person, v.snapshot.currency)}</span>
                       )}
                     </div>
                     {v.snapshot?.short_description && (

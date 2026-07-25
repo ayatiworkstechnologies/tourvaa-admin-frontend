@@ -5,11 +5,13 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { Invoice, getInvoices, downloadInvoicePdf, regenerateInvoicePdf } from "@/lib/api/services/invoiceService";
 import { useToast } from "@/hooks/useToast";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const PAGE_SIZE = 10;
 
 export default function InvoicesPage() {
   const toast = useToast();
+  const { format } = useCurrency();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalInvoices, setTotalInvoices] = useState(0);
@@ -75,10 +77,10 @@ export default function InvoicesPage() {
     { key: "invoice_number", header: "Invoice" },
     { key: "booking_id", header: "Booking" },
     { key: "status", header: "Status" },
-    { key: "subtotal_amount", header: "Subtotal" },
-    { key: "gst_amount", header: "GST" },
-    { key: "total_amount", header: "Total" },
-    { key: "amount_due", header: "Due" },
+    { key: "subtotal_amount", header: "Subtotal", render: (invoice) => format(invoice.subtotal_amount, invoice.currency) },
+    { key: "gst_amount", header: "GST", render: (invoice) => format(invoice.gst_amount, invoice.currency) },
+    { key: "total_amount", header: "Total", render: (invoice) => format(invoice.total_amount, invoice.currency) },
+    { key: "amount_due", header: "Due", render: (invoice) => format(invoice.amount_due, invoice.currency) },
     {
       key: "pdf_path",
       header: "Actions",

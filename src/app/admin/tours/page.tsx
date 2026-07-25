@@ -13,17 +13,14 @@ import { CmsRecord, listCms, updateCmsStatus } from "@/lib/api/services/cmsServi
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/useToast";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const PAGE_SIZE = 12;
-
-function money(value: unknown, currency: unknown) {
-  const amount = Number(value || 0).toLocaleString();
-  return `${currency || ""} ${amount}`.trim();
-}
 
 export default function ToursPage() {
   const toast = useToast();
   const { hasPermission } = useAuthContext();
+  const { format } = useCurrency();
   const [rows, setRows] = useState<CmsRecord[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -241,7 +238,7 @@ export default function ToursPage() {
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-wide text-dash-subtle">From</p>
                         <p className="text-lg font-black text-dash-text">
-                          {money(row.price_start_per_person, row.currency)}
+                          {format(row.price_start_per_person as number, row.currency as string)}
                         </p>
                       </div>
 

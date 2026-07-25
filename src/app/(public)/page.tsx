@@ -33,13 +33,14 @@ import {
 } from "@/lib/api/publicClient";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
+import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Tour = {
   id?: number;
   title: string;
   place: string;
   image: string;
-  price: string;
   days: string;
   reviews: string;
   features: string[];
@@ -48,50 +49,14 @@ type Tour = {
   slug?: string;
 };
 
-const trending: Tour[] = [
-  { title: "New Zealand Explorer", place: "New Zealand", image: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=900&q=85", price: "$1,182", days: "9D | 8N", reviews: "2,466", features: ["Auckland + Queenstown", "Age Range: 12–70", "Max Group Size: 24"] },
-  { title: "Golden Triangle Escape", place: "India", image: "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=900&q=85", price: "$839", days: "7D | 6N", reviews: "1,888", features: ["Delhi + Agra + Jaipur", "Age Range: 10–75", "Max Group Size: 20"] },
-  { title: "Swiss Alpine Adventure", place: "Switzerland", image: "https://images.unsplash.com/photo-1527668752968-14dc70a27c95?auto=format&fit=crop&w=900&q=85", price: "$1,575", days: "8D | 7N", reviews: "3,692", features: ["Zurich + Lucerne", "Age Range: 15–70", "Max Group Size: 18"] },
-  { title: "Cherry Blossom Japan", place: "Japan", image: "https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=900&q=85", price: "$1,869", days: "10D | 9N", reviews: "2,989", features: ["Tokyo + Kyoto", "Age Range: 12–70", "Max Group Size: 16"] },
-  { title: "Bali Island Escape", place: "Indonesia", image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=85", price: "$969", days: "6D | 5N", reviews: "2,104", features: ["Ubud + Seminyak", "Age Range: 12–70", "Max Group Size: 20"] },
-];
+const PLACEHOLDER_IMAGE = "/images/tour-card-fallback.jpg";
 
-const handpicked: Tour[] = [
-  { title: "South Island Explorer", place: "New Zealand", image: "https://images.unsplash.com/photo-1469521669194-babb45599def?auto=format&fit=crop&w=900&q=85", price: "$2,699", days: "10D | 9N", reviews: "2,466", features: ["Including Accommodation", "Milford Sound Cruise", "Airport pickup available"] },
-  { title: "Golden Triangle Escape", place: "India", image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=900&q=85", price: "$799", days: "7D | 6N", reviews: "2,466", features: ["Premium accommodation", "Guided heritage tour", "Daily breakfast included"] },
-  { title: "Swiss Alps Escape", place: "Switzerland", image: "https://images.unsplash.com/photo-1502784444187-359ac186c5bb?auto=format&fit=crop&w=900&q=85", price: "$780", days: "6D | 5N", reviews: "1,328", features: ["Mountain-view accommodation", "Scenic train experience", "Daily breakfast included"] },
-  { title: "Paris & Provence", place: "France", image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=85", price: "$670", days: "7D | 6N", reviews: "2,466", features: ["Central hotel accommodation", "Guided city sightseeing", "Seine river cruise included"] },
-  { title: "Amalfi Coast Dreams", place: "Italy", image: "https://images.unsplash.com/photo-1533104816931-20fa691ff6ca?auto=format&fit=crop&w=900&q=85", price: "$1,250", days: "8D | 7N", reviews: "1,806", features: ["Boutique accommodation", "Coastal boat tour", "Daily breakfast included"] },
-];
-
-const places = [
-  { name: "New Zealand", count: "95 Packages", rating: "4.9", image: "https://images.unsplash.com/photo-1469521669194-babb45599def?auto=format&fit=crop&w=900&q=85" },
-  { name: "India", count: "73 Packages", rating: "4.9", image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=900&q=85" },
-  { name: "Switzerland", count: "85 Packages", rating: "4.8", image: "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=900&q=85" },
-  { name: "France", count: "62 Packages", rating: "4.8", image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=85" },
-  { name: "Greece", count: "48 Packages", rating: "4.9", image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=900&q=85" },
-];
-
-const reviews = [
-  { quote: "Booked a 7-day Rajasthan tour through Tourvaa. Everything was flawless — hotels, transport, guides. I didn’t have to think once.", name: "Priya Menon", city: "Kerala, India", initials: "PM" },
-  { quote: "The Golden Triangle package was absolutely worth every dirham. The team was responsive and the itinerary was perfectly paced.", name: "Khalid Al-Rashid", city: "Dubai, UAE", initials: "KA" },
-  { quote: "Discovered Tourvaa on Instagram and booked a Kerala houseboat trip on a whim. Genuinely the best holiday I’ve ever had.", name: "Anjali Sharma", city: "Bengaluru, India", initials: "AS" },
-];
-
-function mapPublicTour(tour: PublicTour, index: number): Tour {
-  const fallback = trending[index % trending.length];
-  let price = fallback.price;
-  if (tour.price_start_per_person != null) {
-    try {
-      price = new Intl.NumberFormat("en-US", { style: "currency", currency: tour.currency || "USD", maximumFractionDigits: 0 }).format(tour.price_start_per_person);
-    } catch { price = `${tour.currency || "$"} ${tour.price_start_per_person.toLocaleString()}`; }
-  }
+function mapPublicTour(tour: PublicTour): Tour {
   return {
     id: tour.id,
     title: tour.title,
     place: tour.country_name || tour.city_name || "Worldwide",
-    image: tour.banner_image || fallback.image,
-    price,
+    image: tour.banner_image ? mediaUrl(tour.banner_image) : PLACEHOLDER_IMAGE,
     days: tour.number_of_days ? `${tour.number_of_days}D | ${Math.max(0, tour.number_of_days - 1)}N` : tour.number_of_hours ? `${tour.number_of_hours} Hours` : "Flexible",
     reviews: "Verified",
     features: [tour.city_name || tour.country_name || "Curated itinerary", tour.category_name || "Guided experience", tour.short_description || "Flexible booking available"],
@@ -101,9 +66,8 @@ function mapPublicTour(tour: PublicTour, index: number): Tour {
   };
 }
 
-function mapDestination(item: CmsDestination, index: number) {
-  const fallback = places[index % places.length];
-  return { name: item.title, count: item.description || "Explore packages", rating: "4.9", image: item.image || fallback.image };
+function mapDestination(item: CmsDestination) {
+  return { name: item.title, count: item.description || "Explore packages", rating: "4.9", image: item.image || PLACEHOLDER_IMAGE };
 }
 
 function mapReview(item: CmsReview) {
@@ -260,6 +224,7 @@ function Stars({ reviews: count }: { reviews?: string }) {
 
 function TourCard({ tour, discount }: { tour: Tour; discount?: boolean }) {
   const { isWishlisted, toggleWishlist } = useTravelStore();
+  const { format } = useCurrency();
   const fallbackId = -Math.abs(Array.from(tour.title).reduce((total, character) => total + character.charCodeAt(0), 0));
   const itemId = tour.id ?? fallbackId;
   const wishlisted = isWishlisted(itemId);
@@ -278,20 +243,38 @@ function TourCard({ tour, discount }: { tour: Tour; discount?: boolean }) {
           <div className="flex items-start justify-between gap-2"><h3 className="truncate text-sm font-bold text-slate-900 transition group-hover:text-blue-600">{tour.title}</h3><span className="shrink-0 rounded border border-blue-300 px-1 text-[8px] font-bold text-blue-600">{tour.days}</span></div>
           <Stars reviews={tour.reviews} />
           <div className="mt-3 space-y-1 border-t border-slate-100 pt-2 text-[9px] text-slate-500">{tour.features.map((feature) => <p key={feature} className="flex items-center gap-1.5"><Check size={10} className="text-blue-500" />{feature}</p>)}</div>
-          <div className="mt-3 flex items-end gap-2 border-t border-slate-100 pt-2 text-xs"><b>From</b><span className="text-[9px] text-slate-300 line-through">$1,599</span><strong className="text-lg text-slate-950">{tour.price}</strong><span className="text-[8px] text-slate-400">pp</span></div>
+          <div className="mt-3 flex items-end gap-2 border-t border-slate-100 pt-2 text-xs"><b>From</b><strong className="text-lg text-slate-950">{tour.rawPrice != null ? format(tour.rawPrice, tour.currency || "USD") : "Price on request"}</strong><span className="text-[8px] text-slate-400">pp</span></div>
         </div>
       </Link>
     </article>
   );
 }
 
-function CarouselSection({ title, tours, discount }: { title: string; tours: Tour[]; discount?: boolean }) {
+function TourCardSkeleton() {
+  return (
+    <div className="w-[275px] shrink-0 animate-pulse overflow-hidden rounded-xl border border-slate-100 bg-white p-3 sm:w-[310px] lg:w-[calc((100vw-7rem)/4)] xl:w-[306px]">
+      <div className="h-44 rounded-lg bg-slate-100" />
+      <div className="pt-3">
+        <div className="h-4 w-3/4 rounded-full bg-slate-100" />
+        <div className="mt-3 h-3 w-1/2 rounded-full bg-slate-100" />
+        <div className="mt-4 h-8 w-2/3 rounded-full bg-slate-100" />
+      </div>
+    </div>
+  );
+}
+
+function CarouselSection({ title, tours, discount, loading }: { title: string; tours: Tour[]; discount?: boolean; loading?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const move = (direction: number) => ref.current?.scrollBy({ left: direction * 340, behavior: "smooth" });
+  if (!loading && tours.length === 0) return null;
   return (
     <section className="py-10">
       <div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-bold text-slate-950 sm:text-2xl">{title}</h2><div className="flex gap-2"><button aria-label="Previous tours" onClick={() => move(-1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 bg-white transition hover:border-blue-500 hover:text-blue-600"><ArrowLeft size={15} /></button><button aria-label="Next tours" onClick={() => move(1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 bg-white transition hover:border-blue-500 hover:text-blue-600"><ArrowRight size={15} /></button></div></div>
-      <div ref={ref} className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-5">{tours.map((tour, index) => <div className="snap-start" key={`${tour.title}-${index}`}><TourCard tour={tour} discount={discount} /></div>)}</div>
+      <div ref={ref} className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-5">
+        {loading
+          ? Array.from({ length: 5 }).map((_, index) => <div className="snap-start" key={index}><TourCardSkeleton /></div>)
+          : tours.map((tour, index) => <div className="snap-start" key={`${tour.title}-${index}`}><TourCard tour={tour} discount={discount} /></div>)}
+      </div>
     </section>
   );
 }
@@ -299,10 +282,11 @@ function CarouselSection({ title, tours, discount }: { title: string; tours: Tou
 export default function Home() {
   const [banners, setBanners] = useState<CmsBanner[]>([]);
   const [bannerIndex, setBannerIndex] = useState(0);
-  const [trendingTours, setTrendingTours] = useState<Tour[]>(trending);
-  const [handpickedTours, setHandpickedTours] = useState<Tour[]>(handpicked);
-  const [dynamicPlaces, setDynamicPlaces] = useState(places);
-  const [dynamicReviews, setDynamicReviews] = useState(reviews.map((item) => ({ ...item, rating: 5 })));
+  const [loadingHome, setLoadingHome] = useState(true);
+  const [trendingTours, setTrendingTours] = useState<Tour[]>([]);
+  const [handpickedTours, setHandpickedTours] = useState<Tour[]>([]);
+  const [dynamicPlaces, setDynamicPlaces] = useState<{ name: string; count: string; rating: string; image: string }[]>([]);
+  const [dynamicReviews, setDynamicReviews] = useState<{ quote: string; name: string; city: string; initials: string; rating: number }[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -316,6 +300,7 @@ export default function Home() {
       }
       if (destinationResult.status === "fulfilled" && destinationResult.value.length) setDynamicPlaces(destinationResult.value.slice(0, 10).map(mapDestination));
       if (reviewResult.status === "fulfilled" && reviewResult.value.length) setDynamicReviews(reviewResult.value.slice(0, 6).map(mapReview));
+      setLoadingHome(false);
     });
     return () => { active = false; };
   }, []);
@@ -346,8 +331,8 @@ export default function Home() {
       </section>
 
       <div className="relative z-10 mx-auto max-w-[1380px] px-5 sm:px-8 lg:px-12">
-        <Reveal><CarouselSection title="Trending Tour Packages" tours={trendingTours} discount /></Reveal>
-        <Reveal><CarouselSection title="Handpicked Tours for You" tours={handpickedTours} /></Reveal>
+        <Reveal><CarouselSection title="Trending Tour Packages" tours={trendingTours} discount loading={loadingHome} /></Reveal>
+        <Reveal><CarouselSection title="Handpicked Tours for You" tours={handpickedTours} loading={loadingHome} /></Reveal>
 
         <Reveal className="py-12 lg:px-16">
           <section className="grid overflow-hidden rounded-lg border border-slate-100 bg-white p-2 shadow-[0_8px_26px_rgba(15,23,42,.08)] md:grid-cols-2">
@@ -360,30 +345,52 @@ export default function Home() {
           </section>
         </Reveal>
 
-        <Reveal><PlacesCarousel places={dynamicPlaces} /></Reveal>
-        <Reveal><Testimonials reviews={dynamicReviews} /></Reveal>
+        <Reveal><PlacesCarousel places={dynamicPlaces} loading={loadingHome} /></Reveal>
+        <Reveal><Testimonials reviews={dynamicReviews} loading={loadingHome} /></Reveal>
         <Reveal><DestinationDirectory /></Reveal>
       </div>
     </main>
   );
 }
 
-function PlacesCarousel({ places: items }: { places: { name: string; count: string; rating: string; image: string }[] }) {
+function PlacesCarousel({ places: items, loading }: { places: { name: string; count: string; rating: string; image: string }[]; loading?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const move = (direction: number) => ref.current?.scrollBy({ left: direction * 320, behavior: "smooth" });
+  if (!loading && items.length === 0) return null;
   return (
     <section className="py-10">
       <div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-bold sm:text-2xl">Places Worth Exploring</h2><div className="flex gap-2"><button onClick={() => move(-1)} aria-label="Previous places" className="flex h-8 w-8 items-center justify-center rounded border border-slate-200"><ArrowLeft size={15} /></button><button onClick={() => move(1)} aria-label="Next places" className="flex h-8 w-8 items-center justify-center rounded border border-slate-200"><ArrowRight size={15} /></button></div></div>
-      <div ref={ref} className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-5">{items.map((place) => <Link href={`/tours?country=${place.name}`} key={place.name} className="group w-[275px] shrink-0 snap-start rounded-xl border border-slate-100 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,.07)] transition hover:-translate-y-1"><div className="h-44 overflow-hidden rounded-lg"><img src={place.image} alt={place.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /></div><div className="mt-3 flex items-center justify-between"><h3 className="font-bold">{place.name}</h3><span className="flex items-center gap-1 text-xs font-bold"><Star size={10} className="fill-amber-400 text-amber-400" />{place.rating}</span></div><p className="mt-1 text-[10px] text-slate-400">▣ {place.count}</p></Link>)}</div>
+      <div ref={ref} className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-5">
+        {loading
+          ? Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="w-[275px] shrink-0 animate-pulse rounded-xl border border-slate-100 bg-white p-3">
+                <div className="h-44 rounded-lg bg-slate-100" />
+                <div className="mt-3 h-4 w-2/3 rounded-full bg-slate-100" />
+                <div className="mt-2 h-3 w-1/3 rounded-full bg-slate-100" />
+              </div>
+            ))
+          : items.map((place) => <Link href={`/tours?country=${place.name}`} key={place.name} className="group w-[275px] shrink-0 snap-start rounded-xl border border-slate-100 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,.07)] transition hover:-translate-y-1"><div className="h-44 overflow-hidden rounded-lg"><img src={place.image} alt={place.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /></div><div className="mt-3 flex items-center justify-between"><h3 className="font-bold">{place.name}</h3><span className="flex items-center gap-1 text-xs font-bold"><Star size={10} className="fill-amber-400 text-amber-400" />{place.rating}</span></div><p className="mt-1 text-[10px] text-slate-400">▣ {place.count}</p></Link>)}
+      </div>
     </section>
   );
 }
 
-function Testimonials({ reviews: items }: { reviews: { quote: string; name: string; city: string; initials: string; rating: number }[] }) {
+function Testimonials({ reviews: items, loading }: { reviews: { quote: string; name: string; city: string; initials: string; rating: number }[]; loading?: boolean }) {
+  if (!loading && items.length === 0) return null;
   return (
     <section className="py-12 text-center">
       <h2 className="text-2xl font-bold sm:text-3xl">What Tourvaa travellers are saying</h2>
-      <div className="mt-10 grid gap-5 text-left md:grid-cols-3">{items.map((review) => <article key={review.name} className="rounded-2xl border border-slate-100 bg-white p-7 shadow-[0_8px_24px_rgba(15,23,42,.07)] transition hover:-translate-y-1"><Quote size={25} className="text-slate-200" /><p className="mt-4 min-h-24 text-xs leading-relaxed text-slate-700">“{review.quote}”</p><div className="mt-5 flex items-center border-t border-slate-100 pt-4"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">{review.initials}</span><div className="ml-3"><h3 className="text-[11px] font-bold">{review.name}</h3><p className="text-[9px] text-slate-400">{review.city}</p></div><span className="ml-auto flex text-amber-400">{Array.from({ length: review.rating }).map((_, i) => <Star key={i} size={11} className="fill-current" />)}</span></div></article>)}</div>
+      <div className="mt-10 grid gap-5 text-left md:grid-cols-3">
+        {loading
+          ? Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="animate-pulse rounded-2xl border border-slate-100 bg-white p-7">
+                <div className="h-4 w-full rounded-full bg-slate-100" />
+                <div className="mt-2 h-4 w-2/3 rounded-full bg-slate-100" />
+                <div className="mt-6 flex items-center border-t border-slate-100 pt-4"><div className="h-10 w-10 rounded-full bg-slate-100" /><div className="ml-3 space-y-2"><div className="h-3 w-20 rounded-full bg-slate-100" /><div className="h-3 w-14 rounded-full bg-slate-100" /></div></div>
+              </div>
+            ))
+          : items.map((review) => <article key={review.name} className="rounded-2xl border border-slate-100 bg-white p-7 shadow-[0_8px_24px_rgba(15,23,42,.07)] transition hover:-translate-y-1"><Quote size={25} className="text-slate-200" /><p className="mt-4 min-h-24 text-xs leading-relaxed text-slate-700">“{review.quote}”</p><div className="mt-5 flex items-center border-t border-slate-100 pt-4"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">{review.initials}</span><div className="ml-3"><h3 className="text-[11px] font-bold">{review.name}</h3><p className="text-[9px] text-slate-400">{review.city}</p></div><span className="ml-auto flex text-amber-400">{Array.from({ length: review.rating }).map((_, i) => <Star key={i} size={11} className="fill-current" />)}</span></div></article>)}
+      </div>
     </section>
   );
 }

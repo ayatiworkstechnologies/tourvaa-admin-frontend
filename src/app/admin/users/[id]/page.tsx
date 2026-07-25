@@ -54,9 +54,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   if (dashboardLoading || loading) return <Loader label="Loading user..." fullScreen />;
   if (!dashboard || !user) return null;
   const fields = [
-    ["User type", user.user_type || user.role?.name || "—"],
+    ["User type", user.user_type || user.role?.name || "-"],
     ["Email", user.email],
-    ["Mobile", user.phone || "—"],
+    ["Mobile", user.phone || "-"],
     ["Email verified", user.email_verified ? "Yes" : "No"],
     ["Password created", user.password_created ? "Yes" : "No"],
     ["Admin verified", user.admin_verified ? "Yes" : "No"],

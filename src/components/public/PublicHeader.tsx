@@ -9,7 +9,7 @@ import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import CurrencySelector from "@/components/public/CurrencySelector";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 
-const links = [["Destinations", "/destinations"], ["Tour Packages", "/tours"], ["Experiences", "/#experiences"], ["About Us", "/about"]] as const;
+const links = [["Destinations", "/destinations"], ["Tour Packages", "/tours"], ["About Us", "/about"]] as const;
 
 export default function PublicHeader() {
   const pathname = usePathname();

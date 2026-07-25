@@ -6,6 +6,7 @@ import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig 
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type LedgerEntry = {
   id: number;
@@ -45,10 +46,6 @@ function statusColors(s: string) {
   return "bg-slate-50 text-slate-600 border border-slate-100";
 }
 
-function money(v: number | string | undefined, cur = "USD") {
-  return `${cur} ${Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
 function dateText(value?: string) {
   if (!value) return "-";
   const date = new Date(value);
@@ -60,6 +57,7 @@ const inputCls = "w-full rounded-xl border border-dash-border px-3 py-2.5 text-s
 const labelCls = "mb-1.5 block text-xs font-bold uppercase tracking-wide text-dash-muted";
 
 export default function EarningsPage() {
+  const { format: money } = useCurrency();
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);

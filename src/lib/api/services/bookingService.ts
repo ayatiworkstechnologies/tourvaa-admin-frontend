@@ -115,6 +115,7 @@ export type BookingCreate = {
   accommodation_ids?: number[];
   extension_ids?: number[];
   promo_code?: string;
+  affiliate_ref_code?: string;
 };
 
 export type PaginatedBookings = {

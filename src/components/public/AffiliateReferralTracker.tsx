@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
+import { storeReferralCode } from "@/lib/utils/affiliateReferral";
 
-const REFERRAL_KEY = "tourvaa_affiliate_ref";
+const TRACKED_KEY_PREFIX = "tourvaa_affiliate_ref_tracked_";
 
 export default function AffiliateReferralTracker() {
   useEffect(() => {
     const refCode = new URLSearchParams(window.location.search).get("ref")?.trim();
     if (!refCode) return;
 
-    window.localStorage.setItem(REFERRAL_KEY, refCode);
-    const trackedKey = `${REFERRAL_KEY}_tracked_${refCode}`;
+    storeReferralCode(refCode);
+    const trackedKey = `${TRACKED_KEY_PREFIX}${refCode}`;
     if (window.sessionStorage.getItem(trackedKey)) return;
 
     window.sessionStorage.setItem(trackedKey, "1");

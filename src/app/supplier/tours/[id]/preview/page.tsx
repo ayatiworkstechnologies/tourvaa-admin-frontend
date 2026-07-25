@@ -17,6 +17,7 @@ import {
 import { SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
 import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type TourItem = { id: number; title: string; description?: string; short_description?: string };
 type TourOverview = { duration_text?: string; group_size?: string; physical_rating?: string };
@@ -44,6 +45,7 @@ function statusTone(status?: string) {
 
 export default function SupplierTourPreviewPage() {
   const { id } = useParams<{ id: string }>();
+  const { format } = useCurrency();
   const [tour, setTour] = useState<Tour | null>(null);
   const [overview, setOverview] = useState<TourOverview | null>(null);
   const [highlights, setHighlights] = useState<TourItem[]>([]);
@@ -173,7 +175,7 @@ export default function SupplierTourPreviewPage() {
           <SupplierSection title="Booking summary" description="The key information a traveller sees first.">
             <div className="p-5">
               <p className="text-[10px] font-black uppercase tracking-[.12em] text-[#74887C]">Starting from</p>
-              <p className="mt-2 text-3xl font-black text-[#16833A]">{tour.currency || "USD"} {Number(tour.price_start_per_person || 0).toLocaleString()}</p>
+              <p className="mt-2 text-3xl font-black text-[#16833A]">{format(tour.price_start_per_person || 0, tour.currency)}</p>
               <p className="mt-1 text-xs text-[#74887C]">per person</p>
               <div className="mt-5 space-y-3 border-t border-[#E5EFE9] pt-5">
                 <SummaryRow label="Duration" value={duration || "Not added"} />

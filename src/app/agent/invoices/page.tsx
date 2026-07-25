@@ -6,6 +6,7 @@ import { LuCircleAlert as AlertCircle, LuDownload as Download, LuFileText as Fil
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Invoice = {
   id: number;
@@ -20,13 +21,6 @@ type Invoice = {
   status?: string;
   created_at?: string;
 };
-
-function money(value: string | number | undefined, currency = "USD") {
-  if (!value && value !== 0) return "-";
-  const amount = Number(value);
-  if (Number.isNaN(amount)) return String(value);
-  return `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)}`;
-}
 
 function dateText(value?: string | null) {
   if (!value) return "-";
@@ -52,6 +46,9 @@ function Pill({ status, children }: { status?: string; children: React.ReactNode
 }
 
 export default function AgentInvoicesPage() {
+  const { format } = useCurrency();
+  const money = (value: string | number | undefined, currency = "USD") =>
+    value || value === 0 ? format(value, currency) : "-";
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

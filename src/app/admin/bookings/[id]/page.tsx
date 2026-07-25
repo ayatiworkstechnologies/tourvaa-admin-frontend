@@ -8,6 +8,7 @@ import { Booking, getBookingDetail } from "@/lib/api/services/bookingService";
 import BookingStatusBadge from "@/components/bookings/BookingStatusBadge";
 import SupplierPicker from "@/components/bookings/SupplierPicker";
 import api from "@/lib/api/client";
+import { useCurrency } from "@/hooks/useCurrency";
 import { LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuMail as Mail, LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuTicket as Ticket, LuUserCheck as UserCheck, LuUsers as Users, LuCircleX as XCircle } from "react-icons/lu";
 
 type DetailPanelProps = { title: string; children: React.ReactNode };
@@ -75,6 +76,7 @@ function initials(name: string) {
 
 export default function BookingDetailPage() {
   const params = useParams<{ id: string }>();
+  const { format } = useCurrency();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -331,9 +333,9 @@ export default function BookingDetailPage() {
 
             <DetailPanel title="Money">
               <div className="grid gap-4">
-                <DetailField label="Final" value={`${booking.currency} ${booking.final_amount}`} />
-                <DetailField label="Paid" value={`${booking.currency} ${booking.amount_paid}`} />
-                <DetailField label="Pending" value={`${booking.currency} ${booking.amount_pending}`} />
+                <DetailField label="Final" value={format(booking.final_amount, booking.currency)} />
+                <DetailField label="Paid" value={format(booking.amount_paid, booking.currency)} />
+                <DetailField label="Pending" value={format(booking.amount_pending, booking.currency)} />
                 <DetailField label="Payment Type" value={booking.payment_type} />
               </div>
             </DetailPanel>

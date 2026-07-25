@@ -24,6 +24,7 @@ export type Payment = {
   payment_code: string;
   booking_id: number;
   booking_code?: string | null;
+  currency?: string;
   customer_id: number;
   customer_name?: string | null;
   customer_email?: string | null;
