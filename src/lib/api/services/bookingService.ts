@@ -202,6 +202,24 @@ export async function getBookingPayments(bookingId: number | string) {
   return response.data;
 }
 
+export async function exportBookingsCsv() {
+  const response = await api.get("/bookings/export", { responseType: "blob" });
+  const blob = new Blob([response.data], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "bookings-export.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function getBookingPaymentLink(bookingId: number | string) {
+  const response = await api.get<ApiDataResponse<{ booking_id: number; booking_code: string; amount_pending: string; payment_link: string }>>(`/bookings/${bookingId}/payment-link`);
+  return response.data.data;
+}
+
 
 
 

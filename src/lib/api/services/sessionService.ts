@@ -3,6 +3,8 @@
 export type UserSession = {
   id: number;
   user_id: number;
+  user_name?: string | null;
+  user_email?: string | null;
   session_id: string;
   ip_address?: string | null;
   user_agent?: string | null;
@@ -40,6 +42,36 @@ export async function getSessions(filters: SessionFilters = {}) {
 export async function revokeSession(sessionId: number | string) {
   const response = await api.post<ApiDataResponse<UserSession>>(`/sessions/${sessionId}/revoke`);
   return response.data.data;
+}
+
+export async function forceLogoutUser(userId: number | string) {
+  const response = await api.post<ApiDataResponse<{ user_id: number; revoked: boolean }>>(`/sessions/users/${userId}/force-logout`);
+  return response.data.data;
+}
+
+export type LoginHistoryEntry = {
+  id: number;
+  user_id: number | null;
+  email: string;
+  status: string;
+  failure_reason?: string | null;
+  client_type: string;
+  device_name?: string | null;
+  ip_address?: string | null;
+  created_at?: string | null;
+};
+
+export type PaginatedLoginHistory = {
+  items: LoginHistoryEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+};
+
+export async function getLoginHistory(filters: { page?: number; limit?: number; status?: string } = {}) {
+  const response = await api.get<PaginatedLoginHistory>("/sessions/login-history", { params: filters });
+  return response.data;
 }
 
 

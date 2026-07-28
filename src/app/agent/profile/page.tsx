@@ -17,7 +17,12 @@ export default function AgentProfilePage() {
         <button type="button" onClick={() => setActiveTab("documents")} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${activeTab === "documents" ? "bg-blue-700 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}><Files size={16} />Verification Documents</button>
       </div>
       <AgentSection className="mt-4">
-        <div className="p-5 sm:p-6">{activeTab === "agency" ? <AgencyDetailsTab /> : <VerificationDocumentsTab />}</div>
+        {/* Both tabs stay mounted (hidden via CSS, not unmounted) so
+            in-progress form edits on the inactive tab survive switching. */}
+        <div className="p-5 sm:p-6">
+          <div className={activeTab === "agency" ? "" : "hidden"}><AgencyDetailsTab /></div>
+          <div className={activeTab === "documents" ? "" : "hidden"}><VerificationDocumentsTab /></div>
+        </div>
       </AgentSection>
     </AgentPageShell>
   );

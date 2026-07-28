@@ -227,8 +227,8 @@ function ApprovedSupplierDashboard() {
   const [error, setError] = useState("");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (background = false) => {
+    if (!background) setLoading(true);
     setError("");
 
     const bookingParams: Record<string, string | number> = { limit: 6 };
@@ -267,11 +267,13 @@ function ApprovedSupplierDashboard() {
     if (results.some((result) => result.status === "rejected")) {
       setError("Some dashboard data could not be loaded. The available sections are shown below.");
     }
-    setLoading(false);
+    if (!background) setLoading(false);
   }, [filters]);
 
   useEffect(() => {
     void load();
+    const interval = window.setInterval(() => void load(true), 60000);
+    return () => window.clearInterval(interval);
   }, [load]);
 
   const commission = useMemo(() => {

@@ -52,10 +52,12 @@ export default function UnifiedSupplierProfilePage() {
       </div>
 
       <div className="mt-4 w-full rounded-2xl border border-[#DCEBE2] bg-white p-5 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)] sm:p-6">
-        {activeTab === "company" && <CompanyInfoTab />}
-        {activeTab === "vehicles" && <VehiclesTab />}
-        {activeTab === "commission" && <CommissionRequestTab />}
-        {activeTab === "documents" && <DocumentsTab />}
+        {/* Every tab stays mounted (hidden via CSS, not unmounted) so
+            in-progress form edits on inactive tabs survive switching. */}
+        <div className={activeTab === "company" ? "" : "hidden"}><CompanyInfoTab /></div>
+        <div className={activeTab === "vehicles" ? "" : "hidden"}><VehiclesTab /></div>
+        <div className={activeTab === "commission" ? "" : "hidden"}><CommissionRequestTab /></div>
+        <div className={activeTab === "documents" ? "" : "hidden"}><DocumentsTab /></div>
       </div>
     </SupplierPageShell>
   );

@@ -3,6 +3,8 @@
 export type ActivityLog = {
   id: number;
   actor_user_id?: number | null;
+  user_name?: string | null;
+  user_email?: string | null;
   action: string;
   entity_type: string;
   entity_id?: number | null;

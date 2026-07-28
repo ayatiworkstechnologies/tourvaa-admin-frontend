@@ -11,24 +11,40 @@ type Form = {
   markup_value: string;
 };
 
+type HistoryEntry = {
+  id: number;
+  markup_type: string;
+  markup_value: number;
+  status: string;
+  requested_at?: string | null;
+  reviewed_at?: string | null;
+};
+
 export default function CommissionRequestTab() {
   const toast = useToast();
   const [form, setForm] = useState<Form>({ markup_type: "percentage", markup_value: "" });
   const [status, setStatus] = useState("");
   const [note, setNote] = useState("");
+  const [requestedAt, setRequestedAt] = useState<string | null>(null);
+  const [reviewedAt, setReviewedAt] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [saving, setSaving] = useState(false);
+
+  function applySupplierData(data: Record<string, unknown>) {
+    setForm({
+      markup_type: (data.markup_type as string) || "percentage",
+      markup_value: data.markup_value !== undefined && data.markup_value !== null ? String(data.markup_value) : "",
+    });
+    setStatus((data.commission_request_status as string) || "");
+    setNote((data.admin_comments as string) || (data.pending_requirements as string) || "");
+    setRequestedAt((data.commission_requested_at as string) || null);
+    setReviewedAt((data.commission_reviewed_at as string) || null);
+    setHistory((data.commission_request_history as HistoryEntry[]) || []);
+  }
 
   useEffect(() => {
     api.get("/suppliers/me")
-      .then((res) => {
-        const data = res.data?.data ?? res.data ?? {};
-        setForm({
-          markup_type: data.markup_type || "percentage",
-          markup_value: data.markup_value !== undefined && data.markup_value !== null ? String(data.markup_value) : "",
-        });
-        setStatus(data.approval_status || "");
-        setNote(data.pending_requirements || data.admin_comments || "");
-      })
+      .then((res) => applySupplierData(res.data?.data ?? res.data ?? {}))
       .catch(() => {});
   }, []);
 
@@ -41,12 +57,11 @@ export default function CommissionRequestTab() {
         toast.error("Enter a valid commission value.");
         return;
       }
-      await api.post("/suppliers/me/commission-request", {
+      const res = await api.post("/suppliers/me/commission-request", {
         markup_type: form.markup_type,
         markup_value: value,
       });
-      setStatus("admin_review_pending");
-      setNote("Commission request pending admin approval");
+      applySupplierData(res.data?.data ?? res.data ?? {});
       toast.success("Commission request sent for admin approval.");
     } catch {
       toast.error("Could not submit commission request.");
@@ -105,7 +120,30 @@ export default function CommissionRequestTab() {
       <div className="mt-5 rounded-xl bg-dash-bg p-4 text-sm">
         <p className="font-bold text-dash-text">Current admin status: <span className="text-emerald-700">{status || "not submitted"}</span></p>
         {note && <p className="mt-1 text-dash-muted">{note}</p>}
+        {(requestedAt || reviewedAt) && (
+          <div className="mt-2 flex flex-col gap-1 text-xs text-dash-subtle">
+            {requestedAt && <span>Submitted: {new Date(requestedAt).toLocaleString()}</span>}
+            {reviewedAt && <span>Reviewed: {new Date(reviewedAt).toLocaleString()}</span>}
+          </div>
+        )}
       </div>
+
+      {history.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-2 text-xs font-bold uppercase text-dash-muted">Request History</p>
+          <div className="space-y-2">
+            {history.map((entry) => (
+              <div key={entry.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-dash-bg p-3 text-xs">
+                <span className="font-semibold text-dash-text">{entry.markup_type}: {entry.markup_value}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${entry.status === "approved" ? "bg-emerald-50 text-emerald-700" : entry.status === "rejected" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-700"}`}>
+                  {entry.status}
+                </span>
+                <span className="text-dash-subtle">{entry.requested_at ? new Date(entry.requested_at).toLocaleDateString() : ""}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </form>
   );
 }

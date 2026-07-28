@@ -52,6 +52,15 @@ export type ReviewRecord = {
     changed_by?: number | null;
     created_at?: string;
   }>;
+  commission_request_history?: Array<{
+    id: number;
+    markup_type: string;
+    markup_value: number;
+    status: string;
+    requested_at?: string | null;
+    reviewed_at?: string | null;
+    reviewed_by?: number | null;
+  }>;
   business_info?: Record<string, unknown> | null;
   marketing_info?: Record<string, unknown> | null;
   invoicing?: Record<string, unknown> | null;
@@ -102,6 +111,21 @@ export async function rejectReviewRecord(module: ReviewModule, id: string | numb
 
 export async function partialApproveReviewRecord(module: Exclude<ReviewModule, "affiliates">, id: string | number, payload: { admin_comments?: string; pending_requirements?: string }) {
   const response = await api.patch<{ data: ReviewRecord }>(`/${module}/${id}/partial-approve`, payload);
+  return response.data.data;
+}
+
+export async function bulkApproveSuppliers(supplierIds: number[]) {
+  const response = await api.post<{ data: Array<{ id: number; ok: boolean; error?: string }> }>("/suppliers/bulk-approve", { supplier_ids: supplierIds });
+  return response.data.data;
+}
+
+export async function bulkRejectSuppliers(supplierIds: number[], rejection_reason: string, admin_comments = "") {
+  const response = await api.post<{ data: Array<{ id: number; ok: boolean; error?: string }> }>("/suppliers/bulk-reject", { supplier_ids: supplierIds, rejection_reason, admin_comments });
+  return response.data.data;
+}
+
+export async function rejectSupplierCommissionRequest(id: string | number) {
+  const response = await api.post<{ data: ReviewRecord }>(`/suppliers/${id}/commission-request/reject`);
   return response.data.data;
 }
 

@@ -134,6 +134,30 @@ export async function getReportSnapshot() {
   return res.data.data;
 }
 
+export type ReportSchedule = {
+  id: number;
+  report_type: string;
+  cadence: string;
+  recipient_emails: string;
+  is_active: boolean;
+  created_by?: number | null;
+  created_at?: string | null;
+};
+
+export async function getReportSchedules() {
+  const res = await api.get<ApiDataResponse<ReportSchedule[]>>("/reports/schedule");
+  return res.data.data;
+}
+
+export async function createReportSchedule(data: { report_type: string; cadence: string; recipient_emails: string }) {
+  const res = await api.post<ApiDataResponse<ReportSchedule>>("/reports/schedule", data);
+  return res.data.data;
+}
+
+export async function deleteReportSchedule(scheduleId: number) {
+  await api.delete(`/reports/schedule/${scheduleId}`);
+}
+
 export async function exportReportCsv(report: ReportType, params: PeriodParams) {
   const response = await api.get("/reports/exports", {
     params: { report, format: "csv", ...periodQuery(params) },

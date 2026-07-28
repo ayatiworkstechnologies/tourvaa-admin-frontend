@@ -10,6 +10,8 @@ import { invalidateCurrencyCache } from "@/hooks/useCurrency";
 import CurrencySelect from "@/components/ui/CurrencySelect";
 import PaymentSettingsSection from "@/components/settings/PaymentSettingsSection";
 import ApiSettingsSection from "@/components/settings/ApiSettingsSection";
+import SmtpSettingsSection from "@/components/settings/SmtpSettingsSection";
+import CurrencyRatesSection from "@/components/settings/CurrencyRatesSection";
 
 const groupLabels: Record<string, string> = {
   general: "System Settings",
@@ -17,6 +19,8 @@ const groupLabels: Record<string, string> = {
   booking: "Booking Defaults",
   payment: "Payment Settings",
   api: "API Settings",
+  smtp: "Email / SMTP",
+  currency: "Currency",
 };
 
 const booleanSettingKeys = new Set([
@@ -59,10 +63,10 @@ export default function SettingsPage() {
   }, [settings]);
 
   const groupEntries = useMemo(() => Object.entries(grouped), [grouped]);
-  // Payment/API tabs are always shown (backed by dedicated components, not
-  // the fetched AppSetting list), appended after whatever general/system/
+  // Payment/API/SMTP tabs are always shown (backed by dedicated components,
+  // not the fetched AppSetting list), appended after whatever general/system/
   // booking groups the backend returns.
-  const tabKeys = useMemo(() => [...groupEntries.map(([group]) => group), "payment", "api"], [groupEntries]);
+  const tabKeys = useMemo(() => [...groupEntries.map(([group]) => group), "payment", "api", "smtp", "currency"], [groupEntries]);
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -157,6 +161,22 @@ export default function SettingsPage() {
             <h3 className="mb-1 text-lg font-bold text-dash-text">API Settings</h3>
             <p className="mb-5 text-sm text-dash-muted">Third-party API credentials used by connected services.</p>
             <ApiSettingsSection />
+          </section>
+        )}
+
+        {activeGroup === "smtp" && (
+          <section className="rounded-2xl border border-dash-border bg-white p-6">
+            <h3 className="mb-1 text-lg font-bold text-dash-text">Email / SMTP</h3>
+            <p className="mb-5 text-sm text-dash-muted">Mail server used to send password resets, approvals, and notifications.</p>
+            <SmtpSettingsSection />
+          </section>
+        )}
+
+        {activeGroup === "currency" && (
+          <section className="rounded-2xl border border-dash-border bg-white p-6">
+            <h3 className="mb-1 text-lg font-bold text-dash-text">Currency</h3>
+            <p className="mb-5 text-sm text-dash-muted">Live exchange rates used for display conversion (booking/payment amounts always stay in their original currency).</p>
+            <CurrencyRatesSection />
           </section>
         )}
 

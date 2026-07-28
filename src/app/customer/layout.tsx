@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { LuMenu as Menu } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
-import CustomerPortalHeader from "@/components/customer/CustomerPortalHeader";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
+import PublicHeader from "@/components/public/PublicHeader";
+import PublicFooter from "@/components/public/PublicFooter";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
 
@@ -50,20 +52,32 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   return (
     <TravelStoreProvider>
       <div className="customer-public-portal min-h-screen bg-dash-bg" style={portalThemeStyles.customer}>
-        <CustomerSidebar />
+        <PublicHeader />
 
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <button type="button" className="absolute inset-0 bg-slate-950/35 backdrop-blur-[2px]" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" />
-            <div className="relative h-full w-[250px] bg-white shadow-2xl">
-              <CustomerSidebar mobile onNavigate={() => setSidebarOpen(false)} />
+        <div className="pt-20">
+          <CustomerSidebar />
+
+          {sidebarOpen && (
+            <div className="fixed inset-x-0 bottom-0 top-20 z-50 lg:hidden">
+              <button type="button" className="absolute inset-0 bg-slate-950/35 backdrop-blur-[2px]" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" />
+              <div className="relative h-full w-[250px] bg-white shadow-2xl">
+                <CustomerSidebar mobile onNavigate={() => setSidebarOpen(false)} />
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="flex min-h-screen min-w-0 flex-col lg:ml-[250px]">
-          <CustomerPortalHeader name={user.name} profileImage={user.profile_image} onMenuClick={() => setSidebarOpen(true)} />
-          <main className="min-w-0 flex-1">{children}</main>
+          <div className="flex min-h-[calc(100vh-80px)] min-w-0 flex-col lg:ml-[250px]">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open navigation"
+              className="fixed left-4 top-[92px] z-30 flex h-11 w-11 items-center justify-center rounded-xl border border-[#DDE7F4] bg-white text-[#15315A] shadow-sm lg:hidden"
+            >
+              <Menu size={20} />
+            </button>
+            <main className="min-w-0 flex-1">{children}</main>
+            <PublicFooter />
+          </div>
         </div>
       </div>
     </TravelStoreProvider>

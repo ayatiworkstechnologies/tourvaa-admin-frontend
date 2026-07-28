@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuCalendarDays as CalendarDays, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuSquarePen as Edit, LuFilePen as FileEdit, LuImageOff as ImageOff, LuMapPin as MapPin, LuPlus as Plus, LuPowerOff as PowerOff, LuSearch as Search, LuTag as Tag } from "react-icons/lu";
 
@@ -21,6 +22,8 @@ export default function ToursPage() {
   const toast = useToast();
   const { hasPermission } = useAuthContext();
   const { format } = useCurrency();
+  const searchParams = useSearchParams();
+  const supplierId = searchParams.get("supplier_id") || "";
   const [rows, setRows] = useState<CmsRecord[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -38,7 +41,9 @@ export default function ToursPage() {
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await listCms("/tours", { page, limit: PAGE_SIZE, search: debouncedSearch });
+      const params: Record<string, string | number> = { page, limit: PAGE_SIZE, search: debouncedSearch };
+      if (supplierId) params.supplier_id = supplierId;
+      const response = await listCms("/tours", params);
       setRows(response.items || response.data || []);
       setTotal(response.total || 0);
       setTotalPages(response.total_pages || 1);
@@ -47,7 +52,7 @@ export default function ToursPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, toast]);
+  }, [page, debouncedSearch, supplierId, toast]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -124,6 +129,13 @@ export default function ToursPage() {
             </Link>
           )}
         </div>
+
+        {supplierId && (
+          <div className="flex items-center gap-2 rounded-xl border border-dash-border bg-[#EDF5FF] px-4 py-2.5 text-sm font-bold text-dash-brand-hover">
+            Filtered by supplier #{supplierId}
+            <Link href="/admin/tours" className="ml-auto text-xs font-bold underline">Clear</Link>
+          </div>
+        )}
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {statCards.map(({ label, value, icon: Icon, accent }) => (

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import { LuSquarePen as Edit, LuEye as Eye, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
+import { LuLoaderCircle as Loader2, LuSend as Send, LuSquarePen as Edit, LuEye as Eye, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -48,6 +48,9 @@ export default function EmailTemplatesPage() {
   const [previewHtml, setPreviewHtml] = useState("");
   const [previewSubject, setPreviewSubject] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [testEmailFor, setTestEmailFor] = useState<EmailTemplate | null>(null);
+  const [testEmailAddress, setTestEmailAddress] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(templates.length / pageSize));
@@ -114,6 +117,31 @@ export default function EmailTemplatesPage() {
     setPreviewing(null);
     setPreviewHtml("");
     setPreviewSubject("");
+  };
+
+  const openTestEmail = (template: EmailTemplate) => {
+    setTestEmailFor(template);
+    setTestEmailAddress(dashboard?.user.email || "");
+  };
+
+  const closeTestEmail = () => {
+    setTestEmailFor(null);
+    setTestEmailAddress("");
+  };
+
+  const sendTestEmail = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!testEmailFor) return;
+    setSendingTest(true);
+    try {
+      await api.post(`/email-templates/${testEmailFor.id}/test`, { to_email: testEmailAddress });
+      setMessage(`Test email sent to ${testEmailAddress}.`);
+      closeTestEmail();
+    } catch (err: unknown) {
+      setMessage(getErrorMessage(err, "Could not send test email."));
+    } finally {
+      setSendingTest(false);
+    }
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -252,6 +280,13 @@ export default function EmailTemplatesPage() {
                     title="Preview design"
                   >
                     <Eye size={15} />
+                  </button>
+                  <button
+                    onClick={() => openTestEmail(template)}
+                    className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover"
+                    title="Send test email"
+                  >
+                    <Send size={15} />
                   </button>
                   <button
                     onClick={() => openEdit(template)}
@@ -419,6 +454,56 @@ export default function EmailTemplatesPage() {
             <div className="border-t border-dash-border px-6 py-3 text-xs text-dash-subtle">
               Preview uses sample placeholder data for any {"{{variables}}"} in this template.
             </div>
+          </div>
+        </div>
+      )}
+
+      {testEmailFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-dash-text">Send test email</h3>
+              <button
+                onClick={closeTestEmail}
+                aria-label="Close dialog"
+                title="Close dialog"
+                className="rounded-lg p-2 text-dash-muted hover:bg-dash-bg"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="mb-4 text-sm text-dash-muted">
+              Sends &quot;{testEmailFor.name}&quot; with sample placeholder data to the address below.
+            </p>
+            <form onSubmit={sendTestEmail} className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Recipient email</span>
+                <input
+                  type="email"
+                  required
+                  value={testEmailAddress}
+                  onChange={(event) => setTestEmailAddress(event.target.value)}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                />
+              </label>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeTestEmail}
+                  className="rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingTest}
+                  className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
+                >
+                  {sendingTest ? <Loader2 className="animate-spin" size={15} /> : <Send size={15} />}
+                  {sendingTest ? "Sending..." : "Send Test"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

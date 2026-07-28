@@ -1,18 +1,22 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuCalendarCheck as CalendarCheck, LuClock as Clock, LuRefreshCw as RefreshCw, LuTicketX as TicketX, LuWallet as Wallet } from "react-icons/lu";
+import { LuCalendarCheck as CalendarCheck, LuClock as Clock, LuDownload as Download, LuRefreshCw as RefreshCw, LuTicketX as TicketX, LuWallet as Wallet } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import BookingFilters from "@/components/bookings/BookingFilters";
 import BookingTable from "@/components/bookings/BookingTable";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Booking, getBookings, updateBookingStatus, cancelBooking } from "@/lib/api/services/bookingService";
+import { Booking, getBookings, updateBookingStatus, cancelBooking, exportBookingsCsv } from "@/lib/api/services/bookingService";
 
 const PAGE_SIZE = 10;
 const AUTO_REFRESH_MS = 10000;
 
 export default function BookingsPage() {
+  const searchParams = useSearchParams();
+  const supplierId = searchParams.get("supplier_id") || "";
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,6 +28,7 @@ export default function BookingsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [stats, setStats] = useState({ total: 0, confirmed: 0, pendingSupplier: 0, cancelled: 0 });
+  const [exporting, setExporting] = useState(false);
 
   const debouncedSearch = useDebounce(searchTerm, 350);
 
@@ -38,6 +43,7 @@ export default function BookingsPage() {
         search: debouncedSearch,
         booking_status: bookingStatus,
         payment_status: paymentStatus,
+        supplier_id: supplierId ? Number(supplierId) : undefined,
         _ts: Date.now(),
       });
       setBookings(bookingResponse.items || bookingResponse.data || []);
@@ -50,7 +56,7 @@ export default function BookingsPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [currentPage, debouncedSearch, bookingStatus, paymentStatus]);
+  }, [currentPage, debouncedSearch, bookingStatus, paymentStatus, supplierId]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -107,6 +113,15 @@ export default function BookingsPage() {
     setter(nextValue);
   }
 
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await exportBookingsCsv();
+    } finally {
+      setExporting(false);
+    }
+  }
+
   function clearFilters() {
     setSearchTerm("");
     setBookingStatus("");
@@ -143,16 +158,34 @@ export default function BookingsPage() {
               Manage booking lifecycle, supplier acceptance, payment status, and history.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => void refreshAll(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body shadow-sm transition hover:bg-dash-bg disabled:opacity-60"
-            disabled={isRefreshing}
-          >
-            <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
-            Refresh
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => void handleExport()}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body shadow-sm transition hover:bg-dash-bg disabled:opacity-60"
+              disabled={exporting}
+            >
+              <Download size={16} />
+              {exporting ? "Exporting..." : "Export"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void refreshAll(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body shadow-sm transition hover:bg-dash-bg disabled:opacity-60"
+              disabled={isRefreshing}
+            >
+              <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
         </div>
+
+        {supplierId && (
+          <div className="flex items-center gap-2 rounded-xl border border-dash-border bg-[#EDF5FF] px-4 py-2.5 text-sm font-bold text-dash-brand-hover">
+            Filtered by supplier #{supplierId}
+            <Link href="/admin/bookings" className="ml-auto text-xs font-bold underline">Clear</Link>
+          </div>
+        )}
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {statCards.map(({ label, value, icon: Icon, accent }) => (

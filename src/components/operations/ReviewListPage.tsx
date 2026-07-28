@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuPlus as Plus, LuRefreshCw as RefreshCw, LuTruck as Truck, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCircleCheckBig as CheckCircle2, LuDownload as Download, LuEye as Eye, LuFileText as FileText, LuPlus as Plus, LuRefreshCw as RefreshCw, LuTruck as Truck, LuCircleX as XCircle } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import StatusBadge from "@/components/operations/StatusBadge";
 import ActionModal from "@/components/operations/ActionModal";
-import { createReviewRecord, listReviewRecords, ReviewModule, ReviewRecord } from "@/lib/api/services/operationsService";
+import { bulkApproveSuppliers, bulkRejectSuppliers, createReviewRecord, listReviewRecords, ReviewModule, ReviewRecord } from "@/lib/api/services/operationsService";
+import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
@@ -68,8 +69,78 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [supplierView, setSupplierView] = useState<"all" | "pending" | "approved" | "inactive">("all");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const response = await api.get("/suppliers/export", { responseType: "blob" });
+      const blob = new Blob([response.data], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "suppliers-directory.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const canCreate = hasPermission(`${module}.create`) || (module === "affiliates" && hasPermission("affiliates.approve"));
+  const canBulkApprove = module === "suppliers" && hasPermission("suppliers.approve");
+  const canBulkReject = module === "suppliers" && hasPermission("suppliers.reject");
+
+  function toggleSelected(id: number) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleBulkApprove() {
+    if (selectedIds.size === 0) return;
+    setBulkProcessing(true);
+    try {
+      const results = await bulkApproveSuppliers(Array.from(selectedIds));
+      const failed = results.filter((r) => !r.ok);
+      if (failed.length === 0) toast.success(`${results.length} supplier(s) approved.`);
+      else toast.error(`${results.length - failed.length} approved, ${failed.length} failed.`);
+      setSelectedIds(new Set());
+      await fetchRows();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setBulkProcessing(false);
+    }
+  }
+
+  async function handleBulkReject() {
+    if (selectedIds.size === 0) return;
+    const reason = window.prompt(`Rejection reason for ${selectedIds.size} supplier(s):`);
+    if (!reason) return;
+    setBulkProcessing(true);
+    try {
+      const results = await bulkRejectSuppliers(Array.from(selectedIds), reason);
+      const failed = results.filter((r) => !r.ok);
+      if (failed.length === 0) toast.success(`${results.length} supplier(s) rejected.`);
+      else toast.error(`${results.length - failed.length} rejected, ${failed.length} failed.`);
+      setSelectedIds(new Set());
+      await fetchRows();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setBulkProcessing(false);
+    }
+  }
   const fields = moduleNameFields[module];
 
   const fetchRows = useCallback(async () => {
@@ -122,6 +193,22 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   ];
 
   const supplierColumns: DataTableColumn<ReviewRecord>[] = [
+    ...(canBulkApprove || canBulkReject
+      ? [{
+          key: "select",
+          header: "",
+          className: "w-10",
+          render: (row: ReviewRecord) => (
+            <input
+              type="checkbox"
+              checked={selectedIds.has(row.id)}
+              onChange={() => toggleSelected(row.id)}
+              aria-label={`Select ${row.supplier_name || row.id}`}
+              className="h-4 w-4 rounded border-dash-border"
+            />
+          ),
+        } as DataTableColumn<ReviewRecord>]
+      : []),
     { key: "code", header: "ID", className: "w-24", render: (row) => row.supplier_code || row.code || row.id },
     {
       key: "name",
@@ -229,6 +316,11 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
             <p className="mt-1 text-sm text-dash-muted">{module === "suppliers" ? "Review supplier registration, business data, documents, vehicles, approval status, and markup setup." : module === "agents" ? "Review agent registration, business data, documents, invoicing, approval status, and discount setup." : "Review operational accounts, approval status, and commercial controls."}</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {module === "suppliers" && (
+              <button type="button" disabled={exporting} onClick={() => void handleExport()} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg disabled:opacity-60">
+                <Download size={16} /> {exporting ? "Exporting..." : "Export"}
+              </button>
+            )}
             <button type="button" onClick={() => void fetchRows()} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg">
               <RefreshCw size={16} /> Refresh
             </button>
@@ -255,6 +347,26 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
               </button>
             ))}
           </nav>
+        )}
+        {selectedIds.size > 0 && (canBulkApprove || canBulkReject) && (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dash-brand bg-[#EDF5FF] px-4 py-3">
+            <span className="text-sm font-bold text-dash-brand-hover">{selectedIds.size} selected</span>
+            <div className="ml-auto flex gap-2">
+              {canBulkApprove && (
+                <button type="button" disabled={bulkProcessing} onClick={() => void handleBulkApprove()} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                  Approve Selected
+                </button>
+              )}
+              {canBulkReject && (
+                <button type="button" disabled={bulkProcessing} onClick={() => void handleBulkReject()} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                  Reject Selected
+                </button>
+              )}
+              <button type="button" onClick={() => setSelectedIds(new Set())} className="rounded-lg border border-dash-border px-4 py-2 text-xs font-bold text-dash-muted hover:bg-dash-bg">
+                Clear
+              </button>
+            </div>
+          </div>
         )}
         <DataTable
           ariaLabel={title}

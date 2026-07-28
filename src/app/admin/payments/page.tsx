@@ -103,7 +103,7 @@ function ActionModal({
 
         <p className="mb-4 text-xs text-dash-muted">
           Payment: <strong className="text-dash-text">{payment.payment_code}</strong>
-          {" Â· "}Gateway: <strong className="text-dash-text">{payment.gateway || "manual"}</strong>
+          {" · "}Gateway: <strong className="text-dash-text">{payment.gateway || "manual"}</strong>
         </p>
 
         {err && (
@@ -314,7 +314,7 @@ export default function PaymentsPage() {
   );
 
   const columns: DataTableColumn<Payment>[] = [
-    { key: "payment_code", header: "Code", className: "font-bold text-dash-text" },
+    { key: "payment_code", header: "Code", className: "font-bold text-dash-text", render: (p) => <Link href={`/admin/payments/${p.id}`} className="font-bold text-dash-brand-hover hover:underline">{p.payment_code}</Link> },
     {
       key: "customer_name",
       header: "Customer",

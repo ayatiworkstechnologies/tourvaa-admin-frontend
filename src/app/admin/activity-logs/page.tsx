@@ -47,7 +47,7 @@ export default function ActivityLogsPage() {
     { key: "action", header: "Action" },
     { key: "entity_type", header: "Entity" },
     { key: "entity_id", header: "Entity ID" },
-    { key: "actor_user_id", header: "Actor" },
+    { key: "actor_user_id", header: "Actor", render: (log) => log.user_name || (log.actor_user_id ? `User #${log.actor_user_id}` : "-") },
     { key: "ip_address", header: "IP" },
     { key: "created_at", header: "Created" },
   ];

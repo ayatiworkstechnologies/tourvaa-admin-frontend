@@ -31,6 +31,8 @@ export type Payment = {
   payment_method: string;
   payment_type: string;
   gateway?: string;
+  gateway_payment_id?: string | null;
+  gateway_order_id?: string | null;
   total_amount: string;
   authorized_amount?: string;
   captured_amount?: string;

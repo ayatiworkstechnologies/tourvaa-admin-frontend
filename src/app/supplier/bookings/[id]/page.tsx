@@ -32,9 +32,27 @@ type StatusHistory = {
   created_at: string;
 };
 
+type MessageReply = {
+  id: number;
+  sender_type: string;
+  message: string;
+  created_at?: string | null;
+};
+
+type Communication = {
+  id: number;
+  sender_type: string;
+  subject?: string;
+  message: string;
+  visibility: string;
+  created_at?: string | null;
+  replies?: MessageReply[];
+};
+
 type Booking = {
   id: number;
   booking_code: string;
+  communications?: Communication[];
   tour_name?: string;
   tour_title?: string;
   tour_id?: number;
@@ -397,6 +415,7 @@ export default function SupplierBookingDetailPage() {
   const [busy, setBusy] = useState<ActionType | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [showNotify, setShowNotify] = useState(false);
+  const [downloadingIcs, setDownloadingIcs] = useState(false);
 
   const showToast = (type: "success" | "error", msg: string) => {
     setToast({ type, msg });
@@ -459,6 +478,67 @@ export default function SupplierBookingDetailPage() {
     }
   };
 
+  const downloadCalendarEvent = async () => {
+    setDownloadingIcs(true);
+    try {
+      await api.post(`/bookings/${bookingId}/calendar-sync`);
+      const res = await api.get(`/bookings/${bookingId}/calendar-event/download`, { responseType: "blob" });
+      const blob = new Blob([res.data], { type: "text/calendar" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${booking?.booking_code || bookingId}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      showToast("error", "Could not download the calendar event.");
+    } finally {
+      setDownloadingIcs(false);
+    }
+  };
+
+  const [newMessage, setNewMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({});
+  const [sendingReplyId, setSendingReplyId] = useState<number | null>(null);
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+    setSendingMessage(true);
+    try {
+      await api.post(`/supplier/bookings/${bookingId}/communications`, {
+        message: newMessage.trim(),
+        subject: "Message from supplier",
+        visibility: "internal",
+        message_type: "supplier_message",
+      });
+      setNewMessage("");
+      await load();
+    } catch {
+      showToast("error", "Could not send message.");
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const sendReply = async (communicationId: number) => {
+    const message = (replyDrafts[communicationId] || "").trim();
+    if (!message) return;
+    setSendingReplyId(communicationId);
+    try {
+      await api.post(`/supplier/bookings/communications/${communicationId}/replies`, { message });
+      setReplyDrafts((prev) => ({ ...prev, [communicationId]: "" }));
+      await load();
+    } catch {
+      showToast("error", "Could not send reply.");
+    } finally {
+      setSendingReplyId(null);
+    }
+  };
+
   const handleNotify = async (msg: string, notifyCustomer: boolean, notifyAgent: boolean) => {
     await api.post(`/supplier/bookings/${bookingId}/notify`, {
       message: msg,
@@ -516,6 +596,15 @@ export default function SupplierBookingDetailPage() {
           <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black capitalize text-emerald-700">
             {booking.booking_status.replace(/_/g, " ")}
           </span>
+          <button
+            type="button"
+            onClick={() => void downloadCalendarEvent()}
+            disabled={downloadingIcs}
+            className="flex items-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body shadow-sm transition-all hover:bg-[#F3F8FC] disabled:opacity-60"
+          >
+            {downloadingIcs ? <Loader2 className="animate-spin" size={14} /> : <CalendarDays size={14} />}
+            Add to Calendar
+          </button>
           <button
             type="button"
             onClick={() => setShowNotify(true)}
@@ -622,6 +711,78 @@ export default function SupplierBookingDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Communications thread */}
+        <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm lg:col-span-2">
+          <div className="mb-4 flex items-center gap-2">
+            <MessageSquare size={18} className="text-emerald-600" />
+            <h2 className="font-black text-dash-text">Communications</h2>
+          </div>
+
+          {(!booking.communications || booking.communications.length === 0) ? (
+            <p className="text-sm text-dash-muted">No messages yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {booking.communications.map((comm) => (
+                <div key={comm.id} className="rounded-xl border border-dash-border bg-[#FAFBFC] p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold uppercase text-dash-subtle">{comm.sender_type}{comm.subject ? ` · ${comm.subject}` : ""}</span>
+                    <span className="text-xs text-dash-subtle">{comm.created_at ? new Date(comm.created_at).toLocaleString() : ""}</span>
+                  </div>
+                  <p className="mt-2 text-sm text-dash-text">{comm.message}</p>
+
+                  {comm.replies && comm.replies.length > 0 && (
+                    <div className="mt-3 space-y-2 border-l-2 border-emerald-200 pl-3">
+                      {comm.replies.map((reply) => (
+                        <div key={reply.id}>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold uppercase text-dash-subtle">{reply.sender_type}</span>
+                            <span className="text-xs text-dash-subtle">{reply.created_at ? new Date(reply.created_at).toLocaleString() : ""}</span>
+                          </div>
+                          <p className="text-sm text-dash-body">{reply.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      value={replyDrafts[comm.id] || ""}
+                      onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [comm.id]: e.target.value }))}
+                      placeholder="Reply..."
+                      className="flex-1 rounded-lg border border-dash-border px-3 py-1.5 text-xs outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={sendingReplyId === comm.id}
+                      onClick={() => void sendReply(comm.id)}
+                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      Reply
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <form onSubmit={sendMessage} className="mt-4 flex gap-2 border-t border-dash-border pt-4">
+            <input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Send a new message..."
+              className="flex-1 rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-emerald-500"
+            />
+            <button
+              type="submit"
+              disabled={sendingMessage || !newMessage.trim()}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {sendingMessage ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
+              Send
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* Notify modal */}

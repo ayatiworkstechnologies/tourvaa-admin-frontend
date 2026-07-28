@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import { LuSquarePen as Edit, LuMessageSquare as MessageSquare, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
+import { LuSquarePen as Edit, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -29,6 +29,22 @@ const emptyForm = {
 
 const CATEGORIES = ["general", "booking", "payment", "destinations", "policies", "other"];
 
+type ChatSession = {
+  id: number;
+  session_key: string;
+  user_name: string;
+  user_email: string;
+  message_count: number;
+  created_at: string;
+};
+
+type ChatMessage = {
+  id: number;
+  role: string;
+  content: string;
+  created_at: string;
+};
+
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) return error.response?.data?.detail || fallback;
   return fallback;
@@ -48,6 +64,17 @@ export default function ChatbotFAQPage() {
   const totalPages = Math.max(1, Math.ceil(faqs.length / pageSize));
   const paginated = faqs.slice((page - 1) * pageSize, page * pageSize);
 
+  const [activeTab, setActiveTab] = useState<"faqs" | "sessions">("faqs");
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsPage, setSessionsPage] = useState(1);
+  const [sessionsTotal, setSessionsTotal] = useState(0);
+  const [sessionsTotalPages, setSessionsTotalPages] = useState(1);
+  const sessionsPageSize = 10;
+  const [expandedSessionId, setExpandedSessionId] = useState<number | null>(null);
+  const [sessionMessages, setSessionMessages] = useState<ChatMessage[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+
   const fetchFAQs = useCallback(async () => {
     setLoading(true);
     try {
@@ -59,9 +86,45 @@ export default function ChatbotFAQPage() {
     }
   }, []);
 
+  const fetchSessions = useCallback(async () => {
+    setSessionsLoading(true);
+    try {
+      const res = await api.get("/chatbot/admin/sessions", { params: { page: sessionsPage, limit: sessionsPageSize } });
+      const data = res.data ?? {};
+      setSessions(data.items ?? []);
+      setSessionsTotal(data.total ?? 0);
+      setSessionsTotalPages(data.total_pages ?? 1);
+    } catch {
+      setSessions([]);
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, [sessionsPage]);
+
   useEffect(() => {
     fetchFAQs();
   }, [fetchFAQs]);
+
+  useEffect(() => {
+    if (activeTab === "sessions") void fetchSessions();
+  }, [activeTab, fetchSessions]);
+
+  const toggleSessionExpand = async (session: ChatSession) => {
+    if (expandedSessionId === session.id) {
+      setExpandedSessionId(null);
+      return;
+    }
+    setExpandedSessionId(session.id);
+    setMessagesLoading(true);
+    try {
+      const res = await api.get(`/chatbot/admin/sessions/${session.id}/messages`);
+      setSessionMessages(res.data?.data ?? []);
+    } catch {
+      setSessionMessages([]);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
 
   const openCreate = () => {
     setEditing(null);
@@ -165,6 +228,22 @@ export default function ChatbotFAQPage() {
     },
   ];
 
+  const sessionColumns: DataTableColumn<ChatSession>[] = [
+    {
+      key: "user",
+      header: "Visitor",
+      render: (session) => (
+        <>
+          <div className="font-semibold text-dash-text">{session.user_name || "Anonymous"}</div>
+          {session.user_email && <div className="text-xs text-dash-muted">{session.user_email}</div>}
+        </>
+      ),
+    },
+    { key: "session_key", header: "Session Key", className: "font-mono text-xs text-dash-subtle", render: (session) => session.session_key },
+    { key: "message_count", header: "Messages", className: "text-dash-muted", render: (session) => session.message_count },
+    { key: "created_at", header: "Started", className: "text-xs text-dash-muted", render: (session) => (session.created_at ? new Date(session.created_at).toLocaleString() : "-") },
+  ];
+
   if (dashboardLoading || loading) return <Loader label="Loading chatbot FAQs..." fullScreen />;
   if (!dashboard) return null;
 
@@ -185,52 +264,125 @@ export default function ChatbotFAQPage() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={openCreate}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover"
-              >
-                <Plus size={16} />
-                Add FAQ
-              </button>
+              {activeTab === "faqs" && (
+                <button
+                  onClick={openCreate}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover"
+                >
+                  <Plus size={16} />
+                  Add FAQ
+                </button>
+              )}
             </div>
             {message && (
               <p className="mt-4 rounded-xl bg-sky-50 px-4 py-3 text-sm text-dash-brand-hover">{message}</p>
             )}
-          </section>
-
-          <section className="rounded-2xl border border-dash-border bg-white p-6">
-            <div className="p-0">
-              <DataTable
-                ariaLabel="Chatbot FAQs table"
-                columns={columns}
-                rows={paginated}
-                loading={loading}
-                page={page}
-                pageSize={pageSize}
-                total={faqs.length}
-                totalPages={totalPages}
-                onPageChange={setPage}
-                emptyTitle="No FAQs yet."
-                emptyDescription="Add your first FAQ to train the AI assistant."
-                actions={(faq) => (
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => openEdit(faq)}
-                      className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover"
-                    >
-                      <Edit size={15} />
-                    </button>
-                    <button
-                      onClick={() => remove(faq)}
-                      className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                )}
-              />
+            <div className="mt-4 inline-flex rounded-xl border border-dash-border p-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab("faqs")}
+                className={`rounded-lg px-4 py-2 text-sm font-bold ${activeTab === "faqs" ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
+              >
+                FAQs
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("sessions")}
+                className={`rounded-lg px-4 py-2 text-sm font-bold ${activeTab === "sessions" ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
+              >
+                Chat Sessions
+              </button>
             </div>
           </section>
+
+          {activeTab === "faqs" && (
+            <section className="rounded-2xl border border-dash-border bg-white p-6">
+              <div className="p-0">
+                <DataTable
+                  ariaLabel="Chatbot FAQs table"
+                  columns={columns}
+                  rows={paginated}
+                  loading={loading}
+                  page={page}
+                  pageSize={pageSize}
+                  total={faqs.length}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  emptyTitle="No FAQs yet."
+                  emptyDescription="Add your first FAQ to train the AI assistant."
+                  actions={(faq) => (
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => openEdit(faq)}
+                        className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover"
+                      >
+                        <Edit size={15} />
+                      </button>
+                      <button
+                        onClick={() => remove(faq)}
+                        className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  )}
+                />
+              </div>
+            </section>
+          )}
+
+          {activeTab === "sessions" && (
+            <section className="rounded-2xl border border-dash-border bg-white p-6">
+              <div className="p-0">
+                <DataTable
+                  ariaLabel="Chatbot sessions table"
+                  columns={sessionColumns}
+                  rows={sessions}
+                  loading={sessionsLoading}
+                  page={sessionsPage}
+                  pageSize={sessionsPageSize}
+                  total={sessionsTotal}
+                  totalPages={sessionsTotalPages}
+                  onPageChange={setSessionsPage}
+                  emptyTitle="No chat sessions yet."
+                  emptyDescription="Sessions appear once visitors start chatting with the assistant."
+                  actions={(session) => (
+                    <button
+                      onClick={() => void toggleSessionExpand(session)}
+                      className="rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover"
+                    >
+                      {expandedSessionId === session.id ? "Hide" : "View messages"}
+                    </button>
+                  )}
+                  renderExpandedRow={(session) => {
+                    if (expandedSessionId !== session.id) return null;
+                    return (
+                      <tr key={`messages-${session.id}`} className="border-b border-dash-border bg-dash-bg">
+                        <td colSpan={sessionColumns.length + 1} className="px-4 py-4">
+                          {messagesLoading ? (
+                            <div className="flex items-center gap-2 text-sm text-dash-muted">
+                              <Loader2 className="animate-spin" size={15} /> Loading messages...
+                            </div>
+                          ) : sessionMessages.length === 0 ? (
+                            <p className="text-sm text-dash-muted">No messages recorded for this session.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {sessionMessages.map((msg) => (
+                                <div key={msg.id} className={`max-w-2xl rounded-xl px-4 py-2 text-sm ${msg.role === "user" ? "bg-white" : "ml-auto bg-blue-50"}`}>
+                                  <p className="mb-1 text-[10px] font-bold uppercase text-dash-subtle">{msg.role}</p>
+                                  <p className="text-dash-text">{msg.content}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  }}
+                />
+              </div>
+            </section>
+          )}
         </div>
 
         {open && (

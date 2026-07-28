@@ -11,6 +11,11 @@ import DatePicker from "@/components/ui/DatePicker";
 const STATUSES = ["available", "unavailable", "sold_out", "blocked"];
 const emptyEntry = (): CalendarEntry => ({ tour_date: "", start_date: null, end_date: null, available_seats: 10, booked_seats: 0, status: "available" });
 
+function todayStr() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
 export default function TourCalendarTab({ tourId }: { tourId: string }) {
   const toast = useToast();
   const [entries, setEntries] = useState<CalendarEntry[]>([]);
@@ -159,7 +164,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
                   <DatePicker
                     value={(editing as Record<string, unknown>)[key]?.toString().slice(0, 10) ?? ""}
                     onChange={(date) => setEditing((previous) => previous ? { ...previous, [key]: date || null } : previous)}
-                    minDate={key === "end_date" ? editing.start_date?.toString().slice(0, 10) || undefined : undefined}
+                    minDate={key === "end_date" ? (editing.start_date?.toString().slice(0, 10) || todayStr()) : todayStr()}
                     maxDate={key === "start_date" ? editing.end_date?.toString().slice(0, 10) || undefined : undefined}
                     placeholder={`Select ${lbl.toLowerCase()}`}
                     clearable={key !== "tour_date"}
@@ -196,7 +201,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       <div className="rounded-xl border border-dash-border bg-white p-6">
         <h3 className="mb-4 font-bold text-dash-text">Blocked / Unavailable Dates</h3>
         <div className="flex gap-3 mb-4">
-          <DatePicker value={newBlockDate} onChange={setNewBlockDate} placeholder="Select date to block" className="min-w-56 flex-1" />
+          <DatePicker value={newBlockDate} onChange={setNewBlockDate} minDate={todayStr()} placeholder="Select date to block" className="min-w-56 flex-1" />
           <input placeholder="Reason" value={newBlockReason} onChange={(e) => setNewBlockReason(e.target.value)}
             className="flex-1 rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
           <button type="button" onClick={addBlock}

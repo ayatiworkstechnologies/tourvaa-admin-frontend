@@ -4,12 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
-import { Booking, getBookingDetail } from "@/lib/api/services/bookingService";
+import { Booking, getBookingDetail, getBookingPaymentLink } from "@/lib/api/services/bookingService";
 import BookingStatusBadge from "@/components/bookings/BookingStatusBadge";
 import SupplierPicker from "@/components/bookings/SupplierPicker";
 import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
-import { LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuMail as Mail, LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuTicket as Ticket, LuUserCheck as UserCheck, LuUsers as Users, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCircleCheckBig as CheckCircle2, LuLink as LinkIcon, LuLoaderCircle as Loader2, LuMail as Mail, LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuTicket as Ticket, LuUserCheck as UserCheck, LuUsers as Users, LuCircleX as XCircle } from "react-icons/lu";
 
 type DetailPanelProps = { title: string; children: React.ReactNode };
 type DetailFieldProps = { label: string; value?: React.ReactNode };
@@ -100,6 +100,8 @@ export default function BookingDetailPage() {
   const [commSubject, setCommSubject] = useState("");
   const [sendingComm, setSendingComm] = useState(false);
 
+  const [fetchingLink, setFetchingLink] = useState(false);
+
   const fetchBooking = useCallback(async () => {
     if (!params.id) return;
     setIsLoading(true);
@@ -181,6 +183,23 @@ export default function BookingDetailPage() {
     }
   }
 
+  async function copyPaymentLink() {
+    if (!params.id) return;
+    setFetchingLink(true);
+    setActionErr("");
+    try {
+      const result = await getBookingPaymentLink(params.id);
+      const absoluteLink = `${window.location.origin}${result.payment_link}`;
+      await navigator.clipboard.writeText(absoluteLink);
+      setActionMsg(`Payment link copied: ${absoluteLink}`);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      setActionErr(e?.response?.data?.detail || "Failed to generate payment link.");
+    } finally {
+      setFetchingLink(false);
+    }
+  }
+
   const activityItems = booking?.optional_activities || [];
   const accommodationItems = booking?.accommodations || [];
   const extensionItems = booking?.extensions || [];
@@ -238,6 +257,10 @@ export default function BookingDetailPage() {
                   <button type="button" onClick={() => { setShowMsgForm(!showMsgForm); setShowStatusForm(false); setShowAssignForm(false); }}
                     className="flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC] transition-all">
                     <MessageSquare size={14} /> Send Communication
+                  </button>
+                  <button type="button" onClick={() => void copyPaymentLink()} disabled={fetchingLink}
+                    className="flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC] transition-all disabled:opacity-60">
+                    {fetchingLink ? <Loader2 className="animate-spin" size={14} /> : <LinkIcon size={14} />} Payment Link
                   </button>
                 </div>
               </div>

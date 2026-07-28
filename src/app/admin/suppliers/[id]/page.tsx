@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuTruck as Truck, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCalendarDays as CalendarDays, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuTruck as Truck, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
 import ActionModal from "@/components/operations/ActionModal";
 import CompletionChecklist from "@/components/operations/CompletionChecklist";
@@ -16,6 +16,7 @@ import {
   getReviewRecord,
   partialApproveReviewRecord,
   rejectReviewRecord,
+  rejectSupplierCommissionRequest,
   reviewSupplierDocument,
   reviewSupplierVehicle,
   setSupplierAccountState,
@@ -32,6 +33,16 @@ type DetailObject = Record<string, DetailValue>;
 type SupplierDocument = DetailObject & { id?: number; file_url?: string; file_path?: string };
 type SupplierVehicle = DetailObject & { id?: number };
 type SupplierContact = DetailObject & { id?: number; email?: string; phone?: string; is_primary?: boolean };
+
+// Mirrors DOC_TYPES in src/components/supplier/profile/DocumentsTab.tsx -- the
+// document types a supplier is asked to upload during onboarding.
+const REQUIRED_DOCUMENT_TYPES = [
+  { key: "company_registration", label: "Company Registration Certificate" },
+  { key: "trade_license", label: "Trade License" },
+  { key: "tax_certificate", label: "Tax Registration Certificate" },
+  { key: "identity_proof", label: "Identity Proof (Passport / Emirates ID)" },
+  { key: "bank_details", label: "Bank Account Details / Cheque" },
+];
 
 function valueText(value: DetailValue) {
   if (value === null || value === undefined || value === "") return "-";
@@ -151,6 +162,10 @@ export default function SupplierDetailPage() {
   const contacts = (record?.contacts ?? []) as SupplierContact[];
   const primaryContact = contacts.find((contact) => contact.is_primary) ?? contacts[0];
 
+  const missingRequiredDocs = REQUIRED_DOCUMENT_TYPES.filter(
+    (docType) => !documents.some((doc) => doc.document_type === docType.key && doc.status === "approved")
+  );
+
   const approveDocument = (documentId: number) =>
     void run(() => reviewSupplierDocument(id, documentId, { status: "approved" }), "Document approved.");
 
@@ -207,6 +222,8 @@ export default function SupplierDetailPage() {
               <ArrowLeft size={16} /> Back to suppliers
             </Link>
             <div className="flex flex-wrap gap-2">
+              <Link href={`/admin/tours?supplier_id=${id}`} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><MapPin size={16} /> View Tours</Link>
+              <Link href={`/admin/bookings?supplier_id=${id}`} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><CalendarDays size={16} /> View Bookings</Link>
               {canApprove && <button onClick={() => setModal("accept")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"><CheckCircle2 size={16} /> Accept Supplier</button>}
               {canPartial && <button onClick={() => setModal("partial")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><ShieldHalf size={16} /> Request Changes</button>}
               {canReject && <button onClick={() => setModal("reject")} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700"><XCircle size={16} /> Reject</button>}
@@ -248,11 +265,60 @@ export default function SupplierDetailPage() {
                 <p className="mt-1 text-lg font-black text-dash-text">{record.commission_request_type}: {record.commission_request_value ?? 0}</p>
                 <p className="mt-1 text-xs text-dash-muted">Submitted from the supplier dashboard for administration approval.</p>
               </div>
-              {canCommercial && <button type="button" disabled={saving} onClick={() => void run(() => updateCommercialValue("suppliers", id, { markup_type: String(record.commission_request_type || "percentage"), markup_value: Number(record.commission_request_value || 0) }), "Commission request approved.")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Check size={16} />Approve request</button>}
+              {canCommercial && (
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" disabled={saving} onClick={() => void run(() => updateCommercialValue("suppliers", id, { markup_type: String(record.commission_request_type || "percentage"), markup_value: Number(record.commission_request_value || 0) }), "Commission request approved.")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Check size={16} />Approve request</button>
+                  <button type="button" disabled={saving} onClick={() => void run(() => rejectSupplierCommissionRequest(id), "Commission request rejected.")} className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-5 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50"><X size={16} />Reject request</button>
+                </div>
+              )}
             </div>
           )}
 
+          {record.commission_request_history && record.commission_request_history.length > 0 && (
+            <section className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+              <h2 className="font-black text-dash-text">Commission request history</h2>
+              <div className="mt-4 space-y-3">
+                {record.commission_request_history.map((entry) => (
+                  <div key={entry.id} className="flex flex-col gap-1 rounded-xl bg-dash-bg p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-dash-text">{entry.markup_type}: {entry.markup_value}</p>
+                      <StatusBadge value={entry.status} />
+                    </div>
+                    <div className="text-xs text-dash-subtle">
+                      {entry.requested_at && <p>Requested: {new Date(entry.requested_at).toLocaleString()}</p>}
+                      {entry.reviewed_at && <p>Reviewed: {new Date(entry.reviewed_at).toLocaleString()}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           <CompletionCard record={record} />
+
+          {contacts.length > 0 && (
+            <section className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+              <h2 className="font-black text-dash-text">Contacts</h2>
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {contacts.map((contact, index) => (
+                  <div key={contact.id ?? index} className="rounded-xl bg-dash-bg p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-bold text-dash-text">{valueText(contact.contact_name)}</p>
+                      {contact.is_primary && (
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">Primary</span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs font-semibold uppercase text-dash-subtle">{valueText(contact.designation)}</p>
+                    <div className="mt-2 space-y-1 text-sm text-dash-muted">
+                      {contact.email && <p>{contact.email}</p>}
+                      {contact.phone && <p>{contact.phone}</p>}
+                      {contact.alternate_phone && <p>Alt: {contact.alternate_phone}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {record.approval_history && record.approval_history.length > 0 && (
             <section className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
@@ -409,6 +475,11 @@ export default function SupplierDetailPage() {
 
           <ActionModal open={modal === "accept"} title="Accept supplier" saving={saving} submitLabel="Accept and unlock operations" onClose={() => setModal(null)} onSubmit={() => void run(() => acceptSupplier(id), "Supplier approved and operational modules unlocked.")}>
             <p className="text-sm leading-6 text-dash-muted">Accepting this supplier immediately unlocks tour creation, departures, bookings, calendar, payments, payouts and operational reports.</p>
+            {missingRequiredDocs.length > 0 && (
+              <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 ring-1 ring-inset ring-amber-100">
+                ⚠ {missingRequiredDocs.length} of {REQUIRED_DOCUMENT_TYPES.length} required documents are missing or not yet approved: {missingRequiredDocs.map((docType) => docType.label).join(", ")}.
+              </p>
+            )}
           </ActionModal>
           <ActionModal open={modal === "reject"} title="Reject supplier" saving={saving} submitLabel="Reject" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => rejectReviewRecord("suppliers", id, { rejection_reason: String(payload.rejection_reason || ""), admin_comments: String(payload.admin_comments || "") }), "Supplier rejected.")} fields={[{ name: "rejection_reason", label: "Rejection reason", required: true }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "partial"} title="Request supplier changes" saving={saving} submitLabel="Send request" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => partialApproveReviewRecord("suppliers", id, { admin_comments: String(payload.admin_comments || ""), pending_requirements: String(payload.pending_requirements || "") }), "Supplier change request sent.")} fields={[{ name: "pending_requirements", label: "Required changes", type: "textarea" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />

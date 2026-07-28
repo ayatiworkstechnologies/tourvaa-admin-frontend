@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuDownload as Download, LuLoaderCircle as Loader2, LuTrendingUp as TrendingUp } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
+import ReportScheduleSection from "@/components/reports/ReportScheduleSection";
 import Loader from "@/components/ui/Loader";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import DatePicker from "@/components/ui/DatePicker";
@@ -462,6 +463,8 @@ export default function ReportsPage() {
             emptyDescription="Try a different period or report type."
           />
         </section>
+
+        <ReportScheduleSection />
       </div>
     </ModuleWrapper>
   );
