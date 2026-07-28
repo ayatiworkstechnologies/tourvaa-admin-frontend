@@ -27,8 +27,8 @@ type RefundRule = {
   id: number;
   tour_id?: number | null;
   tour_title?: string;
-  days_before_departure_min?: number;
-  days_before_departure_max?: number;
+  days_before_tour_min?: number;
+  days_before_tour_max?: number;
   refund_percentage: number;
   description?: string;
 };
@@ -61,7 +61,7 @@ export default function RefundsPage() {
   const [rules, setRules] = useState<RefundRule[]>([]);
   const [rulesLoading, setRulesLoading] = useState(true);
   const [showRuleForm, setShowRuleForm] = useState(false);
-  const [ruleForm, setRuleForm] = useState({ tour_id: "", days_before_departure_min: "", days_before_departure_max: "", refund_percentage: "", description: "" });
+  const [ruleForm, setRuleForm] = useState({ tour_id: "", days_before_tour_min: "", days_before_tour_max: "", refund_percentage: "", description: "" });
   const [savingRule, setSavingRule] = useState(false);
 
   const fetchRequests = useCallback(async (page = 1) => {
@@ -154,20 +154,20 @@ export default function RefundsPage() {
   };
 
   const saveRule = async () => {
-    if (!ruleForm.refund_percentage) return;
+    if (!ruleForm.refund_percentage || !ruleForm.days_before_tour_min) return;
     setSavingRule(true);
     try {
       const body: Record<string, unknown> = {
         refund_percentage: Number(ruleForm.refund_percentage),
+        days_before_tour_min: Number(ruleForm.days_before_tour_min),
       };
       if (ruleForm.tour_id) body.tour_id = Number(ruleForm.tour_id);
-      if (ruleForm.days_before_departure_min) body.days_before_departure_min = Number(ruleForm.days_before_departure_min);
-      if (ruleForm.days_before_departure_max) body.days_before_departure_max = Number(ruleForm.days_before_departure_max);
+      if (ruleForm.days_before_tour_max) body.days_before_tour_max = Number(ruleForm.days_before_tour_max);
       if (ruleForm.description) body.description = ruleForm.description;
       await api.post("/refund-rules", body);
       toast.success("Refund rule created.");
       setShowRuleForm(false);
-      setRuleForm({ tour_id: "", days_before_departure_min: "", days_before_departure_max: "", refund_percentage: "", description: "" });
+      setRuleForm({ tour_id: "", days_before_tour_min: "", days_before_tour_max: "", refund_percentage: "", description: "" });
       void fetchRules();
     } catch {
       toast.error("Could not create refund rule.");
@@ -219,8 +219,8 @@ export default function RefundsPage() {
       key: "days",
       header: "Days Range",
       className: "text-dash-body",
-      render: (rule) => (rule.days_before_departure_min != null || rule.days_before_departure_max != null)
-        ? `${rule.days_before_departure_min ?? 0} – ${rule.days_before_departure_max ?? "∞"} days`
+      render: (rule) => (rule.days_before_tour_min != null || rule.days_before_tour_max != null)
+        ? `${rule.days_before_tour_min ?? 0} – ${rule.days_before_tour_max ?? "∞"} days`
         : "Any",
     },
     {
@@ -468,11 +468,11 @@ export default function RefundsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">Min Days Before Departure</label>
+                    <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">Min Days Before Departure *</label>
                     <input
                       type="number"
-                      value={ruleForm.days_before_departure_min}
-                      onChange={e => setRuleForm(f => ({ ...f, days_before_departure_min: e.target.value }))}
+                      value={ruleForm.days_before_tour_min}
+                      onChange={e => setRuleForm(f => ({ ...f, days_before_tour_min: e.target.value }))}
                       placeholder="e.g. 7"
                       className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7]"
                     />
@@ -481,8 +481,8 @@ export default function RefundsPage() {
                     <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">Max Days Before Departure</label>
                     <input
                       type="number"
-                      value={ruleForm.days_before_departure_max}
-                      onChange={e => setRuleForm(f => ({ ...f, days_before_departure_max: e.target.value }))}
+                      value={ruleForm.days_before_tour_max}
+                      onChange={e => setRuleForm(f => ({ ...f, days_before_tour_max: e.target.value }))}
                       placeholder="e.g. 30"
                       className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7]"
                     />

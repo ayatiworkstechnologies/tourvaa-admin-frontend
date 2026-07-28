@@ -124,7 +124,7 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
         </div>
       )}
       
-      <div className={`flex flex-1 flex-col transition-all duration-300 ${collapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"}`}>
+      <div className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ${collapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"}`}>
         <Header
           title={pageTitle}
           name={user.name}
@@ -134,7 +134,7 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
           onMenuClick={() => setSidebarOpen(true)}
           theme="emerald"
         />
-        <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1">{children}</main>
       </div>
       {approvalNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true" aria-labelledby="supplier-approval-title">

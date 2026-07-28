@@ -14,6 +14,13 @@ export type TourOverview = {
   tour_type: string;
   physical_rating: "easy" | "moderate" | "hard";
   overview_icon_data?: Record<string, string>[] | null;
+  why_choose_this_tour?: string;
+  ideal_for?: string;
+  best_season?: string;
+  tour_pace?: string;
+  transportation_summary?: string;
+  accommodation_summary?: string;
+  meal_summary?: string;
 };
 
 export async function getOverview(tourId: number | string): Promise<TourOverview | null> {
@@ -36,6 +43,14 @@ export type ItineraryDay = {
   short_description: string;
   long_description: string;
   activities: string;
+  accommodation?: string;
+  start_time?: string;
+  end_time?: string;
+  travel_distance?: string;
+  travel_duration?: string;
+  transport_type?: string;
+  meals_included?: string;
+  important_notes?: string;
   image: string;
   image_alt_text: string;
   display_order: number;
@@ -160,6 +175,7 @@ export type TourExtension = {
   extension_title: string;
   extension_note: string;
   extra_price: number;
+  category: string;
   display_order: number;
   status: string;
 };
@@ -252,6 +268,7 @@ export type OptionalActivity = {
   description: string;
   price_per_person: number;
   image: string;
+  category: string;
   status: string;
 };
 
@@ -280,6 +297,7 @@ export type AccommodationExtra = {
   description: string;
   extra_price: number;
   price_type: "per_person" | "per_booking";
+  category: string;
   is_default: boolean;
   status: string;
 };

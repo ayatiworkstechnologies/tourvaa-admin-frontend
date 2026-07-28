@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LuArrowRight as ArrowRight } from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuStar as Star } from "react-icons/lu";
 import { fetchFeaturedTours, PublicTour } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -35,6 +35,7 @@ function TourCard({ tour, isStatic }: { tour: Partial<PublicTour>; isStatic?: bo
       <div className="p-4">
         <h3 className="font-heading line-clamp-2 text-base font-black text-zinc-950 transition-colors group-hover:text-teal-700">{tour.title}</h3>
         <p className="mt-1 text-xs font-semibold text-zinc-500">{[tour.city_name, tour.country_name].filter(Boolean).join(", ")} · {tour.number_of_days} Days</p>
+        {tour.rating_average != null && <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-zinc-600"><Star size={11} className="fill-amber-400 text-amber-400" />{tour.rating_average.toFixed(1)} <span className="font-normal text-zinc-400">({tour.rating_count})</span></p>}
         <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
           {tour.price_start_per_person
             ? <p className="text-lg font-black text-zinc-950">{formatCompact(tour.price_start_per_person, tour.currency || "USD")}<span className="text-xs font-semibold text-zinc-400"> /person</span></p>

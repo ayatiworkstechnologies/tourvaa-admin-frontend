@@ -6,5 +6,10 @@ import { metadataFor } from "@/lib/seo/pageMetadata";
 export const metadata: Metadata = metadataFor("/");
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <PublicLayout><AffiliateReferralTracker />{children}</PublicLayout>;
+  return (
+    <PublicLayout>
+      <AffiliateReferralTracker />
+      {children}
+    </PublicLayout>
+  );
 }

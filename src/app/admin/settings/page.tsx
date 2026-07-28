@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -8,28 +8,19 @@ import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 import { invalidateCurrencyCache } from "@/hooks/useCurrency";
 import CurrencySelect from "@/components/ui/CurrencySelect";
+import PaymentSettingsSection from "@/components/settings/PaymentSettingsSection";
+import ApiSettingsSection from "@/components/settings/ApiSettingsSection";
 
 const groupLabels: Record<string, string> = {
   general: "System Settings",
   system: "System Controls",
   booking: "Booking Defaults",
-  payment: "Payment Placeholders",
-  api: "API Placeholders",
+  payment: "Payment Settings",
+  api: "API Settings",
 };
 
 const booleanSettingKeys = new Set([
   "maintenance_mode",
-  "stripe_enabled",
-  "paypal_enabled",
-]);
-
-const secretSettingKeys = new Set([
-  "stripe_secret_key",
-  "paypal_secret",
-  "google_map_api_key",
-  "email_api_key",
-  "sms_api_key",
-  "third_party_api_key",
 ]);
 
 type Setting = {
@@ -55,7 +46,11 @@ export default function SettingsPage() {
       // "default_currency" is a legacy duplicate of "currency" (Booking
       // Defaults) -- the backend keeps them mirrored automatically, so only
       // show the one currency picker to avoid a confusing second field.
-      .filter((setting) => setting.key !== "default_currency")
+      // "payment"/"api" groups are excluded here on purpose: those AppSetting
+      // rows are a disconnected, unencrypted copy that the real payment
+      // gateway code never reads - PaymentSettingsSection/ApiSettingsSection
+      // below talk to the actual encrypted PaymentSetting/ApiSetting tables.
+      .filter((setting) => setting.key !== "default_currency" && setting.group !== "payment" && setting.group !== "api")
       .reduce<Record<string, Setting[]>>((groups, setting) => {
         groups[setting.group] = groups[setting.group] || [];
         groups[setting.group].push(setting);
@@ -64,6 +59,10 @@ export default function SettingsPage() {
   }, [settings]);
 
   const groupEntries = useMemo(() => Object.entries(grouped), [grouped]);
+  // Payment/API tabs are always shown (backed by dedicated components, not
+  // the fetched AppSetting list), appended after whatever general/system/
+  // booking groups the backend returns.
+  const tabKeys = useMemo(() => [...groupEntries.map(([group]) => group), "payment", "api"], [groupEntries]);
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -83,8 +82,7 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-     
-    fetchSettings();
+    void fetchSettings();
   }, [fetchSettings]);
 
   const saveSettings = async (event: React.FormEvent) => {
@@ -109,10 +107,12 @@ export default function SettingsPage() {
   }
   if (!dashboard) return null;
 
+  const activeGenericGroup = grouped[activeGroup];
+
   return (
     <ProtectedRoute requiredPermission="settings.view">
     <DashboardLayout title="Settings" menus={dashboard.menus} user={dashboard.user}>
-      <form onSubmit={saveSettings} className="space-y-6">
+      <div className="space-y-6">
         <section className="rounded-2xl border border-dash-border bg-white p-6">
           <h2 className="text-2xl font-bold text-dash-text">General Settings</h2>
           <p className="mt-1 text-sm text-dash-muted">
@@ -127,7 +127,7 @@ export default function SettingsPage() {
 
         <section className="rounded-2xl border border-dash-border bg-white p-3">
           <div className="flex flex-wrap gap-2">
-            {groupEntries.map(([group]) => (
+            {tabKeys.map((group) => (
               <button
                 key={group}
                 type="button"
@@ -144,95 +144,90 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {groupEntries
-          .filter(([group]) => group === activeGroup)
-          .map(([group, items]) => (
-          <section key={group} className="rounded-2xl border border-dash-border bg-white p-6">
-            <h3 className="mb-1 text-lg font-bold text-dash-text">
-              {groupLabels[group] || group}
-            </h3>
-            <p className="mb-5 text-sm text-dash-muted">
-              {group === "payment"
-                ? "Store payment provider settings used by payment workflows."
-                : group === "api"
-                ? "Keep third-party API settings ready for connected services."
-                : "Update platform defaults used by the admin and customer experience."}
-            </p>
-            <div className="grid gap-4 md:grid-cols-2">
-              {items.map((setting) => (
-                <label key={setting.key} className="block">
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">
-                    {setting.label}
-                  </span>
-                  {booleanSettingKeys.has(setting.key) ? (
-                    <select
-                      value={form[setting.key] || "false"}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          [setting.key]: event.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-                    >
-                      <option value="false">Disabled</option>
-                      <option value="true">Enabled</option>
-                    </select>
-                  ) : setting.key === "default_payment_mode" ? (
-                    <select
-                      value={form[setting.key] || "test"}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          [setting.key]: event.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-                    >
-                      <option value="test">Test</option>
-                      <option value="live">Live</option>
-                    </select>
-                  ) : setting.key === "currency" ? (
-                    <CurrencySelect
-                      value={form[setting.key] || "USD"}
-                      onChange={(code) =>
-                        setForm((current) => ({
-                          ...current,
-                          [setting.key]: code,
-                        }))
-                      }
-                    />
-                  ) : (
-                    <input
-                      type={secretSettingKeys.has(setting.key) ? "password" : "text"}
-                      value={form[setting.key] || ""}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          [setting.key]: event.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-                    />
-                  )}
-                </label>
-              ))}
-            </div>
+        {activeGroup === "payment" && (
+          <section className="rounded-2xl border border-dash-border bg-white p-6">
+            <h3 className="mb-1 text-lg font-bold text-dash-text">Payment Settings</h3>
+            <p className="mb-5 text-sm text-dash-muted">Live Stripe/PayPal credentials used by the actual checkout flow.</p>
+            <PaymentSettingsSection />
           </section>
-        ))}
+        )}
 
-        <div className="flex justify-end">
-          <button
-            disabled={saving}
-            className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
-          >
-            {saving ? "Saving..." : "Save Settings"}
-          </button>
-        </div>
-      </form>
+        {activeGroup === "api" && (
+          <section className="rounded-2xl border border-dash-border bg-white p-6">
+            <h3 className="mb-1 text-lg font-bold text-dash-text">API Settings</h3>
+            <p className="mb-5 text-sm text-dash-muted">Third-party API credentials used by connected services.</p>
+            <ApiSettingsSection />
+          </section>
+        )}
+
+        {activeGenericGroup && (
+          <form onSubmit={saveSettings}>
+            <section className="rounded-2xl border border-dash-border bg-white p-6">
+              <h3 className="mb-1 text-lg font-bold text-dash-text">
+                {groupLabels[activeGroup] || activeGroup}
+              </h3>
+              <p className="mb-5 text-sm text-dash-muted">
+                Update platform defaults used by the admin and customer experience.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                {activeGenericGroup.map((setting) => (
+                  <label key={setting.key} className="block">
+                    <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+                      {setting.label}
+                    </span>
+                    {booleanSettingKeys.has(setting.key) ? (
+                      <select
+                        value={form[setting.key] || "false"}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            [setting.key]: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                      >
+                        <option value="false">Disabled</option>
+                        <option value="true">Enabled</option>
+                      </select>
+                    ) : setting.key === "currency" ? (
+                      <CurrencySelect
+                        value={form[setting.key] || "USD"}
+                        onChange={(code) =>
+                          setForm((current) => ({
+                            ...current,
+                            [setting.key]: code,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <input
+                        value={form[setting.key] || ""}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            [setting.key]: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                      />
+                    )}
+                  </label>
+                ))}
+              </div>
+            </section>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                disabled={saving}
+                className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
+              >
+                {saving ? "Saving..." : "Save Settings"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </DashboardLayout>
     </ProtectedRoute>
   );
 }
-
-

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuEye as Eye, LuMapPinned as MapPinned, LuWallet as Wallet } from "react-icons/lu";
+import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuDownload as Download, LuEye as Eye, LuHeadset as Headset, LuMapPinned as MapPinned, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
@@ -16,28 +16,45 @@ type Booking = {
   booking_status: string;
   payment_status: string;
   final_amount?: string | number;
+  amount_paid?: string | number;
+  amount_pending?: string | number;
+  total_travellers?: number;
+  no_of_adults?: number;
+  no_of_children?: number;
   currency?: string;
 };
 
-const STATUSES = [
-  "all",
-  "pending_payment",
-  "pending_credit_approval",
-  "pending_supplier_assignment",
-  "payment_authorized",
-  "pending_supplier_acceptance",
-  "supplier_reassignment_required",
-  "confirmed",
-  "ready_to_travel",
-  "upcoming",
-  "ongoing",
-  "postponed",
-  "cancellation_requested",
-  "completed",
-  "cancelled",
-  "declined",
-  "refunded",
-];
+// Every raw backend status the customer could see, grouped into the four
+// customer-facing tabs the spec asks for (Upcoming / Pending / Completed / Cancelled).
+const STATUS_TABS = [
+  { key: "upcoming", label: "Upcoming", statuses: ["confirmed", "ready_to_travel", "upcoming", "ongoing", "postponed"] },
+  { key: "pending", label: "Pending", statuses: ["pending_payment", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required", "cancellation_requested"] },
+  { key: "completed", label: "Completed", statuses: ["completed"] },
+  { key: "cancelled", label: "Cancelled", statuses: ["cancelled", "declined", "refunded"] },
+] as const;
+
+const CUSTOMER_STATUS_LABELS: Record<string, string> = {
+  pending_payment: "Payment Pending",
+  pending_credit_approval: "Payment Pending",
+  pending_supplier_assignment: "Booking Submitted",
+  payment_authorized: "Booking Submitted",
+  pending_supplier_acceptance: "Supplier Confirmation Pending",
+  supplier_reassignment_required: "Supplier Confirmation Pending",
+  cancellation_requested: "Changes Requested",
+  confirmed: "Booking Confirmed",
+  ready_to_travel: "Travel Documents Ready",
+  upcoming: "Booking Confirmed",
+  ongoing: "Tour In Progress",
+  postponed: "Booking Confirmed",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  declined: "Supplier Declined",
+  refunded: "Refunded",
+};
+
+function customerStatusLabel(status: string) {
+  return CUSTOMER_STATUS_LABELS[status] || status.replaceAll("_", " ");
+}
 
 function dateText(value?: string | null) {
   if (!value) return "-";
@@ -69,15 +86,14 @@ export default function CustomerBookingsPage() {
     value || value === 0 ? format(value, currency) : "-";
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState<(typeof STATUS_TABS)[number]["key"]>("upcoming");
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const limit = 10;
 
   useEffect(() => {
-    const requestedStatus = new URLSearchParams(window.location.search).get("status");
-    if (requestedStatus && STATUSES.includes(requestedStatus)) setStatusFilter(requestedStatus);
+    const requestedTab = new URLSearchParams(window.location.search).get("tab");
+    if (requestedTab && STATUS_TABS.some((tab) => tab.key === requestedTab)) setActiveTab(requestedTab as typeof activeTab);
   }, []);
 
   useEffect(() => {
@@ -85,12 +101,11 @@ export default function CustomerBookingsPage() {
     async function load() {
       setLoading(true);
       try {
-        const params: Record<string, unknown> = { limit, page };
-        if (statusFilter !== "all") params.booking_status = statusFilter;
-        const res = await api.get("/customer/bookings", { params });
+        // The backend only filters by a single raw status, but each tab maps to
+        // several - fetch unfiltered and group/paginate client-side instead.
+        const res = await api.get("/customer/bookings", { params: { limit: 200, page: 1 } });
         if (!active) return;
         setBookings(res.data?.items ?? res.data?.data ?? []);
-        setTotal(res.data?.total ?? 0);
         setStatusCounts(res.data?.status_counts ?? {});
       } catch {
         if (active) setBookings([]);
@@ -100,12 +115,16 @@ export default function CustomerBookingsPage() {
     }
     load();
     return () => { active = false; };
-  }, [page, statusFilter]);
+  }, []);
 
+  const tabStatuses: readonly string[] = STATUS_TABS.find((tab) => tab.key === activeTab)?.statuses ?? [];
+  const tabBookings = useMemo(() => bookings.filter((b) => tabStatuses.includes(b.booking_status)), [bookings, tabStatuses]);
+  const total = tabBookings.length;
   const totalPages = Math.ceil(total / limit) || 1;
+  const pageRows = tabBookings.slice((page - 1) * limit, page * limit);
 
-  function handleStatus(s: string) {
-    setStatusFilter(s);
+  function handleTab(key: typeof activeTab) {
+    setActiveTab(key);
     setPage(1);
   }
 
@@ -126,8 +145,10 @@ export default function CustomerBookingsPage() {
     { key: "code", header: "Code", render: (b) => <Link href={`/customer/bookings/${b.id}`} className="hover:text-dash-brand hover:underline">{b.booking_code}</Link>, className: "font-bold text-dash-text" },
     { key: "tour", header: "Tour Name", render: (b) => b.tour_name ?? "-", className: "text-dash-muted" },
     { key: "date", header: "Tour Date", render: (b) => dateText(b.tour_date), className: "hidden text-dash-muted sm:table-cell" },
-    { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{b.booking_status.replaceAll("_", " ")}</Pill> },
-    { key: "payment", header: "Payment Status", render: (b) => <Pill status={b.payment_status}>{b.payment_status.replaceAll("_", " ")}</Pill>, className: "hidden md:table-cell" },
+    { key: "travellers", header: "Travellers", render: (b) => b.total_travellers ?? ((b.no_of_adults ?? 0) + (b.no_of_children ?? 0) || "-"), className: "hidden text-dash-muted sm:table-cell" },
+    { key: "status", header: "Status", render: (b) => <Pill status={b.booking_status}>{customerStatusLabel(b.booking_status)}</Pill> },
+    { key: "paid", header: "Amount Paid", render: (b) => money(b.amount_paid, b.currency), className: "hidden text-right text-dash-muted md:table-cell" },
+    { key: "due", header: "Balance Due", render: (b) => Number(b.amount_pending || 0) > 0 ? money(b.amount_pending, b.currency) : "-", className: "hidden text-right font-bold text-amber-600 md:table-cell" },
     { key: "total", header: "Total Amount", render: (b) => money(b.final_amount, b.currency), className: "hidden text-right font-bold text-dash-text md:table-cell" },
   ];
 
@@ -157,22 +178,25 @@ export default function CustomerBookingsPage() {
         ))}
       </div>
 
-      {/* Status Filter */}
+      {/* Tabs */}
       <div className="mt-4 flex flex-wrap gap-2 rounded-xl border border-[#DDE7F3] bg-white p-3">
-        {STATUSES.map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => handleStatus(s)}
-            className={`rounded-lg px-4 py-2 text-[11px] font-bold capitalize transition-all ${
-              statusFilter === s
-                ? "bg-[#0868E8] text-white shadow-md shadow-blue-100"
-                : "border border-[#DCE5F0] bg-white text-[#5C7190] hover:border-blue-300 hover:text-[#0865D9]"
-            }`}
-          >
-            {s === "all" ? "All" : s.replaceAll("_", " ")}
-          </button>
-        ))}
+        {STATUS_TABS.map((tab) => {
+          const count = tab.statuses.reduce((sum, status) => sum + (statusCounts[status] ?? 0), 0);
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => handleTab(tab.key)}
+              className={`rounded-lg px-4 py-2 text-[11px] font-bold transition-all ${
+                activeTab === tab.key
+                  ? "bg-[#0868E8] text-white shadow-md shadow-blue-100"
+                  : "border border-[#DCE5F0] bg-white text-[#5C7190] hover:border-blue-300 hover:text-[#0865D9]"
+              }`}
+            >
+              {tab.label} {count > 0 && <span className="opacity-70">({count})</span>}
+            </button>
+          );
+        })}
       </div>
 
       {/* Table */}
@@ -180,7 +204,7 @@ export default function CustomerBookingsPage() {
         <DataTable
           ariaLabel="Bookings"
           columns={columns}
-          rows={bookings}
+          rows={pageRows}
           loading={loading}
           page={page}
           pageSize={limit}
@@ -198,7 +222,27 @@ export default function CustomerBookingsPage() {
             </Link>
           }
           actions={(b) => (
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-wrap justify-end gap-2">
+              {Number(b.amount_pending || 0) > 0 && (
+                <Link
+                  href={`/customer/bookings/${b.id}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm hover:bg-amber-100 transition-all"
+                >
+                  <Wallet size={14} /> Pay Balance
+                </Link>
+              )}
+              <Link
+                href="/customer/invoices"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs font-semibold text-dash-body shadow-sm hover:bg-[#F3F8FC] hover:text-dash-brand transition-all"
+              >
+                <Download size={14} /> Invoice
+              </Link>
+              <Link
+                href="/customer/support"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs font-semibold text-dash-body shadow-sm hover:bg-[#F3F8FC] hover:text-dash-brand transition-all"
+              >
+                <Headset size={14} /> Support
+              </Link>
               <Link
                 href={`/customer/bookings/${b.id}`}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs font-semibold text-dash-body shadow-sm hover:bg-[#F3F8FC] hover:text-dash-brand transition-all"

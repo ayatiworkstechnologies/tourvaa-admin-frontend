@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCreditCard as CreditCard, LuFileText as FileText, LuHistory as History, LuLoaderCircle as Loader2, LuMapPinned as MapPinned, LuReceipt as Receipt, LuUsers as Users, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCreditCard as CreditCard, LuFileText as FileText, LuHistory as History, LuLoaderCircle as Loader2, LuMapPinned as MapPinned, LuReceipt as Receipt, LuStar as Star, LuUsers as Users, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api/client";
 import { CustomerPageShell } from "@/components/customer/CustomerPage";
@@ -47,6 +47,7 @@ type Booking = {
   no_of_adults?: number;
   no_of_children?: number;
   no_of_infants?: number;
+  no_of_rooms?: number;
   total_travellers?: number;
   notes?: string;
   customer_notes?: string;
@@ -298,6 +299,12 @@ export default function CustomerBookingDetailPage() {
   const [showPayModal, setShowPayModal] = useState(false);
   const [paymentBanner, setPaymentBanner] = useState<{ type: "success" | "error" | "info"; msg: string } | null>(null);
   const [capturingPayPal, setCapturingPayPal] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewError, setReviewError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -389,10 +396,27 @@ export default function CustomerBookingDetailPage() {
   const canCancel = booking && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
   const pendingAmount = Number(booking?.amount_pending ?? 0);
   const canPay = booking && pendingAmount > 0 && !["cancelled", "declined", "completed", "cancellation_requested", "postponed"].includes(booking.booking_status);
+  const canReview = booking && booking.booking_status === "completed" && !reviewSubmitted;
 
   useEffect(() => {
     if (searchParams.get("action") === "pay" && canPay) setShowPayModal(true);
   }, [canPay, searchParams]);
+
+  async function handleReviewSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!booking) return;
+    setReviewSubmitting(true);
+    setReviewError("");
+    try {
+      await api.post("/customer/reviews", { booking_id: booking.id, rating: reviewRating, review_text: reviewText.trim() || undefined });
+      setReviewSubmitted(true);
+      setShowReview(false);
+    } catch (exception) {
+      setReviewError(axios.isAxiosError(exception) ? exception.response?.data?.detail || "Could not submit your review." : "Could not submit your review.");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  }
 
   return (
     <CustomerPageShell>
@@ -478,9 +502,51 @@ export default function CustomerBookingDetailPage() {
                     <XCircle size={16} /> Request Cancellation
                   </button>
                 )}
+                {canReview && !showReview && (
+                  <button type="button" onClick={() => setShowReview(true)}
+                    className="flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-50 transition-all">
+                    <Star size={16} /> Submit Review
+                  </button>
+                )}
               </div>
             </div>
           </div>
+
+          {reviewSubmitted && (
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+              <CheckCircle2 size={16} />
+              Thanks for your review - it will appear on the tour page once approved.
+            </div>
+          )}
+
+          {/* Review form */}
+          {showReview && (
+            <form onSubmit={handleReviewSubmit} className="mb-6 rounded-2xl border border-amber-100 bg-amber-50 p-5">
+              <p className="mb-3 font-bold text-amber-800">Rate your trip</p>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <button key={value} type="button" onClick={() => setReviewRating(value)} aria-label={`${value} star${value === 1 ? "" : "s"}`}>
+                    <Star size={26} className={value <= reviewRating ? "fill-amber-400 text-amber-400" : "text-slate-300"} />
+                  </button>
+                ))}
+              </div>
+              <textarea value={reviewText} onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Tell other travellers about your experience (optional)..."
+                rows={3} className="mt-3 w-full resize-none rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400" />
+              {reviewError && <p className="mt-2 text-xs font-semibold text-red-600">{reviewError}</p>}
+              <div className="mt-3 flex gap-3">
+                <button type="submit" disabled={reviewSubmitting}
+                  className="flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-700 disabled:opacity-60">
+                  {reviewSubmitting ? <Loader2 className="animate-spin" size={14} /> : null}
+                  Submit Review
+                </button>
+                <button type="button" onClick={() => setShowReview(false)}
+                  className="rounded-xl border border-dash-border bg-white px-4 py-2 text-sm font-bold text-dash-body hover:bg-[#F3F8FC]">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
 
           {booking.supplier_acceptance_status === "pending" && (
             <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-800">
@@ -521,6 +587,9 @@ export default function CustomerBookingDetailPage() {
                 <Field label="Travel Date" value={<span className="flex items-center gap-1"><CalendarCheck size={14} className="text-dash-brand" />{booking.tour_date || "-"}</span>} />
                 <Field label="Country" value={booking.country} />
                 <Field label="Supplier" value={booking.supplier_name} />
+                <a href={`/api/customer/bookings/${booking.id}/itinerary`} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-dash-border px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC]">
+                  <FileText size={13} /> Download Itinerary
+                </a>
               </div>
             </Panel>
 
@@ -529,6 +598,7 @@ export default function CustomerBookingDetailPage() {
                 <Field label="Adults" value={booking.no_of_adults ?? "-"} />
                 <Field label="Children" value={booking.no_of_children ?? 0} />
                 <Field label="Infants" value={booking.no_of_infants ?? 0} />
+                {booking.no_of_rooms != null && <Field label="Rooms" value={booking.no_of_rooms} />}
                 <Field label="Total" value={<span className="flex items-center gap-1"><Users size={14} className="text-dash-brand" />{booking.total_travellers ?? "-"}</span>} />
               </div>
             </Panel>

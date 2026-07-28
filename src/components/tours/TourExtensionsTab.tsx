@@ -6,10 +6,11 @@ import { TourExtension, getExtensions, createExtension, updateExtension, deleteE
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import TourPicker from "@/components/tours/TourPicker";
+import { ADDON_CATEGORIES, addonCategoryLabel } from "@/lib/constants/addonCategories";
 
 const empty = (): TourExtension => ({
   extension_tour_id: 0, extension_title: "", extension_note: "",
-  extra_price: 0, display_order: 0, status: "active",
+  extra_price: 0, category: "other", display_order: 0, status: "active",
 });
 
 const inputClass =
@@ -98,7 +99,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
         <div key={item.id} className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
           <div className="flex items-start justify-between">
             <div>
-              <p className="font-semibold text-dash-text">{item.extension_title || item.extension_tour_title || `Tour #${item.extension_tour_id}`}</p>
+              <div className="flex items-center gap-2"><p className="font-semibold text-dash-text">{item.extension_title || item.extension_tour_title || `Tour #${item.extension_tour_id}`}</p><span className="rounded-full bg-[var(--portal-soft)] px-2 py-0.5 text-[10px] font-bold text-dash-brand">{addonCategoryLabel(item.category)}</span></div>
               {item.extension_note && <p className="text-sm text-dash-subtle">{item.extension_note}</p>}
               <p className="mt-1 text-sm font-semibold text-dash-brand">Extra: {item.extra_price}</p>
             </div>
@@ -162,6 +163,12 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
                 onChange={(e) => setEditing((p) => (p ? { ...p, display_order: Number(e.target.value) } : p))}
                 className={inputClass}
               />
+            </label>
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Category</span>
+              <select value={editing.category} onChange={(e) => setEditing((p) => (p ? { ...p, category: e.target.value } : p))} className={inputClass}>
+                {ADDON_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
             </label>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>

@@ -1,12 +1,12 @@
 "use client";
 
-import TourFormPage from "@/components/cms/TourFormPage";
+import TourWizard from "@/components/tours/TourWizard";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 
 export default function CreateTourPage() {
   return (
     <ModuleWrapper title="Create Tour" requiredPermission="tours.create">
-      <TourFormPage />
+      <TourWizard role="admin" />
     </ModuleWrapper>
   );
 }

@@ -65,6 +65,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/admin/profile": { title: "Admin Profile", description: "Manage your Tourvaa administrator profile and account security.", index: false },
   "/admin/refunds": { title: "Refunds & Cancellations", description: "Review cancellation requests, refund eligibility, policies, and refund processing.", index: false },
   "/admin/reports": { title: "Reports", description: "Review Tourvaa booking, revenue, supplier, customer, and operational reports.", index: false },
+  "/admin/reviews": { title: "Customer Reviews", description: "Moderate customer-submitted tour reviews before they appear publicly.", index: false },
   "/admin/roles": { title: "Role Management", description: "Configure administration roles and their Tourvaa permissions.", index: false },
   "/admin/sessions": { title: "Active Sessions", description: "Review and manage authenticated Tourvaa administration sessions.", index: false },
   "/admin/settings": { title: "Platform Settings", description: "Configure Tourvaa platform, business, localization, and operational settings.", index: false },

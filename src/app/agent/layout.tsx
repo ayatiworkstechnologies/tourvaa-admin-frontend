@@ -98,7 +98,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         </div>
       )}
       
-      <div className={`flex flex-1 flex-col transition-all duration-300 ${collapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"}`}>
+      <div className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ${collapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"}`}>
         <Header
           title={pageTitle}
           name={user.name}
@@ -108,7 +108,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
           onMenuClick={() => setSidebarOpen(true)}
           theme="navy"
         />
-        <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>
   );

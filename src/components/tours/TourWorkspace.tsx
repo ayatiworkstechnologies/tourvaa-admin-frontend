@@ -1,9 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import {
-  LuArrowLeft as ArrowLeft,
-  LuArrowRight as ArrowRight,
-  LuCheck as Check,
-} from "react-icons/lu";
+import { useEffect, useRef, useState } from "react";
+import { LuArrowRight as ArrowRight, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight } from "react-icons/lu";
 
 export type TourWorkspaceRole = "admin" | "supplier";
 
@@ -127,98 +126,94 @@ export function TourWorkspaceTabs({
   tabs,
   activeIndex,
   onSelect,
-  completedIndices = new Set<number>(),
 }: {
   role: TourWorkspaceRole;
   tabs: TourWorkspaceTab[];
   activeIndex: number;
   onSelect: (index: number) => void;
-  completedIndices?: Set<number>;
 }) {
   const colors = theme[role];
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateScrollState();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+    return () => {
+      el.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabs]);
+
+  useEffect(() => {
+    // Keep the active tab in view when it's changed programmatically (e.g. Back/Next).
+    const el = scrollRef.current;
+    const activeButton = el?.children[0]?.children[activeIndex] as HTMLElement | undefined;
+    activeButton?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  }, [activeIndex]);
+
+  const scrollByAmount = (amount: number) => scrollRef.current?.scrollBy({ left: amount, behavior: "smooth" });
+
   return (
-    <div className={`mt-4 overflow-x-auto rounded-2xl border bg-white p-2 shadow-[0_8px_24px_-22px_rgba(24,76,140,.7)] [-webkit-overflow-scrolling:touch] ${colors.contentBorder}`}>
-      <div className="flex min-w-max gap-1">
-        {tabs.map((tab, index) => (
+    <div className={`relative mt-4 rounded-2xl border bg-white shadow-[0_8px_24px_-22px_rgba(24,76,140,.7)] ${colors.contentBorder}`}>
+      {canScrollLeft && (
+        <>
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 rounded-l-2xl bg-gradient-to-r from-white to-transparent" />
           <button
-            key={tab.key}
             type="button"
-            onClick={() => onSelect(index)}
-            aria-current={activeIndex === index ? "page" : undefined}
-            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-bold transition ${
-              activeIndex === index ? `${colors.tabActive} shadow-sm` : colors.tabIdle
-            }`}
+            onClick={() => scrollByAmount(-180)}
+            aria-label="Scroll tabs left"
+            className="absolute left-1 top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-dash-border bg-white shadow-sm hover:bg-dash-bg"
           >
-            {completedIndices.has(index) && activeIndex !== index && (
-              <span className={`flex h-4 w-4 items-center justify-center rounded-full text-white ${colors.progressBar}`}>
-                <Check size={10} strokeWidth={3} />
-              </span>
-            )}
-            {tab.label}
+            <ChevronLeft size={14} />
           </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export function TourWorkspaceStepFooter({
-  role,
-  activeIndex,
-  total,
-  completedCount,
-  onBack,
-  onNext,
-  onFinish,
-}: {
-  role: TourWorkspaceRole;
-  activeIndex: number;
-  total: number;
-  completedCount: number;
-  onBack: () => void;
-  onNext: () => void;
-  onFinish: () => void;
-}) {
-  const colors = theme[role];
-  const isFirst = activeIndex === 0;
-  const isLast = activeIndex === total - 1;
-
-  return (
-    <div className={`mt-4 flex flex-col gap-3 rounded-2xl border bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${colors.contentBorder} ${colors.contentShadow}`}>
-      <button
-        type="button"
-        onClick={onBack}
-        disabled={isFirst}
-        className="inline-flex items-center justify-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body transition hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40"
+        </>
+      )}
+      <div
+        ref={scrollRef}
+        className="overflow-x-auto p-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        <ArrowLeft size={15} />
-        Back
-      </button>
-
-      <div className="text-center">
-        <p className="text-xs font-bold text-dash-body">
-          Section {activeIndex + 1} of {total}
-        </p>
-        <p className="mt-0.5 text-[10px] text-dash-subtle">{completedCount} of {total} reviewed</p>
+        <div className="flex min-w-max gap-1">
+          {tabs.map((tab, index) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => onSelect(index)}
+              aria-current={activeIndex === index ? "page" : undefined}
+              className={`whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-bold transition ${
+                activeIndex === index ? `${colors.tabActive} shadow-sm` : colors.tabIdle
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
-
-      <button
-        type="button"
-        onClick={isLast ? onFinish : onNext}
-        className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 ${colors.primary}`}
-      >
-        {isLast ? (
-          <>
-            <Check size={15} strokeWidth={3} />
-            Complete Review
-          </>
-        ) : (
-          <>
-            Next Section
-            <ArrowRight size={15} />
-          </>
-        )}
-      </button>
+      {canScrollRight && (
+        <>
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 rounded-r-2xl bg-gradient-to-l from-white to-transparent" />
+          <button
+            type="button"
+            onClick={() => scrollByAmount(180)}
+            aria-label="Scroll tabs right"
+            className="absolute right-1 top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-dash-border bg-white shadow-sm hover:bg-dash-bg"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -236,50 +231,6 @@ export function TourWorkspaceContent({
   return (
     <div className={`mt-4 rounded-2xl border bg-white p-5 sm:p-7 ${colors.contentBorder} ${colors.contentShadow} ${className}`}>
       {children}
-    </div>
-  );
-}
-
-export function TourWorkspaceProgress({
-  role,
-  stages,
-  currentIndex,
-}: {
-  role: TourWorkspaceRole;
-  stages: Array<{ label: string; note?: string; complete?: boolean }>;
-  currentIndex?: number;
-}) {
-  const colors = theme[role];
-  return (
-    <div className={`grid grid-cols-2 gap-2 ${stages.length > 4 ? "xl:grid-cols-5" : "sm:grid-cols-4"}`}>
-      {stages.map((stage, index) => {
-        const active = currentIndex === index;
-        const complete = stage.complete ?? (currentIndex != null && index < currentIndex);
-        const reached = complete || active;
-        return (
-          <div
-            key={stage.label}
-            className={`rounded-xl border p-3 transition ${
-              active ? `${colors.progressActive} shadow-sm` : complete ? colors.progressDone : colors.progressIdle
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-black ${reached ? colors.progressNumber : colors.progressMuted}`}>
-                {complete ? <Check size={13} strokeWidth={3} /> : index + 1}
-              </span>
-              <span className="min-w-0">
-                <span className={`block truncate text-[10px] font-black ${active ? colors.progressText : "text-dash-muted"}`}>{stage.label}</span>
-                {stage.note && <span className="block truncate text-[9px] text-dash-subtle">{stage.note}</span>}
-              </span>
-            </div>
-            {currentIndex != null && (
-              <div className={`mt-2 h-1 overflow-hidden rounded-full ${colors.track}`}>
-                <div className={`h-full rounded-full transition-all ${colors.progressBar} ${reached ? "w-full" : "w-0"}`} />
-              </div>
-            )}
-          </div>
-        );
-      })}
     </div>
   );
 }

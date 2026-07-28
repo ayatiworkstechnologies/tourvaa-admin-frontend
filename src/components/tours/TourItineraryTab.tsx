@@ -11,7 +11,9 @@ import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 
 const empty = (): ItineraryDay => ({
   day_number: 1, day_title: "", location_name: "",
-  short_description: "", long_description: "", activities: "",
+  short_description: "", long_description: "", activities: "", accommodation: "",
+  start_time: "", end_time: "", travel_distance: "", travel_duration: "",
+  transport_type: "", meals_included: "", important_notes: "",
   image: "", image_alt_text: "", display_order: 0, status: "active",
 });
 
@@ -136,6 +138,13 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
               ["day_number", "Day number", "number"],
               ["day_title", "Day title", "text"],
               ["location_name", "Location", "text"],
+              ["accommodation", "Accommodation", "text"],
+              ["start_time", "Start time", "time"],
+              ["end_time", "End time", "time"],
+              ["travel_distance", "Travel distance", "text"],
+              ["travel_duration", "Travel duration", "text"],
+              ["transport_type", "Transport type", "text"],
+              ["meals_included", "Meals included", "text"],
               ["display_order", "Display order", "number"],
             ].map(([key, label, type]) => (
               <label key={key}>
@@ -148,7 +157,7 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
                 />
               </label>
             ))}
-            {(["short_description", "long_description", "activities"] as const).map((key) => (
+            {(["short_description", "long_description", "activities", "important_notes"] as const).map((key) => (
               <label key={key} className="md:col-span-2">
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{key.replace(/_/g, " ")}</span>
                 <textarea

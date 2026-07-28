@@ -1,5 +1,5 @@
 import type { IconType as LucideIcon } from "react-icons";
-import { LuBadgeCheck as BadgeCheck, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuMail as Mail, LuMapPinned as MapPinned, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShield as Shield, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
+import { LuBadgeCheck as BadgeCheck, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuMail as Mail, LuMapPinned as MapPinned, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShield as Shield, LuStar as Star, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
 import { MenuItem } from "@/types/auth";
 
 export type NavItem = {
@@ -27,6 +27,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Tour Approval", module: "tour_approval", href: "/admin/tour-approval", icon: BadgeCheck, permissions: ["tours.publish", "update-tours"], section: "Tour Management" },
   { label: "Tour Categories", module: "categories", href: "/admin/tours/categories", icon: Tags, permissions: ["categories.view", "view-categories", "subcategories.view", "view-subcategories"], section: "Tour Management", matchHrefs: ["/admin/tours/subcategories"] },
   { label: "Discounts", module: "discounts", href: "/admin/discounts", icon: Percent, permissions: ["tours.view", "view-tours"], section: "Tour Management" },
+  { label: "Reviews", module: "reviews", href: "/admin/reviews", icon: Star, permissions: ["tours.view", "view-tours"], section: "Tour Management" },
   { label: "Bookings", module: "bookings", href: "/admin/bookings", icon: CalendarCheck, permissions: ["bookings.view", "view-bookings"], section: "Finance" },
   { label: "Cancellations & Refunds", module: "cancellations", href: "/admin/refunds", icon: RotateCcw, permissions: ["bookings.view", "view-bookings", "bookings.cancel"], section: "Finance" },
   { label: "Payments", module: "payments", href: "/admin/payments", icon: CreditCard, permissions: ["payments.view", "view-payments"], section: "Finance" },

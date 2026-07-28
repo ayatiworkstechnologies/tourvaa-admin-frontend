@@ -36,6 +36,7 @@ export const pagePermissions: Record<string, string> = {
   "/admin/cms": "website_cms.view",
   "/admin/chatbot": "chatbot.view",
   "/admin/refunds": "cancellations.view",
+  "/admin/reviews": "tours.view",
   "/admin/supplier-payouts": "supplier_ledger.view",
 };
 

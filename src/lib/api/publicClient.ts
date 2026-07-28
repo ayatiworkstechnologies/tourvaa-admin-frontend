@@ -24,6 +24,16 @@ export type PublicTour = {
   status: string;
   canonical_path?: string;
   departures?: { id: number; date: string; slots: number; status: string }[];
+  rating_average?: number | null;
+  rating_count?: number;
+};
+
+export type PublicReview = {
+  id: number;
+  customer_name: string;
+  rating: number;
+  review_text: string | null;
+  created_at: string;
 };
 
 export type PublicTourDetail = PublicTour & {
@@ -31,6 +41,8 @@ export type PublicTourDetail = PublicTour & {
   start_location: string;
   finish_location: string;
   map_image: string | null;
+  booking_deposit: number | null;
+  balance_payment_deadline_days: number | null;
   overview: {
     duration_text: string;
     start_location: string;
@@ -38,19 +50,41 @@ export type PublicTourDetail = PublicTour & {
     group_size: string;
     tour_type: string;
     physical_rating: string;
+    why_choose_this_tour: string | null;
+    ideal_for: string | null;
+    best_season: string | null;
+    tour_pace: string | null;
+    transportation_summary: string | null;
+    accommodation_summary: string | null;
+    meal_summary: string | null;
   } | null;
-  itineraries: { day: number; title: string; description: string; accommodation: string; meals: string }[];
+  itineraries: {
+    day: number;
+    title: string;
+    description: string;
+    location: string;
+    accommodation: string;
+    meals: string;
+    transport: string;
+    start_time: string;
+    end_time: string;
+    travel_distance: string;
+    travel_duration: string;
+    important_notes: string;
+  }[];
   highlights: { text: string }[];
   inclusions: { text: string }[];
   exclusions: { text: string }[];
   gallery: { image_url: string; alt_text: string; is_banner: boolean }[];
   pricing: { persons_from: number; persons_to: number | null; price_per_person: number; currency: string }[];
-  optional_activities: { id: number; name: string; description: string; price: number | null; currency: string }[];
-  accommodations: { id: number; name: string; description: string; price: number | null }[];
-  extensions: { id: number; title: string; description: string; duration_days: number | null; price: number | null }[];
+  optional_activities: { id: number; name: string; description: string; price: number | null; currency: string; category: string }[];
+  accommodations: { id: number; name: string; description: string; price: number | null; category: string }[];
+  extensions: { id: number; title: string; description: string; duration_days: number | null; price: number | null; category: string }[];
   discounts: { label: string; discount_type: string; value: number; valid_from: string | null; valid_to: string | null }[];
   calendar: { id: number; date: string; slots: number; status: string }[];
   similar_tours: PublicTour[];
+  cancellation_policy: { days_before_min: number; days_before_max: number | null; refund_percentage: number; description: string }[];
+  reviews: PublicReview[];
 };
 
 export type PublicCategory = { id: number; category_name: string; slug: string; description: string; image: string | null };
@@ -118,4 +152,8 @@ export async function fetchFooterLinks() {
 export async function fetchPublicSettings() {
   const res = await axios.get("/api/settings/public");
   return (res.data.data || {}) as Record<string, string>;
+}
+
+export async function subscribeNewsletter(email: string) {
+  await publicApi.post("/newsletter/subscribe", { email });
 }

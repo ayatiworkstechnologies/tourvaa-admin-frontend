@@ -18,10 +18,16 @@ const workSans = Work_Sans({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default function PublicLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <TravelStoreProvider>
-      <div className={`${outfit.variable} ${workSans.variable} public-site min-h-screen bg-white font-[family-name:var(--font-body)] text-slate-950`}>
+      <div
+        className={`${outfit.variable} ${workSans.variable} public-site min-h-screen bg-white font-[family-name:var(--font-body)] text-slate-950`}
+      >
         <PublicHeader />
         <div className="public-page-enter">{children}</div>
         <PublicFooter />

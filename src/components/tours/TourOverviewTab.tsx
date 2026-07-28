@@ -11,6 +11,8 @@ const RATINGS = ["easy", "moderate", "hard"] as const;
 const empty: TourOverview = {
   duration_text: "", start_location: "", end_location: "",
   group_size: "", tour_type: "", physical_rating: "easy",
+  why_choose_this_tour: "", ideal_for: "", best_season: "", tour_pace: "",
+  transportation_summary: "", accommodation_summary: "", meal_summary: "",
 };
 
 const inputClass =
@@ -69,6 +71,19 @@ export default function TourOverviewTab({ tourId }: { tourId: string }) {
     </label>
   );
 
+  const textareaField = (key: keyof TourOverview, label: string, placeholder?: string) => (
+    <label key={key} className="md:col-span-2 lg:col-span-3">
+      <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
+      <textarea
+        value={(form[key] as string) ?? ""}
+        onChange={(e) => update(key, e.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        className={`min-h-20 ${inputClass}`}
+      />
+    </label>
+  );
+
   return (
     <form onSubmit={submit} className="space-y-6">
       <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
@@ -88,6 +103,21 @@ export default function TourOverviewTab({ tourId }: { tourId: string }) {
           </label>
         </div>
       </div>
+
+      <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+        <h2 className="text-xl font-black text-dash-text">Trip Planning Details</h2>
+        <p className="mt-1 text-sm text-dash-subtle">Helps travellers decide if this tour fits them.</p>
+        <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {field("best_season", "Best season", "e.g. October to March")}
+          {field("tour_pace", "Tour pace", "e.g. Relaxed, Moderate, Fast-paced")}
+          {textareaField("ideal_for", "Ideal for", "e.g. Couples, families with teens, first-time visitors")}
+          {textareaField("why_choose_this_tour", "Why choose this tour")}
+          {textareaField("transportation_summary", "Transportation summary")}
+          {textareaField("accommodation_summary", "Accommodation summary")}
+          {textareaField("meal_summary", "Meal summary")}
+        </div>
+      </div>
+
       <div className="flex justify-end">
         <button
           type="submit"
