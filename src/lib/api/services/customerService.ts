@@ -125,6 +125,11 @@ export async function getCustomerDetail(customerId: string | number) {
   return response.data.data;
 }
 
+export async function updateCustomer(customerId: string | number, payload: Record<string, unknown>) {
+  const response = await api.put<{ status: string; data: Customer }>(`/customers/${customerId}`, payload);
+  return response.data.data;
+}
+
 export async function updateCustomerStatus(customerId: string | number, status: "active" | "inactive") {
   const response = await api.patch<{ status: string; data: Customer }>(`/customers/${customerId}/status`, {
     status,

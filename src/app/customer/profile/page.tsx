@@ -97,6 +97,16 @@ export default function CustomerProfilePage() {
     profile.country_id ? Number(profile.country_id) : null
   );
 
+  // Customers only persist country_id/city_id; the state select is derived
+  // from the loaded city's state_id since there is no stored state_id field.
+  useEffect(() => {
+    if (profile.state_id || !profile.city_id) return;
+    const match = cities.find((c) => String(c.id) === profile.city_id);
+    if (match?.state_id) {
+      setProfile((current) => ({ ...current, state_id: String(match.state_id) }));
+    }
+  }, [cities, profile.city_id, profile.state_id]);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {

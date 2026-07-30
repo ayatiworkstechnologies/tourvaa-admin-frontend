@@ -74,6 +74,14 @@ export default function AgencyDetailsTab() {
     form.country_id ? Number(form.country_id) : null,
   );
 
+  // Agents only persist country_id/city_id; the state select is derived
+  // from the loaded city's state_id since there is no stored state field.
+  useEffect(() => {
+    if (selectedStateId || !form.city_id) return;
+    const match = cities.find((c) => String(c.id) === form.city_id);
+    if (match?.state_id) setSelectedStateId(String(match.state_id));
+  }, [cities, form.city_id, selectedStateId]);
+
   useEffect(() => {
     setLoadError("");
     Promise.all([api.get("/profile/me"), api.get("/agents/me")])

@@ -4,11 +4,12 @@ import Link from "next/link";
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
 import ActionModal from "@/components/operations/ActionModal";
 import CompletionChecklist from "@/components/operations/CompletionChecklist";
 import ReviewProfileHero from "@/components/operations/ReviewProfileHero";
+import LocationEditModal from "@/components/common/LocationEditModal";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import StatusBadge from "@/components/operations/StatusBadge";
@@ -95,6 +96,7 @@ export default function AgentDetailPage() {
   const [modal, setModal] = useState<"reject" | "partial" | "commercial" | "block" | "reject-document" | null>(null);
   const [activeTab, setActiveTab] = useState<"business" | "invoicing" | "documents">("business");
   const [reviewDocumentId, setReviewDocumentId] = useState<number | null>(null);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   const approvalStatus = String(record?.approval_status || "").toLowerCase();
   const accountStatus = String(record?.status || "").toLowerCase();
@@ -106,6 +108,7 @@ export default function AgentDetailPage() {
   const canPartial = !isApproved && !isBlocked && (hasPermission("agents.partial_approve") || canApprove);
   const canCommercial = hasPermission("agents.manage_discount");
   const canBlock = hasPermission("agents.edit") || hasPermission("agents.approve");
+  const canEditLocation = hasPermission("agents.edit");
   const canReviewDocuments = hasPermission("agents.approve") || hasPermission("agents.reject");
 
   const fetchRecord = useCallback(async () => {
@@ -158,6 +161,20 @@ export default function AgentDetailPage() {
     );
   };
 
+  const saveLocation = async (value: { country_id: number | null; city_id: number | null }) => {
+    setSaving(true);
+    try {
+      await updateReviewRecord("agents", id, value);
+      toast.success("Agent location updated.");
+      setLocationModalOpen(false);
+      await fetchRecord();
+    } catch (error) {
+      toast.error(apiError(error, "Could not update agent location."));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const tabs = useMemo(
     () => [
       { key: "business" as const, label: "Business Info", icon: Briefcase },
@@ -183,6 +200,7 @@ export default function AgentDetailPage() {
               {canReject && <button onClick={() => setModal("reject")} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700"><XCircle size={16} /> Reject</button>}
               {canBlock && <button onClick={() => isBlocked ? void run(() => updateReviewRecord("agents", id, { status: "active" }), "Agent unblocked.") : setModal("block")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><Ban size={16} /> {isBlocked ? "Unblock" : "Block"}</button>}
               {canCommercial && <button onClick={() => setModal("commercial")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><Percent size={16} /> Discount</button>}
+              {canEditLocation && <button onClick={() => setLocationModalOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><MapPin size={16} /> Edit Location</button>}
             </div>
           </div>
 
@@ -303,6 +321,15 @@ export default function AgentDetailPage() {
           <ActionModal open={modal === "block"} title="Block agent" saving={saving} submitLabel="Block" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateReviewRecord("agents", id, { status: "blocked", admin_comments: String(payload.admin_comments || "") }), "Agent blocked.")} fields={[{ name: "admin_comments", label: "Block reason / admin note", type: "textarea" }]} />
           <ActionModal open={modal === "commercial"} title="Update discount" saving={saving} submitLabel="Save" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateCommercialValue("agents", id, { discount_type: payload.value_type, discount_value: payload.value }), "Discount updated.")} fields={[{ name: "value_type", label: "Discount type", type: "select", options: [{ label: "Percentage", value: "percentage" }, { label: "Fixed", value: "fixed" }] }, { name: "value", label: "Discount value", type: "number" }]} />
           <ActionModal open={modal === "reject-document"} title="Reject agent document" saving={saving} submitLabel="Reject and request re-upload" onClose={() => { setModal(null); setReviewDocumentId(null); }} onSubmit={rejectDocument} fields={[{ name: "rejection_reason", label: "Reason and re-upload instructions", type: "textarea" }]} />
+          <LocationEditModal
+            open={locationModalOpen}
+            title="Edit agent location"
+            countryId={record.country_id ?? null}
+            cityId={record.city_id ?? null}
+            saving={saving}
+            onClose={() => setLocationModalOpen(false)}
+            onSave={(value) => void saveLocation(value)}
+          />
         </div>
       ) : (
         <section className="rounded-xl border border-dash-border bg-white p-10 text-center text-dash-muted">Agent not found.</section>

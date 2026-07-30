@@ -7,6 +7,7 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/useToast";
 import { combinePhone } from "@/lib/utils/validators";
 import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
+import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 
 type Customer = {
   id: number;
@@ -48,7 +49,7 @@ function useDebounce<T>(value: T, delay: number): T {
 
 const BLANK = {
   first_name: "", last_name: "", email: "", phone: "", phone_country_code: "+91",
-  country: "", state: "", city: "", postal_code: "", address_line_1: "", address_line_2: "",
+  country_id: "", state_id: "", city_id: "", postal_code: "", address_line_1: "", address_line_2: "",
 };
 
 export default function AgentCustomersPage() {
@@ -64,6 +65,13 @@ export default function AgentCustomersPage() {
   const [error, setError] = useState("");
   const [retryKey, setRetryKey] = useState(0);
   const limit = 10;
+
+  const { countries } = useGeoCountries();
+  const { states } = useGeoStates(form.country_id ? Number(form.country_id) : null);
+  const { cities } = useGeoCities(
+    form.state_id ? Number(form.state_id) : null,
+    form.country_id ? Number(form.country_id) : null
+  );
 
   const debouncedSearch = useDebounce(search, 350);
   const abortRef = useRef<AbortController | null>(null);
@@ -112,15 +120,20 @@ export default function AgentCustomersPage() {
     try {
       const fullName = `${form.first_name} ${form.last_name}`.trim();
       const phone = form.phone ? combinePhone(form.phone_country_code || "+91", form.phone) : "";
+      const selectedCountry = countries.find((c) => String(c.id) === form.country_id);
+      const selectedState = states.find((s) => String(s.id) === form.state_id);
+      const selectedCity = cities.find((c) => String(c.id) === form.city_id);
       await api.post("/customers/", {
         first_name: form.first_name,
         last_name: form.last_name,
         full_name: fullName,
         email: form.email,
         phone,
-        country: form.country,
-        state: form.state,
-        city: form.city,
+        country_id: parseInt(form.country_id) || null,
+        city_id: parseInt(form.city_id) || null,
+        country: selectedCountry?.name || "",
+        state: selectedState?.name || "",
+        city: selectedCity?.name || "",
         postal_code: form.postal_code,
         address_line_1: form.address_line_1,
         address_line_2: form.address_line_2,
@@ -260,15 +273,38 @@ export default function AgentCustomersPage() {
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Country</label>
-                  <input value={form.country} onChange={field("country")} placeholder="Country" autoComplete="country-name" className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                  <select
+                    value={form.country_id}
+                    onChange={(e) => setForm((f) => ({ ...f, country_id: e.target.value, state_id: "", city_id: "" }))}
+                    className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand"
+                  >
+                    <option value="">Select country</option>
+                    {countries.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">State / Province</label>
-                  <input value={form.state} onChange={field("state")} placeholder="State" autoComplete="address-level1" className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                  <select
+                    value={form.state_id}
+                    disabled={!form.country_id}
+                    onChange={(e) => setForm((f) => ({ ...f, state_id: e.target.value, city_id: "" }))}
+                    className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand disabled:bg-dash-bg"
+                  >
+                    <option value="">{form.country_id ? "Select state" : "Select country first"}</option>
+                    {states.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">City</label>
-                  <input value={form.city} onChange={field("city")} placeholder="City" autoComplete="address-level2" className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                  <select
+                    value={form.city_id}
+                    disabled={!form.country_id}
+                    onChange={(e) => setForm((f) => ({ ...f, city_id: e.target.value }))}
+                    className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand disabled:bg-dash-bg"
+                  >
+                    <option value="">{form.country_id ? "Select city" : "Select country first"}</option>
+                    {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">

@@ -20,6 +20,7 @@ export type GeoState = {
 export type GeoCity = {
   id: number;
   name: string;
+  state_id: number | null;
 };
 
 // Module-level cache so data is fetched only once per session
@@ -64,6 +65,7 @@ async function fetchCities(stateId?: number | null, countryId?: number | null): 
   const data = responseItems<Record<string, unknown>>(res.data).map((item) => ({
     id: Number(item.id),
     name: String(item.city_name ?? item.name ?? ""),
+    state_id: item.state_id ? Number(item.state_id) : null,
   })).filter((item) => item.id && item.name);
   _citiesCache.set(cacheKey, data);
   return data;

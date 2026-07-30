@@ -8,6 +8,7 @@ import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCal
 import ActionModal from "@/components/operations/ActionModal";
 import CompletionChecklist from "@/components/operations/CompletionChecklist";
 import ReviewProfileHero from "@/components/operations/ReviewProfileHero";
+import LocationEditModal from "@/components/common/LocationEditModal";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import StatusBadge from "@/components/operations/StatusBadge";
@@ -22,6 +23,7 @@ import {
   setSupplierAccountState,
   ReviewRecord,
   updateCommercialValue,
+  updateReviewRecord,
 } from "@/lib/api/services/operationsService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -114,6 +116,7 @@ export default function SupplierDetailPage() {
   const [modal, setModal] = useState<"accept" | "reject" | "partial" | "commercial" | "deactivate" | "suspend" | "reject-item" | null>(null);
   const [activeTab, setActiveTab] = useState<"business" | "invoicing" | "documents" | "vehicles">("business");
   const [reviewTarget, setReviewTarget] = useState<{ type: "document" | "vehicle"; id: number } | null>(null);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   const approvalStatus = String(record?.approval_status || "").toLowerCase();
   const accountStatus = String(record?.status || "").toLowerCase();
@@ -128,6 +131,7 @@ export default function SupplierDetailPage() {
   const canCommercial = hasPermission("suppliers.manage_markup");
   const hasCommissionRequest = record?.commission_request_status === "pending";
   const canBlock = hasPermission("suppliers.edit") || hasPermission("suppliers.approve");
+  const canEditLocation = hasPermission("suppliers.edit");
   const canReviewItems = hasPermission("suppliers.approve") || hasPermission("suppliers.reject");
 
   const fetchRecord = useCallback(async () => {
@@ -180,6 +184,20 @@ export default function SupplierDetailPage() {
     }
   };
 
+  const saveLocation = async (value: { country_id: number | null; city_id: number | null }) => {
+    setSaving(true);
+    try {
+      await updateReviewRecord("suppliers", id, value);
+      toast.success("Supplier location updated.");
+      setLocationModalOpen(false);
+      await fetchRecord();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openRejectItem = (type: "document" | "vehicle", itemId: number) => {
     setReviewTarget({ type, id: itemId });
     setModal("reject-item");
@@ -224,6 +242,7 @@ export default function SupplierDetailPage() {
             <div className="flex flex-wrap gap-2">
               <Link href={`/admin/tours?supplier_id=${id}`} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><MapPin size={16} /> View Tours</Link>
               <Link href={`/admin/bookings?supplier_id=${id}`} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><CalendarDays size={16} /> View Bookings</Link>
+              {canEditLocation && <button onClick={() => setLocationModalOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><MapPin size={16} /> Edit Location</button>}
               {canApprove && <button onClick={() => setModal("accept")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"><CheckCircle2 size={16} /> Accept Supplier</button>}
               {canPartial && <button onClick={() => setModal("partial")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><ShieldHalf size={16} /> Request Changes</button>}
               {canReject && <button onClick={() => setModal("reject")} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700"><XCircle size={16} /> Reject</button>}
@@ -497,6 +516,15 @@ export default function SupplierDetailPage() {
             }}
             onSubmit={submitRejectItem}
             fields={[{ name: "rejection_reason", label: "Rejection reason", required: true }]}
+          />
+          <LocationEditModal
+            open={locationModalOpen}
+            title="Edit supplier location"
+            countryId={record.country_id ?? null}
+            cityId={record.city_id ?? null}
+            saving={saving}
+            onClose={() => setLocationModalOpen(false)}
+            onSave={(value) => void saveLocation(value)}
           />
         </div>
       ) : (

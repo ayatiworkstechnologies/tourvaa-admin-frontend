@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LuReceiptText as ReceiptText } from "react-icons/lu";
+import { LuDownload as Download, LuReceiptText as ReceiptText } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useToast } from "@/hooks/useToast";
 
 type Invoice = {
   id: number;
@@ -29,13 +30,34 @@ function dateText(value?: string) {
 
 export default function CustomerInvoicesPage() {
   const { format } = useCurrency();
+  const toast = useToast();
   const money = (value: string | number | undefined, currency = "USD") =>
     value == null || value === "" ? "-" : format(value, currency);
   const [rows, setRows] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const limit = 10;
+
+  async function handleDownload(invoice: Invoice) {
+    setDownloadingId(invoice.id);
+    try {
+      const response = await api.get(`/customer/invoices/${invoice.id}/download`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${invoice.invoice_number || `invoice-${invoice.id}`}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Could not download the invoice PDF.");
+    } finally {
+      setDownloadingId(null);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -68,7 +90,20 @@ export default function CustomerInvoicesPage() {
         action={{ label: "View Bookings", href: "/customer/bookings" }}
       />
       <div className="mt-4">
-        <DataTable ariaLabel="Customer invoices" columns={columns} rows={rows} loading={loading} page={page} pageSize={limit} total={total} totalPages={Math.ceil(total / limit) || 1} onPageChange={setPage} emptyTitle="No invoices found" emptyDescription="Invoices will appear here after booking confirmation." actions={(i) => i.booking_id ? <Link href={`/customer/bookings/${i.booking_id}`} className="inline-flex items-center gap-1 rounded-lg border border-[#D5E1EF] bg-white px-3 py-1.5 text-xs font-bold text-[#315174] hover:border-blue-300 hover:text-[#0865D9]">Booking</Link> : null} />
+        <DataTable ariaLabel="Customer invoices" columns={columns} rows={rows} loading={loading} page={page} pageSize={limit} total={total} totalPages={Math.ceil(total / limit) || 1} onPageChange={setPage} emptyTitle="No invoices found" emptyDescription="Invoices will appear here after booking confirmation." actions={(i) => (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleDownload(i)}
+              disabled={downloadingId === i.id}
+              className="inline-flex items-center gap-1 rounded-lg border border-[#D5E1EF] bg-white px-3 py-1.5 text-xs font-bold text-[#315174] hover:border-blue-300 hover:text-[#0865D9] disabled:opacity-60"
+            >
+              <Download size={13} />
+              {downloadingId === i.id ? "Downloading..." : "PDF"}
+            </button>
+            {i.booking_id ? <Link href={`/customer/bookings/${i.booking_id}`} className="inline-flex items-center gap-1 rounded-lg border border-[#D5E1EF] bg-white px-3 py-1.5 text-xs font-bold text-[#315174] hover:border-blue-300 hover:text-[#0865D9]">Booking</Link> : null}
+          </div>
+        )} />
       </div>
     </CustomerPageShell>
   );

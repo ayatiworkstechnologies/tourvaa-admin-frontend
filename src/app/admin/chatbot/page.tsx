@@ -60,9 +60,9 @@ export default function ChatbotFAQPage() {
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
-  const totalPages = Math.max(1, Math.ceil(faqs.length / pageSize));
-  const paginated = faqs.slice((page - 1) * pageSize, page * pageSize);
 
   const [activeTab, setActiveTab] = useState<"faqs" | "sessions">("faqs");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -75,16 +75,19 @@ export default function ChatbotFAQPage() {
   const [sessionMessages, setSessionMessages] = useState<ChatMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
 
-  const fetchFAQs = useCallback(async () => {
+  const fetchFAQs = useCallback(async (targetPage: number = page) => {
     setLoading(true);
     try {
-      const res = await api.get("/chatbot/admin/faqs");
-      setFaqs(res.data || []);
-      setPage(1);
+      const res = await api.get("/chatbot/admin/faqs", { params: { page: targetPage, limit: pageSize } });
+      const data = res.data ?? {};
+      setFaqs(data.items ?? []);
+      setTotal(data.total ?? 0);
+      setTotalPages(data.total_pages ?? 1);
     } finally {
       setLoading(false);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const fetchSessions = useCallback(async () => {
     setSessionsLoading(true);
@@ -301,11 +304,11 @@ export default function ChatbotFAQPage() {
                 <DataTable
                   ariaLabel="Chatbot FAQs table"
                   columns={columns}
-                  rows={paginated}
+                  rows={faqs}
                   loading={loading}
                   page={page}
                   pageSize={pageSize}
-                  total={faqs.length}
+                  total={total}
                   totalPages={totalPages}
                   onPageChange={setPage}
                   emptyTitle="No FAQs yet."

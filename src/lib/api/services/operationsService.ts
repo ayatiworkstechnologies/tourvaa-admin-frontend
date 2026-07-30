@@ -15,6 +15,8 @@ export type ReviewRecord = {
   type?: string;
   supplier_type?: string;
   agent_type?: string;
+  country_id?: number | null;
+  city_id?: number | null;
   country_name?: string;
   city_name?: string;
   years_in_operation?: number;

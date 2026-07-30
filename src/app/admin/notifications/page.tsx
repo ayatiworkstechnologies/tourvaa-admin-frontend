@@ -13,6 +13,7 @@ import {
 import { playNotificationSound, unlockNotificationSound } from "@/lib/utils/notificationSound";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import {
   isNotificationPushMessage,
   NOTIFICATION_REFRESH_EVENT,
@@ -36,6 +37,7 @@ function formatDate(iso?: string | null) {
 
 export default function NotificationsPage() {
   const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalNotifications, setTotalNotifications] = useState(0);
@@ -133,12 +135,17 @@ export default function NotificationsPage() {
 
   async function handleMarkAllRead() {
     if (!debouncedUserId) {
-      toast.error("Enter a User ID above to mark all of their notifications as read.");
-      return;
+      const ok = await confirm({
+        title: "Mark all notifications as read?",
+        message: "No User ID is entered, so this marks every user's notifications as read platform-wide. This cannot be undone.",
+        confirmLabel: "Mark all as read",
+        danger: true,
+      });
+      if (!ok) return;
     }
     setMarkingAll(true);
     try {
-      const result = await markAllNotificationsRead(Number(debouncedUserId));
+      const result = await markAllNotificationsRead(debouncedUserId ? Number(debouncedUserId) : undefined);
       toast.success(`Marked ${result.updated} notification(s) as read.`);
       await fetchNotifications();
     } catch {
@@ -201,6 +208,7 @@ export default function NotificationsPage() {
 
   return (
     <ModuleWrapper title="Notifications" requiredPermission="notifications.view">
+      {confirmDialog}
       <div className="space-y-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -229,6 +237,7 @@ export default function NotificationsPage() {
               type="button"
               onClick={() => void handleMarkAllRead()}
               disabled={markingAll}
+              title={debouncedUserId ? `Mark all notifications for User ${debouncedUserId} as read` : "Mark every user's notifications as read"}
               className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] transition hover:-translate-y-0.5 hover:bg-dash-brand-hover disabled:opacity-60"
             >
               <CheckCheck size={16} />

@@ -51,11 +51,13 @@ export async function markNotificationRead(notificationId: number | string) {
   return response.data.data;
 }
 
-export async function markAllNotificationsRead(userId: number) {
+export async function markAllNotificationsRead(userId?: number) {
+  // Omitting userId marks every user's notifications as read (admin-only,
+  // enforced server-side) - used for the platform-wide "mark all read".
   const response = await api.patch<ApiDataResponse<{ updated: number }>>(
     "/notifications/mark-all-read",
     undefined,
-    { params: { user_id: userId } }
+    { params: userId ? { user_id: userId } : {} }
   );
 
   return response.data.data;

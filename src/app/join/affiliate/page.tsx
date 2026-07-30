@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { LuArrowRight as ArrowRight, LuChartColumn as BarChart3, LuCircleCheckBig as CheckCircle2, LuLink2 as Link2, LuMegaphone as Megaphone, LuWallet as Wallet, LuZap as Zap } from "react-icons/lu";
+import publicApi from "@/lib/api/publicClient";
 
 const perks = [
   { icon: Link2, title: "Unique Referral Link", desc: "Get a personal tracking link to share across all your channels." },
@@ -33,24 +34,37 @@ export default function JoinAffiliatePage() {
   const [form, setForm] = useState({ name: "", email: "", website: "", audience: "" });
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const subject = `Affiliate application - ${form.name.trim()}`;
-    const body = [
-      `Name: ${form.name.trim()}`,
-      `Email: ${form.email.trim()}`,
-      `Website / social profile: ${form.website.trim() || "Not provided"}`,
-      "",
-      "Audience:",
-      form.audience.trim(),
-    ].join("\n");
-    window.location.href = `mailto:hello@tourvaa.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setSent(true);
-    setSubmitting(false);
+    setError("");
+    // There is no self-service affiliate account type yet (registration
+    // only supports Customer/Agent/Supplier), so this submits as a real
+    // lead through the same contact pipeline the /contact page uses -
+    // delivered by the backend, not left to the visitor's own mail client.
+    try {
+      await publicApi.post("/contact", {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        enquiry_type: "Affiliate application",
+        subject: `Affiliate application - ${form.name.trim()}`,
+        message: [
+          `Website / social profile: ${form.website.trim() || "Not provided"}`,
+          "",
+          "Audience:",
+          form.audience.trim(),
+        ].join("\n"),
+      });
+      setSent(true);
+    } catch {
+      setError("Could not submit your application right now. Please try again, or email hello@tourvaa.com directly.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -145,8 +159,8 @@ export default function JoinAffiliatePage() {
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50">
                     <CheckCircle2 size={34} className="text-violet-500" />
                   </div>
-                  <p className="mt-4 text-xl font-black text-zinc-950">Application email prepared</p>
-                  <p className="mt-2 text-sm text-slate-500">Complete and send the email in your mail application. The Tourvaa team will contact you after reviewing it.</p>
+                  <p className="mt-4 text-xl font-black text-zinc-950">Application received</p>
+                  <p className="mt-2 text-sm text-slate-500">Thanks for applying. The Tourvaa team will review your application and get back to you within 1-2 business days.</p>
                   <Link href="/" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-600">
                     Back to Home
                   </Link>
@@ -176,8 +190,9 @@ export default function JoinAffiliatePage() {
                       <label className={LABEL}>Tell us about your audience</label>
                       <textarea required rows={4} value={form.audience} onChange={(e) => set("audience", e.target.value)} placeholder="Platform, audience size, geographic focus, travel interests…" className={`${INPUT} resize-none`} />
                     </div>
+                    {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</p>}
                     <button type="submit" disabled={submitting} className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-500 py-3.5 text-sm font-bold text-white transition-all hover:bg-violet-600 disabled:opacity-55">
-                      {submitting ? "Preparing…" : <><span>Prepare Application Email</span> <ArrowRight size={15} /></>}
+                      {submitting ? "Submitting…" : <><span>Submit Application</span> <ArrowRight size={15} /></>}
                     </button>
                     <p className="text-center text-xs text-slate-400">We never share your details with third parties.</p>
                   </form>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuArrowLeft as ArrowLeft, LuCalendar as Calendar, LuCalendarCheck as CalendarCheck, LuCalendarX as CalendarX, LuCircleCheckBig as CheckCircle2, LuCreditCard as CreditCard, LuMail as Mail, LuMessageSquare as MessageSquare, LuWallet as Wallet, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuCalendar as Calendar, LuCalendarCheck as CalendarCheck, LuCalendarX as CalendarX, LuCircleCheckBig as CheckCircle2, LuCreditCard as CreditCard, LuMail as Mail, LuMapPin as MapPin, LuMessageSquare as MessageSquare, LuWallet as Wallet, LuCircleX as XCircle } from "react-icons/lu";
 import { useParams } from "next/navigation";
 
 import CustomerActionButtons from "@/components/customers/CustomerActionButtons";
@@ -13,6 +13,7 @@ import {
 } from "@/components/customers/CustomerHistoryTables";
 import CustomerProfileCard from "@/components/customers/CustomerProfileCard";
 import SendCustomerMessageModal from "@/components/customers/SendCustomerMessageModal";
+import LocationEditModal from "@/components/common/LocationEditModal";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import { useToast } from "@/hooks/useToast";
@@ -31,6 +32,7 @@ import {
   resetCustomerPassword,
   sendCustomerMessage,
   unblockCustomer,
+  updateCustomer,
 } from "@/lib/api/services/customerService";
 
 export default function CustomerDetailPage() {
@@ -46,8 +48,10 @@ export default function CustomerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"bookings" | "payments" | "communications">("bookings");
 
+  const canEditLocation = hasPermission("customers.edit");
   const canBlock = hasPermission("customers.block") || hasPermission("customers.edit");
   const canUnblock = hasPermission("customers.unblock") || hasPermission("customers.edit");
   const canReset = hasPermission("customers.reset_password") || hasPermission("customers.edit");
@@ -131,6 +135,20 @@ export default function CustomerDetailPage() {
     }
   };
 
+  const handleSaveLocation = async (value: { country_id: number | null; city_id: number | null }) => {
+    setSaving(true);
+    try {
+      await updateCustomer(customerId, value);
+      toast.success("Customer location updated.");
+      setLocationModalOpen(false);
+      await fetchCustomer();
+    } catch {
+      toast.error("Could not update customer location.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSendMessage = async (payload: { subject: string; message: string; booking_id?: number | null }) => {
     setSaving(true);
     try {
@@ -174,6 +192,16 @@ export default function CustomerDetailPage() {
               Back to customers
             </Link>
             <div className="flex flex-wrap gap-2">
+              {canEditLocation && (
+                <button
+                  type="button"
+                  onClick={() => setLocationModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"
+                >
+                  <MapPin size={16} />
+                  Edit Location
+                </button>
+              )}
               {canCommunicate && (
                 <button
                   type="button"
@@ -261,6 +289,15 @@ export default function CustomerDetailPage() {
             saving={saving}
             onClose={() => setMessageOpen(false)}
             onSend={handleSendMessage}
+          />
+          <LocationEditModal
+            open={locationModalOpen}
+            title="Edit customer location"
+            countryId={customer.country_id ?? null}
+            cityId={customer.city_id ?? null}
+            saving={saving}
+            onClose={() => setLocationModalOpen(false)}
+            onSave={(value) => void handleSaveLocation(value)}
           />
         </div>
       ) : (

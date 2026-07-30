@@ -70,8 +70,13 @@ check("affiliate profile sends supported website_url field", profile.includes("w
 check("affiliate self-edit is disabled when backend permission is unavailable", profile.includes('hasPermission("affiliates.approve")'));
 
 const affiliateJoin = read("src/app/join/affiliate/page.tsx");
-check("affiliate application no longer reports a fake API submission", affiliateJoin.includes("mailto:hello@tourvaa.com"));
-check("affiliate application clearly requires the user to send the email", affiliateJoin.includes("Complete and send the email"));
+// The affiliate application form used to fabricate a mailto: link and claim
+// success without actually delivering anything (a "fake API submission").
+// It now really submits through the same /contact endpoint the public
+// contact page uses, and surfaces a real error state if that call fails -
+// these checks guard against silently regressing back to the mailto stub.
+check("affiliate application submits through the real /contact endpoint, not a mailto stub", affiliateJoin.includes('publicApi.post("/contact"') && !affiliateJoin.includes("mailto:hello@tourvaa.com"));
+check("affiliate application surfaces a real failure state if the API call fails", affiliateJoin.includes("catch") && affiliateJoin.includes("setError"));
 
 const imageFormats = read("src/lib/uploads/imageFormats.ts");
 const adminAssetUpload = read("src/components/operations/AdminAssetUpload.tsx");

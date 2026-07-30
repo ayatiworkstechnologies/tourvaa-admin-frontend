@@ -188,9 +188,9 @@ export default function VehiclesTab() {
     }
   }
 
-  async function removePhoto(vehicleId: number, url: string) {
+  async function removePhoto(vehicleId: number, index: number) {
     try {
-      await api.delete(`/suppliers/me/vehicles/${vehicleId}/photos`, { params: { photo_url: url } });
+      await api.delete(`/suppliers/me/vehicles/${vehicleId}/photos`, { params: { photo_index: index } });
       await load();
     } catch (err) {
       toast.error(apiErr(err, "Could not remove photo."));
@@ -305,7 +305,7 @@ export default function VehiclesTab() {
                             <div key={i} className="relative">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={mediaUrl(url)} alt={`photo-${i}`} className="h-14 w-14 rounded-lg object-cover border border-dash-border" />
-                              <button type="button" onClick={() => removePhoto(v.id, url)}
+                              <button type="button" onClick={() => removePhoto(v.id, i)}
                                 className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600">
                                 <X size={9} />
                               </button>
