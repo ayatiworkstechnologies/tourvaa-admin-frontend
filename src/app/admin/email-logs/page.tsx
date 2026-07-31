@@ -55,6 +55,9 @@ export default function EmailLogsPage() {
     }
   }
 
+  // `search` is intentionally excluded -- it's applied only via the manual
+  // handleSearch submit below, not on every keystroke.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void load(); }, [page, status]);
 
   function handleSearch(e: React.FormEvent) {

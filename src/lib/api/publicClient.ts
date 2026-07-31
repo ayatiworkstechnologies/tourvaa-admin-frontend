@@ -96,7 +96,7 @@ export type CmsDestination = { id: number; title: string; image: string | null; 
 export type CmsReview = { id: number; reviewer_name: string; reviewer_image: string | null; rating: number; review_text: string; tour_name: string | null; country: string | null; sort_order: number; is_active: boolean };
 export type CmsExternalLink = { id: number; label: string; url: string; open_in_new_tab: boolean; location: string; sort_order: number; is_active: boolean };
 
-export async function fetchPublicTours(params: Record<string, string | number>) {
+export async function fetchPublicTours(params: Record<string, string | number | boolean>) {
   const res = await publicApi.get("/tours", { params });
   return res.data as { total: number; page: number; total_pages: number; items: PublicTour[] };
 }

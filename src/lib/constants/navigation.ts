@@ -33,6 +33,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Payments", module: "payments", href: "/admin/payments", icon: CreditCard, permissions: ["payments.view", "view-payments"], section: "Finance" },
   { label: "Invoices", module: "invoices", href: "/admin/invoices", icon: ReceiptText, permissions: ["invoices.view", "view-invoices"], section: "Finance" },
   { label: "Supplier Payouts", module: "supplier_ledger", href: "/admin/supplier-payouts", icon: Banknote, permissions: ["supplier_ledger.view", "view-supplier_ledger"], section: "Finance" },
+  { label: "Agent Payouts", module: "agent_ledger", href: "/admin/agent-payouts", icon: Banknote, permissions: ["agent_ledger.view", "view-agent_ledger"], section: "Finance" },
   { label: "Reports", module: "reports", href: "/admin/reports", icon: FileText, permissions: ["reports.view", "view-reports"], section: "Finance" },
   { label: "Website CMS", module: "website_cms", href: "/admin/cms", icon: Globe, permissions: ["website_cms.view", "view-website_cms", "settings.view", "view-settings"], section: "System" },
   { label: "Email Templates", module: "email", href: "/admin/email-templates", icon: Mail, permissions: ["email_templates.view", "email.view", "view-email"], section: "System" },

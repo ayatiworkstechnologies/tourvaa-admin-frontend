@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuLoaderCircle as Loader2, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuSearch as Search, LuShieldCheck as ShieldCheck, LuWalletCards as WalletCards } from "react-icons/lu";
@@ -11,8 +11,8 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 type Payout = {
   id: number;
   payout_code: string;
-  supplier_id?: number;
-  supplier_name?: string;
+  agent_id?: number;
+  agent_name?: string;
   total_amount: string;
   currency: string;
   payment_method: string;
@@ -46,7 +46,7 @@ function dateText(value?: string | null) {
   return date.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-export default function SupplierPayoutsAdminPage() {
+export default function AgentPayoutsAdminPage() {
   const toast = useToast();
   const { format: money } = useCurrency();
   const [payouts, setPayouts] = useState<Payout[]>([]);
@@ -64,15 +64,15 @@ export default function SupplierPayoutsAdminPage() {
     try {
       const params: Record<string, string> = { limit: "100" };
       if (filter !== "all") params.status = filter;
-      const res = await api.get("/supplier-payouts", { params });
+      const res = await api.get("/agent-payouts", { params });
       setPayouts(res.data?.items ?? res.data?.data ?? []);
       setPage(1);
     } catch (e: unknown) {
       const msg =
         (e as { response?: { data?: { detail?: string; message?: string } } })?.response?.data?.detail ??
         (e as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Could not load supplier payouts.";
-      setError(typeof msg === "string" ? msg : "Could not load supplier payouts.");
+        "Could not load agent payouts.";
+      setError(typeof msg === "string" ? msg : "Could not load agent payouts.");
       setPayouts([]);
     } finally {
       setLoading(false);
@@ -84,7 +84,7 @@ export default function SupplierPayoutsAdminPage() {
   async function approvePayout(id: number) {
     setActing(id);
     try {
-      await api.post(`/supplier-payouts/${id}/approve`);
+      await api.post(`/agent-payouts/${id}/approve`);
       toast.success("Payout approved.");
       await load();
     } catch (e: unknown) {
@@ -98,7 +98,7 @@ export default function SupplierPayoutsAdminPage() {
   async function markPaid(id: number) {
     setActing(id);
     try {
-      await api.post(`/supplier-payouts/${id}/mark-paid`);
+      await api.post(`/agent-payouts/${id}/mark-paid`);
       toast.success("Payout marked as paid.");
       await load();
     } catch (e: unknown) {
@@ -112,7 +112,7 @@ export default function SupplierPayoutsAdminPage() {
   const visiblePayouts = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return payouts;
-    return payouts.filter((p) => [p.payout_code, p.supplier_name, p.payment_method, p.status, p.reference_number]
+    return payouts.filter((p) => [p.payout_code, p.agent_name, p.payment_method, p.status, p.reference_number]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(q)));
   }, [payouts, search]);
@@ -150,12 +150,12 @@ export default function SupplierPayoutsAdminPage() {
       ),
     },
     {
-      key: "supplier",
-      header: "Supplier",
+      key: "agent",
+      header: "Agent",
       render: (p) => (
         <div>
-          <p className="text-sm font-bold text-dash-text">{p.supplier_name || `Supplier #${p.supplier_id ?? p.id}`}</p>
-          <p className="mt-0.5 text-xs text-dash-subtle">Requested by {p.initiator_name || "supplier"}</p>
+          <p className="text-sm font-bold text-dash-text">{p.agent_name || `Agent #${p.agent_id ?? p.id}`}</p>
+          <p className="mt-0.5 text-xs text-dash-subtle">Requested by {p.initiator_name || "agent"}</p>
         </div>
       ),
     },
@@ -170,13 +170,13 @@ export default function SupplierPayoutsAdminPage() {
   ];
 
   return (
-    <ModuleWrapper title="Supplier Payouts" requiredPermission="supplier_ledger.view">
+    <ModuleWrapper title="Agent Payouts" requiredPermission="agent_ledger.view">
       <div>
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-dash-brand">Finance Operations</p>
-          <h1 className="mt-1 text-2xl font-black text-dash-text">Supplier Payouts</h1>
-          <p className="mt-1 text-sm text-dash-muted">Approve supplier payout requests and mark released payments as paid.</p>
+          <h1 className="mt-1 text-2xl font-black text-dash-text">Agent Payouts</h1>
+          <p className="mt-1 text-sm text-dash-muted">Approve agent commission payout requests and mark released payments as paid.</p>
         </div>
         <button type="button" onClick={() => void load()} disabled={loading}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg-muted disabled:opacity-50 sm:w-auto">
@@ -209,7 +209,7 @@ export default function SupplierPayoutsAdminPage() {
             <div>
               <p className="text-xs font-bold uppercase text-amber-700">Latest pending request</p>
               <p className="mt-1 text-sm font-bold text-dash-text">
-                {latestPending.payout_code} - {latestPending.supplier_name || "Supplier"} - {money(latestPending.total_amount, latestPending.currency)}
+                {latestPending.payout_code} - {latestPending.agent_name || "Agent"} - {money(latestPending.total_amount, latestPending.currency)}
               </p>
             </div>
             <button type="button" onClick={() => approvePayout(latestPending.id)} disabled={acting === latestPending.id}
@@ -250,7 +250,7 @@ export default function SupplierPayoutsAdminPage() {
             </div>
           )}
           <DataTable
-            ariaLabel="Supplier Payouts"
+            ariaLabel="Agent Payouts"
             columns={columns}
             rows={paginatedPayouts}
             loading={loading}
@@ -261,7 +261,7 @@ export default function SupplierPayoutsAdminPage() {
             totalPages={totalPages}
             onPageChange={setPage}
             emptyTitle="No payout requests found"
-            emptyDescription="Supplier payout requests will appear here after suppliers submit them."
+            emptyDescription="Agent payout requests will appear here after agents submit them."
             actions={(p) => (
               <div className="flex justify-end gap-1.5">
                 {p.status === "pending" && (

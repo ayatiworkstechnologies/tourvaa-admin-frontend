@@ -154,7 +154,6 @@ export function TourWorkspaceTabs({
       el.removeEventListener("scroll", updateScrollState);
       window.removeEventListener("resize", updateScrollState);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabs]);
 
   useEffect(() => {

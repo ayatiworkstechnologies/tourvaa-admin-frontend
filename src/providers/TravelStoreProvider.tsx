@@ -15,12 +15,20 @@ export type TravelItem = {
   href?: string;
 };
 
+export const MAX_COMPARE_ITEMS = 4;
+const COMPARE_STORAGE_KEY = "tourvaa_compare";
+
 type TravelStore = {
   hydrated: boolean;
   wishlist: TravelItem[];
   wishlistCount: number;
   isWishlisted: (id: number) => boolean;
   toggleWishlist: (item: TravelItem) => void;
+  compareList: TravelItem[];
+  compareCount: number;
+  isCompared: (id: number) => boolean;
+  toggleCompare: (item: TravelItem) => { added: boolean; limitReached: boolean };
+  clearCompare: () => void;
 };
 
 type WishlistResponse = {
@@ -34,8 +42,42 @@ export function TravelStoreProvider({ children }: { children: React.ReactNode })
   const { isLoggedIn, loading: authLoading, user } = useAuthContext();
   const [hydrated, setHydrated] = useState(false);
   const [wishlist, setWishlist] = useState<TravelItem[]>([]);
+  const [compareList, setCompareList] = useState<TravelItem[]>([]);
   const roleSlug = user?.role?.slug ?? "";
   const canUseWishlist = isLoggedIn && roleSlug === "customer";
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(COMPARE_STORAGE_KEY);
+      if (raw) setCompareList(JSON.parse(raw));
+    } catch {
+      // ignore malformed/inaccessible storage
+    }
+  }, []);
+
+  const toggleCompare = useCallback((item: TravelItem) => {
+    const exists = compareList.some((saved) => saved.id === item.id);
+    if (!exists && compareList.length >= MAX_COMPARE_ITEMS) {
+      return { added: false, limitReached: true };
+    }
+    const next = exists ? compareList.filter((saved) => saved.id !== item.id) : [...compareList, item];
+    setCompareList(next);
+    try {
+      window.localStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // ignore write failures (private browsing, quota, etc.)
+    }
+    return { added: !exists, limitReached: false };
+  }, [compareList]);
+
+  const clearCompare = useCallback(() => {
+    setCompareList([]);
+    try {
+      window.localStorage.removeItem(COMPARE_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     if (authLoading) return;
@@ -98,7 +140,12 @@ export function TravelStoreProvider({ children }: { children: React.ReactNode })
     wishlistCount: wishlist.length,
     isWishlisted: (id) => wishlist.some((item) => item.id === id),
     toggleWishlist,
-  }), [hydrated, toggleWishlist, wishlist]);
+    compareList,
+    compareCount: compareList.length,
+    isCompared: (id) => compareList.some((item) => item.id === id),
+    toggleCompare,
+    clearCompare,
+  }), [hydrated, wishlist, toggleWishlist, compareList, toggleCompare, clearCompare]);
 
   return <TravelStoreContext.Provider value={value}>{children}</TravelStoreContext.Provider>;
 }

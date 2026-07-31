@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuBriefcaseBusiness as BriefcaseBusiness, LuCalendarCheck as CalendarCheck, LuFileText as FileText, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuUser as User, LuUsers as Users } from "react-icons/lu";
+import { LuBanknote as Banknote, LuBriefcaseBusiness as BriefcaseBusiness, LuCalendarCheck as CalendarCheck, LuFileText as FileText, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuUser as User, LuUsers as Users } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
@@ -15,6 +15,7 @@ const NAV = [
   { href: "/agent/bookings", icon: CalendarCheck, label: "Bookings", section: "Sales Workspace" },
   { href: "/agent/customers", icon: Users, label: "My Customers", section: "Sales Workspace" },
   { href: "/agent/invoices", icon: FileText, label: "Invoices", section: "Finance" },
+  { href: "/agent/payouts", icon: Banknote, label: "Payouts", section: "Finance" },
   { href: "/agent/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
   { href: "/agent/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
@@ -25,6 +26,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/agent/bookings": "Bookings",
   "/agent/customers": "My Customers",
   "/agent/invoices": "Invoices",
+  "/agent/payouts": "Payouts",
   "/agent/messages": "Messages",
   "/agent/profile": "My Profile",
 };

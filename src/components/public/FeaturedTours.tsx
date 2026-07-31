@@ -56,7 +56,7 @@ export default function FeaturedTours() {
   useEffect(() => {
     fetchFeaturedTours(4)
       .then(setTours)
-      .catch(() => {})
+      .catch((error) => console.error("Failed to load featured tours, falling back to static list", error))
       .finally(() => setLoaded(true));
   }, []);
 

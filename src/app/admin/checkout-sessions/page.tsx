@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import api from "@/lib/api/client";
@@ -35,7 +35,7 @@ export default function CheckoutSessionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [status, setStatus] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, string | number> = { page, limit: PAGE_SIZE };
@@ -49,9 +49,9 @@ export default function CheckoutSessionsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, status]);
 
-  useEffect(() => { void load(); }, [page, status]);
+  useEffect(() => { void load(); }, [load]);
 
   const columns: DataTableColumn<CheckoutSession>[] = [
     { key: "session_key", header: "Session Key", className: "font-mono text-xs text-dash-subtle" },

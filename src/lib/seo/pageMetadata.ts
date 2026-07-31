@@ -20,6 +20,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/blogs/[slug]": { title: "Travel Guide", description: "Read destination insights, practical travel advice, and trip inspiration from the Tourvaa travel guide." },
   "/booking/[id]": { title: "Complete Your Booking", description: "Review travellers, trip options, pricing, and secure payment details to complete your Tourvaa booking.", index: false },
   "/cart": { title: "Your Cart", description: "Review saved Tourvaa packages and continue securely to booking.", index: false },
+  "/compare": { title: "Compare Tours", description: "Compare price, duration, inclusions, and ratings across your saved Tourvaa tours side by side.", index: false },
   "/cancellation-policy": { title: "Cancellation Policy", description: "Understand Tourvaa cancellation timelines, refund eligibility, supplier conditions, and booking change procedures." },
   "/contact": { title: "Contact Us", description: "Contact the Tourvaa team for booking assistance, tour questions, partnership enquiries, or platform support." },
   "/cookie-policy": { title: "Cookie Policy", description: "Learn how Tourvaa uses cookies and similar technologies to operate, secure, and improve the website." },
@@ -74,6 +75,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/admin/settings/countries": { title: "Country Settings", description: "Manage supported countries, currencies, and localization details.", index: false },
   "/admin/settings/payment": { title: "Payment Settings", description: "Configure Tourvaa payment gateways, currencies, and checkout settings.", index: false },
   "/admin/supplier-payouts": { title: "Supplier Payouts", description: "Review supplier balances, payout requests, approvals, and payment status.", index: false },
+  "/admin/agent-payouts": { title: "Agent Payouts", description: "Review agent commission balances, payout requests, approvals, and payment status.", index: false },
   "/admin/suppliers": { title: "Supplier Management", description: "Review supplier accounts, verification, vehicles, tours, and commercial settings.", index: false },
   "/admin/suppliers/[id]": { title: "Supplier Verification", description: "Review supplier business details, documents, vehicles, and approval status.", index: false },
   "/admin/tour-approval": { title: "Tour Approvals", description: "Review submitted tour versions and approve or reject publication changes.", index: false },
@@ -92,6 +94,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/agent/bookings/[id]": { title: "Agent Booking Details", description: "Review travellers, pricing, payment, supplier acceptance, and booking execution.", index: false },
   "/agent/customers": { title: "Agent Customers", description: "Create and manage customer profiles used for agency tour bookings.", index: false },
   "/agent/invoices": { title: "Agent Invoices", description: "Review and download invoices for bookings created by your agency.", index: false },
+  "/agent/payouts": { title: "Agent Payouts", description: "Review commission payout history and request eligible agent earnings.", index: false },
   "/agent/messages": { title: "Agent Messages", description: "View agency support conversations and contact the Tourvaa team.", index: false },
   "/agent/profile": { title: "Agent Profile & Verification", description: "Manage agency details, security, required documents, and verification status.", index: false },
 

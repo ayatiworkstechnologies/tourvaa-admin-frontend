@@ -5,7 +5,7 @@ import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save,
 import { CalendarEntry, getCalendar, createCalendarEntry, updateCalendarEntry, deleteCalendarEntry, UnavailableDate, getUnavailableDates, createUnavailableDate, deleteUnavailableDate } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
-import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import DataTable from "@/components/ui/DataTable";
 import DatePicker from "@/components/ui/DatePicker";
 
 const STATUSES = ["available", "unavailable", "sold_out", "blocked"];

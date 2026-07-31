@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuPlus as Plus, LuRefreshCw as RefreshCw, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuPlane as Plane, LuRefreshCw as RefreshCw, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
@@ -113,7 +113,8 @@ export default function AgentBookingsPage() {
 
   const stats = [
     { label: "Total Bookings", value: Object.values(statusCounts).reduce((sum, count) => sum + count, 0), icon: CalendarCheck, tone: "bg-blue-50 text-blue-700" },
-    { label: "Confirmed", value: (statusCounts.confirmed ?? 0) + (statusCounts.ready_to_travel ?? 0) + (statusCounts.upcoming ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-700" },
+    { label: "Confirmed", value: (statusCounts.confirmed ?? 0) + (statusCounts.upcoming ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-700" },
+    { label: "Ready to Travel", value: statusCounts.ready_to_travel ?? 0, icon: Plane, tone: "bg-sky-50 text-sky-700" },
     { label: "Pending", value: (statusCounts.pending_payment ?? 0) + (statusCounts.pending_credit_approval ?? 0) + (statusCounts.pending_supplier_assignment ?? 0) + (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0) + (statusCounts.supplier_reassignment_required ?? 0) + (statusCounts.cancellation_requested ?? 0), icon: Clock3, tone: "bg-amber-50 text-amber-700" },
     { label: "Cancelled", value: (statusCounts.cancelled ?? 0) + (statusCounts.declined ?? 0) + (statusCounts.refunded ?? 0), icon: XCircle, tone: "bg-rose-50 text-rose-700" },
   ];
@@ -138,7 +139,7 @@ export default function AgentBookingsPage() {
       />
 
       {/* Stats */}
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {stats.map(({ label, value, icon, tone }) => <AgentMetric key={label} label={label} value={value} icon={icon} tone={tone} />)}
       </div>
 

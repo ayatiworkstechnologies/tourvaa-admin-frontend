@@ -19,11 +19,13 @@ import {
   LuMinus as Minus,
   LuPlus as Plus,
   LuQuote as Quote,
+  LuScale as Scale,
   LuSearch as Search,
   LuShieldCheck as ShieldCheck,
   LuStar as Star,
   LuUsers as Users,
 } from "react-icons/lu";
+import { useToast } from "@/hooks/useToast";
 import {
   CmsBanner,
   CmsDestination,
@@ -38,7 +40,7 @@ import {
   PublicCategory,
   PublicTour,
 } from "@/lib/api/publicClient";
-import { useTravelStore } from "@/providers/TravelStoreProvider";
+import { MAX_COMPARE_ITEMS, useTravelStore } from "@/providers/TravelStoreProvider";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -57,6 +59,12 @@ type Tour = {
 };
 
 const PLACEHOLDER_IMAGE = "/images/tour-card-fallback.jpg";
+
+function stableHash(value: string): number {
+  let hash = 5381;
+  for (let i = 0; i < value.length; i += 1) hash = (hash * 33) ^ value.charCodeAt(i);
+  return hash >>> 0;
+}
 
 function mapPublicTour(tour: PublicTour): Tour {
   return {
@@ -96,13 +104,33 @@ function Reveal({ children, className = "" }: { children: React.ReactNode; class
   return <div ref={ref} className={`reveal-block ${className}`}>{children}</div>;
 }
 
+const MONTH_CODES: Record<string, string> = { Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06", Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12" };
+
+function travelDateToMonth(value: string): string {
+  const match = value.match(/([A-Za-z]{3})[a-z]*\s+(\d{4})/);
+  if (!match) return "";
+  const code = MONTH_CODES[match[1] as keyof typeof MONTH_CODES];
+  return code ? `${match[2]}-${code}` : "";
+}
+
+function durationToRange(value: string): { min?: string; max?: string } {
+  switch (value) {
+    case "Day Tours": return { max: "1" };
+    case "2 - 6 Days": return { min: "2", max: "6" };
+    case "7 - 10 Days": return { min: "7", max: "10" };
+    case "11 - 14 Days": return { min: "11", max: "14" };
+    case "15+ Days": return { min: "15" };
+    default: return {};
+  }
+}
+
 function HomeSearch() {
   const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<"destination" | "date" | "duration" | "passengers" | null>(null);
   const [destination, setDestination] = useState("India");
-  const [travelDate, setTravelDate] = useState("02 Jul 2026");
-  const [duration, setDuration] = useState("7 - 10 Days");
+  const [travelDate, setTravelDate] = useState("Anytime");
+  const [duration, setDuration] = useState("Any Duration");
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(1);
 
@@ -118,7 +146,12 @@ function HomeSearch() {
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const params = new URLSearchParams({ country: destination, travel_date: travelDate, duration, adults: String(adults), children: String(children) });
+    const params = new URLSearchParams({ country: destination });
+    const departureMonth = travelDateToMonth(travelDate);
+    if (departureMonth) params.set("departure_month", departureMonth);
+    const { min, max } = durationToRange(duration);
+    if (min) params.set("min_days", min);
+    if (max) params.set("max_days", max);
     router.push(`/tours?${params.toString()}`);
     setOpen(null);
   };
@@ -169,10 +202,23 @@ function DestinationPanel({ selected, onSelect }: { selected: string; onSelect: 
   return <div className={panelClass}><p className="rounded-md bg-slate-50 px-3 py-2 text-center text-[10px] font-semibold text-blue-600">Other popular destinations</p><div className="mt-2 space-y-1">{countries.map(([flag, name]) => <button key={name} type="button" onClick={() => onSelect(name)} className={`flex w-full items-center gap-3 rounded-md border px-3 py-2 text-[11px] font-semibold transition ${selected === name ? "border-blue-400 bg-blue-50" : "border-transparent hover:bg-slate-50"}`}><span className="text-base">{flag}</span>{name}</button>)}</div></div>;
 }
 
+function monthMeta(monthsAhead: number) {
+  const today = new Date();
+  const first = new Date(today.getFullYear(), today.getMonth() + monthsAhead, 1);
+  return {
+    label: new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(first),
+    shortMonth: new Intl.DateTimeFormat("en", { month: "short" }).format(first),
+    year: first.getFullYear(),
+    start: first.getDay(),
+    days: new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate(),
+  };
+}
+
 function DatePanel({ selected, onApply }: { selected: string; onApply: (value: string) => void }) {
   const [mode, setMode] = useState<"flexible" | "specific">("flexible");
-  const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState("Jul");
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(new Intl.DateTimeFormat("en", { month: "short" }).format(now));
   const [anytime, setAnytime] = useState(false);
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -185,8 +231,8 @@ function DatePanel({ selected, onApply }: { selected: string; onApply: (value: s
 
       {mode === "flexible" ? (
         <div key="flexible" className="date-panel-content grid gap-4 sm:grid-cols-2">
-          <CalendarMonth month="July 2026" start={3} selected={selected} onSelect={onApply} />
-          <CalendarMonth month="August 2026" start={6} selected={selected} onSelect={onApply} />
+          <CalendarMonth {...monthMeta(0)} selected={selected} onSelect={onApply} />
+          <CalendarMonth {...monthMeta(1)} selected={selected} onSelect={onApply} />
         </div>
       ) : (
         <div key="specific" className="date-panel-content">
@@ -208,10 +254,8 @@ function DatePanel({ selected, onApply }: { selected: string; onApply: (value: s
   );
 }
 
-function CalendarMonth({ month, start, selected, onSelect }: { month: string; start: number; selected: string; onSelect: (value: string) => void }) {
-  const days = month.startsWith("July") ? 31 : 31;
-  const shortMonth = month.slice(0, 3);
-  return <div><div className="mb-3 flex items-center justify-between"><b className="text-xs">{month}</b><span className="flex gap-1"><button type="button" className="h-6 w-6 rounded transition hover:-translate-x-0.5 hover:bg-slate-100">‹</button><button type="button" className="h-6 w-6 rounded transition hover:translate-x-0.5 hover:bg-slate-100">›</button></span></div><div className="grid grid-cols-7 text-center text-[9px] text-slate-400">{["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => <span key={day} className="py-1">{day}</span>)}</div><div className="calendar-days grid grid-cols-7 gap-1 text-center text-[10px] font-semibold">{Array.from({ length: start }).map((_, i) => <span key={`blank-${i}`} />)}{Array.from({ length: days }).map((_, i) => { const value = `${String(i + 1).padStart(2, "0")} ${shortMonth} 2026`; const active = selected === value; return <button type="button" key={value} onClick={() => onSelect(value)} className={`aspect-square rounded transition hover:bg-blue-100 hover:text-blue-700 ${active ? "is-selected bg-blue-600 text-white" : "text-slate-700"}`}>{String(i + 1).padStart(2, "0")}</button>; })}</div></div>;
+function CalendarMonth({ label, shortMonth, year, start, days, selected, onSelect }: { label: string; shortMonth: string; year: number; start: number; days: number; selected: string; onSelect: (value: string) => void }) {
+  return <div><div className="mb-3 flex items-center justify-between"><b className="text-xs">{label}</b><span className="flex gap-1"><button type="button" className="h-6 w-6 rounded transition hover:-translate-x-0.5 hover:bg-slate-100">‹</button><button type="button" className="h-6 w-6 rounded transition hover:translate-x-0.5 hover:bg-slate-100">›</button></span></div><div className="grid grid-cols-7 text-center text-[9px] text-slate-400">{["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => <span key={day} className="py-1">{day}</span>)}</div><div className="calendar-days grid grid-cols-7 gap-1 text-center text-[10px] font-semibold">{Array.from({ length: start }).map((_, i) => <span key={`blank-${i}`} />)}{Array.from({ length: days }).map((_, i) => { const value = `${String(i + 1).padStart(2, "0")} ${shortMonth} ${year}`; const active = selected === value; return <button type="button" key={value} onClick={() => onSelect(value)} className={`aspect-square rounded transition hover:bg-blue-100 hover:text-blue-700 ${active ? "is-selected bg-blue-600 text-white" : "text-slate-700"}`}>{String(i + 1).padStart(2, "0")}</button>; })}</div></div>;
 }
 
 function DurationPanel({ selected, onSelect }: { selected: string; onSelect: (value: string) => void }) {
@@ -244,16 +288,27 @@ function Stars({ reviews: count }: { reviews?: string }) {
 }
 
 function TourCard({ tour, discount }: { tour: Tour; discount?: boolean }) {
-  const { isWishlisted, toggleWishlist } = useTravelStore();
+  const { isWishlisted, toggleWishlist, isCompared, toggleCompare } = useTravelStore();
   const { format } = useCurrency();
-  const fallbackId = -Math.abs(Array.from(tour.title).reduce((total, character) => total + character.charCodeAt(0), 0));
-  const itemId = tour.id ?? fallbackId;
+  const toast = useToast();
+  const itemId = tour.id ?? stableHash(tour.slug || tour.title);
   const wishlisted = isWishlisted(itemId);
+  const compared = tour.id != null && isCompared(tour.id);
   const href = tour.id ? publicTourUrl(tour) : `/tours?search=${encodeURIComponent(tour.title)}`;
   const travelItem = { id: itemId, title: tour.title, place: tour.place, image: tour.image, price: tour.rawPrice ?? null, currency: tour.currency || "USD", duration: tour.days, href };
+  const onToggleCompare = () => {
+    if (tour.id == null) return;
+    const { limitReached } = toggleCompare(travelItem);
+    if (limitReached) toast.error(`You can compare up to ${MAX_COMPARE_ITEMS} tours at a time.`);
+  };
   return (
     <article className="group relative w-[275px] shrink-0 overflow-hidden rounded-xl border border-slate-100 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,.07)] transition duration-500 hover:-translate-y-2 hover:shadow-xl sm:w-[310px] lg:w-[calc((100vw-7rem)/4)] xl:w-[306px]">
-      <button type="button" onClick={() => toggleWishlist(travelItem)} aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`} className={`absolute right-5 top-5 z-20 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur transition hover:scale-110 ${wishlisted ? "bg-red-500 text-white" : "bg-black/15 text-white hover:bg-white hover:text-red-500"}`}><Heart size={17} className={wishlisted ? "fill-current" : ""} /></button>
+      <div className="absolute right-5 top-5 z-20 flex flex-col gap-2">
+        <button type="button" onClick={() => toggleWishlist(travelItem)} aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`} className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur transition hover:scale-110 ${wishlisted ? "bg-red-500 text-white" : "bg-black/15 text-white hover:bg-white hover:text-red-500"}`}><Heart size={17} className={wishlisted ? "fill-current" : ""} /></button>
+        {tour.id != null && (
+          <button type="button" onClick={onToggleCompare} aria-label={compared ? `Remove ${tour.title} from comparison` : `Add ${tour.title} to comparison`} className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur transition hover:scale-110 ${compared ? "bg-blue-600 text-white" : "bg-black/15 text-white hover:bg-white hover:text-blue-600"}`}><Scale size={16} /></button>
+        )}
+      </div>
       <Link href={href} aria-label={`View ${tour.title}`} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
         <div className="relative h-44 overflow-hidden rounded-lg">
           <img src={tour.image} alt={tour.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
@@ -328,7 +383,7 @@ export default function Home() {
         }
         const places = destinationResult.value.slice(0, 5).map((item) => mapDestination(item, tourCounts));
         setDynamicPlaces(places);
-        Promise.allSettled(places.map((place) => fetchPublicTours({ country: place.name, sort: "price_asc", limit: 1 }))).then((priceResults) => {
+        Promise.allSettled(places.map((place) => fetchPublicTours({ country: place.name, sort: "price_asc", limit: 1, available_only: true }))).then((priceResults) => {
           if (!active) return;
           setDynamicPlaces((current) => current.map((place, index) => {
             const result = priceResults[index];
@@ -476,7 +531,7 @@ function TravelStylesSection({ categories, loading: parentLoading }: { categorie
     if (!active) return;
     let cancelled = false;
     setLoading(true);
-    fetchPublicTours({ category: active.slug, sort: "newest", limit: 4 })
+    fetchPublicTours({ category: active.slug, sort: "newest", limit: 4, available_only: true })
       .then((result) => { if (!cancelled) setTours(result.items.map(mapPublicTour)); })
       .catch(() => { if (!cancelled) setTours([]); })
       .finally(() => { if (!cancelled) setLoading(false); });

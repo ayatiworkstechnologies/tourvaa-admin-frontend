@@ -1,0 +1,336 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus } from "react-icons/lu";
+import api from "@/lib/api/client";
+import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
+import { useCurrency } from "@/hooks/useCurrency";
+
+type Payout = {
+  id: number;
+  payout_code?: string;
+  amount?: number | string;
+  total_amount?: number | string;
+  currency?: string;
+  status?: string;
+  payment_method?: string;
+  notes?: string;
+  created_at?: string;
+  paid_at?: string;
+};
+
+type LedgerEntry = {
+  amount_pending?: number | string;
+  currency?: string;
+  status?: string;
+};
+
+function statusColors(s: string) {
+  const v = (s || "").toLowerCase();
+  if (["paid", "completed", "settled"].includes(v))
+    return "bg-emerald-50 text-emerald-700";
+  if (["pending", "processing", "approved"].includes(v))
+    return "bg-amber-50 text-amber-700";
+  if (["failed", "rejected", "cancelled"].includes(v))
+    return "bg-red-50 text-red-600";
+  return "bg-slate-50 text-slate-600";
+}
+
+const inputCls =
+  "w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
+const labelCls = "block text-xs font-bold text-dash-body mb-1.5";
+
+export default function AgentPayoutsPage() {
+  const { format: money } = useCurrency();
+  const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showForm, setShowForm] = useState(false);
+
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [payoutRes, ledgerRes] = await Promise.all([
+        api.get("/agent-payouts", { params: { limit: 20 } }),
+        api.get("/agent-ledgers", { params: { limit: 100 } }),
+      ]);
+      setPayouts(payoutRes.data?.items ?? payoutRes.data?.data ?? payoutRes.data ?? []);
+      setLedgers(ledgerRes.data?.items ?? ledgerRes.data?.data ?? []);
+    } catch {
+      setError("Failed to load payouts. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const availableBalance = useMemo(() => ledgers
+    .filter((entry) => ["pending", "partial"].includes((entry.status || "").toLowerCase()) && (entry.currency || "USD") === currency)
+    .reduce((sum, entry) => sum + Number(entry.amount_pending || 0), 0), [ledgers, currency]);
+
+  const handleRequestPayout = async () => {
+    if (!amount || Number(amount) <= 0) {
+      setFormError("Please enter a valid amount.");
+      return;
+    }
+    if (Number(amount) > availableBalance) {
+      setFormError(`Requested amount cannot exceed the available balance of ${money(availableBalance, currency)}.`);
+      return;
+    }
+    setSubmitting(true);
+    setFormError("");
+    setFormSuccess(false);
+    try {
+      await api.post("/agent-payouts", {
+        amount: Number(amount),
+        currency,
+        payment_method: paymentMethod,
+        notes: notes || undefined,
+      });
+      setFormSuccess(true);
+      setShowForm(false);
+      setAmount("");
+      setNotes("");
+      void load();
+    } catch (e: unknown) {
+      const msg =
+        (e as { response?: { data?: { detail?: string; message?: string } } })
+          ?.response?.data?.detail ??
+        (e as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ??
+        "Failed to request payout.";
+      setFormError(typeof msg === "string" ? msg : "Failed to request payout.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <AgentPageShell>
+      <AgentPageHeader title="Payouts" description="Request available commission earnings and track every approval, release, and payment reference." icon={Banknote} eyebrow="Agent Finance">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-[11px] text-[#63728B]">Only available, unreserved ledger balances can be requested.</span>
+          <button
+            type="button"
+            onClick={() => {
+              setShowForm((v) => !v);
+              setFormError("");
+              setFormSuccess(false);
+            }}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-[#1D4ED8]"
+          >
+            <Plus size={16} />
+            Request Payout
+          </button>
+        </div>
+      </AgentPageHeader>
+
+      {formSuccess && (
+        <div className="mt-4 mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+          <CheckCircle2 size={16} />
+          Payout request submitted successfully!
+        </div>
+      )}
+
+      {showForm && (
+        <div className="mt-4 mb-6 rounded-2xl border border-blue-200 bg-blue-50/50 p-5 shadow-sm">
+          <h2 className="mb-4 text-base font-black text-dash-text">
+            Request Payout
+          </h2>
+          <p className="mb-4 text-sm text-dash-muted">Available to request: <strong className="text-blue-700">{money(availableBalance, currency)}</strong>. Amounts already reserved in another request are excluded.</p>
+          {formError && (
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+              <AlertCircle size={16} />
+              {formError}
+            </div>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>
+                Amount <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={availableBalance}
+                step={0.01}
+                className={inputCls}
+                placeholder="e.g. 500"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Currency</label>
+              <select
+                title="Currency"
+                className={inputCls}
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              >
+                <option value="AED">AED</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="INR">INR</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Payment Method</label>
+              <select
+                title="Payment method"
+                className={inputCls}
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="cheque">Cheque</option>
+                <option value="online">Online Payment</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Notes</label>
+              <input
+                className={inputCls}
+                placeholder="Optional notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={handleRequestPayout}
+              disabled={submitting || availableBalance <= 0}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"
+            >
+              {submitting ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <CheckCircle2 size={15} />
+              )}
+              {submitting ? "Submitting..." : "Submit Request"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg-muted"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-4 mb-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+          <span className="flex items-center gap-2">
+            <AlertCircle size={16} />
+            {error}
+          </span>
+          <button
+            type="button"
+            onClick={load}
+            className="text-xs font-bold underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="mt-4 space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-16 animate-pulse rounded-xl border border-dash-border bg-white"
+            />
+          ))}
+        </div>
+      )}
+
+      {!loading && !error && payouts.length === 0 && (
+        <div className="mt-4 rounded-xl border border-dashed border-[#D0D5DD] bg-white py-16 text-center">
+          <Banknote size={36} className="mx-auto text-[#D0D5DD]" />
+          <p className="mt-4 text-base font-bold text-dash-muted">
+            No payout requests yet
+          </p>
+          <p className="mt-1 text-sm text-dash-subtle">
+            Submit a payout request and it will appear here.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700"
+          >
+            <Plus size={16} />
+            Request Payout
+          </button>
+        </div>
+      )}
+
+      {!loading && payouts.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {payouts.map((p) => (
+            <div
+              key={p.id}
+              className="flex flex-col gap-3 rounded-xl border border-dash-border bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+                  <Banknote size={18} className="text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-dash-text">
+                    {p.payout_code ?? `Payout #${p.id}`}
+                  </p>
+                  <p className="text-xs text-dash-muted">
+                    {p.payment_method?.replace(/_/g, " ") ?? "Bank Transfer"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-dash-subtle">
+                    Requested:{" "}
+                    {(p.created_at ?? "").split("T")[0] || "-"}
+                    {p.paid_at
+                      ? ` - Paid: ${p.paid_at.split("T")[0]}`
+                      : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="font-black text-dash-text">
+                    {money(p.total_amount ?? p.amount, p.currency)}
+                  </p>
+                  {p.notes && (
+                    <p className="max-w-[160px] truncate text-xs text-dash-subtle">
+                      {p.notes}
+                    </p>
+                  )}
+                </div>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-bold ${statusColors(p.status ?? "")}`}
+                >
+                  {p.status ?? "pending"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </AgentPageShell>
+  );
+}

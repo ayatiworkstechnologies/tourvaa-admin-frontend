@@ -27,8 +27,8 @@ export default function AffiliateProfilePage() {
         phone: d.phone || "",
         website_url: d.website_url || "",
       }));
-    }).catch(() => {});
-  }, [affiliateId, user]);
+    }).catch(() => toast.error("Failed to load profile details."));
+  }, [affiliateId, user, toast]);
 
   const set = (k: keyof ProfileForm, v: string) => { setState("idle"); setForm(f => ({ ...f, [k]: v })); };
 

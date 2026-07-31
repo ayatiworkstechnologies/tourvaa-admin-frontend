@@ -14,6 +14,7 @@ import {
   LuLogOut as LogOut,
   LuMenu as Menu,
   LuPlane as Plane,
+  LuScale as Scale,
   LuUserRound as User,
   LuX as X,
 } from "react-icons/lu";
@@ -37,13 +38,21 @@ export default function PublicHeader() {
   const [scrolled, setScrolled] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const { isLoggedIn, dashboard, user, logout } = useAuthContext();
-  const { wishlistCount } = useTravelStore();
+  const { wishlistCount, compareCount } = useTravelStore();
   const dashboardPath = getDashboardPath(dashboard?.user?.role?.slug ?? "");
   const roleSlug = dashboard?.user?.role?.slug ?? "";
   const profilePath =
     roleSlug === "customer"
       ? "/customer/profile"
       : `${dashboardPath.replace(/\/dashboard$/, "")}/profile`;
+  const bookingsPath =
+    roleSlug === "customer"
+      ? "/customer/bookings"
+      : roleSlug === "agent-reseller"
+        ? "/agent/bookings"
+        : roleSlug === "supplier"
+          ? "/supplier/bookings"
+          : null;
   useEffect(() => {
     const listen = () => setScrolled(window.scrollY > 24);
     listen();
@@ -95,6 +104,21 @@ export default function PublicHeader() {
               </span>
             )}
           </Link>
+          <Link
+            href="/compare"
+            className="group relative flex flex-col items-center gap-1 text-[9px] font-semibold"
+          >
+            <Scale
+              size={17}
+              className="transition group-hover:-translate-y-1 group-hover:text-blue-600"
+            />
+            Compare
+            {compareCount > 0 && (
+              <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">
+                {compareCount}
+              </span>
+            )}
+          </Link>
           <span className="flex flex-col items-center gap-0.5 text-[9px] font-semibold">
             <Globe size={17} />
             <span className="flex items-center gap-1 [&_select]:border-0 [&_select]:bg-transparent [&_select]:p-0 [&_select]:text-[9px]">
@@ -127,7 +151,7 @@ export default function PublicHeader() {
                   name={user?.name}
                   dashboardPath={dashboardPath}
                   profilePath={profilePath}
-                  customer={roleSlug === "customer"}
+                  bookingsPath={bookingsPath}
                   onClose={() => setProfileOpen(false)}
                   onLogout={logout}
                 />
@@ -166,6 +190,14 @@ export default function PublicHeader() {
             <Heart size={15} />
             Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
           </Link>
+          <Link
+            href="/compare"
+            onClick={() => setOpen(false)}
+            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-blue-50 px-3 py-3 text-xs font-bold text-blue-700"
+          >
+            <Scale size={15} />
+            Compare {compareCount > 0 && `(${compareCount})`}
+          </Link>
           <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
             {isLoggedIn ? "Your account" : "Account login"}
           </p>
@@ -180,9 +212,9 @@ export default function PublicHeader() {
                   <LayoutDashboard size={17} />
                   Open My Dashboard
                 </Link>
-                {roleSlug === "customer" && (
+                {bookingsPath && (
                   <Link
-                    href="/customer/bookings"
+                    href={bookingsPath}
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-3 rounded-xl border border-blue-100 px-4 py-3 text-sm font-bold text-slate-700"
                   >
@@ -293,14 +325,14 @@ function AuthenticatedProfileMenu({
   name,
   dashboardPath,
   profilePath,
-  customer,
+  bookingsPath,
   onClose,
   onLogout,
 }: {
   name?: string;
   dashboardPath: string;
   profilePath: string;
-  customer: boolean;
+  bookingsPath: string | null;
   onClose: () => void;
   onLogout: () => void;
 }) {
@@ -322,9 +354,9 @@ function AuthenticatedProfileMenu({
           icon={LayoutDashboard}
           onClose={onClose}
         />
-        {customer && (
+        {bookingsPath && (
           <AccountMenuLink
-            href="/customer/bookings"
+            href={bookingsPath}
             label="My bookings"
             icon={CalendarCheck}
             onClose={onClose}

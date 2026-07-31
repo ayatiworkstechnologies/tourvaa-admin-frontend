@@ -11,11 +11,15 @@ type CurrencyState = {
   loading: boolean;
   isStale: boolean;
   rateDate?: string;
+  /** True when the admin has set a site-wide currency (Settings → Booking
+   * Defaults → Currency) — every visitor sees that currency and cannot
+   * switch, rather than the old per-browser locale-detected preference. */
+  forced: boolean;
 };
 
 const STORAGE_KEY = "tourvaa_display_currency";
 const listeners = new Set<(state: CurrencyState) => void>();
-let state: CurrencyState = { code: "USD", baseCode: "USD", rates: { USD: 1 }, loading: true, isStale: false };
+let state: CurrencyState = { code: "USD", baseCode: "USD", rates: { USD: 1 }, loading: true, isStale: false, forced: false };
 let loadPromise: Promise<void> | null = null;
 
 function emit(next: Partial<CurrencyState>) {
@@ -37,13 +41,32 @@ async function loadCurrency() {
   loadPromise = (async () => {
     const saved = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
     const country = localeCountry();
-    const [ratesResult, contextResult] = await Promise.allSettled([
+    const [ratesResult, contextResult, settingsResult] = await Promise.allSettled([
       api.get("/currency/rates", { params: { base: "USD" } }),
       api.get("/currency/context", { params: country ? { country } : {} }),
+      api.get("/settings/public"),
     ]);
     const rateData = ratesResult.status === "fulfilled" ? ratesResult.value.data?.data : null;
     const contextData = contextResult.status === "fulfilled" ? contextResult.value.data?.data : null;
+    const publicSettings = settingsResult.status === "fulfilled" ? settingsResult.value.data?.data : null;
     const rates = rateData?.rates && typeof rateData.rates === "object" ? rateData.rates : { USD: 1 };
+
+    // An admin-set site currency (Settings → Booking Defaults → Currency)
+    // is a strict override: every visitor sees it, no per-browser choice.
+    const siteCurrency = String(publicSettings?.currency || "").toUpperCase();
+    if (siteCurrency && rates[siteCurrency]) {
+      emit({
+        baseCode: "USD",
+        rates,
+        code: siteCurrency,
+        loading: false,
+        isStale: Boolean(rateData?.is_stale),
+        rateDate: rateData?.rate_date || undefined,
+        forced: true,
+      });
+      return;
+    }
+
     const detected = String(contextData?.currency || "USD").toUpperCase();
     const preferred = String(saved || detected || "USD").toUpperCase();
     emit({
@@ -53,6 +76,7 @@ async function loadCurrency() {
       loading: false,
       isStale: Boolean(rateData?.is_stale),
       rateDate: rateData?.rate_date || undefined,
+      forced: false,
     });
   })().catch(() => emit({ loading: false, isStale: true }));
   return loadPromise;
@@ -61,11 +85,12 @@ async function loadCurrency() {
 /** Clears rates after an admin setting change and reloads on the next hook mount. */
 export function invalidateCurrencyCache() {
   loadPromise = null;
-  emit({ rates: { USD: 1 }, baseCode: "USD", loading: true });
+  emit({ rates: { USD: 1 }, baseCode: "USD", loading: true, forced: false });
   if (typeof window !== "undefined") void loadCurrency();
 }
 
 export function setDisplayCurrency(code: string) {
+  if (state.forced) return;
   const normalized = code.toUpperCase();
   if (!state.rates[normalized]) return;
   if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, normalized);

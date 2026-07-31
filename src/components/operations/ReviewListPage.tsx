@@ -8,7 +8,7 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import StatusBadge from "@/components/operations/StatusBadge";
 import ActionModal from "@/components/operations/ActionModal";
-import { bulkApproveSuppliers, bulkRejectSuppliers, createReviewRecord, listReviewRecords, ReviewModule, ReviewRecord } from "@/lib/api/services/operationsService";
+import { bulkApproveAgents, bulkApproveSuppliers, bulkRejectAgents, bulkRejectSuppliers, createReviewRecord, listReviewRecords, ReviewModule, ReviewRecord } from "@/lib/api/services/operationsService";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -68,7 +68,8 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [supplierView, setSupplierView] = useState<"all" | "pending" | "approved" | "inactive">("all");
+  const [statusView, setStatusView] = useState<"all" | "pending" | "approved" | "inactive">("all");
+  const supportsStatusView = module === "suppliers" || module === "agents";
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -76,12 +77,12 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   async function handleExport() {
     setExporting(true);
     try {
-      const response = await api.get("/suppliers/export", { responseType: "blob" });
+      const response = await api.get(`/${module}/export`, { responseType: "blob" });
       const blob = new Blob([response.data], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "suppliers-directory.csv";
+      link.download = `${module}-directory.csv`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -94,8 +95,8 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   }
 
   const canCreate = hasPermission(`${module}.create`) || (module === "affiliates" && hasPermission("affiliates.approve"));
-  const canBulkApprove = module === "suppliers" && hasPermission("suppliers.approve");
-  const canBulkReject = module === "suppliers" && hasPermission("suppliers.reject");
+  const canBulkApprove = supportsStatusView && hasPermission(`${module}.approve`);
+  const canBulkReject = supportsStatusView && hasPermission(`${module}.reject`);
 
   function toggleSelected(id: number) {
     setSelectedIds((current) => {
@@ -106,13 +107,16 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     });
   }
 
+  const entityLabel = module === "agents" ? "agent" : "supplier";
+
   async function handleBulkApprove() {
     if (selectedIds.size === 0) return;
     setBulkProcessing(true);
     try {
-      const results = await bulkApproveSuppliers(Array.from(selectedIds));
+      const ids = Array.from(selectedIds);
+      const results = module === "agents" ? await bulkApproveAgents(ids) : await bulkApproveSuppliers(ids);
       const failed = results.filter((r) => !r.ok);
-      if (failed.length === 0) toast.success(`${results.length} supplier(s) approved.`);
+      if (failed.length === 0) toast.success(`${results.length} ${entityLabel}(s) approved.`);
       else toast.error(`${results.length - failed.length} approved, ${failed.length} failed.`);
       setSelectedIds(new Set());
       await fetchRows();
@@ -125,13 +129,14 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
 
   async function handleBulkReject() {
     if (selectedIds.size === 0) return;
-    const reason = window.prompt(`Rejection reason for ${selectedIds.size} supplier(s):`);
+    const reason = window.prompt(`Rejection reason for ${selectedIds.size} ${entityLabel}(s):`);
     if (!reason) return;
     setBulkProcessing(true);
     try {
-      const results = await bulkRejectSuppliers(Array.from(selectedIds), reason);
+      const ids = Array.from(selectedIds);
+      const results = module === "agents" ? await bulkRejectAgents(ids, reason) : await bulkRejectSuppliers(ids, reason);
       const failed = results.filter((r) => !r.ok);
-      if (failed.length === 0) toast.success(`${results.length} supplier(s) rejected.`);
+      if (failed.length === 0) toast.success(`${results.length} ${entityLabel}(s) rejected.`);
       else toast.error(`${results.length - failed.length} rejected, ${failed.length} failed.`);
       setSelectedIds(new Set());
       await fetchRows();
@@ -146,13 +151,13 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
-      const supplierFilters: Record<string, string | number> = {};
-      if (module === "suppliers") {
-        if (supplierView === "pending") supplierFilters.approval_status = "PENDING";
-        if (supplierView === "approved") supplierFilters.approval_status = "APPROVED";
-        if (supplierView === "inactive") supplierFilters.status = "inactive";
+      const statusFilters: Record<string, string | number> = {};
+      if (supportsStatusView) {
+        if (statusView === "pending") statusFilters.approval_status = "pending";
+        if (statusView === "approved") statusFilters.approval_status = "approved";
+        if (statusView === "inactive") statusFilters.status = "inactive";
       }
-      const response = await listReviewRecords(module, { page, limit: 10, search, ...supplierFilters });
+      const response = await listReviewRecords(module, { page, limit: 10, search, ...statusFilters });
       setRows(response.items || response.data || []);
       setTotal(response.total || 0);
       setTotalPages(response.total_pages || 1);
@@ -161,7 +166,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     } finally {
       setLoading(false);
     }
-  }, [module, page, search, supplierView, toast]);
+  }, [module, page, search, statusView, supportsStatusView, toast]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchRows(), 200);
@@ -260,6 +265,22 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   ];
 
   const agentColumns: DataTableColumn<ReviewRecord>[] = [
+    ...(canBulkApprove || canBulkReject
+      ? [{
+          key: "select",
+          header: "",
+          className: "w-10",
+          render: (row: ReviewRecord) => (
+            <input
+              type="checkbox"
+              checked={selectedIds.has(row.id)}
+              onChange={() => toggleSelected(row.id)}
+              aria-label={`Select ${row.agent_name || row.id}`}
+              className="h-4 w-4 rounded border-dash-border"
+            />
+          ),
+        } as DataTableColumn<ReviewRecord>]
+      : []),
     { key: "code", header: "ID", className: "w-24", render: (row) => row.agent_code || row.code || row.id },
     {
       key: "name",
@@ -316,7 +337,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
             <p className="mt-1 text-sm text-dash-muted">{module === "suppliers" ? "Review supplier registration, business data, documents, vehicles, approval status, and markup setup." : module === "agents" ? "Review agent registration, business data, documents, invoicing, approval status, and discount setup." : "Review operational accounts, approval status, and commercial controls."}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {module === "suppliers" && (
+            {supportsStatusView && (
               <button type="button" disabled={exporting} onClick={() => void handleExport()} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg disabled:opacity-60">
                 <Download size={16} /> {exporting ? "Exporting..." : "Export"}
               </button>
@@ -331,17 +352,17 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
             )}
           </div>
         </section>
-        {module === "suppliers" && (
-          <nav className="flex flex-wrap gap-2 rounded-xl border border-dash-border bg-white p-2" aria-label="Supplier status filters">
+        {supportsStatusView && (
+          <nav className="flex flex-wrap gap-2 rounded-xl border border-dash-border bg-white p-2" aria-label={`${entityLabel} status filters`}>
             {(["all", "pending", "approved", "inactive"] as const).map((view) => (
               <button
                 key={view}
                 type="button"
                 onClick={() => {
-                  setSupplierView(view);
+                  setStatusView(view);
                   setPage(1);
                 }}
-                className={`rounded-lg px-4 py-2 text-sm font-bold capitalize ${supplierView === view ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
+                className={`rounded-lg px-4 py-2 text-sm font-bold capitalize ${statusView === view ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
               >
                 {view}
               </button>

@@ -45,8 +45,8 @@ export default function CommissionRequestTab() {
   useEffect(() => {
     api.get("/suppliers/me")
       .then((res) => applySupplierData(res.data?.data ?? res.data ?? {}))
-      .catch(() => {});
-  }, []);
+      .catch(() => toast.error("Failed to load commission details."));
+  }, [toast]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();

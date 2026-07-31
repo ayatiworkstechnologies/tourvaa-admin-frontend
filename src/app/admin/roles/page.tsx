@@ -6,7 +6,6 @@ import { LuSquarePen as Edit, LuKeyRound as KeyRound, LuPlus as Plus, LuSave as 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import api from "@/lib/api/client";
 import { Role } from "@/types/user";
-import Loader from "@/components/ui/Loader";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 
 type Permission = {

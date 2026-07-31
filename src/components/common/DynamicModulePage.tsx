@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LuSquarePen as Edit, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
-import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import DataTable from "@/components/ui/DataTable";
 
 type Field = {
   name: string;

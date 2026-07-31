@@ -182,7 +182,7 @@ export default function PublicBookingPage() {
     const due = new Date(travel);
     due.setDate(due.getDate() - tour.balance_payment_deadline_days);
     return due;
-  }, [depositAmount, tour?.balance_payment_deadline_days, values.travelDate]);
+  }, [depositAmount, tour, values.travelDate]);
 
   useEffect(() => {
     if (!depositAmount) setValue("paymentType", "full", { shouldDirty: true });

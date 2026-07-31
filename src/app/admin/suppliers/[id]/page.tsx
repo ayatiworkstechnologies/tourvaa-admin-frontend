@@ -391,6 +391,19 @@ export default function SupplierDetailPage() {
                 <KeyValueList data={record.invoicing} empty="No invoicing information submitted yet." />
               )}
 
+              {activeTab === "documents" && (
+                <p
+                  className={`mb-4 rounded-xl px-4 py-3 text-sm font-semibold ring-1 ring-inset ${
+                    missingRequiredDocs.length === 0
+                      ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
+                      : "bg-amber-50 text-amber-700 ring-amber-100"
+                  }`}
+                >
+                  {REQUIRED_DOCUMENT_TYPES.length - missingRequiredDocs.length} of {REQUIRED_DOCUMENT_TYPES.length} required documents approved
+                  {missingRequiredDocs.length > 0 && ` — missing: ${missingRequiredDocs.map((docType) => docType.label).join(", ")}`}
+                </p>
+              )}
+
               {activeTab === "documents" &&
                 (documents.length === 0 ? (
                   <p className="rounded-lg bg-dash-bg p-4 text-sm font-semibold text-dash-muted">No supplier documents uploaded yet.</p>

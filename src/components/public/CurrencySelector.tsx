@@ -3,7 +3,19 @@
 import { useCurrency } from "@/hooks/useCurrency";
 
 export default function CurrencySelector({ inverse = false }: { inverse?: boolean }) {
-  const { code, currencies, setCode, loading, isStale } = useCurrency();
+  const { code, currencies, setCode, loading, isStale, forced } = useCurrency();
+
+  if (forced) {
+    return (
+      <span
+        title="Site currency (set by admin)"
+        className={`rounded-lg border px-2 py-2 text-xs font-black ${inverse ? "border-white/20 bg-white/10 text-white" : "border-slate-200 bg-white text-slate-700"}`}
+      >
+        {code}
+      </span>
+    );
+  }
+
   return (
     <label className="relative" title={isStale ? "Using cached exchange rates" : "Display currency"}>
       <span className="sr-only">Display currency</span>

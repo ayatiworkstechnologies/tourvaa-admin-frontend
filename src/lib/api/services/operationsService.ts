@@ -126,6 +126,16 @@ export async function bulkRejectSuppliers(supplierIds: number[], rejection_reaso
   return response.data.data;
 }
 
+export async function bulkApproveAgents(agentIds: number[]) {
+  const response = await api.post<{ data: Array<{ id: number; ok: boolean; error?: string }> }>("/agents/bulk-approve", { agent_ids: agentIds });
+  return response.data.data;
+}
+
+export async function bulkRejectAgents(agentIds: number[], rejection_reason: string, admin_comments = "") {
+  const response = await api.post<{ data: Array<{ id: number; ok: boolean; error?: string }> }>("/agents/bulk-reject", { agent_ids: agentIds, rejection_reason, admin_comments });
+  return response.data.data;
+}
+
 export async function rejectSupplierCommissionRequest(id: string | number) {
   const response = await api.post<{ data: ReviewRecord }>(`/suppliers/${id}/commission-request/reject`);
   return response.data.data;

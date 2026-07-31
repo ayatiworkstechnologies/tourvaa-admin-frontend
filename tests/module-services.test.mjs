@@ -91,8 +91,8 @@ console.log("── paymentService");
 const paymentSrc = readService("paymentService.ts");
 check("paymentService.ts exists", paymentSrc.length > 0);
 
-// tourDetailService - Week 9 & 10
-console.log("── tourDetailService (Week 9 + 10)");
+// tourDetailService
+console.log("── tourDetailService");
 const tdSrc = readService("tourDetailService.ts");
 check("tourDetailService.ts exists", tdSrc.length > 0);
 check("getOverview exported", hasExport(tdSrc, "getOverview"));

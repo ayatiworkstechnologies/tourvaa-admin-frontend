@@ -11,7 +11,6 @@ import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
 import LocationInput from "@/components/ui/LocationInput";
 import {
   combinePhone,
-  digitsOnly,
   mobileHelp,
   passwordHelp,
   splitPhone,

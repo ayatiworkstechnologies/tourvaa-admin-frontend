@@ -117,8 +117,10 @@ export default function CustomerBookingsPage() {
     return () => { active = false; };
   }, []);
 
-  const tabStatuses: readonly string[] = STATUS_TABS.find((tab) => tab.key === activeTab)?.statuses ?? [];
-  const tabBookings = useMemo(() => bookings.filter((b) => tabStatuses.includes(b.booking_status)), [bookings, tabStatuses]);
+  const tabBookings = useMemo(() => {
+    const tabStatuses: readonly string[] = STATUS_TABS.find((tab) => tab.key === activeTab)?.statuses ?? [];
+    return bookings.filter((b) => tabStatuses.includes(b.booking_status));
+  }, [bookings, activeTab]);
   const total = tabBookings.length;
   const totalPages = Math.ceil(total / limit) || 1;
   const pageRows = tabBookings.slice((page - 1) * limit, page * limit);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LuClipboardList as ClipboardList, LuRefreshCw as RefreshCw } from "react-icons/lu";
+import { LuRefreshCw as RefreshCw } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
@@ -50,6 +50,9 @@ export default function AuditLogsPage() {
     }
   }
 
+  // `search` is intentionally excluded -- it's applied only via the manual
+  // handleSearch submit below, not on every keystroke.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void load(); }, [page, entity]);
 
   function handleSearch(e: React.FormEvent) {

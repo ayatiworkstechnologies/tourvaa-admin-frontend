@@ -5,12 +5,13 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LuArrowRight as ArrowRight, LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuClock3 as Clock, LuFilter as Filter, LuGrid2X2 as Grid, LuHeart as Heart, LuHouse as Home, LuList as List, LuSearch as Search, LuSlidersHorizontal as Sliders, LuStar as Star, LuMapPin as MapPin, LuUsers as Users } from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuClock3 as Clock, LuFilter as Filter, LuGrid2X2 as Grid, LuHeart as Heart, LuHouse as Home, LuList as List, LuScale as Scale, LuSearch as Search, LuSlidersHorizontal as Sliders, LuStar as Star, LuMapPin as MapPin } from "react-icons/lu";
 import { fetchPublicCategories, fetchPublicCountries, fetchPublicTours, PublicTour } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useToast } from "@/hooks/useToast";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
-import { useTravelStore } from "@/providers/TravelStoreProvider";
+import { MAX_COMPARE_ITEMS, useTravelStore } from "@/providers/TravelStoreProvider";
 
 const FALLBACK = "/images/tour-card-fallback.jpg";
 
@@ -27,7 +28,8 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const queryDepartureMonth = searchParams.get("departure_month") || "";
   const querySort = searchParams.get("sort") || "newest";
   const { formatCompact } = useCurrency();
-  const { isWishlisted, toggleWishlist } = useTravelStore();
+  const { isWishlisted, toggleWishlist, isCompared, toggleCompare } = useTravelStore();
+  const toast = useToast();
   const [countryName, setCountryName] = useState("");
   const [destination, setDestination] = useState(queryCountry);
   const [tours, setTours] = useState<PublicTour[]>([]);
@@ -57,7 +59,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           setCountryName(resolvedCountry);
           setDestination(resolvedCountry);
         }
-        const params: Record<string, string | number> = { limit: 100 };
+        const params: Record<string, string | number | boolean> = { limit: 100, available_only: true };
         if (resolvedCountry) params.country = resolvedCountry;
         if (querySearch) params.search = querySearch;
         if (queryCategory) params.category = queryCategory;
@@ -97,11 +99,10 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   return (
     <main className="min-h-screen bg-white pb-24 pt-24 text-slate-950">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
-        <form onSubmit={submit} className="mt-3 grid rounded-xl border border-slate-100 bg-white p-1.5 shadow-[0_14px_40px_rgba(15,23,42,.12)] md:grid-cols-[1.1fr_1fr_1fr_1.15fr_1fr]">
+        <form onSubmit={submit} className="mt-3 grid rounded-xl border border-slate-100 bg-white p-1.5 shadow-[0_14px_40px_rgba(15,23,42,.12)] md:grid-cols-[1.15fr_1fr_1.15fr_1fr]">
           <FilterField label="Where to?" value={destination} placeholder="Select country" icon={MapPin} onChange={setDestination} />
-          <FilterField label="When?" placeholder="Select date" icon={Calendar} />
-          <FilterField label="How Many Days?" placeholder="Choose Duration" icon={Clock} />
-          <FilterField label="Who's going?" placeholder="2 Adults, 1 child" icon={Users} />
+          <FilterField label="When?" placeholder="Any month" icon={Calendar} value={queryDepartureMonth} onChange={(value) => applyFilter({ departure_month: value })} options={departureMonths().filter((option) => option.value)} />
+          <FilterField label="How Many Days?" placeholder="Any duration" icon={Clock} value={queryMinDays || queryMaxDays ? `${queryMinDays}-${queryMaxDays}` : ""} onChange={(value) => { const [min, max] = value.split("-"); applyFilter({ min_days: min, max_days: max }); }} options={[{ label: "2 – 6 Days", value: "2-6" }, { label: "7 – 10 Days", value: "7-10" }, { label: "11 – 14 Days", value: "11-14" }, { label: "15+ Days", value: "15-" }]} />
           <button className="m-1 flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue-600 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg"><Search size={16} />Search</button>
         </form>
 
@@ -121,21 +122,41 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <div className="ml-auto flex rounded-lg bg-slate-50 p-1"><button type="button" aria-label="Grid view" onClick={() => setView("grid")} className={`flex h-8 w-8 items-center justify-center rounded ${view === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600"}`}><Grid size={17} /></button><button type="button" aria-label="List view" onClick={() => setView("list")} className={`flex h-8 w-8 items-center justify-center rounded ${view === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600"}`}><List size={18} /></button></div>
           </div>
 
-          {tours.length === 0 ? <div className="py-24 text-center"><Filter size={34} className="mx-auto text-slate-300" /><h2 className="mt-5 text-xl font-black">No published tours yet</h2><Link href="/tours" className="mt-5 inline-flex rounded-lg bg-blue-600 px-6 py-3 text-sm font-bold text-white">Explore all tours</Link></div> : <div className={`mt-9 grid gap-8 ${view === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>{tours.map((tour) => <TourResultCard key={tour.id} tour={tour} view={view} formatCompact={formatCompact} saved={isWishlisted(tour.id)} onWishlist={() => toggleWishlist({ id: tour.id, title: tour.title, place: tour.country_name, image: tour.banner_image ? mediaUrl(tour.banner_image) : FALLBACK, price: tour.price_start_per_person, currency: tour.currency || "USD", duration: tour.number_of_days ? `${tour.number_of_days} days` : "Flexible", href: publicTourUrl(tour) })} />)}</div>}
+          {tours.length === 0 ? <div className="py-24 text-center"><Filter size={34} className="mx-auto text-slate-300" /><h2 className="mt-5 text-xl font-black">No published tours yet</h2><Link href="/tours" className="mt-5 inline-flex rounded-lg bg-blue-600 px-6 py-3 text-sm font-bold text-white">Explore all tours</Link></div> : <div className={`mt-9 grid gap-8 ${view === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>{tours.map((tour) => {
+            const travelItem = { id: tour.id, title: tour.title, place: tour.country_name, image: tour.banner_image ? mediaUrl(tour.banner_image) : FALLBACK, price: tour.price_start_per_person, currency: tour.currency || "USD", duration: tour.number_of_days ? `${tour.number_of_days} days` : "Flexible", href: publicTourUrl(tour) };
+            return (
+              <TourResultCard
+                key={tour.id}
+                tour={tour}
+                view={view}
+                formatCompact={formatCompact}
+                saved={isWishlisted(tour.id)}
+                onWishlist={() => toggleWishlist(travelItem)}
+                compared={isCompared(tour.id)}
+                onCompare={() => {
+                  const { limitReached } = toggleCompare(travelItem);
+                  if (limitReached) toast.error(`You can compare up to ${MAX_COMPARE_ITEMS} tours at a time.`);
+                }}
+              />
+            );
+          })}</div>}
         </div>
       </div>
     </main>
   );
 }
 
-function TourResultCard({ tour, view, formatCompact, saved, onWishlist }: { tour: PublicTour; view: "grid" | "list"; formatCompact: (amount: number | string | null | undefined, currency?: string) => string; saved: boolean; onWishlist: () => void }) {
+function TourResultCard({ tour, view, formatCompact, saved, onWishlist, compared, onCompare }: { tour: PublicTour; view: "grid" | "list"; formatCompact: (amount: number | string | null | undefined, currency?: string) => string; saved: boolean; onWishlist: () => void; compared: boolean; onCompare: () => void }) {
   const image = tour.banner_image ? mediaUrl(tour.banner_image) : FALLBACK;
   const base = Number(tour.price_start_per_person || 0);
   const days = tour.number_of_days || 6;
   const departures = tour.departures?.slice(0, 3) || [];
   return (
     <article className={`group relative rounded-xl border border-slate-100 bg-white p-3 shadow-[0_12px_30px_rgba(15,23,42,.09)] transition hover:-translate-y-1 hover:shadow-xl ${view === "list" ? "grid sm:grid-cols-[340px_1fr]" : ""}`}>
-      <button type="button" onClick={onWishlist} className={`absolute right-5 top-5 z-10 flex h-8 w-8 items-center justify-center rounded-full ${saved ? "bg-red-500 text-white" : "bg-white/90 text-red-500"}`}><Heart size={17} className={saved ? "fill-current" : ""} /></button>
+      <div className="absolute right-5 top-5 z-10 flex flex-col gap-2">
+        <button type="button" onClick={onWishlist} className={`flex h-8 w-8 items-center justify-center rounded-full ${saved ? "bg-red-500 text-white" : "bg-white/90 text-red-500"}`}><Heart size={17} className={saved ? "fill-current" : ""} /></button>
+        <button type="button" onClick={onCompare} aria-label={compared ? `Remove ${tour.title} from comparison` : `Add ${tour.title} to comparison`} className={`flex h-8 w-8 items-center justify-center rounded-full ${compared ? "bg-blue-600 text-white" : "bg-white/90 text-blue-600"}`}><Scale size={16} /></button>
+      </div>
       <Link href={publicTourUrl(tour)} className="contents">
         <div className="relative h-48 overflow-hidden rounded-lg"><img src={image} alt={tour.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /><span className="absolute left-3 top-3 rounded-full bg-sky-400/80 px-3 py-1 text-[9px] font-bold text-white"><MapPin size={9} className="mr-1 inline" />{tour.country_name}</span></div>
         <div className="p-1 pt-4">
@@ -166,6 +187,21 @@ function departureMonths() {
   return options;
 }
 
-function FilterField({ label, value = "", placeholder, icon: Icon, onChange }: { label: string; value?: string; placeholder: string; icon: typeof MapPin; onChange?: (value: string) => void }) {
+function FilterField({ label, value = "", placeholder, icon: Icon, onChange, options }: { label: string; value?: string; placeholder: string; icon: typeof MapPin; onChange?: (value: string) => void; options?: { label: string; value: string }[] }) {
+  if (options) {
+    return (
+      <label className="flex min-h-14 items-center gap-2 border-b border-slate-100 px-3 md:border-b-0 md:border-r">
+        <Icon size={15} className="text-blue-600" />
+        <span className="min-w-0 flex-1">
+          <b className="block text-[9px] text-blue-600">{label}</b>
+          <select aria-label={label} value={value} onChange={(event) => onChange?.(event.target.value)} className="w-full cursor-pointer appearance-none bg-transparent text-xs text-slate-500 outline-none">
+            <option value="">{placeholder}</option>
+            {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        </span>
+        <ChevronDown size={12} className="text-slate-300" />
+      </label>
+    );
+  }
   return <label className="flex min-h-14 items-center gap-2 border-b border-slate-100 px-3 md:border-b-0 md:border-r"><Icon size={15} className="text-blue-600" /><span className="min-w-0 flex-1"><b className="block text-[9px] text-blue-600">{label}</b><input value={value} readOnly={!onChange} onChange={(event) => onChange?.(event.target.value)} placeholder={placeholder} className="w-full bg-transparent text-xs text-slate-500 outline-none placeholder:text-slate-400" /></span><ChevronDown size={12} className="text-slate-300" /></label>;
 }

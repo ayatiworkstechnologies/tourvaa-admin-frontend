@@ -149,6 +149,18 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   }, [id, refreshKey]);
 
   useEffect(() => {
+    if (!booking || searchParams.get("new") !== "1") return;
+    const method = booking.agent_payment_method?.replaceAll("_", " ");
+    setPaymentBanner({
+      type: "success",
+      message: method
+        ? `Booking created successfully. Payment method: ${method}. Collect payment from the customer as agreed and record it once received.`
+        : "Booking created successfully.",
+    });
+    router.replace(`/agent/bookings/${id}`, { scroll: false });
+  }, [booking, id, router, searchParams]);
+
+  useEffect(() => {
     if (!booking || searchParams.get("pay") !== "1") return;
     if (Number(booking.amount_pending ?? 0) > 0) {
       setPaymentBanner({ type: "info", message: "Booking created successfully. Complete the payment to send it to the supplier." });

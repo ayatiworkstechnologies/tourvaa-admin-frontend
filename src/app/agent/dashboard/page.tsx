@@ -111,12 +111,12 @@ export default function AgentDashboardPage() {
   };
 
   const stats = [
-    { label: "Total Bookings", value: summary.total_bookings ?? bookings.length, icon: CalendarCheck, sub: "Filtered", href: "/agent/bookings" },
+    { label: "Total Bookings", value: summary.total_bookings ?? 0, icon: CalendarCheck, sub: "Filtered", href: "/agent/bookings" },
     { label: "Active Customers", value: summary.active_customers ?? 0, icon: Users, sub: "Filtered", href: "/agent/customers" },
-    { label: "Active Bookings", value: summary.upcoming_bookings ?? bookings.filter((b) => b.booking_status === "confirmed").length, icon: PackageCheck, sub: "In progress", href: "/agent/bookings" },
+    { label: "Active Bookings", value: summary.upcoming_bookings ?? 0, icon: PackageCheck, sub: "In progress", href: "/agent/bookings" },
     { label: "Paid Revenue", value: formatCompact(summary.monthly_revenue), icon: CircleDollarSign, sub: "Filtered", href: "/agent/bookings" },
     { label: "Est. Commission", value: formatCompact(summary.commission_earned), icon: CircleDollarSign, sub: "Filtered", href: "/agent/invoices" },
-    { label: "Completed", value: summary.completed_bookings ?? bookings.filter((b) => b.booking_status === "completed").length, icon: PackageCheck, sub: "Finished", href: "/agent/bookings" },
+    { label: "Completed", value: summary.completed_bookings ?? 0, icon: PackageCheck, sub: "Finished", href: "/agent/bookings" },
   ];
 
   return (
