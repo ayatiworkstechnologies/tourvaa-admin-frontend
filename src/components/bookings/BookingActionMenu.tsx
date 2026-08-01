@@ -9,6 +9,7 @@ type BookingActionMenuProps = {
   paymentStatus?: string;
   onCancel?: (bookingId: number) => void;
   onConfirm?: (bookingId: number) => void;
+  busy?: boolean;
 };
 
 export default function BookingActionMenu({
@@ -16,6 +17,7 @@ export default function BookingActionMenu({
   bookingStatus,
   onCancel,
   onConfirm,
+  busy,
 }: BookingActionMenuProps) {
   const canConfirm = bookingStatus && !["confirmed", "cancelled"].includes(bookingStatus);
   const canCancel = bookingStatus !== "cancelled";
@@ -31,8 +33,9 @@ export default function BookingActionMenu({
 
       {canConfirm && onConfirm ? (
         <button
-          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
+          disabled={busy}
           onClick={() => onConfirm(bookingId)}
         >
           <CheckCircle2 size={13} /> Confirm
@@ -41,8 +44,9 @@ export default function BookingActionMenu({
 
       {canCancel && onCancel ? (
         <button
-          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
+          disabled={busy}
           onClick={() => onCancel(bookingId)}
         >
           <XCircle size={13} /> Cancel

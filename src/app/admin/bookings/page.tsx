@@ -29,6 +29,7 @@ export default function BookingsPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [stats, setStats] = useState({ total: 0, confirmed: 0, pendingSupplier: 0, cancelled: 0 });
   const [exporting, setExporting] = useState(false);
+  const [busyBookingId, setBusyBookingId] = useState<number | null>(null);
 
   const debouncedSearch = useDebounce(searchTerm, 350);
 
@@ -129,13 +130,29 @@ export default function BookingsPage() {
   }
 
   async function confirmBooking(bookingId: number) {
-    await updateBookingStatus(bookingId, "confirmed", "Confirmed from admin panel");
-    await refreshAll(true);
+    if (busyBookingId) return;
+    setBusyBookingId(bookingId);
+    try {
+      await updateBookingStatus(bookingId, "confirmed", "Confirmed from admin panel");
+      await refreshAll(true);
+    } catch {
+      setErrorMessage("Could not confirm the booking.");
+    } finally {
+      setBusyBookingId(null);
+    }
   }
 
   async function cancelSelectedBooking(bookingId: number) {
-    await cancelBooking(bookingId, "Cancelled from admin panel");
-    await refreshAll(true);
+    if (busyBookingId) return;
+    setBusyBookingId(bookingId);
+    try {
+      await cancelBooking(bookingId, "Cancelled from admin panel");
+      await refreshAll(true);
+    } catch {
+      setErrorMessage("Could not cancel the booking.");
+    } finally {
+      setBusyBookingId(null);
+    }
   }
 
   const statCards = useMemo(
@@ -220,6 +237,7 @@ export default function BookingsPage() {
           onPageChange={setCurrentPage}
           onCancel={cancelSelectedBooking}
           onConfirm={confirmBooking}
+          busyBookingId={busyBookingId}
         />
       </div>
     </ModuleWrapper>

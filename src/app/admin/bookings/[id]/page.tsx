@@ -53,16 +53,23 @@ function StatusTimeline({ booking }: { booking: Booking }) {
   );
 }
 
+// Kept in sync with BOOKING_STATUSES in tourvaa-admin-backend/app/schemas/bookings.py -
+// the backend rejects any value outside that set, so this list must not drift from it.
 const BOOKING_STATUSES = [
   "draft",
   "pending_payment",
+  "pending_credit_approval",
+  "pending_supplier_assignment",
   "payment_authorized",
   "pending_supplier_acceptance",
+  "supplier_reassignment_required",
   "confirmed",
+  "ready_to_travel",
   "upcoming",
   "ongoing",
   "postponed",
   "completed",
+  "cancellation_requested",
   "declined",
   "cancelled",
   "refunded",

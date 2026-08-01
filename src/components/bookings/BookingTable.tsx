@@ -14,6 +14,7 @@ type BookingTableProps = {
   onPageChange: (page: number) => void;
   onCancel?: (bookingId: number) => void;
   onConfirm?: (bookingId: number) => void;
+  busyBookingId?: number | null;
 };
 
 function money(value: string | number | undefined, currency: string) {
@@ -21,7 +22,7 @@ function money(value: string | number | undefined, currency: string) {
   return `${currency || ""} ${amount}`.trim();
 }
 
-export default function BookingTable({ onCancel, onConfirm, ...tableProps }: BookingTableProps) {
+export default function BookingTable({ onCancel, onConfirm, busyBookingId, ...tableProps }: BookingTableProps) {
   const columns: DataTableColumn<Booking>[] = [
     { key: "booking_code", header: "Booking", className: "font-bold text-dash-text" },
     {
@@ -71,6 +72,7 @@ export default function BookingTable({ onCancel, onConfirm, ...tableProps }: Boo
           paymentStatus={booking.payment_status}
           onCancel={onCancel}
           onConfirm={onConfirm}
+          busy={busyBookingId === booking.id}
         />
       ),
     },

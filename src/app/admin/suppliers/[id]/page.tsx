@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCalendarDays as CalendarDays, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuTruck as Truck, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
@@ -134,14 +134,20 @@ export default function SupplierDetailPage() {
   const canEditLocation = hasPermission("suppliers.edit");
   const canReviewItems = hasPermission("suppliers.approve") || hasPermission("suppliers.reject");
 
+  const requestIdRef = useRef(0);
+
   const fetchRecord = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      setRecord(await getReviewRecord("suppliers", id));
+      const data = await getReviewRecord("suppliers", id);
+      if (requestIdRef.current !== requestId) return;
+      setRecord(data);
     } catch (error) {
+      if (requestIdRef.current !== requestId) return;
       toast.error(getApiErrorMessage(error));
     } finally {
-      setLoading(false);
+      if (requestIdRef.current === requestId) setLoading(false);
     }
   }, [id, toast]);
 

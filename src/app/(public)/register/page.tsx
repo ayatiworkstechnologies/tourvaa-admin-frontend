@@ -45,16 +45,58 @@ function maskEmail(email: string) {
   return `${name.slice(0, 2)}${"*".repeat(Math.max(2, name.length - 2))}@${domain}`;
 }
 
+// The resend cooldown is a UX hint, not a real limit - the backend enforces
+// its own rate limit (3 calls / 300s) regardless. Persisting the cooldown's
+// end timestamp (rather than just a countdown in component state) keeps the
+// "check your email" screen and its timer accurate across a page reload,
+// instead of resetting to a fresh 60s that doesn't reflect what the server
+// will actually allow.
+const PENDING_REGISTRATION_KEY = "tourvaa_pending_registration";
+const RESEND_COOLDOWN_SECONDS = 60;
+
+type PendingRegistration = { email: string; changeToken: string; cooldownUntil: number };
+
+function readPendingRegistration(): PendingRegistration | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(PENDING_REGISTRATION_KEY);
+    return raw ? (JSON.parse(raw) as PendingRegistration) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePendingRegistration(value: PendingRegistration | null) {
+  if (typeof window === "undefined") return;
+  if (value) window.sessionStorage.setItem(PENDING_REGISTRATION_KEY, JSON.stringify(value));
+  else window.sessionStorage.removeItem(PENDING_REGISTRATION_KEY);
+}
+
+function secondsUntil(timestamp: number) {
+  return Math.max(0, Math.ceil((timestamp - Date.now()) / 1000));
+}
+
 export default function RegisterPage() {
   const [accountType, setAccountType] = useState<AccountType>("CUSTOMER");
   const [form, setForm] = useState(initialForm);
-  const [sentEmail, setSentEmail] = useState("");
-  const [changeToken, setChangeToken] = useState("");
+  const [sentEmail, setSentEmail] = useState(() => readPendingRegistration()?.email ?? "");
+  const [changeToken, setChangeToken] = useState(() => readPendingRegistration()?.changeToken ?? "");
   const [redirect, setRedirect] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [resendIn, setResendIn] = useState(60);
+  const [resendIn, setResendIn] = useState(() => {
+    const pending = readPendingRegistration();
+    return pending ? secondsUntil(pending.cooldownUntil) : RESEND_COOLDOWN_SECONDS;
+  });
+
+  function startResendCooldown(email: string, token: string) {
+    const cooldownUntil = Date.now() + RESEND_COOLDOWN_SECONDS * 1000;
+    setSentEmail(email);
+    setChangeToken(token);
+    setResendIn(RESEND_COOLDOWN_SECONDS);
+    writePendingRegistration({ email, changeToken: token, cooldownUntil });
+  }
   const loginHref = redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login";
 
   useEffect(() => {
@@ -92,8 +134,7 @@ export default function RegisterPage() {
           email,
           redirect,
         });
-        setSentEmail(email);
-        setResendIn(60);
+        startResendCooldown(email, changeToken);
       } else {
         const base = {
           first_name: form.first_name,
@@ -105,9 +146,7 @@ export default function RegisterPage() {
           redirect,
         };
         const response = await api.post("/auth/register", base);
-        setChangeToken(response.data.data.registration_change_token || "");
-        setSentEmail(email);
-        setResendIn(60);
+        startResendCooldown(email, response.data.data.registration_change_token || "");
       }
     } catch (registrationError) {
       setError(errorMessage(registrationError));
@@ -121,7 +160,7 @@ export default function RegisterPage() {
     setError("");
     try {
       await api.post("/auth/resend-verification", { email: sentEmail, redirect });
-      setResendIn(60);
+      startResendCooldown(sentEmail, changeToken);
     } catch (resendError) {
       setError(errorMessage(resendError));
     } finally {
@@ -148,7 +187,13 @@ export default function RegisterPage() {
               <Refresh size={15} />
               {resending ? "Sending..." : resendIn > 0 ? `Resend in ${resendIn}s` : "Resend verification email"}
             </button>
-            <button onClick={() => setSentEmail("")} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700">
+            <button
+              onClick={() => {
+                setSentEmail("");
+                writePendingRegistration(null);
+              }}
+              className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700"
+            >
               Change email
             </button>
           </div>

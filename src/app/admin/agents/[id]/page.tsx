@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import axios from "axios";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
@@ -111,14 +111,20 @@ export default function AgentDetailPage() {
   const canEditLocation = hasPermission("agents.edit");
   const canReviewDocuments = hasPermission("agents.approve") || hasPermission("agents.reject");
 
+  const requestIdRef = useRef(0);
+
   const fetchRecord = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      setRecord(await getReviewRecord("agents", id));
+      const data = await getReviewRecord("agents", id);
+      if (requestIdRef.current !== requestId) return;
+      setRecord(data);
     } catch {
+      if (requestIdRef.current !== requestId) return;
       toast.error("Could not load agent detail.");
     } finally {
-      setLoading(false);
+      if (requestIdRef.current === requestId) setLoading(false);
     }
   }, [id, toast]);
 

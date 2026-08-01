@@ -57,7 +57,7 @@ const inputCls = "w-full rounded-xl border border-dash-border px-3 py-2.5 text-s
 const labelCls = "mb-1.5 block text-xs font-bold uppercase tracking-wide text-dash-muted";
 
 export default function EarningsPage() {
-  const { format: money } = useCurrency();
+  const { formatExact: money } = useCurrency();
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +69,8 @@ export default function EarningsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [requestError, setRequestError] = useState("");
   const [requestSuccess, setRequestSuccess] = useState("");
+
+  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -88,21 +90,39 @@ export default function EarningsPage() {
 
   useEffect(() => { void load(); }, []);
 
+  // Ledger entries can span more than one currency - summary totals must be
+  // computed within a single currency at a time, never summed across them,
+  // or the "Available Payout" figure (which gets auto-filled into a real
+  // payout request) would be a meaningless mix of unlike currency amounts.
+  const currencies = useMemo(
+    () => Array.from(new Set(entries.map((e) => (e.currency || "").toUpperCase()).filter(Boolean))),
+    [entries]
+  );
+
+  useEffect(() => {
+    if (currencies.length === 0) return;
+    if (!selectedCurrency || !currencies.includes(selectedCurrency)) {
+      setSelectedCurrency(currencies[0]);
+    }
+  }, [currencies, selectedCurrency]);
+
   const summary = useMemo(() => {
-    const currency = entries.find((e) => e.currency)?.currency ?? payouts.find((p) => p.currency)?.currency ?? "USD";
-    const gross = entries.reduce((sum, e) => sum + Number(e.gross_amount ?? 0), 0);
-    const commission = entries.reduce((sum, e) => sum + Number(e.commission_amount ?? 0), 0);
-    const net = entries.reduce((sum, e) => sum + Number(e.net_payable ?? 0), 0);
-    const paid = entries.reduce((sum, e) => sum + Number(e.amount_paid ?? 0), 0);
-    const available = entries
+    const currency = selectedCurrency ?? currencies[0] ?? "USD";
+    const currencyEntries = entries.filter((e) => (e.currency || "USD").toUpperCase() === currency);
+    const currencyPayouts = payouts.filter((p) => (p.currency || "USD").toUpperCase() === currency);
+    const gross = currencyEntries.reduce((sum, e) => sum + Number(e.gross_amount ?? 0), 0);
+    const commission = currencyEntries.reduce((sum, e) => sum + Number(e.commission_amount ?? 0), 0);
+    const net = currencyEntries.reduce((sum, e) => sum + Number(e.net_payable ?? 0), 0);
+    const paid = currencyEntries.reduce((sum, e) => sum + Number(e.amount_paid ?? 0), 0);
+    const available = currencyEntries
       .filter((e) => ["pending", "partial"].includes((e.status || "").toLowerCase()))
       .reduce((sum, e) => sum + Number(e.amount_pending ?? 0), 0);
-    const reserved = entries
+    const reserved = currencyEntries
       .filter((e) => (e.status || "").toLowerCase() === "reserved")
       .reduce((sum, e) => sum + Number(e.amount_pending ?? 0), 0);
     const avgCommission = gross > 0 ? (commission / gross) * 100 : 0;
-    const pendingPayouts = payouts.filter((p) => ["pending", "approved"].includes((p.status || "").toLowerCase()));
-    const paidPayouts = payouts.filter((p) => (p.status || "").toLowerCase() === "paid");
+    const pendingPayouts = currencyPayouts.filter((p) => ["pending", "approved"].includes((p.status || "").toLowerCase()));
+    const paidPayouts = currencyPayouts.filter((p) => (p.status || "").toLowerCase() === "paid");
     return {
       currency,
       gross,
@@ -115,7 +135,7 @@ export default function EarningsPage() {
       pendingPayoutTotal: pendingPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
       paidPayoutTotal: paidPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
     };
-  }, [entries, payouts]);
+  }, [entries, payouts, selectedCurrency, currencies]);
 
   function openAutoRequest() {
     setRequestOpen(true);
@@ -188,7 +208,19 @@ export default function EarningsPage() {
       <SupplierPageHeader title="Earnings & Commission" description="Understand every booking value, Tourvaa commission deduction, net earning, and payout balance." icon={Wallet} eyebrow="Supplier Finance">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-[11px] text-[#657C6F]">Ledger values remain in their original booking currency.</span>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {currencies.length > 1 && (
+              <select
+                value={summary.currency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
+                className="rounded-xl border border-[#D5E6DB] bg-white px-3 py-2.5 text-xs font-black text-[#526C5D]"
+                aria-label="Summary currency"
+              >
+                {currencies.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            )}
             <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-[#D5E6DB] bg-white px-4 py-2.5 text-xs font-black text-[#526C5D] hover:bg-[#F0F8F3] disabled:opacity-60">
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh
             </button>

@@ -27,7 +27,7 @@ type AuthContextValue = {
   isLoggedIn: boolean;
   loginWithToken: (token?: string) => Promise<DashboardData | null>;
   refreshSession: () => Promise<DashboardData | null>;
-  logout: (redirectTo?: string) => void;
+  logout: (redirectTo?: string) => Promise<void>;
   hasPermission: (permission: string) => boolean;
 };
 
@@ -46,7 +46,12 @@ const publicRoutes = [
 // Role-based portal paths are self-guarded -- exclude from global redirect
 const portalPaths = ["/customer", "/agent", "/supplier", "/affiliate"];
 
-const DOCS_CAPTURE_MODE = typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
+// Dev/QA-only tool for capturing documentation screenshots without a real
+// login. Must never be reachable in a production bundle: process.env.NODE_ENV
+// is statically replaced at build time, so this whole branch is dead-code
+// eliminated from production output regardless of what's in localStorage.
+const DOCS_CAPTURE_ENABLED = process.env.NODE_ENV !== "production";
+const DOCS_CAPTURE_MODE = DOCS_CAPTURE_ENABLED && typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
 
 const docsCaptureDashboard = {
   user: {
@@ -151,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const docsInitialDashboard = (() => {
+    if (!DOCS_CAPTURE_ENABLED) return null;
     if (typeof window === "undefined") return DOCS_CAPTURE_MODE ? docsCaptureDashboard : null;
     const docsDashboard = window.localStorage.getItem("tourvaa_docs_dashboard");
     if (!docsDashboard) return DOCS_CAPTURE_MODE ? docsCaptureDashboard : null;
@@ -188,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const restore = async () => {
       setLoading(true);
 
-      const docsDashboard = typeof window !== "undefined"
+      const docsDashboard = DOCS_CAPTURE_ENABLED && typeof window !== "undefined"
         ? window.localStorage.getItem("tourvaa_docs_dashboard")
         : null;
 
@@ -241,8 +247,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [refreshSession]
   );
 
-  const logout = useCallback((redirectTo?: string) => {
-    void api.post("/auth/logout").catch(() => undefined);
+  const logout = useCallback(async (redirectTo?: string) => {
+    // Wait for the server to actually clear the httpOnly session cookies
+    // before wiping client state and navigating away - on a shared machine,
+    // a fire-and-forget call that fails silently (network blip, ad-blocker)
+    // would show "logged out" while the real session cookie is still valid.
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // Best-effort: still clear local state below even if the server call fails.
+    }
     clearSession();
     setTokenState(null);
     setDashboard(null);

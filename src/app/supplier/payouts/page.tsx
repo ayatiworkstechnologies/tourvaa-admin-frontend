@@ -41,7 +41,7 @@ const inputCls =
 const labelCls = "block text-xs font-bold text-dash-body mb-1.5";
 
 export default function PayoutsPage() {
-  const { format: money } = useCurrency();
+  const { formatExact: money } = useCurrency();
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);

@@ -2,11 +2,12 @@
 
 import { useAuthContext } from "@/providers/AuthProvider";
 
-const DOCS_CAPTURE_MODE = typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
+const DOCS_CAPTURE_ENABLED = process.env.NODE_ENV !== "production";
+const DOCS_CAPTURE_MODE = DOCS_CAPTURE_ENABLED && typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
 
 export function useDashboard() {
   const { dashboard, loading, refreshSession, error } = useAuthContext();
-  const docsDashboard = typeof window !== "undefined"
+  const docsDashboard = DOCS_CAPTURE_ENABLED && typeof window !== "undefined"
     ? window.localStorage.getItem("tourvaa_docs_dashboard")
     : null;
   const parsedDocsDashboard = docsDashboard ? JSON.parse(docsDashboard) : null;

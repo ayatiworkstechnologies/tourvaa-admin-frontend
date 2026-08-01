@@ -11,7 +11,7 @@ const PAGE_SIZE = 10;
 
 export default function InvoicesPage() {
   const toast = useToast();
-  const { format } = useCurrency();
+  const { formatExact: format } = useCurrency();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalInvoices, setTotalInvoices] = useState(0);

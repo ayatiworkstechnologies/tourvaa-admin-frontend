@@ -48,7 +48,7 @@ function dateText(value?: string | null) {
 
 export default function SupplierPayoutsAdminPage() {
   const toast = useToast();
-  const { format: money } = useCurrency();
+  const { formatExact: money } = useCurrency();
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -117,14 +117,29 @@ export default function SupplierPayoutsAdminPage() {
       .some((value) => String(value).toLowerCase().includes(q)));
   }, [payouts, search]);
 
+  // Payouts can be in different currencies - summary amounts must only ever
+  // be summed within one currency at a time, not mixed together.
+  const currencies = useMemo(
+    () => Array.from(new Set(payouts.map((p) => (p.currency || "").toUpperCase()).filter(Boolean))),
+    [payouts]
+  );
+  const [summaryCurrency, setSummaryCurrency] = useState<string | null>(null);
+  useEffect(() => {
+    if (currencies.length === 0) return;
+    if (!summaryCurrency || !currencies.includes(summaryCurrency)) {
+      setSummaryCurrency(currencies[0]);
+    }
+  }, [currencies, summaryCurrency]);
+
   const summary = useMemo(() => {
-    const pendingRows = payouts.filter((p) => p.status === "pending");
-    const approvedRows = payouts.filter((p) => p.status === "approved");
-    const paidRows = payouts.filter((p) => p.status === "paid");
-    const currency = payouts[0]?.currency || "USD";
+    const currency = summaryCurrency ?? currencies[0] ?? "USD";
+    const currencyPayouts = payouts.filter((p) => (p.currency || "USD").toUpperCase() === currency);
+    const pendingRows = currencyPayouts.filter((p) => p.status === "pending");
+    const approvedRows = currencyPayouts.filter((p) => p.status === "approved");
+    const paidRows = currencyPayouts.filter((p) => p.status === "paid");
     return {
       currency,
-      totalAmount: payouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
+      totalAmount: currencyPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
       pendingAmount: pendingRows.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
       approvedAmount: approvedRows.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
       paidAmount: paidRows.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
@@ -132,7 +147,7 @@ export default function SupplierPayoutsAdminPage() {
       approvedCount: approvedRows.length,
       paidCount: paidRows.length,
     };
-  }, [payouts]);
+  }, [payouts, summaryCurrency, currencies]);
 
   const latestPending = payouts.find((p) => p.status === "pending") ?? null;
   const paginatedPayouts = visiblePayouts.slice((page - 1) * pageSize, page * pageSize);
@@ -178,10 +193,24 @@ export default function SupplierPayoutsAdminPage() {
           <h1 className="mt-1 text-2xl font-black text-dash-text">Supplier Payouts</h1>
           <p className="mt-1 text-sm text-dash-muted">Approve supplier payout requests and mark released payments as paid.</p>
         </div>
-        <button type="button" onClick={() => void load()} disabled={loading}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg-muted disabled:opacity-50 sm:w-auto">
-          <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {currencies.length > 1 && (
+            <select
+              value={summary.currency}
+              onChange={(e) => setSummaryCurrency(e.target.value)}
+              className="rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm font-bold text-dash-body"
+              aria-label="Summary currency"
+            >
+              {currencies.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          )}
+          <button type="button" onClick={() => void load()} disabled={loading}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg-muted disabled:opacity-50 sm:w-auto">
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh
+          </button>
+        </div>
       </div>
 
       <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

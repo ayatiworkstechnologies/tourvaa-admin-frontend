@@ -72,29 +72,41 @@ export default function TourDetailPage() {
   const countryOnlySlug = params?.id && !params.slug && !/^\d+$/.test(params.id) ? params.id : null;
 
   useEffect(() => {
+    let active = true;
     const routeId = params?.id;
     const routeSlug = params?.slug;
     const isCountryListing = routeId && !routeSlug && !/^\d+$/.test(routeId);
     if (isCountryListing) { setLoading(false); setNotFound(false); return; }
     const tourKey = routeSlug || routeId;
     if (!tourKey) { setNotFound(true); setLoading(false); return; }
+    setLoading(true);
     fetchPublicTourDetail(tourKey, routeSlug ? routeId : undefined)
-      .then((data) => setTour({
-        ...data,
-        itineraries: data.itineraries ?? [],
-        highlights: data.highlights ?? [],
-        inclusions: data.inclusions ?? [],
-        exclusions: data.exclusions ?? [],
-        gallery: data.gallery ?? [],
-        pricing: data.pricing ?? [],
-        optional_activities: data.optional_activities ?? [],
-        extensions: data.extensions ?? [],
-        discounts: data.discounts ?? [],
-        calendar: data.calendar ?? [],
-        similar_tours: data.similar_tours ?? [],
-      }))
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (!active) return;
+        setTour({
+          ...data,
+          itineraries: data.itineraries ?? [],
+          highlights: data.highlights ?? [],
+          inclusions: data.inclusions ?? [],
+          exclusions: data.exclusions ?? [],
+          gallery: data.gallery ?? [],
+          pricing: data.pricing ?? [],
+          optional_activities: data.optional_activities ?? [],
+          extensions: data.extensions ?? [],
+          discounts: data.discounts ?? [],
+          calendar: data.calendar ?? [],
+          similar_tours: data.similar_tours ?? [],
+        });
+      })
+      .catch(() => {
+        if (active) setNotFound(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [params?.id, params?.slug]);
 
   useEffect(() => {

@@ -11,13 +11,14 @@ type Props = {
   requiredPermission?: string;
 };
 
-const DOCS_CAPTURE_MODE = typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
+const DOCS_CAPTURE_ENABLED = process.env.NODE_ENV !== "production";
+const DOCS_CAPTURE_MODE = DOCS_CAPTURE_ENABLED && typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
 
 export default function ProtectedRoute({ children, requiredPermission }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const { loading, isLoggedIn, hasPermission } = useAuthContext();
-  const docsMode = typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
+  const docsMode = DOCS_CAPTURE_ENABLED && typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
 
   useEffect(() => {
     if (!docsMode && !loading && !isLoggedIn) {

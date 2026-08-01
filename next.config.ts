@@ -9,6 +9,16 @@ const apiProxyTarget = (
 ).replace(/\/$/, "");
 const apiProxyOrigin = new URL(apiProxyTarget).origin;
 
+// 'unsafe-eval' is only needed for dev-mode tooling (HMR/fast refresh) -
+// a production build should not require it. 'unsafe-inline' stays in both
+// script-src and style-src for now: Next.js/Tailwind emit inline
+// scripts/styles that would need nonce-based CSP wiring to remove safely,
+// which is a larger change than this fix's scope.
+const scriptSrc =
+  process.env.NODE_ENV === "production"
+    ? "script-src 'self' 'unsafe-inline';"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval';";
+
 const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
   async headers() {
@@ -19,7 +29,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: ${apiProxyOrigin}; connect-src 'self' ${apiProxyOrigin}; font-src 'self' data:; frame-ancestors 'none';`,
+              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: ${apiProxyOrigin}; connect-src 'self' ${apiProxyOrigin}; font-src 'self' data:; frame-ancestors 'none';`,
           },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },

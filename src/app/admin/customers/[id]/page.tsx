@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuArrowLeft as ArrowLeft, LuCalendar as Calendar, LuCalendarCheck as CalendarCheck, LuCalendarX as CalendarX, LuCircleCheckBig as CheckCircle2, LuCreditCard as CreditCard, LuMail as Mail, LuMapPin as MapPin, LuMessageSquare as MessageSquare, LuWallet as Wallet, LuCircleX as XCircle } from "react-icons/lu";
 import { useParams } from "next/navigation";
 
@@ -60,10 +60,14 @@ export default function CustomerDetailPage() {
     hasPermission("customers.view_communications") || hasPermission("customers.view");
   const canCommunicate = hasPermission("customers.communicate");
 
+  const requestIdRef = useRef(0);
+
   const fetchCustomer = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
       const detail = await getCustomerDetail(customerId);
+      if (requestIdRef.current !== requestId) return;
       setCustomer(detail);
 
       const [bookingResponse, paymentResponse, communicationResponse] = await Promise.all([
@@ -71,22 +75,20 @@ export default function CustomerDetailPage() {
         canViewPayments ? getCustomerPayments(customerId) : Promise.resolve({ items: [] }),
         canViewCommunications ? getCustomerCommunications(customerId) : Promise.resolve({ items: [] }),
       ]);
+      if (requestIdRef.current !== requestId) return;
       setBookings(bookingResponse.items || []);
       setPayments(paymentResponse.items || []);
       setCommunications(communicationResponse.items || []);
     } catch {
+      if (requestIdRef.current !== requestId) return;
       toast.error("Could not load customer.");
     } finally {
-      setLoading(false);
+      if (requestIdRef.current === requestId) setLoading(false);
     }
   }, [canViewCommunications, canViewPayments, customerId, toast]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void fetchCustomer();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+    void fetchCustomer();
   }, [fetchCustomer]);
 
   const handleBlock = async () => {

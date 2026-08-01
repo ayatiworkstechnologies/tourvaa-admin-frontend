@@ -13,7 +13,7 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const { dashboard, loading, isLoggedIn } = useAuthContext();
-  const docsMode = typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
+  const docsMode = process.env.NODE_ENV !== "production" && typeof window !== "undefined" && Boolean(window.localStorage.getItem("tourvaa_docs_dashboard"));
   const isAdminLogin = pathname === "/admin/login";
   const isWrongPortal = Boolean(
     isLoggedIn && dashboard && !ADMIN_DASHBOARD_TYPES.has(dashboard.dashboard_type),

@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LuArrowLeft as ArrowLeft, LuCircleCheckBig as CheckCircle2, LuLink as LinkIcon, LuPercent as Percent, LuShieldHalf as ShieldHalf, LuCircleX as XCircle } from "react-icons/lu";
 
 import ActionModal from "@/components/operations/ActionModal";
@@ -55,14 +55,20 @@ export default function ReviewDetailPage({ module, id, title, requiredPermission
   const canPartial = module !== "affiliates" && (hasPermission(`${module}.partial_approve`) || canApprove);
   const canCommercial = module === "suppliers" ? hasPermission("suppliers.manage_markup") : module === "agents" ? hasPermission("agents.manage_discount") : hasPermission("affiliates.manage_api_link");
 
+  const requestIdRef = useRef(0);
+
   const fetchRecord = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      setRecord(await getReviewRecord(module, id));
+      const data = await getReviewRecord(module, id);
+      if (requestIdRef.current !== requestId) return;
+      setRecord(data);
     } catch {
+      if (requestIdRef.current !== requestId) return;
       toast.error("Could not load detail.");
     } finally {
-      setLoading(false);
+      if (requestIdRef.current === requestId) setLoading(false);
     }
   }, [id, module, toast]);
 

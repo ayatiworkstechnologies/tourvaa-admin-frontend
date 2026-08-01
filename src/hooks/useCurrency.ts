@@ -132,5 +132,13 @@ export function useCurrency() {
     convert,
     format: (amount: number | string | null | undefined, fromCurrency = "USD") => formatCurrency(convert(amount, fromCurrency), outputCode(fromCurrency)),
     formatCompact: (amount: number | string | null | undefined, fromCurrency = "USD") => formatCurrencyCompact(convert(amount, fromCurrency), outputCode(fromCurrency)),
+    /** Formats an amount that was actually settled/recorded in `currency`
+     * (a captured payment, an invoice total, a payout) without running it
+     * through FX conversion - converting a real historical transaction to
+     * the viewer's ambient display currency would show a number that was
+     * never actually charged/paid, and breaks reconciliation against
+     * gateway settlement reports. Use `format` only for values that are
+     * genuinely meant to be browsed/compared across currencies. */
+    formatExact: (amount: number | string | null | undefined, currency = "USD") => formatCurrency(amount, currency.toUpperCase()),
   };
 }

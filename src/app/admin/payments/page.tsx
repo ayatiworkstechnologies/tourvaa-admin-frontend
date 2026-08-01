@@ -239,7 +239,7 @@ function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => voi
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function PaymentsPage() {
   const { hasPermission } = useAuthContext();
-  const { format } = useCurrency();
+  const { formatExact: format } = useCurrency();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");

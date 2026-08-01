@@ -97,14 +97,14 @@ function TravellerPicker({ onSelect }: { onSelect: (n: number) => void }) {
   );
 }
 
-function BookingConfirm({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+function BookingConfirm({ onConfirm, onCancel, disabled }: { onConfirm: () => void; onCancel: () => void; disabled?: boolean }) {
   return (
     <div className="mt-2 rounded-xl border border-dash-border bg-white p-3 shadow-sm">
       <div className="flex gap-2">
-        <button type="button" onClick={onConfirm} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+        <button type="button" onClick={onConfirm} disabled={disabled} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
           <CheckCircle2 size={14} /> Confirm Booking
         </button>
-        <button type="button" onClick={onCancel} className="flex-1 rounded-xl border border-[#D9DEE8] py-2 text-xs font-bold text-dash-muted hover:bg-dash-bg-muted">Cancel</button>
+        <button type="button" onClick={onCancel} disabled={disabled} className="flex-1 rounded-xl border border-[#D9DEE8] py-2 text-xs font-bold text-dash-muted hover:bg-dash-bg-muted disabled:opacity-50">Cancel</button>
       </div>
     </div>
   );
@@ -118,6 +118,7 @@ export default function ChatWidget() {
   const [loading, setLoading] = useState(false);
   const [sessionKey, setSessionKey] = useState<string | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [resolvedBookingIndices, setResolvedBookingIndices] = useState<Set<number>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -184,7 +185,9 @@ export default function ChatWidget() {
     void sendRaw(`__select_travellers__:tour_id=${tourId}|date=${date}|travellers=${travellers}`, `Travellers: ${travellers}`);
   };
 
-  const handleConfirmBooking = async (data: ActionData) => {
+  const handleConfirmBooking = async (data: ActionData, index: number) => {
+    if (bookingLoading || resolvedBookingIndices.has(index)) return;
+
     if (!user) {
       setMessages(prev => [...prev, {
         role: "assistant",
@@ -203,6 +206,7 @@ export default function ChatWidget() {
         customer_notes: "Booked via AI chat assistant",
       });
       const bookingCode = res.data?.data?.booking_code || res.data?.booking_code || `#${res.data?.data?.id || res.data?.id || ""}`;
+      setResolvedBookingIndices(prev => new Set(prev).add(index));
       setMessages(prev => [...prev, {
         role: "assistant",
         content: `Booking confirmed! Your booking code is **${bookingCode}**. Check your customer dashboard for full details and payment instructions.`,
@@ -220,7 +224,9 @@ export default function ChatWidget() {
     }
   };
 
-  const handleCancelBooking = () => {
+  const handleCancelBooking = (index: number) => {
+    if (resolvedBookingIndices.has(index)) return;
+    setResolvedBookingIndices(prev => new Set(prev).add(index));
     setMessages(prev => [...prev, { role: "assistant", content: "Booking cancelled. Let me know if you'd like to explore other tours or need help with anything else." }]);
   };
 
@@ -258,8 +264,9 @@ export default function ChatWidget() {
                   )}
                   {msg.role === "assistant" && msg.action_type === "confirm_booking" && msg.action_data && (
                     <BookingConfirm
-                      onConfirm={() => handleConfirmBooking(msg.action_data!)}
-                      onCancel={handleCancelBooking}
+                      onConfirm={() => handleConfirmBooking(msg.action_data!, i)}
+                      onCancel={() => handleCancelBooking(i)}
+                      disabled={bookingLoading || resolvedBookingIndices.has(i)}
                     />
                   )}
                   {bookingLoading && msg.action_type === "confirm_booking" && (

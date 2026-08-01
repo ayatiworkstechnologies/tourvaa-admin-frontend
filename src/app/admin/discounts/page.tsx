@@ -102,6 +102,10 @@ export default function DiscountsPage() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    if (editing.discount_value < 0 || (editing.discount_type === "percentage" && editing.discount_value > 100)) {
+      toast.error("A percentage discount must be between 0 and 100.");
+      return;
+    }
     setSaving(true);
     try {
       if (editing.id) {
@@ -350,6 +354,8 @@ export default function DiscountsPage() {
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Value</span>
                   <input
                     type="number"
+                    min={0}
+                    max={editing.discount_type === "percentage" ? 100 : undefined}
                     value={editing.discount_value}
                     onChange={(e) => setEditing((p) => (p ? { ...p, discount_value: Number(e.target.value) } : p))}
                     className={inputClass}
