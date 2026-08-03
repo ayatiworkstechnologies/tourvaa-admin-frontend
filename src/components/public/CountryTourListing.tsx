@@ -83,6 +83,17 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     router.push(`/tours${params.size ? `?${params}` : ""}`);
   };
 
+  const activeFilterCount = [
+    Boolean(queryMinPrice || queryMaxPrice),
+    Boolean(queryMinDays || queryMaxDays),
+    Boolean(queryCountry),
+    Boolean(queryCategory),
+    Boolean(queryDepartureMonth),
+    querySort !== "newest",
+  ].filter(Boolean).length;
+
+  const clearFilters = () => applyFilter({ min_price: "", max_price: "", min_days: "", max_days: "", country: "", category: "", departure_month: "", sort: "" });
+
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const params = new URLSearchParams();
@@ -106,13 +117,24 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           <button className="m-1 flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue-600 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg"><Search size={16} />Search</button>
         </form>
 
-        <div className="animate-fade-up pt-32 md:pt-36">
+        <div className="animate-fade-up pt-8 md:pt-10">
           <nav className="flex items-center gap-3 text-sm font-semibold"><Home size={17} className="text-blue-600" /><Link href="/">Home</Link><span>›</span><MapPin size={17} className="text-blue-600" /><Link href="/tours">Tour</Link>{countryName && <><span>›</span><MapPin size={17} className="text-blue-600" /><span>{countryName}</span></>}</nav>
           <h1 className="mt-8 text-3xl font-black">{pageTitle}</h1>
           <p className="mt-5 text-sm"><b>{total} Tours Found</b> <span className="text-slate-500">{countLocation}</span></p>
 
           <div className="mt-6 flex flex-wrap items-center gap-2 border-b border-slate-100 pb-8">
-            <button type="button" className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white"><Sliders size={14} />Filter <span className="rounded-full bg-white px-1 text-blue-600">01</span></button>
+            <button
+              type="button"
+              onClick={clearFilters}
+              disabled={activeFilterCount === 0}
+              title={activeFilterCount ? "Clear all filters" : "No filters applied"}
+              className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition ${activeFilterCount ? "bg-blue-600 text-white hover:bg-blue-700" : "cursor-default bg-slate-100 text-slate-400"}`}
+            >
+              <Sliders size={14} />Filter{" "}
+              <span className={`rounded-full px-1 ${activeFilterCount ? "bg-white text-blue-600" : "bg-white text-slate-400"}`}>
+                {String(activeFilterCount).padStart(2, "0")}
+              </span>
+            </button>
             <FilterSelect label="Budget" value={`${queryMinPrice}-${queryMaxPrice}`} active={Boolean(queryMinPrice || queryMaxPrice)} options={[{ label: "Any budget", value: "-" }, { label: "Under $1,000", value: "-1000" }, { label: "$1,000 – $2,000", value: "1000-2000" }, { label: "$2,000+", value: "2000-" }]} onChange={(value) => { const [min, max] = value.split("-"); applyFilter({ min_price: min, max_price: max }); }} />
             <FilterSelect label="Duration" value={`${queryMinDays}-${queryMaxDays}`} active={Boolean(queryMinDays || queryMaxDays)} options={[{ label: "Any duration", value: "-" }, { label: "2 – 6 Days", value: "2-6" }, { label: "7 – 10 Days", value: "7-10" }, { label: "11 – 14 Days", value: "11-14" }, { label: "15+ Days", value: "15-" }]} onChange={(value) => { const [min, max] = value.split("-"); applyFilter({ min_days: min, max_days: max }); }} />
             <FilterSelect label="Destination" value={queryCountry} active={Boolean(queryCountry)} options={[{ label: "All destinations", value: "" }, ...countryOptions.map((item) => ({ label: item, value: item }))]} onChange={(value) => applyFilter({ country: value })} />

@@ -66,7 +66,7 @@ html {
   text-size-adjust: 100%;
 }
 
-/* Public site heading font (Outfit, loaded + scoped in PublicLayout.tsx).
+/* Public site heading font - aliased to --font-onest in PublicLayout.tsx.
  * Falls back to the body font stack outside the public route group where
  * --font-heading is never set. */
 .font-heading {
@@ -81,7 +81,7 @@ body {
   overflow-x: clip;
   background: var(--bg-main);
   color: var(--text-main);
-  font-family: "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: var(--font-onest);
 }
 
 button,
@@ -445,7 +445,7 @@ button {
   color: var(--public-ink);
 }
 .public-site h1, .public-site h2, .public-site h3, .public-site h4 {
-  font-family: var(--font-heading), sans-serif;
+  font-family: var(--font-heading);
 }
 .public-page-enter { animation: publicPageFade .45s ease both; }
 @keyframes publicPageFade { from { opacity: 0; } to { opacity: 1; } }
@@ -504,3 +504,10 @@ button {
     scroll-behavior: auto !important;
   }
 }
+
+/* Repositioning the Elfsight Website Translator widget (which portals to
+   <body> with its own fixed top/right) is handled in JS - see
+   ElfsightTranslator.tsx. A plain CSS rule here doesn't survive Tailwind's
+   build: its selector targets a class that's only ever injected at runtime
+   by Elfsight's script and never appears as literal text in our own source,
+   so Tailwind's content scanner treats the rule as unused and drops it. */

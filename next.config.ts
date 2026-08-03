@@ -14,10 +14,21 @@ const apiProxyOrigin = new URL(apiProxyTarget).origin;
 // script-src and style-src for now: Next.js/Tailwind emit inline
 // scripts/styles that would need nonce-based CSP wiring to remove safely,
 // which is a larger change than this fix's scope.
+// The Elfsight Website Translator widget (platform.js) loads its own
+// scripts/styles from *.elfsight.com/*.elfsightcdn.com (per
+// https://help.elfsight.com/article/1581 - both must be allowlisted or the
+// browser silently blocks the widget and it never renders), but the actual
+// phrase-translation API calls it makes at runtime go to a THIRD, distinct
+// domain - phrase-translator.wu.elfsightcompute.com - discovered via a
+// browser console CSP violation, not documented anywhere. Without
+// *.elfsightcompute.com in connect-src the widget UI renders fine but
+// picking a language silently fails to translate anything.
+const elfsightHosts =
+  "https://elfsight.com https://*.elfsight.com https://elfsightcdn.com https://*.elfsightcdn.com https://*.elfsightcompute.com";
 const scriptSrc =
   process.env.NODE_ENV === "production"
-    ? "script-src 'self' 'unsafe-inline';"
-    : "script-src 'self' 'unsafe-inline' 'unsafe-eval';";
+    ? `script-src 'self' 'unsafe-inline' ${elfsightHosts};`
+    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${elfsightHosts};`;
 
 const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
@@ -29,7 +40,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: ${apiProxyOrigin}; connect-src 'self' ${apiProxyOrigin}; font-src 'self' data:; frame-ancestors 'none';`,
+              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${elfsightHosts}; img-src 'self' data: blob: https: ${apiProxyOrigin}; connect-src 'self' ${apiProxyOrigin} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com; font-src 'self' data: ${elfsightHosts}; frame-ancestors 'none';`,
           },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },

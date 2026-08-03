@@ -8,7 +8,7 @@ import {
   LuBuilding2 as Building,
   LuCalendarCheck as CalendarCheck,
   LuChevronDown as ChevronDown,
-  LuGlobe as Globe,
+  LuDollarSign as DollarSign,
   LuHeart as Heart,
   LuLayoutDashboard as LayoutDashboard,
   LuLogOut as LogOut,
@@ -79,9 +79,9 @@ export default function PublicHeader() {
   const transparent = isHome && !scrolled;
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${transparent ? "bg-transparent text-slate-900" : "border-b border-slate-100 bg-white/95 text-slate-900 shadow-sm backdrop-blur-xl"}`}
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${transparent ? "bg-transparent text-white" : "border-b border-slate-100 bg-white/95 text-slate-900 shadow-sm backdrop-blur-xl"}`}
     >
-      <div className="mx-auto flex h-20 max-w-[1480px] min-w-0 items-center justify-between gap-4 px-4 sm:px-7 lg:px-12">
+      <div className="mx-auto flex h-20 max-w-[1480px] min-w-0 items-center justify-between gap-4 py-2 pl-4 pr-36 sm:pl-7 sm:pr-36 lg:pl-12 lg:pr-40">
         <Link
           href="/"
           className="text-2xl font-black tracking-tight text-[#1478f2]"
@@ -120,10 +120,8 @@ export default function PublicHeader() {
             )}
           </Link>
           <span className="flex flex-col items-center gap-0.5 text-[9px] font-semibold">
-            <Globe size={17} />
-            <span className="flex items-center gap-1 [&_select]:border-0 [&_select]:bg-transparent [&_select]:p-0 [&_select]:text-[9px]">
-              EN | <CurrencySelector inverse={transparent} />
-            </span>
+            <DollarSign size={17} />
+            <CurrencySelector inverse={transparent} />
           </span>
           <div ref={profileRef} className="relative">
             <button

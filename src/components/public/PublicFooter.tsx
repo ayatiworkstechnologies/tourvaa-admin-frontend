@@ -2,15 +2,23 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { LuFacebook as Facebook, LuInstagram as Instagram, LuLinkedin as Linkedin, LuMail as Mail, LuPhone as Phone, LuYoutube as Youtube } from "react-icons/lu";
+import { LuCompass as Compass, LuFacebook as Facebook, LuGlobe as Globe, LuInstagram as Instagram, LuLinkedin as Linkedin, LuMapPin as MapPin, LuYoutube as Youtube } from "react-icons/lu";
 import CurrencySelector from "@/components/public/CurrencySelector";
-import { CmsExternalLink, fetchFooterLinks, fetchPublicSettings, subscribeNewsletter } from "@/lib/api/publicClient";
+import {
+  CmsExternalLink,
+  fetchFooterLinks,
+  fetchPublicCategories,
+  fetchPublicCities,
+  fetchPublicCountries,
+  fetchPublicSettings,
+  PublicCategory,
+  PublicCity,
+  PublicCountry,
+} from "@/lib/api/publicClient";
 
-const exploreLinks = [["Destinations", "/destinations"], ["Tour Packages", "/tours"], ["Travel Styles", "/tours?sort=newest"], ["Special Offers", "/tours?sort=price_asc"], ["Travel Stories", "/blogs"]] as const;
-const supportLinks = [["Contact Us", "/contact"], ["Cancellation Policy", "/cancellation-policy"], ["Booking Terms", "/terms"], ["Privacy Policy", "/privacy-policy"]] as const;
-const partnerLinks = [["Become a Supplier", "/login?role=supplier"], ["Agent Login", "/login?role=agent"], ["Supplier Login", "/login?role=supplier"], ["Partner Support", "/contact"]] as const;
-const accountLinks = [["Customer Login", "/login?role=traveller"], ["My Bookings", "/customer/bookings"], ["Wishlist", "/wishlist"], ["Profile", "/customer/profile"]] as const;
-const paymentBadges = ["VISA", "Mastercard", "RuPay", "UPI"] as const;
+const supportLinks = [["Contact Us", "/contact"], ["Cancellation Policy", "/cancellation-policy"], ["Privacy Policy", "/privacy-policy"], ["Terms & Conditions", "/terms"]] as const;
+const companyLinks = [["About us", "/about"], ["Blog", "/blogs"], ["Tours", "/tours"], ["Destinations", "/destinations"]] as const;
+const loginLinks = [["Travellers Login", "/login?role=traveller"], ["Agents Login", "/login?role=agent"]] as const;
 
 function isSocialLink(link: CmsExternalLink) {
   return /facebook|instagram|linkedin|youtube|twitter|whatsapp|\bx\b/i.test(`${link.label} ${link.url}`);
@@ -25,44 +33,81 @@ function SocialIcon({ label }: { label: string }) {
   return <span className="text-xs font-black">↗</span>;
 }
 
-function NewsletterBox() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+type MegaTab = "destinations" | "countries" | "categories";
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!email.trim()) return;
-    setStatus("sending");
-    try {
-      await subscribeNewsletter(email.trim());
-      setStatus("sent");
-      setEmail("");
-    } catch {
-      setStatus("error");
-    }
-  };
+const megaTabs: { key: MegaTab; label: string; icon: React.ElementType }[] = [
+  { key: "destinations", label: "Destinations", icon: MapPin },
+  { key: "countries", label: "Top countries to visit", icon: Globe },
+  { key: "categories", label: "Top attraction categories", icon: Compass },
+];
+
+function DestinationsMegaPanel() {
+  const [tab, setTab] = useState<MegaTab>("destinations");
+  const [cities, setCities] = useState<PublicCity[]>([]);
+  const [countries, setCountries] = useState<PublicCountry[]>([]);
+  const [categories, setCategories] = useState<PublicCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([fetchPublicCities(), fetchPublicCountries(), fetchPublicCategories()]).then(([citiesRes, countriesRes, categoriesRes]) => {
+      if (!active) return;
+      if (citiesRes.status === "fulfilled") setCities(citiesRes.value);
+      if (countriesRes.status === "fulfilled") setCountries(countriesRes.value);
+      if (categoriesRes.status === "fulfilled") setCategories(categoriesRes.value);
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const items =
+    tab === "destinations"
+      ? cities.filter((c) => (c.tour_count || 0) > 0).slice(0, 16).map((c) => ({ key: `city-${c.id}`, label: c.city_name, count: c.tour_count || 0, href: `/tours?city=${encodeURIComponent(c.city_name)}` }))
+      : tab === "countries"
+        ? countries.filter((c) => (c.tour_count || 0) > 0).slice(0, 16).map((c) => ({ key: `country-${c.id}`, label: c.country_name, count: c.tour_count || 0, href: `/tours?country=${encodeURIComponent(c.country_name)}` }))
+        : categories.filter((c) => (c.tour_count || 0) > 0).slice(0, 16).map((c) => ({ key: `cat-${c.id}`, label: c.category_name, count: c.tour_count || 0, href: `/tours?category=${encodeURIComponent(c.slug)}` }));
+
+  if (!loading && cities.length === 0 && countries.length === 0 && categories.length === 0) return null;
+  const activeTab = megaTabs.find((item) => item.key === tab) ?? megaTabs[0];
 
   return (
-    <div>
-      <h2 className="text-sm font-bold text-slate-950">Stay updated with Tourvaa</h2>
-      <p className="mt-2 max-w-xs text-xs leading-relaxed text-slate-500">Get travel inspiration, deals and updates straight to your inbox.</p>
-      <form onSubmit={submit} className="mt-4 flex gap-2">
-        <label className="sr-only" htmlFor="footer-newsletter-email">Email address</label>
-        <input
-          id="footer-newsletter-email"
-          type="email"
-          required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="Enter your email"
-          className="w-full min-w-0 rounded border border-slate-300 bg-white px-4 py-2.5 text-xs outline-none focus:border-blue-500"
-        />
-        <button type="submit" disabled={status === "sending"} className="shrink-0 rounded bg-[#1478f2] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-60">
-          {status === "sending" ? "..." : "Subscribe"}
-        </button>
-      </form>
-      {status === "sent" && <p className="mt-2 text-[10px] font-semibold text-emerald-600">Thanks for subscribing!</p>}
-      {status === "error" && <p className="mt-2 text-[10px] font-semibold text-rose-600">Could not subscribe right now. Please try again.</p>}
+    <div className="bg-white pb-10 pt-2">
+      <div className="mx-auto max-w-[1380px] px-6 lg:px-12">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,.06)] sm:p-7">
+          <div className="inline-flex flex-wrap gap-1 rounded-full bg-slate-100 p-1">
+            {megaTabs.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setTab(item.key)}
+                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition ${tab === item.key ? "bg-blue-600 text-white shadow-[0_4px_12px_rgba(37,99,235,.35)]" : "text-slate-500 hover:text-slate-800"}`}
+              >
+                <item.icon size={13} />
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {loading
+              ? Array.from({ length: 12 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-xl bg-slate-100" />)
+              : items.map((item) => (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white hover:shadow-[0_8px_20px_rgba(15,23,42,.08)]"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
+                      <activeTab.icon size={17} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold text-slate-900">{item.label}</span>
+                      <span className="block text-[10px] text-slate-400">{item.count} tour{item.count === 1 ? "" : "s"} &amp; activities</span>
+                    </span>
+                  </Link>
+                ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -87,50 +132,37 @@ export default function PublicFooter() {
 
   const socialLinks = useMemo(() => externalLinks.filter(isSocialLink), [externalLinks]);
   const siteName = settings.site_name || settings.app_name || "Tourvaa";
-  const tagline = settings.site_tagline || settings.footer_description || "Making travel simple, memorable and meaningful.";
-  const supportEmail = settings.support_email || settings.contact_email || "";
-  const supportPhone = settings.support_phone || settings.contact_phone || "";
+  const tagline = settings.site_tagline || settings.footer_description || "Explore more, travel better, and create memories with Tourvaa.";
 
   return (
-    <footer className="mt-10 bg-[#f5f5f5] text-slate-700">
-      <div className="mx-auto grid max-w-[1380px] gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.3fr] lg:px-12">
-        <FooterGroup title="Explore" links={exploreLinks} />
-        <FooterGroup title="Support" links={supportLinks} />
-        <FooterGroup title="Partners" links={partnerLinks} />
-        <FooterGroup title="My Account" links={accountLinks} />
-      </div>
-
-      <div className="mx-auto grid max-w-[1380px] gap-10 border-t border-slate-200 px-6 py-10 sm:grid-cols-2 lg:px-12">
-        <NewsletterBox />
-        <div>
-          <Link href="/" className="text-lg font-black text-[#1478f2]">{siteName}</Link>
-          <p className="mt-2 max-w-xs text-xs leading-relaxed text-slate-500">{tagline}</p>
-          {(supportEmail || supportPhone) && <div className="mt-4 space-y-2 text-[11px] text-slate-500">{supportEmail && <a href={`mailto:${supportEmail}`} className="flex items-center gap-2 hover:text-blue-600"><Mail size={13} />{supportEmail}</a>}{supportPhone && <a href={`tel:${supportPhone}`} className="flex items-center gap-2 hover:text-blue-600"><Phone size={13} />{supportPhone}</a>}</div>}
-          <div className="mt-5 grid grid-cols-2 gap-4">
-            <CurrencySelector />
-            <label className="sr-only" htmlFor="footer-country">Country</label>
-            <select id="footer-country" value={country} onChange={(event) => setCountry(event.target.value)} className="rounded border border-slate-300 bg-white px-4 py-2 text-xs font-semibold outline-none focus:border-blue-500">
-              {[country, "INDIA", "UAE", "UNITED KINGDOM", "USA"].filter((item, index, array) => array.indexOf(item) === index).map((item) => <option key={item}>{item}</option>)}
-            </select>
-          </div>
-          <div className="mt-5 flex items-center gap-4">
-            {socialLinks.length ? socialLinks.map((link) => <a key={link.id} href={link.url} target={link.open_in_new_tab ? "_blank" : undefined} rel={link.open_in_new_tab ? "noreferrer" : undefined} aria-label={link.label} className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm transition hover:-translate-y-1 hover:bg-blue-600 hover:text-white"><SocialIcon label={link.label} /></a>) : <><Facebook className="text-blue-600" size={16} /><Instagram className="text-pink-500" size={16} /><Linkedin className="text-blue-700" size={16} /><Youtube className="text-red-600" size={17} /></>}
+    <>
+      <DestinationsMegaPanel />
+      <footer className="bg-[#f5f5f5] text-slate-700">
+        <div className="mx-auto grid max-w-[1380px] gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.3fr] lg:px-12">
+          <FooterGroup title="Support" links={supportLinks} />
+          <FooterGroup title="Our Company" links={companyLinks} />
+          <FooterGroup title="Login" links={loginLinks} />
+          <div>
+            <Link href="/" className="text-lg font-black text-[#1478f2]">{siteName}</Link>
+            <p className="mt-2 max-w-xs text-xs leading-relaxed text-slate-500">{tagline}</p>
+            <div className="mt-5 grid grid-cols-2 gap-4">
+              <CurrencySelector />
+              <label className="sr-only" htmlFor="footer-country">Country</label>
+              <select id="footer-country" value={country} onChange={(event) => setCountry(event.target.value)} className="rounded border border-slate-300 bg-white px-4 py-2 text-xs font-semibold outline-none focus:border-blue-500">
+                {[country, "INDIA", "UAE", "UNITED KINGDOM", "USA"].filter((item, index, array) => array.indexOf(item) === index).map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </div>
+            <div className="mt-5 flex items-center gap-4">
+              {socialLinks.length ? socialLinks.map((link) => <a key={link.id} href={link.url} target={link.open_in_new_tab ? "_blank" : undefined} rel={link.open_in_new_tab ? "noreferrer" : undefined} aria-label={link.label} className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm transition hover:-translate-y-1 hover:bg-blue-600 hover:text-white"><SocialIcon label={link.label} /></a>) : <><Facebook className="text-blue-600" size={16} /><Instagram className="text-pink-500" size={16} /><Linkedin className="text-blue-700" size={16} /><Youtube className="text-red-600" size={17} /></>}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="border-t border-slate-200 px-5 py-6">
-        <div className="mx-auto flex max-w-[1380px] flex-col items-center gap-4 sm:flex-row sm:justify-between">
-          <p className="text-[9px] text-slate-500">Tourvaa · Making travel simple, memorable and meaningful.</p>
-          <div className="flex items-center gap-2">
-            {paymentBadges.map((badge) => (
-              <span key={badge} className="rounded border border-slate-300 bg-white px-2.5 py-1 text-[9px] font-bold tracking-wide text-slate-600">{badge}</span>
-            ))}
-          </div>
+        <div className="border-t border-slate-200 px-5 py-6">
+          <p className="text-center text-[9px] text-slate-500">© {new Date().getFullYear()} Tourvaa Private Limited. All rights reserved.</p>
         </div>
-        <p className="mt-4 text-center text-[9px] text-slate-500">© {new Date().getFullYear()} Tourvaa Private Limited. All rights reserved.</p>
-      </div>
-    </footer>
+      </footer>
+    </>
   );
 }
 

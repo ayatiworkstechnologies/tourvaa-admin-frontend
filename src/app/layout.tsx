@@ -1,8 +1,19 @@
 ﻿import type { Metadata } from "next";
+import { Onest } from "next/font/google";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import "./globals.css";
 import { DEFAULT_DESCRIPTION, DEFAULT_SOCIAL_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo/pageMetadata";
+
+// Variable font (weights 100-900) used app-wide - see globals.css `body`.
+// adjustFontFallback disabled + no fallback list: only Onest is ever
+// referenced, no "Onest Fallback"/system-font stand-in while it loads.
+const onest = Onest({
+  subsets: ["latin"],
+  variable: "--font-onest",
+  adjustFontFallback: false,
+  fallback: [],
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -24,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en" data-scroll-behavior="smooth" className={onest.variable}>
       <body suppressHydrationWarning>
         <ToastProvider>
           <AuthProvider>{children}</AuthProvider>

@@ -26,6 +26,9 @@ export type PublicTour = {
   departures?: { id: number; date: string; slots: number; status: string }[];
   rating_average?: number | null;
   rating_count?: number;
+  start_location?: string | null;
+  end_location?: string | null;
+  group_size?: string | null;
 };
 
 export type PublicReview = {
@@ -87,10 +90,10 @@ export type PublicTourDetail = PublicTour & {
   reviews: PublicReview[];
 };
 
-export type PublicCategory = { id: number; category_name: string; slug: string; description: string; image: string | null };
+export type PublicCategory = { id: number; category_name: string; slug: string; description: string; image: string | null; tour_count?: number };
 export type PublicSubcategory = { id: number; subcategory_name: string; slug: string; category_name: string };
 export type PublicCountry = { id: number; country_name: string; country_code: string; tour_count?: number };
-export type PublicCity = { id: number; city_name: string; country_id: number };
+export type PublicCity = { id: number; city_name: string; country_id: number; tour_count?: number };
 export type CmsBanner = { id: number; title: string; subtitle: string | null; image: string; cta_text: string | null; cta_url: string | null; sort_order: number; is_active: boolean };
 export type CmsDestination = { id: number; title: string; image: string | null; description: string | null; sort_order: number; is_active: boolean };
 export type CmsReview = { id: number; reviewer_name: string; reviewer_image: string | null; rating: number; review_text: string; tour_name: string | null; country: string | null; sort_order: number; is_active: boolean };
@@ -127,6 +130,11 @@ export async function fetchPublicSubcategories(category?: string) {
 export async function fetchPublicCountries() {
   const res = await publicApi.get("/countries");
   return res.data.items as PublicCountry[];
+}
+
+export async function fetchPublicCities(country?: string) {
+  const res = await publicApi.get("/cities", { params: country ? { country } : {} });
+  return res.data.items as PublicCity[];
 }
 
 export async function fetchHomepageBanners() {
