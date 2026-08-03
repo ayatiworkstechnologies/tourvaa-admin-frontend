@@ -20,6 +20,7 @@ import {
   TourWorkspaceTabs,
 } from "@/components/tours/TourWorkspace";
 import TourOverviewTab from "@/components/tours/TourOverviewTab";
+import PhysicalRatingField from "@/components/tours/PhysicalRatingField";
 import TourHighlightsTab from "@/components/tours/TourHighlightsTab";
 import TourItineraryTab from "@/components/tours/TourItineraryTab";
 import TourItemsTab from "@/components/tours/TourItemsTab";
@@ -238,7 +239,18 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
 
       <TourWorkspaceContent role={role}>
         {activeKey === "basic" && <TourFormPage tourId={tourId} embedded role={role} sections={["basic"]} initialData={tour ?? undefined} onSaved={() => fetchTour(false)} />}
-        {activeKey === "location" && <TourFormPage tourId={tourId} embedded role={role} sections={["location"]} initialData={tour ?? undefined} onSaved={() => fetchTour(false)} />}
+        {activeKey === "location" && (
+          <div className="space-y-6">
+            <TourFormPage tourId={tourId} embedded role={role} sections={["location"]} initialData={tour ?? undefined} onSaved={() => fetchTour(false)} />
+            <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+              <h2 className="text-xl font-black text-dash-text">Physical Rating</h2>
+              <p className="mt-1 text-sm text-dash-subtle">How physically demanding this tour is for travellers.</p>
+              <div className="mt-5">
+                <PhysicalRatingField tourId={tourId} />
+              </div>
+            </div>
+          </div>
+        )}
         {activeKey === "overview" && (
           <div className="space-y-6">
             <TourOverviewTab tourId={tourId} />
@@ -246,12 +258,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
           </div>
         )}
         {activeKey === "itinerary" && <TourItineraryTab tourId={tourId} />}
-        {activeKey === "pricing" && (
-          <div className="space-y-6">
-            <TourFormPage tourId={tourId} embedded role={role} sections={["pricing"]} initialData={tour ?? undefined} onSaved={() => fetchTour(false)} />
-            <TourPricingTab tourId={tourId} />
-          </div>
-        )}
+        {activeKey === "pricing" && <TourPricingTab tourId={tourId} role={role} />}
         {activeKey === "accommodation" && <TourAccommodationExtraTab tourId={tourId} />}
         {activeKey === "activities" && <TourOptionalActivityTab tourId={tourId} />}
         {activeKey === "policies" && (

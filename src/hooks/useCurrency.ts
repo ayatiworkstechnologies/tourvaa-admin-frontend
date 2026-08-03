@@ -40,14 +40,32 @@ async function loadCurrency() {
   if (loadPromise) return loadPromise;
   loadPromise = (async () => {
     const saved = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
-    const country = localeCountry();
+    // Leave `country` unset on the first call: the backend then geolocates
+    // by request IP (cf-ipcountry / x-vercel-ip-country), which is what
+    // should decide the default currency, not the browser's language
+    // setting (an expat or a traveller with an English OS would otherwise
+    // always get resolved to the "wrong" country). Locale is only used as a
+    // last-resort fallback when no IP-derived country is available at all
+    // (e.g. local dev with no CDN in front of the API).
     const [ratesResult, contextResult, settingsResult] = await Promise.allSettled([
       api.get("/currency/rates", { params: { base: "USD" } }),
-      api.get("/currency/context", { params: country ? { country } : {} }),
+      api.get("/currency/context"),
       api.get("/settings/public"),
     ]);
     const rateData = ratesResult.status === "fulfilled" ? ratesResult.value.data?.data : null;
-    const contextData = contextResult.status === "fulfilled" ? contextResult.value.data?.data : null;
+    let contextData = contextResult.status === "fulfilled" ? contextResult.value.data?.data : null;
+    if (!contextData?.country_code) {
+      const localeFallback = localeCountry();
+      if (localeFallback) {
+        try {
+          const fallbackResult = await api.get("/currency/context", { params: { country: localeFallback } });
+          contextData = fallbackResult.data?.data ?? contextData;
+        } catch {
+          // keep the original (IP-less) contextData; format() below still
+          // falls back to USD.
+        }
+      }
+    }
     const publicSettings = settingsResult.status === "fulfilled" ? settingsResult.value.data?.data : null;
     const rates = rateData?.rates && typeof rateData.rates === "object" ? rateData.rates : { USD: 1 };
 

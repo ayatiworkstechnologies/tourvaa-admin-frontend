@@ -23,6 +23,8 @@ type HistoryEntry = {
 export default function CommissionRequestTab() {
   const toast = useToast();
   const [form, setForm] = useState<Form>({ markup_type: "percentage", markup_value: "" });
+  const [floorType, setFloorType] = useState("");
+  const [floorValue, setFloorValue] = useState(0);
   const [status, setStatus] = useState("");
   const [note, setNote] = useState("");
   const [requestedAt, setRequestedAt] = useState<string | null>(null);
@@ -35,6 +37,8 @@ export default function CommissionRequestTab() {
       markup_type: (data.markup_type as string) || "percentage",
       markup_value: data.markup_value !== undefined && data.markup_value !== null ? String(data.markup_value) : "",
     });
+    setFloorType((data.markup_type as string) || "");
+    setFloorValue(Number(data.markup_value) || 0);
     setStatus((data.commission_request_status as string) || "");
     setNote((data.admin_comments as string) || (data.pending_requirements as string) || "");
     setRequestedAt((data.commission_requested_at as string) || null);
@@ -48,6 +52,8 @@ export default function CommissionRequestTab() {
       .catch(() => toast.error("Failed to load commission details."));
   }, [toast]);
 
+  const isFloorEnforced = Boolean(floorType) && form.markup_type === floorType;
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setSaving(true);
@@ -57,14 +63,23 @@ export default function CommissionRequestTab() {
         toast.error("Enter a valid commission value.");
         return;
       }
+      if (isFloorEnforced && value < floorValue) {
+        toast.error(`Commission value cannot be lower than the ${floorValue}% fixed by admin.`);
+        return;
+      }
       const res = await api.post("/suppliers/me/commission-request", {
         markup_type: form.markup_type,
         markup_value: value,
       });
       applySupplierData(res.data?.data ?? res.data ?? {});
-      toast.success("Commission request sent for admin approval.");
-    } catch {
-      toast.error("Could not submit commission request.");
+      toast.success(
+        isFloorEnforced && value >= floorValue
+          ? "Commission updated."
+          : "Commission request sent for admin approval."
+      );
+    } catch (error: unknown) {
+      const message = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(message || "Could not submit commission request.");
     } finally {
       setSaving(false);
     }
@@ -106,7 +121,7 @@ export default function CommissionRequestTab() {
             <Percent className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dash-subtle" />
             <input
               type="number"
-              min="0"
+              min={isFloorEnforced ? floorValue : 0}
               step="0.01"
               value={form.markup_value}
               onChange={(event) => setForm((current) => ({ ...current, markup_value: event.target.value }))}
@@ -114,6 +129,11 @@ export default function CommissionRequestTab() {
               placeholder="E.g. 10"
             />
           </div>
+          {isFloorEnforced && (
+            <p className="mt-1 text-xs text-dash-subtle">
+              Fixed by admin at {floorValue}%. You can increase this and save directly — no approval needed to go higher.
+            </p>
+          )}
         </label>
       </div>
 

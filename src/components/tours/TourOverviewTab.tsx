@@ -6,8 +6,6 @@ import { getOverview, saveOverview, TourOverview } from "@/lib/api/services/tour
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 
-const RATINGS = ["easy", "moderate", "hard"] as const;
-
 const empty: TourOverview = {
   duration_text: "", start_location: "", end_location: "",
   group_size: "", tour_type: "", physical_rating: "easy",
@@ -90,18 +88,12 @@ export default function TourOverviewTab({ tourId }: { tourId: string }) {
         <h2 className="text-xl font-black text-dash-text">Tour Overview</h2>
         <p className="mt-1 text-sm text-dash-subtle">Quick tour details shown on the listing page.</p>
         <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {field("duration_text", "Duration", "e.g. 5 Days / 4 Nights")}
-          {field("start_location", "Start location", "e.g. Cochin International Airport")}
-          {field("end_location", "End location", "e.g. Cochin International Airport")}
           {field("group_size", "Group size", "e.g. 2–15 people")}
-          {field("tour_type", "Tour type", "e.g. Adventure, Cultural, Luxury")}
-          <label>
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Physical rating</span>
-            <select value={form.physical_rating} onChange={(e) => update("physical_rating", e.target.value)} className={inputClass}>
-              {RATINGS.map((r) => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
-            </select>
-          </label>
         </div>
+        <p className="mt-3 text-xs text-dash-subtle">
+          Duration, start/end location, and tour type are set in the Basic Details and Location &amp; Category
+          steps. Physical rating has moved to Location &amp; Category.
+        </p>
       </div>
 
       <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">

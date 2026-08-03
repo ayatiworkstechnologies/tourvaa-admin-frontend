@@ -23,8 +23,10 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<CalendarEntry | null>(null);
   const [saving, setSaving] = useState(false);
-  const [newBlockDate, setNewBlockDate] = useState("");
+  const [newBlockStart, setNewBlockStart] = useState("");
+  const [newBlockEnd, setNewBlockEnd] = useState("");
   const [newBlockReason, setNewBlockReason] = useState("");
+  const [blocking, setBlocking] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,19 +80,43 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
     }
   };
 
+  const datesInRange = (start: string, end: string) => {
+    const dates: string[] = [];
+    const cursor = new Date(`${start}T00:00:00`);
+    const last = new Date(`${end}T00:00:00`);
+    while (cursor <= last) {
+      dates.push(cursor.toISOString().slice(0, 10));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return dates;
+  };
+
   const addBlock = async () => {
-    if (!newBlockDate) {
-      toast.error("Select a date.");
+    if (!newBlockStart) {
+      toast.error("Select a start date.");
       return;
     }
+    const end = newBlockEnd || newBlockStart;
+    if (end < newBlockStart) {
+      toast.error("End date must be on or after the start date.");
+      return;
+    }
+    setBlocking(true);
     try {
-      const d = await createUnavailableDate(tourId, { unavailable_date: newBlockDate, reason: newBlockReason });
-      setBlocked((prev) => [...prev, d]);
-      setNewBlockDate("");
+      const created = await Promise.all(
+        datesInRange(newBlockStart, end).map((date) =>
+          createUnavailableDate(tourId, { unavailable_date: date, reason: newBlockReason })
+        )
+      );
+      setBlocked((prev) => [...prev, ...created]);
+      setNewBlockStart("");
+      setNewBlockEnd("");
       setNewBlockReason("");
-      toast.success("Date blocked.");
+      toast.success(created.length > 1 ? `${created.length} dates blocked.` : "Date blocked.");
     } catch {
       toast.error("Failed.");
+    } finally {
+      setBlocking(false);
     }
   };
 
@@ -200,13 +226,14 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       {/* Blocked dates */}
       <div className="rounded-xl border border-dash-border bg-white p-6">
         <h3 className="mb-4 font-bold text-dash-text">Blocked / Unavailable Dates</h3>
-        <div className="flex gap-3 mb-4">
-          <DatePicker value={newBlockDate} onChange={setNewBlockDate} minDate={todayStr()} placeholder="Select date to block" className="min-w-56 flex-1" />
+        <div className="flex flex-wrap gap-3 mb-4">
+          <DatePicker value={newBlockStart} onChange={setNewBlockStart} minDate={todayStr()} placeholder="Start date" className="min-w-40 flex-1" />
+          <DatePicker value={newBlockEnd} onChange={setNewBlockEnd} minDate={newBlockStart || todayStr()} placeholder="End date (optional)" clearable className="min-w-40 flex-1" />
           <input placeholder="Reason" value={newBlockReason} onChange={(e) => setNewBlockReason(e.target.value)}
-            className="flex-1 rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-          <button type="button" onClick={addBlock}
-            className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-600">
-            <Plus size={16} /> Block
+            className="min-w-40 flex-1 rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+          <button type="button" onClick={addBlock} disabled={blocking}
+            className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-600 disabled:opacity-60">
+            <Plus size={16} /> {blocking ? "Blocking..." : "Block"}
           </button>
         </div>
         {blocked.length === 0 ? (

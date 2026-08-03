@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuAlignLeft as AlignLeft,
   LuArrowLeft as ArrowLeft,
-  LuCircleDollarSign as CircleDollarSign,
   LuFileText as FileText,
   LuImage as ImageIcon,
   LuMapPinned as MapPinned,
@@ -140,7 +139,6 @@ export default function TourFormPage({
   const showBasic = sections.includes("basic");
   const showLocation = sections.includes("location");
   const showMediaSeo = sections.includes("media-seo");
-  const showPricing = sections.includes("pricing");
   const isSupplier = role === "supplier";
   const inputClass = `w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition ${
     isSupplier
@@ -464,6 +462,16 @@ export default function TourFormPage({
               <input type="checkbox" checked={form.featured === "true"} onChange={(e) => update("featured", String(e.target.checked))} />
               <span className="text-sm font-semibold text-dash-body">Featured tour</span>
             </label>
+
+            <label className="flex items-center gap-2 pt-6 md:col-span-2">
+              <input type="checkbox" checked={form.requires_supplier_confirmation !== "false"} onChange={(e) => update("requires_supplier_confirmation", String(e.target.checked))} />
+              <span className="text-sm font-semibold text-dash-body">Requires supplier confirmation before a paid booking is confirmed</span>
+            </label>
+            {form.requires_supplier_confirmation === "false" && (
+              <p className="text-xs text-dash-subtle md:col-span-2">
+                Off: a fully paid booking with an assigned supplier confirms immediately, without waiting on supplier acceptance.
+              </p>
+            )}
           </FormSection>
           )}
 
@@ -653,41 +661,6 @@ export default function TourFormPage({
               <input type="checkbox" checked={form.search_visibility !== "false"} onChange={(e) => update("search_visibility", String(e.target.checked))} />
               <span className="text-sm font-semibold text-dash-body">Visible to search engines</span>
             </label>
-          </FormSection>
-          )}
-
-          {showPricing && (
-          <FormSection role={role} icon={CircleDollarSign} title="Pricing basics" description="A single default price for tours that don't need group-size slabs. Group pricing slabs are managed below.">
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pricing type</span>
-              <select value={form.pricing_type ?? "per_person"} onChange={(e) => update("pricing_type", e.target.value)} className={inputClass}>
-                <option value="per_person">Per person</option>
-                <option value="per_couple">Per couple</option>
-                <option value="per_group">Per group</option>
-                <option value="per_room">Per room</option>
-                <option value="custom_quote">Custom quote</option>
-              </select>
-            </label>
-            {pricingNumberFields.map(([key, label]) => (
-              <label key={key}>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
-                <input
-                  type="number"
-                  value={form[key] ?? ""}
-                  onChange={(e) => update(key, e.target.value)}
-                  className={inputClass}
-                />
-              </label>
-            ))}
-            <label className="flex items-center gap-2 md:col-span-2">
-              <input type="checkbox" checked={form.requires_supplier_confirmation !== "false"} onChange={(e) => update("requires_supplier_confirmation", String(e.target.checked))} />
-              <span className="text-sm font-semibold text-dash-body">Requires supplier confirmation before a paid booking is confirmed</span>
-            </label>
-            {form.requires_supplier_confirmation === "false" && (
-              <p className="text-xs text-dash-subtle md:col-span-2">
-                Off: a fully paid booking with an assigned supplier confirms immediately, without waiting on supplier acceptance.
-              </p>
-            )}
           </FormSection>
           )}
 

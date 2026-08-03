@@ -236,9 +236,19 @@ export type PricingSlab = {
   adult_price: number;
   child_price: number;
   supplier_price: number;
+  // markup_type/markup_value/final_price mirror the supplier's fixed
+  // commission and are always recomputed server-side -- read-only here.
   markup_type: string;
   markup_value: number;
   final_price: number;
+  supplier_final_adult_price?: number | null;
+  supplier_final_child_price?: number | null;
+  // admin_markup_type/admin_markup_value are Tourvaa's own markup, editable
+  // by admins only; storefront_* is the resulting customer-facing price.
+  admin_markup_type: string;
+  admin_markup_value: number;
+  storefront_adult_price?: number | null;
+  storefront_child_price?: number | null;
   currency: string;
   status: string;
 };
