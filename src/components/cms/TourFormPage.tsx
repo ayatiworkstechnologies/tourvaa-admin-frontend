@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/useToast";
 import api from "@/lib/api/client";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 
-type Section = "basic" | "location" | "media-seo" | "pricing";
+type Section = "basic" | "location" | "media-seo";
 
 type Props = {
   tourId?: string;
@@ -32,17 +32,7 @@ type Props = {
   sections?: Section[];
 };
 
-const ALL_SECTIONS: Section[] = ["basic", "location", "media-seo", "pricing"];
-
-const pricingNumberFields: [string, string][] = [
-  ["offer_price", "Offer price"],
-  ["infant_price", "Infant price"],
-  ["single_supplement", "Single supplement"],
-  ["tax_percentage", "Tax %"],
-  ["service_fee", "Service fee"],
-  ["booking_deposit", "Booking deposit"],
-  ["balance_payment_deadline_days", "Balance due (days before departure)"],
-];
+const ALL_SECTIONS: Section[] = ["basic", "location", "media-seo"];
 
 type DropdownOption = { id: number; label: string };
 type SubcategoryOption = { id: number; label: string; category_id: number | null };
@@ -76,7 +66,6 @@ const seoFields: [string, string][] = [
 ];
 
 const simpleNumberFields: [string, string][] = [
-  ["price_start_per_person", "Price from"],
   ["number_of_days", "Days"],
   ["number_of_hours", "Hours"],
 ];
@@ -159,6 +148,7 @@ export default function TourFormPage({
   );
   const [loading, setLoading] = useState(Boolean(tourId && !initialData));
   const [saving, setSaving] = useState(false);
+  const [conflict, setConflict] = useState<{ message: string; current_updated_by?: number } | null>(null);
 
   const [selectedStateId, setSelectedStateId] = useState("");
   const { countries } = useGeoCountries();
@@ -308,18 +298,15 @@ export default function TourFormPage({
     payload.requires_supplier_confirmation = form.requires_supplier_confirmation !== "false";
 
     // Simple number fields - use default if blank
-    payload.price_start_per_person = form.price_start_per_person ? Number(form.price_start_per_person) : 0;
+    // price_start_per_person is intentionally omitted -- it's system-
+    // calculated from approved Supplier Pricing (see save_tour's pop), not
+    // a client-editable value.
     payload.number_of_days = form.number_of_days ? Number(form.number_of_days) : 1;
     payload.number_of_hours = form.number_of_hours ? Number(form.number_of_hours) : null;
     payload.number_of_nights = form.number_of_nights ? Number(form.number_of_nights) : null;
     payload.max_group_size = form.max_group_size ? Number(form.max_group_size) : null;
     payload.min_booking_size = form.min_booking_size ? Number(form.min_booking_size) : null;
     payload.pricing_type = form.pricing_type || "per_person";
-    for (const [key] of pricingNumberFields) {
-      payload[key] = key === "balance_payment_deadline_days"
-        ? (form[key] ? Number(form[key]) : null)
-        : (form[key] ? Number(form[key]) : 0);
-    }
 
     // FK fields - null when not selected
     payload.supplier_id = form.supplier_id ? Number(form.supplier_id) : null;
@@ -329,6 +316,7 @@ export default function TourFormPage({
     payload.category_id = form.category_id ? Number(form.category_id) : null;
 
     payload.subcategory_ids = selectedSubcategoryIds;
+    if (tourId && form.updated_at) payload.expected_updated_at = form.updated_at;
 
     try {
       const saved = tourId
@@ -337,12 +325,41 @@ export default function TourFormPage({
       toast.success("Tour saved successfully.");
       await onSaved?.(saved);
     } catch (err: unknown) {
+      const response = (err as { response?: { status?: number; data?: Record<string, unknown> } })?.response;
+      if (response?.status === 409 && response.data) {
+        setConflict({
+          message: String(response.data.message ?? "This tour was updated by another user. Reload the latest changes before saving."),
+          current_updated_by: response.data.current_updated_by as number | undefined,
+        });
+        return;
+      }
+      // The backend's validation-error handler returns `detail` as an
+      // array of per-field error objects, not a string (see
+      // middleware/error_handlers.py) -- `message` is always the
+      // human-readable string and must be preferred, or a toast ends up
+      // trying to render that array as a React child and crashes the page.
+      const detail = response?.data?.detail;
       const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        (typeof response?.data?.message === "string" ? response.data.message : undefined) ??
+        (typeof detail === "string" ? detail : undefined) ??
         "Could not save tour.";
       toast.error(msg);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const reloadLatest = async () => {
+    if (!tourId) return;
+    setLoading(true);
+    try {
+      const data = await getCms("/tours", tourId);
+      setForm(normalizeTourForm(data));
+      setConflict(null);
+    } catch {
+      toast.error("Could not reload the tour.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -366,6 +383,20 @@ export default function TourFormPage({
             variant: "secondary",
           }]}
         />
+      )}
+
+      {conflict && (
+        <div className={`${embedded ? "" : "mt-4"} flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3`}>
+          <p className="text-sm font-semibold text-amber-800">{conflict.message}</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => void reloadLatest()} className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-black text-white hover:bg-amber-700">
+              Reload Latest
+            </button>
+            <button type="button" onClick={() => setConflict(null)} className="rounded-xl border border-amber-300 px-4 py-2 text-xs font-black text-amber-800 hover:bg-amber-100">
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
 
       {loading ? (
@@ -403,6 +434,17 @@ export default function TourFormPage({
                 <input value={form.tour_code ?? "Assigned on save"} disabled className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-500`} />
               </label>
             )}
+            {tourId && (
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Price from</span>
+                <input
+                  value={form.price_start_per_person ? `${form.currency ?? "USD"} ${form.price_start_per_person}` : "No approved pricing yet"}
+                  disabled
+                  title="Calculated automatically from the lowest approved Supplier Pricing slab -- set Supplier Pricing, then get it approved, to set this."
+                  className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-500`}
+                />
+              </label>
+            )}
             {textFields.map(([key, label]) => (
               <label key={key}>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
@@ -420,6 +462,7 @@ export default function TourFormPage({
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
                 <input
                   type="number"
+                  min={key === "number_of_days" ? 1 : 0}
                   value={form[key] ?? ""}
                   onChange={(e) => update(key, e.target.value)}
                   className={inputClass}
@@ -432,6 +475,7 @@ export default function TourFormPage({
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
                 <input
                   type="number"
+                  min={key === "number_of_nights" ? 0 : 1}
                   value={form[key] ?? ""}
                   onChange={(e) => update(key, e.target.value)}
                   className={inputClass}

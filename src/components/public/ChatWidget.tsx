@@ -143,9 +143,13 @@ export default function ChatWidget() {
     setLoading(true);
 
     try {
+      const token = typeof window !== "undefined" ? window.localStorage.getItem("tourvaa_token") : null;
       const res = await fetch("/api/chatbot/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ message: trimmed, session_key: sessionKey }),
       });
       if (!res.ok) throw new Error("Chat request failed");

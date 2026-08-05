@@ -28,6 +28,20 @@ type TourVersion = {
 
 type DiffRow = { field: string; oldValue: string; newValue: string };
 
+const REVIEW_SECTIONS = [
+  { key: "basic", label: "Basic Details" },
+  { key: "location", label: "Location & Category" },
+  { key: "overview", label: "Overview & Highlights" },
+  { key: "itinerary", label: "Itinerary" },
+  { key: "pricing", label: "Supplier Pricing" },
+  { key: "accommodation", label: "Accommodation" },
+  { key: "activities", label: "Activities & Add-ons" },
+  { key: "policies", label: "Inclusions & Policies" },
+  { key: "media", label: "Media & SEO" },
+  { key: "availability", label: "Availability" },
+];
+const SEVERITIES = ["info", "minor", "required", "critical"] as const;
+
 function diffSnapshots(previous: Record<string, unknown> | undefined, next: Record<string, unknown> | undefined): DiffRow[] {
   const keys = new Set([...Object.keys(previous || {}), ...Object.keys(next || {})]);
   const rows: DiffRow[] = [];
@@ -51,6 +65,9 @@ export default function TourApprovalPage() {
   const [loading, setLoading] = useState(true);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [commentSection, setCommentSection] = useState("basic");
+  const [commentSeverity, setCommentSeverity] = useState<typeof SEVERITIES[number]>("required");
+  const [commentText, setCommentText] = useState("");
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [comparingVersion, setComparingVersion] = useState<TourVersion | null>(null);
   const [compareLoading, setCompareLoading] = useState(false);
@@ -88,11 +105,15 @@ export default function TourApprovalPage() {
     if (!rejectionReason.trim()) return;
     setProcessingId(v.id);
     try {
-      await api.patch(`/tours/${v.tour_id}/versions/${v.id}/reject`, { rejection_reason: rejectionReason });
+      const comments = commentText.trim()
+        ? [{ section: commentSection, severity: commentSeverity, comment: commentText.trim() }]
+        : [];
+      await api.patch(`/tours/${v.tour_id}/versions/${v.id}/reject`, { rejection_reason: rejectionReason, comments });
       toast.success("Tour version rejected.");
       setVersions(prev => prev.filter(x => x.id !== v.id));
       setRejectingId(null);
       setRejectionReason("");
+      setCommentText("");
     } catch {
       toast.error("Could not reject tour version.");
     } finally {
@@ -192,7 +213,7 @@ export default function TourApprovalPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setRejectingId(v.id); setRejectionReason(""); }}
+                      onClick={() => { setRejectingId(v.id); setRejectionReason(""); setCommentSection("basic"); setCommentSeverity("required"); setCommentText(""); }}
                       disabled={processingId === v.id}
                       className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-60"
                     >
@@ -210,6 +231,33 @@ export default function TourApprovalPage() {
                       placeholder="Explain why this tour version is being rejected..."
                       className="w-full resize-none rounded-xl border border-red-200 px-3 py-2.5 text-sm outline-none focus:border-red-400"
                     />
+                    <p className="mb-2 mt-3 text-sm font-bold text-red-700">Section feedback (optional, shown to the supplier in that editor step):</p>
+                    <div className="flex flex-wrap gap-2">
+                      <select
+                        value={commentSection}
+                        onChange={(e) => setCommentSection(e.target.value)}
+                        className="rounded-lg border border-red-200 px-2 py-1.5 text-xs font-semibold outline-none focus:border-red-400"
+                      >
+                        {REVIEW_SECTIONS.map((s) => (
+                          <option key={s.key} value={s.key}>{s.label}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={commentSeverity}
+                        onChange={(e) => setCommentSeverity(e.target.value as typeof SEVERITIES[number])}
+                        className="rounded-lg border border-red-200 px-2 py-1.5 text-xs font-semibold capitalize outline-none focus:border-red-400"
+                      >
+                        {SEVERITIES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                      <input
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder="e.g. Add at least one itinerary day"
+                        className="min-w-[220px] flex-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs outline-none focus:border-red-400"
+                      />
+                    </div>
                     <div className="mt-3 flex gap-2">
                       <button
                         type="button"

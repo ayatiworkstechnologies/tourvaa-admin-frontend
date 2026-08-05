@@ -13,7 +13,7 @@ import { canAccessSupplierRoute, isApprovedSupplier, isSupplierOperationalRoute 
 const NAV = [
   { href: "/supplier/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/supplier/tours", icon: MapPinned, label: "My Tours", section: "Tour Workspace" },
-  { href: "/supplier/tours/create", icon: Plus, label: "Create Tour", section: "Tour Workspace" },
+  { href: "/supplier/tours/create", icon: Plus, label: "Create", section: "Tour Workspace" },
   { href: "/supplier/bookings", icon: CalendarCheck, label: "Bookings", section: "Operations" },
   { href: "/supplier/earnings", icon: Wallet, label: "Earnings", section: "Operations" },
   { href: "/supplier/payouts", icon: Banknote, label: "Payouts", section: "Operations" },

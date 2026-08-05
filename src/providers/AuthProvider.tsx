@@ -107,11 +107,17 @@ function isPublicRoute(pathname: string) {
 
 function permissionAliases(permission: string) {
   const aliases = new Set([permission]);
+  // Mirrors the backend's MODULE_ALIASES (app/auth/permissions.py) exactly,
+  // so a permission granted under one legacy module name is still
+  // recognized under its current/alternate name on the frontend.
   const moduleAliases: Record<string, string[]> = {
-    activity_logs: ["activity-logs"],
+    activity_logs: ["activity-logs", "audit_logs"],
     "activity-logs": ["activity_logs"],
+    audit_logs: ["activity_logs"],
     email_templates: ["email"],
     email: ["email_templates"],
+    resellers: ["agents"],
+    agents: ["resellers"],
   };
   const dottedToLegacyAction: Record<string, string> = {
     view: "view",
@@ -133,15 +139,19 @@ function permissionAliases(permission: string) {
     });
   };
 
+  // Mutually exclusive, matching the backend's expand_permission_slugs
+  // (app/auth/permissions.py): a slug is either dotted or legacy-hyphen
+  // format. Without the "else", a module name that itself contains a
+  // hyphen (e.g. "activity-logs") would satisfy both `includes(".")` and
+  // `includes("-")`, running the hyphen branch a second time on a dotted
+  // slug and producing spurious aliases from a bogus module/action split.
   if (permission.includes(".")) {
     const [moduleName, action] = permission.split(".");
     const legacyAction = dottedToLegacyAction[action];
 
     if (moduleName && action) addModuleAliases(action, moduleName, "dotted");
     if (moduleName && legacyAction) addModuleAliases(legacyAction, moduleName, "legacy");
-  }
-
-  if (permission.includes("-")) {
+  } else if (permission.includes("-")) {
     const [action, ...moduleParts] = permission.split("-");
     const moduleName = moduleParts.join("-");
     const dottedAction = legacyToDottedAction[action];

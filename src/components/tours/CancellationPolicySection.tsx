@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LuPlus as Plus, LuTrash2 as Trash2 } from "react-icons/lu";
+import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
@@ -23,6 +23,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -41,25 +42,45 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
     void load();
   }, [load]);
 
+  const startEdit = (rule: RefundRule) => {
+    setEditingId(rule.id);
+    setForm({
+      days_before_tour_min: String(rule.days_before_tour_min),
+      days_before_tour_max: rule.days_before_tour_max != null ? String(rule.days_before_tour_max) : "",
+      refund_percentage: String(rule.refund_percentage),
+      description: rule.description ?? "",
+    });
+    setShowForm(true);
+  };
+
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.days_before_tour_min || !form.refund_percentage) return;
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
-        tour_id: Number(tourId),
         days_before_tour_min: Number(form.days_before_tour_min),
         refund_percentage: Number(form.refund_percentage),
+        days_before_tour_max: form.days_before_tour_max ? Number(form.days_before_tour_max) : null,
+        description: form.description || null,
       };
-      if (form.days_before_tour_max) body.days_before_tour_max = Number(form.days_before_tour_max);
-      if (form.description) body.description = form.description;
-      const res = await api.post<{ data: RefundRule }>("/refund-rules", body);
-      setRules((prev) => [...prev, res.data.data]);
+      if (editingId) {
+        // Re-fetch after the mutation (rather than trusting the local
+        // append/replace) so the stored record — including any
+        // server-side recalculation from maybe_resubmit_for_review — is
+        // what the UI reflects, and it survives a refresh identically.
+        await api.put(`/refund-rules/${editingId}`, body);
+        toast.success("Cancellation rule updated.");
+      } else {
+        await api.post("/refund-rules", { ...body, tour_id: Number(tourId) });
+        toast.success("Cancellation rule added.");
+      }
+      await load();
       setForm(emptyForm);
+      setEditingId(null);
       setShowForm(false);
-      toast.success("Cancellation rule added.");
     } catch {
-      toast.error("Could not add cancellation rule.");
+      toast.error(editingId ? "Could not update cancellation rule." : "Could not add cancellation rule.");
     } finally {
       setSaving(false);
     }
@@ -69,7 +90,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
     if (!confirm("Delete this cancellation rule?")) return;
     try {
       await api.delete(`/refund-rules/${id}`);
-      setRules((prev) => prev.filter((r) => r.id !== id));
+      await load();
     } catch {
       toast.error("Could not delete cancellation rule.");
     }
@@ -119,9 +140,14 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
                   <td className="px-4 py-2.5 font-bold text-dash-brand-hover">{rule.refund_percentage}%</td>
                   <td className="px-4 py-2.5 text-dash-subtle">{rule.description || "—"}</td>
                   <td className="px-4 py-2.5 text-right">
-                    <button type="button" onClick={() => remove(rule.id)} className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500 hover:bg-[#FFF0F0]">
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <button type="button" onClick={() => startEdit(rule)} className="rounded-lg border border-dash-border p-1.5 text-dash-subtle hover:bg-[#F7F9FC]">
+                        <Pencil size={14} />
+                      </button>
+                      <button type="button" onClick={() => remove(rule.id)} className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500 hover:bg-[#FFF0F0]">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -132,7 +158,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
 
       {showForm && (
         <form onSubmit={save} className="rounded-xl border-2 border-dash-brand bg-white p-6">
-          <h3 className="mb-4 font-bold text-dash-text">New Cancellation Rule</h3>
+          <h3 className="mb-4 font-bold text-dash-text">{editingId ? "Edit Cancellation Rule" : "New Cancellation Rule"}</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Min days before *</span>
@@ -175,9 +201,9 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
             </label>
           </div>
           <div className="mt-4 flex justify-end gap-3">
-            <button type="button" onClick={() => { setShowForm(false); setForm(emptyForm); }} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
+            <button type="button" onClick={() => { setShowForm(false); setForm(emptyForm); setEditingId(null); }} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
             <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
-              {saving ? "Saving..." : "Add Rule"}
+              {saving ? "Saving..." : editingId ? "Save Changes" : "Add Rule"}
             </button>
           </div>
         </form>

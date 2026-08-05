@@ -59,7 +59,12 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           setCountryName(resolvedCountry);
           setDestination(resolvedCountry);
         }
-        const params: Record<string, string | number | boolean> = { limit: 100, available_only: true };
+        // available_only requires a TourCalendar departure row (future
+        // date, open seats) -- there's no UI control to opt into that
+        // filter, so it must not be forced on by default or every
+        // published tour without a configured calendar silently vanishes
+        // from the listing regardless of any other filter.
+        const params: Record<string, string | number | boolean> = { limit: 100 };
         if (resolvedCountry) params.country = resolvedCountry;
         if (querySearch) params.search = querySearch;
         if (queryCategory) params.category = queryCategory;

@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   LuCircleAlert as AlertCircle,
   LuArrowLeft as ArrowLeft,
+  LuArrowRight as ArrowRight,
   LuCircleCheckBig as CheckCircle2,
   LuEye as Eye,
   LuLoaderCircle as Loader2,
   LuMapPinned as MapPinned,
+  LuRotateCcw as RotateCcw,
   LuSendHorizontal as SendHorizontal,
 } from "react-icons/lu";
 
@@ -17,6 +19,7 @@ import TourFormPage from "@/components/cms/TourFormPage";
 import {
   TourWorkspaceContent,
   TourWorkspaceHeader,
+  TourWorkspaceStepper,
   TourWorkspaceTabs,
 } from "@/components/tours/TourWorkspace";
 import TourOverviewTab from "@/components/tours/TourOverviewTab";
@@ -40,6 +43,16 @@ type Tour = {
   tour_code: string;
   slug: string;
   title: string;
+  status: string;
+  pending_review_kind?: string | null;
+};
+
+type ReviewComment = {
+  id: number;
+  section: string;
+  field_name?: string | null;
+  comment: string;
+  severity: string;
   status: string;
 };
 
@@ -67,11 +80,37 @@ function statusColors(status: string) {
   const value = (status || "").toLowerCase();
   if (["active", "published"].includes(value))
     return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (["pending", "pending_approval", "submitted", "draft"].includes(value))
+  if (["pending", "pending_approval", "submitted", "draft", "repricing_required"].includes(value))
     return "border-amber-200 bg-amber-50 text-amber-700";
   if (["rejected", "cancelled"].includes(value))
     return "border-red-200 bg-red-50 text-red-600";
   return "border-slate-200 bg-slate-50 text-slate-600";
+}
+
+const SEVERITY_STYLES: Record<string, string> = {
+  info: "border-blue-200 bg-blue-50 text-blue-700",
+  minor: "border-slate-200 bg-slate-50 text-slate-700",
+  required: "border-amber-200 bg-amber-50 text-amber-700",
+  critical: "border-red-200 bg-red-50 text-red-700",
+};
+
+// While a published tour has a pending review (see backend
+// tour_versions._stage_pending_version), Tour.status deliberately stays
+// "published" so it never leaves the public site mid-review -- this derives
+// the badge/banner the wizard actually needs to show from that plus
+// pending_review_kind, instead of reading Tour.status alone.
+function reviewBanner(tour: Tour): { label: string; message: string } | null {
+  if (tour.status !== "published" || !tour.pending_review_kind) return null;
+  if (tour.pending_review_kind === "repricing_required") {
+    return {
+      label: "Repricing Required",
+      message: "Supplier pricing changed. The published price stays active until an admin recalculates and approves it.",
+    };
+  }
+  return {
+    label: "Unpublished Changes",
+    message: "The published version remains live while this update is being reviewed.",
+  };
 }
 
 export default function TourWizard({ tourId, role }: { tourId?: string; role: "admin" | "supplier" }) {
@@ -81,6 +120,13 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
 
   const [group, setGroup] = useState<"primary" | "secondary">("primary");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([0]));
+
+  const selectPrimaryStep = (index: number) => {
+    setGroup("primary");
+    setActiveIndex(index);
+    setVisitedSteps((prev) => new Set(prev).add(index));
+  };
 
   const [tour, setTour] = useState<Tour | null>(null);
   const [loadingTour, setLoadingTour] = useState(Boolean(tourId));
@@ -88,6 +134,8 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [comments, setComments] = useState<ReviewComment[]>([]);
 
   const fetchTour = useCallback(async (showLoading = true) => {
     if (!tourId) return;
@@ -103,9 +151,43 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     }
   }, [tourId]);
 
+  const fetchComments = useCallback(async () => {
+    if (!tourId) return;
+    try {
+      const response = await api.get(`/tours/${tourId}/review-comments`, { params: { status: "open" } });
+      setComments(response.data?.data ?? []);
+    } catch {
+      // Non-critical -- the editor still works without visible feedback.
+    }
+  }, [tourId]);
+
   useEffect(() => {
     void fetchTour();
-  }, [fetchTour]);
+    void fetchComments();
+  }, [fetchTour, fetchComments]);
+
+  const resolveComment = async (commentId: number) => {
+    if (!tourId) return;
+    try {
+      await api.patch(`/tours/${tourId}/review-comments/${commentId}/resolve`);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch {
+      // leave it in the list -- the user can retry
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!tourId) return;
+    setWithdrawing(true);
+    try {
+      await api.post(`/tours/${tourId}/withdraw`);
+      await fetchTour(false);
+    } catch {
+      setSubmitError("Could not withdraw the submission. Please try again.");
+    } finally {
+      setWithdrawing(false);
+    }
+  };
 
   const handleSubmitForApproval = async () => {
     if (!tourId) return;
@@ -129,7 +211,10 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     }
   };
 
-  // Create mode: no tour yet, only the essentials form can be shown.
+  // Create mode: no tour yet, only the essentials form can be shown. The
+  // remaining 9 steps have nowhere to save to until a tour id exists, so the
+  // stepper is shown read-only (step 1 active, the rest visibly locked)
+  // purely to preview the flow ahead rather than as real navigation.
   if (!tourId) {
     return (
       <>
@@ -141,7 +226,15 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
           eyebrow={isSupplier ? "Tour Builder" : "Admin Tour Builder"}
           actions={[{ label: isSupplier ? "Back to My Tours" : "Back to Tours", href: basePath, icon: ArrowLeft, variant: "secondary" }]}
         />
-        <div className="mt-4">
+        <TourWorkspaceStepper
+          role={role}
+          steps={PRIMARY_STEPS}
+          activeIndex={0}
+          visitedIndexes={new Set()}
+          onSelect={() => {}}
+          disabled
+        />
+        <TourWorkspaceContent role={role} stepLabel={`Step 1 of ${PRIMARY_STEPS.length} · ${PRIMARY_STEPS[0].label}`}>
           <TourFormPage
             embedded
             role={role}
@@ -151,7 +244,10 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
               router.push(id ? `${basePath}/${id}/edit` : basePath);
             }}
           />
-        </div>
+        </TourWorkspaceContent>
+        <p className="mt-3 text-center text-[11px] font-semibold text-dash-subtle">
+          Steps 2–{PRIMARY_STEPS.length} unlock once you save the basics above.
+        </p>
       </>
     );
   }
@@ -187,7 +283,13 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     tour &&
     ["draft", "rejected"].includes((tour.status ?? "").toLowerCase()) &&
     !submitSuccess;
+  const banner = tour ? reviewBanner(tour) : null;
+  const canWithdraw =
+    isSupplier &&
+    tour &&
+    (["pending_approval", "repricing_required"].includes((tour.status ?? "").toLowerCase()) || Boolean(banner));
   const activeKey = group === "primary" ? PRIMARY_STEPS[activeIndex].key : SECONDARY_TABS[activeIndex].key;
+  const openCommentsForStep = comments.filter((c) => c.section === activeKey);
 
   return (
     <>
@@ -204,11 +306,24 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
       >
         <div className="flex flex-wrap items-center gap-2">
           {tour?.status && (
-            <span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusColors(tour.status)}`}>
-              {tour.status.replaceAll("_", " ")}
+            <span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusColors(banner ? "pending_approval" : tour.status)}`}>
+              {banner ? banner.label : tour.status.replaceAll("_", " ")}
             </span>
           )}
-          <span className="text-[11px] text-dash-muted">Changes save inside each section below.</span>
+          <span className="text-[11px] text-dash-muted">
+            {banner ? banner.message : "Changes save inside each section below."}
+          </span>
+          {canWithdraw && (
+            <button
+              type="button"
+              onClick={() => void handleWithdraw()}
+              disabled={withdrawing}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-dash-border bg-white px-3 py-1 text-xs font-bold text-dash-body hover:bg-dash-bg disabled:opacity-60"
+            >
+              {withdrawing ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />}
+              Withdraw Submission
+            </button>
+          )}
         </div>
       </TourWorkspaceHeader>
 
@@ -219,12 +334,22 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
         </div>
       )}
 
-      <TourWorkspaceTabs
-        role={role}
-        tabs={PRIMARY_STEPS}
-        activeIndex={group === "primary" ? activeIndex : -1}
-        onSelect={(index) => { setGroup("primary"); setActiveIndex(index); }}
-      />
+      {group === "primary" ? (
+        <TourWorkspaceStepper
+          role={role}
+          steps={PRIMARY_STEPS}
+          activeIndex={activeIndex}
+          visitedIndexes={visitedSteps}
+          onSelect={selectPrimaryStep}
+        />
+      ) : (
+        <TourWorkspaceTabs
+          role={role}
+          tabs={PRIMARY_STEPS}
+          activeIndex={-1}
+          onSelect={selectPrimaryStep}
+        />
+      )}
 
       <div className="mt-6 flex items-center gap-3 px-1">
         <span className="whitespace-nowrap text-[10px] font-black uppercase tracking-wide text-dash-subtle">Marketing & availability</span>
@@ -237,7 +362,37 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
         onSelect={(index) => { setGroup("secondary"); setActiveIndex(index); }}
       />
 
-      <TourWorkspaceContent role={role}>
+      {openCommentsForStep.length > 0 && (
+        <div className="mt-4 space-y-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+          <p className="text-xs font-black uppercase tracking-wide text-amber-700">Admin feedback for this step</p>
+          {openCommentsForStep.map((c) => (
+            <div key={c.id} className="flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-white p-3">
+              <div className="min-w-0">
+                <span className={`mr-2 rounded-full border px-2 py-0.5 text-[10px] font-bold capitalize ${SEVERITY_STYLES[c.severity] ?? SEVERITY_STYLES.minor}`}>
+                  {c.severity}
+                </span>
+                <span className="text-sm text-dash-body">{c.comment}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void resolveComment(c.id)}
+                className="shrink-0 rounded-lg border border-dash-border px-2.5 py-1 text-xs font-bold text-dash-subtle hover:bg-dash-bg"
+              >
+                Mark resolved
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <TourWorkspaceContent
+        role={role}
+        stepLabel={
+          group === "primary"
+            ? `Step ${activeIndex + 1} of ${PRIMARY_STEPS.length} · ${PRIMARY_STEPS[activeIndex].label}`
+            : SECONDARY_TABS[activeIndex]?.label
+        }
+      >
         {activeKey === "basic" && <TourFormPage tourId={tourId} embedded role={role} sections={["basic"]} initialData={tour ?? undefined} onSaved={() => fetchTour(false)} />}
         {activeKey === "location" && (
           <div className="space-y-6">
@@ -257,7 +412,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
             <TourHighlightsTab tourId={tourId} />
           </div>
         )}
-        {activeKey === "itinerary" && <TourItineraryTab tourId={tourId} />}
+        {activeKey === "itinerary" && <TourItineraryTab tourId={tourId} numberOfDays={tour?.number_of_days ? Number(tour.number_of_days) : undefined} />}
         {activeKey === "pricing" && <TourPricingTab tourId={tourId} role={role} />}
         {activeKey === "accommodation" && <TourAccommodationExtraTab tourId={tourId} />}
         {activeKey === "activities" && <TourOptionalActivityTab tourId={tourId} />}
@@ -329,6 +484,32 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
         {activeKey === "discounts" && <TourDiscountsTab tourId={tourId} />}
         {activeKey === "similar" && <TourSimilarTab tourId={tourId} />}
       </TourWorkspaceContent>
+
+      {group === "primary" && (
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => selectPrimaryStep(Math.max(0, activeIndex - 1))}
+            disabled={activeIndex === 0}
+            className="inline-flex items-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-xs font-black text-dash-body transition hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ArrowLeft size={15} /> Back
+          </button>
+          {activeIndex < PRIMARY_STEPS.length - 1 ? (
+            <button
+              type="button"
+              onClick={() => selectPrimaryStep(Math.min(PRIMARY_STEPS.length - 1, activeIndex + 1))}
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 ${
+                isSupplier ? "bg-[#16833A] shadow-emerald-200 hover:bg-[#117331]" : "bg-dash-brand shadow-blue-200 hover:bg-dash-brand-hover"
+              }`}
+            >
+              Continue: {PRIMARY_STEPS[activeIndex + 1].label} <ArrowRight size={15} />
+            </button>
+          ) : (
+            <span className="text-[11px] font-bold text-dash-subtle">You&apos;re on the last step.</span>
+          )}
+        </div>
+      )}
     </>
   );
 }

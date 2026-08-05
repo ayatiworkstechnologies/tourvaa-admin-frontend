@@ -121,23 +121,25 @@ tourvaa-admin-frontend/
 │
 ├── hooks/                        # Custom React hooks
 ├── lib/                          # Utilities and services
-│   ├── api.ts                    # Axios instance with JWT refresh
+│   ├── api/
+│   │   ├── client.ts             # Axios instance with JWT refresh
+│   │   └── services/             # Per-domain API service modules
+│   ├── constants/                # Static config (e.g. portalThemes.ts)
 │   ├── session.ts                # localStorage token management
 │   ├── auth.ts                   # Auth helpers
 │   ├── validators.ts             # Form validation helpers
 │   ├── error-handler.ts          # API error message extraction
 │   ├── location-options.ts       # Countries, states, cities, phone codes
 │   ├── media-url.ts              # Storage URL resolution
-│   ├── navigation.ts             # Navigation helpers
-│   └── services/                 # API service modules (12 files)
+│   └── navigation.ts             # Navigation helpers
 │
 ├── providers/
-│   └── AuthProvider.tsx          # Global auth context
+│   └── AuthProvider.tsx          # Global auth context - hasPermission(), permission alias expansion
 ├── types/
 │   ├── auth.ts                   # Auth-related TypeScript types
 │   └── user.ts                   # User and Role types
-├── config/
-│   └── page-permissions.ts       # Route → required permission map
+├── config/                       # Present but currently empty - no page-to-permission map file exists;
+│                                  # each page declares its own `requiredPermission` prop instead (see section 7)
 ├── next.config.ts                # Next.js config (rewrites, security headers)
 ├── tailwind.config.*             # Tailwind config
 ├── tsconfig.json                 # TypeScript config
@@ -334,7 +336,7 @@ type DashboardData = {
 4. router.push("/login")
 ```
 
-### Automatic Token Refresh (`lib/api.ts`)
+### Automatic Token Refresh (`src/lib/api/client.ts`)
 
 When any API call returns `401`:
 1. Check if it's the refresh call itself (avoid loop) → hard logout if so
@@ -371,38 +373,20 @@ auth.hasPermission("view-bookings")  // same result
 | `email_templates.view` | `email_templates.view`, `view-email_templates`, `email.view`, `view-email` |
 | `activity_logs.view` | `activity_logs.view`, `activity-logs.view`, `view-activity_logs` |
 
-Module aliases: `activity_logs` ↔ `activity-logs`, `email_templates` ↔ `email`
+Module aliases (`moduleAliases` in `AuthProvider.tsx`, mirrors the backend's `MODULE_ALIASES`): `activity_logs` ↔ `activity-logs` ↔ `audit_logs`, `email_templates` ↔ `email`, `resellers` ↔ `agents`
 
 Action aliases: `edit` ↔ `update`
 
-### Page-Level Permission Gate (`config/page-permissions.ts`)
+### Page-Level Permission Gate (`ModuleWrapper` / `ProtectedRoute`)
 
-Every admin route maps to a required permission. Used by `ProtectedRoute` and `ModuleWrapper`:
+There is no centralized route-to-permission map file. Each admin page declares its own required permission inline via a `requiredPermission` prop, e.g.:
 
 ```typescript
-"/admin/dashboard"       → "dashboard.view"
-"/admin/users"           → "users.view"
-"/admin/customers"       → "customers.view"
-"/admin/suppliers"       → "suppliers.view"
-"/admin/agents"          → "agents.view"
-"/admin/affiliates"      → "affiliates.view"
-"/admin/tours"           → "tours.view"
-"/admin/tours/create"    → "tours.create"
-"/admin/tours/[id]/edit" → "tours.edit"
-"/admin/bookings"        → "bookings.view"
-"/admin/payments"        → "payments.view"
-"/admin/invoices"        → "invoices.view"
-"/admin/reports"         → "reports.view"
-"/admin/roles"           → "roles.view"
-"/admin/permissions"     → "permissions.view"
-"/admin/settings"        → "settings.view"
-"/admin/activity-logs"   → "activity_logs.view"
-"/admin/notifications"   → "notifications.view"
-"/admin/sessions"        → "sessions.view"
-"/admin/email-templates" → "email_templates.view"
-"/admin/profile"         → "profile.view"
-// + settings sub-pages, CMS sub-pages
+// src/app/admin/tours/create/page.tsx
+<ModuleWrapper title="Create Tour" requiredPermission="tours.create">
 ```
+
+`ModuleWrapper` (`src/components/common/ModuleWrapper.tsx`) wraps `ProtectedRoute` (`src/components/auth/ProtectedRoute.tsx`), which redirects to the appropriate login page if unauthenticated, or renders an `AccessDenied` screen if `requiredPermission` isn't in the user's `hasPermission()` set. Supplier-portal pages use `SupplierPageShell` instead and rely entirely on the backend's ownership/approval checks rather than a client-side permission gate.
 
 ### Sidebar
 
@@ -412,7 +396,7 @@ Built dynamically from `dashboard.sidebar_menu` returned by `/api/dashboard/me`.
 
 ## 8. API Layer
 
-### Axios Instance (`lib/api.ts`)
+### Axios Instance (`src/lib/api/client.ts`)
 
 ```typescript
 const api = axios.create({ baseURL: "/api" });
@@ -476,7 +460,7 @@ Content:
 
 ### `/login` - Login Page
 
-**File:** `app/login/page.tsx`  
+**File:** `src/app/(public)/login/page.tsx` (customer/public login; admin has its own at `src/app/admin/login/page.tsx`)
 **Layout:** `AuthLayout`
 
 Form fields:

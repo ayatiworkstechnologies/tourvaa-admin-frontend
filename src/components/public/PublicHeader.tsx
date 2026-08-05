@@ -8,7 +8,6 @@ import {
   LuBuilding2 as Building,
   LuCalendarCheck as CalendarCheck,
   LuChevronDown as ChevronDown,
-  LuDollarSign as DollarSign,
   LuHeart as Heart,
   LuLayoutDashboard as LayoutDashboard,
   LuLogOut as LogOut,
@@ -21,6 +20,7 @@ import {
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import CurrencySelector from "@/components/public/CurrencySelector";
+import { useCurrency } from "@/hooks/useCurrency";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 
 const mobileLinks = [
@@ -39,6 +39,7 @@ export default function PublicHeader() {
   const profileRef = useRef<HTMLDivElement>(null);
   const { isLoggedIn, dashboard, user, logout } = useAuthContext();
   const { wishlistCount, compareCount } = useTravelStore();
+  const { symbol: currencySymbol } = useCurrency();
   const dashboardPath = getDashboardPath(dashboard?.user?.role?.slug ?? "");
   const roleSlug = dashboard?.user?.role?.slug ?? "";
   const profilePath =
@@ -119,9 +120,9 @@ export default function PublicHeader() {
               </span>
             )}
           </Link>
-          <span className="flex flex-col items-center gap-0.5 text-[9px] font-semibold">
-            <DollarSign size={17} />
-            <CurrencySelector inverse={transparent} />
+          <span className="flex items-center gap-1 text-[9px] font-semibold">
+            <span className="text-[15px] leading-none" aria-hidden="true">{currencySymbol}</span>
+            <CurrencySelector inverse={transparent} plain />
           </span>
           <div ref={profileRef} className="relative">
             <button

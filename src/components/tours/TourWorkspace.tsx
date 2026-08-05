@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { LuArrowRight as ArrowRight, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight } from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuCheck as Check, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight } from "react-icons/lu";
 
 export type TourWorkspaceRole = "admin" | "supplier";
 
@@ -217,18 +217,112 @@ export function TourWorkspaceTabs({
   );
 }
 
+export function TourWorkspaceStepper({
+  role,
+  steps,
+  activeIndex,
+  visitedIndexes,
+  onSelect,
+  disabled = false,
+}: {
+  role: TourWorkspaceRole;
+  steps: TourWorkspaceTab[];
+  activeIndex: number;
+  /** Step indexes the user has already opened at least once -- rendered with
+   * a checkmark. This tracks "visited", not real field-level completeness
+   * (that lives in the Review & Submit checklist), so it's a wayfinding aid
+   * rather than a validation signal. */
+  visitedIndexes: Set<number>;
+  onSelect: (index: number) => void;
+  /** True in create mode, before a tour id exists -- the other 9 steps have
+   * nowhere to save to yet, so the stepper previews the flow without acting
+   * as real navigation. */
+  disabled?: boolean;
+}) {
+  const colors = theme[role];
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const progressPct = steps.length > 1 ? (activeIndex / (steps.length - 1)) * 100 : 0;
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    const activeButton = el?.children[activeIndex] as HTMLElement | undefined;
+    activeButton?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  }, [activeIndex]);
+
+  return (
+    <div className={`relative mt-4 rounded-2xl border bg-white p-4 shadow-[0_8px_24px_-22px_rgba(24,76,140,.7)] sm:p-5 ${colors.contentBorder}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className={`text-[11px] font-black uppercase tracking-[.1em] ${colors.progressText}`}>
+          Step {activeIndex + 1} of {steps.length}
+        </span>
+        <span className="truncate text-[11px] font-bold text-dash-subtle">{steps[activeIndex]?.label}</span>
+      </div>
+      <div className={`relative mt-2.5 h-1.5 w-full overflow-hidden rounded-full ${colors.track}`}>
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ease-out ${colors.progressBar}`}
+          style={{ width: `${progressPct}%` }}
+        />
+      </div>
+      <div
+        ref={scrollRef}
+        className="mt-4 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {steps.map((step, index) => {
+          const active = index === activeIndex;
+          const done = !active && visitedIndexes.has(index);
+          const locked = disabled && !active;
+          return (
+            <button
+              key={step.key}
+              type="button"
+              onClick={() => !disabled && onSelect(index)}
+              aria-current={active ? "step" : undefined}
+              aria-disabled={locked || undefined}
+              title={locked ? "Save the basics first to unlock this step" : undefined}
+              className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-left transition ${
+                locked ? "cursor-not-allowed opacity-50" : ""
+              } ${active ? colors.progressActive : done ? colors.progressDone : colors.progressIdle}`}
+            >
+              <span
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black ${
+                  active || done ? colors.progressNumber : colors.progressMuted
+                }`}
+              >
+                {done ? <Check size={12} /> : index + 1}
+              </span>
+              <span className={`whitespace-nowrap text-[11px] font-bold ${active ? colors.progressText : "text-dash-subtle"}`}>
+                {step.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function TourWorkspaceContent({
   role,
   children,
   className = "",
+  stepLabel,
 }: {
   role: TourWorkspaceRole;
   children: React.ReactNode;
   className?: string;
+  /** Small kicker shown at the top of the content card so the current step
+   * stays legible after scrolling past the stepper on long forms. */
+  stepLabel?: string;
 }) {
   const colors = theme[role];
   return (
     <div className={`mt-4 rounded-2xl border bg-white p-5 sm:p-7 ${colors.contentBorder} ${colors.contentShadow} ${className}`}>
+      {stepLabel && (
+        <div className={`mb-5 flex items-center gap-2 border-b pb-4 ${colors.divider}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${colors.progressBar}`} />
+          <span className={`text-[11px] font-black uppercase tracking-[.1em] ${colors.progressText}`}>{stepLabel}</span>
+        </div>
+      )}
       {children}
     </div>
   );

@@ -856,7 +856,11 @@ export default function Home() {
         }
         const places = destinationResult.value.slice(0, 5).map((item) => mapDestination(item, tourCounts));
         setDynamicPlaces(places);
-        Promise.allSettled(places.map((place) => fetchPublicTours({ country: place.name, sort: "price_asc", limit: 1, available_only: true }))).then((priceResults) => {
+        // Not available_only -- that requires a configured TourCalendar
+        // departure and would silently return no price for every
+        // destination whose tours don't have one set up yet (see
+        // CountryTourListing.tsx's identical fix).
+        Promise.allSettled(places.map((place) => fetchPublicTours({ country: place.name, sort: "price_asc", limit: 1 }))).then((priceResults) => {
           if (!active) return;
           setDynamicPlaces((current) => current.map((place, index) => {
             const result = priceResults[index];

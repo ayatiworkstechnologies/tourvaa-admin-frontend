@@ -33,7 +33,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const toast = useCallback(
     (type: ToastType, message: string, title?: string) => {
       const id = Date.now() + Math.random();
-      setToasts((current) => [...current, { id, type, title, message }]);
+      // Callers occasionally pass a non-string here despite the `string`
+      // type (e.g. an API error's `detail` field, which can be an array of
+      // per-field validation errors, sneaking through an `as string` cast)
+      // -- rendering that directly as a React child crashes the whole page,
+      // so coerce defensively rather than trust the caller.
+      const safeMessage = typeof message === "string" ? message : "Something went wrong.";
+      setToasts((current) => [...current, { id, type, title, message: safeMessage }]);
       window.setTimeout(() => remove(id), 4200);
     },
     [remove]

@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LuArrowDown as ArrowDown, LuArrowUp as ArrowUp, LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
+import { LuArrowDown as ArrowDown, LuArrowUp as ArrowUp, LuCircleAlert as AlertCircle, LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import {
   getItineraries, createItinerary, updateItinerary, deleteItinerary, reorderItineraries, ItineraryDay,
 } from "@/lib/api/services/tourDetailService";
@@ -17,12 +17,15 @@ const empty = (): ItineraryDay => ({
   image: "", image_alt_text: "", display_order: 0, status: "active",
 });
 
-export default function TourItineraryTab({ tourId }: { tourId: string }) {
+export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: string; numberOfDays?: number | null }) {
   const toast = useToast();
   const [items, setItems] = useState<ItineraryDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ItineraryDay | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const duration = numberOfDays && numberOfDays > 0 ? numberOfDays : null;
+  const atLimit = duration != null && items.length >= duration;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -44,6 +47,10 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    if (!editing.id && atLimit) {
+      toast.error(`This tour is set to ${duration} day(s) in Basic Details -- remove a day there before adding another.`);
+      return;
+    }
     setSaving(true);
     try {
       if (editing.id) {
@@ -92,15 +99,33 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-dash-text">Day-wise Itinerary</h2>
+        <div>
+          <h2 className="text-xl font-bold text-dash-text">Day-wise Itinerary</h2>
+          {duration != null && (
+            <p className="mt-0.5 text-xs font-semibold text-dash-subtle">
+              {items.length} of {duration} day{duration === 1 ? "" : "s"} added
+            </p>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => setEditing({ ...empty(), day_number: items.length + 1, display_order: items.length })}
-          className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white"
+          disabled={atLimit}
+          title={atLimit ? `This tour is set to ${duration} day(s) in Basic Details -- update that before adding another day.` : undefined}
+          className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Plus size={16} /> Add Day
         </button>
       </div>
+
+      {duration != null && items.length !== duration && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          {items.length < duration
+            ? `This tour is set to ${duration} day(s) in Basic Details, but only ${items.length} itinerary day${items.length === 1 ? "" : "s"} added. Add ${duration - items.length} more before submitting.`
+            : `This tour has ${items.length} itinerary days, more than the ${duration} day(s) set in Basic Details. Remove extra days or update the duration.`}
+        </div>
+      )}
 
       {items.length === 0 && !editing && (
         <div className="rounded-xl border border-dashed border-dash-border p-10 text-center text-sm text-dash-subtle">
@@ -151,6 +176,8 @@ export default function TourItineraryTab({ tourId }: { tourId: string }) {
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
                 <input
                   type={type}
+                  min={key === "day_number" ? 1 : undefined}
+                  max={key === "day_number" && duration != null ? duration : undefined}
                   value={(editing as Record<string, unknown>)[key] as string ?? ""}
                   onChange={(e) => setEditing((prev) => prev ? { ...prev, [key]: type === "number" ? Number(e.target.value) : e.target.value } : prev)}
                   className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
