@@ -7,6 +7,7 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import api from "@/lib/api/client";
 import { Role } from "@/types/user";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { useToast } from "@/hooks/useToast";
 
 type Permission = {
   id: number;
@@ -30,6 +31,7 @@ const emptyForm: RoleForm = {
 };
 
 export default function RolesPage() {
+  const toast = useToast();
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,11 +120,11 @@ export default function RolesPage() {
       } while (currentPage <= totalPages);
 
       setPermissions(allPerms);
-    } catch (error) {
-      console.error("Failed to fetch permissions", error);
+    } catch {
+      toast.error("Failed to load permissions. Please try again.");
       setPermissions([]);
     }
-  }, []);
+  }, [toast]);
 
   const loadData = useCallback(async () => {
     setLoading(true);

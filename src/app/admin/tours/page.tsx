@@ -4,13 +4,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuCalendarDays as CalendarDays, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuSquarePen as Edit, LuFilePen as FileEdit, LuImageOff as ImageOff, LuMapPin as MapPin, LuPlus as Plus, LuPowerOff as PowerOff, LuSearch as Search, LuTag as Tag } from "react-icons/lu";
+import { LuCalendarDays as CalendarDays, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuDownload as Download, LuSquarePen as Edit, LuFilePen as FileEdit, LuImageOff as ImageOff, LuMapPin as MapPin, LuPlus as Plus, LuPowerOff as PowerOff, LuSearch as Search, LuTag as Tag } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import EmptyState from "@/components/common/EmptyState";
 import LoadingState from "@/components/common/LoadingState";
 import StatusBadge from "@/components/operations/StatusBadge";
+import TourExcelImportButton from "@/components/tours/TourExcelImportButton";
 import { CmsRecord, listCms, updateCmsStatus } from "@/lib/api/services/cmsService";
+import { exportTourExcel } from "@/lib/api/services/tourImportExportService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/useToast";
@@ -32,11 +34,23 @@ export default function ToursPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, published: 0, draft: 0, disabled: 0 });
   const [togglingId, setTogglingId] = useState<number | string | null>(null);
+  const [exportingId, setExportingId] = useState<number | string | null>(null);
 
   const debouncedSearch = useDebounce(search, 350);
   const canCreate = hasPermission("tours.create");
   const canEdit = hasPermission("tours.edit");
   const canToggle = hasPermission("tours.disable");
+
+  const downloadTour = async (row: CmsRecord) => {
+    setExportingId(row.id);
+    try {
+      await exportTourExcel(Number(row.id), String(row.tour_code || row.title || `tour-${row.id}`));
+    } catch {
+      toast.error("Could not download this tour's details.");
+    } finally {
+      setExportingId(null);
+    }
+  };
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -119,15 +133,18 @@ export default function ToursPage() {
               Create draft tours, assign locations/categories/suppliers, and manage publishing status.
             </p>
           </div>
-          {canCreate && (
-            <Link
-              href="/admin/tours/create"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-dash-brand px-5 py-3 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] transition-all hover:-translate-y-0.5 hover:bg-dash-brand-hover sm:w-auto"
-            >
-              <Plus size={18} strokeWidth={2.5} />
-              Add Tour
-            </Link>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {canCreate && <TourExcelImportButton theme="admin" onImported={() => { void fetchRows(); void fetchStats(); }} />}
+            {canCreate && (
+              <Link
+                href="/admin/tours/create"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-dash-brand px-5 py-3 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] transition-all hover:-translate-y-0.5 hover:bg-dash-brand-hover sm:w-auto"
+              >
+                <Plus size={18} strokeWidth={2.5} />
+                Add Tour
+              </Link>
+            )}
+          </div>
         </div>
 
         {supplierId && (
@@ -255,6 +272,15 @@ export default function ToursPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={exportingId === row.id}
+                          onClick={() => void downloadTour(row)}
+                          aria-label={`Download ${row.title || "tour"} details`}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-muted hover:bg-dash-bg disabled:opacity-60"
+                        >
+                          <Download size={14} />
+                        </button>
                         {canEdit && (
                           <Link
                             href={`/admin/tours/${row.id}/edit`}

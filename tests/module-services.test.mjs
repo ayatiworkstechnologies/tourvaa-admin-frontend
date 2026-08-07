@@ -57,9 +57,8 @@ check("api handles 401 with refresh", apiSrc.includes("refresh-token") && apiSrc
 
 const sessionSrc = readLib("api/session.ts");
 check("lib/api/session.ts exists", sessionSrc.length > 0);
-check("session has getStoredTokenSafe", sessionSrc.includes("getStoredTokenSafe"));
 check("session has clearSession", sessionSrc.includes("clearSession"));
-check("session has setToken", sessionSrc.includes("setToken"));
+check("session does not write tokens to localStorage (cookie auth)", !sessionSrc.includes("localStorage.setItem"));
 
 // cmsService
 console.log("── cmsService");

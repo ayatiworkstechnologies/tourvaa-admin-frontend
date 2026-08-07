@@ -29,6 +29,13 @@ export default function AdminLayout({ children, title, menus, user }: Props) {
     return () => window.removeEventListener("tourvaa:close-mobile-sidebar", close);
   }, []);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileOpen(false); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen]);
+
   return (
     <div className="h-screen min-w-0 overflow-hidden bg-dash-bg" style={portalThemeStyles.admin}>
       <AdminSidebar menus={menus} collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />

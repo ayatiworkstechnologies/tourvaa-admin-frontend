@@ -4,24 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import {
-  LuBriefcaseBusiness as Briefcase,
-  LuBuilding2 as Building,
   LuCircleCheckBig as Check,
   LuMail as Mail,
-  LuPlane as Plane,
   LuRefreshCw as Refresh,
   LuUser as User,
 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
 
-type AccountType = "CUSTOMER" | "AGENT" | "SUPPLIER";
-
-const choices = [
-  { value: "CUSTOMER" as const, title: "Customer", text: "Book tours and manage your trips", icon: Plane },
-  { value: "AGENT" as const, title: "Travel Agent", text: "Book for clients and track commissions", icon: Briefcase },
-  { value: "SUPPLIER" as const, title: "Supplier", text: "Manage tours, bookings and payouts", icon: Building },
-];
+// Traveller (customer) accounts only - agents and suppliers register through
+// their own dedicated portals (/agent-portal/login, /supplier-portal/login).
+const ACCOUNT_TYPE = "CUSTOMER";
 
 const initialForm = {
   first_name: "",
@@ -77,7 +70,6 @@ function secondsUntil(timestamp: number) {
 }
 
 export default function RegisterPage() {
-  const [accountType, setAccountType] = useState<AccountType>("CUSTOMER");
   const [form, setForm] = useState(initialForm);
   const [sentEmail, setSentEmail] = useState(() => readPendingRegistration()?.email ?? "");
   const [changeToken, setChangeToken] = useState(() => readPendingRegistration()?.changeToken ?? "");
@@ -101,10 +93,6 @@ export default function RegisterPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const requested = params.get("type")?.toUpperCase();
-    if (requested === "CUSTOMER" || requested === "AGENT" || requested === "SUPPLIER") {
-      setAccountType(requested);
-    }
     const requestedRedirect = params.get("redirect");
     setRedirect(
       requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
@@ -142,7 +130,7 @@ export default function RegisterPage() {
           country_code: form.country_code,
           mobile_number: form.mobile_number,
           accepted_terms: form.accepted_terms,
-          account_type: accountType,
+          account_type: ACCOUNT_TYPE,
           redirect,
         };
         const response = await api.post("/auth/register", base);
@@ -204,37 +192,13 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 pb-16 pt-28">
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-lg">
         <div className="text-center">
           <h1 className="text-3xl font-black text-slate-950">Create your Tourvaa account</h1>
-          <p className="mt-2 text-sm text-slate-500">Choose an account type, then verify your email to create a password.</p>
+          <p className="mt-2 text-sm text-slate-500">Verify your email to create a password and start booking.</p>
         </div>
 
-        <div className="mt-7 grid gap-3 sm:grid-cols-3">
-          {choices.map(({ value, title, text, icon: Icon }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => {
-                setAccountType(value);
-                setError("");
-              }}
-              className={`rounded-2xl border p-5 text-left transition ${
-                accountType === value
-                  ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100"
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}
-            >
-              <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${accountType === value ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}>
-                <Icon size={19} />
-              </span>
-              <span className="mt-3 block font-bold text-slate-900">{title}</span>
-              <span className="mt-1 block text-xs leading-5 text-slate-500">{text}</span>
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={submit} className="mt-5 space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <form onSubmit={submit} className="mt-7 space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <label className="block">
             <span className="mb-1.5 block text-xs font-bold text-slate-700">First name</span>
             <span className="relative block">

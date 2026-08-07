@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuGitCompare as GitCompare, LuLoaderCircle as Loader2, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
@@ -73,6 +73,15 @@ export default function TourApprovalPage() {
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareDiff, setCompareDiff] = useState<DiffRow[] | null>(null);
   const [comparePrevLabel, setComparePrevLabel] = useState("");
+  const closeCompareRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!comparingVersion) return;
+    closeCompareRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setComparingVersion(null); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [comparingVersion]);
 
   const fetchVersions = useCallback(async () => {
     setLoading(true);
@@ -284,14 +293,14 @@ export default function TourApprovalPage() {
       </div>
 
       {comparingVersion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true" aria-label={`Comparing v${comparingVersion.version_number} vs ${comparePrevLabel}`}>
           <div className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-dash-border px-6 py-4">
               <div>
                 <h3 className="text-lg font-bold text-dash-text">Comparing v{comparingVersion.version_number} vs {comparePrevLabel}</h3>
                 <p className="text-xs text-dash-muted">{comparingVersion.snapshot?.title || `Tour #${comparingVersion.tour_id}`}</p>
               </div>
-              <button type="button" onClick={() => setComparingVersion(null)} className="rounded-lg p-2 text-dash-muted hover:bg-dash-bg">
+              <button ref={closeCompareRef} type="button" onClick={() => setComparingVersion(null)} className="rounded-lg p-2 text-dash-muted hover:bg-dash-bg">
                 <X size={18} />
               </button>
             </div>

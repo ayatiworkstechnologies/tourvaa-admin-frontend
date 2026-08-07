@@ -16,8 +16,8 @@ console.log("\n=== Currency Flow ===\n");
 const hook = read("src/hooks/useCurrency.ts");
 const publicHeader = read("src/components/public/PublicHeader.tsx");
 const portalHeader = read("src/components/layout/Header.tsx");
-const tours = read("src/app/(public)/tours/page.tsx");
-const detail = read("src/app/(public)/tours/[id]/page.tsx");
+const listing = read("src/components/public/CountryTourListing.tsx");
+const detailExperience = read("src/components/public/TourDetailExperience.tsx");
 const booking = read("src/app/(public)/booking/[id]/page.tsx");
 
 check("USD is the conversion base", hook.includes('baseCode: "USD"') && hook.includes('/currency/rates'));
@@ -26,8 +26,8 @@ check("currency preference persists", hook.includes("localStorage.setItem") && h
 check("conversion uses source and target rates", hook.includes("value / sourceRate") && hook.includes("* targetRate"));
 check("public header exposes the selector", publicHeader.includes("<CurrencySelector"));
 check("portal header exposes the selector", portalHeader.includes("<CurrencySelector"));
-check("tour listing converts from each tour currency", tours.includes("formatCompact(tour.price_start_per_person, tour.currency"));
-check("tour details convert price and add-ons", detail.includes("displayMoney(tour.price_start_per_person") && detail.includes("displayMoney(a.price"));
+check("tour listing converts from each tour currency", listing.includes("formatCompact(base, tour.currency"));
+check("tour details convert price and add-ons", detailExperience.includes("format(tour.price_start_per_person, tour.currency") && detailExperience.includes("item.price != null ? format(item.price"));
 check("booking review converts display amounts", booking.includes("const { format: money") && booking.includes("money(customerTotal, currency)"));
 check("gateway still receives immutable booking currency", booking.includes("currency: booking.currency"));
 check("checkout explains indicative conversion", booking.includes("displayed conversion is indicative"));

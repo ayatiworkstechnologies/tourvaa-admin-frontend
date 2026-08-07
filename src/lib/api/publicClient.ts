@@ -74,11 +74,14 @@ export type PublicTourDetail = PublicTour & {
     travel_distance: string;
     travel_duration: string;
     important_notes: string;
+    activities: string;
+    image?: string | null;
   }[];
-  highlights: { text: string }[];
+  highlights: { text: string; title?: string; image?: string | null; description?: string }[];
   inclusions: { text: string }[];
   exclusions: { text: string }[];
   gallery: { image_url: string; alt_text: string; is_banner: boolean }[];
+  tour_video_url?: string | null;
   pricing: { persons_from: number; persons_to: number | null; price_per_person: number; currency: string }[];
   optional_activities: { id: number; name: string; description: string; price: number | null; currency: string; category: string }[];
   accommodations: { id: number; name: string; description: string; price: number | null; category: string }[];

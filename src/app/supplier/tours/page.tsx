@@ -10,6 +10,7 @@ import {
   LuCircleAlert as AlertCircle,
   LuCircleCheckBig as CheckCircle2,
   LuClock3 as Clock,
+  LuDownload as Download,
   LuEye as Eye,
   LuMapPin as MapPin,
   LuMapPinned as MapPinned,
@@ -19,9 +20,12 @@ import {
   LuSendHorizontal as SendHorizontal,
 } from "react-icons/lu";
 import { SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
+import TourExcelImportButton from "@/components/tours/TourExcelImportButton";
 import api from "@/lib/api/client";
+import { exportTourExcel } from "@/lib/api/services/tourImportExportService";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useToast } from "@/hooks/useToast";
 
 type Tour = {
   id: number;
@@ -58,6 +62,7 @@ function statusColors(status: string) {
 }
 
 export default function SupplierToursPage() {
+  const toast = useToast();
   const { format } = useCurrency();
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +76,19 @@ export default function SupplierToursPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<number | null>(null);
+  const [exportingId, setExportingId] = useState<number | null>(null);
   const limit = 12;
+
+  async function downloadTour(tour: Tour) {
+    setExportingId(tour.id);
+    try {
+      await exportTourExcel(tour.id, tour.tour_code || tour.title || `tour-${tour.id}`);
+    } catch {
+      toast.error("Could not download this tour's details.");
+    } finally {
+      setExportingId(null);
+    }
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -128,9 +145,12 @@ export default function SupplierToursPage() {
         eyebrow="Tour Workspace"
         actions={[{ label: "Create New Tour", href: "/supplier/tours/create", icon: Plus }]}
       >
-        <div className="flex flex-wrap items-center gap-3 text-[11px]">
-          <span className="rounded-full bg-emerald-50 px-3 py-2 font-bold text-emerald-700">{total} tour{total === 1 ? "" : "s"} in this view</span>
-          <span className="rounded-full bg-slate-50 px-3 py-2 font-bold text-[#61776A]">Edit drafts anytime · Published changes return to review</span>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 text-[11px]">
+            <span className="rounded-full bg-emerald-50 px-3 py-2 font-bold text-emerald-700">{total} tour{total === 1 ? "" : "s"} in this view</span>
+            <span className="rounded-full bg-slate-50 px-3 py-2 font-bold text-[#61776A]">Edit drafts anytime · Published changes return to review</span>
+          </div>
+          <TourExcelImportButton theme="supplier" onImported={() => void load()} />
         </div>
       </SupplierPageHeader>
 
@@ -223,19 +243,28 @@ export default function SupplierToursPage() {
                       {isPending && <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700"><Clock size={11} /> Admin review</span>}
                     </div>
 
-                    <div className="mt-auto grid grid-cols-[1fr_auto] gap-2 pt-5">
+                    <div className="mt-auto grid grid-cols-[1fr_auto_auto] gap-2 pt-5">
                       <Link href={`/supplier/tours/${tour.id}/edit`} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#16833A] px-3 py-2.5 text-xs font-black text-white hover:bg-[#117331]">
                         <Pencil size={14} /> Edit Tour
                       </Link>
                       <Link href={`/supplier/tours/${tour.id}/preview`} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D5E6DB] text-[#527060] hover:bg-[#F0F8F3] hover:text-[#16833A]" aria-label={`Preview ${tour.title}`}>
                         <Eye size={15} />
                       </Link>
+                      <button
+                        type="button"
+                        disabled={exportingId === tour.id}
+                        onClick={() => void downloadTour(tour)}
+                        aria-label={`Download ${tour.title} details`}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D5E6DB] text-[#527060] hover:bg-[#F0F8F3] hover:text-[#16833A] disabled:opacity-60"
+                      >
+                        <Download size={15} />
+                      </button>
                       {canSubmit && (
                         <button
                           type="button"
                           disabled={submittingId === tour.id}
                           onClick={() => void handleSubmitForApproval(tour.id)}
-                          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-[#CFE3D6] bg-[#F0F8F3] px-3 py-2.5 text-xs font-black text-[#16833A] hover:bg-[#E4F4E9] disabled:opacity-60"
+                          className="col-span-3 inline-flex items-center justify-center gap-2 rounded-xl border border-[#CFE3D6] bg-[#F0F8F3] px-3 py-2.5 text-xs font-black text-[#16833A] hover:bg-[#E4F4E9] disabled:opacity-60"
                         >
                           {submittingId === tour.id ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#16833A] border-t-transparent" /> : <SendHorizontal size={14} />}
                           Submit for Approval

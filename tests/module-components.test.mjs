@@ -95,14 +95,11 @@ check("CustomerTable.tsx exists", customerTable.length > 0);
 const customerProfile = readComp("customers/CustomerProfileCard.tsx");
 check("CustomerProfileCard.tsx exists", customerProfile.length > 0);
 
-const customerBookings = readComp("customers/CustomerBookingHistory.tsx");
-check("CustomerBookingHistory.tsx exists", customerBookings.length > 0);
-
-const customerPayments = readComp("customers/CustomerPaymentHistory.tsx");
-check("CustomerPaymentHistory.tsx exists", customerPayments.length > 0);
-
-const customerComms = readComp("customers/CustomerCommunicationHistory.tsx");
-check("CustomerCommunicationHistory.tsx exists", customerComms.length > 0);
+const customerHistoryTables = readComp("customers/CustomerHistoryTables.tsx");
+check("CustomerHistoryTables.tsx exists", customerHistoryTables.length > 0);
+check("CustomerHistoryTables exports CustomerBookingHistory", customerHistoryTables.includes("export function CustomerBookingHistory"));
+check("CustomerHistoryTables exports CustomerPaymentHistory", customerHistoryTables.includes("export function CustomerPaymentHistory"));
+check("CustomerHistoryTables exports CustomerCommunicationHistory", customerHistoryTables.includes("export function CustomerCommunicationHistory"));
 
 const customerActions = readComp("customers/CustomerActionButtons.tsx");
 check("CustomerActionButtons.tsx exists", customerActions.length > 0);

@@ -13,10 +13,10 @@ import { publicTourUrl } from "@/lib/utils/tourUrl";
 const PLACEHOLDER = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=75";
 
 const STATIC_FALLBACK = [
-  { id: 0, title: "Magical Maldives Escape", number_of_days: 5, city_name: "Malé", country_name: "Maldives", price_start_per_person: 4599, currency: "AED", category_name: "Best Seller", banner_image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=800&q=75" },
-  { id: 0, title: "Dubai Luxury Getaway", number_of_days: 6, city_name: "Dubai", country_name: "UAE", price_start_per_person: 2299, currency: "AED", category_name: "Popular", banner_image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=75" },
-  { id: 0, title: "Kashmir Paradise Tour", number_of_days: 7, city_name: "Srinagar", country_name: "India", price_start_per_person: 1899, currency: "AED", category_name: "Trending", banner_image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=75" },
-  { id: 0, title: "Bali Relaxation Holiday", number_of_days: 6, city_name: "Bali", country_name: "Indonesia", price_start_per_person: 2899, currency: "AED", category_name: "Limited Offer", banner_image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=75" },
+  { id: 0, title: "Magical Maldives Escape", number_of_days: 5, city_name: "Malé", country_name: "Maldives", price_start_per_person: 4599, currency: "USD", category_name: "Best Seller", banner_image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=800&q=75" },
+  { id: 0, title: "Dubai Luxury Getaway", number_of_days: 6, city_name: "Dubai", country_name: "UAE", price_start_per_person: 2299, currency: "USD", category_name: "Popular", banner_image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=75" },
+  { id: 0, title: "Kashmir Paradise Tour", number_of_days: 7, city_name: "Srinagar", country_name: "India", price_start_per_person: 1899, currency: "USD", category_name: "Trending", banner_image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=75" },
+  { id: 0, title: "Bali Relaxation Holiday", number_of_days: 6, city_name: "Bali", country_name: "Indonesia", price_start_per_person: 2899, currency: "USD", category_name: "Limited Offer", banner_image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=75" },
 ];
 
 function TourCard({ tour, isStatic }: { tour: Partial<PublicTour>; isStatic?: boolean }) {
@@ -56,7 +56,7 @@ export default function FeaturedTours() {
   useEffect(() => {
     fetchFeaturedTours(4)
       .then(setTours)
-      .catch((error) => console.error("Failed to load featured tours, falling back to static list", error))
+      .catch(() => setTours([]))
       .finally(() => setLoaded(true));
   }, []);
 

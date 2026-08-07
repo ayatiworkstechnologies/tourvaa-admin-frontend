@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCreditCard as CreditCard, LuFileText as FileText, LuHistory as History, LuLoaderCircle as Loader2, LuMapPinned as MapPinned, LuReceipt as Receipt, LuStar as Star, LuUsers as Users, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
@@ -119,6 +119,7 @@ function PayNowModal({
     preferredPaymentType === "partial" && partialAvailable ? "partial" : "full",
   );
   const paymentAmount = paymentType === "partial" ? depositDue : amount;
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     api.get("/payments/gateways/status")
@@ -126,6 +127,13 @@ function PayNowModal({
       .catch(() => setGw({ stripe: false, paypal: false, test_mode_available: true }))
       .finally(() => setGwLoading(false));
   }, []);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
 
   async function payWithStripe() {
     setLoading("stripe"); setErr("");
@@ -177,7 +185,7 @@ function PayNowModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label="Choose your payment">
       <div className="w-full max-w-md rounded-3xl border border-dash-border bg-white p-6 shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
           <div>
@@ -186,7 +194,7 @@ function PayNowModal({
               Booking balance: <strong className="text-dash-text">{formatCurrency(amount, currency)}</strong>
             </p>
           </div>
-          <button type="button" onClick={onClose} disabled={!!loading} aria-label="Close payment modal"
+          <button ref={closeRef} type="button" onClick={onClose} disabled={!!loading} aria-label="Close payment modal"
             className="rounded-xl p-1.5 text-dash-muted hover:bg-dash-bg hover:text-dash-text">
             <X size={18} />
           </button>

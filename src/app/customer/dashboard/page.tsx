@@ -5,15 +5,21 @@ import Link from "next/link";
 import {
   LuArrowRight as ArrowRight,
   LuCompass as Compass,
+  LuFileText as FileText,
+  LuHeadset as Headset,
   LuHeart as Heart,
   LuMapPin as MapPin,
+  LuShare2 as Share2,
   LuSquarePen as Pencil,
+  LuUserPlus as UserPlus,
   LuUserRound as UserRound,
+  LuWallet as Wallet,
 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
+import { useToast } from "@/hooks/useToast";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { CustomerPageHeader, CustomerPageShell, CustomerSection } from "@/components/customer/CustomerPage";
 
@@ -43,6 +49,7 @@ type Booking = {
   tour_date?: string | null;
   booking_status: string;
   final_amount?: string | number;
+  amount_pending?: string | number;
   currency?: string;
 };
 
@@ -82,14 +89,17 @@ function Skeleton({ className = "" }: { className?: string }) {
 
 export default function CustomerDashboardPage() {
   const { user } = useAuthContext();
-  const { format } = useCurrency();
+  const { format, formatExact } = useCurrency();
   const { hydrated, wishlist } = useTravelStore();
+  const toast = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError("");
     try {
       const [profileResult, bookingResult] = await Promise.allSettled([
         api.get("/customers/me"),
@@ -97,6 +107,9 @@ export default function CustomerDashboardPage() {
       ]);
       if (profileResult.status === "fulfilled") setProfile(profileResult.value.data?.data ?? null);
       if (bookingResult.status === "fulfilled") setBookings(bookingResult.value.data?.items ?? bookingResult.value.data?.data ?? []);
+      if (profileResult.status === "rejected" && bookingResult.status === "rejected") {
+        setLoadError("Your dashboard could not be loaded. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -108,6 +121,28 @@ export default function CustomerDashboardPage() {
 
   const wishlistPreview = wishlist.slice(0, WISHLIST_PREVIEW);
 
+  const shareReferral = async () => {
+    const shareData = {
+      title: "Tourvaa",
+      text: "I'm planning my next trip with Tourvaa — check out their curated tours!",
+      url: typeof window !== "undefined" ? window.location.origin : "https://tourvaa.com",
+    };
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // user cancelled the native share sheet - nothing to do
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      toast.success("Link copied to clipboard.");
+    } catch {
+      toast.error("Could not copy the link.");
+    }
+  };
+
   return (
     <CustomerPageShell>
       <CustomerPageHeader
@@ -116,6 +151,42 @@ export default function CustomerDashboardPage() {
         icon={UserRound}
         eyebrow="Traveller Portal"
       />
+
+      {loadError && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          <span>{loadError}</span>
+          <button type="button" onClick={() => void load()} className="rounded-lg bg-white px-3 py-1.5 font-bold shadow-sm ring-1 ring-amber-200 hover:bg-amber-100">
+            Retry
+          </button>
+        </div>
+      )}
+
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <Link href="/tours" className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#0865D9]"><Compass size={18} /></span>
+          <span className="text-xs font-black text-[#0C2043]">Book a Tour</span>
+        </Link>
+        <Link href="/customer/payments" className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Wallet size={18} /></span>
+          <span className="text-xs font-black text-[#0C2043]">Make a Payment</span>
+        </Link>
+        <Link href="/customer/travellers" className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><UserPlus size={18} /></span>
+          <span className="text-xs font-black text-[#0C2043]">Add Traveller</span>
+        </Link>
+        <Link href="/customer/invoices" className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><FileText size={18} /></span>
+          <span className="text-xs font-black text-[#0C2043]">View Invoices</span>
+        </Link>
+        <Link href="/customer/support" className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600"><Headset size={18} /></span>
+          <span className="text-xs font-black text-[#0C2043]">Contact Support</span>
+        </Link>
+        <button type="button" onClick={() => void shareReferral()} className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700"><Share2 size={18} /></span>
+          <span className="text-xs font-black text-[#0C2043]">Refer a Friend</span>
+        </button>
+      </div>
 
       <CustomerSection className="mt-4" title="Profile Details">
         <div className="p-5 sm:p-6">
@@ -172,6 +243,7 @@ export default function CustomerDashboardPage() {
                   <th className="px-3 py-3">Tour</th>
                   <th className="px-3 py-3">Status</th>
                   <th className="px-5 py-3 text-right">Total</th>
+                  <th className="px-5 py-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8EEF6]">
@@ -189,7 +261,17 @@ export default function CustomerDashboardPage() {
                         {humanStatus(booking.booking_status)}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-right font-bold text-[#0C2043]">{format(booking.final_amount ?? 0, booking.currency)}</td>
+                    <td className="px-5 py-3 text-right font-bold text-[#0C2043]">{formatExact(booking.final_amount ?? 0, booking.currency)}</td>
+                    <td className="px-5 py-3 text-right">
+                      {Number(booking.amount_pending || 0) > 0 && (
+                        <Link
+                          href={`/customer/bookings/${booking.id}?action=pay`}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-100"
+                        >
+                          <Wallet size={13} /> Pay
+                        </Link>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

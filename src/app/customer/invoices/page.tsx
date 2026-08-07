@@ -29,10 +29,10 @@ function dateText(value?: string) {
 }
 
 export default function CustomerInvoicesPage() {
-  const { format } = useCurrency();
+  const { formatExact } = useCurrency();
   const toast = useToast();
   const money = (value: string | number | undefined, currency = "USD") =>
-    value == null || value === "" ? "-" : format(value, currency);
+    value == null || value === "" ? "-" : formatExact(value, currency);
   const [rows, setRows] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

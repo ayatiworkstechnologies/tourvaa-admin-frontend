@@ -19,7 +19,7 @@ const NAV = [
   { href: "/supplier/payouts", icon: Banknote, label: "Payouts", section: "Operations" },
   { href: "/supplier/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
   { href: "/supplier/notifications", icon: Bell, label: "Notifications", section: "Communication" },
-  { href: "/supplier/profile#documents", icon: FileCheck, label: "Documents", placement: "bottom" as const },
+  { href: "/supplier/profile?tab=documents", icon: FileCheck, label: "Documents", placement: "bottom" as const },
   { href: "/supplier/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
 

@@ -18,7 +18,13 @@ import {
 
 const supportLinks = [["Contact Us", "/contact"], ["Cancellation Policy", "/cancellation-policy"], ["Privacy Policy", "/privacy-policy"], ["Terms & Conditions", "/terms"]] as const;
 const companyLinks = [["About us", "/about"], ["Blog", "/blogs"], ["Tours", "/tours"], ["Destinations", "/destinations"]] as const;
-const loginLinks = [["Travellers Login", "/login?role=traveller"], ["Agents Login", "/login?role=agent"]] as const;
+const loginLinks = [
+  ["Travellers Login", "/login?role=traveller"],
+  ["Agents Login", "/agent-portal/login"],
+  ["Supplier Login", "/supplier-portal/login"],
+  ["Become a Supplier", "/supplier-portal"],
+  ["Become an Agent", "/agent-portal"],
+] as const;
 
 function isSocialLink(link: CmsExternalLink) {
   return /facebook|instagram|linkedin|youtube|twitter|whatsapp|\bx\b/i.test(`${link.label} ${link.url}`);

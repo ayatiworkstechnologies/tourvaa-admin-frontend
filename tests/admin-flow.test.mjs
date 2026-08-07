@@ -84,35 +84,38 @@ check("admin navigation exposes cancellations and refunds", navigation.includes(
 
 const tourWorkspace = read("src/components/tours/TourWorkspace.tsx");
 const tourCreateForm = read("src/components/cms/TourFormPage.tsx");
-const tourEditor = read("src/components/tours/TourEditPage.tsx");
+// Admin tour create/edit are thin wrappers (create/page.tsx, TourEditPage.tsx)
+// around the shared TourWizard component, which owns the workspace header,
+// tabs, content, and stepper - assertions below target TourWizard.tsx.
+const tourWizard = read("src/components/tours/TourWizard.tsx");
 check(
   "admin tour create and edit share the upgraded workspace header",
   tourCreateForm.includes("TourWorkspaceHeader") &&
-    tourEditor.includes("TourWorkspaceHeader") &&
+    tourWizard.includes("TourWorkspaceHeader") &&
     tourWorkspace.includes("Admin Tour Workspace"),
 );
 check(
   "admin tour creation shows guided completion stages",
-  tourCreateForm.includes("Location & Owner") &&
-    tourCreateForm.includes("Content & Media") &&
-    tourCreateForm.includes("SEO & Publish"),
+  tourWizard.includes('label: "Basic Details"') &&
+    tourWizard.includes('label: "Location & Category"') &&
+    tourWizard.includes('label: "Review & Submit"'),
 );
 check(
   "admin tour editor uses the common tab and content-card workflow",
-  tourEditor.includes("TourWorkspaceTabs") &&
-    tourEditor.includes("TourWorkspaceContent") &&
-    tourEditor.includes("TourWorkspaceStepFooter") &&
-    ["Itinerary", "Gallery", "Pricing", "Calendar", "Discounts"].every((label) =>
-      tourEditor.includes(`label: "${label}"`)
+  tourWizard.includes("TourWorkspaceTabs") &&
+    tourWizard.includes("TourWorkspaceContent") &&
+    tourWizard.includes("TourWorkspaceStepper") &&
+    ["Itinerary", "Pricing", "Calendar", "Discounts"].every((label) =>
+      tourWizard.includes(`label: "${label}"`)
     ),
 );
 check(
   "admin tour sections support explicit step completion",
-  tourEditor.includes("completedSteps") &&
-    tourEditor.includes("completeAndNext") &&
-    tourEditor.includes('router.push("/admin/tours")'),
+  tourWizard.includes("visitedSteps") &&
+    tourWizard.includes("selectPrimaryStep") &&
+    tourWizard.includes('basePath = isSupplier ? "/supplier/tours" : "/admin/tours"'),
 );
-check("embedded edit form avoids a duplicate workspace header", tourEditor.includes("tourId={tourId} embedded"));
+check("embedded edit form avoids a duplicate workspace header", tourWizard.includes("tourId={tourId} embedded"));
 
 console.log(`\nAdmin flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

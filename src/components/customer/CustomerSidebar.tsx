@@ -71,7 +71,7 @@ export default function CustomerSidebar({ mobile = false, onNavigate }: Customer
           className="mt-1 flex h-11 w-full items-center gap-3 rounded-xl px-3 text-[13px] font-semibold text-[#385070] transition hover:bg-rose-50 hover:text-rose-600"
         >
           <LogOut size={18} />
-          Logout
+          Sign out
         </button>
       </nav>
     </aside>

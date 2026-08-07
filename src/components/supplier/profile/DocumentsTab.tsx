@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuUpload as Upload } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
 import { IMAGE_DOCUMENT_ACCEPT } from "@/lib/uploads/imageFormats";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -87,21 +88,15 @@ export default function DocumentsTab() {
     }
   }
 
-  async function viewDocument(fileUrl: string) {
-    if (fileUrl.startsWith("/api/private-documents/") || fileUrl.includes("/private-documents/")) {
-      // Private document - fetch with auth header, open as blob
+  async function viewDocument(doc: Document) {
+    if (doc.file_url.startsWith("/api/private-documents/") || doc.file_url.includes("/private-documents/")) {
       try {
-        const res = await api.get(fileUrl.replace(/^\/api/, ""), { responseType: "blob" });
-        const contentType = String(res.headers["content-type"] || "application/octet-stream");
-        const blob = new Blob([res.data as BlobPart], { type: contentType });
-        const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        await openPrivateDocument("supplier", doc.id);
       } catch {
         toast.error("Could not open document.");
       }
     } else {
-      window.open(fileUrl, "_blank");
+      window.open(doc.file_url, "_blank");
     }
   }
 
@@ -162,7 +157,7 @@ export default function DocumentsTab() {
                         <div className="mt-0.5 flex items-center gap-2">
                           <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusCls(doc.status)}`}>{doc.status}</span>
                           {doc.uploaded_at && <span className="text-xs text-dash-subtle">{new Date(doc.uploaded_at).toLocaleDateString()}</span>}
-                          <button type="button" onClick={() => viewDocument(doc.file_url)} className="text-xs font-bold text-emerald-600 hover:underline">View file</button>
+                          <button type="button" onClick={() => void viewDocument(doc)} className="text-xs font-bold text-emerald-600 hover:underline">View file</button>
                         </div>
                       ) : (
                         <p className="text-xs text-dash-subtle">Not uploaded yet</p>

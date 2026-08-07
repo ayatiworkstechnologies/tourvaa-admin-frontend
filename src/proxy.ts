@@ -19,6 +19,19 @@ const PUBLIC_EXCEPTIONS = ["/admin/login"];
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // next.config.ts sets skipTrailingSlashRedirect: true so that /api/users
+  // and /api/users/ can be rewritten as two distinct, deliberate proxy
+  // targets (see the rewrites() list) instead of Next's default redirect
+  // silently rewriting one into the other before rewrites ever run. That
+  // flag disables Next's built-in trailing-slash normalization globally,
+  // so page routes need it reinstated here (the matcher below already
+  // excludes /api and /storage, so this never touches those rewrite pairs).
+  if (pathname !== "/" && pathname.endsWith("/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.slice(0, -1);
+    return NextResponse.redirect(url, 308);
+  }
+
   if (PUBLIC_EXCEPTIONS.includes(pathname)) {
     return NextResponse.next();
   }
@@ -41,5 +54,9 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/customer/:path*", "/agent/:path*", "/supplier/:path*", "/affiliate/:path*"],
+  // Broad enough to cover every page route (for trailing-slash
+  // normalization), while excluding /api and /storage (whose rewrite pairs
+  // in next.config.ts rely on skipTrailingSlashRedirect being left alone),
+  // _next internals, and any path with a file extension.
+  matcher: ["/((?!api|storage|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

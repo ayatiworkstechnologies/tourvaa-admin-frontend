@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   LuBriefcaseBusiness as Briefcase,
-  LuBuilding2 as Building,
   LuCalendarCheck as CalendarCheck,
   LuChevronDown as ChevronDown,
   LuHeart as Heart,
@@ -89,7 +88,7 @@ export default function PublicHeader() {
         >
           Tourvaa
         </Link>
-        <nav className="hidden items-center gap-4 sm:flex lg:gap-6">
+        <nav className="hidden items-center gap-4 lg:flex lg:gap-6">
           <Link
             href="/customer/wishlist"
             className="group relative flex flex-col items-center gap-1 text-[9px] font-semibold"
@@ -148,9 +147,7 @@ export default function PublicHeader() {
               (isLoggedIn ? (
                 <AuthenticatedProfileMenu
                   name={user?.name}
-                  dashboardPath={dashboardPath}
                   profilePath={profilePath}
-                  bookingsPath={bookingsPath}
                   onClose={() => setProfileOpen(false)}
                   onLogout={logout}
                 />
@@ -162,13 +159,13 @@ export default function PublicHeader() {
         <button
           onClick={() => setOpen(!open)}
           aria-label="Toggle navigation"
-          className="sm:hidden"
+          className="lg:hidden"
         >
           {open ? <X /> : <Menu />}
         </button>
       </div>
       {open && (
-        <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg sm:hidden">
+        <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg lg:hidden">
           <div className="grid grid-cols-2 gap-2">
             {mobileLinks.map(([label, href]) => (
               <Link
@@ -242,16 +239,26 @@ export default function PublicHeader() {
                 </button>
               </>
             ) : (
-              profileOptions.map(({ label, href, icon: Icon }) => (
-                <Link
-                  key={label}
-                  href={href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 text-sm font-bold text-slate-700"
-                >
-                  <Icon size={17} className="text-blue-600" />
-                  {label}
-                </Link>
+              profileOptions.map(({ label, href, registerHref, icon: Icon }) => (
+                <div key={label} className="flex items-stretch gap-2">
+                  <Link
+                    href={href}
+                    onClick={() => setOpen(false)}
+                    className="flex flex-1 items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 text-sm font-bold text-slate-700"
+                  >
+                    <Icon size={17} className="text-blue-600" />
+                    {label}
+                  </Link>
+                  {registerHref && (
+                    <Link
+                      href={registerHref}
+                      onClick={() => setOpen(false)}
+                      className="flex shrink-0 items-center rounded-xl border border-blue-100 px-3 text-xs font-black text-blue-600"
+                    >
+                      Register
+                    </Link>
+                  )}
+                </div>
               ))
             )}
           </div>
@@ -266,19 +273,15 @@ const profileOptions = [
     label: "Traveller Login",
     note: "Bookings, wishlist and trips",
     href: "/login?role=traveller",
+    registerHref: "/register",
     icon: Plane,
   },
   {
     label: "Agent Login",
     note: "Customers, bookings and earnings",
-    href: "/login?role=agent",
+    href: "/agent-portal/login",
+    registerHref: "/agent-portal/login?tab=register",
     icon: Briefcase,
-  },
-  {
-    label: "Supplier Login",
-    note: "Tours, inventory and payouts",
-    href: "/login?role=supplier",
-    icon: Building,
   },
 ] as const;
 
@@ -286,7 +289,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
   return (
     <div
       role="menu"
-      className="hero-filter-panel absolute right-0 top-[calc(100%+14px)] w-72 overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 text-slate-900 shadow-[0_20px_55px_rgba(15,23,42,.18)]"
+      className="profile-dropdown-panel absolute right-0 top-[calc(100%+14px)] w-72 overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 text-slate-900 shadow-[0_20px_55px_rgba(15,23,42,.18)]"
     >
       <div className="px-3 pb-2 pt-2">
         <p className="text-sm font-black">Welcome to Tourvaa</p>
@@ -294,27 +297,42 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
           Choose your account type to continue
         </p>
       </div>
-      {profileOptions.map(({ label, note, href, icon: Icon }) => (
-        <Link
-          role="menuitem"
+      {profileOptions.map(({ label, note, href, registerHref, icon: Icon }) => (
+        <div
           key={label}
-          href={href}
-          onClick={onClose}
-          className="group flex items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-blue-50"
+          className="group flex items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-blue-50"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
-            <Icon size={18} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <b className="block text-xs">{label}</b>
-            <span className="mt-0.5 block text-[9px] text-slate-400">
-              {note}
+          <Link
+            role="menuitem"
+            href={href}
+            onClick={onClose}
+            className="flex min-w-0 flex-1 items-center gap-3 py-1"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
+              <Icon size={18} />
             </span>
-          </span>
-          <span className="text-blue-500 transition group-hover:translate-x-1">
-            ›
-          </span>
-        </Link>
+            <span className="min-w-0 flex-1">
+              <b className="block text-xs">{label}</b>
+              <span className="mt-0.5 block text-[9px] text-slate-400">
+                {note}
+              </span>
+            </span>
+          </Link>
+          {registerHref ? (
+            <Link
+              role="menuitem"
+              href={registerHref}
+              onClick={onClose}
+              className="shrink-0 rounded-lg border border-blue-100 px-2.5 py-1.5 text-[9px] font-black text-blue-600 hover:bg-blue-600 hover:text-white"
+            >
+              Register
+            </Link>
+          ) : (
+            <span className="pr-1 text-blue-500 transition group-hover:translate-x-1">
+              ›
+            </span>
+          )}
+        </div>
       ))}
     </div>
   );
@@ -322,48 +340,30 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
 
 function AuthenticatedProfileMenu({
   name,
-  dashboardPath,
   profilePath,
-  bookingsPath,
   onClose,
   onLogout,
 }: {
   name?: string;
-  dashboardPath: string;
   profilePath: string;
-  bookingsPath: string | null;
   onClose: () => void;
   onLogout: () => void;
 }) {
   return (
     <div
       role="menu"
-      className="hero-filter-panel absolute right-0 top-[calc(100%+14px)] w-72 overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 text-slate-900 shadow-[0_20px_55px_rgba(15,23,42,.18)]"
+      className="profile-dropdown-panel absolute right-0 top-[calc(100%+14px)] w-72 overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 text-slate-900 shadow-[0_20px_55px_rgba(15,23,42,.18)]"
     >
       <div className="border-b border-slate-100 px-3 pb-3 pt-2">
         <p className="truncate text-sm font-black">{name || "My Tourvaa"}</p>
         <p className="mt-0.5 text-[10px] text-slate-400">
-          Manage your account and journeys
+          Manage your account
         </p>
       </div>
       <div className="pt-2">
         <AccountMenuLink
-          href={dashboardPath}
-          label="My dashboard"
-          icon={LayoutDashboard}
-          onClose={onClose}
-        />
-        {bookingsPath && (
-          <AccountMenuLink
-            href={bookingsPath}
-            label="My bookings"
-            icon={CalendarCheck}
-            onClose={onClose}
-          />
-        )}
-        <AccountMenuLink
           href={profilePath}
-          label="My profile"
+          label="Profile"
           icon={User}
           onClose={onClose}
         />

@@ -35,6 +35,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const publicRoutes = [
   "/login",
+  "/supplier-portal",
+  "/agent-portal",
   "/register",
   "/forgot-password",
   "/reset-password",
@@ -244,7 +246,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (token && dashboard && (pathname === "/login" || pathname === "/admin/login")) {
+    // "/login" (the public site's shared customer/agent/supplier login) already
+    // navigates itself post-login, honoring a "?redirect=" return path back to
+    // wherever the user came from - see src/app/(public)/login/page.tsx. Doing
+    // it again here would race that logic with this redirect-unaware fallback
+    // and could win, dropping the user on their role's dashboard instead of
+    // back where they started. "/admin/login" has no such self-navigation, so
+    // it still needs this generic redirect.
+    if (token && dashboard && pathname === "/admin/login") {
       const roleSlug = dashboard.user?.role?.slug ?? "";
       router.replace(getDashboardPath(roleSlug));
     }

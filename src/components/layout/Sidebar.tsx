@@ -3,7 +3,7 @@
 import { createPortal } from "react-dom";
 import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuLock as Lock, LuLogOut as LogOut, LuMapPinned as MapPinned } from "react-icons/lu";
 import type { IconType as LucideIcon } from "react-icons";
 import { useAuth } from "@/hooks/useAuth";
@@ -147,6 +147,7 @@ export default function Sidebar({
   onLockedItemClick,
 }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { logout } = useAuth();
   const [tooltip, setTooltip] = useState<TooltipState>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -172,9 +173,36 @@ export default function Sidebar({
     setTooltip(null);
   }
 
-  function isActiveItem(item: SidebarNavItem) {
+  // For hrefs carrying a query string (e.g. "/supplier/profile?tab=documents"),
+  // match on pathname + those specific query params - usePathname() alone
+  // can't distinguish nav items that share a pathname but point at different
+  // tabs of the same page.
+  function hrefMatches(href: string) {
+    const [hrefPath, hrefQuery] = href.split("?");
+    if (hrefQuery) {
+      if (pathname !== hrefPath) return false;
+      const hrefParams = new URLSearchParams(hrefQuery);
+      return [...hrefParams.entries()].every(([key, value]) => searchParams.get(key) === value);
+    }
+    return pathname === hrefPath || (hrefPath !== dashboardHref && pathname.startsWith(`${hrefPath}/`));
+  }
+
+  function bestMatchLength(item: SidebarNavItem) {
     const hrefs = [item.href, ...(item.matchHrefs ?? [])];
-    return hrefs.some((href) => pathname === href || (href !== dashboardHref && pathname.startsWith(`${href}/`)));
+    let best = -1;
+    for (const href of hrefs) {
+      if (hrefMatches(href)) best = Math.max(best, href.length);
+    }
+    return best;
+  }
+
+  // When two items' hrefs both match the current path (e.g. "/supplier/tours"
+  // and "/supplier/tours/create"), only the most specific (longest) match
+  // should be highlighted.
+  function isActiveItem(item: SidebarNavItem) {
+    const length = bestMatchLength(item);
+    if (length < 0) return false;
+    return navItems.every((other) => other === item || bestMatchLength(other) <= length);
   }
 
   function renderSidebarItem(item: SidebarNavItem, index: number) {
@@ -319,7 +347,7 @@ export default function Sidebar({
             <button
               type="button"
               onClick={() => logout()}
-              onMouseEnter={(e) => showTooltip(e, "Logout")}
+              onMouseEnter={(e) => showTooltip(e, "Sign out")}
               onMouseLeave={hideTooltip}
               className={`flex h-12 w-full items-center rounded-xl px-3.5 transition ${colors.logout} ${
                 collapsed ? "justify-center px-0" : ""

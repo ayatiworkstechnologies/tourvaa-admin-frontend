@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { LuLogIn as LogIn, LuMapPin as MapPin, LuX as X } from "react-icons/lu";
@@ -17,11 +17,20 @@ const PLACEHOLDER = "https://images.unsplash.com/photo-1506905925346-21bda4d32df
 // guest prompt
 function GuestPrompt({ onClose, returnPath, isLoggedIn }: { onClose: () => void; returnPath: string; isLoggedIn?: boolean }) {
   const router = useRouter();
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={isLoggedIn ? "Booking account required" : "Sign in to book"}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-2xl">
-        <button type="button" aria-label="Close" onClick={onClose} className="absolute right-4 top-4 rounded-xl p-1.5 text-slate-400 hover:bg-slate-100">
+        <button ref={closeRef} type="button" aria-label="Close" onClick={onClose} className="absolute right-4 top-4 rounded-xl p-1.5 text-slate-400 hover:bg-slate-100">
           <X size={16} />
         </button>
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900">
@@ -45,7 +54,7 @@ function GuestPrompt({ onClose, returnPath, isLoggedIn }: { onClose: () => void;
           </button>
           <button
             type="button"
-            onClick={() => { onClose(); router.push(`/login?role=agent&redirect=${encodeURIComponent(returnPath)}`); }}
+            onClick={() => { onClose(); router.push(`/agent-portal/login?redirect=${encodeURIComponent(returnPath)}`); }}
             className="rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
           >
             Agent login
@@ -83,6 +92,7 @@ export default function TourDetailPage() {
     fetchPublicTourDetail(tourKey, routeSlug ? routeId : undefined)
       .then((data) => {
         if (!active) return;
+        if (routeId && /^\d+$/.test(routeId)) router.replace(publicTourUrl(data), { scroll: false });
         setTour({
           ...data,
           itineraries: data.itineraries ?? [],
@@ -107,11 +117,7 @@ export default function TourDetailPage() {
     return () => {
       active = false;
     };
-  }, [params?.id, params?.slug]);
-
-  useEffect(() => {
-    if (tour && params?.id && /^\d+$/.test(params.id)) router.replace(publicTourUrl(tour), { scroll: false });
-  }, [tour, params?.id, router]);
+  }, [params?.id, params?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (countryOnlySlug) {
     return <CountryTourListing countrySlug={countryOnlySlug} />;

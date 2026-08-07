@@ -10,7 +10,14 @@ export function useDashboard() {
   const docsDashboard = DOCS_CAPTURE_ENABLED && typeof window !== "undefined"
     ? window.localStorage.getItem("tourvaa_docs_dashboard")
     : null;
-  const parsedDocsDashboard = docsDashboard ? JSON.parse(docsDashboard) : null;
+  let parsedDocsDashboard = null;
+  if (docsDashboard) {
+    try {
+      parsedDocsDashboard = JSON.parse(docsDashboard);
+    } catch {
+      parsedDocsDashboard = null;
+    }
+  }
 
   return {
     dashboard: dashboard || parsedDocsDashboard,

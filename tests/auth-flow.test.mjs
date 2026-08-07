@@ -51,7 +51,7 @@ check("every public role sends the same verification link", register.includes('"
 check("session restoration loads dashboard identity", auth.includes('api.get("/dashboard/me")'));
 check("invalid restored sessions clear local state", auth.includes("clearSession()") && auth.includes("setDashboard(null)"));
 check("authenticated login pages redirect by role", auth.includes("getDashboardPath(roleSlug)"));
-check("explicit logout returns to the matching portal login", auth.includes('pathname.startsWith("/admin") ? "/admin/login" : "/login"') && auth.includes("const logout = useCallback((redirectTo?: string)"));
+check("explicit logout returns to the matching portal login", auth.includes('pathname.startsWith("/admin") ? "/admin/login" : "/login"') && auth.includes("const logout = useCallback(async (redirectTo?: string)"));
 
 const adminGuard = read("src/components/admin/AdminRouteGuard.tsx");
 check("admin guard rejects non-admin dashboard types", adminGuard.includes("ADMIN_DASHBOARD_TYPES.has(dashboard.dashboard_type)"));

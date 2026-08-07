@@ -7,6 +7,19 @@ import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import DataTable from "@/components/ui/DataTable";
 import CurrencySelect from "@/components/ui/CurrencySelect";
+import api from "@/lib/api/client";
+
+function supplierReceives(price: number, commissionType: string, commissionValue: number): number {
+  const value = commissionType === "percentage" ? price * (1 - commissionValue / 100) : price - commissionValue;
+  return Math.max(0, Math.round(value * 100) / 100);
+}
+
+// Formats a raw slab amount in the slab's own currency, without running it
+// through useCurrency's FX conversion -- these are the actual entered
+// prices, not amounts to be displayed in the viewer's preferred currency.
+function formatSlabAmount(amount: number, currency: string): string {
+  return `${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+}
 
 const empty = (): PricingSlab => ({
   passenger_from: 1, passenger_to: 4, adult_price: 0, child_price: 0,
@@ -24,6 +37,17 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
   const [adminEditingId, setAdminEditingId] = useState<number | null>(null);
   const [adminMarkup, setAdminMarkup] = useState({ admin_markup_type: "percentage", admin_markup_value: 0 });
   const [adminSaving, setAdminSaving] = useState(false);
+  const [commissionFloor, setCommissionFloor] = useState<{ type: string; value: number } | null>(null);
+
+  useEffect(() => {
+    if (role !== "supplier") return;
+    api.get("/suppliers/me")
+      .then((res) => {
+        const data = res.data?.data ?? res.data ?? {};
+        setCommissionFloor({ type: data.markup_type || "percentage", value: Number(data.markup_value) || 0 });
+      })
+      .catch(() => setCommissionFloor(null));
+  }, [role]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,8 +80,9 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch {
-      toast.error("Failed to save.");
+    } catch (error: unknown) {
+      const message = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(message || "Failed to save.");
     } finally {
       setSaving(false);
     }
@@ -111,10 +136,17 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-dash-text">Supplier Pricing</h2>
-            <p className="text-sm text-dash-subtle">Your price per pax-range slab. Commission is fixed by admin and included automatically.</p>
+            <p className="text-sm text-dash-subtle">Your price per pax-range slab.</p>
           </div>
-          <button type="button" onClick={() => setEditing({ ...empty() })}
-            className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white">
+          <button
+            type="button"
+            onClick={() => setEditing({
+              ...empty(),
+              markup_type: commissionFloor?.type ?? "percentage",
+              markup_value: commissionFloor?.value ?? 0,
+            })}
+            className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white"
+          >
             <Plus size={16} /> Add Slab
           </button>
         </div>
@@ -143,7 +175,7 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
                 },
                 {
                   key: "final_price",
-                  header: "Your Price (with commission)",
+                  header: "You Receive",
                   className: "font-bold text-dash-brand",
                   render: (item) => item.supplier_final_adult_price ?? item.final_price,
                 },
@@ -169,8 +201,34 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
             <div className="grid gap-4 md:grid-cols-3">
               {numField("passenger_from", "Pax from")}
               {numField("passenger_to", "Pax to")}
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Commission %</span>
+                <input
+                  type="number"
+                  min={commissionFloor && editing.markup_type === commissionFloor.type ? commissionFloor.value : 0}
+                  step="0.01"
+                  value={editing.markup_value}
+                  onChange={(e) => setEditing((p) => p ? { ...p, markup_value: Number(e.target.value) } : p)}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                />
+                <span className="mt-1 block text-[11px] text-dash-subtle">
+                  {commissionFloor
+                    ? `Your agreed commission (${commissionFloor.value}%) is applied automatically. You may increase it for higher visibility.`
+                    : "Your agreed commission is applied automatically. You may increase it for higher visibility."}
+                </span>
+              </label>
               {numField("adult_price", "Adult price")}
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier receives</span>
+                <input type="text" disabled value={formatSlabAmount(supplierReceives(editing.adult_price, editing.markup_type, editing.markup_value), editing.currency)}
+                  className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
+              </label>
               {numField("child_price", "Child price")}
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier receives</span>
+                <input type="text" disabled value={formatSlabAmount(supplierReceives(editing.child_price, editing.markup_type, editing.markup_value), editing.currency)}
+                  className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
+              </label>
               <label>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
                 <CurrencySelect value={editing.currency} onChange={(code) => setEditing((p) => p ? { ...p, currency: code } : p)} />
@@ -184,8 +242,8 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
                 </select>
               </label>
             </div>
-            <p className="mt-3 text-xs text-dash-subtle">
-              Commission ({editing.markup_value}{editing.markup_type === "percentage" ? "%" : " fixed"}) is fixed by admin and applied automatically — it is not editable here.
+            <p className="mt-4 rounded-xl bg-dash-bg p-3 text-xs text-dash-subtle">
+              <strong className="text-dash-body">Note:</strong> The prices entered above are your net supplier prices. Tourvaa will apply a retail markup before publishing your tour to cover agent commissions, transaction fees, marketing, and operating costs.
             </p>
             <div className="mt-4 flex justify-end gap-3">
               <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>

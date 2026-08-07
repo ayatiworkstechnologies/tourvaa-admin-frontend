@@ -16,14 +16,14 @@ export default function CurrencySelector({ inverse = false, plain = false }: { i
   }
 
   return (
-    <label className="relative" title={isStale ? "Using cached exchange rates" : "Display currency"}>
+    <label className="inline-flex items-center gap-1" title={isStale ? "Using cached exchange rates" : "Display currency"}>
       <span className="sr-only">Display currency</span>
       <select
         aria-label="Display currency"
         value={code}
         disabled={loading}
         onChange={(event) => setCode(event.target.value)}
-        className={`cursor-pointer text-xs font-black outline-none transition ${boxClass} ${textClass}`}
+        className={`cursor-pointer text-xs font-black outline-none transition disabled:opacity-60 ${boxClass} ${textClass}`}
       >
         {currencies.length
           ? currencies.map((item) => (
@@ -33,7 +33,13 @@ export default function CurrencySelector({ inverse = false, plain = false }: { i
             ))
           : <option value="USD">$ USD</option>}
       </select>
-      {isStale && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-400" aria-label="Cached rates" />}
+      {loading && <span className="inline-block h-2.5 w-2.5 shrink-0 animate-spin rounded-full border-[1.5px] border-current border-t-transparent opacity-60" aria-hidden="true" />}
+      {!loading && isStale && (
+        <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[8px] font-bold uppercase tracking-wide text-amber-500">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+          Cached
+        </span>
+      )}
     </label>
   );
 }

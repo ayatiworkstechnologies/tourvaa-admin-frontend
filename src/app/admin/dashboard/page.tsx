@@ -62,6 +62,8 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   const [loadError,        setLoadError]        = useState("");
   const [savingId,         setSavingId]         = useState<string | null>(null);
   const [msg,              setMsg]              = useState("");
+  const [rejectTarget,     setRejectTarget]     = useState<{ type: "supplier" | "agent"; id: number } | null>(null);
+  const [rejectReason,     setRejectReason]     = useState("Does not meet requirements");
 
   // filter form state (only applied when user clicks "Apply")
   const [fStart,   setFStart]   = useState("");
@@ -132,14 +134,13 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
     finally { setSavingId(null); }
   };
 
-  const rejectSupplier = async (id: number) => {
-    const reason = window.prompt("Rejection reason:", "Does not meet requirements");
-    if (!reason) return;
+  const confirmRejectSupplier = async (id: number, reason: string) => {
     setSavingId(`s-${id}`);
     try {
       await api.patch(`/suppliers/${id}/reject`, { rejection_reason: reason });
       setPendingSuppliers((p) => p.filter((s) => s.id !== id));
       setMsg("Supplier rejected.");
+      setRejectTarget(null);
     } catch { setMsg("Could not reject supplier."); }
     finally { setSavingId(null); }
   };
@@ -154,26 +155,35 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
     finally { setSavingId(null); }
   };
 
-  const rejectAgent = async (id: number) => {
-    const reason = window.prompt("Rejection reason:", "Does not meet requirements");
-    if (!reason) return;
+  const confirmRejectAgent = async (id: number, reason: string) => {
     setSavingId(`a-${id}`);
     try {
       await api.patch(`/agents/${id}/reject`, { rejection_reason: reason });
       setPendingAgents((p) => p.filter((a) => a.id !== id));
       setMsg("Agent rejected.");
+      setRejectTarget(null);
     } catch { setMsg("Could not reject agent."); }
     finally { setSavingId(null); }
   };
 
+  const openRejectPrompt = (type: "supplier" | "agent", id: number) => {
+    setRejectTarget({ type, id });
+    setRejectReason("Does not meet requirements");
+  };
+
+  const cancelRejectPrompt = () => {
+    setRejectTarget(null);
+    setRejectReason("Does not meet requirements");
+  };
+
   // stat cards
   const stats = [
-    { label: "Total Bookings",   value: summary.total_bookings  ?? 0,                        icon: CalendarCheck,    sub: "All bookings" },
-    { label: "Total Customers",  value: summary.total_customers ?? 0,                        icon: Users,            sub: "Platform" },
-    { label: "Pending Payments", value: summary.pending_payments ?? 0,                       icon: Mail,             sub: "Awaiting payment" },
-    { label: "Total Revenue",    value: formatCompact(summary.total_revenue),                icon: CircleDollarSign, sub: "Captured" },
-    { label: "Suppliers",        value: summary.total_suppliers ?? 0,                        icon: PackageCheck,     sub: `${summary.pending_suppliers ?? 0} pending` },
-    { label: "Agents",           value: summary.total_agents    ?? 0,                        icon: Headset,          sub: `${summary.pending_agents ?? 0} pending` },
+    { label: "Total Bookings",   value: summary.total_bookings  ?? 0,                        icon: CalendarCheck,    sub: "All bookings",       href: "/admin/bookings" },
+    { label: "Total Customers",  value: summary.total_customers ?? 0,                        icon: Users,            sub: "Platform",           href: "/admin/customers" },
+    { label: "Pending Payments", value: summary.pending_payments ?? 0,                       icon: Mail,             sub: "Awaiting payment",   href: "/admin/payments" },
+    { label: "Total Revenue",    value: formatCompact(summary.total_revenue),                icon: CircleDollarSign, sub: "Captured",           href: "/admin/reports" },
+    { label: "Suppliers",        value: summary.total_suppliers ?? 0,                        icon: PackageCheck,     sub: `${summary.pending_suppliers ?? 0} pending`, href: "/admin/suppliers" },
+    { label: "Agents",           value: summary.total_agents    ?? 0,                        icon: Headset,          sub: `${summary.pending_agents ?? 0} pending`,    href: "/admin/agents" },
   ];
 
   // chart colours
@@ -231,7 +241,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
       {/* 2. stat cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {stats.map((stat, idx) => (
-          <div key={idx} className="group flex cursor-pointer items-center gap-5 rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-dash-brand/30 hover:shadow-xl">
+          <Link key={idx} href={stat.href} className="group flex items-center gap-5 rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-dash-brand/30 hover:shadow-xl">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--portal-soft)] text-dash-brand shadow-sm transition-colors duration-300 group-hover:bg-dash-brand group-hover:text-white">
               <stat.icon size={24} strokeWidth={2} />
             </div>
@@ -244,7 +254,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
                 </span>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -494,19 +504,38 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
           ) : (
             <ul className="space-y-2">
               {pendingSuppliers.map((s) => (
-                <li key={s.id} className="flex items-center justify-between rounded-xl border border-dash-border bg-white p-3">
-                  <div>
-                    <p className="text-sm font-bold text-dash-text">{s.supplier_name}</p>
-                    <p className="text-xs text-dash-muted">{s.email || s.approval_status || "Pending registration"}</p>
+                <li key={s.id} className="rounded-xl border border-dash-border bg-white p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-dash-text">{s.supplier_name}</p>
+                      <p className="text-xs text-dash-muted">{s.email || s.approval_status || "Pending registration"}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => approveSupplier(s.id)} disabled={savingId === `s-${s.id}`} className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-100 disabled:opacity-50">
+                        <CheckCircle2 size={12} /> Approve
+                      </button>
+                      <button type="button" onClick={() => openRejectPrompt("supplier", s.id)} disabled={savingId === `s-${s.id}`} className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50">
+                        <XCircle size={12} /> Reject
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => approveSupplier(s.id)} disabled={savingId === `s-${s.id}`} className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-100 disabled:opacity-50">
-                      <CheckCircle2 size={12} /> Approve
-                    </button>
-                    <button type="button" onClick={() => rejectSupplier(s.id)}  disabled={savingId === `s-${s.id}`} className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50">
-                      <XCircle size={12} /> Reject
-                    </button>
-                  </div>
+                  {rejectTarget?.type === "supplier" && rejectTarget.id === s.id && (
+                    <div className="mt-3 rounded-lg border border-red-100 bg-red-50/60 p-3">
+                      <label className="block text-[10px] font-black uppercase tracking-wide text-red-700">Rejection reason</label>
+                      <textarea
+                        value={rejectReason}
+                        onChange={(event) => setRejectReason(event.target.value)}
+                        onKeyDown={(event) => event.key === "Escape" && cancelRejectPrompt()}
+                        rows={2}
+                        autoFocus
+                        className="mt-1.5 w-full rounded-lg border border-red-200 bg-white p-2 text-xs text-dash-text outline-none focus:border-red-400"
+                      />
+                      <div className="mt-2 flex justify-end gap-2">
+                        <button type="button" onClick={cancelRejectPrompt} className="rounded-lg px-3 py-1.5 text-xs font-bold text-dash-muted hover:bg-white">Cancel</button>
+                        <button type="button" disabled={!rejectReason.trim() || savingId === `s-${s.id}`} onClick={() => confirmRejectSupplier(s.id, rejectReason.trim())} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50">Confirm reject</button>
+                      </div>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -533,19 +562,38 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
           ) : (
             <ul className="space-y-2">
               {pendingAgents.map((a) => (
-                <li key={a.id} className="flex items-center justify-between rounded-xl border border-dash-border bg-white p-3">
-                  <div>
-                    <p className="text-sm font-bold text-dash-text">{a.agent_name}</p>
-                    <p className="text-xs text-dash-muted">{a.email || a.approval_status || "Pending registration"}</p>
+                <li key={a.id} className="rounded-xl border border-dash-border bg-white p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-dash-text">{a.agent_name}</p>
+                      <p className="text-xs text-dash-muted">{a.email || a.approval_status || "Pending registration"}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => approveAgent(a.id)} disabled={savingId === `a-${a.id}`} className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-100 disabled:opacity-50">
+                        <CheckCircle2 size={12} /> Approve
+                      </button>
+                      <button type="button" onClick={() => openRejectPrompt("agent", a.id)} disabled={savingId === `a-${a.id}`} className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50">
+                        <XCircle size={12} /> Reject
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => approveAgent(a.id)} disabled={savingId === `a-${a.id}`} className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-100 disabled:opacity-50">
-                      <CheckCircle2 size={12} /> Approve
-                    </button>
-                    <button type="button" onClick={() => rejectAgent(a.id)}  disabled={savingId === `a-${a.id}`} className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50">
-                      <XCircle size={12} /> Reject
-                    </button>
-                  </div>
+                  {rejectTarget?.type === "agent" && rejectTarget.id === a.id && (
+                    <div className="mt-3 rounded-lg border border-red-100 bg-red-50/60 p-3">
+                      <label className="block text-[10px] font-black uppercase tracking-wide text-red-700">Rejection reason</label>
+                      <textarea
+                        value={rejectReason}
+                        onChange={(event) => setRejectReason(event.target.value)}
+                        onKeyDown={(event) => event.key === "Escape" && cancelRejectPrompt()}
+                        rows={2}
+                        autoFocus
+                        className="mt-1.5 w-full rounded-lg border border-red-200 bg-white p-2 text-xs text-dash-text outline-none focus:border-red-400"
+                      />
+                      <div className="mt-2 flex justify-end gap-2">
+                        <button type="button" onClick={cancelRejectPrompt} className="rounded-lg px-3 py-1.5 text-xs font-bold text-dash-muted hover:bg-white">Cancel</button>
+                        <button type="button" disabled={!rejectReason.trim() || savingId === `a-${a.id}`} onClick={() => confirmRejectAgent(a.id, rejectReason.trim())} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50">Confirm reject</button>
+                      </div>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

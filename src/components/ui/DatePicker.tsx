@@ -230,7 +230,7 @@ export default function DatePicker({
               {availableSet.size > 0 && <><span className={`h-2 w-2 rounded-full ${accentStyles.dot}`} />Available</>}
             </div>
             <div className="flex gap-2">
-              {clearable && <button type="button" onClick={() => { onChange(""); setIsOpen(false); }} className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">Clear</button>}
+              {clearable && <button type="button" aria-label="Clear selected date" onClick={() => { onChange(""); setIsOpen(false); }} className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">Clear</button>}
               {!isDisabledDate(today) && <button type="button" onClick={() => selectDate(today)} className={`rounded-lg px-2.5 py-1.5 text-xs font-black ${accentStyles.soft}`}>Today</button>}
             </div>
           </div>

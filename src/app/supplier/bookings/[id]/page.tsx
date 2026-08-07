@@ -11,6 +11,7 @@ import {
   SupplierPageShell,
 } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useToast } from "@/hooks/useToast";
 
 type Traveller = {
   id?: number;
@@ -131,6 +132,18 @@ function ActionBanner({
   const [declineReason, setDeclineReason] = useState("");
   const [postponeReason, setPostponeReason] = useState("");
   const [newDate, setNewDate] = useState("");
+
+  useEffect(() => {
+    if (!showCancel && !showDecline && !showPostpone) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setShowCancel(false);
+      setShowDecline(false);
+      setShowPostpone(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showCancel, showDecline, showPostpone]);
 
   const v = status.toLowerCase();
   const payment = (paymentStatus || "").toLowerCase();
@@ -413,14 +426,9 @@ export default function SupplierBookingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<ActionType | null>(null);
-  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const toast = useToast();
   const [showNotify, setShowNotify] = useState(false);
   const [downloadingIcs, setDownloadingIcs] = useState(false);
-
-  const showToast = (type: "success" | "error", msg: string) => {
-    setToast({ type, msg });
-    setTimeout(() => setToast(null), 5000);
-  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -448,31 +456,31 @@ export default function SupplierBookingDetailPage() {
     try {
       if (type === "confirm") {
         await api.post(`/supplier/bookings/${bookingId}/accept`, {});
-        showToast("success", "Booking accepted. The customer has been notified.");
+        toast.success("Booking accepted. The customer has been notified.");
       } else if (type === "decline") {
         await api.post(`/supplier/bookings/${bookingId}/decline`, { reason: payload?.reason });
-        showToast("success", "Booking declined and the payment hold has been released.");
+        toast.success("Booking declined and the payment hold has been released.");
       } else if (type === "ongoing") {
         await api.patch(`/supplier/bookings/${bookingId}/ongoing`, { reason: payload?.reason || "Tour started by supplier" });
-        showToast("success", "Tour marked as ongoing. Customer and agent have been notified.");
+        toast.success("Tour marked as ongoing. Customer and agent have been notified.");
       } else if (type === "complete") {
         await api.patch(`/supplier/bookings/${bookingId}/complete`, {});
-        showToast("success", "Booking marked as completed. Customer has been notified.");
+        toast.success("Booking marked as completed. Customer has been notified.");
       } else if (type === "cancel") {
         await api.patch(`/supplier/bookings/${bookingId}/cancel`, { reason: payload?.reason });
-        showToast("success", "Booking cancelled. Customer has been notified.");
+        toast.success("Booking cancelled. Customer has been notified.");
       } else if (type === "postpone") {
         await api.patch(`/supplier/bookings/${bookingId}/postpone`, {
           reason: payload?.reason,
           new_tour_date: payload?.new_tour_date || undefined,
         });
-        showToast("success", "Booking postponed. Customer and agent have been notified.");
+        toast.success("Booking postponed. Customer and agent have been notified.");
       }
       void load();
     } catch (e: unknown) {
       const responseData = (e as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
       const detail = responseData?.detail || responseData?.message;
-      showToast("error", typeof detail === "string" ? detail : "Action failed. Please try again.");
+      toast.error(typeof detail === "string" ? detail : "Action failed. Please try again.");
     } finally {
       setBusy(null);
     }
@@ -493,7 +501,7 @@ export default function SupplierBookingDetailPage() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      showToast("error", "Could not download the calendar event.");
+      toast.error("Could not download the calendar event.");
     } finally {
       setDownloadingIcs(false);
     }
@@ -518,7 +526,7 @@ export default function SupplierBookingDetailPage() {
       setNewMessage("");
       await load();
     } catch {
-      showToast("error", "Could not send message.");
+      toast.error("Could not send message.");
     } finally {
       setSendingMessage(false);
     }
@@ -533,7 +541,7 @@ export default function SupplierBookingDetailPage() {
       setReplyDrafts((prev) => ({ ...prev, [communicationId]: "" }));
       await load();
     } catch {
-      showToast("error", "Could not send reply.");
+      toast.error("Could not send reply.");
     } finally {
       setSendingReplyId(null);
     }
@@ -615,17 +623,6 @@ export default function SupplierBookingDetailPage() {
           </button>
         </div>
       </SupplierPageHeader>
-
-      {/* Toast */}
-      {toast && (
-        <div className={`mb-4 flex items-center justify-between rounded-xl border px-4 py-3 text-sm font-semibold ${toast.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-600"}`}>
-          <span className="flex items-center gap-2">
-            {toast.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-            {toast.msg}
-          </span>
-          <button type="button" title="Dismiss" onClick={() => setToast(null)} className="hover:opacity-70"><X size={14} /></button>
-        </div>
-      )}
 
       {/* Action banner */}
       <ActionBanner status={booking.booking_status} paymentStatus={booking.payment_status} supplierAcceptanceStatus={booking.supplier_acceptance_status} onAction={handleAction} busy={busy} />
@@ -720,7 +717,11 @@ export default function SupplierBookingDetailPage() {
           </div>
 
           {(!booking.communications || booking.communications.length === 0) ? (
-            <p className="text-sm text-dash-muted">No messages yet.</p>
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dash-border bg-dash-bg py-10 text-center">
+              <MessageSquare size={28} className="text-dash-subtle" />
+              <p className="mt-3 text-sm font-bold text-dash-text">No messages yet</p>
+              <p className="mt-1 text-xs text-dash-muted">Messages with the customer and admin will appear here.</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {booking.communications.map((comm) => (

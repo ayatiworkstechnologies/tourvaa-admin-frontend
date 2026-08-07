@@ -91,7 +91,7 @@ function TravellerPicker({ onSelect }: { onSelect: (n: number) => void }) {
         <button type="button" aria-label="Decrease travellers" onClick={() => setCount(c => Math.max(1, c - 1))} className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#D9DEE8] hover:bg-dash-bg-muted"><Minus size={14} /></button>
         <span className="w-8 text-center text-sm font-bold text-dash-text">{count}</span>
         <button type="button" aria-label="Increase travellers" onClick={() => setCount(c => Math.min(20, c + 1))} className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#D9DEE8] hover:bg-dash-bg-muted"><Plus size={14} /></button>
-        <button type="button" onClick={() => onSelect(count)} className="ml-2 rounded-xl bg-[#0284C7] px-3 py-2 text-xs font-bold text-white hover:bg-[#0369A1]">Confirm</button>
+        <button type="button" aria-label="Confirm traveller count" onClick={() => onSelect(count)} className="ml-2 rounded-xl bg-[#0284C7] px-3 py-2 text-xs font-bold text-white hover:bg-[#0369A1]">Confirm</button>
       </div>
     </div>
   );
@@ -121,6 +121,7 @@ export default function ChatWidget() {
   const [resolvedBookingIndices, setResolvedBookingIndices] = useState<Set<number>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [launcherVisible, setLauncherVisible] = useState(true);
 
   useEffect(() => {
     if (!open) return;
@@ -128,6 +129,35 @@ export default function ChatWidget() {
     const timer = window.setTimeout(() => inputRef.current?.focus(), 80);
     return () => window.clearTimeout(timer);
   }, [open, messages]);
+
+  // The launcher button is fixed to a screen corner, so on any content-heavy
+  // page it inevitably drifts over whatever text/fields happen to scroll
+  // underneath it. Hiding it while the user is actively scrolling (reappearing
+  // once they stop, or if they scroll back up) keeps it out of the way of
+  // reading/typing without making it hard to find.
+  useEffect(() => {
+    if (open) return;
+    let lastY = window.scrollY;
+    let hideTimer: number | undefined;
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      const goingDown = y > lastY + 4;
+      const goingUp = y < lastY - 4;
+      if (goingDown) setLauncherVisible(false);
+      else if (goingUp) setLauncherVisible(true);
+      lastY = y;
+
+      window.clearTimeout(hideTimer);
+      hideTimer = window.setTimeout(() => setLauncherVisible(true), 600);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(hideTimer);
+    };
+  }, [open]);
 
   const sendRaw = async (text: string, displayText?: string) => {
     const trimmed = text.trim();
@@ -314,8 +344,15 @@ export default function ChatWidget() {
         </div>
       )}
 
-      <button type="button" onClick={() => setOpen(v => !v)} aria-label={open ? "Close chat" : "Open AI chat assistant"} className={`fixed bottom-4 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full shadow-2xl transition-all duration-300 md:right-6 ${open ? "bg-[#0F172A]" : "bg-[#0284C7] hover:scale-105 hover:bg-[#0369A1]"}`}>
-        {open ? <X size={24} className="text-white" /> : <><MessageCircle size={26} className="text-white" /><span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-emerald-400"><Sparkles size={10} className="text-white" /></span></>}
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        aria-label={open ? "Close chat" : "Open AI chat assistant"}
+        className={`fixed bottom-3 right-3 z-50 flex h-13 w-13 items-center justify-center rounded-full shadow-2xl transition-all duration-300 sm:bottom-4 sm:right-4 sm:h-16 sm:w-16 md:right-6 ${open ? "bg-[#0F172A]" : "bg-[#0284C7] hover:scale-105 hover:bg-[#0369A1]"} ${
+          open || launcherVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-20 opacity-0"
+        }`}
+      >
+        {open ? <X className="size-5 text-white sm:size-6" /> : <><MessageCircle className="size-[22px] text-white sm:size-[26px]" /><span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-emerald-400"><Sparkles size={10} className="text-white" /></span></>}
       </button>
     </>
   );

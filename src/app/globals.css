@@ -196,6 +196,12 @@ button {
   animation: tourvaaHero 16s ease-in-out infinite alternate;
 }
 
+@keyframes heroZoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+.animate-hero-zoom { animation: heroZoom 6s ease-out forwards; }
+
 @keyframes heroFilterEnter {
   from { opacity: 0; transform: translateY(22px) scale(.985); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -203,6 +209,11 @@ button {
 
 @keyframes filterPanelDrop {
   from { opacity: 0; transform: translateY(-8px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dropdownPanelIn {
+  from { opacity: 0; transform: translateY(-4px) scale(.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
@@ -230,6 +241,7 @@ button {
 .hero-filter-field.is-active svg { transform: translateY(-2px) scale(1.08); }
 .hero-filter-field.is-active { box-shadow: inset 0 -2px 0 #2563eb; }
 .hero-filter-panel { transform-origin: top center; animation: filterPanelDrop .28s cubic-bezier(.22,1,.36,1) both; }
+.profile-dropdown-panel { transform-origin: top right; animation: dropdownPanelIn .16s ease both; }
 .date-panel-content { animation: datePanelIn .3s cubic-bezier(.22,1,.36,1) both; }
 .calendar-days button { transition: transform .18s ease, background-color .18s ease, color .18s ease; }
 .calendar-days button:hover { transform: translateY(-2px) scale(1.06); }

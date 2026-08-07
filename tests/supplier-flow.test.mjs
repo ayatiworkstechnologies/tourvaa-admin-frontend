@@ -52,34 +52,38 @@ const tours = read("src/app/supplier/tours/page.tsx");
 const tourCreate = read("src/app/supplier/tours/create/page.tsx");
 const tourEdit = read("src/app/supplier/tours/[id]/edit/page.tsx");
 const preview = read("src/app/supplier/tours/[id]/preview/page.tsx");
+// Admin and supplier tour create/edit are now thin wrappers around the
+// shared TourWizard component (<TourWizard role="supplier" .../>), so the
+// step/tab/header assertions below target TourWizard.tsx, not the wrappers.
+const tourWizard = read("src/components/tours/TourWizard.tsx");
 check("tour cards use private supplier preview", tours.includes("/supplier/tours/${tour.id}/preview"));
 check("tour list supports search and every publishing state", tours.includes("pending_approval") && tours.includes("rejected") && tours.includes("params.search = debouncedSearch"));
 check("tour list surfaces submission errors", tours.includes("setActionError") && tours.includes("could not be submitted"));
 check("tour cards display their cover media", tours.includes("banner_image") && tours.includes("mediaUrl(tour.banner_image)"));
-check("tour creation has guided progress and review", tourCreate.includes("TourWorkspaceProgress") && tourCreate.includes("Review & Submit"));
-check("tour edit retains all structured editing tabs", ["Overview", "Highlights", "Itinerary", "Inclusions", "Gallery", "Pricing", "Calendar"].every((tab) => tourEdit.includes(`"${tab}"`)));
-check("tour edit links to private preview", tourEdit.includes("/preview") && tourEdit.includes("Preview"));
+check("supplier create/edit pages use the shared TourWizard", tourCreate.includes("<TourWizard") && tourEdit.includes("<TourWizard"));
+check("tour creation has guided progress and review", tourWizard.includes("TourWorkspaceStepper") && tourWizard.includes("Review & Submit"));
+check("tour edit retains all structured editing tabs", ["Overview", "Highlights", "Itinerary", "Inclusions", "Gallery", "Pricing", "Calendar"].every((tab) => tourWizard.includes(tab)));
+check("tour edit links to private preview", tourWizard.includes("/preview") && tourWizard.includes("Preview"));
 check(
   "admin and supplier tour builders use the same shared design system",
-  tourCreate.includes("TourWorkspaceHeader") &&
-    tourEdit.includes("TourWorkspaceHeader") &&
-    tourEdit.includes("TourWorkspaceTabs") &&
-    tourEdit.includes("TourWorkspaceContent") &&
-    tourEdit.includes("TourWorkspaceStepFooter"),
+  tourWizard.includes("TourWorkspaceHeader") &&
+    tourWizard.includes("TourWorkspaceTabs") &&
+    tourWizard.includes("TourWorkspaceContent") &&
+    tourWizard.includes("TourWorkspaceStepper"),
 );
 check(
   "supplier tour sections support explicit step completion",
-  tourEdit.includes("completedSteps") &&
-    tourEdit.includes("completeAndNext") &&
-    tourEdit.includes('router.push("/supplier/tours")'),
+  tourWizard.includes("visitedSteps") &&
+    tourWizard.includes("selectPrimaryStep") &&
+    tourWizard.includes('basePath = isSupplier ? "/supplier/tours"'),
 );
+const sharedTourForm = read("src/components/cms/TourFormPage.tsx");
 check(
   "supplier edit uses the complete shared tour details form",
   tourEdit.includes('role="supplier"') &&
-    tourEdit.includes("TourFormPage") &&
-    ["Currency", "Media", "Subcategories", "SEO"].every((section) => tourCreate.includes(section) || read("src/components/cms/TourFormPage.tsx").includes(section)),
+    tourWizard.includes("TourFormPage") &&
+    ["Currency", "Media", "Subcategories", "SEO"].every((section) => sharedTourForm.includes(section)),
 );
-const sharedTourForm = read("src/components/cms/TourFormPage.tsx");
 check(
   "supplier assignment and publishing status stay protected",
   sharedTourForm.includes("disabled={isSupplier}") &&
@@ -94,7 +98,7 @@ check(
 );
 check(
   "supplier edit reuses its loaded tour record in the shared form",
-  tourEdit.includes("initialData={tour ?? undefined}") &&
+  tourWizard.includes("initialData={tour ?? undefined}") &&
     sharedTourForm.includes("if (!tourId || initialData) return"),
 );
 check("preview uses backend tour field names", preview.includes("price_start_per_person") && preview.includes("banner_image"));
@@ -126,7 +130,7 @@ const supplierInnerPages = [
 check("supplier inner pages share the upgraded page shell", supplierInnerPages.every((page) => page.includes("SupplierPageShell")));
 check(
   "supplier inner pages share consistent page headers",
-  supplierInnerPages.every((page) => page.includes("SupplierPageHeader") || page.includes("TourWorkspaceHeader")),
+  supplierInnerPages.every((page) => page.includes("SupplierPageHeader") || page.includes("TourWorkspaceHeader") || page.includes("<TourWizard")),
 );
 
 console.log(`\nSupplier flow: ${passed} passed, ${failed} failed`);

@@ -6,7 +6,7 @@ import { LuMenu as Menu } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
-import PublicHeader from "@/components/public/PublicHeader";
+import CustomerPortalHeader from "@/components/customer/CustomerPortalHeader";
 import PublicFooter from "@/components/public/PublicFooter";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
@@ -52,9 +52,9 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   return (
     <TravelStoreProvider>
       <div className="customer-public-portal min-h-screen bg-dash-bg" style={portalThemeStyles.customer}>
-        <PublicHeader />
+        <CustomerPortalHeader />
 
-        <div className="pt-20">
+        <div className="pt-20 sm:pt-[92px]">
           <CustomerSidebar />
 
           {sidebarOpen && (

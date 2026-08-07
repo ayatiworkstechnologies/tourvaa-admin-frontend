@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck, LuPercent as Percent } from "react-icons/lu";
 import CompanyInfoTab from "@/components/supplier/profile/CompanyInfoTab";
 import DocumentsTab from "@/components/supplier/profile/DocumentsTab";
@@ -16,14 +17,16 @@ const TABS = [
 ];
 
 export default function UnifiedSupplierProfilePage() {
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState("company");
 
+  // Re-derive whenever the ?tab= query param changes, not just on mount -
+  // navigating here from the sidebar/profile-dropdown while already on this
+  // page doesn't remount the component, only updates the URL.
   useEffect(() => {
-    const hash = window.location.hash.replace("#", "");
-    if (TABS.some((tab) => tab.id === hash)) {
-      setActiveTab(hash);
-    }
-  }, []);
+    setActiveTab(TABS.some((tab) => tab.id === requestedTab) ? requestedTab! : "company");
+  }, [requestedTab]);
 
   return (
     <SupplierPageShell>

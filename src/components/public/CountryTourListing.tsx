@@ -28,7 +28,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const queryDepartureMonth = searchParams.get("departure_month") || "";
   const querySort = searchParams.get("sort") || "newest";
   const { formatCompact } = useCurrency();
-  const { isWishlisted, toggleWishlist, isCompared, toggleCompare } = useTravelStore();
+  const { isWishlisted, toggleWishlist, isCompared, toggleCompare, compareCount } = useTravelStore();
   const toast = useToast();
   const [countryName, setCountryName] = useState("");
   const [destination, setDestination] = useState(queryCountry);
@@ -160,6 +160,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                 saved={isWishlisted(tour.id)}
                 onWishlist={() => toggleWishlist(travelItem)}
                 compared={isCompared(tour.id)}
+                compareLimitReached={!isCompared(tour.id) && compareCount >= MAX_COMPARE_ITEMS}
                 onCompare={() => {
                   const { limitReached } = toggleCompare(travelItem);
                   if (limitReached) toast.error(`You can compare up to ${MAX_COMPARE_ITEMS} tours at a time.`);
@@ -173,7 +174,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   );
 }
 
-function TourResultCard({ tour, view, formatCompact, saved, onWishlist, compared, onCompare }: { tour: PublicTour; view: "grid" | "list"; formatCompact: (amount: number | string | null | undefined, currency?: string) => string; saved: boolean; onWishlist: () => void; compared: boolean; onCompare: () => void }) {
+function TourResultCard({ tour, view, formatCompact, saved, onWishlist, compared, compareLimitReached, onCompare }: { tour: PublicTour; view: "grid" | "list"; formatCompact: (amount: number | string | null | undefined, currency?: string) => string; saved: boolean; onWishlist: () => void; compared: boolean; compareLimitReached: boolean; onCompare: () => void }) {
   const image = tour.banner_image ? mediaUrl(tour.banner_image) : FALLBACK;
   const base = Number(tour.price_start_per_person || 0);
   const days = tour.number_of_days || 6;
@@ -182,7 +183,16 @@ function TourResultCard({ tour, view, formatCompact, saved, onWishlist, compared
     <article className={`group relative rounded-xl border border-slate-100 bg-white p-3 shadow-[0_12px_30px_rgba(15,23,42,.09)] transition hover:-translate-y-1 hover:shadow-xl ${view === "list" ? "grid sm:grid-cols-[340px_1fr]" : ""}`}>
       <div className="absolute right-5 top-5 z-10 flex flex-col gap-2">
         <button type="button" onClick={onWishlist} className={`flex h-8 w-8 items-center justify-center rounded-full ${saved ? "bg-red-500 text-white" : "bg-white/90 text-red-500"}`}><Heart size={17} className={saved ? "fill-current" : ""} /></button>
-        <button type="button" onClick={onCompare} aria-label={compared ? `Remove ${tour.title} from comparison` : `Add ${tour.title} to comparison`} className={`flex h-8 w-8 items-center justify-center rounded-full ${compared ? "bg-blue-600 text-white" : "bg-white/90 text-blue-600"}`}><Scale size={16} /></button>
+        <button
+          type="button"
+          onClick={onCompare}
+          disabled={compareLimitReached}
+          aria-label={compared ? `Remove ${tour.title} from comparison` : compareLimitReached ? `Comparison list is full (max ${MAX_COMPARE_ITEMS})` : `Add ${tour.title} to comparison`}
+          title={compareLimitReached ? `Comparison list is full (max ${MAX_COMPARE_ITEMS})` : undefined}
+          className={`flex h-8 w-8 items-center justify-center rounded-full transition ${compared ? "bg-blue-600 text-white" : compareLimitReached ? "cursor-not-allowed bg-white/60 text-blue-300" : "bg-white/90 text-blue-600"}`}
+        >
+          <Scale size={16} />
+        </button>
       </div>
       <Link href={publicTourUrl(tour)} className="contents">
         <div className="relative h-48 overflow-hidden rounded-lg"><img src={image} alt={tour.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /><span className="absolute left-3 top-3 rounded-full bg-sky-400/80 px-3 py-1 text-[9px] font-bold text-white"><MapPin size={9} className="mr-1 inline" />{tour.country_name}</span></div>

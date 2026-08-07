@@ -41,7 +41,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export default function PersonalDetailsTab() {
   const toast = useToast();
-  const { user, refreshSession } = useAuthContext();
+  const { user, refreshSession, logout } = useAuthContext();
   const [profile, setProfile] = useState(emptyProfile);
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
@@ -149,7 +149,12 @@ export default function PersonalDetailsTab() {
         new_password: passwordForm.new_password,
       });
       setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
-      toast.success("Password updated successfully.");
+      toast.success("Password updated successfully. Please sign in again.");
+      // A changed password must end the current session too, not just
+      // future ones - otherwise this tab stays logged in on the old
+      // session until it happens to make a request that gets refreshed.
+      await logout();
+      return;
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Could not update password."));
     } finally {

@@ -236,8 +236,10 @@ export type PricingSlab = {
   adult_price: number;
   child_price: number;
   supplier_price: number;
-  // markup_type/markup_value/final_price mirror the supplier's fixed
-  // commission and are always recomputed server-side -- read-only here.
+  // markup_type mirrors the supplier's commission type and is always
+  // recomputed server-side. markup_value is the commission for this slab --
+  // suppliers may raise it above their agreed rate, but the server floors
+  // it and rejects any attempt to go lower. final_price is read-only.
   markup_type: string;
   markup_value: number;
   final_price: number;

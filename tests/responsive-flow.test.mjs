@@ -53,8 +53,10 @@ for (const path of [
 }
 
 const customerDashboard = read("src/app/customer/dashboard/page.tsx");
-check("customer trip requests reflow on mobile", customerDashboard.includes("grid-cols-[64px_minmax(0,1fr)]") && customerDashboard.includes("sm:grid-cols-[76px_minmax(0,1fr)_auto]"));
-check("customer payment status reflows below its summary", customerDashboard.includes("col-start-2") && customerDashboard.includes("sm:col-start-auto"));
+// The bookings list is a <table> (not a card grid) - like DataTable.tsx
+// elsewhere in this file, it reflows on narrow screens via horizontal
+// scroll rather than a stacking grid.
+check("customer bookings table scrolls horizontally on narrow screens", customerDashboard.includes("overflow-x-auto") && customerDashboard.includes("min-w-[640px]"));
 
 console.log(`\nResponsive flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

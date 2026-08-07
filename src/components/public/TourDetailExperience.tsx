@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuBedDouble as Bed, LuBriefcase as Suitcase, LuBus as Bus, LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuCheck as Check, LuCircleCheckBig as CheckCircle, LuHeart as Heart, LuHouse as House, LuMapPin as MapPin, LuMinus as Minus, LuPlus as Plus, LuSparkles as Sparkles, LuStar as Star, LuTag as Tag, LuUserRound as User, LuUsers as Users, LuUtensils as Utensils, LuX as X } from "react-icons/lu";
 import { PublicTour, PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -11,6 +11,8 @@ import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 
 const FALLBACK = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85";
+
+type HeroSlide = { type: "image" | "video"; src: string };
 
 type Props = {
   tour: PublicTourDetail;
@@ -26,13 +28,20 @@ type Props = {
 
 export default function TourDetailExperience({ tour, images, initialTravelDate, initialAdults, initialChildren, onBook, onWishlist, wishlisted, modal }: Props) {
   const { format } = useCurrency();
-  const gallery = images.length ? images : [FALLBACK];
+  const gallery = useMemo(() => (images.length ? images : [FALLBACK]), [images]);
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
   const departures = useMemo(() => tour.calendar.filter((entry) => entry.status !== "cancelled").slice(0, 5), [tour.calendar]);
   const [selectedDate, setSelectedDate] = useState(initialTravelDate || departures[0]?.date || "");
   const unitPrice = Number(tour.price_start_per_person || 0);
   const total = unitPrice * Math.max(1, adults + children);
+  const bestDiscount = useMemo(() => {
+    if (!tour.discounts.length) return null;
+    return tour.discounts.reduce<{ perPersonSaving: number } | null>((best, discount) => {
+      const perPersonSaving = discount.discount_type === "percentage" ? unitPrice * (discount.value / 100) : discount.value;
+      return !best || perPersonSaving > best.perPersonSaving ? { perPersonSaving } : best;
+    }, null);
+  }, [tour.discounts, unitPrice]);
   const dayCount = tour.number_of_days || 9;
   const destination = tour.country_name || "Your destination";
   const baseCurrency = tour.currency || "USD";
@@ -46,15 +55,18 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
   const accommodationItems = tour.accommodations.map((item) => ({ id: item.id, name: item.name, description: item.description, priceLabel: item.price != null ? format(item.price, baseCurrency) : "Included" }));
   const activityItems = tour.optional_activities.map((item) => ({ id: item.id, name: item.name, description: item.description, priceLabel: item.price != null ? format(item.price, item.currency || baseCurrency) : "Included" }));
   const extensionItems = tour.extensions.map((item) => ({ id: item.id, name: item.title, description: item.description, priceLabel: item.price != null ? format(item.price, baseCurrency) : "Included" }));
+  const bannerImages = useMemo(() => tour.gallery.filter((g) => g.is_banner).map((g) => mediaUrl(g.image_url)), [tour.gallery]);
+  const nonBannerImages = useMemo(() => tour.gallery.filter((g) => !g.is_banner).map((g) => mediaUrl(g.image_url)), [tour.gallery]);
+  const heroSlides: HeroSlide[] = useMemo(() => {
+    const images = (bannerImages.length ? bannerImages : [gallery[0]]).map((src): HeroSlide => ({ type: "image", src }));
+    return tour.tour_video_url ? [...images, { type: "video", src: tour.tour_video_url }] : images;
+  }, [bannerImages, gallery, tour.tour_video_url]);
+  const galleryImages = nonBannerImages.length ? nonBannerImages : gallery;
 
   return (
     <main className="min-h-screen bg-white pb-24 pt-20 text-slate-950">
       {modal}
-      <section className="relative h-[300px] overflow-hidden md:h-[380px]">
-        <img src={gallery[0]} alt={destination} className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/25" />
-        <h1 className="absolute inset-0 flex items-center justify-center text-4xl font-black text-white drop-shadow md:text-5xl">{destination}</h1>
-      </section>
+      <HeroCarousel slides={heroSlides} title={destination} />
 
       <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
         <header className="animate-fade-up">
@@ -73,10 +85,7 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
 
         <div className="animate-fade-up delay-100 mt-12 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_350px]">
           <div className="min-w-0">
-            <section className="grid h-[360px] grid-cols-2 gap-4 overflow-hidden md:h-[480px]">
-              <img src={gallery[0]} alt={tour.title} className="h-full w-full rounded-xl object-cover" />
-              <div className="grid min-h-0 grid-rows-2 gap-4"><img src={gallery[1] || gallery[0]} alt="Tour view" className="h-full min-h-0 w-full rounded-xl object-cover" /><div className="grid min-h-0 grid-cols-2 gap-4"><img src={gallery[2] || gallery[0]} alt="Tour view" className="h-full min-h-0 w-full rounded-xl object-cover" /><img src={gallery[3] || gallery[1] || gallery[0]} alt="Tour view" className="h-full min-h-0 w-full rounded-xl object-cover" /></div></div>
-            </section>
+            <GalleryCarousel images={galleryImages} title={tour.title} />
             <p className="border-b border-slate-200 py-7 text-sm font-semibold leading-6">{tour.short_description || `Don't miss ${destination}'s breathtaking landscapes, iconic landmarks, and unforgettable adventures-all in one perfectly planned journey.`}</p>
 
             <section id="overview" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
@@ -123,14 +132,21 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
 
             {(tour.highlights.length > 0 || tour.inclusions.length > 0 || tour.exclusions.length > 0) && (
               <section id="inclusions" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
-                <h3 className="flex items-center gap-3 text-2xl font-black"><CheckCircle className="text-blue-600" />What&apos;s Included</h3>
+                <h3 className="flex items-center gap-3 text-2xl font-black"><CheckCircle className="text-blue-600" />Tour Highlights</h3>
                 <p className="mt-4 rounded-xl bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-800">Here&apos;s everything included in this tour package, plus what to expect along the way.</p>
                 {tour.highlights.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-xs font-black uppercase text-slate-500">Tour Highlights</h4>
-                    <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-                      {tour.highlights.map((item, index) => <li key={index} className="flex items-start gap-3 text-sm leading-6 text-slate-700"><Star size={14} className="mt-1 shrink-0 fill-amber-400 text-amber-400" />{item.text}</li>)}
-                    </ul>
+                  <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                    {tour.highlights.map((item, index) => (
+                      <div key={index} className="overflow-hidden rounded-2xl border border-slate-100">
+                        {item.image && (
+                          <img src={mediaUrl(item.image)} alt={item.title || item.text} className="h-40 w-full object-cover" />
+                        )}
+                        <div className="p-4">
+                          <p className="flex items-center gap-2 text-sm font-black text-slate-900"><Star size={14} className="shrink-0 fill-amber-400 text-amber-400" />{item.title || item.text}</p>
+                          {item.description && <p className="mt-1.5 text-sm leading-6 text-slate-600">{item.description}</p>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {(tour.inclusions.length > 0 || tour.exclusions.length > 0) && (
@@ -149,7 +165,6 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
                     )}
                   </div>
                 )}
-                <p className="mt-6 border-t border-slate-100 pt-4 text-xs text-slate-500">Optional activities are not included in the tour price and can be arranged directly with your guide during the trip.</p>
               </section>
             )}
 
@@ -206,30 +221,12 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
               </section>
             )}
 
-            <div className="mt-5 flex gap-8 overflow-x-auto rounded-xl border border-slate-200 px-5 py-5 text-xs font-bold"><a href="#inclusions">What&apos;s Included</a><a href="#itinerary">Journey Plan</a><a href="#addons">Extras</a><a href="#stays">Where You&apos;ll Stay</a><a href="#availability">Availability & Pricing</a><a href="#discover">Discover More</a></div>
-
-            <section id="itinerary" className="mt-5 space-y-5">
-              {(tour.itineraries.length
+            <ItineraryAccordion
+              days={tour.itineraries.length
                 ? tour.itineraries
-                : [{ day: 1, title: `Welcome to ${tour.city_name || destination}`, description: `Arrive and meet your Tourvaa representative. Transfer to your hotel, check in, and enjoy the rest of the day at leisure.`, location: tour.city_name || destination, meals: "Breakfast", transport: "", start_time: "", end_time: "", travel_distance: "", travel_duration: "", important_notes: "" }]
-              ).map((item, index) => (
-                <article key={`${item.day}-${item.title}`} className="grid gap-8 rounded-2xl border border-slate-200 p-7 shadow-sm md:grid-cols-[1fr_.9fr]">
-                  <div>
-                    <div className="flex items-center justify-between text-[10px] font-black uppercase text-blue-600"><span>Tourvaa / {destination}</span><span className="rounded bg-blue-50 px-3 py-1">Day {item.day}</span></div>
-                    <h3 className="mt-7 text-3xl font-medium">{item.title}</h3>
-                    <p className="mt-7 text-sm leading-7 text-slate-600">{item.description}</p>
-                    {item.important_notes && <div className="mt-7 rounded-xl bg-slate-50 p-5 text-xs leading-6"><b>Please note</b><p>{item.important_notes}</p></div>}
-                    <div className="mt-7 grid grid-cols-2 gap-4 border-t pt-5 text-xs">
-                      <span><Bed size={15} className="mb-2" />Location<br /><b>{item.location || destination}</b></span>
-                      <span><Utensils size={15} className="mb-2" />Meals<br /><b>{item.meals || "Not specified"}</b></span>
-                      {item.transport && <span><Bus size={15} className="mb-2" />Transport<br /><b>{item.transport}</b></span>}
-                      {(item.start_time || item.end_time) && <span><Calendar size={15} className="mb-2" />Timing<br /><b>{item.start_time}{item.start_time && item.end_time ? " – " : ""}{item.end_time}</b></span>}
-                    </div>
-                  </div>
-                  <div className="relative min-h-80 overflow-hidden rounded-2xl"><img src={gallery[(index + 1) % gallery.length]} alt={item.title} className="h-full w-full object-cover" /><div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20 text-white"><small>DESTINATIONS</small><p className="text-2xl">{item.location || destination}</p></div></div>
-                </article>
-              ))}
-            </section>
+                : [{ day: 1, title: `Welcome to ${tour.city_name || destination}`, description: `Arrive and meet your Tourvaa representative. Transfer to your hotel, check in, and enjoy the rest of the day at leisure.`, location: tour.city_name || destination, accommodation: "", meals: "Breakfast", transport: "", start_time: "", end_time: "", travel_distance: "", travel_duration: "", important_notes: "", activities: "", image: null }]}
+              fallbackImages={gallery}
+            />
 
             {stays.length > 0 && (
               <section id="stays" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
@@ -299,7 +296,21 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
             <h3 className="text-lg font-black">Book Your {destination} Adventure</h3><p className="mt-1 text-xs text-slate-500">Secure your preferred departure in just a few steps.</p>
             <div className="mt-5 space-y-2">{(departures.length ? departures : [{ date: "2026-09-12", slots: 8, status: "available" }, { date: "2026-09-20", slots: 12, status: "available" }, { date: "2026-09-26", slots: 5, status: "available" }]).map((entry, index) => <button type="button" key={entry.date} onClick={() => setSelectedDate(entry.date)} className={`flex w-full items-center justify-between rounded-lg border p-3 text-left transition ${selectedDate === entry.date || (!selectedDate && index === 0) ? "border-blue-400 bg-blue-50" : "border-slate-200 hover:border-blue-300"}`}><span><b className="block text-xs">{dateLabel(entry.date)}</b><small className={entry.slots <= 5 ? "font-bold text-amber-500" : "text-slate-500"}>{entry.slots} Seats Left</small></span><span className="text-right"><b className="block text-xs text-blue-600">{format(unitPrice, tour.currency || "USD")}</b><small className="text-[9px] text-slate-400">per traveller</small></span></button>)}</div>
             <div className="mt-6 border-t pt-5"><h4 className="text-xs font-black uppercase">Who&apos;s travelling?</h4><Counter label="Adults" note="Ages 12 years and above" value={adults} setValue={setAdults} min={1} /><Counter label="Children" note="Ages 3–11" value={children} setValue={setChildren} min={0} /></div>
-            <div className="mt-5 border-t pt-5 text-xs"><h4 className="font-black uppercase">Booking summary</h4><Summary label={`Tour Price (${adults + children} Guests)`} value={format(total, tour.currency || "USD")} /><Summary label="Taxes & Service Fees" value="Included" accent /><Summary label="Booking Fee" value="Free" accent /><div className="mt-4 flex items-end justify-between border-t pt-4"><span><b className="block">Total Amount</b><small className="text-slate-400">per booking</small></span><b className="text-xl">{format(total, tour.currency || "USD")}</b></div></div>
+            <div className="mt-5 border-t pt-5 text-xs">
+              <h4 className="font-black uppercase">Booking summary</h4>
+              <Summary label={`Tour Price (${adults + children} Guests)`} value={format(total, tour.currency || "USD")} />
+              <Summary label="Taxes & Service Fees" value="Included" accent /><Summary label="Booking Fee" value="Free" accent />
+              {bestDiscount && bestDiscount.perPersonSaving > 0 && (
+                <div className="mt-2 flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 font-black text-emerald-700">
+                  <span>You Save</span>
+                  <span>
+                    {format(adults + children > 1 ? bestDiscount.perPersonSaving * (adults + children) : bestDiscount.perPersonSaving, tour.currency || "USD")}
+                    {adults + children <= 1 && <span className="font-normal"> / person</span>}
+                  </span>
+                </div>
+              )}
+              <div className="mt-4 flex items-end justify-between border-t pt-4"><span><b className="block">Total Amount</b><small className="text-slate-400">per booking</small></span><b className="text-xl">{format(total, tour.currency || "USD")}</b></div>
+            </div>
             <button type="button" onClick={() => onBook({ travelDate: selectedDate, adults, children })} className="mt-5 w-full rounded-lg bg-blue-600 py-3.5 text-sm font-black text-white transition hover:bg-blue-700">Book Now</button>
             <button type="button" onClick={onWishlist} className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-xs font-bold ${wishlisted ? "border-red-200 bg-red-50 text-red-600" : "border-slate-200"}`}><Heart size={14} className={wishlisted ? "fill-current" : ""} />{wishlisted ? "Saved" : "Add to Wishlist"}</button>
           </aside>
@@ -316,8 +327,175 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
   );
 }
 
+function HeroCarousel({ slides, title }: { slides: HeroSlide[]; title: string }) {
+  const safeSlides = slides.length ? slides : [{ type: "image" as const, src: FALLBACK }];
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (safeSlides.length <= 1) return;
+    const timer = setInterval(() => setIndex((i) => (i + 1) % safeSlides.length), 5000);
+    return () => clearInterval(timer);
+  }, [safeSlides.length]);
+
+  return (
+    <section className="relative h-[300px] overflow-hidden md:h-[380px]">
+      {safeSlides.map((slide, i) => (
+        <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === index ? "opacity-100" : "opacity-0"}`} aria-hidden={i !== index}>
+          {slide.type === "video" ? (
+            <video src={slide.src} className="h-full w-full object-cover" autoPlay muted loop playsInline />
+          ) : (
+            <img src={slide.src} alt={title} className={`h-full w-full object-cover ${i === index ? "animate-hero-zoom" : ""}`} />
+          )}
+        </div>
+      ))}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/25" />
+      <h1 className="pointer-events-none absolute inset-0 flex items-center justify-center text-4xl font-black text-white drop-shadow md:text-5xl">{title}</h1>
+      {safeSlides.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+          {safeSlides.map((_, i) => (
+            <button key={i} type="button" aria-label={`Show slide ${i + 1}`} onClick={() => setIndex(i)} className={`h-1.5 rounded-full transition-all ${i === index ? "w-6 bg-white" : "w-1.5 bg-white/50"}`} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function GalleryCarousel({ images, title }: { images: string[]; title: string }) {
+  const safeImages = images.length ? images : [FALLBACK];
+  const [index, setIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const lightboxCloseRef = useRef<HTMLButtonElement>(null);
+  const prev = () => setIndex((i) => (i - 1 + safeImages.length) % safeImages.length);
+  const next = () => setIndex((i) => (i + 1) % safeImages.length);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    lightboxCloseRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLightboxOpen(false);
+      else if (event.key === "ArrowLeft") prev();
+      else if (event.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightboxOpen, safeImages.length]);
+
+  return (
+    <section>
+      <div className="relative h-[360px] overflow-hidden rounded-xl md:h-[480px]">
+        <img src={safeImages[index]} alt={title} onClick={() => setLightboxOpen(true)} className="h-full w-full cursor-zoom-in object-cover" />
+        {safeImages.length > 1 && (
+          <>
+            <button type="button" aria-label="Previous image" onClick={prev} className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow hover:bg-white"><ArrowLeft size={16} /></button>
+            <button type="button" aria-label="Next image" onClick={next} className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow hover:bg-white"><ArrowRight size={16} /></button>
+            <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white">{index + 1} / {safeImages.length}</span>
+          </>
+        )}
+      </div>
+      {safeImages.length > 1 && (
+        <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
+          {safeImages.map((src, i) => (
+            <button type="button" key={i} aria-label={`Show image ${i + 1}`} onClick={() => setIndex(i)} className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition ${i === index ? "border-blue-600" : "border-transparent opacity-70 hover:opacity-100"}`}>
+              <img src={src} alt="" className="h-full w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+      {lightboxOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" role="dialog" aria-modal="true" aria-label={`${title} - full-size image`} onClick={() => setLightboxOpen(false)}>
+          <button ref={lightboxCloseRef} type="button" aria-label="Close" onClick={() => setLightboxOpen(false)} className="absolute right-5 top-5 text-white"><X size={28} /></button>
+          <img src={safeImages[index]} alt={title} className="max-h-full max-w-full object-contain" onClick={(event) => event.stopPropagation()} />
+          {safeImages.length > 1 && (
+            <>
+              <button type="button" aria-label="Previous image" onClick={(event) => { event.stopPropagation(); prev(); }} className="absolute left-5 top-1/2 -translate-y-1/2 text-white"><ArrowLeft size={32} /></button>
+              <button type="button" aria-label="Next image" onClick={(event) => { event.stopPropagation(); next(); }} className="absolute right-5 top-1/2 -translate-y-1/2 text-white"><ArrowRight size={32} /></button>
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ItineraryAccordion({ days, fallbackImages }: { days: PublicTourDetail["itineraries"]; fallbackImages: string[] }) {
+  const isDayTour = days.length <= 1;
+  const [expanded, setExpanded] = useState<Set<number>>(() => new Set(isDayTour ? [0] : []));
+  const allExpanded = expanded.size === days.length;
+
+  const toggle = (index: number) => {
+    if (isDayTour) return;
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  return (
+    <section id="itinerary" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <div className="flex items-center justify-between">
+        <h3 className="text-2xl font-black">Itinerary</h3>
+        {!isDayTour && (
+          <button type="button" onClick={() => setExpanded(allExpanded ? new Set() : new Set(days.map((_, i) => i)))} className="text-xs font-black text-blue-600 hover:underline">
+            {allExpanded ? "Collapse all" : "Expand all"}
+          </button>
+        )}
+      </div>
+      <div className="mt-5 divide-y divide-slate-100">
+        {days.map((item, index) => {
+          const isOpen = isDayTour || expanded.has(index);
+          const activitiesList = item.activities ? item.activities.split(/\r?\n|,/).map((a) => a.trim()).filter(Boolean) : [];
+          const image = item.image ? mediaUrl(item.image) : fallbackImages[(index + 1) % fallbackImages.length];
+          return (
+            <div key={`${item.day}-${item.title}`} className="py-2">
+              <button
+                type="button"
+                onClick={() => toggle(index)}
+                aria-expanded={isOpen}
+                className={`flex w-full items-center justify-between gap-4 rounded-xl px-3 py-3 text-left ${isDayTour ? "cursor-default" : "hover:bg-slate-50"}`}
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  {!isDayTour && <span className="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">Day {item.day}</span>}
+                  <b className="truncate text-sm">{item.title}</b>
+                </span>
+                {!isDayTour && <ChevronDown size={16} className={`shrink-0 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />}
+              </button>
+              {isOpen && (
+                <div className="grid gap-6 px-3 pb-4 pt-2 md:grid-cols-[1fr_.8fr]">
+                  <div className="min-w-0">
+                    {item.description && <p className="text-sm leading-7 text-slate-600">{item.description}</p>}
+                    {activitiesList.length > 0 && (
+                      <div className="mt-5">
+                        <h4 className="text-xs font-black uppercase text-emerald-700">Included Activities</h4>
+                        <ul className="mt-2 space-y-1.5">
+                          {activitiesList.map((activity, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><Check size={14} className="mt-1 shrink-0 text-emerald-600" />{activity}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <div className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 text-xs">
+                      <span><House size={15} className="mb-2" />Accommodation<br /><b>{item.accommodation || "Not specified"}</b></span>
+                      <span><Utensils size={15} className="mb-2" />Meals<br /><b>{item.meals || "Not specified"}</b></span>
+                    </div>
+                    {item.important_notes && <div className="mt-5 rounded-xl bg-slate-50 p-4 text-xs leading-6"><b>Please note</b><p>{item.important_notes}</p></div>}
+                  </div>
+                  {image && <img src={image} alt={item.title} className="h-64 w-full rounded-2xl object-cover md:h-full" />}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function Essential({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) { return <div className="flex gap-4"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-blue-600">{icon}</span><span><b className="block text-sm">{title}</b><small className="text-slate-500">{value}</small></span></div>; }
-function Counter({ label, note, value, setValue, min }: { label: string; note: string; value: number; setValue: (value: number) => void; min: number }) { return <div className="mt-4 flex items-center justify-between"><span><b className="block text-xs">{label}</b><small className="text-[9px] text-slate-400">{note}</small></span><span className="flex items-center gap-3"><button type="button" onClick={() => setValue(Math.max(min, value - 1))} className="rounded border p-1"><Minus size={12} /></button><b className="w-5 text-center text-xs">{String(value).padStart(2, "0")}</b><button type="button" onClick={() => setValue(value + 1)} className="rounded border p-1"><Plus size={12} /></button></span></div>; }
+function Counter({ label, note, value, setValue, min }: { label: string; note: string; value: number; setValue: (value: number) => void; min: number }) { return <div className="mt-4 flex items-center justify-between"><span><b className="block text-xs">{label}</b><small className="text-[9px] text-slate-400">{note}</small></span><span className="flex items-center gap-3"><button type="button" aria-label={`Decrease ${label.toLowerCase()}`} onClick={() => setValue(Math.max(min, value - 1))} className="rounded border p-1"><Minus size={12} /></button><b className="w-5 text-center text-xs">{String(value).padStart(2, "0")}</b><button type="button" aria-label={`Increase ${label.toLowerCase()}`} onClick={() => setValue(value + 1)} className="rounded border p-1"><Plus size={12} /></button></span></div>; }
 function Summary({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) { return <div className="mt-3 flex justify-between"><span>{label}</span><b className={accent ? "text-emerald-500" : ""}>{value}</b></div>; }
 function dateLabel(value: string) { const date = new Date(`${value}T00:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", weekday: "long" }).format(date); }
 function flagFor(country: string) { const key = country.trim().toLowerCase(); return key === "new zealand" ? "🇳🇿" : key === "india" ? "🇮🇳" : key === "switzerland" ? "🇨🇭" : "🌍"; }

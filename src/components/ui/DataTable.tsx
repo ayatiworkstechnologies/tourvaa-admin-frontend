@@ -4,7 +4,6 @@ import { Fragment } from "react";
 import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuSearch as Search } from "react-icons/lu";
 import EmptyState from "@/components/common/EmptyState";
 import ErrorState from "@/components/common/ErrorState";
-import LoadingState from "@/components/common/LoadingState";
 
 export type DataTableColumn<T> = {
   key: string;
@@ -113,14 +112,20 @@ export default function DataTable<T extends { id?: number | string }>({
             {/* body */}
             <tbody>
               {loading ? (
-                <tr>
-                  <td
-                    colSpan={columns.length + (actions ? 1 : 0)}
-                    className="px-5 py-14 text-center"
-                  >
-                    <LoadingState label="Loading…" table />
-                  </td>
-                </tr>
+                Array.from({ length: Math.min(pageSize ?? 5, 8) }).map((_, index) => (
+                  <tr key={index} className="border-b border-dash-bg-muted last:border-0">
+                    {columns.map((col) => (
+                      <td key={col.key} className={`px-5 py-4 ${col.className ?? ""}`}>
+                        <div className="h-4 w-3/4 animate-pulse rounded bg-dash-bg-muted" />
+                      </td>
+                    ))}
+                    {actions && (
+                      <td className="px-5 py-4 text-right">
+                        <div className="ml-auto h-4 w-12 animate-pulse rounded bg-dash-bg-muted" />
+                      </td>
+                    )}
+                  </tr>
+                ))
               ) : rows.length === 0 ? (
                 <tr>
                   <td
