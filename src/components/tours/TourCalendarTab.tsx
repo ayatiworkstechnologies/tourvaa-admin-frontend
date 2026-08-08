@@ -85,7 +85,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
     const cursor = new Date(`${start}T00:00:00`);
     const last = new Date(`${end}T00:00:00`);
     while (cursor <= last) {
-      dates.push(cursor.toISOString().slice(0, 10));
+      dates.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`);
       cursor.setDate(cursor.getDate() + 1);
     }
     return dates;

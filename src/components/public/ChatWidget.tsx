@@ -8,6 +8,7 @@ import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import SharedDatePicker from "@/components/ui/DatePicker";
+import { todayLocalDateStr } from "@/lib/utils/date";
 
 type TourCard = { id: number; title: string; duration_days?: number; price?: number | null; currency: string; cover_image?: string | null; slug: string };
 type ActionData = {
@@ -67,7 +68,7 @@ function TourCards({ tours, onSelect }: { tours: TourCard[]; onSelect: (t: TourC
 
 function ChatDatePicker({ onSelect }: { onSelect: (date: string) => void }) {
   const [value, setValue] = useState("");
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayLocalDateStr();
   return (
     <div className="mt-2 rounded-xl border border-dash-border bg-white p-3 shadow-sm">
       <p className="mb-2 text-xs font-bold text-dash-body">Select travel date</p>
@@ -173,12 +174,11 @@ export default function ChatWidget() {
     setLoading(true);
 
     try {
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("tourvaa_token") : null;
       const res = await fetch("/api/chatbot/chat", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ message: trimmed, session_key: sessionKey }),
       });

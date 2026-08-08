@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCalendarCheck as CalendarCheck, LuClock as Clock, LuDownload as Download, LuRefreshCw as RefreshCw, LuTicketX as TicketX, LuWallet as Wallet } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
@@ -32,11 +32,13 @@ export default function BookingsPage() {
   const [busyBookingId, setBusyBookingId] = useState<number | null>(null);
 
   const debouncedSearch = useDebounce(searchTerm, 350);
+  const fetchRequestIdRef = useRef(0);
 
   const fetchBookings = useCallback(async (background = false) => {
     if (background) setIsRefreshing(true);
     else setIsLoading(true);
 
+    const requestId = ++fetchRequestIdRef.current;
     try {
       const bookingResponse = await getBookings({
         page: currentPage,
@@ -47,15 +49,18 @@ export default function BookingsPage() {
         supplier_id: supplierId ? Number(supplierId) : undefined,
         _ts: Date.now(),
       });
+      if (requestId !== fetchRequestIdRef.current) return;
       setBookings(bookingResponse.items || bookingResponse.data || []);
       setTotalBookings(bookingResponse.total || 0);
       setTotalPages(bookingResponse.total_pages || 1);
       setErrorMessage("");
     } catch {
-      setErrorMessage("Could not load bookings.");
+      if (requestId === fetchRequestIdRef.current) setErrorMessage("Could not load bookings.");
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      if (requestId === fetchRequestIdRef.current) {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     }
   }, [currentPage, debouncedSearch, bookingStatus, paymentStatus, supplierId]);
 

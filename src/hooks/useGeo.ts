@@ -96,10 +96,12 @@ export function useGeoStates(countryId: number | null | undefined) {
   useEffect(() => {
     if (!countryId) { setStates([]); return; }
     if (_statesCache.has(countryId)) { setStates(_statesCache.get(countryId)!); return; }
+    let cancelled = false;
     setLoading(true);
     fetchStates(countryId)
-      .then(setStates)
-      .finally(() => setLoading(false));
+      .then((data) => { if (!cancelled) setStates(data); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [countryId]);
 
   return { states, loading };
@@ -116,10 +118,12 @@ export function useGeoCities(stateId: number | null | undefined, countryId?: num
   useEffect(() => {
     if (!stateId && !countryId) { setCities([]); return; }
     if (_citiesCache.has(cacheKey)) { setCities(_citiesCache.get(cacheKey)!); return; }
+    let cancelled = false;
     setLoading(true);
     fetchCities(stateId, countryId)
-      .then(setCities)
-      .finally(() => setLoading(false));
+      .then((data) => { if (!cancelled) setCities(data); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [cacheKey, countryId, stateId]);
 
   return { cities, loading };

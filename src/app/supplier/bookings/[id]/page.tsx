@@ -12,6 +12,7 @@ import {
 } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/useToast";
+import { todayLocalDateStr } from "@/lib/utils/date";
 
 type Traveller = {
   id?: number;
@@ -268,7 +269,7 @@ function ActionBanner({
       {showPostpone && (
         <div className="mt-4 rounded-xl border border-[#D9ECFF] bg-white p-4">
           <div className="grid gap-3 md:grid-cols-2">
-            <DatePicker value={newDate} onChange={setNewDate} minDate={new Date().toISOString().split("T")[0]} placeholder="Select new tour date" />
+            <DatePicker value={newDate} onChange={setNewDate} minDate={todayLocalDateStr()} placeholder="Select new tour date" />
             <input value={postponeReason} onChange={(e) => setPostponeReason(e.target.value)} placeholder="Reason for postponement" className="rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-dash-brand" />
           </div>
           <div className="mt-3 flex gap-2">

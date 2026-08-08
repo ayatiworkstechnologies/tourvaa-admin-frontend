@@ -34,7 +34,7 @@ export function combinePhone(countryCode: string, number: string) {
 
 export function splitPhone(value: string, countryCodes: string[] = []) {
   const normalized = value.trim();
-  const matchedCode = countryCodes
+  const matchedCode = [...countryCodes]
     .sort((a, b) => b.length - a.length)
     .find((code) => normalized.startsWith(code));
 

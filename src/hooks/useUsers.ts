@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import api from "@/lib/api/client";
 import { User, UserFormData } from "@/types/user";
 
@@ -19,6 +19,7 @@ export function useUsers({ enabled = true, page = 1, limit = 10, search = "", ac
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(enabled);
   const [saving, setSaving] = useState(false);
+  const requestIdRef = useRef(0);
 
   const fetchUsers = useCallback(async () => {
     if (!enabled) {
@@ -26,20 +27,22 @@ export function useUsers({ enabled = true, page = 1, limit = 10, search = "", ac
       return;
     }
 
+    const requestId = ++requestIdRef.current;
     setLoading(true);
 
     try {
       const response = await api.get("/users/", {
         params: { page, limit, search, account_status: accountStatus, user_type: userType },
       });
+      if (requestId !== requestIdRef.current) return;
       const items = response.data.items || response.data.data || [];
       setUsers(items);
       setTotal(response.data.total ?? items.length);
       setTotalPages(response.data.total_pages ?? 1);
     } catch {
-      setUsers([]);
+      if (requestId === requestIdRef.current) setUsers([]);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [accountStatus, enabled, limit, page, search, userType]);
 
