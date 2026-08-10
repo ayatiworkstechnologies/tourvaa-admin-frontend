@@ -14,12 +14,14 @@ type Invoice = {
   invoice_number?: string;
   booking_id?: number;
   booking_code?: string;
-  invoice_status?: string;
+  status?: string;
+  invoice_type?: string;
   total_amount?: string | number;
   grand_total?: string | number;
   currency?: string;
   created_at?: string;
-  due_date?: string;
+  amount_due?: string | number;
+  balance_due_date?: string;
 };
 
 function dateText(value?: string) {
@@ -76,8 +78,11 @@ export default function CustomerInvoicesPage() {
   const columns: DataTableColumn<Invoice>[] = [
     { key: "invoice", header: "Invoice", render: (i) => i.invoice_number || `#${i.id}`, className: "font-bold text-dash-text" },
     { key: "booking", header: "Booking", render: (i) => i.booking_id ? <Link className="font-semibold text-dash-brand hover:underline" href={`/customer/bookings/${i.booking_id}`}>{i.booking_code || `Booking #${i.booking_id}`}</Link> : "-" },
-    { key: "status", header: "Status", render: (i) => <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-bold capitalize text-slate-700">{(i.invoice_status || "issued").replaceAll("_", " ")}</span> },
+    { key: "status", header: "Status", render: (i) => <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-bold capitalize text-slate-700">{(i.status || "generated").replaceAll("_", " ")}</span> },
+    { key: "type", header: "Type", render: (i) => (i.invoice_type || "tax_invoice").replaceAll("_", " "), className: "capitalize" },
     { key: "amount", header: "Amount", render: (i) => money(i.grand_total ?? i.total_amount, i.currency), className: "text-right font-bold text-dash-text" },
+    { key: "due", header: "Balance", render: (i) => money(i.amount_due, i.currency), className: "text-right" },
+    { key: "due_date", header: "Due date", render: (i) => i.amount_due && Number(i.amount_due) > 0 ? dateText(i.balance_due_date) : "Fully paid", className: "hidden text-dash-muted lg:table-cell" },
     { key: "date", header: "Date", render: (i) => dateText(i.created_at), className: "hidden text-dash-muted md:table-cell" },
   ];
 

@@ -30,8 +30,23 @@ const scriptSrc =
     ? `script-src 'self' 'unsafe-inline' ${elfsightHosts};`
     : `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${elfsightHosts};`;
 
+// The Turbopack/webpack dev-mode HMR client connects back over its own
+// ws://<host>:<port>/_next/webpack-hmr socket. 'self' in connect-src is
+// supposed to auto-cover the ws-equivalent of the page's own origin, but
+// that isn't reliable across browsers/proxies, so dev mode explicitly
+// allows it (prod never serves this endpoint at all).
+const devHmrHosts = "ws://localhost:* ws://127.0.0.1:*";
+const connectSrc =
+  process.env.NODE_ENV === "production"
+    ? `connect-src 'self' ${apiProxyOrigin} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com;`
+    : `connect-src 'self' ${apiProxyOrigin} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com ${devHmrHosts};`;
+
 const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
+  // Next's dev-server DNS-rebinding protection only allows "localhost" by
+  // default, silently dropping HMR websocket connections (and, with them,
+  // hydration) when the app is opened via http://127.0.0.1:3000 instead.
+  allowedDevOrigins: ["localhost", "127.0.0.1"],
   async headers() {
     return [
       {
@@ -40,7 +55,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${elfsightHosts}; img-src 'self' data: blob: https: ${apiProxyOrigin}; connect-src 'self' ${apiProxyOrigin} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com; font-src 'self' data: ${elfsightHosts}; frame-ancestors 'none';`,
+              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${elfsightHosts}; img-src 'self' data: blob: https: ${apiProxyOrigin}; ${connectSrc} font-src 'self' data: ${elfsightHosts}; frame-ancestors 'none';`,
           },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },

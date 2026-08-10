@@ -10,10 +10,12 @@ export type Invoice = {
   status: string;
   currency: string;
   subtotal_amount: string;
+  gst_rate: string;
   gst_amount: string;
   total_amount: string;
   amount_paid: string;
   amount_due: string;
+  balance_due_date?: string | null;
   pdf_path?: string | null;
   emailed_at?: string | null;
   created_at?: string | null;
@@ -30,6 +32,8 @@ export type InvoiceGenerateRequest = {
   booking_id: number;
   payment_id?: number;
   invoice_type?: string;
+  gst_rate?: number;
+  balance_due_date?: string;
 };
 
 export type PaginatedInvoices = {
@@ -59,8 +63,8 @@ export async function generateInvoice(invoice: InvoiceGenerateRequest) {
   return response.data.data;
 }
 
-export async function emailInvoice(invoiceId: number | string, email?: string) {
-  const response = await api.post<ApiDataResponse<Invoice>>(`/invoices/${invoiceId}/email`, { email });
+export async function emailInvoice(invoiceId: number | string, email?: string, message?: string) {
+  const response = await api.post<ApiDataResponse<Invoice>>(`/invoices/${invoiceId}/email`, { email, message });
   return response.data.data;
 }
 

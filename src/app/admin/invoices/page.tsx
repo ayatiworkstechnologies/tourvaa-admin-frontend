@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
-import { Invoice, getInvoices, downloadInvoicePdf, regenerateInvoicePdf } from "@/lib/api/services/invoiceService";
+import { Invoice, getInvoices, downloadInvoicePdf, emailInvoice, regenerateInvoicePdf } from "@/lib/api/services/invoiceService";
 import { useToast } from "@/hooks/useToast";
 import { useCurrency } from "@/hooks/useCurrency";
 
@@ -20,6 +20,20 @@ export default function InvoicesPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
+  const [emailingId, setEmailingId] = useState<number | null>(null);
+
+  async function handleEmail(invoice: Invoice) {
+    setEmailingId(invoice.id);
+    try {
+      const updated = await emailInvoice(invoice.id);
+      setInvoices((prev) => prev.map((item) => (item.id === invoice.id ? updated : item)));
+      toast.success("Invoice emailed to the customer.");
+    } catch {
+      toast.error("Invoice email delivery failed. Check Email Logs for details.");
+    } finally {
+      setEmailingId(null);
+    }
+  }
 
   async function handleDownload(invoice: Invoice) {
     setDownloadingId(invoice.id);
@@ -77,10 +91,12 @@ export default function InvoicesPage() {
     { key: "invoice_number", header: "Invoice" },
     { key: "booking_id", header: "Booking" },
     { key: "status", header: "Status" },
+    { key: "invoice_type", header: "Type", render: (invoice) => invoice.invoice_type.replaceAll("_", " ") },
     { key: "subtotal_amount", header: "Subtotal", render: (invoice) => format(invoice.subtotal_amount, invoice.currency) },
     { key: "gst_amount", header: "GST", render: (invoice) => format(invoice.gst_amount, invoice.currency) },
     { key: "total_amount", header: "Total", render: (invoice) => format(invoice.total_amount, invoice.currency) },
     { key: "amount_due", header: "Due", render: (invoice) => format(invoice.amount_due, invoice.currency) },
+    { key: "balance_due_date", header: "Due date", render: (invoice) => invoice.balance_due_date ? new Date(invoice.balance_due_date).toLocaleDateString() : "Fully paid" },
     {
       key: "pdf_path",
       header: "Actions",
@@ -106,6 +122,15 @@ export default function InvoicesPage() {
             className="inline-flex items-center gap-1 rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs font-bold text-dash-brand transition-all hover:bg-sky-50 disabled:opacity-60"
           >
             {regeneratingId === invoice.id ? "Regenerating…" : invoice.pdf_path ? "Regenerate" : "Generate PDF"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleEmail(invoice)}
+            disabled={emailingId === invoice.id || !invoice.pdf_path}
+            title={invoice.pdf_path ? "Email this PDF to the customer" : "Generate the PDF before emailing"}
+            className="inline-flex items-center gap-1 rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs font-bold text-dash-brand transition-all hover:bg-sky-50 disabled:opacity-60"
+          >
+            {emailingId === invoice.id ? "Emailing…" : "Email"}
           </button>
         </div>
       ),
