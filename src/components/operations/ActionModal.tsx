@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LuX as X } from "react-icons/lu";
+import { LuEye as Eye, LuEyeOff as EyeOff, LuX as X } from "react-icons/lu";
 
 type Field = {
   name: string;
@@ -43,6 +43,7 @@ export default function ActionModal({
   initialValues,
 }: Props) {
   const [form, setForm] = useState<Record<string, string>>({});
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const show = open ?? isOpen ?? false;
   const isSaving = saving ?? isLoading ?? false;
   const label = confirmLabel ?? submitLabel;
@@ -56,6 +57,7 @@ export default function ActionModal({
       setForm(parsed);
     } else if (!show) {
       setForm({});
+      setVisiblePasswords({});
     }
   }, [show, initialValues]);
 
@@ -97,6 +99,25 @@ export default function ActionModal({
                     <option value="">Select</option>
                     {field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
+                ) : field.type === "password" ? (
+                  <span className="relative block">
+                    <input
+                      required={field.required}
+                      type={visiblePasswords[field.name] ? "text" : "password"}
+                      value={form[field.name] || ""}
+                      onChange={(event) => setForm((prev) => ({ ...prev, [field.name]: event.target.value }))}
+                      className="w-full rounded-xl border border-dash-border py-2.5 pl-4 pr-12 text-sm outline-none focus:border-dash-brand"
+                    />
+                    <button
+                      type="button"
+                      aria-label={visiblePasswords[field.name] ? `Hide ${field.label}` : `Show ${field.label}`}
+                      aria-pressed={Boolean(visiblePasswords[field.name])}
+                      onClick={() => setVisiblePasswords((current) => ({ ...current, [field.name]: !current[field.name] }))}
+                      className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-dash-muted transition hover:bg-dash-bg hover:text-dash-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-dash-brand"
+                    >
+                      {visiblePasswords[field.name] ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </span>
                 ) : (
                   <input required={field.required} type={field.type || "text"} value={form[field.name] || ""} onChange={(event) => setForm((prev) => ({ ...prev, [field.name]: event.target.value }))} className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
                 )}

@@ -55,6 +55,7 @@ const nextConfig = read("next.config.ts");
 const countrySettings = read("src/app/admin/settings/countries/page.tsx");
 const geoHooks = read("src/hooks/useGeo.ts");
 const reviewList = read("src/components/operations/ReviewListPage.tsx");
+const actionModal = read("src/components/operations/ActionModal.tsx");
 check(
   "admin can create suppliers, agents, and affiliates through slash-safe proxy routes",
   operationsService.includes('api.post<{ data: ReviewRecord }>(`/${module}/`, payload)') &&
@@ -80,6 +81,21 @@ check(
     reviewList.includes('{ name: "email", label: "Email", type: "email", required: true }') &&
     reviewList.includes('{ name: "password", label: "Password", type: "password", required: true }') &&
     reviewList.includes('render: (row) => row.id'),
+);
+check(
+  "admin agent and affiliate creation collect login details and display numeric ids",
+  reviewList.includes('{ name: "agent_name", label: "Agent Name", required: true }') &&
+    reviewList.includes('{ name: "name", label: "Affiliate Name", required: true }') &&
+    (reviewList.match(/\{ name: "email", label: "Email", type: "email", required: true \}/g) || []).length >= 3 &&
+    (reviewList.match(/\{ name: "password", label: "Password", type: "password", required: true \}/g) || []).length >= 3 &&
+    reviewList.includes('render: (row) => row.id'),
+);
+check(
+  "admin registration passwords can be shown and hidden",
+  actionModal.includes('field.type === "password"') &&
+    actionModal.includes('`Show ${field.label}`') &&
+    actionModal.includes('`Hide ${field.label}`') &&
+    actionModal.includes("visiblePasswords"),
 );
 check("supplier commission banner omits the misleading approve request action", !suppliers.includes("Approve request"));
 check("supplier document review uses private document service", suppliers.includes('openPrivateDocument("supplier"'));

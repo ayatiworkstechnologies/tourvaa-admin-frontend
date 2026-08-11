@@ -51,12 +51,6 @@ function MiniCheck({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
-const moduleNameFields = {
-  suppliers: { name: "supplier_name", type: "supplier_type" },
-  agents: { name: "agent_name", type: "agent_type" },
-  affiliates: { name: "name", type: "business_type" },
-} as const;
-
 export default function ReviewListPage({ module, title, requiredPermission }: Props) {
   const toast = useToast();
   const { hasPermission } = useAuthContext();
@@ -146,8 +140,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
       setBulkProcessing(false);
     }
   }
-  const fields = moduleNameFields[module];
-
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
@@ -188,7 +180,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   };
 
   const defaultColumns: DataTableColumn<ReviewRecord>[] = [
-    { key: "code", header: "ID", render: (row) => row.code || row.supplier_code || row.agent_code || row.affiliate_code || row.id },
+    { key: "code", header: "ID", render: (row) => row.id },
     { key: "name", header: "Name", render: (row) => row.name || row.supplier_name || row.agent_name },
     { key: "type", header: "Type", render: (row) => row.type || row.supplier_type || row.agent_type || row.business_type || "-" },
     { key: "country", header: "Country", render: (row) => row.country_name || "-" },
@@ -281,7 +273,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           ),
         } as DataTableColumn<ReviewRecord>]
       : []),
-    { key: "code", header: "ID", className: "w-24", render: (row) => row.agent_code || row.code || row.id },
+    { key: "code", header: "ID", className: "w-24", render: (row) => row.id },
     {
       key: "name",
       header: "Agent",
@@ -422,10 +414,14 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           { name: "supplier_name", label: "Supplier Name", required: true },
           { name: "email", label: "Email", type: "email", required: true },
           { name: "password", label: "Password", type: "password", required: true },
+        ] : module === "agents" ? [
+          { name: "agent_name", label: "Agent Name", required: true },
+          { name: "email", label: "Email", type: "email", required: true },
+          { name: "password", label: "Password", type: "password", required: true },
         ] : [
-          { name: fields.name, label: "Name", required: true },
-          { name: fields.type, label: "Type" },
-          ...(module === "affiliates" ? [{ name: "email", label: "Email", type: "email" as const, required: true }, { name: "phone", label: "Phone" }] : []),
+          { name: "name", label: "Affiliate Name", required: true },
+          { name: "email", label: "Email", type: "email", required: true },
+          { name: "password", label: "Password", type: "password", required: true },
         ]}
       />
     </ModuleWrapper>
