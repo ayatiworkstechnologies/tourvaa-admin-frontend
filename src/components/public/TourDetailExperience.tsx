@@ -78,7 +78,7 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
             ) : (
               <span className="flex items-center gap-2 text-slate-400"><Star size={16} /> No reviews yet</span>
             )}
-            <span>Operated by: <b>Tourvaa Experiences</b></span>
+            <span>Operated by: <b>{tour.supplier_name || "Tourvaa Experiences"}</b></span>
           </div>
           <nav className="mt-7 flex flex-wrap gap-x-12 gap-y-3 text-sm font-semibold text-slate-700"><a href="#overview">Explore</a><a href="#essentials" className="flex items-center gap-2">Tour Categories <ChevronDown size={15} /></a><a href="#itinerary" className="flex items-center gap-2">Travel Guides <ChevronDown size={15} /></a><a href="#itinerary" className="flex items-center gap-2">Travel Guide <ChevronDown size={15} /></a></nav>
         </header>

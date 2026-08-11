@@ -82,8 +82,14 @@ export default function AgentToursPage() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const submittedSearch = String(new FormData(form).get("search") ?? "").trim();
+    setSearch(submittedSearch);
     setPage(1);
-    setQuery(search);
+    setQuery(submittedSearch);
+    // A repeated submission should refresh the catalogue as well. This also
+    // covers browser autofill that may not have emitted a React change event.
+    setRetryKey((value) => value + 1);
   }
 
   return (
@@ -103,6 +109,7 @@ export default function AgentToursPage() {
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dash-subtle" />
           <input
+            name="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tours by name, destination…"
@@ -111,6 +118,7 @@ export default function AgentToursPage() {
         </div>
         <button
           type="submit"
+          aria-label="Search published tours"
           className="flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white transition hover:bg-dash-brand-hover"
         >
           <SlidersHorizontal size={15} /> Search

@@ -44,7 +44,7 @@ check("access tokens are never written to localStorage", !session.includes("loca
 const auth = read("src/providers/AuthProvider.tsx");
 const verifyEmail = read("src/app/(public)/auth/verify-email/page.tsx");
 const register = read("src/app/(public)/register/page.tsx");
-check("verification and account-status pages remain public", auth.includes('"/auth/verify-email"') && auth.includes('"/account-status"'));
+check("verification and account-status pages remain public", auth.includes('return !pathname.startsWith("/admin")') && auth.includes('pathname === "/admin/login"'));
 check("completed verification activates and redirects every role to sign in", verifyEmail.includes("router.replace(loginHref)") && verifyEmail.includes("Your email is verified and your account is active"));
 check("unified registration never asks for an initial password", !register.includes('name="password"') && !register.includes("validatePassword"));
 check("every public role sends the same verification link", register.includes('"Send Verification Link"') && register.includes('api.post("/auth/register", base)'));

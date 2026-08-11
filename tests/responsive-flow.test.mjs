@@ -33,6 +33,9 @@ const publicHeader = read("src/components/public/PublicHeader.tsx");
 check("public marketing navigation waits for desktop width", publicHeader.includes("lg:flex"));
 check("public header preserves a shrinkable flex row", publicHeader.includes("max-w-[1480px] min-w-0"));
 
+const portalHeader = read("src/components/layout/Header.tsx");
+check("portal header reserves clearance for the fixed language widget", portalHeader.includes("pr-36") && portalHeader.includes("lg:pr-40"));
+
 const customerHeader = read("src/components/customer/CustomerPortalHeader.tsx");
 check("customer header has compact mobile height", customerHeader.includes("h-20") && customerHeader.includes("sm:h-[92px]"));
 check("customer profile menu is viewport bounded", customerHeader.includes("calc(100vw-1.5rem)"));

@@ -1,43 +1,39 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
+/* eslint-disable @next/next/no-img-element */
+
+import { FormEvent, useState } from "react";
 import {
-  LuArrowRight as ArrowRight,
-  LuCalendarDays as CalendarDays,
-  LuCheck as Check,
   LuCircleAlert as AlertCircle,
-  LuCircleCheckBig as CheckCircle2,
-  LuClock3 as Clock3,
-  LuHeadphones as Headphones,
-  LuMail as Mail,
-  LuMapPinned as MapPinned,
-  LuMessageSquare as MessageSquare,
-  LuPhone as Phone,
+  LuCircleCheckBig as CheckCircle,
   LuSend as Send,
-  LuShieldCheck as ShieldCheck,
-  LuSparkles as Sparkles,
 } from "react-icons/lu";
+
+import AboutReveal from "@/components/public/AboutReveal";
 import publicApi from "@/lib/api/publicClient";
 
-const INPUT_CLASS = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:bg-white focus:ring-4 focus:ring-teal-600/10";
+const INPUT_CLASS = "min-h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
 
-const CONTACT_OPTIONS = [
-  { Icon: Phone, eyebrow: "Call our experts", value: "+91 98765 43210", note: "Mon–Sun, 9:00 AM–9:00 PM", href: "tel:+919876543210" },
-  { Icon: Mail, eyebrow: "Email support", value: "support@tourvaa.com", note: "Replies within one business day", href: "mailto:support@tourvaa.com" },
-  { Icon: MapPinned, eyebrow: "Visit our office", value: "Chennai, India", note: "Meetings available by appointment", href: "https://maps.google.com/?q=Chennai,India" },
-];
+const INITIAL_FORM = {
+  reservation: "no",
+  name: "",
+  phone: "",
+  email: "",
+  subject: "",
+  message: "",
+};
 
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", enquiryType: "Trip planning", subject: "", message: "" });
+  const [form, setForm] = useState(INITIAL_FORM);
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterMessage, setNewsletterMessage] = useState("");
 
   const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
 
-  const submit = async (event: React.FormEvent) => {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
     setError("");
@@ -46,141 +42,117 @@ export default function ContactPage() {
         name: form.name,
         email: form.email,
         phone: form.phone,
-        enquiry_type: form.enquiryType,
+        enquiry_type: form.subject,
         subject: form.subject,
-        message: form.message,
+        message: `Reservation number: ${form.reservation === "yes" ? "Yes" : "No"}\n\n${form.message}`,
       });
       setSent(true);
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Could not send your message. Please try again or email us directly.";
-      setError(typeof message === "string" ? message : "Could not send your message. Please try again or email us directly.");
+      const message = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(typeof message === "string" ? message : "Could not send your message. Please try again or contact us directly.");
     } finally {
       setSubmitting(false);
     }
-  };
+  }
 
-  const reset = () => {
-    setSent(false);
-    setForm({ name: "", email: "", phone: "", enquiryType: "Trip planning", subject: "", message: "" });
-  };
+  function subscribe(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    setNewsletterMessage("Thank you — travel tips are on their way!");
+    setNewsletterEmail("");
+  }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-20">
-      <section className="relative overflow-hidden bg-[#063c42] pb-28 pt-32 text-white md:pb-32 md:pt-40">
-        <Image src="/images/destination-desert.jpg" alt="Travel destination at sunset" fill priority sizes="100vw" className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#043d42]/95 via-[#043d42]/80 to-[#043d42]/25" />
-        <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-orange-400/20 blur-3xl" />
+    <AboutReveal>
+      <main className="overflow-hidden bg-white text-[#111827]">
+        <section className="relative mt-20 h-[260px] overflow-hidden sm:h-[330px] lg:h-[390px]">
+          <img src="/images/destination-alpine.jpg" alt="Snow-covered mountains overlooking an alpine valley" className="animate-tourvaa-hero h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-slate-900/10" />
+        </section>
 
-        <div className="relative mx-auto grid max-w-7xl items-end gap-10 px-5 md:px-8 lg:grid-cols-[1fr_350px]">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-teal-50 backdrop-blur-md">
-              <MessageSquare size={14} /> We&apos;re here to help
-            </div>
-            <h1 className="mt-5 max-w-3xl font-heading text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              Let&apos;s plan something <span className="text-orange-400">unforgettable.</span>
-            </h1>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-white/75 sm:text-base">
-              From your first idea to the final detail, our travel specialists are ready to help with tours, bookings, partnerships, and support.
-            </p>
-          </div>
+        <section className="p-4 sm:p-6 lg:p-7">
+          <div data-reveal="scale" className="relative mx-auto max-w-[1480px] overflow-hidden rounded-[28px] bg-slate-900 shadow-[0_20px_55px_rgba(15,23,42,.16)]">
+            <img src="/images/destination-alpine.jpg" alt="Mist-covered mountain peaks" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/30 via-slate-900/10 to-slate-950/15" />
 
-          <div className="hidden rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-md lg:block">
-            <div className="flex items-center gap-4">
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-teal-800"><Headphones size={22} /></span>
-              <div><p className="text-xs font-black uppercase tracking-[0.16em] text-teal-100">Live assistance</p><p className="mt-1 text-lg font-black">7 days a week</p></div>
-            </div>
-            <div className="mt-5 border-t border-white/15 pt-5 text-sm leading-6 text-white/70">Most enquiries receive a response within 24 hours.</div>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative z-10 mx-auto -mt-12 max-w-7xl px-5 md:px-8">
-        <div className="grid overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10 sm:grid-cols-3">
-          {CONTACT_OPTIONS.map(({ Icon, eyebrow, value, note, href }, index) => (
-            <a key={eyebrow} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel={href.startsWith("http") ? "noreferrer" : undefined} className={`group flex gap-4 p-5 transition hover:bg-teal-50 sm:p-6 ${index < CONTACT_OPTIONS.length - 1 ? "border-b border-slate-200 sm:border-b-0 sm:border-r" : ""}`}>
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 transition group-hover:bg-teal-700 group-hover:text-white"><Icon size={21} /></span>
-              <span className="min-w-0"><small className="block text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{eyebrow}</small><strong className="mt-1 block truncate text-sm text-slate-950 sm:text-base">{value}</strong><small className="mt-1 block text-xs leading-5 text-slate-500">{note}</small></span>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto mt-14 max-w-7xl px-5 md:px-8">
-        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 lg:p-10">
-            {sent ? (
-              <div className="flex min-h-[520px] flex-col items-center justify-center px-4 text-center">
-                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50"><CheckCircle2 size={40} className="text-emerald-600" /></span>
-                <p className="mt-6 text-3xl font-black text-slate-950">Message received</p>
-                <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">Thank you for contacting Tourvaa. Our team will review your enquiry and get back to you within 24 hours.</p>
-                <button type="button" onClick={reset} className="mt-8 rounded-xl bg-teal-700 px-6 py-3 text-sm font-black text-white transition hover:bg-teal-800">Send another message</button>
-              </div>
-            ) : (
-              <>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-500">Send an enquiry</p>
-                <h2 className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">How can we help?</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">Share a few details and the right specialist will contact you.</p>
-
-                {error && (
-                  <div className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
-                    <AlertCircle size={16} className="shrink-0" />
-                    {error}
+            <div className="relative grid min-h-[820px] gap-0 lg:grid-cols-[minmax(520px,700px)_1fr]">
+              <div className="m-5 rounded-2xl bg-white p-6 shadow-2xl sm:m-7 sm:p-9 lg:m-6 lg:p-10">
+                {sent ? (
+                  <div className="flex h-full min-h-[640px] flex-col items-center justify-center text-center">
+                    <span className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><CheckCircle size={40} /></span>
+                    <h1 className="mt-6 text-3xl font-black">Message received</h1>
+                    <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">Thank you for contacting Tourvaa. One of our local advisors will contact you within 24 hours.</p>
+                    <button type="button" onClick={() => { setSent(false); setForm(INITIAL_FORM); }} className="mt-8 rounded-lg bg-blue-600 px-6 py-3 text-sm font-black text-white transition hover:bg-blue-500">Send another message</button>
                   </div>
+                ) : (
+                  <>
+                    <h1 className="font-heading text-3xl font-black tracking-tight sm:text-4xl">Contact Us</h1>
+                    <p className="mt-3 text-sm leading-6 text-slate-500 sm:text-base">Fill out the form below and one of our local advisors will contact you within 24 hours.</p>
+
+                    {error && <div role="alert" className="mt-5 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-600"><AlertCircle size={17} />{error}</div>}
+
+                    <form onSubmit={submit} className="mt-8">
+                      <fieldset className="border-b border-slate-200 pb-6">
+                        <legend className="text-sm font-black text-slate-800">Do you have a reservation number?</legend>
+                        <div className="mt-4 flex gap-7">
+                          {["yes", "no"].map((option) => (
+                            <label key={option} className="flex cursor-pointer items-center gap-3 text-sm font-semibold capitalize">
+                              <input type="radio" name="reservation" value={option} checked={form.reservation === option} onChange={(event) => set("reservation", event.target.value)} className="h-5 w-5 accent-blue-600" />
+                              {option}
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+
+                      <div className="mt-7 grid gap-5 sm:grid-cols-2">
+                        <label><span className="mb-2 block text-xs font-bold">Full Name</span><input required value={form.name} onChange={(event) => set("name", event.target.value)} placeholder="e.g. James Anderson" className={INPUT_CLASS} /></label>
+                        <label><span className="mb-2 block text-xs font-bold">Phone Number</span><input required type="tel" value={form.phone} onChange={(event) => set("phone", event.target.value)} placeholder="+1 (555) 000-0000" className={INPUT_CLASS} /></label>
+                      </div>
+                      <label className="mt-5 block"><span className="mb-2 block text-xs font-bold">Email Address</span><input required type="email" value={form.email} onChange={(event) => set("email", event.target.value)} placeholder="james@travelagency.com" className={INPUT_CLASS} /></label>
+                      <label className="mt-5 block"><span className="mb-2 block text-xs font-bold">Subject</span><select required value={form.subject} onChange={(event) => set("subject", event.target.value)} className={`${INPUT_CLASS} appearance-auto`}><option value="" disabled>Select a trip category or general inquiry</option><option>Trip planning</option><option>Existing booking</option><option>Payment support</option><option>Partnership</option><option>General inquiry</option></select></label>
+                      <label className="mt-5 block"><span className="mb-2 block text-xs font-bold">Message</span><textarea required rows={6} value={form.message} onChange={(event) => set("message", event.target.value)} placeholder="Tell us about your travel plans, destinations, and estimated dates..." className={`${INPUT_CLASS} resize-none py-4`} /></label>
+
+                      <button type="submit" disabled={submitting} className="mt-7 flex min-h-13 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60">
+                        {submitting ? "Sending..." : <><Send size={16} /> Send Message</>}
+                      </button>
+                      <p className="mt-6 text-center text-sm text-slate-500">Prefer a direct call? Visit our <a href="tel:+919876543210" className="font-semibold text-blue-600 hover:underline">Direct Contact</a> section.</p>
+                    </form>
+                  </>
                 )}
+              </div>
 
-                <form onSubmit={submit} className="mt-8 space-y-5">
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <label className="block"><span className="mb-2 block text-xs font-black text-slate-700">Full name</span><input required value={form.name} onChange={(event) => set("name", event.target.value)} placeholder="Your full name" className={INPUT_CLASS} /></label>
-                    <label className="block"><span className="mb-2 block text-xs font-black text-slate-700">Email address</span><input required type="email" value={form.email} onChange={(event) => set("email", event.target.value)} placeholder="you@example.com" className={INPUT_CLASS} /></label>
+              <div className="relative flex min-h-[440px] items-end px-8 pb-10 text-white sm:px-12 lg:min-h-0 lg:px-10 lg:pb-12 xl:px-14">
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/15 to-transparent lg:bg-gradient-to-t" />
+                <div data-reveal="right" className="relative max-w-2xl">
+                  <h2 className="font-heading text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">Get in touch with us</h2>
+                  <p className="mt-4 text-sm leading-6 text-white/75 sm:text-base">Whether you have questions about a tour, need help with a booking, or want personalised travel advice — our expert team is here to help.</p>
+                  <div className="mt-7 grid max-w-lg grid-cols-2 border-t border-white/25 pt-7">
+                    <div><strong className="block text-3xl font-black">24hrs</strong><span className="mt-2 block text-xs text-white/65">Average response time</span></div>
+                    <div><strong className="block text-3xl font-black">4.9/5</strong><span className="mt-2 block text-xs text-white/65">Customer satisfaction</span></div>
                   </div>
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <label className="block"><span className="mb-2 block text-xs font-black text-slate-700">Phone number <span className="font-medium text-slate-400">(optional)</span></span><input type="tel" value={form.phone} onChange={(event) => set("phone", event.target.value)} placeholder="+91 98765 43210" className={INPUT_CLASS} /></label>
-                    <label className="block"><span className="mb-2 block text-xs font-black text-slate-700">Enquiry type</span><select value={form.enquiryType} onChange={(event) => set("enquiryType", event.target.value)} className={INPUT_CLASS}><option>Trip planning</option><option>Existing booking</option><option>Payment support</option><option>Partnership</option><option>General enquiry</option></select></label>
-                  </div>
-                  <label className="block"><span className="mb-2 block text-xs font-black text-slate-700">Subject</span><input required value={form.subject} onChange={(event) => set("subject", event.target.value)} placeholder="What would you like help with?" className={INPUT_CLASS} /></label>
-                  <label className="block"><span className="mb-2 block text-xs font-black text-slate-700">Message</span><textarea required rows={6} value={form.message} onChange={(event) => set("message", event.target.value)} placeholder="Tell us about your plans, dates, travellers, or booking question..." className={`${INPUT_CLASS} resize-none`} /></label>
-                  <div className="flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="flex items-center gap-2 text-xs text-slate-500"><ShieldCheck size={15} className="text-teal-700" /> Your information is kept private and secure.</p>
-                    <button type="submit" disabled={submitting} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-orange-500 px-7 text-sm font-black text-white shadow-md transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60">
-                      {submitting ? "Sending…" : <><Send size={16} /> Send message</>}
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-          </div>
-
-          <aside className="space-y-5 lg:sticky lg:top-24">
-            <div className="overflow-hidden rounded-2xl bg-[#075b57] p-6 text-white sm:p-7">
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-teal-100"><CalendarDays size={22} /></span>
-              <h3 className="mt-5 text-xl font-black">Planning a new holiday?</h3>
-              <p className="mt-2 text-sm leading-6 text-white/70">Browse our handpicked tours first, then send us your favourites and travel dates.</p>
-              <Link href="/tours" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-orange-300 transition hover:gap-3 hover:text-orange-200">Explore tour packages <ArrowRight size={15} /></Link>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">What happens next</p>
-              <div className="mt-5 space-y-4">
-                {["We review your enquiry", "A specialist contacts you", "We help finalise your next step"].map((item, index) => <div key={item} className="flex items-start gap-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-50 text-xs font-black text-teal-800">{index + 1}</span><p className="pt-1 text-sm font-bold text-slate-700">{item}</p></div>)}
+                </div>
               </div>
             </div>
+          </div>
+        </section>
 
-            <div className="rounded-2xl border border-orange-200 bg-orange-50 p-6">
-              <div className="flex items-center gap-3"><Clock3 size={20} className="text-orange-600" /><p className="font-black text-slate-950">Already travelling?</p></div>
-              <p className="mt-3 text-sm leading-6 text-slate-600">For time-sensitive in-trip support, call us or use the live chat widget for the quickest response.</p>
-              <div className="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-700"><Check size={14} /> Support available every day</div>
+        <section className="border-y border-slate-200 bg-white">
+          <div data-reveal className="mx-auto flex max-w-[1320px] flex-col gap-8 px-5 py-12 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12 lg:py-16">
+            <div>
+              <h2 className="font-heading text-2xl font-black tracking-tight sm:text-3xl">Get Travel Tips Straight to Your Inbox</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Subscribe to receive tactical gear updates, packing checklists, and sudden destination safety bulletins.</p>
             </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center">
-              <Sparkles size={20} className="mx-auto text-teal-700" />
-              <p className="mt-3 text-sm font-black text-slate-950">Prefer self-service?</p>
-              <Link href="/terms" className="mt-2 inline-block text-xs font-bold text-teal-700 hover:underline">View travel information and policies</Link>
-            </div>
-          </aside>
-        </div>
-      </section>
-    </main>
+            <form onSubmit={subscribe} className="w-full lg:max-w-[520px]">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <label htmlFor="contact-newsletter-email" className="sr-only">Email address</label>
+                <input id="contact-newsletter-email" required type="email" value={newsletterEmail} onChange={(event) => { setNewsletterEmail(event.target.value); setNewsletterMessage(""); }} placeholder="Enter your email address" className="min-h-12 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-5 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100" />
+                <button type="submit" className="min-h-12 rounded-lg bg-blue-600 px-8 text-sm font-black text-white shadow-lg shadow-blue-600/15 transition hover:-translate-y-0.5 hover:bg-blue-500">Subscribe</button>
+              </div>
+              {newsletterMessage && <p role="status" className="mt-2 text-sm font-semibold text-emerald-600">{newsletterMessage}</p>}
+            </form>
+          </div>
+        </section>
+      </main>
+    </AboutReveal>
   );
 }

@@ -35,6 +35,7 @@ import {
   fetchPopularDestinations,
   fetchPublicCountries,
   fetchPublicTours,
+  PublicCountry,
   PublicTour,
 } from "@/lib/api/publicClient";
 import { MAX_COMPARE_ITEMS, useTravelStore } from "@/providers/TravelStoreProvider";
@@ -661,6 +662,7 @@ export default function Home() {
   const [handpickedTours, setHandpickedTours] = useState<Tour[]>([]);
   const [dynamicPlaces, setDynamicPlaces] = useState<{ name: string; count: string; rating: string; image: string; price: number | null; currency: string }[]>([]);
   const [dynamicReviews, setDynamicReviews] = useState<{ quote: string; name: string; city: string; tourName: string; initials: string; rating: number }[]>([]);
+  const [searchCountries, setSearchCountries] = useState<PublicCountry[]>([]);
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
 
   useEffect(() => {
@@ -694,6 +696,7 @@ export default function Home() {
           }));
         });
       }
+      if (countryResult.status === "fulfilled") setSearchCountries(countryResult.value);
       if (reviewResult.status === "fulfilled" && reviewResult.value.length) setDynamicReviews(reviewResult.value.slice(0, 6).map(mapReview));
       setLoadingHome(false);
     });
@@ -721,7 +724,7 @@ export default function Home() {
           <span className="animate-fade-up mx-auto inline-flex items-center gap-1.5 rounded-full bg-white/15 px-5 py-2 text-xs font-semibold text-white backdrop-blur">◔ Discover the world with confidence</span>
           <h1 key={heroTitle} className="animate-fade-up mx-auto mt-6 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">{heroTitle}</h1>
           {banner?.subtitle && <p className="animate-fade-up delay-100 mx-auto mt-4 max-w-xl text-base text-white/85">{banner.subtitle}</p>}
-          <div className="animate-fade-up delay-200 mt-12"><HeroFilterBar onPanelOpenChange={setSearchPanelOpen} /></div>
+          <div className="animate-fade-up delay-200 mt-12"><HeroFilterBar countries={searchCountries} onPanelOpenChange={setSearchPanelOpen} /></div>
           <div className="animate-fade-up delay-400 mt-12">
             {/* Separate from the animate-fade-up entrance animation above: that
              * animation's `both` fill-mode pins opacity:1 after it finishes,

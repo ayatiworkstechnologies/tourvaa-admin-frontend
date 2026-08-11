@@ -32,6 +32,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/account-status": { title: "Account Status", description: "Check the verification and activation status of your Tourvaa account.", index: false },
   "/auth/verify-email": { title: "Verify Email", description: "Verify your Tourvaa email and create a secure password.", index: false },
   "/terms": { title: "Terms & Conditions", description: "Review the terms governing Tourvaa accounts, tour bookings, payments, cancellations, suppliers, and platform use." },
+  "/travel-advice": { title: "Travel Advice & Guides", description: "Prepare for your next journey with Tourvaa visa, health, insurance, packing, money, safety, and destination advice." },
   "/tours": { title: "Browse Tours", description: "Compare curated tours by destination, dates, duration, availability, and price, then book securely with Tourvaa." },
   "/tours/[id]": { title: "Tour Details", description: "Review tour itinerary, inclusions, available dates, optional experiences, accommodation, and pricing on Tourvaa." },
   "/tours/[id]/[slug]": { title: "Tour Details", description: "Review tour itinerary, inclusions, available dates, optional experiences, accommodation, and pricing on Tourvaa." },

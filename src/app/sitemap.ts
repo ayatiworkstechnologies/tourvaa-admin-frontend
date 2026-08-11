@@ -11,6 +11,7 @@ const pages: Array<{
   { path: "/destinations", changeFrequency: "weekly", priority: 0.8 },
   { path: "/blogs", changeFrequency: "weekly", priority: 0.8 },
   { path: "/about", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/travel-advice", changeFrequency: "monthly", priority: 0.7 },
   { path: "/contact", changeFrequency: "monthly", priority: 0.7 },
   { path: "/join/agent", changeFrequency: "monthly", priority: 0.6 },
   { path: "/join/supplier", changeFrequency: "monthly", priority: 0.6 },

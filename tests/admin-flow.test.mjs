@@ -50,7 +50,45 @@ check("private documents are opened from authenticated blobs", documentService.i
 
 const suppliers = read("src/app/admin/suppliers/[id]/page.tsx");
 const agents = read("src/app/admin/agents/[id]/page.tsx");
+const operationsService = read("src/lib/api/services/operationsService.ts");
+const nextConfig = read("next.config.ts");
+const countrySettings = read("src/app/admin/settings/countries/page.tsx");
+const geoHooks = read("src/hooks/useGeo.ts");
+const reviewList = read("src/components/operations/ReviewListPage.tsx");
+check(
+  "admin can create suppliers, agents, and affiliates through slash-safe proxy routes",
+  operationsService.includes('api.post<{ data: ReviewRecord }>(`/${module}/`, payload)') &&
+    nextConfig.includes('["suppliers", "agents", "affiliates"]') &&
+    nextConfig.includes('destination: `${apiProxyTarget}/api/${module}/`'),
+);
+check(
+  "add-city loads states from the modal country and normalizes an optional state",
+  countrySettings.includes("states: formStates") &&
+    countrySettings.includes("setFormCountryId(Number(nextForm.country_id) || null)") &&
+    countrySettings.includes("state_id: nextForm.state_id ? Number(nextForm.state_id) : null"),
+);
+check(
+  "city controls use city permissions and newly added states invalidate geo cache",
+  countrySettings.includes('hasPermission("cities.create")') &&
+    countrySettings.includes('hasPermission("cities.edit")') &&
+    countrySettings.includes("invalidateGeoStates(Number(form.country_id) || undefined)") &&
+    geoHooks.includes("export function invalidateGeoStates"),
+);
+check(
+  "admin supplier creation collects login details and displays a numeric id",
+  reviewList.includes('{ name: "supplier_name", label: "Supplier Name", required: true }') &&
+    reviewList.includes('{ name: "email", label: "Email", type: "email", required: true }') &&
+    reviewList.includes('{ name: "password", label: "Password", type: "password", required: true }') &&
+    reviewList.includes('render: (row) => row.id'),
+);
+check("supplier commission banner omits the misleading approve request action", !suppliers.includes("Approve request"));
 check("supplier document review uses private document service", suppliers.includes('openPrivateDocument("supplier"'));
+check(
+  "supplier document and vehicle filenames stay within their cards",
+  suppliers.includes('className="mt-1 break-all text-sm font-semibold text-dash-text"') &&
+    suppliers.includes('title={valueText(doc.document_name || doc.document_type)}') &&
+    suppliers.match(/className="min-w-0 rounded-xl border border-dash-border p-4"/g)?.length === 2,
+);
 check("agent document review uses private document service", agents.includes('openPrivateDocument("agent"'));
 check("admin can approve and reject individual agent documents", agents.includes("reviewAgentDocument") && agents.includes("Reject agent document"));
 

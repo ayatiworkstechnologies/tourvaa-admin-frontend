@@ -24,26 +24,15 @@ const PUBLIC_API_PATHS = [
   "/public",
 ];
 
-const PUBLIC_PAGE_PATHS = [
-  "/",
-  "/login",
-  "/admin/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/auth/verify-email",
-  "/account-status",
-  "/join",
-  "/destinations",
-  "/tours",
-  "/blogs",
-  "/about",
-  "/contact",
-  "/terms",
-  "/cookie-policy",
-  "/cancellation-policy",
-  "/accessibility",
-];
+// Portal route groups that genuinely require an active session. Everything
+// else (marketing pages, /tours, /wishlist, /compare, /booking, and any
+// future public page) is guest-accessible, so a 401 from the silent
+// session-restore check on mount must never force-redirect there - an
+// explicit allowlist of public pages goes stale the moment a new public
+// page is added (this is exactly what happened with /wishlist and /compare).
+const PROTECTED_PAGE_PREFIXES = ["/admin", "/customer", "/supplier", "/agent", "/affiliate"];
+// Auth entry points nested under an otherwise-protected prefix stay public.
+const PROTECTED_PREFIX_EXCEPTIONS = ["/admin/login"];
 
 function normalizeApiUrl(url?: string) {
   if (!url) return url;
@@ -75,7 +64,10 @@ function isPublicApiPath(url?: string) {
 }
 
 function isPublicPagePath(pathname: string) {
-  return PUBLIC_PAGE_PATHS.some((publicPath) => pathname === publicPath || pathname.startsWith(`${publicPath}/`));
+  if (PROTECTED_PREFIX_EXCEPTIONS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+    return true;
+  }
+  return !PROTECTED_PAGE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
 const api = axios.create({

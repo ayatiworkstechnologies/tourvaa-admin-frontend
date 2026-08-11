@@ -9,7 +9,7 @@ import ActionModal from "@/components/operations/ActionModal";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
-import { useGeoCountries, useGeoStates } from "@/hooks/useGeo";
+import { invalidateGeoStates, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import api from "@/lib/api/client";
 
 function singular(word: string): string {
@@ -26,6 +26,7 @@ type Field = {
   label: string;
   type?: "text" | "select";
   options?: { label: string; value: string | number }[];
+  required?: boolean;
 };
 
 type TabProps = {
@@ -36,9 +37,11 @@ type TabProps = {
   extraParams?: Record<string, string>;
   canCreate: boolean;
   canEdit: boolean;
+  onFormChange?: (form: Record<string, string | number>) => void;
+  preparePayload?: (form: Record<string, string | number>) => Record<string, string | number | null>;
 };
 
-function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, canEdit }: TabProps) {
+function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, canEdit, onFormChange, preparePayload }: TabProps) {
   const toast = useToast();
   const [rows, setRows] = useState<Row[]>([]);
   const [search, setSearch] = useState("");
@@ -69,6 +72,7 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
     const blank: Record<string, string | number> = {};
     fields.forEach((f) => { blank[f.name] = f.type === "select" ? (f.options?.[0]?.value ?? "") : ""; });
     setForm(blank);
+    onFormChange?.(blank);
     setEditing(null);
     setOpen(true);
   }
@@ -77,6 +81,7 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
     const vals: Record<string, string | number> = {};
     fields.forEach((f) => { vals[f.name] = (row[f.name] as string | number) ?? ""; });
     setForm(vals);
+    onFormChange?.(vals);
     setEditing(row);
     setOpen(true);
   }
@@ -84,13 +89,15 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
   async function handleSave() {
     setSaving(true);
     try {
+      const payload = preparePayload ? preparePayload(form) : form;
       if (editing) {
-        await api.put(`${endpoint}/${editing.id}`, form);
+        await api.put(`${endpoint}/${editing.id}`, payload);
         toast.success(`${singular(title)} updated`);
       } else {
-        await api.post(endpoint, form);
+        await api.post(endpoint, payload);
         toast.success(`${singular(title)} added`);
       }
+      if (endpoint === "/states") invalidateGeoStates(Number(form.country_id) || undefined);
       setOpen(false);
       await load();
     } catch {
@@ -178,8 +185,14 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
               {f.type === "select" ? (
                 <select
                   title={f.label}
+                  required={f.required}
                   value={String(form[f.name] ?? "")}
-                  onChange={(e) => setForm((p) => ({ ...p, [f.name]: e.target.value }))}
+                  onChange={(e) => {
+                    const next = { ...form, [f.name]: e.target.value };
+                    if (f.name === "country_id" && fields.some((field) => field.name === "state_id")) next.state_id = "";
+                    setForm(next);
+                    onFormChange?.(next);
+                  }}
                   className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand"
                 >
                   {f.options?.map((o) => (
@@ -189,6 +202,7 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
               ) : (
                 <input
                   title={f.label}
+                  required={f.required}
                   placeholder={f.label}
                   value={String(form[f.name] ?? "")}
                   onChange={(e) => setForm((p) => ({ ...p, [f.name]: e.target.value }))}
@@ -278,10 +292,12 @@ function CitiesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolea
   const { countries } = useGeoCountries();
   const [countryFilter, setCountryFilter] = useState<number | null>(null);
   const [stateFilter, setStateFilter] = useState<number | null>(null);
-  const { states } = useGeoStates(countryFilter);
+  const [formCountryId, setFormCountryId] = useState<number | null>(null);
+  const { states: filterStates } = useGeoStates(countryFilter);
+  const { states: formStates, loading: formStatesLoading } = useGeoStates(formCountryId);
 
   const countryOptions = countries.map((c) => ({ label: c.name, value: c.id }));
-  const stateOptions = states.map((s) => ({ label: s.name, value: s.id }));
+  const stateOptions = formStates.map((s) => ({ label: s.name, value: s.id }));
 
   const extraParams = useMemo(() => {
     const params: Record<string, string> = {};
@@ -310,7 +326,7 @@ function CitiesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolea
             className="rounded-xl border border-dash-border bg-white px-3 py-2 text-sm outline-none focus:border-dash-brand"
           >
             <option value="">All States</option>
-            {states.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            {filterStates.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         )}
       </div>
@@ -320,10 +336,16 @@ function CitiesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolea
         canCreate={canCreate}
         canEdit={canEdit}
         extraParams={extraParams}
+        onFormChange={(nextForm) => setFormCountryId(Number(nextForm.country_id) || null)}
+        preparePayload={(nextForm) => ({
+          ...nextForm,
+          country_id: Number(nextForm.country_id),
+          state_id: nextForm.state_id ? Number(nextForm.state_id) : null,
+        })}
         fields={[
-          { name: "country_id", label: "Country", type: "select", options: countryOptions },
-          { name: "state_id", label: "State / Province", type: "select", options: [{ label: "- None -", value: "" }, ...stateOptions] },
-          { name: "city_name", label: "City name" },
+          { name: "country_id", label: "Country", type: "select", options: countryOptions, required: true },
+          { name: "state_id", label: "State / Province", type: "select", options: [{ label: formStatesLoading ? "Loading states..." : "- None -", value: "" }, ...stateOptions] },
+          { name: "city_name", label: "City name", required: true },
         ]}
         columns={[
           { key: "country_name", header: "Country" },
@@ -352,8 +374,10 @@ function CountriesPageContent() {
     TABS.some((t) => t.key === initialTab) ? initialTab : "countries"
   );
 
-  const canCreate = hasPermission("countries.create");
-  const canEdit = hasPermission("countries.edit");
+  const canCreateCountries = hasPermission("countries.create");
+  const canEditCountries = hasPermission("countries.edit");
+  const canCreateCities = hasPermission("cities.create");
+  const canEditCities = hasPermission("cities.edit");
 
   return (
     <ModuleWrapper title="Countries, States & Cities" requiredPermission="countries.view">
@@ -378,9 +402,9 @@ function CountriesPageContent() {
         </div>
 
         {/* Tab content */}
-        {activeTab === "countries" && <CountriesTab canCreate={canCreate} canEdit={canEdit} />}
-        {activeTab === "states" && <StatesTab canCreate={canCreate} canEdit={canEdit} />}
-        {activeTab === "cities" && <CitiesTab canCreate={canCreate} canEdit={canEdit} />}
+        {activeTab === "countries" && <CountriesTab canCreate={canCreateCountries} canEdit={canEditCountries} />}
+        {activeTab === "states" && <StatesTab canCreate={canCreateCountries} canEdit={canEditCountries} />}
+        {activeTab === "cities" && <CitiesTab canCreate={canCreateCities} canEdit={canEditCities} />}
       </div>
     </ModuleWrapper>
   );

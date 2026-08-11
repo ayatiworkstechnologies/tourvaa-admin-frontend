@@ -21,6 +21,8 @@ function check(label, condition) {
 console.log("\n=== Customer Booking Flow ===\n");
 
 const search = read("src/components/public/HeroFilterBar.tsx");
+const homepage = read("src/app/(public)/page.tsx");
+check("homepage destination filter uses the active country API list", homepage.includes("setSearchCountries(countryResult.value)") && homepage.includes("countries={searchCountries}") && search.includes("countries.map((country)"));
 check("search preserves travel date", search.includes('params.set("travel_date"'));
 check("search preserves adult count", search.includes('params.set("adults"'));
 check("search preserves child count", search.includes('params.set("children"'));
@@ -30,6 +32,7 @@ check("tour links preserve booking query", detail.includes("bookingQuery"));
 check("login return path preserves booking context", detail.includes("encodeURIComponent(returnPath)"));
 check("tour CTA opens dedicated public booking flow", detail.includes('`/booking/${tour.id}'));
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
+check("tour operator displays the assigned supplier name", detailExperience.includes('tour.supplier_name || "Tourvaa Experiences"'));
 check("tour detail uses Book Now without cart actions", detailExperience.includes("Book Now") && !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
 
 // The booking form was moved off the tour detail page into a dedicated
@@ -77,14 +80,18 @@ const legacyWishlist = read("src/app/(public)/wishlist/page.tsx");
 const retiredCart = read("src/app/(public)/cart/page.tsx");
 check("public and customer headers no longer expose cart", !publicHeader.includes('href="/cart"') && !customerHeader.includes('href="/cart"'));
 check("wishlist books tours directly", wishlist.includes('href={`/booking/${item.id}`}') && !wishlist.includes("addToCart"));
-check("wishlist lives inside the customer portal", publicHeader.includes('href="/customer/wishlist"') && customerHeader.includes('href="/customer/wishlist"'));
-check("wishlist is loaded from the authenticated customer API", wishlistStore.includes('api.get<WishlistResponse>("/customer/wishlist")'));
-check("wishlist mutations persist to the customer API", wishlistStore.includes('api.post(`/customer/wishlist/${item.id}`)') && wishlistStore.includes('api.delete(`/customer/wishlist/${item.id}`)'));
-// The compare list (a separate feature from wishlist) intentionally still
-// uses localStorage - only the wishlist itself must be API-backed.
-check("wishlist mutation functions don't fall back to local storage", !wishlistStore.slice(wishlistStore.indexOf("const toggleWishlist")).includes("localStorage"));
-check("compare list still uses local storage (by design, unlike wishlist)", wishlistStore.includes("COMPARE_STORAGE_KEY") && wishlistStore.includes("window.localStorage"));
-check("legacy wishlist redirects into the customer portal", legacyWishlist.includes('redirect("/customer/wishlist")'));
+// The public nav links to the public /wishlist page (works for guests too);
+// the customer-portal header/sidebar link to /customer/wishlist for signed-in
+// customers browsing inside their portal - both render the same store.
+check("public header links to the public wishlist page", publicHeader.includes('href="/wishlist"'));
+check("customer portal header links to the portal wishlist page", customerHeader.includes('href="/customer/wishlist"'));
+check("wishlist is loaded from the authenticated user API when logged in", wishlistStore.includes('api.get<WishlistResponse>("/wishlist")'));
+check("wishlist mutations persist to the user API when logged in", wishlistStore.includes('api.post(`/wishlist/${item.id}`)') && wishlistStore.includes('api.delete(`/wishlist/${item.id}`)'));
+// Guests (not logged in, or not a customer) get a local-only wishlist instead
+// of being blocked - it's merged into the account on login.
+check("wishlist falls back to local storage for guests", wishlistStore.includes("WISHLIST_STORAGE_KEY") && wishlistStore.includes("readLocalWishlist") && wishlistStore.includes("writeLocalWishlist"));
+check("compare list still uses local storage (by design, unlike wishlist for logged-in users)", wishlistStore.includes("COMPARE_STORAGE_KEY") && wishlistStore.includes("window.localStorage"));
+check("public wishlist page renders the store directly instead of redirecting", legacyWishlist.includes("useTravelStore") && !legacyWishlist.includes("redirect("));
 check("retired cart route redirects to tours", retiredCart.includes('redirect("/tours")'));
 
 const login = read("src/app/(public)/login/page.tsx");

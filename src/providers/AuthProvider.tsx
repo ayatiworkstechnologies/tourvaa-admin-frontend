@@ -33,20 +33,14 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const publicRoutes = [
-  "/login",
-  "/supplier-portal",
-  "/agent-portal",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/auth/verify-email",
-  "/account-status",
-  "/admin/login",
-];
-
-// Role-based portal paths are self-guarded -- exclude from global redirect
-const portalPaths = ["/customer", "/agent", "/supplier", "/affiliate"];
+// /customer, /agent, /supplier, and /affiliate are self-guarded by their own
+// layout.tsx (each redirects to /login itself when unauthenticated), and
+// every other route is genuinely public (marketing pages, /tours, /wishlist,
+// /compare, /booking, and any future public page) - only /admin/* has no
+// layout-level guard of its own, so it's the one prefix this global redirect
+// still needs to protect. An explicit allowlist of "public" paths goes stale
+// the moment a new public page is added (this is exactly what happened with
+// /wishlist and /compare).
 
 // Dev/QA-only tool for capturing documentation screenshots without a real
 // login. Must never be reachable in a production bundle: process.env.NODE_ENV
@@ -89,22 +83,8 @@ const docsCaptureDashboard = {
 } as DashboardData;
 
 function isPublicRoute(pathname: string) {
-  return (
-    pathname === "/" ||
-    pathname.startsWith("/destinations") ||
-    pathname.startsWith("/tours") ||
-    pathname.startsWith("/booking") ||
-    pathname.startsWith("/blogs") ||
-    pathname.startsWith("/about") ||
-    pathname.startsWith("/contact") ||
-    pathname.startsWith("/join") ||
-    pathname.startsWith("/terms") ||
-    pathname.startsWith("/cookie-policy") ||
-    pathname.startsWith("/cancellation-policy") ||
-    pathname.startsWith("/accessibility") ||
-    portalPaths.some((p) => pathname.startsWith(p)) ||
-    publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))
-  );
+  if (pathname === "/admin/login" || pathname.startsWith("/admin/login/")) return true;
+  return !pathname.startsWith("/admin");
 }
 
 function permissionAliases(permission: string) {

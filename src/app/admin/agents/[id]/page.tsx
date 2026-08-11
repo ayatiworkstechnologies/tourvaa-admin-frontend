@@ -13,7 +13,7 @@ import LocationEditModal from "@/components/common/LocationEditModal";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import StatusBadge from "@/components/operations/StatusBadge";
-import { approveReviewRecord, getReviewRecord, partialApproveReviewRecord, rejectReviewRecord, reviewAgentDocument, ReviewRecord, updateCommercialValue, updateReviewRecord } from "@/lib/api/services/operationsService";
+import { approveReviewRecord, getReviewRecord, partialApproveReviewRecord, rejectAgentCommissionRequest, rejectReviewRecord, reviewAgentDocument, ReviewRecord, updateCommercialValue, updateReviewRecord } from "@/lib/api/services/operationsService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
@@ -241,7 +241,10 @@ export default function AgentDetailPage() {
                 <p className="mt-1 text-lg font-black text-dash-text">{record.commission_request_type}: {record.commission_request_value ?? 0}</p>
                 <p className="mt-1 text-xs text-dash-muted">Submitted from the agent dashboard for administration approval.</p>
               </div>
-              {canCommercial && <button type="button" disabled={saving} onClick={() => void run(() => updateCommercialValue("agents", id, { discount_type: String(record.commission_request_type || "percentage"), discount_value: Number(record.commission_request_value || 0) }), "Commission request approved.")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Check size={16} />Approve request</button>}
+              <div className="flex gap-2">
+                {canCommercial && <button type="button" disabled={saving} onClick={() => void run(() => rejectAgentCommissionRequest(id), "Commission request rejected.")} className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-5 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50"><X size={16} />Reject request</button>}
+                {canCommercial && <button type="button" disabled={saving} onClick={() => void run(() => updateCommercialValue("agents", id, { discount_type: String(record.commission_request_type || "percentage"), discount_value: Number(record.commission_request_value || 0) }), "Commission request approved.")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Check size={16} />Approve request</button>}
+              </div>
             </div>
           )}
 

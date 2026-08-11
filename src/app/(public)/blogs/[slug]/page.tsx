@@ -77,11 +77,12 @@ function renderBody(text: string) {
   return <p key={text} className="leading-relaxed text-zinc-600">{text}</p>;
 }
 
-export default function BlogDetailPage({ params }: { params: { slug: string } }) {
-  const post = posts[params.slug] || fallback;
+export default async function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = posts[slug] || fallback;
 
   const related = Object.entries(posts)
-    .filter(([s]) => s !== params.slug)
+    .filter(([relatedSlug]) => relatedSlug !== slug)
     .slice(0, 2);
 
   return (

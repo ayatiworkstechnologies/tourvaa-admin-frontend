@@ -8,6 +8,7 @@ export default publicApi;
 export type PublicTour = {
   id: number;
   tour_code: string;
+  supplier_name: string;
   title: string;
   slug: string;
   subtitle: string;

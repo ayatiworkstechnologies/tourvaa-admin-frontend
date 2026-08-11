@@ -214,7 +214,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           ),
         } as DataTableColumn<ReviewRecord>]
       : []),
-    { key: "code", header: "ID", className: "w-24", render: (row) => row.supplier_code || row.code || row.id },
+    { key: "code", header: "ID", className: "w-24", render: (row) => row.id },
     {
       key: "name",
       header: "Supplier",
@@ -418,10 +418,14 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         submitLabel="Create"
         onClose={() => setOpen(false)}
         onSubmit={create}
-        fields={[
-          { name: fields.name, label: "Name" },
+        fields={module === "suppliers" ? [
+          { name: "supplier_name", label: "Supplier Name", required: true },
+          { name: "email", label: "Email", type: "email", required: true },
+          { name: "password", label: "Password", type: "password", required: true },
+        ] : [
+          { name: fields.name, label: "Name", required: true },
           { name: fields.type, label: "Type" },
-          ...(module === "affiliates" ? [{ name: "email", label: "Email" }, { name: "phone", label: "Phone" }] : []),
+          ...(module === "affiliates" ? [{ name: "email", label: "Email", type: "email" as const, required: true }, { name: "phone", label: "Phone" }] : []),
         ]}
       />
     </ModuleWrapper>

@@ -28,6 +28,11 @@ let _countriesCache: GeoCountry[] | null = null;
 const _statesCache = new Map<number, GeoState[]>();
 const _citiesCache = new Map<string, GeoCity[]>();
 
+export function invalidateGeoStates(countryId?: number) {
+  if (countryId) _statesCache.delete(countryId);
+  else _statesCache.clear();
+}
+
 function responseItems<T>(payload: { data?: T[]; items?: T[] }) {
   return payload.items ?? payload.data ?? [];
 }

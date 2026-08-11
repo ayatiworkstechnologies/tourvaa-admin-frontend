@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { LuCompass as Compass, LuFacebook as Facebook, LuGlobe as Globe, LuInstagram as Instagram, LuLinkedin as Linkedin, LuMapPin as MapPin, LuYoutube as Youtube } from "react-icons/lu";
 import CurrencySelector from "@/components/public/CurrencySelector";
@@ -25,6 +26,9 @@ const loginLinks = [
   ["Become a Supplier", "/supplier-portal"],
   ["Become an Agent", "/agent-portal"],
 ] as const;
+const aboutSupportLinks = [["Contact", "/contact"], ["Legal Notice", "/terms"], ["Privacy Policy", "/privacy-policy"], ["General Terms and Conditions", "/terms"], ["Plan Your Trip", "/tours"]] as const;
+const aboutCompanyLinks = [["About us", "/about"], ["Blog", "/blogs"], ["Explore Tourvaa", "/destinations"], ["Tours", "/tours"], ["Traveller’s Choice", "/tours"]] as const;
+const aboutLoginLinks = [["Travellers Login", "/login?role=traveller"], ["Agents login", "/agent-portal/login"]] as const;
 
 function isSocialLink(link: CmsExternalLink) {
   return /facebook|instagram|linkedin|youtube|twitter|whatsapp|\bx\b/i.test(`${link.label} ${link.url}`);
@@ -119,6 +123,8 @@ function DestinationsMegaPanel() {
 }
 
 export default function PublicFooter() {
+  const pathname = usePathname();
+  const isEditorialPage = pathname === "/" || pathname === "/about" || pathname === "/travel-advice" || pathname === "/contact";
   const [externalLinks, setExternalLinks] = useState<CmsExternalLink[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [country, setCountry] = useState("INDIA");
@@ -142,12 +148,12 @@ export default function PublicFooter() {
 
   return (
     <>
-      <DestinationsMegaPanel />
+      {!isEditorialPage && <DestinationsMegaPanel />}
       <footer className="bg-[#f5f5f5] text-slate-700">
         <div className="mx-auto grid max-w-[1380px] gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.3fr] lg:px-12">
-          <FooterGroup title="Support" links={supportLinks} />
-          <FooterGroup title="Our Company" links={companyLinks} />
-          <FooterGroup title="Login" links={loginLinks} />
+          <FooterGroup title="Support" links={isEditorialPage ? aboutSupportLinks : supportLinks} />
+          <FooterGroup title="Our Company" links={isEditorialPage ? aboutCompanyLinks : companyLinks} />
+          <FooterGroup title="Login" links={isEditorialPage ? aboutLoginLinks : loginLinks} />
           <div>
             <Link href="/" className="text-lg font-black text-[#1478f2]">{siteName}</Link>
             <p className="mt-2 max-w-xs text-xs leading-relaxed text-slate-500">{tagline}</p>
@@ -165,7 +171,10 @@ export default function PublicFooter() {
         </div>
 
         <div className="border-t border-slate-200 px-5 py-6">
-          <p className="text-center text-[9px] text-slate-500">© {new Date().getFullYear()} Tourvaa Private Limited. All rights reserved.</p>
+          <p className="text-center text-[9px] text-slate-500">
+            Copyright © {new Date().getFullYear()} by Tourvaa Private Limited - All Right Reserved
+            {isEditorialPage ? " | Design & Developed by Ayatiworks" : ""}
+          </p>
         </div>
       </footer>
     </>

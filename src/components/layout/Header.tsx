@@ -87,7 +87,9 @@ export default function Header({
 
   return (
     <header className={`sticky z-30 border-b border-[#E8ECF3] bg-white/95 shadow-[0_1px_6px_-1px_rgba(15,23,42,0.06)] backdrop-blur-xl ${headerOffset ? "top-20" : "top-0"}`}>
-      <div className={`flex min-w-0 items-center justify-between gap-2 px-3 sm:px-6 md:px-9 ${spacious ? "h-20" : "h-[70px]"}`}>
+      {/* Keep the same right-side lane as PublicHeader for the fixed Elfsight
+          language widget, which renders directly under <body>. */}
+      <div className={`flex min-w-0 items-center justify-between gap-2 py-0 pl-3 pr-36 sm:pl-6 sm:pr-36 md:pl-9 lg:pr-40 ${spacious ? "h-20" : "h-[70px]"}`}>
 
         {/* left */}
         <div className="flex min-w-0 items-center gap-3">

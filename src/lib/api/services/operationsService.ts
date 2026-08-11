@@ -141,6 +141,11 @@ export async function rejectSupplierCommissionRequest(id: string | number) {
   return response.data.data;
 }
 
+export async function rejectAgentCommissionRequest(id: string | number) {
+  const response = await api.post<{ data: ReviewRecord }>(`/agents/${id}/commission-request/reject`);
+  return response.data.data;
+}
+
 export async function updateCommercialValue(module: "suppliers" | "agents", id: string | number, payload: Record<string, unknown>) {
   const path = module === "suppliers" ? "markup" : "discount";
   const response = await api.patch<{ data: ReviewRecord }>(`/${module}/${id}/${path}`, payload);

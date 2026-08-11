@@ -17,6 +17,24 @@ export type TravelItem = {
 
 export const MAX_COMPARE_ITEMS = 4;
 const COMPARE_STORAGE_KEY = "tourvaa_compare";
+const WISHLIST_STORAGE_KEY = "tourvaa_wishlist";
+
+function readLocalWishlist(): TravelItem[] {
+  try {
+    const raw = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalWishlist(items: TravelItem[]) {
+  try {
+    window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(items));
+  } catch {
+    // ignore write failures (private browsing, quota, etc.)
+  }
+}
 
 type TravelStore = {
   hydrated: boolean;
@@ -44,7 +62,7 @@ export function TravelStoreProvider({ children }: { children: React.ReactNode })
   const [wishlist, setWishlist] = useState<TravelItem[]>([]);
   const [compareList, setCompareList] = useState<TravelItem[]>([]);
   const roleSlug = user?.role?.slug ?? "";
-  const canUseWishlist = isLoggedIn && roleSlug === "customer";
+  const canUseRemoteWishlist = isLoggedIn && ["customer", "agent", "agent-reseller"].includes(roleSlug);
 
   useEffect(() => {
     try {
@@ -82,18 +100,28 @@ export function TravelStoreProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (authLoading) return;
 
-    if (!canUseWishlist) {
-      setWishlist([]);
+    if (!canUseRemoteWishlist) {
+      setWishlist(readLocalWishlist());
       setHydrated(true);
       return;
     }
 
     let active = true;
     setHydrated(false);
-    api.get<WishlistResponse>("/customer/wishlist")
+
+    // A guest wishlist may have been built up before logging in - merge it
+    // into the account once, then it's the server copy from here on.
+    const local = readLocalWishlist();
+    const merge = local.length
+      ? Promise.all(local.map((item) => api.post(`/wishlist/${item.id}`).catch(() => null)))
+      : Promise.resolve(null);
+
+    merge
+      .then(() => api.get<WishlistResponse>("/wishlist"))
       .then((response) => {
         if (!active) return;
         setWishlist(response.data.items ?? response.data.data ?? []);
+        writeLocalWishlist([]);
       })
       .catch(() => {
         if (active) setWishlist([]);
@@ -105,12 +133,16 @@ export function TravelStoreProvider({ children }: { children: React.ReactNode })
     return () => {
       active = false;
     };
-  }, [authLoading, canUseWishlist, user?.id]);
+  }, [authLoading, canUseRemoteWishlist, user?.id]);
 
   const toggleWishlist = useCallback((item: TravelItem) => {
-    if (!canUseWishlist) {
-      const returnPath = `${window.location.pathname}${window.location.search}`;
-      window.location.assign(`/login?role=traveller&redirect=${encodeURIComponent(returnPath)}`);
+    if (!canUseRemoteWishlist) {
+      const wasSaved = wishlist.some((saved) => saved.id === item.id);
+      const next = wasSaved
+        ? wishlist.filter((saved) => saved.id !== item.id)
+        : [item, ...wishlist.filter((saved) => saved.id !== item.id)];
+      setWishlist(next);
+      writeLocalWishlist(next);
       return;
     }
 
@@ -122,8 +154,8 @@ export function TravelStoreProvider({ children }: { children: React.ReactNode })
     ));
 
     const request = wasSaved
-      ? api.delete(`/customer/wishlist/${item.id}`)
-      : api.post(`/customer/wishlist/${item.id}`);
+      ? api.delete(`/wishlist/${item.id}`)
+      : api.post(`/wishlist/${item.id}`);
 
     void request.catch(() => {
       setWishlist((current) => (
@@ -132,7 +164,7 @@ export function TravelStoreProvider({ children }: { children: React.ReactNode })
           : current.filter((saved) => saved.id !== item.id)
       ));
     });
-  }, [canUseWishlist, wishlist]);
+  }, [canUseRemoteWishlist, wishlist]);
 
   const value = useMemo<TravelStore>(() => ({
     hydrated,

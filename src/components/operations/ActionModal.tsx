@@ -4,7 +4,7 @@ import { LuX as X } from "react-icons/lu";
 type Field = {
   name: string;
   label: string;
-  type?: "text" | "number" | "textarea" | "select";
+  type?: "text" | "password" | "email" | "number" | "textarea" | "select";
   options?: { label: string; value: string }[];
   required?: boolean;
 };

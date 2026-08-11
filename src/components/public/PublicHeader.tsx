@@ -26,6 +26,7 @@ const mobileLinks = [
   ["Destinations", "/destinations"],
   ["Tour Packages", "/tours"],
   ["Deals", "/tours?sort=price_asc"],
+  ["Travel Advice", "/travel-advice"],
   ["About Tourvaa", "/about"],
 ] as const;
 
@@ -90,7 +91,7 @@ export default function PublicHeader() {
         </Link>
         <nav className="hidden items-center gap-4 lg:flex lg:gap-6">
           <Link
-            href="/customer/wishlist"
+            href="/wishlist"
             className="group relative flex flex-col items-center gap-1 text-[9px] font-semibold"
           >
             <Heart
@@ -179,7 +180,7 @@ export default function PublicHeader() {
             ))}
           </div>
           <Link
-            href="/customer/wishlist"
+            href="/wishlist"
             onClick={() => setOpen(false)}
             className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-blue-50 px-3 py-3 text-xs font-bold text-blue-700"
           >

@@ -33,7 +33,25 @@ function durationToRange(value: string): { min?: string; max?: string } {
   }
 }
 
-export default function HeroFilterBar({ onPanelOpenChange }: { onPanelOpenChange?: (isOpen: boolean) => void }) {
+type DestinationCountry = {
+  country_name: string;
+  country_code: string;
+};
+
+const FALLBACK_COUNTRIES: DestinationCountry[] = [
+  { country_name: "India", country_code: "IN" },
+  { country_name: "United Kingdom", country_code: "GB" },
+  { country_name: "United Arab Emirates", country_code: "AE" },
+  { country_name: "Türkiye", country_code: "TR" },
+];
+
+function countryFlag(countryCode: string) {
+  const code = countryCode.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return "🌍";
+  return String.fromCodePoint(...Array.from(code).map((letter) => 127397 + letter.charCodeAt(0)));
+}
+
+export default function HeroFilterBar({ countries = [], onPanelOpenChange }: { countries?: DestinationCountry[]; onPanelOpenChange?: (isOpen: boolean) => void }) {
   const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<"destination" | "date" | "duration" | "passengers" | null>(null);
@@ -85,7 +103,7 @@ export default function HeroFilterBar({ onPanelOpenChange }: { onPanelOpenChange
           <button type="button" onClick={() => setOpen(open === "destination" ? null : "destination")} className={fieldClass("destination")} aria-expanded={open === "destination"}>
             <MapPin size={17} className="shrink-0 text-blue-600" /><span className="min-w-0 flex-1"><b className="block text-[10px] text-blue-600">Destination</b><span className="block truncate text-xs text-slate-500">{destination}</span></span><ChevronDown size={12} className="text-slate-300" />
           </button>
-          {open === "destination" && <DestinationPanel selected={destination} onSelect={(value) => { setDestination(value); setOpen(null); }} />}
+          {open === "destination" && <DestinationPanel countries={countries.length ? countries : FALLBACK_COUNTRIES} selected={destination} onSelect={(value) => { setDestination(value); setOpen(null); }} />}
         </div>
 
         <div className="relative border-b border-slate-200 md:border-b-0 md:border-r">
@@ -117,9 +135,8 @@ export default function HeroFilterBar({ onPanelOpenChange }: { onPanelOpenChange
 
 const panelClass = "hero-filter-panel absolute left-0 top-[calc(100%+10px)] z-50 w-full min-w-64 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-[0_18px_45px_rgba(15,23,42,.28)] md:left-0";
 
-function DestinationPanel({ selected, onSelect }: { selected: string; onSelect: (value: string) => void }) {
-  const countries = [["🇮🇳", "India"], ["🇬🇧", "United Kingdom"], ["🇦🇪", "UAE"], ["🇹🇷", "Türkiye"]];
-  return <div className={panelClass}><p className="rounded-md bg-slate-50 px-3 py-2 text-center text-[10px] font-semibold text-blue-600">Other popular destinations</p><div className="mt-2 space-y-1">{countries.map(([flag, name]) => <button key={name} type="button" onClick={() => onSelect(name)} className={`flex w-full items-center gap-3 rounded-md border px-3 py-2 text-[11px] font-semibold transition ${selected === name ? "border-blue-400 bg-blue-50" : "border-transparent hover:bg-slate-50"}`}><span className="text-base">{flag}</span>{name}</button>)}</div></div>;
+function DestinationPanel({ countries, selected, onSelect }: { countries: DestinationCountry[]; selected: string; onSelect: (value: string) => void }) {
+  return <div className={panelClass}><p className="rounded-md bg-slate-50 px-3 py-2 text-center text-[10px] font-semibold text-blue-600">Available destinations</p><div className="mt-2 max-h-72 space-y-1 overflow-y-auto overscroll-contain pr-1">{countries.map((country) => <button key={country.country_code || country.country_name} type="button" onClick={() => onSelect(country.country_name)} className={`flex w-full items-center gap-3 rounded-md border px-3 py-2 text-[11px] font-semibold transition ${selected === country.country_name ? "border-blue-400 bg-blue-50" : "border-transparent hover:bg-slate-50"}`}><span className="text-base" aria-hidden="true">{countryFlag(country.country_code)}</span>{country.country_name}</button>)}</div></div>;
 }
 
 function monthMeta(monthsAhead: number) {

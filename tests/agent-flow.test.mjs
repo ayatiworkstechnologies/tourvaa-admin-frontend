@@ -28,6 +28,9 @@ check("catalogue uses published tour API", tours.includes('api.get("/public/tour
 check("catalogue does not fall back to private inventory", !tours.includes('api.get("/tours"'));
 check("catalogue uses backend price and image fields", tours.includes("price_start_per_person") && tours.includes("banner_image"));
 check("catalogue exposes retryable API failures", tours.includes("Tours could not be loaded") && tours.includes("Retry"));
+check("catalogue search submits the current form value and always refreshes", tours.includes('new FormData(form).get("search")') && tours.includes("setQuery(submittedSearch)") && tours.includes("setRetryKey((value) => value + 1)"));
+const wishlistStore = read("src/providers/TravelStoreProvider.tsx");
+check("agents can persist favorite tours to their wishlist", wishlistStore.includes('"agent-reseller"') && wishlistStore.includes('api.post(`/wishlist/${item.id}`)') && wishlistStore.includes('api.get<WishlistResponse>("/wishlist")'));
 
 const create = read("src/app/agent/bookings/create/page.tsx");
 const publicBooking = read("src/app/(public)/booking/[id]/page.tsx");

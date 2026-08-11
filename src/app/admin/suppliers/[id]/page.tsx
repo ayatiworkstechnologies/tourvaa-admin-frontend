@@ -60,9 +60,9 @@ function InfoGrid({ rows }: { rows: [string, DetailValue][] }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {rows.map(([label, value]) => (
-        <div key={label} className="rounded-lg bg-dash-bg p-4">
+        <div key={label} className="min-w-0 rounded-lg bg-dash-bg p-4">
           <p className="text-xs font-bold uppercase text-dash-subtle">{label}</p>
-          <div className="mt-1 text-sm font-semibold text-dash-text">
+          <div className="mt-1 break-all text-sm font-semibold text-dash-text">
             {label.toLowerCase().includes("status") || label.toLowerCase() === "approval" ? (
               <StatusBadge value={String(value || "")} />
             ) : (
@@ -292,7 +292,6 @@ export default function SupplierDetailPage() {
               </div>
               {canCommercial && (
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" disabled={saving} onClick={() => void run(() => updateCommercialValue("suppliers", id, { markup_type: String(record.commission_request_type || "percentage"), markup_value: Number(record.commission_request_value || 0) }), "Commission request approved.")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Check size={16} />Approve request</button>
                   <button type="button" disabled={saving} onClick={() => void run(() => rejectSupplierCommissionRequest(id), "Commission request rejected.")} className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-5 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50"><X size={16} />Reject request</button>
                 </div>
               )}
@@ -416,13 +415,20 @@ export default function SupplierDetailPage() {
                 ) : (
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {documents.map((doc, index) => (
-                      <div key={doc.id ?? index} className="rounded-xl border border-dash-border p-4">
+                      <div key={doc.id ?? index} className="min-w-0 rounded-xl border border-dash-border p-4">
                         <div className="mb-3 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <FileText size={16} className="text-dash-brand" />
-                            <p className="text-sm font-bold text-dash-text">{valueText(doc.document_name || doc.document_type)}</p>
+                          <div className="flex min-w-0 flex-1 items-center gap-2">
+                            <FileText size={16} className="shrink-0 text-dash-brand" />
+                            <p
+                              className="min-w-0 truncate text-sm font-bold text-dash-text"
+                              title={valueText(doc.document_name || doc.document_type)}
+                            >
+                              {valueText(doc.document_name || doc.document_type)}
+                            </p>
                           </div>
-                          <StatusBadge value={String(doc.status || "pending")} />
+                          <div className="shrink-0">
+                            <StatusBadge value={String(doc.status || "pending")} />
+                          </div>
                         </div>
                         <InfoGrid rows={[
                           ["Type", doc.document_type],
@@ -466,13 +472,20 @@ export default function SupplierDetailPage() {
                 ) : (
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {vehicles.map((vehicle, index) => (
-                      <div key={vehicle.id ?? index} className="rounded-xl border border-dash-border p-4">
+                      <div key={vehicle.id ?? index} className="min-w-0 rounded-xl border border-dash-border p-4">
                         <div className="mb-3 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <Truck size={16} className="text-dash-brand" />
-                            <p className="text-sm font-bold text-dash-text">{[vehicle.make, vehicle.model].filter(Boolean).join(" ") || `Vehicle ${index + 1}`}</p>
+                          <div className="flex min-w-0 flex-1 items-center gap-2">
+                            <Truck size={16} className="shrink-0 text-dash-brand" />
+                            <p
+                              className="min-w-0 truncate text-sm font-bold text-dash-text"
+                              title={[vehicle.make, vehicle.model].filter(Boolean).join(" ") || `Vehicle ${index + 1}`}
+                            >
+                              {[vehicle.make, vehicle.model].filter(Boolean).join(" ") || `Vehicle ${index + 1}`}
+                            </p>
                           </div>
-                          <StatusBadge value={String(vehicle.approval_status || "pending")} />
+                          <div className="shrink-0">
+                            <StatusBadge value={String(vehicle.approval_status || "pending")} />
+                          </div>
                         </div>
                         <InfoGrid rows={[
                           ["Year", vehicle.year],

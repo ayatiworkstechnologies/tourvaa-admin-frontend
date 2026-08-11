@@ -112,6 +112,19 @@ const nextConfig: NextConfig = {
         source: "/api/email-templates/",
         destination: `${apiProxyTarget}/api/email-templates/`,
       },
+      // Keep collection-create requests on the backend's slash-terminated
+      // routes. The generic wildcard rewrite can drop the final slash,
+      // which turns these POST requests into 405 responses.
+      ...["suppliers", "agents", "affiliates"].flatMap((module) => [
+        {
+          source: `/api/${module}`,
+          destination: `${apiProxyTarget}/api/${module}/`,
+        },
+        {
+          source: `/api/${module}/`,
+          destination: `${apiProxyTarget}/api/${module}/`,
+        },
+      ]),
       {
         source: "/api/public/:path*",
         destination: `${apiProxyTarget}/api/public/:path*`,
