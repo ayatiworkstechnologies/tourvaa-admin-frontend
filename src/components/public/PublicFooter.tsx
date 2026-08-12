@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LuFacebook as Facebook, LuInstagram as Instagram, LuLinkedin as Linkedin, LuYoutube as Youtube } from "react-icons/lu";
 import CurrencySelector from "@/components/public/CurrencySelector";
 import DestinationsMegaPanel from "@/components/public/DestinationsMegaPanel";
-import { CmsExternalLink, fetchFooterLinks } from "@/lib/api/publicClient";
+import { CmsExternalLink, PublicCountry, fetchFooterLinks, fetchPublicCountries } from "@/lib/api/publicClient";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 
 const supportLinks = [
@@ -48,6 +48,7 @@ export default function PublicFooter() {
   const pathname = usePathname();
   const { settings } = usePublicSettings();
   const [externalLinks, setExternalLinks] = useState<CmsExternalLink[]>([]);
+  const [countries, setCountries] = useState<PublicCountry[]>([]);
   const [country, setCountry] = useState("INDIA");
 
   useEffect(() => {
@@ -55,6 +56,9 @@ export default function PublicFooter() {
     fetchFooterLinks()
       .then((links) => { if (active) setExternalLinks(links); })
       .catch(() => { /* Static footer links remain available. */ });
+    fetchPublicCountries()
+      .then((items) => { if (active) setCountries(items); })
+      .catch(() => { /* Fixed fallback list remains available. */ });
     return () => { active = false; };
   }, []);
 
@@ -63,6 +67,12 @@ export default function PublicFooter() {
   }, [settings]);
 
   const socialLinks = useMemo(() => externalLinks.filter(isSocialLink), [externalLinks]);
+  const countryOptions = useMemo(() => {
+    const names = countries.length
+      ? countries.map((item) => item.country_name.toUpperCase())
+      : ["INDIA", "UAE", "UNITED KINGDOM", "USA"];
+    return [country, ...names].filter((item, index, array) => array.indexOf(item) === index);
+  }, [countries, country]);
   const siteName = settings.site_name || settings.app_name || "Tourvaa";
   const tagline = settings.site_tagline || settings.footer_description || "Explore more, travel better, and create memories with Tourvaa.";
 
@@ -81,7 +91,7 @@ export default function PublicFooter() {
             <CurrencySelector />
             <label className="sr-only" htmlFor="footer-country">Country</label>
             <select id="footer-country" value={country} onChange={(event) => setCountry(event.target.value)} className="rounded border border-slate-300 bg-white px-4 py-2 text-xs font-semibold outline-none focus:border-blue-500">
-              {[country, "INDIA", "UAE", "UNITED KINGDOM", "USA"].filter((item, index, array) => array.indexOf(item) === index).map((item) => <option key={item}>{item}</option>)}
+              {countryOptions.map((item) => <option key={item}>{item}</option>)}
             </select>
           </div>
           <div className="mt-5 flex items-center gap-4">
@@ -90,8 +100,9 @@ export default function PublicFooter() {
         </div>
       </div>
 
-      <div className="border-t border-slate-200 px-5 py-6">
-        <p className="text-center text-[9px] text-slate-500">Copyright © {new Date().getFullYear()} by Tourvaa Private Limited - All Right Reserved</p>
+      <div className="mx-auto flex max-w-[1380px] flex-col items-center justify-between gap-2 border-t border-slate-200 px-5 py-6 sm:flex-row sm:gap-4 lg:px-12">
+        <p className="text-center text-[9px] text-slate-500 sm:text-left">Copyright © {new Date().getFullYear()} by Tourvaa Private Limited - All Right Reserved</p>
+        <p className="text-center text-[9px] text-slate-400 sm:text-right">Design and Developed by Ayatiworks</p>
       </div>
     </footer>
     </>
