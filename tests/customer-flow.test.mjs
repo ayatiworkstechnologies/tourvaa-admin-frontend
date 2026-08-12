@@ -74,11 +74,13 @@ check("dashboard request links apply the bookings tab filter", customerBookings.
 
 const publicHeader = read("src/components/public/PublicHeader.tsx");
 const customerHeader = read("src/components/customer/CustomerPortalHeader.tsx");
+const customerLayout = read("src/app/customer/layout.tsx");
 const wishlist = read("src/app/customer/wishlist/page.tsx");
 const wishlistStore = read("src/providers/TravelStoreProvider.tsx");
 const legacyWishlist = read("src/app/(public)/wishlist/page.tsx");
 const retiredCart = read("src/app/(public)/cart/page.tsx");
 check("public and customer headers no longer expose cart", !publicHeader.includes('href="/cart"') && !customerHeader.includes('href="/cart"'));
+check("customer footer receives public settings context", customerLayout.includes("<PublicSettingsProvider>") && customerLayout.includes("<PublicFooter />"));
 check("wishlist books tours directly", wishlist.includes('href={`/booking/${item.id}`}') && !wishlist.includes("addToCart"));
 // The public nav links to the public /wishlist page (works for guests too);
 // the customer-portal header/sidebar link to /customer/wishlist for signed-in
@@ -92,7 +94,7 @@ check("wishlist mutations persist to the user API when logged in", wishlistStore
 check("wishlist falls back to local storage for guests", wishlistStore.includes("WISHLIST_STORAGE_KEY") && wishlistStore.includes("readLocalWishlist") && wishlistStore.includes("writeLocalWishlist"));
 check("compare list still uses local storage (by design, unlike wishlist for logged-in users)", wishlistStore.includes("COMPARE_STORAGE_KEY") && wishlistStore.includes("window.localStorage"));
 check("public wishlist page renders the store directly instead of redirecting", legacyWishlist.includes("useTravelStore") && !legacyWishlist.includes("redirect("));
-check("retired cart route redirects to tours", retiredCart.includes('redirect("/tours")'));
+check("retired cart route permanently redirects to tours", retiredCart.includes('permanentRedirect("/tours")'));
 
 const login = read("src/app/(public)/login/page.tsx");
 const register = read("src/app/(public)/register/page.tsx");

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { LuX as X } from "react-icons/lu";
+import { LuPlus as Plus } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
-import { Invoice, getInvoices, downloadInvoicePdf, emailInvoice, regenerateInvoicePdf } from "@/lib/api/services/invoiceService";
+import { Invoice, getInvoices, downloadInvoicePdf, emailInvoice, generateInvoice, invoiceActionError, regenerateInvoicePdf } from "@/lib/api/services/invoiceService";
 import { useToast } from "@/hooks/useToast";
 import { useCurrency } from "@/hooks/useCurrency";
 
@@ -21,6 +23,60 @@ export default function InvoicesPage() {
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
   const [emailingId, setEmailingId] = useState<number | null>(null);
+  const [generateOpen, setGenerateOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [genBookingId, setGenBookingId] = useState("");
+  const [genPaymentId, setGenPaymentId] = useState("");
+  const [genInvoiceType, setGenInvoiceType] = useState("auto");
+  const [genGstRate, setGenGstRate] = useState("0.18");
+  const [generateError, setGenerateError] = useState("");
+
+  const refresh = async (page = currentPage) => {
+    setIsLoading(true);
+    try {
+      const invoiceResponse = await getInvoices({ page, limit: PAGE_SIZE });
+      setInvoices(invoiceResponse.items || []);
+      setTotalInvoices(invoiceResponse.total || 0);
+      setTotalPages(invoiceResponse.total_pages || 1);
+      setErrorMessage("");
+    } catch {
+      setErrorMessage("Could not load invoices.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  async function handleGenerate(event: React.FormEvent) {
+    event.preventDefault();
+    const bookingId = Number(genBookingId);
+    if (!Number.isInteger(bookingId) || bookingId <= 0) {
+      setGenerateError("Enter a valid booking ID.");
+      return;
+    }
+    setGenerating(true);
+    setGenerateError("");
+    try {
+      await generateInvoice({
+        booking_id: bookingId,
+        payment_id: genPaymentId ? Number(genPaymentId) : undefined,
+        invoice_type: genInvoiceType,
+        gst_rate: Number(genGstRate) || 0,
+      });
+      toast.success("Invoice generated.");
+      setGenerateOpen(false);
+      setGenBookingId("");
+      setGenPaymentId("");
+      setGenInvoiceType("auto");
+      setGenGstRate("0.18");
+      await refresh();
+    } catch (error) {
+      setGenerateError(invoiceActionError(error, "Invoice generation failed. Check the booking ID and try again."));
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+
 
   async function handleEmail(invoice: Invoice) {
     setEmailingId(invoice.id);
@@ -39,8 +95,8 @@ export default function InvoicesPage() {
     setDownloadingId(invoice.id);
     try {
       await downloadInvoicePdf(invoice.id, `${invoice.invoice_number || invoice.id}.pdf`);
-    } catch {
-      toast.error("Could not download invoice PDF.");
+    } catch (error) {
+      toast.error(invoiceActionError(error, "Could not download invoice PDF."));
     } finally {
       setDownloadingId(null);
     }
@@ -140,9 +196,18 @@ export default function InvoicesPage() {
   return (
     <ModuleWrapper title="Invoices" requiredPermission="invoices.view">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-dash-text">Invoices</h1>
-          <p className="text-sm text-dash-muted">Generated GST invoices and delivery status.</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-dash-text">Invoices</h1>
+            <p className="text-sm text-dash-muted">Generated GST invoices and delivery status.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setGenerateOpen(true); setGenerateError(""); }}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white transition hover:bg-dash-brand-hover"
+          >
+            <Plus size={16} /> Generate Invoice
+          </button>
         </div>
 
         <DataTable

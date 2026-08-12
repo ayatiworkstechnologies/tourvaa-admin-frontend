@@ -3,6 +3,7 @@ import PublicHeader from "@/components/public/PublicHeader";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
 import ChatWidget from "@/components/public/ChatWidget";
 import ElfsightTranslator from "@/components/public/ElfsightTranslator";
+import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
 
 // The public site used to load its own Outfit/Work_Sans fonts, scoped here
 // via --font-heading/--font-body. The whole app now shares one variable
@@ -21,17 +22,19 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   return (
-    <TravelStoreProvider>
-      <div
-        style={fontVars}
-        className="public-site min-h-screen bg-white font-[family-name:var(--font-body)] text-slate-950"
-      >
-        <PublicHeader />
-        <div className="public-page-enter">{children}</div>
-        <PublicFooter />
-        <ChatWidget />
-        <ElfsightTranslator />
-      </div>
-    </TravelStoreProvider>
+    <PublicSettingsProvider>
+      <TravelStoreProvider>
+        <div
+          style={fontVars}
+          className="public-site min-h-screen bg-white font-[family-name:var(--font-body)] text-slate-950"
+        >
+          <PublicHeader />
+          <div className="public-page-enter">{children}</div>
+          <PublicFooter />
+          <ChatWidget />
+          <ElfsightTranslator />
+        </div>
+      </TravelStoreProvider>
+    </PublicSettingsProvider>
   );
 }

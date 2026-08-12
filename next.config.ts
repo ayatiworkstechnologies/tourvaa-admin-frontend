@@ -36,10 +36,17 @@ const scriptSrc =
 // that isn't reliable across browsers/proxies, so dev mode explicitly
 // allows it (prod never serves this endpoint at all).
 const devHmrHosts = "ws://localhost:* ws://127.0.0.1:*";
+// The admin/agent/supplier/customer messaging inbox opens a WebSocket
+// directly against the backend's public origin - Next's rewrites() proxy
+// doesn't reliably support WS upgrades, so that traffic can't go through
+// the same-origin /api path the rest of the app uses. NEXT_PUBLIC_WS_URL
+// must be set to the backend's public wss:// origin for this to work; it
+// falls back to deriving one from apiProxyOrigin for local dev only.
+const publicWsUrl = (process.env.NEXT_PUBLIC_WS_URL || apiProxyOrigin.replace(/^http/, "ws")).replace(/\/$/, "");
 const connectSrc =
   process.env.NODE_ENV === "production"
-    ? `connect-src 'self' ${apiProxyOrigin} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com;`
-    : `connect-src 'self' ${apiProxyOrigin} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com ${devHmrHosts};`;
+    ? `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com;`
+    : `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com ${devHmrHosts};`;
 
 const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,

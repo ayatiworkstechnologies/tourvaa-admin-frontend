@@ -1,5 +1,7 @@
 ﻿import Link from "next/link";
 
+import ConfiguredSupportEmail from "@/components/public/ConfiguredSupportEmail";
+
 const tiers = [
   { window: "More than 60 days before departure", refund: "Full refund minus platform processing fee (3%)" },
   { window: "30–59 days before departure", refund: "75% refund of total booking value" },
@@ -61,8 +63,8 @@ export default function CancellationPolicyPage() {
 
           <div className="rounded-xl bg-teal-50 p-5 text-sm text-zinc-600">
             Questions about a cancellation?{" "}
-            <Link href="/contact" className="font-bold text-teal-600 hover:underline">Contact us</Link>{" "}
-            or email <a href="mailto:hello@tourvaa.com" className="font-bold text-teal-600 hover:underline">hello@tourvaa.com</a>.
+            <Link href="/contact" className="font-bold text-teal-600 hover:underline">Contact us</Link>.
+            <ConfiguredSupportEmail prefix=" You can also email " suffix="." className="font-bold text-teal-600 hover:underline" />
           </div>
         </div>
       </div>

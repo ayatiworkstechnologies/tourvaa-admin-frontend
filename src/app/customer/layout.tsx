@@ -10,6 +10,7 @@ import CustomerPortalHeader from "@/components/customer/CustomerPortalHeader";
 import PublicFooter from "@/components/public/PublicFooter";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
+import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -50,8 +51,9 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   if (!isLoggedIn || !user) return null;
 
   return (
-    <TravelStoreProvider>
-      <div className="customer-public-portal min-h-screen bg-dash-bg" style={portalThemeStyles.customer}>
+    <PublicSettingsProvider>
+      <TravelStoreProvider>
+        <div className="customer-public-portal min-h-screen bg-dash-bg" style={portalThemeStyles.customer}>
         <CustomerPortalHeader />
 
         <div className="pt-20 sm:pt-[92px]">
@@ -79,7 +81,8 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
             <PublicFooter />
           </div>
         </div>
-      </div>
-    </TravelStoreProvider>
+        </div>
+      </TravelStoreProvider>
+    </PublicSettingsProvider>
   );
 }

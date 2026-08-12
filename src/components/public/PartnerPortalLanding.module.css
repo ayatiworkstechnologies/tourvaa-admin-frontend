@@ -1,0 +1,110 @@
+.heroImage {
+  animation: heroReveal 1.4s cubic-bezier(.22, 1, .36, 1) both, heroDrift 18s ease-in-out 1.4s infinite alternate;
+}
+
+.heroCopy > * {
+  animation: copyReveal .75s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.heroCopy > :nth-child(2) { animation-delay: 90ms; }
+.heroCopy > :nth-child(3) { animation-delay: 170ms; }
+.heroCopy > :nth-child(4) { animation-delay: 250ms; }
+.heroCopy > :nth-child(5) { animation-delay: 330ms; }
+
+.floatCard {
+  animation: cardReveal .8s cubic-bezier(.22, 1, .36, 1) .55s both, cardFloat 5s ease-in-out 1.35s infinite;
+}
+
+.pulseDot {
+  animation: softPulse 2s ease-in-out infinite;
+}
+
+.metricStrip {
+  animation: stripReveal .75s cubic-bezier(.22, 1, .36, 1) .45s both;
+}
+
+.featureCard,
+.stepCard,
+.documentCard {
+  transition: border-color .3s ease, box-shadow .3s ease, transform .3s cubic-bezier(.22, 1, .36, 1), background-color .3s ease;
+}
+
+.featureCard:hover,
+.documentCard:hover {
+  transform: translateY(-6px);
+}
+
+.featureCard:hover .icon,
+.documentCard:hover .icon {
+  transform: rotate(-5deg) scale(1.08);
+}
+
+.stepCard:hover {
+  transform: translateY(-5px) scale(1.01);
+}
+
+.icon {
+  transition: transform .3s cubic-bezier(.22, 1, .36, 1);
+}
+
+.ctaGlow {
+  animation: glowBreath 5s ease-in-out infinite;
+}
+
+@keyframes heroReveal {
+  from { opacity: 0; transform: scale(1.08); }
+  to { opacity: 1; transform: scale(1.01); }
+}
+
+@keyframes heroDrift {
+  from { transform: scale(1.01) translate3d(0, 0, 0); }
+  to { transform: scale(1.07) translate3d(-1%, -.5%, 0); }
+}
+
+@keyframes copyReveal {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(24px) scale(.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes softPulse {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+  50% { box-shadow: 0 0 0 7px transparent; }
+}
+
+@keyframes stripReveal {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glowBreath {
+  0%, 100% { opacity: .4; transform: scale(.96); }
+  50% { opacity: .7; transform: scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroImage,
+  .heroCopy > *,
+  .floatCard,
+  .pulseDot,
+  .metricStrip,
+  .ctaGlow {
+    animation: none;
+  }
+
+  .featureCard,
+  .stepCard,
+  .documentCard,
+  .icon {
+    transition: none;
+  }
+}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LuClock3 as Clock, LuLogOut as LogOut, LuRefreshCw as Refresh } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 
 type StatusUser = { name: string; email: string; account_status: string; user_type: string; role?: { slug?: string } };
 const copy: Record<string, { title: string; text: string }> = {
@@ -14,6 +15,7 @@ const copy: Record<string, { title: string; text: string }> = {
 };
 
 export default function AccountStatusPage() {
+  const { supportEmail } = usePublicSettings();
   const router = useRouter();
   const [user, setUser] = useState<StatusUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,6 @@ export default function AccountStatusPage() {
     <p className="mt-3 text-sm leading-6 text-slate-500">{details.text}</p>
     {user && <p className="mt-4 rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-600">{user.email} · {user.user_type}</p>}
     <div className="mt-7 flex justify-center gap-3"><button onClick={() => void refresh()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white"><Refresh size={15} />{loading ? "Checking…" : "Refresh status"}</button><button onClick={() => void signOut()} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700"><LogOut size={15} />Sign out</button></div>
-    <a href="mailto:support@tourvaa.com" className="mt-6 inline-block text-sm font-bold text-blue-600">Contact support</a>
+    {supportEmail ? <a href={`mailto:${supportEmail}`} className="mt-6 inline-block text-sm font-bold text-blue-600">Contact support</a> : <a href="/contact" className="mt-6 inline-block text-sm font-bold text-blue-600">Contact support</a>}
   </section></main>;
 }

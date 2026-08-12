@@ -36,6 +36,34 @@ check("chat booking uses the customer portal endpoint", chat.includes('api.post(
 check("chat no longer calls the nonexistent customers-me booking route", !chat.includes("/customers/me/bookings"));
 check("chat login guidance points to the frontend login page", chat.includes("Open /login"));
 
+const publicHomepage = read("src/app/(public)/page.tsx");
+check("homepage does not ship fictional tour or destination fallbacks", !publicHomepage.includes("DEMO_TRENDING_TOURS") && !publicHomepage.includes("DEMO_HANDPICKED_TOURS") && !publicHomepage.includes("DEMO_PLACES"));
+check("homepage tour cards do not invent ratings or discounts", !publicHomepage.includes('"2,050 reviews"') && !publicHomepage.includes('"Save 25%"') && !publicHomepage.includes('?? 4.8'));
+check("homepage has truthful empty collection states", publicHomepage.includes("No featured tours are available yet.") && publicHomepage.includes("No destinations are available yet."));
+check("homepage fallbacks use bundled images", publicHomepage.includes('"/images/hero-1.jpg"') && !publicHomepage.includes("images.unsplash.com"));
+
+const publicLayout = read("src/components/public/PublicLayout.tsx");
+const publicSettings = read("src/providers/PublicSettingsProvider.tsx");
+const publicFooter = read("src/components/public/PublicFooter.tsx");
+const destinationsMegaPanel = read("src/components/public/DestinationsMegaPanel.tsx");
+const portalPublicFooter = read("src/components/public/portal/PortalPublicFooter.tsx");
+const publicContactSources = [
+  "src/app/(public)/contact/page.tsx",
+  "src/app/(public)/account-status/page.tsx",
+  "src/app/(public)/cancellation-policy/page.tsx",
+  "src/app/(public)/privacy-policy/page.tsx",
+  "src/app/(public)/terms/page.tsx",
+  "src/app/join/affiliate/page.tsx",
+].map(read).join("\n");
+check("public layout loads settings once for all public contact surfaces", publicLayout.includes("<PublicSettingsProvider>") && publicSettings.includes("fetchPublicSettings()"));
+check("public contact surfaces use configured support details", publicContactSources.includes("usePublicSettings") || publicContactSources.includes("ConfiguredSupportEmail"));
+check("public contact surfaces contain no hardcoded Tourvaa contact links", !publicContactSources.includes("mailto:hello@tourvaa.com") && !publicContactSources.includes("mailto:support@tourvaa.com") && !publicContactSources.includes("tel:+919876543210"));
+check("legacy seeded contact placeholders are suppressed", publicSettings.includes("PLACEHOLDER_EMAILS") && publicSettings.includes("PLACEHOLDER_PHONES") && publicSettings.includes("PLACEHOLDER_ADDRESSES"));
+check("all public pages use one canonical footer link set", ["supportLinks", "companyLinks", "loginLinks"].every((links) => publicFooter.includes(`links={${links}}`)) && !publicFooter.includes("aboutSupportLinks") && !publicFooter.includes("aboutCompanyLinks") && !publicFooter.includes("aboutLoginLinks"));
+check("destination panel appears on the homepage only", publicFooter.includes('pathname === "/" && <DestinationsMegaPanel />'));
+check("destination panel never renders empty loading cards", destinationsMegaPanel.includes("if (loading) return null") && destinationsMegaPanel.includes("if (!availableTabs.length) return null") && !destinationsMegaPanel.includes("animate-pulse"));
+check("partner landing pages reuse the canonical public footer", portalPublicFooter.includes("<PublicFooter />") && portalPublicFooter.includes("<PublicSettingsProvider>") && portalPublicFooter.includes("<TravelStoreProvider>"));
+
 const tracker = read("src/components/public/AffiliateReferralTracker.tsx");
 check("public pages capture affiliate referral codes", tracker.includes('get("ref")'));
 check("affiliate clicks use the backend public tracking endpoint", tracker.includes("/api/affiliates/track/${encodeURIComponent(refCode)}"));

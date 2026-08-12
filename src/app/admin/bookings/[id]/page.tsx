@@ -257,7 +257,7 @@ export default function BookingDetailPage() {
                     className="flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC] transition-all">
                     <RefreshCw size={14} /> Change Status
                   </button>
-                  <button type="button" onClick={() => { setShowAssignForm(!showAssignForm); setShowStatusForm(false); setShowMsgForm(false); }}
+                  <button type="button" onClick={() => { if (!showAssignForm) { setSupplierId(booking.supplier_id ?? null); } setShowAssignForm(!showAssignForm); setShowStatusForm(false); setShowMsgForm(false); }}
                     className="flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC] transition-all">
                     <UserCheck size={14} /> Assign Supplier
                   </button>
@@ -315,7 +315,7 @@ export default function BookingDetailPage() {
               <p className="mb-3 font-bold text-dash-text">Assign Supplier</p>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-[260px] flex-1">
-                  <SupplierPicker value={supplierId} onChange={(id) => setSupplierId(id)} />
+                  <SupplierPicker value={supplierId} name={supplierId === booking.supplier_id ? booking.supplier_name : undefined} onChange={(id) => setSupplierId(id)} />
                 </div>
                 <button type="submit" disabled={assigning || !supplierId}
                   className="flex items-center gap-2 rounded-xl bg-dash-text px-4 py-2 text-sm font-bold text-white hover:bg-[#1e2d3f] disabled:opacity-60">

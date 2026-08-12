@@ -1,5 +1,5 @@
 import type { IconType as LucideIcon } from "react-icons";
-import { LuBadgeCheck as BadgeCheck, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuMail as Mail, LuMapPinned as MapPinned, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShield as Shield, LuStar as Star, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
+import { LuBadgeCheck as BadgeCheck, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuMail as Mail, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShield as Shield, LuStar as Star, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
 import { MenuItem } from "@/types/auth";
 
 export type NavItem = {
@@ -41,6 +41,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Activity Logs", module: "activity_logs", href: "/admin/activity-logs", icon: FileText, permissions: ["activity_logs.view", "activity-logs.view", "view-activity_logs", "view-activity-logs"], section: "System" },
   { label: "Sessions", module: "sessions", href: "/admin/sessions", icon: Users, permissions: ["sessions.view", "view-sessions"], section: "System" },
   { label: "Notifications", module: "notifications", href: "/admin/notifications", icon: Bell, permissions: ["notifications.view", "view-notifications"], section: "System" },
+  { label: "Messages", module: "messages", href: "/admin/messages", icon: MessageSquare, permissions: ["messages.view"], section: "System" },
   { label: "Profile", module: "profile", href: "/admin/profile", icon: UserRound, permissions: ["profile.view", "view-profile"], placement: "bottom" },
 ];
 

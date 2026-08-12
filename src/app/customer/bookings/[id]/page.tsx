@@ -7,6 +7,7 @@ import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck
 import axios from "axios";
 import api from "@/lib/api/client";
 import { CustomerPageShell } from "@/components/customer/CustomerPage";
+import BookingMessageThread from "@/components/messaging/BookingMessageThread";
 import { useCurrency } from "@/hooks/useCurrency";
 import { formatCurrency } from "@/lib/utils/currency";
 
@@ -630,6 +631,13 @@ export default function CustomerBookingDetailPage() {
               </div>
             </Panel>
           </div>
+
+          {/* Message the supplier */}
+          {booking.supplier_name && (
+            <div className="mt-4">
+              <BookingMessageThread bookingId={booking.id} />
+            </div>
+          )}
 
           {/* Traveller list */}
           {booking.travellers && booking.travellers.length > 0 && (

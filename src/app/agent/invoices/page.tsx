@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -87,15 +88,9 @@ export default function AgentInvoicesPage() {
   async function downloadInvoice(inv: Invoice) {
     setDownloading(inv.id);
     try {
-      const res = await api.get(`/invoices/${inv.id}/download`, { responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `invoice-${inv.invoice_number ?? inv.id}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch {
-      setError("The invoice PDF could not be downloaded.");
+      await downloadInvoicePdf(inv.id, `${inv.invoice_number ?? `invoice-${inv.id}`}.pdf`);
+    } catch (error) {
+      setError(invoiceActionError(error, "The invoice PDF could not be downloaded."));
     } finally {
       setDownloading(null);
     }

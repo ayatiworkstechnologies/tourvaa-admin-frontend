@@ -135,7 +135,9 @@ export function useCurrency() {
 
   const outputCode = (fromCurrency: string) => {
     const source = fromCurrency.toUpperCase();
-    return snapshot.rates[source] && snapshot.rates[snapshot.code] ? snapshot.code : source;
+    const sourceRate = snapshot.rates[source];
+    const targetRate = snapshot.rates[snapshot.code];
+    return sourceRate && targetRate ? snapshot.code : source;
   };
 
   return {

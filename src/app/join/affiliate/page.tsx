@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { LuArrowRight as ArrowRight, LuChartColumn as BarChart3, LuCircleCheckBig as CheckCircle2, LuLink2 as Link2, LuMegaphone as Megaphone, LuWallet as Wallet, LuZap as Zap } from "react-icons/lu";
 import publicApi from "@/lib/api/publicClient";
+import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 
 const perks = [
   { icon: Link2, title: "Unique Referral Link", desc: "Get a personal tracking link to share across all your channels." },
@@ -31,6 +32,7 @@ const INPUT = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 t
 const LABEL = "mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400";
 
 export default function JoinAffiliatePage() {
+  const { supportEmail } = usePublicSettings();
   const [form, setForm] = useState({ name: "", email: "", website: "", audience: "" });
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +63,9 @@ export default function JoinAffiliatePage() {
       });
       setSent(true);
     } catch {
-      setError("Could not submit your application right now. Please try again, or email hello@tourvaa.com directly.");
+      setError(supportEmail
+        ? `Could not submit your application right now. Please try again, or email ${supportEmail} directly.`
+        : "Could not submit your application right now. Please try again later.");
     } finally {
       setSubmitting(false);
     }

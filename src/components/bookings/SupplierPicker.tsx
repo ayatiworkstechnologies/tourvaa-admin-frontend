@@ -10,16 +10,24 @@ type SupplierOption = { id: number; supplier_name: string; supplier_code?: strin
 
 type Props = {
   value: number | null;
+  /** Display name for a `value` that was pre-set by the caller (e.g. an
+   * existing supplier assignment loaded from the server) rather than chosen
+   * through this picker's own search-and-select flow. */
+  name?: string;
   onChange: (supplierId: number | null, name: string) => void;
   placeholder?: string;
 };
 
-export default function SupplierPicker({ value, onChange, placeholder = "Search suppliers by name or code…" }: Props) {
+export default function SupplierPicker({ value, name, onChange, placeholder = "Search suppliers by name or code…" }: Props) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<SupplierOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedName, setSelectedName] = useState("");
+  const [selectedName, setSelectedName] = useState(name ?? "");
+
+  useEffect(() => {
+    if (value && name) setSelectedName(name);
+  }, [value, name]);
   const debouncedQuery = useDebounce(query, 300);
   const containerRef = useRef<HTMLDivElement>(null);
 

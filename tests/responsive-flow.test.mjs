@@ -1,5 +1,5 @@
 /** Responsive layout contracts shared by public pages and every portal. */
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
@@ -32,6 +32,14 @@ check("admin mobile drawer fits narrow screens", adminLayout.includes("86vw"));
 const publicHeader = read("src/components/public/PublicHeader.tsx");
 check("public marketing navigation waits for desktop width", publicHeader.includes("lg:flex"));
 check("public header preserves a shrinkable flex row", publicHeader.includes("max-w-[1480px] min-w-0"));
+check("desktop header exposes every primary browse link", publicHeader.includes('aria-label="Primary navigation"') && publicHeader.includes("browseLinks.map") && ["Destinations", "Tour Packages", "Deals", "Travel Advice", "About Tourvaa"].every((label) => publicHeader.includes(label)));
+
+const supplierPortal = read("src/app/supplier-portal/page.tsx");
+const agentPortal = read("src/app/agent-portal/page.tsx");
+const partnerMotion = read("src/components/public/PartnerPortalLanding.module.css");
+check("partner landing pages use optimized local hero images", [supplierPortal, agentPortal].every((source) => source.includes('from "next/image"') && source.includes("fill priority")) && existsSync(resolve(root, "public/images/supplier-portal-hero.png")) && existsSync(resolve(root, "public/images/agent-portal-hero.png")));
+check("partner landing heroes adapt across mobile and desktop", [supplierPortal, agentPortal].every((source) => source.includes("min-h-[720px]") && source.includes("lg:grid-cols")));
+check("partner landing motion respects reduced-motion preferences", partnerMotion.includes("@media (prefers-reduced-motion: reduce)") && partnerMotion.includes("animation: none"));
 
 const portalHeader = read("src/components/layout/Header.tsx");
 check("portal header reserves clearance for the fixed language widget", portalHeader.includes("pr-36") && portalHeader.includes("lg:pr-40"));

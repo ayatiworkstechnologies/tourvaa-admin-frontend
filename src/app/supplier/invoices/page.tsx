@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { LuFileText as FileText, LuDownload as Download, LuLoaderCircle as Loader2 } from "react-icons/lu";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
-import { Invoice, getInvoices, downloadInvoicePdf } from "@/lib/api/services/invoiceService";
+import { Invoice, getInvoices, downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import { useCurrency } from "@/hooks/useCurrency";
 
 export default function SupplierInvoicesPage() {
@@ -32,6 +32,8 @@ export default function SupplierInvoicesPage() {
     setDownloadingId(invoice.id);
     try {
       await downloadInvoicePdf(invoice.id, `${invoice.invoice_number}.pdf`);
+    } catch (downloadError) {
+      setError(invoiceActionError(downloadError, "Could not download the invoice PDF."));
     } finally {
       setDownloadingId(null);
     }

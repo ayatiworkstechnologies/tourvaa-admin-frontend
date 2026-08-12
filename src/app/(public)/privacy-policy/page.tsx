@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import ConfiguredSupportEmail from "@/components/public/ConfiguredSupportEmail";
+
 const sections = [
   {
     title: "1. What this page covers",
@@ -23,7 +25,7 @@ const sections = [
   },
   {
     title: "6. Contact",
-    content: "For any privacy question, or to request the complete Privacy Policy document, contact us at hello@tourvaa.com or via our Contact page.",
+    content: "For any privacy question, or to request the complete Privacy Policy document, contact us via our Contact page.",
   },
 ];
 
@@ -56,9 +58,8 @@ export default function PrivacyPolicyPage() {
             <Link href="/cookie-policy" className="font-semibold text-teal-600 hover:underline">Cookie Policy</Link>{" "}
             and{" "}
             <Link href="/terms" className="font-semibold text-teal-600 hover:underline">Terms &amp; Conditions</Link>.
-            Questions? Contact us at{" "}
-            <a href="mailto:hello@tourvaa.com" className="font-semibold text-teal-600 hover:underline">hello@tourvaa.com</a>{" "}
-            or visit our <Link href="/contact" className="font-semibold text-teal-600 hover:underline">Contact page</Link>.
+            Questions? Visit our <Link href="/contact" className="font-semibold text-teal-600 hover:underline">Contact page</Link>.
+            <ConfiguredSupportEmail prefix=" You can also email " suffix="." className="font-semibold text-teal-600 hover:underline" />
           </div>
         </div>
       </div>

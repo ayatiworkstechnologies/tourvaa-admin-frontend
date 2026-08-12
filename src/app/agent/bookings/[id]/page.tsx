@@ -6,9 +6,11 @@ import { use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LuArrowLeft as ArrowLeft, LuCreditCard as CreditCard, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import BookingPaymentModal from "@/components/bookings/BookingPaymentModal";
 import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
+import BookingMessageThread from "@/components/messaging/BookingMessageThread";
 import { useCurrency } from "@/hooks/useCurrency";
 
 type Traveller = {
@@ -215,15 +217,9 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
     setInvoiceError("");
     setDownloadLoading(true);
     try {
-      const res = await api.get(`/invoices/${invoice.id}/download`, { responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `invoice-${invoice.invoice_number ?? invoice.id}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch {
-      setInvoiceError("Invoice could not be downloaded.");
+      await downloadInvoicePdf(invoice.id, `${invoice.invoice_number ?? `invoice-${invoice.id}`}.pdf`);
+    } catch (error) {
+      setInvoiceError(invoiceActionError(error, "Invoice could not be downloaded."));
     } finally {
       setDownloadLoading(false);
     }
@@ -406,6 +402,13 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           )}
         </div>
       </div>
+
+      {/* Message the supplier */}
+      {booking.supplier?.supplier_name && (
+        <div className="mt-6">
+          <BookingMessageThread bookingId={booking.id} />
+        </div>
+      )}
 
       {/* Travellers */}
       {travellers.length > 0 && (

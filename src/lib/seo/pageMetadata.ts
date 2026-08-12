@@ -19,7 +19,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/blogs": { title: "Travel Guides & Stories", description: "Explore Tourvaa travel guides, destination inspiration, planning advice, and stories for your next journey." },
   "/blogs/[slug]": { title: "Travel Guide", description: "Read destination insights, practical travel advice, and trip inspiration from the Tourvaa travel guide." },
   "/booking/[id]": { title: "Complete Your Booking", description: "Review travellers, trip options, pricing, and secure payment details to complete your Tourvaa booking.", index: false },
-  "/cart": { title: "Your Cart", description: "Review saved Tourvaa packages and continue securely to booking.", index: false },
+  "/cart": { title: "Browse Tours", description: "This retired cart URL permanently redirects to Tourvaa's current tour catalogue and direct-booking flow.", index: false },
   "/compare": { title: "Compare Tours", description: "Compare price, duration, inclusions, and ratings across your saved Tourvaa tours side by side.", index: false },
   "/cancellation-policy": { title: "Cancellation Policy", description: "Understand Tourvaa cancellation timelines, refund eligibility, supplier conditions, and booking change procedures." },
   "/contact": { title: "Contact Us", description: "Contact the Tourvaa team for booking assistance, tour questions, partnership enquiries, or platform support." },

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import api from "@/lib/api/client";
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -14,6 +14,14 @@ export function usePushNotifications() {
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     setSupported("serviceWorker" in navigator && "PushManager" in window);
@@ -42,9 +50,9 @@ export function usePushNotifications() {
         auth: json.keys?.auth,
       });
 
-      setSubscribed(true);
+      if (mountedRef.current) setSubscribed(true);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, [supported]);
 
@@ -60,9 +68,9 @@ export function usePushNotifications() {
         data: { endpoint: json.endpoint, p256dh: json.keys?.p256dh, auth: json.keys?.auth },
       });
       await sub.unsubscribe();
-      setSubscribed(false);
+      if (mountedRef.current) setSubscribed(false);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, []);
 
@@ -71,7 +79,7 @@ export function usePushNotifications() {
     navigator.serviceWorker.register("/sw.js").then(async (reg) => {
       await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
-      setSubscribed(!!sub);
+      if (mountedRef.current) setSubscribed(!!sub);
     });
   }, [supported]);
 

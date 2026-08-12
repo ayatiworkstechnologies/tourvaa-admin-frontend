@@ -123,6 +123,8 @@ export default function BookingsPage() {
     setExporting(true);
     try {
       await exportBookingsCsv();
+    } catch {
+      setErrorMessage("Could not export bookings. Please try again.");
     } finally {
       setExporting(false);
     }

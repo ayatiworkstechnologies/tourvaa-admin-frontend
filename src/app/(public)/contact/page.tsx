@@ -11,6 +11,7 @@ import {
 
 import AboutReveal from "@/components/public/AboutReveal";
 import publicApi from "@/lib/api/publicClient";
+import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 
 const INPUT_CLASS = "min-h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
 
@@ -24,6 +25,7 @@ const INITIAL_FORM = {
 };
 
 export default function ContactPage() {
+  const { companyAddress, supportEmail, supportPhone, supportPhoneHref } = usePublicSettings();
   const [form, setForm] = useState(INITIAL_FORM);
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -115,7 +117,9 @@ export default function ContactPage() {
                       <button type="submit" disabled={submitting} className="mt-7 flex min-h-13 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60">
                         {submitting ? "Sending..." : <><Send size={16} /> Send Message</>}
                       </button>
-                      <p className="mt-6 text-center text-sm text-slate-500">Prefer a direct call? Visit our <a href="tel:+919876543210" className="font-semibold text-blue-600 hover:underline">Direct Contact</a> section.</p>
+                      <p className="mt-6 text-center text-sm text-slate-500">
+                        {supportPhone ? <>Prefer a direct call? Call <a href={`tel:${supportPhoneHref}`} className="font-semibold text-blue-600 hover:underline">{supportPhone}</a>.</> : "Prefer another way to reach us? Send the form above and our team will reply."}
+                      </p>
                     </form>
                   </>
                 )}
@@ -130,6 +134,13 @@ export default function ContactPage() {
                     <div><strong className="block text-3xl font-black">24hrs</strong><span className="mt-2 block text-xs text-white/65">Average response time</span></div>
                     <div><strong className="block text-3xl font-black">4.9/5</strong><span className="mt-2 block text-xs text-white/65">Customer satisfaction</span></div>
                   </div>
+                  {(supportEmail || supportPhone || companyAddress) && (
+                    <address className="mt-7 space-y-1 border-t border-white/25 pt-6 text-sm not-italic text-white/75">
+                      {supportEmail && <p><a href={`mailto:${supportEmail}`} className="hover:text-white hover:underline">{supportEmail}</a></p>}
+                      {supportPhone && <p><a href={`tel:${supportPhoneHref}`} className="hover:text-white hover:underline">{supportPhone}</a></p>}
+                      {companyAddress && <p>{companyAddress}</p>}
+                    </address>
+                  )}
                 </div>
               </div>
             </div>

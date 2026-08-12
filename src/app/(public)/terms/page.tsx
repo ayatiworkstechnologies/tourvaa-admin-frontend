@@ -1,5 +1,7 @@
 ﻿import Link from "next/link";
 
+import ConfiguredSupportEmail from "@/components/public/ConfiguredSupportEmail";
+
 const sections = [
   {
     title: "1. Acceptance of Terms",
@@ -11,7 +13,7 @@ const sections = [
   },
   {
     title: "3. Account Registration",
-    content: "To access booking and account features, you must register and provide accurate, complete information. You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. Notify us immediately at hello@tourvaa.com if you suspect unauthorised access.",
+    content: "To access booking and account features, you must register and provide accurate, complete information. You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. Notify us immediately through our Contact page if you suspect unauthorised access.",
   },
   {
     title: "4. Bookings and Payments",
@@ -68,9 +70,8 @@ export default function TermsPage() {
             ))}
           </div>
           <div className="mt-10 rounded-xl bg-slate-50 p-5 text-sm text-zinc-500">
-            Questions about these terms? Contact us at{" "}
-            <a href="mailto:hello@tourvaa.com" className="font-semibold text-teal-600 hover:underline">hello@tourvaa.com</a>{" "}
-            or visit our <Link href="/contact" className="font-semibold text-teal-600 hover:underline">Contact page</Link>.
+            Questions about these terms? Visit our <Link href="/contact" className="font-semibold text-teal-600 hover:underline">Contact page</Link>.
+            <ConfiguredSupportEmail prefix=" You can also email " suffix="." className="font-semibold text-teal-600 hover:underline" />
           </div>
         </div>
       </div>

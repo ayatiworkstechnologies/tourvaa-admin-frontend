@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LuDownload as Download, LuReceiptText as ReceiptText } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -45,17 +46,9 @@ export default function CustomerInvoicesPage() {
   async function handleDownload(invoice: Invoice) {
     setDownloadingId(invoice.id);
     try {
-      const response = await api.get(`/customer/invoices/${invoice.id}/download`, { responseType: "blob" });
-      const url = window.URL.createObjectURL(response.data);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${invoice.invoice_number || `invoice-${invoice.id}`}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Could not download the invoice PDF.");
+      await downloadInvoicePdf(invoice.id, `${invoice.invoice_number || `invoice-${invoice.id}`}.pdf`, true);
+    } catch (error) {
+      toast.error(invoiceActionError(error, "Could not download the invoice PDF."));
     } finally {
       setDownloadingId(null);
     }

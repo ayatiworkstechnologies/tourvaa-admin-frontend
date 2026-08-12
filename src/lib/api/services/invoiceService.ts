@@ -1,5 +1,8 @@
 ﻿import api from "@/lib/api/client";
 
+import axios from "axios";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+
 export type Invoice = {
   id: number;
   invoice_number: string;
@@ -76,6 +79,12 @@ export async function regenerateInvoicePdf(invoiceId: number | string) {
   return response.data.data;
 }
 
+export function invoiceActionError(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) return getApiErrorMessage(error) || fallback;
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
 /**
  * Downloads an invoice PDF and saves it via the browser.
  *
@@ -86,16 +95,36 @@ export async function regenerateInvoicePdf(invoiceId: number | string) {
  * Bearer token via its request interceptor) and saving it client-side is
  * the correct fix.
  */
-export async function downloadInvoicePdf(invoiceId: number | string, filename?: string) {
-  const response = await api.get(`/invoices/${invoiceId}/download`, { responseType: "blob" });
-  const url = window.URL.createObjectURL(response.data);
+export async function downloadInvoicePdf(invoiceId: number | string, filename?: string, customerScoped = false) {
+  const endpoint = customerScoped ? `/customer/invoices/${invoiceId}/download` : `/invoices/${invoiceId}/download`;
+  let response;
+  try {
+    response = await api.get(endpoint, { responseType: "blob" });
+  } catch (error) {
+    const responseBlob = (error as { response?: { data?: unknown } })?.response?.data;
+    if (responseBlob instanceof Blob) {
+      let payload: { detail?: string; message?: string } | null = null;
+      try {
+        payload = JSON.parse(await responseBlob.text()) as { detail?: string; message?: string };
+      } catch { /* Preserve the original Axios error for non-JSON responses. */ }
+      if (payload?.detail || payload?.message) throw new Error(payload.detail || payload.message);
+    }
+    throw error;
+  }
+
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: "application/pdf" });
+  const signature = new TextDecoder("ascii").decode((await blob.slice(0, 5).arrayBuffer()));
+  if (signature !== "%PDF-") throw new Error("The server did not return a valid invoice PDF. Please regenerate it and try again.");
+
+  const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = filename || `invoice-${invoiceId}.pdf`;
   document.body.appendChild(link);
   link.click();
   link.remove();
-  window.URL.revokeObjectURL(url);
+  // Revoking synchronously can cancel downloads in Safari/WebKit.
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 1_000);
 }
 
 

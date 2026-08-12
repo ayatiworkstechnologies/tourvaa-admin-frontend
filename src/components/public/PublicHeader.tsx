@@ -22,7 +22,7 @@ import CurrencySelector from "@/components/public/CurrencySelector";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 
-const mobileLinks = [
+const browseLinks = [
   ["Destinations", "/destinations"],
   ["Tour Packages", "/tours"],
   ["Deals", "/tours?sort=price_asc"],
@@ -89,7 +89,23 @@ export default function PublicHeader() {
         >
           Tourvaa
         </Link>
-        <nav className="hidden items-center gap-4 lg:flex lg:gap-6">
+        <nav aria-label="Primary navigation" className="hidden min-w-0 flex-1 items-center justify-center gap-3 lg:flex xl:gap-5">
+          {browseLinks.map(([label, href]) => {
+            const route = href.split("?")[0];
+            const active = !href.includes("?") && (pathname === route || (route !== "/" && pathname.startsWith(`${route}/`)));
+            return (
+              <Link
+                key={label}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={`whitespace-nowrap text-xs font-bold transition hover:text-blue-500 ${active ? "text-blue-500" : ""}`}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+        <nav aria-label="Account and trip tools" className="hidden shrink-0 items-center gap-4 lg:flex lg:gap-6">
           <Link
             href="/wishlist"
             className="group relative flex flex-col items-center gap-1 text-[9px] font-semibold"
@@ -168,7 +184,7 @@ export default function PublicHeader() {
       {open && (
         <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg lg:hidden">
           <div className="grid grid-cols-2 gap-2">
-            {mobileLinks.map(([label, href]) => (
+            {browseLinks.map(([label, href]) => (
               <Link
                 key={label}
                 href={href}
