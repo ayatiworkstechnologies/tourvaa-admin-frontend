@@ -1,6 +1,6 @@
 import api from "@/lib/api/client";
 
-export type ParticipantType = "agent" | "supplier" | "customer";
+export type ParticipantType = "agent" | "supplier" | "customer" | "affiliate";
 export type SenderRole = "admin" | ParticipantType;
 
 export type ChatMessage = {
@@ -22,6 +22,7 @@ export type Conversation = {
   agent_id?: number | null;
   supplier_id?: number | null;
   customer_id?: number | null;
+  affiliate_id?: number | null;
   status: string;
   last_message_at: string | null;
   last_message_preview: string | null;
@@ -52,15 +53,20 @@ export async function getUnreadSummary() {
   return response.data?.data as Record<ParticipantType, number>;
 }
 
+const OWN_MESSAGES_PATH: Record<ParticipantType, string> = {
+  customer: "/customer/messages",
+  supplier: "/supplier/messages",
+  agent: "/agent/messages",
+  affiliate: "/affiliate/messages",
+};
+
 export async function getOwnConversation(portal: ParticipantType) {
-  const path = portal === "customer" ? "/customer/messages" : portal === "supplier" ? "/supplier/messages" : "/agent/messages";
-  const response = await api.get(path);
+  const response = await api.get(OWN_MESSAGES_PATH[portal]);
   return response.data?.data as ConversationThread;
 }
 
 export async function sendOwnMessage(portal: ParticipantType, body: string) {
-  const path = portal === "customer" ? "/customer/messages" : portal === "supplier" ? "/supplier/messages" : "/agent/messages";
-  const response = await api.post(path, { message: body });
+  const response = await api.post(OWN_MESSAGES_PATH[portal], { message: body });
   return response.data?.data as ChatMessage;
 }
 

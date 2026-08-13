@@ -76,8 +76,13 @@ for (const route of ["forgot-password", "reset-password"]) {
 }
 
 const referralLinks = read("src/app/affiliate/referral-links/page.tsx");
-check("affiliate links use their configured destination", referralLinks.includes("new URL(link.destination_url"));
-check("affiliate links retain their referral code", referralLinks.includes('url.searchParams.set("ref", link.ref_code)'));
+// Referral links moved from a client-side "?ref=code" query param appended to
+// the destination URL to server-tracked short links (GET /r/{code}, see
+// app/routers/affiliate_redirect.py) that record a click + attribution
+// server-side before redirecting - the short link embeds the ref_code/alias
+// directly in its path instead of as a query param.
+check("affiliate links use the server-tracked short link format", referralLinks.includes("/r/${link.custom_alias || link.ref_code}"));
+check("affiliate links retain their referral code", referralLinks.includes("link.custom_alias || link.ref_code"));
 check("unsupported referral update endpoint is not called", !referralLinks.includes("api.patch"));
 check("unsupported referral delete endpoint is not called", !referralLinks.includes("api.delete"));
 
@@ -86,11 +91,22 @@ check("affiliate dashboard uses commission summary API", affiliateDashboard.incl
 check("affiliate dashboard uses serialized click totals", affiliateDashboard.includes("link.total_clicks"));
 check("affiliate dashboard uses converted_at timestamp", affiliateDashboard.includes("c.converted_at"));
 
-for (const page of ["dashboard", "referral-links", "clicks", "conversions", "commissions", "payouts", "profile"]) {
+for (const page of ["dashboard", "referral-links", "clicks", "conversions", "commissions", "profile"]) {
   const source = read(`src/app/affiliate/${page}/page.tsx`);
   check(`${page} requires the provisioned affiliate id`, source.includes("dashboard?.user?.affiliate_id ?? null"));
   check(`${page} does not fall back to the unrelated user id`, !source.includes("dashboard?.user?.id"));
 }
+
+// Payouts (and payout-methods/wallet) moved to session-scoped self-service
+// endpoints (GET/POST /affiliate/payouts, /affiliate/payout-methods,
+// /affiliate/wallet - see app/routers/affiliate_payouts.py) where the
+// backend resolves the caller's own affiliate row from the auth token via
+// get_actor_affiliate, rather than the frontend passing a client-held
+// affiliate_id - a stronger guarantee than the old pattern since a client
+// can no longer influence which affiliate's data it reads by any id it holds.
+const payoutsSource = read("src/app/affiliate/payouts/page.tsx");
+check("payouts uses session-scoped self-service endpoints", payoutsSource.includes("getAffiliatePayouts") && payoutsSource.includes("getPayoutMethods") && payoutsSource.includes("getWalletSummary"));
+check("payouts does not fall back to the unrelated user id", !payoutsSource.includes("dashboard?.user?.id"));
 
 const profile = read("src/app/affiliate/profile/page.tsx");
 check("affiliate profile update uses backend PUT contract", profile.includes("api.put(`/affiliates/${affiliateId}`"));

@@ -7,7 +7,7 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 
-type CommissionSummary = { total_commission?: number; paid_commission?: number; pending_commission?: number; currency?: string };
+type CommissionSummary = { total_commission?: number; paid_commission?: number; pending_commission?: number; available_commission?: number; currency?: string };
 
 export default function CommissionsPage() {
   const toast = useToast();
@@ -37,6 +37,7 @@ export default function CommissionsPage() {
 
   const cards = [
     { label: "Total Commission Earned", value: fmt(summary.total_commission), color: "text-purple-700 bg-purple-50", icon: Coins },
+    { label: "Available for Payout", value: fmt(summary.available_commission), color: "text-sky-700 bg-sky-50", icon: Coins },
     { label: "Commission Paid Out", value: fmt(summary.paid_commission), color: "text-emerald-700 bg-emerald-50", icon: Banknote },
     { label: "Pending Commission", value: fmt(summary.pending_commission), color: "text-amber-700 bg-amber-50", icon: Coins },
   ];
@@ -49,9 +50,9 @@ export default function CommissionsPage() {
       </div>
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="animate-pulse h-28 rounded-xl border border-dash-border bg-white" />)}</div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="animate-pulse h-28 rounded-xl border border-dash-border bg-white" />)}</div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map(({ label, value, color, icon: Icon }) => (
             <div key={label} className="rounded-xl border border-dash-border bg-white p-6 shadow-sm">
               <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${color}`}><Icon size={20} /></div>

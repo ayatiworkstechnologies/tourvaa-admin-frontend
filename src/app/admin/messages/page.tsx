@@ -20,6 +20,7 @@ const TABS: { key: ParticipantType; label: string }[] = [
   { key: "agent", label: "Agents" },
   { key: "supplier", label: "Suppliers" },
   { key: "customer", label: "Customers" },
+  { key: "affiliate", label: "Affiliates" },
 ];
 
 function timeAgo(value?: string | null) {
@@ -47,7 +48,7 @@ export default function AdminMessagesPage() {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  const [unreadSummary, setUnreadSummary] = useState<Record<ParticipantType, number>>({ agent: 0, supplier: 0, customer: 0 });
+  const [unreadSummary, setUnreadSummary] = useState<Record<ParticipantType, number>>({ agent: 0, supplier: 0, customer: 0, affiliate: 0 });
   const threadEndRef = useRef<HTMLDivElement>(null);
 
   const loadUnreadSummary = useCallback(async () => {

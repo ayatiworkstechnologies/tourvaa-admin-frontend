@@ -33,7 +33,7 @@ type SidebarProps = {
   onLockedItemClick?: (item: SidebarNavItem) => void;
 };
 
-export type SidebarTheme = "admin" | "supplier" | "agent" | "customer";
+export type SidebarTheme = "admin" | "supplier" | "agent" | "customer" | "affiliate";
 
 const SIDEBAR_THEMES: Record<SidebarTheme, {
   shell: string;
@@ -129,6 +129,25 @@ const SIDEBAR_THEMES: Record<SidebarTheme, {
     toggle: "border-[#D8E7FA] bg-white text-[#1478F2] hover:bg-blue-50",
     glow: "bg-transparent",
     edge: "w-1 bg-gradient-to-b from-[#56B4FF] via-[#1478F2] to-[#0B4FAA]",
+  },
+  affiliate: {
+    shell: "border-[#E7DDF5] bg-white shadow-[8px_0_32px_-20px_rgba(126,34,206,0.24)]",
+    headerBorder: "border-[#EEE4F9]",
+    logo: "bg-gradient-to-br from-[#A855F7] to-[#7E22CE] text-white shadow-purple-200",
+    title: "text-[#3B0764]",
+    subtitle: "text-[#7E22CE]",
+    section: "text-[#7E22CE]/65",
+    active: "bg-[#7E22CE] text-white shadow-[0_8px_20px_-10px_rgba(126,34,206,0.8)]",
+    activeIcon: "text-white",
+    activeDot: "bg-white",
+    inactive: "text-slate-600 hover:bg-purple-50/80 hover:text-[#6B21A8]",
+    inactiveIcon: "text-[#9D5FE0]",
+    footerBorder: "border-[#EEE4F9]",
+    logout: "text-slate-600 hover:bg-rose-50 hover:text-rose-600",
+    logoutIcon: "text-rose-500",
+    toggle: "border-[#E3D3F6] bg-white text-[#7E22CE] hover:bg-purple-50",
+    glow: "bg-transparent",
+    edge: "w-1 bg-gradient-to-b from-[#C084FC] via-[#7E22CE] to-[#4C1D95]",
   },
 };
 

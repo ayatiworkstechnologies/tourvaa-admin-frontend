@@ -1,5 +1,5 @@
 import type { IconType as LucideIcon } from "react-icons";
-import { LuBadgeCheck as BadgeCheck, LuBell as Bell, LuBot as Bot, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuMail as Mail, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShield as Shield, LuStar as Star, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
+import { LuBadgeCheck as BadgeCheck, LuBell as Bell, LuBot as Bot, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuLink2 as Link2, LuMail as Mail, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShield as Shield, LuStar as Star, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
 import { MenuItem } from "@/types/auth";
 
 export type NavItem = {
@@ -22,6 +22,9 @@ export const adminNavItems: NavItem[] = [
   { label: "Suppliers", module: "suppliers", href: "/admin/suppliers", icon: Warehouse, permissions: ["suppliers.view", "view-suppliers"], section: "Business" },
   { label: "Agents", module: "agents", href: "/admin/agents", icon: UsersRound, permissions: ["agents.view", "view-agents"], section: "Business" },
   { label: "Affiliates", module: "affiliates", href: "/admin/affiliates", icon: UsersRound, permissions: ["affiliates.view", "view-affiliates"], section: "Business" },
+  { label: "Affiliate Links", module: "affiliate_links", href: "/admin/affiliates/links", icon: Link2, permissions: ["affiliate_links.view"], section: "Business" },
+  { label: "Commission Rules", module: "affiliate_commission_rules", href: "/admin/affiliates/commission-rules", icon: Percent, permissions: ["affiliate_commission_rules.view"], section: "Business" },
+  { label: "Affiliate Payouts", module: "affiliate_payouts", href: "/admin/affiliates/payouts", icon: Banknote, permissions: ["affiliate_payouts.approve", "affiliate_payouts.view"], section: "Business" },
   { label: "Countries", module: "countries", href: "/admin/settings/countries", icon: FileText, permissions: ["countries.view", "view-countries", "cities.view", "view-cities"], section: "Tour Management" },
   { label: "Tours", module: "tours", href: "/admin/tours", icon: MapPinned, permissions: ["tours.view", "view-tours"], section: "Tour Management" },
   { label: "Tour Approval", module: "tour_approval", href: "/admin/tour-approval", icon: BadgeCheck, permissions: ["tours.publish", "update-tours"], section: "Tour Management" },

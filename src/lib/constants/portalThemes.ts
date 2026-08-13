@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-export type PortalThemeName = "admin" | "supplier" | "agent" | "customer";
+export type PortalThemeName = "admin" | "supplier" | "agent" | "customer" | "affiliate";
 
 type PortalThemeProperties = CSSProperties & Record<`--${string}`, string>;
 
@@ -52,5 +52,17 @@ export const portalThemeStyles: Record<PortalThemeName, PortalThemeProperties> =
     "--portal-hero-via": "#1478F2",
     "--portal-hero-to": "#56B4FF",
     "--portal-soft": "#EFF6FF",
+  },
+  affiliate: {
+    "--color-dash-brand": "#7E22CE",
+    "--color-dash-brand-hover": "#6B21A8",
+    "--color-dash-brand-dark": "#4C1D95",
+    "--color-dash-bg": "#FAF7FE",
+    "--color-dash-bg-muted": "#F3E8FD",
+    "--color-dash-border": "#E7DDF5",
+    "--portal-hero-from": "#2E1065",
+    "--portal-hero-via": "#6B21A8",
+    "--portal-hero-to": "#A855F7",
+    "--portal-soft": "#F3E8FD",
   },
 };

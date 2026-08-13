@@ -136,6 +136,12 @@ const nextConfig: NextConfig = {
         source: "/api/public/:path*",
         destination: `${apiProxyTarget}/api/public/:path*`,
       },
+      // Affiliate short-links (https://tourvaa.com/r/{code}) are served
+      // directly by the backend, outside /api, so they stay short/shareable.
+      {
+        source: "/r/:path*",
+        destination: `${apiProxyTarget}/r/:path*`,
+      },
       {
         source: "/api/:path*",
         destination: `${apiProxyTarget}/api/:path*`,
