@@ -1,34 +1,26 @@
 "use client";
 
-import { LuBot as Bot, LuCalendar as Calendar, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuMessageCircle as MessageCircle, LuMinus as Minus, LuPlus as Plus, LuSend as Send, LuSparkles as Sparkles, LuX as X } from "react-icons/lu";
+import { LuBot as Bot, LuCalendar as Calendar, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuMessageCircle as MessageCircle, LuMinus as Minus, LuPlus as Plus, LuSend as Send, LuSparkles as Sparkles, LuThumbsDown as ThumbsDown, LuThumbsUp as ThumbsUp, LuX as X } from "react-icons/lu";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useAuthContext } from "@/providers/AuthProvider";
 import api from "@/lib/api/client";
+import { streamChat, submitChatFeedback, ChatbotRateLimitError, type ChatActionData } from "@/lib/api/services/chatbotService";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import SharedDatePicker from "@/components/ui/DatePicker";
 import { todayLocalDateStr } from "@/lib/utils/date";
 
-type TourCard = { id: number; title: string; duration_days?: number; price?: number | null; currency: string; cover_image?: string | null; slug: string };
-type ActionData = {
-  tours?: TourCard[];
-  tour_id?: number;
-  tour_title?: string;
-  date?: string;
-  duration_days?: number;
-  price?: number | null;
-  price_per_person?: number | null;
-  travellers?: number;
-  total_price?: number | null;
-  currency?: string;
-};
+type TourCard = NonNullable<ChatActionData["tours"]>[number];
+type ActionData = ChatActionData;
 
 type Message = {
   role: "user" | "assistant";
   content: string;
   action_type?: string | null;
   action_data?: ActionData | null;
+  message_id?: number | null;
+  feedback?: 1 | -1 | null;
 };
 
 const INITIAL_MESSAGE: Message = {
@@ -123,6 +115,13 @@ export default function ChatWidget() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [launcherVisible, setLauncherVisible] = useState(true);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const timer = window.setInterval(() => setCooldownSeconds(s => Math.max(0, s - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [cooldownSeconds]);
 
   useEffect(() => {
     if (!open) return;
@@ -162,7 +161,7 @@ export default function ChatWidget() {
 
   const sendRaw = async (text: string, displayText?: string) => {
     const trimmed = text.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || loading || cooldownSeconds > 0) return;
 
     const isCommand = trimmed.startsWith("__");
     if (!isCommand) {
@@ -173,29 +172,52 @@ export default function ChatWidget() {
     setInput("");
     setLoading(true);
 
+    let assistantStarted = false;
+
+    const appendDelta = (delta: string) => {
+      if (!assistantStarted) {
+        assistantStarted = true;
+        setLoading(false);
+        setMessages(prev => [...prev, { role: "assistant", content: delta }]);
+      } else {
+        setMessages(prev => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          next[next.length - 1] = { ...last, content: last.content + delta };
+          return next;
+        });
+      }
+    };
+
     try {
-      const res = await fetch("/api/chatbot/chat", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: trimmed, session_key: sessionKey }),
+      await streamChat(trimmed, sessionKey, window.location.pathname, (event) => {
+        if (event.type === "delta") {
+          appendDelta(event.text);
+        } else if (event.type === "done") {
+          setSessionKey(event.session_key);
+          setMessages(prev => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            next[next.length - 1] = { ...last, action_type: event.action_type ?? null, action_data: event.action_data ?? null, message_id: event.message_id ?? null };
+            return next;
+          });
+        }
       });
-      if (!res.ok) throw new Error("Chat request failed");
-      const data = await res.json();
-      setSessionKey(data.session_key);
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: data.reply,
-        action_type: data.action_type ?? null,
-        action_data: data.action_data ?? null,
-      }]);
-    } catch {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "I could not connect right now. Please try again, or contact Tourvaa support.",
-      }]);
+
+      if (!assistantStarted) throw new Error("Empty response");
+    } catch (err) {
+      if (err instanceof ChatbotRateLimitError) {
+        setCooldownSeconds(err.retryAfterSeconds);
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: `You're sending messages a bit fast. Please wait ${err.retryAfterSeconds}s before trying again.`,
+        }]);
+      } else if (!assistantStarted) {
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: "I could not connect right now. Please try again, or contact Tourvaa support.",
+        }]);
+      }
     } finally {
       setLoading(false);
     }
@@ -264,6 +286,23 @@ export default function ChatWidget() {
     setMessages(prev => [...prev, { role: "assistant", content: "Booking cancelled. Let me know if you'd like to explore other tours or need help with anything else." }]);
   };
 
+  const handleFeedback = (index: number, messageId: number, rating: 1 | -1) => {
+    setMessages(prev => {
+      const next = [...prev];
+      const current = next[index];
+      if (current.feedback === rating) return prev;
+      next[index] = { ...current, feedback: rating };
+      return next;
+    });
+    void submitChatFeedback(messageId, rating).catch(() => {
+      setMessages(prev => {
+        const next = [...prev];
+        next[index] = { ...next[index], feedback: null };
+        return next;
+      });
+    });
+  };
+
   return (
     <>
       {open && (
@@ -308,6 +347,26 @@ export default function ChatWidget() {
                       <Loader2 size={13} className="animate-spin" /> Processing booking…
                     </div>
                   )}
+                  {msg.role === "assistant" && msg.message_id != null && (
+                    <div className="mt-1.5 flex items-center gap-1">
+                      <button
+                        type="button"
+                        aria-label="Helpful"
+                        onClick={() => handleFeedback(i, msg.message_id!, 1)}
+                        className={`rounded-lg p-1.5 transition ${msg.feedback === 1 ? "bg-emerald-50 text-emerald-600" : "text-dash-muted hover:bg-dash-bg-muted"}`}
+                      >
+                        <ThumbsUp size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Not helpful"
+                        onClick={() => handleFeedback(i, msg.message_id!, -1)}
+                        className={`rounded-lg p-1.5 transition ${msg.feedback === -1 ? "bg-red-50 text-red-600" : "text-dash-muted hover:bg-dash-bg-muted"}`}
+                      >
+                        <ThumbsDown size={13} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -338,8 +397,8 @@ export default function ChatWidget() {
           )}
 
           <div className="flex items-center gap-2 border-t border-dash-border bg-white p-3">
-            <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey} disabled={loading} placeholder="Ask about tours or bookings..." className="min-w-0 flex-1 rounded-xl border border-[#D9DEE8] bg-dash-bg px-4 py-2.5 text-sm outline-none transition focus:border-[#0284C7] focus:bg-white focus:ring-4 focus:ring-sky-100 disabled:opacity-60" />
-            <button type="button" onClick={() => void send(input)} disabled={loading || !input.trim()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0284C7] text-white transition hover:bg-[#0369A1] disabled:opacity-40" aria-label="Send message"><Send size={17} /></button>
+            <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey} disabled={loading || cooldownSeconds > 0} placeholder={cooldownSeconds > 0 ? `Please wait ${cooldownSeconds}s...` : "Ask about tours or bookings..."} className="min-w-0 flex-1 rounded-xl border border-[#D9DEE8] bg-dash-bg px-4 py-2.5 text-sm outline-none transition focus:border-[#0284C7] focus:bg-white focus:ring-4 focus:ring-sky-100 disabled:opacity-60" />
+            <button type="button" onClick={() => void send(input)} disabled={loading || cooldownSeconds > 0 || !input.trim()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0284C7] text-white transition hover:bg-[#0369A1] disabled:opacity-40" aria-label="Send message"><Send size={17} /></button>
           </div>
         </div>
       )}

@@ -17,6 +17,7 @@ type FAQ = {
   category: string;
   sort_order: number;
   is_active: boolean;
+  is_public: boolean;
 };
 
 const emptyForm = {
@@ -25,6 +26,7 @@ const emptyForm = {
   category: "general",
   sort_order: 0,
   is_active: true,
+  is_public: true,
 };
 
 const CATEGORIES = ["general", "booking", "payment", "destinations", "policies", "other"];
@@ -64,7 +66,7 @@ export default function ChatbotFAQPage() {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
-  const [activeTab, setActiveTab] = useState<"faqs" | "sessions">("faqs");
+  const [activeTab, setActiveTab] = useState<"faqs" | "train" | "sessions">("faqs");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsPage, setSessionsPage] = useState(1);
@@ -78,7 +80,9 @@ export default function ChatbotFAQPage() {
   const fetchFAQs = useCallback(async (targetPage: number = page) => {
     setLoading(true);
     try {
-      const res = await api.get("/chatbot/admin/faqs", { params: { page: targetPage, limit: pageSize } });
+      const res = await api.get("/chatbot/admin/faqs", {
+        params: { page: targetPage, limit: pageSize, is_public: activeTab === "train" ? false : true },
+      });
       const data = res.data ?? {};
       setFaqs(data.items ?? []);
       setTotal(data.total ?? 0);
@@ -86,7 +90,7 @@ export default function ChatbotFAQPage() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, activeTab]);
 
   const fetchSessions = useCallback(async () => {
     setSessionsLoading(true);
@@ -104,12 +108,17 @@ export default function ChatbotFAQPage() {
   }, [sessionsPage]);
 
   useEffect(() => {
-    fetchFAQs();
-  }, [fetchFAQs]);
+    if (activeTab === "faqs" || activeTab === "train") void fetchFAQs();
+  }, [fetchFAQs, activeTab]);
 
   useEffect(() => {
     if (activeTab === "sessions") void fetchSessions();
   }, [activeTab, fetchSessions]);
+
+  const switchTab = (tab: "faqs" | "train" | "sessions") => {
+    setActiveTab(tab);
+    setPage(1);
+  };
 
   const toggleSessionExpand = async (session: ChatSession) => {
     if (expandedSessionId === session.id) {
@@ -130,7 +139,7 @@ export default function ChatbotFAQPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, is_public: activeTab !== "train" });
     setOpen(true);
   };
 
@@ -142,6 +151,7 @@ export default function ChatbotFAQPage() {
       category: faq.category,
       sort_order: faq.sort_order,
       is_active: faq.is_active,
+      is_public: faq.is_public,
     });
     setOpen(true);
   };
@@ -251,7 +261,7 @@ export default function ChatbotFAQPage() {
 
   return (
     <ProtectedRoute requiredPermission="chatbot.view">
-      <DashboardLayout title="Chatbot FAQ" menus={dashboard.menus} user={dashboard.user}>
+      <DashboardLayout title="Chatbot" menus={dashboard.menus} user={dashboard.user}>
         <div className="space-y-6">
           <section className="rounded-2xl border border-dash-border bg-white p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -260,19 +270,21 @@ export default function ChatbotFAQPage() {
                   <MessageSquare size={20} className="text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-dash-text">Chatbot FAQ</h2>
+                  <h2 className="text-2xl font-bold text-dash-text">Chatbot</h2>
                   <p className="text-sm text-dash-muted mt-0.5">
-                    Manage AI knowledge base - these Q&amp;As are injected into the AI assistant&apos;s context.
+                    {activeTab === "train"
+                      ? "Add training Q&A that ground the AI assistant without appearing on the public FAQ page."
+                      : "Manage AI knowledge base - these Q&As are injected into the AI assistant's context."}
                   </p>
                 </div>
               </div>
-              {activeTab === "faqs" && (
+              {(activeTab === "faqs" || activeTab === "train") && (
                 <button
                   onClick={openCreate}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover"
                 >
                   <Plus size={16} />
-                  Add FAQ
+                  {activeTab === "train" ? "Add Training Q&A" : "Add FAQ"}
                 </button>
               )}
             </div>
@@ -282,14 +294,21 @@ export default function ChatbotFAQPage() {
             <div className="mt-4 inline-flex rounded-xl border border-dash-border p-1">
               <button
                 type="button"
-                onClick={() => setActiveTab("faqs")}
+                onClick={() => switchTab("faqs")}
                 className={`rounded-lg px-4 py-2 text-sm font-bold ${activeTab === "faqs" ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
               >
                 FAQs
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("sessions")}
+                onClick={() => switchTab("train")}
+                className={`rounded-lg px-4 py-2 text-sm font-bold ${activeTab === "train" ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
+              >
+                Train
+              </button>
+              <button
+                type="button"
+                onClick={() => switchTab("sessions")}
                 className={`rounded-lg px-4 py-2 text-sm font-bold ${activeTab === "sessions" ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
               >
                 Chat Sessions
@@ -297,11 +316,11 @@ export default function ChatbotFAQPage() {
             </div>
           </section>
 
-          {activeTab === "faqs" && (
+          {(activeTab === "faqs" || activeTab === "train") && (
             <section className="rounded-2xl border border-dash-border bg-white p-6">
               <div className="p-0">
                 <DataTable
-                  ariaLabel="Chatbot FAQs table"
+                  ariaLabel={activeTab === "train" ? "Chatbot training data table" : "Chatbot FAQs table"}
                   columns={columns}
                   rows={faqs}
                   loading={loading}
@@ -310,8 +329,12 @@ export default function ChatbotFAQPage() {
                   total={total}
                   totalPages={totalPages}
                   onPageChange={setPage}
-                  emptyTitle="No FAQs yet."
-                  emptyDescription="Add your first FAQ to train the AI assistant."
+                  emptyTitle={activeTab === "train" ? "No training data yet." : "No FAQs yet."}
+                  emptyDescription={
+                    activeTab === "train"
+                      ? "Add Q&A pairs here to ground the AI assistant without publishing them to the public FAQ page."
+                      : "Add your first FAQ to train the AI assistant."
+                  }
                   actions={(faq) => (
                     <div className="flex justify-end gap-2">
                       <button
@@ -392,7 +415,9 @@ export default function ChatbotFAQPage() {
             <div className="flex max-h-[88vh] w-full max-w-2xl flex-col rounded-2xl bg-white p-6 shadow-2xl">
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-xl font-bold text-dash-text">
-                  {editing ? "Edit FAQ" : "Add FAQ"}
+                  {editing
+                    ? (editing.is_public ? "Edit FAQ" : "Edit Training Q&A")
+                    : (activeTab === "train" ? "Add Training Q&A" : "Add FAQ")}
                 </h3>
                 <button onClick={close} className="rounded-lg p-2 text-dash-muted hover:bg-dash-bg">
                   <X size={18} />
@@ -454,7 +479,16 @@ export default function ChatbotFAQPage() {
                     checked={form.is_active}
                     onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
                   />
-                  Active (visible to AI assistant and public FAQ)
+                  Active (used by the AI assistant)
+                </label>
+
+                <label className="flex items-center gap-2 text-sm font-semibold text-dash-muted">
+                  <input
+                    type="checkbox"
+                    checked={form.is_public}
+                    onChange={(e) => setForm((f) => ({ ...f, is_public: e.target.checked }))}
+                  />
+                  Public (also shown on the customer-facing FAQ page)
                 </label>
 
                 <div className="flex justify-end gap-3 border-t border-dash-border pt-4 mt-auto">

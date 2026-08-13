@@ -1,5 +1,5 @@
 import type { IconType as LucideIcon } from "react-icons";
-import { LuBadgeCheck as BadgeCheck, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuMail as Mail, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShield as Shield, LuStar as Star, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
+import { LuBadgeCheck as BadgeCheck, LuBell as Bell, LuBot as Bot, LuCalendarCheck as CalendarCheck, LuCreditCard as CreditCard, LuFileText as FileText, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuKeyRound as KeyRound, LuMail as Mail, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPercent as Percent, LuBanknote as Banknote, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShield as Shield, LuStar as Star, LuTags as Tags, LuUserRound as UserRound, LuUsers as Users, LuUsersRound as UsersRound, LuWarehouse as Warehouse } from "react-icons/lu";
 import { MenuItem } from "@/types/auth";
 
 export type NavItem = {
@@ -36,6 +36,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Agent Payouts", module: "agent_ledger", href: "/admin/agent-payouts", icon: Banknote, permissions: ["agent_ledger.view", "view-agent_ledger"], section: "Finance" },
   { label: "Reports", module: "reports", href: "/admin/reports", icon: FileText, permissions: ["reports.view", "view-reports"], section: "Finance" },
   { label: "Website CMS", module: "website_cms", href: "/admin/cms", icon: Globe, permissions: ["website_cms.view", "view-website_cms", "settings.view", "view-settings"], section: "System" },
+  { label: "Chatbot", module: "chatbot", href: "/admin/chatbot", icon: Bot, permissions: ["chatbot.view", "view-chatbot"], section: "System" },
   { label: "Email Templates", module: "email", href: "/admin/email-templates", icon: Mail, permissions: ["email_templates.view", "email.view", "view-email"], section: "System" },
   { label: "Settings", module: "settings", href: "/admin/settings", icon: Settings, permissions: ["settings.view", "view-settings"], placement: "bottom" },
   { label: "Activity Logs", module: "activity_logs", href: "/admin/activity-logs", icon: FileText, permissions: ["activity_logs.view", "activity-logs.view", "view-activity_logs", "view-activity-logs"], section: "System" },
