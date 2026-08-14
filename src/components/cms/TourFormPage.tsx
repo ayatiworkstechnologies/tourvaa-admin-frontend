@@ -30,6 +30,7 @@ type Props = {
   onSaved?: (saved?: Record<string, unknown>) => void | Promise<void>;
   initialData?: Record<string, unknown>;
   sections?: Section[];
+  onGoToPricing?: () => void;
 };
 
 const ALL_SECTIONS: Section[] = ["basic", "location", "media-seo"];
@@ -123,6 +124,7 @@ export default function TourFormPage({
   onSaved,
   initialData,
   sections = ALL_SECTIONS,
+  onGoToPricing,
 }: Props) {
   const toast = useToast();
   const showBasic = sections.includes("basic");
@@ -437,12 +439,24 @@ export default function TourFormPage({
             {tourId && (
               <label>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Price from</span>
-                <input
-                  value={form.price_start_per_person ? `${form.currency ?? "USD"} ${form.price_start_per_person}` : "No approved pricing yet"}
-                  disabled
-                  title="Calculated automatically from the lowest approved Supplier Pricing slab -- set Supplier Pricing, then get it approved, to set this."
-                  className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-500`}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    value={form.price_start_per_person ? `${form.currency ?? "USD"} ${form.price_start_per_person}` : "No approved pricing yet"}
+                    disabled
+                    title="Calculated automatically from the lowest approved Supplier Pricing slab -- set Supplier Pricing, then get it approved, to set this."
+                    className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-500`}
+                  />
+                  {onGoToPricing && (
+                    <button
+                      type="button"
+                      onClick={onGoToPricing}
+                      className="shrink-0 whitespace-nowrap rounded-xl border border-dash-border px-3 py-2.5 text-xs font-bold text-dash-brand hover:bg-dash-bg"
+                    >
+                      Set in Pricing tab
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-[11px] text-dash-subtle">Set per-passenger prices in the Pricing step -- this updates automatically once approved.</p>
               </label>
             )}
             {textFields.map(([key, label]) => (

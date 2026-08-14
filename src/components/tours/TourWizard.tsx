@@ -393,7 +393,17 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
             : SECONDARY_TABS[activeIndex]?.label
         }
       >
-        {activeKey === "basic" && <TourFormPage tourId={tourId} embedded role={role} sections={["basic"]} initialData={tour ?? undefined} onSaved={() => fetchTour(false)} />}
+        {activeKey === "basic" && (
+          <TourFormPage
+            tourId={tourId}
+            embedded
+            role={role}
+            sections={["basic"]}
+            initialData={tour ?? undefined}
+            onSaved={() => fetchTour(false)}
+            onGoToPricing={() => selectPrimaryStep(PRIMARY_STEPS.findIndex((s) => s.key === "pricing"))}
+          />
+        )}
         {activeKey === "location" && (
           <div className="space-y-6">
             <TourFormPage tourId={tourId} embedded role={role} sections={["location"]} initialData={tour ?? undefined} onSaved={() => fetchTour(false)} />
