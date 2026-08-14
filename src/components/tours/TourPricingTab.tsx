@@ -9,9 +9,14 @@ import DataTable from "@/components/ui/DataTable";
 import CurrencySelect from "@/components/ui/CurrencySelect";
 import api from "@/lib/api/client";
 
-function supplierReceives(price: number, commissionType: string, commissionValue: number): number {
-  const value = commissionType === "percentage" ? price * (1 - commissionValue / 100) : price - commissionValue;
-  return Math.max(0, Math.round(value * 100) / 100);
+// Revenue-share model: the price entered below IS the full customer-facing
+// total (no separate markup layered on top). Tourvaa's cut is a single
+// global commission rate (Admin Settings -> Tourvaa Commission %, applies to
+// every supplier/tour) carved out of that total - this mirrors exactly what
+// services.tours._apply_pricing_computation computes server-side; this
+// preview just lets the price be checked before saving.
+function supplierReceives(price: number, commissionPercent: number): number {
+  return Math.max(0, Math.round(price * (1 - commissionPercent / 100) * 100) / 100);
 }
 
 // Formats a raw slab amount in the slab's own currency, without running it
@@ -28,26 +33,22 @@ const empty = (): PricingSlab => ({
   currency: "USD", status: "active",
 });
 
-export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: string; role?: "admin" | "supplier" }) {
+export default function TourPricingTab({ tourId }: { tourId: string; role?: "admin" | "supplier" }) {
   const toast = useToast();
   const [items, setItems] = useState<PricingSlab[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<PricingSlab | null>(null);
   const [saving, setSaving] = useState(false);
-  const [adminEditingId, setAdminEditingId] = useState<number | null>(null);
-  const [adminMarkup, setAdminMarkup] = useState({ admin_markup_type: "percentage", admin_markup_value: 0 });
-  const [adminSaving, setAdminSaving] = useState(false);
-  const [commissionFloor, setCommissionFloor] = useState<{ type: string; value: number } | null>(null);
+  const [commissionPercent, setCommissionPercent] = useState(10);
 
   useEffect(() => {
-    if (role !== "supplier") return;
-    api.get("/suppliers/me")
+    api.get("/settings/public")
       .then((res) => {
-        const data = res.data?.data ?? res.data ?? {};
-        setCommissionFloor({ type: data.markup_type || "percentage", value: Number(data.markup_value) || 0 });
+        const value = Number(res.data?.data?.supplier_commission_percentage);
+        if (Number.isFinite(value)) setCommissionPercent(value);
       })
-      .catch(() => setCommissionFloor(null));
-  }, [role]);
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,26 +100,6 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
     }
   };
 
-  const startAdminEdit = (item: PricingSlab) => {
-    setAdminEditingId(item.id ?? null);
-    setAdminMarkup({ admin_markup_type: item.admin_markup_type, admin_markup_value: item.admin_markup_value });
-  };
-
-  const saveAdminMarkup = async (item: PricingSlab) => {
-    if (!item.id) return;
-    setAdminSaving(true);
-    try {
-      const updated = await updatePricing(tourId, item.id, { ...item, ...adminMarkup });
-      setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
-      setAdminEditingId(null);
-      toast.success("Tourvaa markup saved.");
-    } catch {
-      toast.error("Failed to save Tourvaa markup.");
-    } finally {
-      setAdminSaving(false);
-    }
-  };
-
   const numField = (key: keyof PricingSlab, lbl: string) => (
     <label key={key}>
       <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
@@ -135,16 +116,12 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-dash-text">Supplier Pricing</h2>
-            <p className="text-sm text-dash-subtle">Your price per pax-range slab.</p>
+            <h2 className="text-xl font-bold text-dash-text">Tour Pricing</h2>
+            <p className="text-sm text-dash-subtle">Price per pax-range slab. This is the full price the customer pays - Tourvaa&apos;s commission ({commissionPercent}%, set once in Admin Settings) is deducted automatically when settling the supplier.</p>
           </div>
           <button
             type="button"
-            onClick={() => setEditing({
-              ...empty(),
-              markup_type: commissionFloor?.type ?? "percentage",
-              markup_value: commissionFloor?.value ?? 0,
-            })}
+            onClick={() => setEditing(empty())}
             className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white"
           >
             <Plus size={16} /> Add Slab
@@ -158,7 +135,7 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
         {items.length > 0 && (
           <div className="rounded-xl border border-dash-border bg-white p-0">
             <DataTable
-              ariaLabel="Supplier pricing slabs"
+              ariaLabel="Tour pricing slabs"
               columns={[
                 {
                   key: "pax_range",
@@ -166,18 +143,19 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
                   className: "font-semibold",
                   render: (item) => `${item.passenger_from}–${item.passenger_to}`,
                 },
-                { key: "adult_price", header: "Adult Price" },
-                { key: "child_price", header: "Child Price" },
+                { key: "adult_price", header: "Adult Price (customer pays)", render: (item) => formatSlabAmount(item.adult_price, item.currency) },
+                { key: "child_price", header: "Child Price (customer pays)", render: (item) => formatSlabAmount(item.child_price, item.currency) },
                 {
-                  key: "markup",
-                  header: "Commission",
-                  render: (item) => `${item.markup_value}${item.markup_type === "percentage" ? "%" : " fixed"}`,
+                  key: "commission",
+                  header: "Tourvaa Commission",
+                  className: "text-dash-subtle",
+                  render: () => `${commissionPercent}%`,
                 },
                 {
-                  key: "final_price",
-                  header: "You Receive",
+                  key: "supplier_receives",
+                  header: "Supplier Receives",
                   className: "font-bold text-dash-brand",
-                  render: (item) => item.supplier_final_adult_price ?? item.final_price,
+                  render: (item) => formatSlabAmount(item.supplier_final_adult_price ?? supplierReceives(item.adult_price, commissionPercent), item.currency),
                 },
                 { key: "currency", header: "Currency" },
               ]}
@@ -202,36 +180,25 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
               {numField("passenger_from", "Pax from")}
               {numField("passenger_to", "Pax to")}
               <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Commission %</span>
-                <input
-                  type="number"
-                  min={commissionFloor && editing.markup_type === commissionFloor.type ? commissionFloor.value : 0}
-                  step="0.01"
-                  value={editing.markup_value}
-                  onChange={(e) => setEditing((p) => p ? { ...p, markup_value: Number(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-                />
-                <span className="mt-1 block text-[11px] text-dash-subtle">
-                  {commissionFloor
-                    ? `Your agreed commission (${commissionFloor.value}%) is applied automatically. You may increase it for higher visibility.`
-                    : "Your agreed commission is applied automatically. You may increase it for higher visibility."}
-                </span>
-              </label>
-              {numField("adult_price", "Adult price")}
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier receives</span>
-                <input type="text" disabled value={formatSlabAmount(supplierReceives(editing.adult_price, editing.markup_type, editing.markup_value), editing.currency)}
-                  className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
-              </label>
-              {numField("child_price", "Child price")}
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier receives</span>
-                <input type="text" disabled value={formatSlabAmount(supplierReceives(editing.child_price, editing.markup_type, editing.markup_value), editing.currency)}
-                  className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
-              </label>
-              <label>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
                 <CurrencySelect value={editing.currency} onChange={(code) => setEditing((p) => p ? { ...p, currency: code } : p)} />
+              </label>
+              {numField("adult_price", "Adult price (customer pays)")}
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier receives</span>
+                <input type="text" disabled value={formatSlabAmount(supplierReceives(editing.adult_price, commissionPercent), editing.currency)}
+                  className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tourvaa commission ({commissionPercent}%)</span>
+                <input type="text" disabled value={formatSlabAmount(editing.adult_price - supplierReceives(editing.adult_price, commissionPercent), editing.currency)}
+                  className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
+              </label>
+              {numField("child_price", "Child price (customer pays)")}
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier receives</span>
+                <input type="text" disabled value={formatSlabAmount(supplierReceives(editing.child_price, commissionPercent), editing.currency)}
+                  className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
               </label>
               <label>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
@@ -243,7 +210,7 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
               </label>
             </div>
             <p className="mt-4 rounded-xl bg-dash-bg p-3 text-xs text-dash-subtle">
-              <strong className="text-dash-body">Note:</strong> The prices entered above are your net supplier prices. Tourvaa will apply a retail markup before publishing your tour to cover agent commissions, transaction fees, marketing, and operating costs.
+              <strong className="text-dash-body">Note:</strong> Adult/Child price above is the full price shown to customers at checkout. Tourvaa&apos;s commission ({commissionPercent}%) is applied automatically at settlement - no separate markup entry is needed.
             </p>
             <div className="mt-4 flex justify-end gap-3">
               <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
@@ -254,85 +221,6 @@ export default function TourPricingTab({ tourId, role = "supplier" }: { tourId: 
           </form>
         )}
       </div>
-
-      {role === "admin" && (
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-xl font-bold text-dash-text">Tourvaa Pricing</h2>
-            <p className="text-sm text-dash-subtle">Admin-only markup added on top of the supplier price, to cover fees and maintenance. This is the price shown at the storefront.</p>
-          </div>
-
-          {items.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-dash-border p-10 text-center text-sm text-dash-subtle">No pricing slabs yet.</div>
-          ) : (
-            <div className="rounded-xl border border-dash-border bg-white p-0">
-              <DataTable
-                ariaLabel="Tourvaa pricing markup"
-                columns={[
-                  {
-                    key: "pax_range",
-                    header: "Pax Range",
-                    className: "font-semibold",
-                    render: (item) => `${item.passenger_from}–${item.passenger_to}`,
-                  },
-                  {
-                    key: "supplier_final",
-                    header: "Supplier Price",
-                    render: (item) => item.supplier_final_adult_price ?? item.final_price,
-                  },
-                  {
-                    key: "admin_markup",
-                    header: "Tourvaa Markup",
-                    render: (item) =>
-                      adminEditingId === item.id ? (
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={adminMarkup.admin_markup_type}
-                            onChange={(e) => setAdminMarkup((m) => ({ ...m, admin_markup_type: e.target.value }))}
-                            className="rounded-lg border border-dash-border px-2 py-1 text-xs outline-none focus:border-dash-brand"
-                          >
-                            <option value="percentage">%</option>
-                            <option value="fixed">Fixed</option>
-                          </select>
-                          <input
-                            type="number"
-                            value={adminMarkup.admin_markup_value}
-                            onChange={(e) => setAdminMarkup((m) => ({ ...m, admin_markup_value: Number(e.target.value) }))}
-                            className="w-20 rounded-lg border border-dash-border px-2 py-1 text-xs outline-none focus:border-dash-brand"
-                          />
-                        </div>
-                      ) : (
-                        `${item.admin_markup_value}${item.admin_markup_type === "percentage" ? "%" : " fixed"}`
-                      ),
-                  },
-                  {
-                    key: "storefront_price",
-                    header: "Storefront Price",
-                    className: "font-bold text-emerald-700",
-                    render: (item) => item.storefront_adult_price ?? item.adult_price,
-                  },
-                  { key: "currency", header: "Currency" },
-                ]}
-                rows={items}
-                actions={(item) =>
-                  adminEditingId === item.id ? (
-                    <div className="flex gap-2 justify-end">
-                      <button type="button" onClick={() => saveAdminMarkup(item)} disabled={adminSaving} className="rounded-lg bg-dash-brand px-2.5 py-1.5 text-xs font-bold text-white disabled:opacity-60">
-                        {adminSaving ? "Saving..." : "Save"}
-                      </button>
-                      <button type="button" onClick={() => setAdminEditingId(null)} className="rounded-lg border border-dash-border p-1.5 hover:bg-[#F2F4F7]"><X size={13} /></button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2 justify-end">
-                      <button type="button" onClick={() => startAdminEdit(item)} aria-label="Edit Tourvaa markup" title="Edit Tourvaa markup" className="rounded-lg border border-dash-border p-1.5 hover:bg-[#F2F4F7]"><Pencil size={13} /></button>
-                    </div>
-                  )
-                }
-              />
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

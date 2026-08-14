@@ -235,18 +235,19 @@ export type PricingSlab = {
   passenger_to: number;
   adult_price: number;
   child_price: number;
+  // supplier_price/markup_type/markup_value/final_price/admin_markup_type/
+  // admin_markup_value are sent for backward API compatibility only - the
+  // server always ignores/recomputes them from the single global commission
+  // rate (Admin Settings -> Tourvaa Commission %). adult_price/child_price
+  // ARE the full customer-facing total; supplier_final_* (what the supplier
+  // is settled) and storefront_* (== adult_price/child_price) are read-only,
+  // server-computed for display.
   supplier_price: number;
-  // markup_type mirrors the supplier's commission type and is always
-  // recomputed server-side. markup_value is the commission for this slab --
-  // suppliers may raise it above their agreed rate, but the server floors
-  // it and rejects any attempt to go lower. final_price is read-only.
   markup_type: string;
   markup_value: number;
   final_price: number;
   supplier_final_adult_price?: number | null;
   supplier_final_child_price?: number | null;
-  // admin_markup_type/admin_markup_value are Tourvaa's own markup, editable
-  // by admins only; storefront_* is the resulting customer-facing price.
   admin_markup_type: string;
   admin_markup_value: number;
   storefront_adult_price?: number | null;

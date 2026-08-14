@@ -52,6 +52,11 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
       return !best || perPersonSaving > best.perPersonSaving ? { perPersonSaving } : best;
     }, null);
   }, [tour.discounts, unitPrice]);
+  // "You Save" must actually come off the total shown below it - previously
+  // the discount banner and the Total Amount both displayed the same
+  // pre-discount `total`, so the saving looked real but was never applied.
+  const savingsAmount = bestDiscount && bestDiscount.perPersonSaving > 0 ? bestDiscount.perPersonSaving * travellerCount : 0;
+  const discountedTotal = Math.max(0, total - savingsAmount);
   const dayCount = tour.number_of_days || 9;
   const destination = tour.country_name || "Your destination";
   const baseCurrency = tour.currency || "USD";
@@ -310,16 +315,16 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
               <h4 className="font-black uppercase">Booking summary</h4>
               <Summary label={`Tour Price (${adults + children} Guests)`} value={format(total, tour.currency || "USD")} />
               <Summary label="Taxes & Service Fees" value="Included" accent /><Summary label="Booking Fee" value="Free" accent />
-              {bestDiscount && bestDiscount.perPersonSaving > 0 && (
+              {savingsAmount > 0 && (
                 <div className="mt-2 flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 font-black text-emerald-700">
                   <span>You Save</span>
                   <span>
-                    {format(adults + children > 1 ? bestDiscount.perPersonSaving * (adults + children) : bestDiscount.perPersonSaving, tour.currency || "USD")}
-                    {adults + children <= 1 && <span className="font-normal"> / person</span>}
+                    {format(savingsAmount, tour.currency || "USD")}
+                    {travellerCount <= 1 && <span className="font-normal"> / person</span>}
                   </span>
                 </div>
               )}
-              <div className="mt-4 flex items-end justify-between border-t pt-4"><span><b className="block">Total Amount</b><small className="text-slate-400">per booking</small></span><b className="text-xl">{format(total, tour.currency || "USD")}</b></div>
+              <div className="mt-4 flex items-end justify-between border-t pt-4"><span><b className="block">Total Amount</b><small className="text-slate-400">per booking</small></span><b className="text-xl">{format(discountedTotal, tour.currency || "USD")}</b></div>
             </div>
             <button type="button" onClick={() => onBook({ travelDate: selectedDate, adults, children })} className="mt-5 w-full rounded-lg bg-blue-600 py-3.5 text-sm font-black text-white transition hover:bg-blue-700">Book Now</button>
             <button type="button" onClick={onWishlist} className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-xs font-bold ${wishlisted ? "border-red-200 bg-red-50 text-red-600" : "border-slate-200"}`}><Heart size={14} className={wishlisted ? "fill-current" : ""} />{wishlisted ? "Saved" : "Add to Wishlist"}</button>
@@ -330,7 +335,7 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
       {tour.similar_tours.length > 0 && <DiscoverMore tours={tour.similar_tours} format={format} />}
 
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-slate-200 bg-white px-5 py-3 shadow-[0_-8px_24px_rgba(15,23,42,.1)] lg:hidden" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
-        <span><b className="block text-sm">{format(unitPrice, tour.currency || "USD")} <span className="text-xs font-normal text-slate-400">/ person</span></b><small className="text-[10px] text-slate-400">Total for {adults + children} {adults + children === 1 ? "guest" : "guests"}: {format(total, tour.currency || "USD")}</small></span>
+        <span><b className="block text-sm">{format(unitPrice, tour.currency || "USD")} <span className="text-xs font-normal text-slate-400">/ person</span></b><small className="text-[10px] text-slate-400">Total for {travellerCount} {travellerCount === 1 ? "guest" : "guests"}: {format(discountedTotal, tour.currency || "USD")}</small></span>
         <a href="#booking" className="shrink-0 rounded-lg bg-blue-600 px-6 py-3 text-xs font-black text-white transition hover:bg-blue-700">Check Availability</a>
       </div>
     </main>
