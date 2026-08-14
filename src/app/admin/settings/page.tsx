@@ -25,6 +25,7 @@ const groupLabels: Record<string, string> = {
 
 const booleanSettingKeys = new Set([
   "maintenance_mode",
+  "force_site_currency",
 ]);
 
 type Setting = {

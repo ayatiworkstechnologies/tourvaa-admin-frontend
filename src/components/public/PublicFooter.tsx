@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { LuFacebook as Facebook, LuInstagram as Instagram, LuLinkedin as Linkedin, LuYoutube as Youtube } from "react-icons/lu";
 import CurrencySelector from "@/components/public/CurrencySelector";
@@ -46,6 +46,7 @@ function SocialIcon({ label }: { label: string }) {
 
 export default function PublicFooter() {
   const pathname = usePathname();
+  const router = useRouter();
   const { settings } = usePublicSettings();
   const [externalLinks, setExternalLinks] = useState<CmsExternalLink[]>([]);
   const [countries, setCountries] = useState<PublicCountry[]>([]);
@@ -90,7 +91,16 @@ export default function PublicFooter() {
           <div className="mt-5 grid grid-cols-2 gap-4">
             <CurrencySelector />
             <label className="sr-only" htmlFor="footer-country">Country</label>
-            <select id="footer-country" value={country} onChange={(event) => setCountry(event.target.value)} className="rounded border border-slate-300 bg-white px-4 py-2 text-xs font-semibold outline-none focus:border-blue-500">
+            <select
+              id="footer-country"
+              value={country}
+              onChange={(event) => {
+                const value = event.target.value;
+                setCountry(value);
+                router.push(`/tours?country=${encodeURIComponent(value)}`);
+              }}
+              className="rounded border border-slate-300 bg-white px-4 py-2 text-xs font-semibold outline-none focus:border-blue-500"
+            >
               {countryOptions.map((item) => <option key={item}>{item}</option>)}
             </select>
           </div>

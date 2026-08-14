@@ -69,10 +69,15 @@ async function loadCurrency() {
     const publicSettings = settingsResult.status === "fulfilled" ? settingsResult.value.data?.data : null;
     const rates = rateData?.rates && typeof rateData.rates === "object" ? rateData.rates : { USD: 1 };
 
-    // An admin-set site currency (Settings → Booking Defaults → Currency)
-    // is a strict override: every visitor sees it, no per-browser choice.
+    // An admin-set site currency is a strict override: every visitor sees it,
+    // no per-browser choice. Gated on the separate "force_site_currency"
+    // toggle, NOT merely on "currency" being non-blank - "currency" also
+    // doubles as the default booking/tour currency and always has a value
+    // (defaults to USD), so using its presence alone would force-lock the
+    // selector for every site out of the box with no way to opt back out.
+    const forceEnabled = String(publicSettings?.force_site_currency || "").toLowerCase() === "true";
     const siteCurrency = String(publicSettings?.currency || "").toUpperCase();
-    if (siteCurrency && rates[siteCurrency]) {
+    if (forceEnabled && siteCurrency && rates[siteCurrency]) {
       emit({
         baseCode: "USD",
         rates,
