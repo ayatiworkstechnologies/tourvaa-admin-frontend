@@ -33,8 +33,18 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
   const [children, setChildren] = useState(initialChildren);
   const departures = useMemo(() => tour.calendar.filter((entry) => entry.status !== "cancelled").slice(0, 5), [tour.calendar]);
   const [selectedDate, setSelectedDate] = useState(initialTravelDate || departures[0]?.date || "");
-  const unitPrice = Number(tour.price_start_per_person || 0);
-  const total = unitPrice * Math.max(1, adults + children);
+  // price_start_per_person is only a teaser "from" price for the tour card -
+  // the actual per-traveller price for a real booking must come from the
+  // group pricing slab matching the selected traveller count (tour.pricing),
+  // the same tiers rendered in the "Group Pricing" section below. Falls back
+  // to price_start_per_person only when no slabs are configured at all.
+  const travellerCount = Math.max(1, adults + children);
+  const matchedSlab = useMemo(
+    () => tour.pricing.find((slab) => travellerCount >= slab.persons_from && (slab.persons_to == null || travellerCount <= slab.persons_to)),
+    [tour.pricing, travellerCount]
+  );
+  const unitPrice = Number(matchedSlab?.price_per_person ?? tour.price_start_per_person ?? 0);
+  const total = unitPrice * travellerCount;
   const bestDiscount = useMemo(() => {
     if (!tour.discounts.length) return null;
     return tour.discounts.reduce<{ perPersonSaving: number } | null>((best, discount) => {
