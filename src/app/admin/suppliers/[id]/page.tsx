@@ -490,11 +490,27 @@ export default function SupplierDetailPage() {
                         <InfoGrid rows={[
                           ["Year", vehicle.year],
                           ["Capacity", vehicle.capacity],
-                          ["Fitness certificate", vehicle.fitness_certificate],
-                          ["Insurance", vehicle.insurance_document],
-                          ["Photos", vehicle.vehicle_photos],
                           ["Reason", vehicle.rejection_reason],
                         ]} />
+                        {(vehicle.fitness_certificate || vehicle.insurance_document || vehicle.vehicle_photos) && (
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            {vehicle.fitness_certificate && (
+                              <a href={String(vehicle.fitness_certificate)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]">
+                                <Eye size={14} /> Fitness certificate
+                              </a>
+                            )}
+                            {vehicle.insurance_document && (
+                              <a href={String(vehicle.insurance_document)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]">
+                                <Eye size={14} /> Insurance
+                              </a>
+                            )}
+                            {vehicle.vehicle_photos && (
+                              <a href={String(vehicle.vehicle_photos)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]">
+                                <Eye size={14} /> Photos
+                              </a>
+                            )}
+                          </div>
+                        )}
                         {canReviewItems && (
                           <div className="mt-3 flex flex-wrap items-center gap-2">
                             {vehicle.approval_status !== "approved" && (

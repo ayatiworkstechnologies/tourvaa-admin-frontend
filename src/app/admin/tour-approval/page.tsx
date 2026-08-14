@@ -87,7 +87,7 @@ export default function TourApprovalPage() {
     setLoading(true);
     try {
       const res = await api.get("/tours/pending-approval");
-      setVersions(res.data?.data ?? res.data ?? []);
+      setVersions(res.data?.items ?? res.data?.data ?? []);
     } catch {
       toast.error("Could not load pending tour approvals.");
     } finally {

@@ -9,6 +9,7 @@ import BookingStatusBadge from "@/components/bookings/BookingStatusBadge";
 import SupplierPicker from "@/components/bookings/SupplierPicker";
 import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { LuCircleCheckBig as CheckCircle2, LuLink as LinkIcon, LuLoaderCircle as Loader2, LuMail as Mail, LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuTicket as Ticket, LuUserCheck as UserCheck, LuUsers as Users, LuCircleX as XCircle } from "react-icons/lu";
 
 type DetailPanelProps = { title: string; children: React.ReactNode };
@@ -53,27 +54,30 @@ function StatusTimeline({ booking }: { booking: Booking }) {
   );
 }
 
-// Kept in sync with BOOKING_STATUSES in tourvaa-admin-backend/app/schemas/bookings.py -
-// the backend rejects any value outside that set, so this list must not drift from it.
-const BOOKING_STATUSES = [
-  "draft",
-  "pending_payment",
-  "pending_credit_approval",
-  "pending_supplier_assignment",
-  "payment_authorized",
-  "pending_supplier_acceptance",
-  "supplier_reassignment_required",
-  "confirmed",
-  "ready_to_travel",
-  "upcoming",
-  "ongoing",
-  "postponed",
-  "completed",
-  "cancellation_requested",
-  "declined",
-  "cancelled",
-  "refunded",
-];
+// Kept in sync with BOOKING_STATUS_TRANSITIONS in
+// tourvaa-admin-backend/app/services/bookings.py - the backend rejects any
+// transition not listed there (e.g. "completed" is terminal and accepts
+// none), so the dropdown must only ever offer statuses the backend will
+// actually allow from the booking's current status.
+const BOOKING_STATUS_TRANSITIONS: Record<string, string[]> = {
+  draft: ["pending_payment", "pending_credit_approval", "pending_supplier_assignment", "cancelled"],
+  pending_payment: ["pending_credit_approval", "payment_authorized", "pending_supplier_assignment", "pending_supplier_acceptance", "confirmed", "cancellation_requested", "cancelled", "declined"],
+  pending_credit_approval: ["pending_payment", "payment_authorized", "pending_supplier_assignment", "cancellation_requested", "cancelled", "declined"],
+  pending_supplier_assignment: ["pending_payment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required", "cancellation_requested", "cancelled", "declined"],
+  payment_authorized: ["pending_supplier_assignment", "pending_supplier_acceptance", "confirmed", "cancellation_requested", "cancelled", "declined"],
+  pending_supplier_acceptance: ["pending_supplier_assignment", "supplier_reassignment_required", "confirmed", "postponed", "cancellation_requested", "cancelled", "declined"],
+  supplier_reassignment_required: ["pending_supplier_assignment", "pending_supplier_acceptance", "cancellation_requested", "cancelled", "declined"],
+  confirmed: ["ready_to_travel", "ongoing", "completed", "postponed", "cancellation_requested", "cancelled"],
+  ready_to_travel: ["ongoing", "completed", "postponed", "cancellation_requested", "cancelled"],
+  upcoming: ["confirmed", "ready_to_travel", "ongoing", "completed", "postponed", "cancellation_requested", "cancelled"],
+  ongoing: ["completed", "postponed", "cancellation_requested", "cancelled"],
+  postponed: ["confirmed", "ready_to_travel", "ongoing", "completed", "cancellation_requested", "cancelled"],
+  cancellation_requested: ["pending_payment", "payment_authorized", "pending_supplier_acceptance", "confirmed", "ready_to_travel", "ongoing", "postponed", "cancelled"],
+  cancelled: ["refunded"],
+  declined: ["pending_supplier_assignment", "supplier_reassignment_required", "refunded"],
+  completed: [],
+  refunded: [],
+};
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -139,8 +143,7 @@ export default function BookingDetailPage() {
       setStatusReason("");
       await fetchBooking();
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string } } };
-      setActionErr(e?.response?.data?.detail || "Failed to change status.");
+      setActionErr(getApiErrorMessage(err));
     } finally {
       setChangingStatus(false);
     }
@@ -253,10 +256,12 @@ export default function BookingDetailPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => { setShowStatusForm(!showStatusForm); setShowAssignForm(false); setShowMsgForm(false); }}
-                    className="flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC] transition-all">
-                    <RefreshCw size={14} /> Change Status
-                  </button>
+                  {(BOOKING_STATUS_TRANSITIONS[booking.booking_status] ?? []).length > 0 && (
+                    <button type="button" onClick={() => { setShowStatusForm(!showStatusForm); setShowAssignForm(false); setShowMsgForm(false); }}
+                      className="flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC] transition-all">
+                      <RefreshCw size={14} /> Change Status
+                    </button>
+                  )}
                   <button type="button" onClick={() => { if (!showAssignForm) { setSupplierId(booking.supplier_id ?? null); } setShowAssignForm(!showAssignForm); setShowStatusForm(false); setShowMsgForm(false); }}
                     className="flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC] transition-all">
                     <UserCheck size={14} /> Assign Supplier
@@ -294,7 +299,7 @@ export default function BookingDetailPage() {
                 <select required title="New booking status" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}
                   className="rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-dash-brand">
                   <option value="">Select new status…</option>
-                  {BOOKING_STATUSES.map((s) => (
+                  {(BOOKING_STATUS_TRANSITIONS[booking.booking_status] ?? []).map((s) => (
                     <option key={s} value={s}>{s.replaceAll("_", " ")}</option>
                   ))}
                 </select>

@@ -6,6 +6,7 @@ import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleD
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import DatePicker from "@/components/ui/DatePicker";
 import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 
@@ -80,8 +81,15 @@ export default function AgentDashboardPage() {
         if (sumRes.status === "fulfilled") setSummary(sumRes.value.data?.data ?? {});
         if (bookRes.status === "fulfilled") setBookings(bookRes.value.data?.items ?? bookRes.value.data?.data ?? []);
         if (agentRes.status === "fulfilled") setAgentProfile(agentRes.value.data?.data ?? null);
-        if (sumRes.status === "rejected" || bookRes.status === "rejected" || agentRes.status === "rejected") {
-          setError("Some dashboard data could not be loaded. Retry to refresh the figures.");
+
+        const rejections = [sumRes, bookRes, agentRes].filter((r) => r.status === "rejected") as PromiseRejectedResult[];
+        if (rejections.length > 0) {
+          // A 403 (e.g. the agent's account isn't approved yet) carries a
+          // specific, actionable message from the backend - surface that
+          // instead of a generic "something failed" banner so the agent
+          // knows exactly why their dashboard data is missing.
+          const approvalError = rejections.find((r) => r.reason?.response?.status === 403);
+          setError(getApiErrorMessage((approvalError ?? rejections[0]).reason));
         }
       } finally {
         setLoading(false);

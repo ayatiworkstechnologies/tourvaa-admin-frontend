@@ -33,6 +33,7 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";
 import { isApprovedSupplier, supplierApprovalStatus } from "@/lib/auth/supplierAccess";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type Summary = {
   total_bookings?: number;
@@ -264,8 +265,13 @@ function ApprovedSupplierDashboard() {
         published: publishedToursResult.status === "fulfilled" ? Number(publishedToursResult.value.data?.total ?? 0) : 0,
       });
     }
-    if (results.some((result) => result.status === "rejected")) {
-      setError("Some dashboard data could not be loaded. The available sections are shown below.");
+    const rejections = results.filter((result): result is PromiseRejectedResult => result.status === "rejected");
+    if (rejections.length > 0) {
+      // A 403 (e.g. the supplier's account isn't approved yet) carries a
+      // specific, actionable message from the backend - surface that
+      // instead of a generic "something failed" banner.
+      const approvalError = rejections.find((r) => r.reason?.response?.status === 403);
+      setError(getApiErrorMessage((approvalError ?? rejections[0]).reason));
     }
     if (!background) setLoading(false);
   }, [filters]);
