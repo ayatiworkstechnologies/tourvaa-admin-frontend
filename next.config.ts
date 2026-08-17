@@ -51,7 +51,10 @@ const connectSrc =
 const nextConfig: NextConfig = {
   // Produces the minimal server bundle consumed by the production Docker image.
   // Static assets and public files are copied beside this bundle in Dockerfile.
-  output: "standalone",
+  // Only set for the Docker build - Vercel has its own deployment output and
+  // does not generate the trace files "standalone" mode expects, which fails
+  // the build with ENOENT on .next/next-server.js.nft.json.
+  ...(process.env.NEXT_OUTPUT_STANDALONE === "true" ? { output: "standalone" as const } : {}),
   skipTrailingSlashRedirect: true,
   // Next's dev-server DNS-rebinding protection only allows "localhost" by
   // default, silently dropping HMR websocket connections (and, with them,

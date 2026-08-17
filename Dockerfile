@@ -20,6 +20,7 @@ ARG API_PROXY_TARGET=http://backend:8000
 ARG NEXT_PUBLIC_WS_URL=ws://localhost:8000
 ENV API_PROXY_TARGET=${API_PROXY_TARGET}
 ENV NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL}
+ENV NEXT_OUTPUT_STANDALONE=true
 RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 FROM node:22-alpine AS runtime
