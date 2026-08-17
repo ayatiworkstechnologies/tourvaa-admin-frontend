@@ -31,7 +31,7 @@ check("booking summary cards use server-wide status counts", bookingList.include
 check("dashboard booking links apply their status filter", bookingList.includes('new URLSearchParams(window.location.search).get("status")'));
 
 const dashboard = read("src/app/supplier/dashboard/page.tsx");
-check("dashboard exposes recoverable partial-load errors", dashboard.includes("Some dashboard data could not be loaded") && dashboard.includes("Retry"));
+check("dashboard exposes recoverable partial-load errors", dashboard.includes("Promise.allSettled") && dashboard.includes("setError(") && dashboard.includes("Retry"));
 check("dashboard excludes reserved ledger rows from available payout", dashboard.includes('=== "reserved"') && dashboard.includes('["pending", "partial"]'));
 check("dashboard loads supplier-scoped tour totals instead of missing summary fields", dashboard.includes('api.get("/tours", { params: { limit: 1 } })') && dashboard.includes('status: "published"'));
 check("dashboard prioritizes supplier actions", ["Create New Tour", "Review Bookings", "View Earnings", "Request Payout"].every((label) => dashboard.includes(label)));
@@ -105,8 +105,10 @@ check("preview uses backend tour field names", preview.includes("price_start_per
 check("preview loads structured tour sections", preview.includes("/highlights") && preview.includes("/inclusions") && preview.includes("/exclusions"));
 
 const messages = read("src/app/supplier/messages/page.tsx");
-check("supplier message history is connected", messages.includes('api.get("/supplier/messages"'));
-check("supplier support compose is connected", messages.includes('api.post("/supplier/messages"'));
+const portalMessageThread = read("src/components/messaging/PortalMessageThread.tsx");
+const messagingService = read("src/lib/api/services/messagingService.ts");
+check("supplier message history is connected", messages.includes('PortalMessageThread portal="supplier"') && portalMessageThread.includes("getOwnConversation(portal)") && messagingService.includes('supplier: "/supplier/messages"'));
+check("supplier support compose is connected", portalMessageThread.includes("sendOwnMessage(portal") && messagingService.includes("api.post(OWN_MESSAGES_PATH[portal]"));
 
 const payouts = read("src/app/supplier/payouts/page.tsx");
 check("payout payload omits unsupported bank fields", !payouts.includes("bank_name:") && !payouts.includes("account_number:"));

@@ -40,6 +40,7 @@
 }
 
 :root {
+  --font-onest: "Onest Variable", "Segoe UI", sans-serif;
   --primary: #4f46e5;
   --primary-dark: #3730a3;
   --accent: #8b5cf6;

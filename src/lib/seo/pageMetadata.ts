@@ -74,6 +74,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/admin/discounts": { title: "Discount Management", description: "Create and manage Tourvaa promotional discounts and eligibility rules.", index: false },
   "/admin/email-templates": { title: "Email Templates", description: "Manage transactional and operational email templates sent by Tourvaa.", index: false },
   "/admin/invoices": { title: "Invoice Management", description: "Review and download invoices generated for Tourvaa bookings and payments.", index: false },
+  "/admin/messages": { title: "Messages", description: "Manage support conversations with Tourvaa customers, suppliers, agents, and affiliates.", index: false },
   "/admin/notifications": { title: "Notifications", description: "Review and manage Tourvaa system and operational notifications.", index: false },
   "/admin/payments": { title: "Payment Management", description: "Monitor payment attempts, captures, refunds, voids, and gateway statuses.", index: false },
   "/admin/payments/[id]": { title: "Payment Details", description: "Review a single payment's gateway status, capture, refund, and void history.", index: false },

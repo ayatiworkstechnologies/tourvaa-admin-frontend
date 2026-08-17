@@ -56,6 +56,18 @@ npm run build
 npm run start
 ```
 
+## Container and CI/CD
+
+Build the production standalone image from this repository:
+
+```bash
+docker build --build-arg API_PROXY_TARGET=http://backend:8000 --build-arg NEXT_PUBLIC_WS_URL=ws://localhost:8000 -t tourvaa/frontend:local .
+```
+
+The image runs as a non-root user on port `3000` and includes a health check. The workflow at `.github/workflows/ci-cd.yml` runs audit, lint, tests and production build, scans the image, then publishes verified main/tag builds to `ghcr.io/<owner>/<repository>`.
+
+For the complete frontend/backend/MySQL/Redis stack, use `compose.yaml` and `DOCKER_CICD_GUIDE.md` from the shared workspace root.
+
 ---
 
 ## Authentication

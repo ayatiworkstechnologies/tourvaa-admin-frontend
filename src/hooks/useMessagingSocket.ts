@@ -17,7 +17,10 @@ const MAX_RETRY_MS = 30000;
  * rather than the session cookie, since a cross-origin request wouldn't carry it. */
 export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => void) {
   const onMessageRef = useRef(onMessage);
-  onMessageRef.current = onMessage;
+
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   useEffect(() => {
     const base = (process.env.NEXT_PUBLIC_WS_URL || "").replace(/\/$/, "");

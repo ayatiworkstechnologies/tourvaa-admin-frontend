@@ -60,7 +60,7 @@ check("booking list failures can be retried", bookings.includes("setRetryKey") &
 
 const dashboard = read("src/app/agent/dashboard/page.tsx");
 check("dashboard sends all visible filters to the summary API", dashboard.includes("booking_status: filters.status") && dashboard.includes("start_date: filters.start_date"));
-check("dashboard exposes recoverable partial-load errors", dashboard.includes("Some dashboard data could not be loaded") && dashboard.includes("Retry"));
+check("dashboard exposes recoverable partial-load errors", dashboard.includes("Promise.allSettled") && dashboard.includes("setError(") && dashboard.includes("Retry"));
 check("commission requests are managed from the agent dashboard", dashboard.includes('api.post("/agents/me/commission-request"') && dashboard.includes("Commission Setup"));
 
 const detail = read("src/app/agent/bookings/[id]/page.tsx");
@@ -79,8 +79,10 @@ check("invoices render readable backend references", invoices.includes("customer
 check("invoice failures are visible and retryable", invoices.includes("Invoices could not be loaded") && invoices.includes("Retry"));
 
 const messages = read("src/app/agent/messages/page.tsx");
-check("agent message history is connected", messages.includes('api.get("/agent/messages"'));
-check("agent support compose is connected", messages.includes('api.post("/agent/messages"'));
+const portalMessageThread = read("src/components/messaging/PortalMessageThread.tsx");
+const messagingService = read("src/lib/api/services/messagingService.ts");
+check("agent message history is connected", messages.includes('PortalMessageThread portal="agent"') && portalMessageThread.includes("getOwnConversation(portal)") && messagingService.includes('agent: "/agent/messages"'));
+check("agent support compose is connected", portalMessageThread.includes("sendOwnMessage(portal") && messagingService.includes("api.post(OWN_MESSAGES_PATH[portal]"));
 
 const profile = read("src/app/agent/profile/page.tsx");
 const verificationDocuments = read("src/components/agent/profile/VerificationDocumentsTab.tsx");

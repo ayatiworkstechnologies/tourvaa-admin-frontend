@@ -49,6 +49,9 @@ const connectSrc =
     : `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com ${devHmrHosts};`;
 
 const nextConfig: NextConfig = {
+  // Produces the minimal server bundle consumed by the production Docker image.
+  // Static assets and public files are copied beside this bundle in Dockerfile.
+  output: "standalone",
   skipTrailingSlashRedirect: true,
   // Next's dev-server DNS-rebinding protection only allows "localhost" by
   // default, silently dropping HMR websocket connections (and, with them,
