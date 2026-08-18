@@ -373,17 +373,9 @@ export default function PublicBookingPage() {
                           <label className="field-label">Full name *<input aria-invalid={Boolean(travellerError?.full_name)} {...register(`travellers.${index}.full_name`, { required: "Name is required" })} className={`field ${travellerError?.full_name ? "border-red-400 ring-2 ring-red-100" : ""}`} /><ErrorText text={travellerError?.full_name?.message} /></label>
                           <label className="field-label">Age *<input type="number" min={adult ? 12 : 3} max={adult ? 120 : 11} aria-invalid={Boolean(travellerError?.age)} {...register(`travellers.${index}.age`, { required: "Age is required", validate: (v) => { const age = Number(v); return (adult ? age >= 12 && age <= 120 : age >= 3 && age <= 11) || (adult ? "Age must be 12–120" : "Age must be 3–11"); } })} className={`field ${travellerError?.age ? "border-red-400 ring-2 ring-red-100" : ""}`} /><ErrorText text={travellerError?.age?.message} /></label>
                         </div>
-                        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                        <div className="mt-3">
                           <label className="field-label">Gender<select {...register(`travellers.${index}.gender`)} className="field"><option value="">Prefer not to say</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></label>
-                          <Controller control={control} name={`travellers.${index}.date_of_birth`} render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} maxDate={todayLocalDateStr()} label="Date of birth" subtitle="Choose date of birth" placeholder="Select date" />} />
-                          <label className="field-label">Nationality<input {...register(`travellers.${index}.nationality`)} placeholder="e.g. Indian" className="field" /></label>
                         </div>
-                        {!isPrimary && (
-                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                            <label className="field-label">Passport number <span className="font-normal normal-case text-slate-400">(optional)</span><input {...register(`travellers.${index}.passport_number`)} className="field" /></label>
-                            <Controller control={control} name={`travellers.${index}.passport_expiry_date`} render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} minDate={todayLocalDateStr()} label="Passport expiry (optional)" placeholder="Select date" />} />
-                          </div>
-                        )}
                       </div>
                     );
                   })}

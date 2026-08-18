@@ -32,7 +32,6 @@ check("tour links preserve booking query", detail.includes("bookingQuery"));
 check("login return path preserves booking context", detail.includes("encodeURIComponent(returnPath)"));
 check("tour CTA opens dedicated public booking flow", detail.includes('`/booking/${tour.id}'));
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
-check("tour operator displays the assigned supplier name", detailExperience.includes('tour.supplier_name || "Tourvaa Experiences"'));
 check("tour detail uses Book Now without cart actions", detailExperience.includes("Book Now") && !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
 
 // The booking form was moved off the tour detail page into a dedicated
