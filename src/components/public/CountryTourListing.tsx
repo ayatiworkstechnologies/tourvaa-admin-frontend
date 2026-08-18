@@ -1,17 +1,16 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LuArrowRight as ArrowRight, LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuClock3 as Clock, LuFilter as Filter, LuGrid2X2 as Grid, LuHeart as Heart, LuHouse as Home, LuList as List, LuScale as Scale, LuSearch as Search, LuSlidersHorizontal as Sliders, LuStar as Star, LuMapPin as MapPin } from "react-icons/lu";
+import { LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuClock3 as Clock, LuFilter as Filter, LuGrid2X2 as Grid, LuHouse as Home, LuList as List, LuSearch as Search, LuSlidersHorizontal as Sliders, LuMapPin as MapPin } from "react-icons/lu";
 import { fetchPublicCategories, fetchPublicCountries, fetchPublicTours, PublicTour } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/useToast";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 import { MAX_COMPARE_ITEMS, useTravelStore } from "@/providers/TravelStoreProvider";
+import TourCard from "@/components/public/TourCard";
 
 const FALLBACK = "/images/tour-card-fallback.jpg";
 
@@ -152,12 +151,14 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           {tours.length === 0 ? <div className="py-24 text-center"><Filter size={34} className="mx-auto text-slate-300" /><h2 className="mt-5 text-xl font-black">No published tours yet</h2><Link href="/tours" className="mt-5 inline-flex rounded-lg bg-blue-600 px-6 py-3 text-sm font-bold text-white">Explore all tours</Link></div> : <div className={`mt-9 grid gap-8 ${view === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>{tours.map((tour) => {
             const travelItem = { id: tour.id, title: tour.title, place: tour.country_name, image: tour.banner_image ? mediaUrl(tour.banner_image) : FALLBACK, price: tour.price_start_per_person, currency: tour.currency || "USD", duration: tour.number_of_days ? `${tour.number_of_days} days` : "Flexible", href: publicTourUrl(tour) };
             return (
-              <TourResultCard
+              <TourCard
                 key={tour.id}
                 tour={tour}
+                format={formatCompact}
+                variant="search"
                 view={view}
-                formatCompact={formatCompact}
-                saved={isWishlisted(tour.id)}
+                departures={tour.departures}
+                wishlisted={isWishlisted(tour.id)}
                 onWishlist={() => toggleWishlist(travelItem)}
                 compared={isCompared(tour.id)}
                 compareLimitReached={!isCompared(tour.id) && compareCount >= MAX_COMPARE_ITEMS}
@@ -173,42 +174,6 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     </main>
   );
 }
-
-function TourResultCard({ tour, view, formatCompact, saved, onWishlist, compared, compareLimitReached, onCompare }: { tour: PublicTour; view: "grid" | "list"; formatCompact: (amount: number | string | null | undefined, currency?: string) => string; saved: boolean; onWishlist: () => void; compared: boolean; compareLimitReached: boolean; onCompare: () => void }) {
-  const image = tour.banner_image ? mediaUrl(tour.banner_image) : FALLBACK;
-  const base = Number(tour.price_start_per_person || 0);
-  const days = tour.number_of_days || 6;
-  const departures = tour.departures?.slice(0, 3) || [];
-  return (
-    <article className={`group relative rounded-xl border border-slate-100 bg-white p-3 shadow-[0_12px_30px_rgba(15,23,42,.09)] transition hover:-translate-y-1 hover:shadow-xl ${view === "list" ? "grid sm:grid-cols-[340px_1fr]" : ""}`}>
-      <div className="absolute right-5 top-5 z-10 flex flex-col gap-2">
-        <button type="button" onClick={onWishlist} className={`flex h-8 w-8 items-center justify-center rounded-full ${saved ? "bg-red-500 text-white" : "bg-white/90 text-red-500"}`}><Heart size={17} className={saved ? "fill-current" : ""} /></button>
-        <button
-          type="button"
-          onClick={onCompare}
-          disabled={compareLimitReached}
-          aria-label={compared ? `Remove ${tour.title} from comparison` : compareLimitReached ? `Comparison list is full (max ${MAX_COMPARE_ITEMS})` : `Add ${tour.title} to comparison`}
-          title={compareLimitReached ? `Comparison list is full (max ${MAX_COMPARE_ITEMS})` : undefined}
-          className={`flex h-8 w-8 items-center justify-center rounded-full transition ${compared ? "bg-blue-600 text-white" : compareLimitReached ? "cursor-not-allowed bg-white/60 text-blue-300" : "bg-white/90 text-blue-600"}`}
-        >
-          <Scale size={16} />
-        </button>
-      </div>
-      <Link href={publicTourUrl(tour)} className="contents">
-        <div className="relative h-48 overflow-hidden rounded-lg"><img src={image} alt={tour.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /><span className="absolute left-3 top-3 rounded-full bg-sky-400/80 px-3 py-1 text-[9px] font-bold text-white"><MapPin size={9} className="mr-1 inline" />{tour.country_name}</span></div>
-        <div className="p-1 pt-4">
-          <div className="flex items-center justify-between gap-3"><h2 className="truncate text-base font-black">{tour.title}</h2><span className="shrink-0 rounded border border-blue-300 px-1 text-[8px] font-bold text-blue-600">{days}D | {Math.max(1, days - 1)}N</span></div>
-          {tour.rating_average != null && <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-slate-600"><Star size={11} className="fill-amber-400 text-amber-400" />{tour.rating_average.toFixed(1)} <span className="font-normal text-slate-400">({tour.rating_count})</span></div>}
-          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 text-[9px] text-slate-600"><span><Calendar size={10} className="mr-1 inline text-blue-500" />{days} Days</span><span><MapPin size={10} className="mr-1 inline text-blue-500" />{tour.city_name || tour.country_name} to destination</span></div>
-          <div className="mt-5 grid grid-cols-4 gap-2">{departures.length ? departures.map((departure) => <span key={departure.id} className="rounded border border-slate-200 p-2 text-[9px]"><small>{shortDate(departure.date)}</small><b className="block text-xs">{base ? formatCompact(base, tour.currency || "USD") : "Request"}</b></span>) : <span className="col-span-3 rounded border border-slate-200 p-2 text-[9px] text-slate-500"><small>Dates on request</small><b className="block text-xs">Contact us</b></span>}<span className="flex items-center justify-center rounded border border-slate-200 text-xs font-black">+More</span></div>
-          <div className="mt-5 flex items-end justify-between border-t border-slate-100 pt-4"><span className="text-sm font-bold">From <b className="text-xl">{base ? formatCompact(base, tour.currency || "USD") : "On request"}</b><small>pp</small></span><span className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-xs font-bold text-white">View tour <ArrowRight size={14} /></span></div>
-        </div>
-      </Link>
-    </article>
-  );
-}
-
-function shortDate(value: string) { const date = new Date(`${value}T00:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "2-digit" }).format(date); }
 
 function FilterSelect({ label, value, active, options, onChange }: { label: string; value: string; active: boolean; options: { label: string; value: string }[]; onChange: (value: string) => void }) {
   return <label className={`relative flex items-center rounded-full border px-3 py-2 text-xs font-semibold transition ${active ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white hover:border-blue-300 hover:text-blue-600"}`}><select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} className="cursor-pointer appearance-none bg-transparent py-0 pl-0 pr-5 text-xs font-semibold outline-none"><option value={value} disabled hidden>{options.find((option) => option.value === value)?.label || label}</option>{options.map((option) => <option key={`${label}-${option.value}`} value={option.value} className="bg-white text-slate-900">{option.label}</option>)}</select><ChevronDown size={13} className="pointer-events-none absolute right-2" /></label>;

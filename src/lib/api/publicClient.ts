@@ -14,6 +14,9 @@ export type PublicTour = {
   subtitle: string;
   price_start_per_person: number | null;
   currency: string;
+  discount_percentage?: number | null;
+  original_price_per_person?: number | null;
+  discounted_price_per_person?: number | null;
   country_name: string;
   country_slug?: string;
   city_name: string;

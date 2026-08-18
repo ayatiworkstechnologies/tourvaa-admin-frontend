@@ -6,9 +6,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuBedDouble as Bed, LuBriefcase as Suitcase, LuBus as Bus, LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuCheck as Check, LuCircleCheckBig as CheckCircle, LuHeart as Heart, LuHouse as House, LuMapPin as MapPin, LuMinus as Minus, LuPlus as Plus, LuSparkles as Sparkles, LuStar as Star, LuTag as Tag, LuUserRound as User, LuUsers as Users, LuUtensils as Utensils, LuX as X } from "react-icons/lu";
 import { PublicTour, PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
+import { DiscountBanner, hasActiveDiscount } from "@/components/public/DiscountPrice";
+import TourCard from "@/components/public/TourCard";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
-import { publicTourUrl } from "@/lib/utils/tourUrl";
-import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { ADDON_CATEGORIES } from "@/lib/constants/addonCategories";
 
 const FALLBACK = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85";
@@ -108,6 +108,7 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
           <h2 className="text-3xl font-black tracking-tight md:text-4xl">{tour.title}</h2>
           <div className="mt-6 flex flex-wrap items-center gap-5 text-sm font-semibold">
             <span className="rounded-full bg-blue-600 px-5 py-2 text-white">Best Seller</span>
+            {hasActiveDiscount(tour) && <DiscountBanner percentage={tour.discount_percentage!} />}
             {tour.rating_average != null ? (
               <a href="#reviews" className="flex items-center gap-2"><Star size={16} className="fill-amber-400 text-amber-400" /><b>{tour.rating_average.toFixed(1)}</b> ({tour.rating_count} Review{tour.rating_count === 1 ? "" : "s"})</a>
             ) : (
@@ -699,29 +700,8 @@ function DiscoverMore({ tours, format }: { tours: PublicTour[]; format: (amount:
     <section id="similar-tours" className="mx-auto mt-14 max-w-7xl px-5 md:px-8">
       <div className="mb-5 flex items-center justify-between"><h3 className="text-2xl font-black">Similar Tours</h3><div className="flex gap-2"><button type="button" aria-label="Previous tours" onClick={() => move(-1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 transition hover:border-blue-500 hover:text-blue-600"><ArrowLeft size={15} /></button><button type="button" aria-label="Next tours" onClick={() => move(1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 transition hover:border-blue-500 hover:text-blue-600"><ArrowRight size={15} /></button></div></div>
       <div ref={ref} className="no-scrollbar flex snap-x gap-5 overflow-x-auto pb-2">
-        {tours.map((related) => <div className="w-[280px] shrink-0 snap-start" key={related.id}><SimilarTourCard tour={related} format={format} /></div>)}
+        {tours.map((related) => <div className="w-[280px] shrink-0 snap-start" key={related.id}><TourCard tour={related} format={format} variant="compact" /></div>)}
       </div>
     </section>
-  );
-}
-
-function SimilarTourCard({ tour, format }: { tour: PublicTour; format: (amount: number | string | null | undefined, currency?: string) => string }) {
-  const { isWishlisted, toggleWishlist } = useTravelStore();
-  const image = tour.banner_image ? mediaUrl(tour.banner_image) : FALLBACK;
-  const wishlisted = isWishlisted(tour.id);
-  const travelItem = { id: tour.id, title: tour.title, place: tour.city_name || tour.country_name, image, price: tour.price_start_per_person ?? null, currency: tour.currency || "USD", duration: tour.number_of_days ? `${tour.number_of_days}D` : "Flexible", href: publicTourUrl(tour) };
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-100 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-      <button type="button" onClick={() => toggleWishlist(travelItem)} aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`} className={`absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur transition hover:scale-110 ${wishlisted ? "bg-red-500 text-white" : "bg-black/20 text-white hover:bg-white hover:text-red-500"}`}><Heart size={15} className={wishlisted ? "fill-current" : ""} /></button>
-      <a href={publicTourUrl(tour)} className="block">
-        <div className="h-48 overflow-hidden"><img src={image} alt={tour.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /></div>
-        <div className="p-5">
-          <p className="text-[10px] font-bold text-blue-600">{tour.city_name || tour.country_name}</p>
-          <h4 className="mt-2 line-clamp-2 text-base font-black">{tour.title}</h4>
-          {tour.rating_average != null && <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500"><Star size={12} className="fill-amber-400 text-amber-400" />{tour.rating_average.toFixed(1)} {tour.rating_count ? `(${tour.rating_count})` : ""}</p>}
-          {tour.price_start_per_person != null && <p className="mt-3 text-sm font-black text-slate-900">{format(tour.price_start_per_person, tour.currency || "USD")} <span className="text-xs font-normal text-slate-400">pp</span></p>}
-        </div>
-      </a>
-    </div>
   );
 }
