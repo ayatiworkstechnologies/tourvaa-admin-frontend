@@ -15,6 +15,8 @@ export type DatePickerProps = {
   minDate?: string;
   maxDate?: string;
   label?: string;
+  /** Small caption shown under the month/year in the calendar popover. Omit for a plain date picker. */
+  subtitle?: string;
   placeholder?: string;
   className?: string;
   buttonClassName?: string;
@@ -29,6 +31,7 @@ export type DatePickerProps = {
 };
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 function dateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -52,6 +55,7 @@ export default function DatePicker({
   minDate,
   maxDate,
   label,
+  subtitle,
   placeholder = "Select date",
   className = "",
   buttonClassName = "",
@@ -163,7 +167,22 @@ export default function DatePicker({
   }
 
   const formattedValue = selectedDate?.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" }) ?? "";
-  const monthLabel = currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  // Fast year/month navigation - clicking "previous month" one at a time to
+  // reach e.g. a birth year decades back is painful, so the header offers
+  // direct-jump dropdowns instead of just prev/next arrows.
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const minParsed = parseDate(minDate);
+    const maxParsed = parseDate(maxDate);
+    const from = minParsed ? minParsed.getFullYear() : currentYear - 100;
+    const to = maxParsed ? maxParsed.getFullYear() : currentYear + 10;
+    const years: number[] = [];
+    for (let year = to; year >= from; year--) years.push(year);
+    return years;
+  }, [minDate, maxDate]);
+  const jumpToMonth = (month: number) => setCurrentMonth((prev) => new Date(prev.getFullYear(), month, 1));
+  const jumpToYear = (year: number) => setCurrentMonth((prev) => new Date(year, prev.getMonth(), 1));
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
@@ -191,11 +210,29 @@ export default function DatePicker({
           style={popoverPosition}
           className="fixed z-[200] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_24px_70px_-18px_rgba(15,23,42,0.35)]"
         >
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <button type="button" onClick={() => setCurrentMonth((month) => new Date(month.getFullYear(), month.getMonth() - 1, 1))} aria-label="Previous month" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"><ChevronLeft size={17} /></button>
-            <div className="text-center"><p className="text-sm font-black text-slate-950">{monthLabel}</p><p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Choose travel date</p></div>
-            <button type="button" onClick={() => setCurrentMonth((month) => new Date(month.getFullYear(), month.getMonth() + 1, 1))} aria-label="Next month" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"><ChevronRight size={17} /></button>
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <button type="button" onClick={() => setCurrentMonth((month) => new Date(month.getFullYear(), month.getMonth() - 1, 1))} aria-label="Previous month" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"><ChevronLeft size={17} /></button>
+            <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5">
+              <select
+                aria-label="Jump to month"
+                value={currentMonth.getMonth()}
+                onChange={(event) => jumpToMonth(Number(event.target.value))}
+                className="min-w-0 rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-sm font-black text-slate-950 outline-none transition hover:border-slate-200 focus:border-slate-300"
+              >
+                {MONTH_NAMES.map((name, index) => <option key={name} value={index}>{name}</option>)}
+              </select>
+              <select
+                aria-label="Jump to year"
+                value={currentMonth.getFullYear()}
+                onChange={(event) => jumpToYear(Number(event.target.value))}
+                className="min-w-0 rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-sm font-black text-slate-950 outline-none transition hover:border-slate-200 focus:border-slate-300"
+              >
+                {yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
+              </select>
+            </div>
+            <button type="button" onClick={() => setCurrentMonth((month) => new Date(month.getFullYear(), month.getMonth() + 1, 1))} aria-label="Next month" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"><ChevronRight size={17} /></button>
           </div>
+          {subtitle && <p className="-mt-2 mb-3 text-center text-[10px] font-semibold uppercase tracking-widest text-slate-400">{subtitle}</p>}
 
           <div className="grid grid-cols-7 border-b border-slate-100 pb-2 text-center">
             {WEEKDAYS.map((day) => <span key={day} className="text-[10px] font-black uppercase tracking-wide text-slate-400">{day.slice(0, 2)}</span>)}
