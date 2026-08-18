@@ -113,7 +113,6 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
             ) : (
               <span className="flex items-center gap-2 text-slate-400"><Star size={16} /> No reviews yet</span>
             )}
-            <span>Operated by: <b>{tour.supplier_name || "Tourvaa Experiences"}</b></span>
           </div>
           <nav className="mt-7 flex flex-wrap gap-x-12 gap-y-3 text-sm font-semibold text-slate-700"><a href="#overview">Explore</a><a href="#essentials" className="flex items-center gap-2">Tour Categories <ChevronDown size={15} /></a><a href="#itinerary" className="flex items-center gap-2">Travel Guides <ChevronDown size={15} /></a><a href="#itinerary" className="flex items-center gap-2">Travel Guide <ChevronDown size={15} /></a></nav>
         </header>
@@ -491,7 +490,12 @@ function ItineraryAccordion({ days, fallbackImages }: { days: PublicTourDetail["
                 {!isDayTour && <ChevronDown size={16} className={`shrink-0 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />}
               </button>
               {isOpen && (
-                <div className="grid gap-6 px-3 pb-4 pt-2 md:grid-cols-[1fr_.8fr]">
+                <div className="px-3 pb-4 pt-2">
+                  {dayImages.length > 0 && (
+                    <div className="mb-6">
+                      <DayImageCarousel images={dayImages} title={item.title} />
+                    </div>
+                  )}
                   <div className="min-w-0">
                     {item.description && <p className="text-sm leading-7 text-slate-600">{item.description}</p>}
                     {activitiesList.length > 0 && (
@@ -520,7 +524,6 @@ function ItineraryAccordion({ days, fallbackImages }: { days: PublicTourDetail["
                     </div>
                     {item.important_notes && <div className="mt-5 rounded-xl bg-slate-50 p-4 text-xs leading-6"><b>Please note</b><p>{item.important_notes}</p></div>}
                   </div>
-                  {dayImages.length > 0 && <DayImageCarousel images={dayImages} title={item.title} />}
                 </div>
               )}
             </div>
@@ -540,7 +543,7 @@ function DayImageCarousel({ images, title }: { images: string[]; title: string }
   const next = () => setIndex((i) => (i + 1) % images.length);
 
   return (
-    <div className="relative h-64 w-full overflow-hidden rounded-2xl md:h-full">
+    <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
       <img src={images[index]} alt={title} className="h-full w-full object-cover" />
       {images.length > 1 && (
         <>

@@ -28,6 +28,7 @@ export default function ToursPage() {
   const supplierId = searchParams.get("supplier_id") || "";
   const [rows, setRows] = useState<CmsRecord[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | "published" | "draft" | "disabled">("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -61,6 +62,7 @@ export default function ToursPage() {
     try {
       const params: Record<string, string | number> = { page, limit: PAGE_SIZE, search: debouncedSearch };
       if (supplierId) params.supplier_id = supplierId;
+      if (statusFilter) params.status = statusFilter;
       const response = await listCms("/tours", params);
       setRows(response.items || response.data || []);
       setTotal(response.total || 0);
@@ -70,7 +72,7 @@ export default function ToursPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, supplierId, toast]);
+  }, [page, debouncedSearch, supplierId, statusFilter, toast]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -101,7 +103,7 @@ export default function ToursPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, statusFilter]);
 
   const deleteTour = async (row: CmsRecord) => {
     if (!confirm(`Delete "${row.title || "this tour"}" permanently? This cannot be undone.`)) return;
@@ -134,10 +136,10 @@ export default function ToursPage() {
 
   const statCards = useMemo(
     () => [
-      { label: "Total Tours", value: stats.total, icon: MapPin, accent: "text-dash-brand-hover bg-[#EDF5FF]" },
-      { label: "Published", value: stats.published, icon: CheckCircle2, accent: "text-emerald-600 bg-emerald-50" },
-      { label: "Draft", value: stats.draft, icon: FileEdit, accent: "text-amber-700 bg-amber-50" },
-      { label: "Disabled", value: stats.disabled, icon: PowerOff, accent: "text-red-600 bg-red-50" },
+      { label: "Total Tours", value: stats.total, icon: MapPin, accent: "text-dash-brand-hover bg-[#EDF5FF]", filter: "" as const },
+      { label: "Published", value: stats.published, icon: CheckCircle2, accent: "text-emerald-600 bg-emerald-50", filter: "published" as const },
+      { label: "Draft", value: stats.draft, icon: FileEdit, accent: "text-amber-700 bg-amber-50", filter: "draft" as const },
+      { label: "Disabled", value: stats.disabled, icon: PowerOff, accent: "text-red-600 bg-red-50", filter: "disabled" as const },
     ],
     [stats]
   );
@@ -174,30 +176,47 @@ export default function ToursPage() {
         )}
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {statCards.map(({ label, value, icon: Icon, accent }) => (
-            <div
-              key={label}
-              className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]"
-            >
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${accent}`}>
-                <Icon size={18} />
-              </div>
-              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-dash-subtle">{label}</p>
-              <p className="mt-1 text-xl font-black text-dash-text">{value}</p>
-            </div>
-          ))}
+          {statCards.map(({ label, value, icon: Icon, accent, filter }) => {
+            const active = statusFilter === filter;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setStatusFilter(filter)}
+                aria-pressed={active}
+                className={`rounded-2xl border bg-white p-5 text-left shadow-[0_1px_4px_0_rgb(0,0,0,0.04)] transition-all hover:-translate-y-0.5 ${active ? "border-dash-brand ring-2 ring-dash-brand/20" : "border-dash-border-soft"}`}
+              >
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${accent}`}>
+                  <Icon size={18} />
+                </div>
+                <p className="mt-3 text-xs font-bold uppercase tracking-wide text-dash-subtle">{label}</p>
+                <p className="mt-1 text-xl font-black text-dash-text">{value}</p>
+              </button>
+            );
+          })}
         </section>
 
-        <label className="relative block max-w-sm">
-          <span className="sr-only">Search tours</span>
-          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#B0B9C6]" />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search tours by title, code…"
-            className="w-full rounded-xl border border-dash-border-soft bg-white py-2.5 pl-9 pr-4 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
-          />
-        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="relative block max-w-sm flex-1">
+            <span className="sr-only">Search tours</span>
+            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#B0B9C6]" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search tours by title, code…"
+              className="w-full rounded-xl border border-dash-border-soft bg-white py-2.5 pl-9 pr-4 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
+            />
+          </label>
+          {statusFilter && (
+            <button
+              type="button"
+              onClick={() => setStatusFilter("")}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-dash-border-soft bg-white px-3 py-2.5 text-xs font-bold text-dash-muted hover:bg-dash-bg"
+            >
+              Status: {statusFilter} ✕
+            </button>
+          )}
+        </div>
 
         {loading ? (
           <LoadingState label="Loading tours…" />
