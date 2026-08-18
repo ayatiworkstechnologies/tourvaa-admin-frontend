@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { ADDON_CATEGORIES, addonCategoryLabel } from "@/lib/constants/addonCategories";
+import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const empty = (): OptionalActivity => ({
   activity_name: "",
@@ -50,11 +51,12 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
     if (!editing) return;
     setSaving(true);
     try {
+      const payload = { ...editing, price_per_person: sanitizeNumber(editing.price_per_person) };
       if (editing.id) {
-        const updated = await updateOptionalActivity(tourId, editing.id, editing);
+        const updated = await updateOptionalActivity(tourId, editing.id, payload);
         setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
       } else {
-        const created = await createOptionalActivity(tourId, editing);
+        const created = await createOptionalActivity(tourId, payload);
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
@@ -146,8 +148,8 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Price per person</span>
               <input
                 type="number"
-                value={editing.price_per_person}
-                onChange={(e) => setEditing((p) => (p ? { ...p, price_per_person: Number(e.target.value) } : p))}
+                value={numberInputValue(editing.price_per_person)}
+                onChange={(e) => setEditing((p) => (p ? { ...p, price_per_person: parseNumberInput(e.target.value) } : p))}
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
               />
             </label>

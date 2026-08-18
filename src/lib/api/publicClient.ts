@@ -76,7 +76,9 @@ export type PublicTourDetail = PublicTour & {
     travel_duration: string;
     important_notes: string;
     activities: string;
+    optional_activities?: string;
     image?: string | null;
+    images?: string[];
   }[];
   highlights: { text: string; title?: string; image?: string | null; description?: string }[];
   inclusions: { text: string }[];
@@ -84,11 +86,13 @@ export type PublicTourDetail = PublicTour & {
   gallery: { image_url: string; alt_text: string; is_banner: boolean }[];
   tour_video_url?: string | null;
   pricing: { persons_from: number; persons_to: number | null; price_per_person: number; currency: string }[];
-  optional_activities: { id: number; name: string; description: string; price: number | null; currency: string; category: string }[];
-  accommodations: { id: number; name: string; description: string; price: number | null; category: string }[];
-  extensions: { id: number; title: string; description: string; duration_days: number | null; price: number | null; category: string }[];
+  optional_activities: { id: number; name: string; description: string; price: number | null; currency: string; category: string; image?: string | null }[];
+  accommodations: { id: number; name: string; description: string; price: number | null; category: string; image?: string | null }[];
+  extensions: { id: number; title: string; description: string; duration_days: number | null; price: number | null; category: string; image?: string | null }[];
   discounts: { label: string; discount_type: string; value: number; valid_from: string | null; valid_to: string | null }[];
   calendar: { id: number; date: string; slots: number; status: string }[];
+  min_advance_booking_days?: number;
+  availability_end_date?: string | null;
   similar_tours: PublicTour[];
   cancellation_policy: { days_before_min: number; days_before_max: number | null; refund_percentage: number; description: string }[];
   reviews: PublicReview[];

@@ -2,18 +2,39 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
-import { CalendarEntry, getCalendar, createCalendarEntry, updateCalendarEntry, deleteCalendarEntry, UnavailableDate, getUnavailableDates, createUnavailableDate, deleteUnavailableDate } from "@/lib/api/services/tourDetailService";
+import { CalendarEntry, getCalendar, createCalendarEntry, updateCalendarEntry, deleteCalendarEntry, UnavailableDate, getUnavailableDates, createUnavailableDate, deleteUnavailableDate, AvailabilityConfig, getAvailabilityConfig, saveAvailabilityConfig } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import DataTable from "@/components/ui/DataTable";
 import DatePicker from "@/components/ui/DatePicker";
+import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const STATUSES = ["available", "unavailable", "sold_out", "blocked"];
 const emptyEntry = (): CalendarEntry => ({ tour_date: "", start_date: null, end_date: null, available_seats: 10, booked_seats: 0, status: "available" });
 
+const WEEKDAYS = [
+  { value: 0, label: "Monday" }, { value: 1, label: "Tuesday" }, { value: 2, label: "Wednesday" },
+  { value: 3, label: "Thursday" }, { value: 4, label: "Friday" }, { value: 5, label: "Saturday" }, { value: 6, label: "Sunday" },
+];
+const FREQUENCIES = [
+  { value: "weekly" as const, label: "Weekly", note: "Tour runs every week" },
+  { value: "fortnightly" as const, label: "Fortnightly", note: "Tour runs every two weeks" },
+  { value: "monthly" as const, label: "Monthly", note: "Tour runs every month" },
+];
+const emptyAvailability = (): AvailabilityConfig => ({
+  availability_start_date: null, availability_end_date: null, min_advance_booking_days: 0,
+  frequency: null, frequency_week: null, frequency_days: [], seats_per_occurrence: 10,
+});
+
 function todayStr() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function earliestBookableDate(minDays: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + minDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function TourCalendarTab({ tourId }: { tourId: string }) {
@@ -27,13 +48,16 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
   const [newBlockEnd, setNewBlockEnd] = useState("");
   const [newBlockReason, setNewBlockReason] = useState("");
   const [blocking, setBlocking] = useState(false);
+  const [schedule, setSchedule] = useState<AvailabilityConfig>(emptyAvailability());
+  const [savingSchedule, setSavingSchedule] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [cal, unav] = await Promise.all([getCalendar(tourId), getUnavailableDates(tourId)]);
+      const [cal, unav, availability] = await Promise.all([getCalendar(tourId), getUnavailableDates(tourId), getAvailabilityConfig(tourId)]);
       setEntries(cal);
       setBlocked(unav);
+      if (availability) setSchedule(availability);
     } catch {
       toast.error("Failed to load.");
     } finally {
@@ -45,19 +69,54 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
     void load();
   }, [load]);
 
+  const toggleWeekday = (day: number) => {
+    setSchedule((prev) => ({
+      ...prev,
+      frequency_days: prev.frequency_days.includes(day) ? prev.frequency_days.filter((d) => d !== day) : [...prev.frequency_days, day],
+    }));
+  };
+
+  const saveSchedule = async () => {
+    if (!schedule.availability_start_date || !schedule.availability_end_date) {
+      toast.error("Set the Tour Start Date and Tour End Date.");
+      return;
+    }
+    if (schedule.frequency && schedule.frequency_days.length === 0) {
+      toast.error("Select at least one day of the week for the chosen frequency.");
+      return;
+    }
+    setSavingSchedule(true);
+    try {
+      const saved = await saveAvailabilityConfig(tourId, {
+        ...schedule,
+        min_advance_booking_days: sanitizeNumber(schedule.min_advance_booking_days),
+        seats_per_occurrence: sanitizeNumber(schedule.seats_per_occurrence),
+      });
+      setSchedule(saved);
+      await load();
+      toast.success("Schedule saved. Calendar dates generated for the selected frequency.");
+    } catch (error: unknown) {
+      const message = (error as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
+      toast.error(message?.detail || message?.message || "Failed to save schedule.");
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
+
   const saveEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editing || !editing.tour_date) {
+    if (!editing || !editing.start_date) {
       toast.error("Select a date.");
       return;
     }
     setSaving(true);
     try {
+      const payload = { ...editing, tour_date: editing.start_date, available_seats: sanitizeNumber(editing.available_seats), booked_seats: sanitizeNumber(editing.booked_seats) };
       if (editing.id) {
-        const updated = await updateCalendarEntry(tourId, editing.id, editing);
+        const updated = await updateCalendarEntry(tourId, editing.id, payload);
         setEntries((prev) => prev.map((i) => i.id === updated.id ? updated : i));
       } else {
-        const created = await createCalendarEntry(tourId, editing);
+        const created = await createCalendarEntry(tourId, payload);
         setEntries((prev) => [...prev, created]);
       }
       setEditing(null);
@@ -134,6 +193,108 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
 
   return (
     <div className="space-y-6">
+      {/* Recurring availability schedule */}
+      <div className="rounded-2xl border border-dash-border bg-white p-6">
+        <h2 className="text-xl font-bold text-dash-text">Tour Calendar &amp; Availability</h2>
+        <p className="mt-1 text-sm text-dash-subtle">Set the dates and schedule when your tour is available.</p>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-4">
+          <div>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tour Start Date</span>
+            <DatePicker
+              value={schedule.availability_start_date?.slice(0, 10) ?? ""}
+              onChange={(date) => setSchedule((p) => ({ ...p, availability_start_date: date || null }))}
+              minDate={todayStr()}
+              placeholder="Select start date"
+            />
+          </div>
+          <div>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tour End Date</span>
+            <DatePicker
+              value={schedule.availability_end_date?.slice(0, 10) ?? ""}
+              onChange={(date) => setSchedule((p) => ({ ...p, availability_end_date: date || null }))}
+              minDate={schedule.availability_start_date?.slice(0, 10) || todayStr()}
+              placeholder="Select end date"
+            />
+          </div>
+          <label>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Minimum Advance Booking (Days)</span>
+            <input type="number" min={0} value={numberInputValue(schedule.min_advance_booking_days)}
+              onChange={(e) => setSchedule((p) => ({ ...p, min_advance_booking_days: parseNumberInput(e.target.value) }))}
+              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+            <span className="mt-1 block text-xs text-dash-subtle">
+              {schedule.min_advance_booking_days > 0
+                ? `Guests can book this tour from ${earliestBookableDate(schedule.min_advance_booking_days)} onwards.`
+                : "Guests can book any available date immediately."}
+            </span>
+          </label>
+          <label>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Available Seats</span>
+            <input type="number" min={0} value={numberInputValue(schedule.seats_per_occurrence)}
+              onChange={(e) => setSchedule((p) => ({ ...p, seats_per_occurrence: parseNumberInput(e.target.value) }))}
+              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+            <span className="mt-1 block text-xs text-dash-subtle">Applied to each generated date below.</span>
+          </label>
+        </div>
+
+        <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs text-blue-800">
+          <strong>How it works:</strong> Guests must book at least the number of days entered above in advance. For example, if you enter 90 days, the tour will be available for booking from the 91st day from today.
+        </div>
+
+        <div className="mt-5 rounded-xl border border-dash-border p-4">
+          <h3 className="font-bold text-dash-text">Tour Frequency / Available Days</h3>
+          <p className="text-sm text-dash-subtle">Choose how often the tour runs and select the days you are available.</p>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {FREQUENCIES.map((f) => (
+              <button key={f.value} type="button"
+                onClick={() => setSchedule((p) => ({ ...p, frequency: f.value, frequency_week: f.value === "weekly" ? null : p.frequency_week || 1 }))}
+                className={`rounded-xl border-2 p-4 text-left transition ${schedule.frequency === f.value ? "border-dash-brand bg-dash-brand/5" : "border-dash-border hover:border-dash-brand/40"}`}
+              >
+                <span className={`block font-bold ${schedule.frequency === f.value ? "text-dash-brand" : "text-dash-text"}`}>{f.label}</span>
+                <span className="text-xs text-dash-subtle">{f.note}</span>
+              </button>
+            ))}
+          </div>
+
+          {schedule.frequency && (
+            <div className="mt-4 space-y-4">
+              {schedule.frequency !== "weekly" && (
+                <div>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Select Week</span>
+                  <div className="flex flex-wrap gap-2">
+                    {(schedule.frequency === "fortnightly" ? [1, 2] : [1, 2, 3, 4]).map((week) => (
+                      <button key={week} type="button" onClick={() => setSchedule((p) => ({ ...p, frequency_week: week }))}
+                        className={`rounded-lg border px-4 py-2 text-sm font-semibold ${schedule.frequency_week === week ? "border-dash-brand bg-dash-brand text-white" : "border-dash-border text-dash-text hover:bg-[#F2F4F7]"}`}>
+                        Week {week}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Select Days of the Week</span>
+                <div className="flex flex-wrap gap-2">
+                  {WEEKDAYS.map((day) => (
+                    <label key={day.value} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer ${schedule.frequency_days.includes(day.value) ? "border-dash-brand bg-dash-brand/5" : "border-dash-border"}`}>
+                      <input type="checkbox" checked={schedule.frequency_days.includes(day.value)} onChange={() => toggleWeekday(day.value)} />
+                      {day.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button type="button" onClick={saveSchedule} disabled={savingSchedule}
+            className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white disabled:opacity-60">
+            <Save size={14} /> {savingSchedule ? "Saving..." : "Save Schedule"}
+          </button>
+        </div>
+      </div>
+
       {/* Available dates */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -153,7 +314,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
             <DataTable
               ariaLabel="Tour Calendar"
               columns={[
-                { key: "date", header: "Date", render: (item) => item.tour_date?.toString().slice(0, 10) },
+                { key: "date", header: "Date", render: (item) => item.start_date?.toString().slice(0, 10) || item.tour_date?.toString().slice(0, 10) },
                 { key: "available", header: "Available", render: (item) => item.available_seats },
                 { key: "booked", header: "Booked", render: (item) => item.booked_seats },
                 {
@@ -184,7 +345,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
               <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
-              {[["tour_date", "Tour date"], ["start_date", "Start date"], ["end_date", "End date"]].map(([key, lbl]) => (
+              {[["start_date", "Start date"], ["end_date", "End date"]].map(([key, lbl]) => (
                 <div key={key}>
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
                   <DatePicker
@@ -193,15 +354,15 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
                     minDate={key === "end_date" ? (editing.start_date?.toString().slice(0, 10) || todayStr()) : todayStr()}
                     maxDate={key === "start_date" ? editing.end_date?.toString().slice(0, 10) || undefined : undefined}
                     placeholder={`Select ${lbl.toLowerCase()}`}
-                    clearable={key !== "tour_date"}
+                    clearable={key !== "start_date"}
                   />
                 </div>
               ))}
               {[["available_seats", "Available seats"], ["booked_seats", "Booked seats"]].map(([key, lbl]) => (
                 <label key={key}>
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
-                  <input type="number" value={(editing as Record<string, unknown>)[key] as number ?? 0}
-                    onChange={(e) => setEditing((p) => p ? { ...p, [key]: Number(e.target.value) } : p)}
+                  <input type="number" value={numberInputValue((editing as Record<string, unknown>)[key] as number)}
+                    onChange={(e) => setEditing((p) => p ? { ...p, [key]: parseNumberInput(e.target.value) } : p)}
                     className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
                 </label>
               ))}

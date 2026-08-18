@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
+import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const APIs = {
   inclusions: { list: getInclusions, create: createInclusion, update: updateInclusion, delete: deleteInclusion },
@@ -51,11 +52,12 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
     if (!editing) return;
     setSaving(true);
     try {
+      const payload = { ...editing, display_order: sanitizeNumber(editing.display_order) };
       if (editing.id) {
-        const updated = await api.update(tourId, editing.id, editing);
+        const updated = await api.update(tourId, editing.id, payload);
         setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
       } else {
-        const created = await api.create(tourId, editing);
+        const created = await api.create(tourId, payload);
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
@@ -134,8 +136,8 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
                 <input
                   type={key === "display_order" ? "number" : "text"}
-                  value={(editing as Record<string, unknown>)[key] as string ?? ""}
-                  onChange={(e) => setEditing((prev) => prev ? { ...prev, [key]: key === "display_order" ? Number(e.target.value) : e.target.value } : prev)}
+                  value={key === "display_order" ? numberInputValue((editing as Record<string, unknown>)[key] as number) : ((editing as Record<string, unknown>)[key] as string ?? "")}
+                  onChange={(e) => setEditing((prev) => prev ? { ...prev, [key]: key === "display_order" ? parseNumberInput(e.target.value) : e.target.value } : prev)}
                   className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
                 />
               </label>

@@ -9,10 +9,12 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
+import { ADDON_CATEGORIES } from "@/lib/constants/addonCategories";
 
 const FALLBACK = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85";
 
 type HeroSlide = { type: "image" | "video"; src: string };
+type AddOnItem = { id: number; name: string; description: string; priceLabel: string; category: string; image: string | null };
 
 type Props = {
   tour: PublicTourDetail;
@@ -45,6 +47,14 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
   );
   const unitPrice = Number(matchedSlab?.price_per_person ?? tour.price_start_per_person ?? 0);
   const total = unitPrice * travellerCount;
+  // Base per-person price for "Save $X per person" on the Group Pricing
+  // tiers below - the lowest-persons_from slab (normally the 1-traveller
+  // rate), falling back to the teaser "from" price if no slabs exist.
+  const basePricePerPerson = useMemo(() => {
+    if (!tour.pricing.length) return Number(tour.price_start_per_person ?? 0);
+    const lowest = tour.pricing.reduce((min, slab) => (slab.persons_from < min.persons_from ? slab : min), tour.pricing[0]);
+    return Number(lowest.price_per_person);
+  }, [tour.pricing, tour.price_start_per_person]);
   const bestDiscount = useMemo(() => {
     if (!tour.discounts.length) return null;
     return tour.discounts.reduce<{ perPersonSaving: number } | null>((best, discount) => {
@@ -67,9 +77,19 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
       .map((item) => ({ accommodation: item.accommodation.trim(), location: item.location || "" }))
       .filter((stay) => (seen.has(stay.accommodation) ? false : (seen.add(stay.accommodation), true)));
   }, [tour.itineraries]);
-  const accommodationItems = tour.accommodations.map((item) => ({ id: item.id, name: item.name, description: item.description, priceLabel: item.price != null ? format(item.price, baseCurrency) : "Included" }));
-  const activityItems = tour.optional_activities.map((item) => ({ id: item.id, name: item.name, description: item.description, priceLabel: item.price != null ? format(item.price, item.currency || baseCurrency) : "Included" }));
-  const extensionItems = tour.extensions.map((item) => ({ id: item.id, name: item.title, description: item.description, priceLabel: item.price != null ? format(item.price, baseCurrency) : "Included" }));
+  const accommodationItems: AddOnItem[] = tour.accommodations.map((item) => ({ id: item.id, name: item.name, description: item.description, priceLabel: item.price != null ? format(item.price, baseCurrency) : "Included", category: item.category, image: item.image ? mediaUrl(item.image) : null }));
+  const activityItems: AddOnItem[] = tour.optional_activities.map((item) => ({ id: item.id, name: item.name, description: item.description, priceLabel: item.price != null ? format(item.price, item.currency || baseCurrency) : "Included", category: item.category, image: item.image ? mediaUrl(item.image) : null }));
+  const extensionItems: AddOnItem[] = tour.extensions.map((item) => ({ id: item.id, name: item.title, description: item.description, priceLabel: item.price != null ? format(item.price, baseCurrency) : "Included", category: item.category, image: item.image ? mediaUrl(item.image) : null }));
+  const addOnsByCategory = useMemo(() => {
+    const all = [...accommodationItems, ...activityItems, ...extensionItems];
+    const grouped = new Map<string, AddOnItem[]>();
+    for (const item of all) {
+      const list = grouped.get(item.category) ?? [];
+      list.push(item);
+      grouped.set(item.category, list);
+    }
+    return ADDON_CATEGORIES.map((c) => ({ category: c.value, label: c.label, items: grouped.get(c.value) ?? [] })).filter((g) => g.items.length > 0);
+  }, [accommodationItems, activityItems, extensionItems]);
   const bannerImages = useMemo(() => tour.gallery.filter((g) => g.is_banner).map((g) => mediaUrl(g.image_url)), [tour.gallery]);
   const nonBannerImages = useMemo(() => tour.gallery.filter((g) => !g.is_banner).map((g) => mediaUrl(g.image_url)), [tour.gallery]);
   const heroSlides: HeroSlide[] = useMemo(() => {
@@ -187,12 +207,18 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
               <section id="pricing" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <h3 className="flex items-center gap-3 text-2xl font-black"><Tag className="text-blue-600" />Group Pricing</h3>
                 <div className="mt-6 divide-y divide-slate-100">
-                  {tour.pricing.map((slab, index) => (
-                    <div key={index} className="flex items-center justify-between py-3 text-sm">
-                      <span className="font-semibold text-slate-700">{slab.persons_from}{slab.persons_to ? `–${slab.persons_to}` : "+"} travellers</span>
-                      <b className="text-blue-700">{format(slab.price_per_person, slab.currency || baseCurrency)} <span className="font-normal text-slate-400">/ person</span></b>
-                    </div>
-                  ))}
+                  {tour.pricing.map((slab, index) => {
+                    const perPersonSaving = basePricePerPerson - slab.price_per_person;
+                    return (
+                      <div key={index} className="flex items-center justify-between py-3 text-sm">
+                        <span className="font-semibold text-slate-700">{slab.persons_from}{slab.persons_to ? `–${slab.persons_to}` : "+"} travellers</span>
+                        <span className="text-right">
+                          <b className="block text-blue-700">{format(slab.price_per_person, slab.currency || baseCurrency)} <span className="font-normal text-slate-400">/ person</span></b>
+                          {perPersonSaving > 0 && <small className="text-emerald-600">(Save {format(perPersonSaving, slab.currency || baseCurrency)} per person)</small>}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -257,35 +283,13 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
               </section>
             )}
 
-            <section id="availability" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
-              <h3 className="flex items-center gap-3 text-2xl font-black"><Calendar className="text-blue-600" />Availability & Pricing</h3>
-              <div className="mt-6 divide-y divide-slate-100">
-                {(departures.length ? departures : [{ date: "2026-09-12", slots: 8, status: "available" }, { date: "2026-09-20", slots: 12, status: "available" }, { date: "2026-09-26", slots: 5, status: "available" }]).map((entry) => {
-                  const isSelected = selectedDate === entry.date;
-                  return (
-                    <div key={entry.date} className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
-                      <span><b className="block">{dateLabel(entry.date)}</b><small className={entry.slots <= 5 ? "font-bold text-amber-500" : "text-slate-500"}>{entry.slots} Seats Left</small></span>
-                      <span className="text-right"><b className="block text-blue-600">{format(unitPrice, tour.currency || "USD")}</b><small className="text-[10px] text-slate-400">per traveller</small></span>
-                      <button
-                        type="button"
-                        onClick={() => { setSelectedDate(entry.date); document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
-                        className={`shrink-0 rounded-lg px-5 py-2.5 text-xs font-black ${isSelected ? "bg-blue-600 text-white hover:bg-blue-700" : "border border-slate-200 text-slate-700 hover:border-blue-300"}`}
-                      >
-                        {isSelected ? "Book Now" : "View Details"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            {(accommodationItems.length > 0 || activityItems.length > 0 || extensionItems.length > 0) && (
+            {addOnsByCategory.length > 0 && (
               <section id="addons" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <h3 className="flex items-center gap-3 text-2xl font-black"><Sparkles className="text-blue-600" />Available Add-ons</h3>
-                <div className="mt-6 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                  <AddOnGroup title="Accommodation" icon={<House size={14} />} items={accommodationItems} />
-                  <AddOnGroup title="Activities" icon={<Star size={14} />} items={activityItems} />
-                  <AddOnGroup title="Extensions" icon={<Calendar size={14} />} items={extensionItems} />
+                <div className="mt-6 space-y-8">
+                  {addOnsByCategory.map((group) => (
+                    <AddOnCategoryCarousel key={group.category} title={group.label} items={group.items} />
+                  ))}
                 </div>
               </section>
             )}
@@ -309,7 +313,14 @@ export default function TourDetailExperience({ tour, images, initialTravelDate, 
 
           <aside id="booking" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_15px_40px_rgba(15,23,42,.12)] lg:sticky lg:top-24">
             <h3 className="text-lg font-black">Book Your {destination} Adventure</h3><p className="mt-1 text-xs text-slate-500">Secure your preferred departure in just a few steps.</p>
-            <div className="mt-5 space-y-2">{(departures.length ? departures : [{ date: "2026-09-12", slots: 8, status: "available" }, { date: "2026-09-20", slots: 12, status: "available" }, { date: "2026-09-26", slots: 5, status: "available" }]).map((entry, index) => <button type="button" key={entry.date} onClick={() => setSelectedDate(entry.date)} className={`flex w-full items-center justify-between rounded-lg border p-3 text-left transition ${selectedDate === entry.date || (!selectedDate && index === 0) ? "border-blue-400 bg-blue-50" : "border-slate-200 hover:border-blue-300"}`}><span><b className="block text-xs">{dateLabel(entry.date)}</b><small className={entry.slots <= 5 ? "font-bold text-amber-500" : "text-slate-500"}>{entry.slots} Seats Left</small></span><span className="text-right"><b className="block text-xs text-blue-600">{format(unitPrice, tour.currency || "USD")}</b><small className="text-[9px] text-slate-400">per traveller</small></span></button>)}</div>
+            <div className="mt-5">
+              <DateAvailabilityPicker
+                calendar={tour.calendar}
+                minAdvanceBookingDays={tour.min_advance_booking_days || 0}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+              />
+            </div>
             <div className="mt-6 border-t pt-5"><h4 className="text-xs font-black uppercase">Who&apos;s travelling?</h4><Counter label="Adults" note="Ages 12 years and above" value={adults} setValue={setAdults} min={1} /><Counter label="Children" note="Ages 3–11" value={children} setValue={setChildren} min={0} /></div>
             <div className="mt-5 border-t pt-5 text-xs">
               <h4 className="font-black uppercase">Booking summary</h4>
@@ -463,7 +474,8 @@ function ItineraryAccordion({ days, fallbackImages }: { days: PublicTourDetail["
         {days.map((item, index) => {
           const isOpen = isDayTour || expanded.has(index);
           const activitiesList = item.activities ? item.activities.split(/\r?\n|,/).map((a) => a.trim()).filter(Boolean) : [];
-          const image = item.image ? mediaUrl(item.image) : fallbackImages[(index + 1) % fallbackImages.length];
+          const optionalActivitiesList = item.optional_activities ? item.optional_activities.split(/\r?\n|,/).map((a) => a.trim()).filter(Boolean) : [];
+          const dayImages = (item.images?.length ? item.images.map((src) => mediaUrl(src)) : item.image ? [mediaUrl(item.image)] : [fallbackImages[(index + 1) % fallbackImages.length]]).filter(Boolean) as string[];
           return (
             <div key={`${item.day}-${item.title}`} className="py-2">
               <button
@@ -492,13 +504,23 @@ function ItineraryAccordion({ days, fallbackImages }: { days: PublicTourDetail["
                         </ul>
                       </div>
                     )}
+                    {optionalActivitiesList.length > 0 && (
+                      <div className="mt-5">
+                        <h4 className="text-xs font-black uppercase text-slate-500">Optional Activities</h4>
+                        <ul className="mt-2 space-y-1.5">
+                          {optionalActivitiesList.map((activity, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />{activity}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <div className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 text-xs">
                       <span><House size={15} className="mb-2" />Accommodation<br /><b>{item.accommodation || "Not specified"}</b></span>
                       <span><Utensils size={15} className="mb-2" />Meals<br /><b>{item.meals || "Not specified"}</b></span>
                     </div>
                     {item.important_notes && <div className="mt-5 rounded-xl bg-slate-50 p-4 text-xs leading-6"><b>Please note</b><p>{item.important_notes}</p></div>}
                   </div>
-                  {image && <img src={image} alt={item.title} className="h-64 w-full rounded-2xl object-cover md:h-full" />}
+                  {dayImages.length > 0 && <DayImageCarousel images={dayImages} title={item.title} />}
                 </div>
               )}
             </div>
@@ -509,25 +531,160 @@ function ItineraryAccordion({ days, fallbackImages }: { days: PublicTourDetail["
   );
 }
 
+// Small carousel for an itinerary day's images - deliberately no lightbox
+// (unlike GalleryCarousel above): the feedback for this section explicitly
+// says click-to-enlarge is not required here.
+function DayImageCarousel({ images, title }: { images: string[]; title: string }) {
+  const [index, setIndex] = useState(0);
+  const prev = () => setIndex((i) => (i - 1 + images.length) % images.length);
+  const next = () => setIndex((i) => (i + 1) % images.length);
+
+  return (
+    <div className="relative h-64 w-full overflow-hidden rounded-2xl md:h-full">
+      <img src={images[index]} alt={title} className="h-full w-full object-cover" />
+      {images.length > 1 && (
+        <>
+          <button type="button" aria-label="Previous image" onClick={prev} className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow hover:bg-white"><ArrowLeft size={14} /></button>
+          <button type="button" aria-label="Next image" onClick={next} className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow hover:bg-white"><ArrowRight size={14} /></button>
+          <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white">{index + 1} / {images.length}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Essential({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) { return <div className="flex gap-4"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-blue-600">{icon}</span><span><b className="block text-sm">{title}</b><small className="text-slate-500">{value}</small></span></div>; }
 function Counter({ label, note, value, setValue, min }: { label: string; note: string; value: number; setValue: (value: number) => void; min: number }) { return <div className="mt-4 flex items-center justify-between"><span><b className="block text-xs">{label}</b><small className="text-[9px] text-slate-400">{note}</small></span><span className="flex items-center gap-3"><button type="button" aria-label={`Decrease ${label.toLowerCase()}`} onClick={() => setValue(Math.max(min, value - 1))} className="rounded border p-1"><Minus size={12} /></button><b className="w-5 text-center text-xs">{String(value).padStart(2, "0")}</b><button type="button" aria-label={`Increase ${label.toLowerCase()}`} onClick={() => setValue(value + 1)} className="rounded border p-1"><Plus size={12} /></button></span></div>; }
 function Summary({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) { return <div className="mt-3 flex justify-between"><span>{label}</span><b className={accent ? "text-emerald-500" : ""}>{value}</b></div>; }
-function dateLabel(value: string) { const date = new Date(`${value}T00:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", weekday: "long" }).format(date); }
+function shortDateLabel(value: string) { const date = new Date(`${value}T00:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date); }
 function flagFor(country: string) { const key = country.trim().toLowerCase(); return key === "new zealand" ? "🇳🇿" : key === "india" ? "🇮🇳" : key === "switzerland" ? "🇨🇭" : "🌍"; }
 
-function AddOnGroup({ title, icon, items }: { title: string; icon: React.ReactNode; items: { id: number; name: string; description: string; priceLabel: string }[] }) {
+function monthKey(value: string) { return value.slice(0, 7); }
+function monthLabel(key: string) {
+  const [year, month] = key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date(year, (month || 1) - 1, 1));
+}
+
+// Dropdown of months with bookable dates, showing seats (no price) per date,
+// replacing the flat 5-row departure list. Only shows dates on/after the
+// tour's minimum-advance-booking window.
+function DateAvailabilityPicker({ calendar, minAdvanceBookingDays, selectedDate, onSelectDate }: {
+  calendar: PublicTourDetail["calendar"];
+  minAdvanceBookingDays: number;
+  selectedDate: string;
+  onSelectDate: (date: string) => void;
+}) {
+  const earliestBookable = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + minAdvanceBookingDays);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, [minAdvanceBookingDays]);
+
+  const bookableDates = useMemo(
+    () => [...calendar].filter((entry) => entry.status !== "cancelled" && entry.date >= earliestBookable).sort((a, b) => a.date.localeCompare(b.date)),
+    [calendar, earliestBookable]
+  );
+
+  const months = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const entry of bookableDates) {
+      const key = monthKey(entry.date);
+      if (!seen.has(key)) { seen.add(key); list.push(key); }
+    }
+    return list;
+  }, [bookableDates]);
+
+  const [selectedMonth, setSelectedMonth] = useState(() => (selectedDate ? monthKey(selectedDate) : months[0] || monthKey(earliestBookable)));
+  useEffect(() => {
+    if (months.length && !months.includes(selectedMonth)) setSelectedMonth(months[0]);
+  }, [months, selectedMonth]);
+
+  const [visibleCount, setVisibleCount] = useState(8);
+  useEffect(() => { setVisibleCount(8); }, [selectedMonth]);
+
+  const monthDates = useMemo(() => bookableDates.filter((entry) => monthKey(entry.date) === selectedMonth), [bookableDates, selectedMonth]);
+  const monthIndex = months.indexOf(selectedMonth);
+
+  if (bookableDates.length === 0) {
+    return <div className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-xs text-slate-500">No upcoming dates available right now.</div>;
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2">
+        <button type="button" aria-label="Previous month" disabled={monthIndex <= 0} onClick={() => setSelectedMonth(months[monthIndex - 1])}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 disabled:opacity-30"><ArrowLeft size={14} /></button>
+        <span className="text-sm font-black">{monthLabel(selectedMonth)}</span>
+        <button type="button" aria-label="Next month" disabled={monthIndex >= months.length - 1} onClick={() => setSelectedMonth(months[monthIndex + 1])}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 disabled:opacity-30"><ArrowRight size={14} /></button>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {monthDates.slice(0, visibleCount).map((entry) => {
+          const isSelected = selectedDate === entry.date;
+          const isSoldOut = entry.status === "sold_out" || entry.slots <= 0;
+          return (
+            <button
+              key={entry.date}
+              type="button"
+              disabled={isSoldOut}
+              onClick={() => onSelectDate(entry.date)}
+              className={`rounded-lg border p-2 text-left text-xs transition ${isSelected ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-blue-300"} ${isSoldOut ? "cursor-not-allowed opacity-50" : ""}`}
+            >
+              <b className="block">{shortDateLabel(entry.date)}</b>
+              <span className={isSoldOut ? "font-bold text-red-500" : entry.slots <= 5 ? "font-bold text-amber-500" : "text-slate-500"}>
+                {isSoldOut ? "Sold Out" : `${entry.slots} Seats Left`}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {monthDates.length > visibleCount && (
+        <button type="button" onClick={() => setVisibleCount((n) => n + 8)} className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline">
+          Show more dates <ArrowRight size={12} />
+        </button>
+      )}
+      <div className="mt-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+        <b>Can&apos;t find a date that suits you?</b>
+        <p className="mt-1">
+          <a href="/contact" className="text-blue-600 hover:underline">Get in touch with us</a>, or discover{" "}
+          <a href="#similar-tours" className="text-blue-600 hover:underline">similar tours available in {monthLabel(selectedMonth)}</a>.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Each add-on category scrolls independently, matching the category-based
+// horizontal carousel requested in feedback (replaces the old fixed
+// Accommodation/Activities/Extensions grid grouping).
+function AddOnCategoryCarousel({ title, items }: { title: string; items: AddOnItem[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const move = (direction: number) => ref.current?.scrollBy({ left: direction * 260, behavior: "smooth" });
   if (!items.length) return null;
   return (
     <div>
-      <h4 className="flex items-center gap-2 text-xs font-black uppercase text-slate-500">{icon}{title}</h4>
-      <ul className="mt-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-black uppercase text-slate-700">{title}</h4>
+        <div className="flex gap-2">
+          <button type="button" aria-label={`Previous ${title} add-ons`} onClick={() => move(-1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 hover:border-blue-400"><ArrowLeft size={13} /></button>
+          <button type="button" aria-label={`Next ${title} add-ons`} onClick={() => move(1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 hover:border-blue-400"><ArrowRight size={13} /></button>
+        </div>
+      </div>
+      <div ref={ref} className="no-scrollbar mt-3 flex snap-x gap-4 overflow-x-auto pb-1">
         {items.map((item) => (
-          <li key={item.id} className="flex items-start justify-between gap-4 rounded-xl border border-slate-100 p-3 text-sm">
-            <span className="min-w-0"><b className="block text-slate-900">{item.name}</b>{item.description && <span className="mt-0.5 block text-xs text-slate-500">{item.description}</span>}</span>
-            <b className="shrink-0 text-blue-700">{item.priceLabel}</b>
-          </li>
+          <div key={item.id} className="w-[220px] shrink-0 snap-start overflow-hidden rounded-xl border border-slate-100">
+            <div className="h-28 w-full bg-slate-100">
+              {item.image ? <img src={item.image} alt={item.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-slate-300"><Sparkles size={24} /></div>}
+            </div>
+            <div className="p-3">
+              <b className="block truncate text-sm text-slate-900">{item.name}</b>
+              {item.description && <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{item.description}</p>}
+              <b className="mt-1.5 block text-sm text-blue-700">{item.priceLabel}</b>
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
@@ -536,8 +693,8 @@ function DiscoverMore({ tours, format }: { tours: PublicTour[]; format: (amount:
   const ref = useRef<HTMLDivElement>(null);
   const move = (direction: number) => ref.current?.scrollBy({ left: direction * 320, behavior: "smooth" });
   return (
-    <section id="discover" className="mx-auto mt-14 max-w-7xl px-5 md:px-8">
-      <div className="mb-5 flex items-center justify-between"><h3 className="text-2xl font-black">Discover More</h3><div className="flex gap-2"><button type="button" aria-label="Previous tours" onClick={() => move(-1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 transition hover:border-blue-500 hover:text-blue-600"><ArrowLeft size={15} /></button><button type="button" aria-label="Next tours" onClick={() => move(1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 transition hover:border-blue-500 hover:text-blue-600"><ArrowRight size={15} /></button></div></div>
+    <section id="similar-tours" className="mx-auto mt-14 max-w-7xl px-5 md:px-8">
+      <div className="mb-5 flex items-center justify-between"><h3 className="text-2xl font-black">Similar Tours</h3><div className="flex gap-2"><button type="button" aria-label="Previous tours" onClick={() => move(-1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 transition hover:border-blue-500 hover:text-blue-600"><ArrowLeft size={15} /></button><button type="button" aria-label="Next tours" onClick={() => move(1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 transition hover:border-blue-500 hover:text-blue-600"><ArrowRight size={15} /></button></div></div>
       <div ref={ref} className="no-scrollbar flex snap-x gap-5 overflow-x-auto pb-2">
         {tours.map((related) => <div className="w-[280px] shrink-0 snap-start" key={related.id}><SimilarTourCard tour={related} format={format} /></div>)}
       </div>

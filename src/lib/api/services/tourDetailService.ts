@@ -43,6 +43,7 @@ export type ItineraryDay = {
   short_description: string;
   long_description: string;
   activities: string;
+  optional_activities?: string;
   accommodation?: string;
   start_time?: string;
   end_time?: string;
@@ -53,6 +54,9 @@ export type ItineraryDay = {
   important_notes?: string;
   image: string;
   image_alt_text: string;
+  // Additional images for the day's carousel, beyond the single cover
+  // `image` above.
+  images?: string[];
   display_order: number;
   status: string;
 };
@@ -235,13 +239,14 @@ export type PricingSlab = {
   passenger_to: number;
   adult_price: number;
   child_price: number;
-  // supplier_price/markup_type/markup_value/final_price/admin_markup_type/
-  // admin_markup_value are sent for backward API compatibility only - the
-  // server always ignores/recomputes them from the single global commission
-  // rate (Admin Settings -> Tourvaa Commission %). adult_price/child_price
-  // ARE the full customer-facing total; supplier_final_* (what the supplier
-  // is settled) and storefront_* (== adult_price/child_price) are read-only,
-  // server-computed for display.
+  // adult_price/child_price are the supplier's own net asking price.
+  // markup_value is the supplier's commission % (server floors it at the
+  // supplier's agreed rate); supplier_final_* (server-computed) is what the
+  // supplier is paid after that commission. admin_markup_value is the
+  // Tourvaa-only retail markup added on top of the same price; only an
+  // admin actor's submitted value is honoured; storefront_* (server-
+  // computed) is the resulting customer-facing price. supplier_price/
+  // final_price are legacy/unused.
   supplier_price: number;
   markup_type: string;
   markup_value: number;
@@ -310,6 +315,7 @@ export type AccommodationExtra = {
   description: string;
   extra_price: number;
   price_type: "per_person" | "per_booking";
+  image?: string;
   category: string;
   is_default: boolean;
   status: string;
@@ -358,6 +364,29 @@ export async function updateCalendarEntry(tourId: number | string, id: number, d
 }
 export async function deleteCalendarEntry(tourId: number | string, id: number): Promise<void> {
   await api.delete(`${base(tourId)}/calendar/${id}`);
+}
+
+// ── Recurring Availability Schedule ─────────────────────────────────────────────
+
+export type AvailabilityConfig = {
+  id?: number;
+  tour_id?: number;
+  availability_start_date: string | null;
+  availability_end_date: string | null;
+  min_advance_booking_days: number;
+  frequency: "weekly" | "fortnightly" | "monthly" | null;
+  frequency_week: number | null;
+  frequency_days: number[];
+  seats_per_occurrence: number;
+};
+
+export async function getAvailabilityConfig(tourId: number | string): Promise<AvailabilityConfig | null> {
+  const r = await api.get<{ data: AvailabilityConfig | null }>(`${base(tourId)}/availability`);
+  return r.data.data;
+}
+export async function saveAvailabilityConfig(tourId: number | string, data: AvailabilityConfig): Promise<AvailabilityConfig> {
+  const r = await api.put<{ data: AvailabilityConfig }>(`${base(tourId)}/availability`, data);
+  return r.data.data;
 }
 
 // ── Unavailable Dates ─────────────────────────────────────────────────────────

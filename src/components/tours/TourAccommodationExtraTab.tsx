@@ -12,12 +12,15 @@ import {
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import { ADDON_CATEGORIES, addonCategoryLabel } from "@/lib/constants/addonCategories";
+import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
+import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const empty = (): AccommodationExtra => ({
   accommodation_name: "",
   description: "",
   extra_price: 0,
   price_type: "per_person",
+  image: "",
   category: "room_upgrade",
   is_default: false,
   status: "active",
@@ -50,11 +53,12 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
     if (!editing) return;
     setSaving(true);
     try {
+      const payload = { ...editing, extra_price: sanitizeNumber(editing.extra_price) };
       if (editing.id) {
-        const updated = await updateAccommodationExtra(tourId, editing.id, editing);
+        const updated = await updateAccommodationExtra(tourId, editing.id, payload);
         setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
       } else {
-        const created = await createAccommodationExtra(tourId, editing);
+        const created = await createAccommodationExtra(tourId, payload);
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
@@ -128,6 +132,13 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
             <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <AdminAssetUpload
+                label="Image"
+                value={editing.image ?? ""}
+                onChange={(value) => setEditing((p) => (p ? { ...p, image: value } : p))}
+              />
+            </div>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Name *</span>
               <input
@@ -140,8 +151,8 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Extra price</span>
               <input
                 type="number"
-                value={editing.extra_price}
-                onChange={(e) => setEditing((p) => (p ? { ...p, extra_price: Number(e.target.value) } : p))}
+                value={numberInputValue(editing.extra_price)}
+                onChange={(e) => setEditing((p) => (p ? { ...p, extra_price: parseNumberInput(e.target.value) } : p))}
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
               />
             </label>

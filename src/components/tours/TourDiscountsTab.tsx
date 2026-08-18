@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import DatePicker from "@/components/ui/DatePicker";
+import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const empty = (): TourDiscount => ({
   discount_name: "", discount_code: null, discount_type: "percentage",
@@ -43,11 +44,12 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
     if (!editing) return;
     setSaving(true);
     try {
+      const payload = { ...editing, discount_value: sanitizeNumber(editing.discount_value), minimum_booking_amount: sanitizeNumber(editing.minimum_booking_amount) };
       if (editing.id) {
-        const updated = await updateDiscount(tourId, editing.id, editing);
+        const updated = await updateDiscount(tourId, editing.id, payload);
         setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
       } else {
-        const created = await createDiscount(tourId, editing);
+        const created = await createDiscount(tourId, payload);
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
@@ -143,12 +145,12 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
             </label>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Value</span>
-              <input type="number" value={editing.discount_value} onChange={(e) => setEditing((p) => p ? { ...p, discount_value: Number(e.target.value) } : p)}
+              <input type="number" value={numberInputValue(editing.discount_value)} onChange={(e) => setEditing((p) => p ? { ...p, discount_value: parseNumberInput(e.target.value) } : p)}
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
             </label>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Min. booking amount</span>
-              <input type="number" value={editing.minimum_booking_amount} onChange={(e) => setEditing((p) => p ? { ...p, minimum_booking_amount: Number(e.target.value) } : p)}
+              <input type="number" value={numberInputValue(editing.minimum_booking_amount)} onChange={(e) => setEditing((p) => p ? { ...p, minimum_booking_amount: parseNumberInput(e.target.value) } : p)}
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
             </label>
             <label>

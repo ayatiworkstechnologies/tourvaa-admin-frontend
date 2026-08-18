@@ -8,13 +8,14 @@ import {
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
+import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const empty = (): ItineraryDay => ({
   day_number: 1, day_title: "", location_name: "",
-  short_description: "", long_description: "", activities: "", accommodation: "",
+  short_description: "", long_description: "", activities: "", optional_activities: "", accommodation: "",
   start_time: "", end_time: "", travel_distance: "", travel_duration: "",
   transport_type: "", meals_included: "", important_notes: "",
-  image: "", image_alt_text: "", display_order: 0, status: "active",
+  image: "", image_alt_text: "", images: [], display_order: 0, status: "active",
 });
 
 export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: string; numberOfDays?: number | null }) {
@@ -53,11 +54,12 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
     }
     setSaving(true);
     try {
+      const payload = { ...editing, day_number: sanitizeNumber(editing.day_number, 1), display_order: sanitizeNumber(editing.display_order) };
       if (editing.id) {
-        const updated = await updateItinerary(tourId, editing.id, editing);
+        const updated = await updateItinerary(tourId, editing.id, payload);
         setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
       } else {
-        const created = await createItinerary(tourId, editing);
+        const created = await createItinerary(tourId, payload);
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
@@ -178,13 +180,13 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
                   type={type}
                   min={key === "day_number" ? 1 : undefined}
                   max={key === "day_number" && duration != null ? duration : undefined}
-                  value={(editing as Record<string, unknown>)[key] as string ?? ""}
-                  onChange={(e) => setEditing((prev) => prev ? { ...prev, [key]: type === "number" ? Number(e.target.value) : e.target.value } : prev)}
+                  value={type === "number" ? numberInputValue((editing as Record<string, unknown>)[key] as number) : ((editing as Record<string, unknown>)[key] as string ?? "")}
+                  onChange={(e) => setEditing((prev) => prev ? { ...prev, [key]: type === "number" ? parseNumberInput(e.target.value) : e.target.value } : prev)}
                   className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
                 />
               </label>
             ))}
-            {(["short_description", "long_description", "activities", "important_notes"] as const).map((key) => (
+            {(["short_description", "long_description", "activities", "optional_activities", "important_notes"] as const).map((key) => (
               <label key={key} className="md:col-span-2">
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{key.replace(/_/g, " ")}</span>
                 <textarea
@@ -197,10 +199,45 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
             ))}
             <div className="md:col-span-2">
               <AdminAssetUpload
-                label="Day image"
+                label="Day image (cover)"
                 value={editing.image ?? ""}
                 onChange={(value) => setEditing((prev) => (prev ? { ...prev, image: value } : prev))}
               />
+            </div>
+            <div className="md:col-span-2 space-y-3">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Day image carousel (additional images)</span>
+              {(editing.images ?? []).map((src, index) => (
+                <div key={index} className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <AdminAssetUpload
+                      label={`Image ${index + 1}`}
+                      value={src}
+                      onChange={(value) => setEditing((prev) => {
+                        if (!prev) return prev;
+                        const images = [...(prev.images ?? [])];
+                        images[index] = value;
+                        return { ...prev, images };
+                      })}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditing((prev) => prev ? { ...prev, images: (prev.images ?? []).filter((_, i) => i !== index) } : prev)}
+                    aria-label={`Remove image ${index + 1}`}
+                    title="Remove image"
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#FFCDD2] text-red-500 hover:bg-[#FFF0F0]"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setEditing((prev) => prev ? { ...prev, images: [...(prev.images ?? []), ""] } : prev)}
+                className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold hover:bg-[#F2F4F7]"
+              >
+                <Plus size={14} /> Add carousel image
+              </button>
             </div>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>

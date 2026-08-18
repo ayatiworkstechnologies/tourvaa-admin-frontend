@@ -30,3 +30,7 @@ export async function updateCmsStatus(endpoint: string, id: string | number, sta
   const response = await api.patch<{ data: CmsRecord }>(`${endpoint}/${id}/status`, { status });
   return response.data.data;
 }
+
+export async function deleteCms(endpoint: string, id: string | number) {
+  await api.delete(`${endpoint}/${id}`);
+}

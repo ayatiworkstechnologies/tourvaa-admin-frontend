@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import TourPicker from "@/components/tours/TourPicker";
 import { ADDON_CATEGORIES, addonCategoryLabel } from "@/lib/constants/addonCategories";
+import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const empty = (): TourExtension => ({
   extension_tour_id: 0, extension_title: "", extension_note: "",
@@ -46,11 +47,12 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
     }
     setSaving(true);
     try {
+      const payload = { ...editing, extra_price: sanitizeNumber(editing.extra_price), display_order: sanitizeNumber(editing.display_order) };
       if (editing.id) {
-        const updated = await updateExtension(tourId, editing.id, editing);
+        const updated = await updateExtension(tourId, editing.id, payload);
         setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
       } else {
-        const created = await createExtension(tourId, editing);
+        const created = await createExtension(tourId, payload);
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
@@ -150,8 +152,8 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Extra price</span>
               <input
                 type="number"
-                value={editing.extra_price ?? ""}
-                onChange={(e) => setEditing((p) => (p ? { ...p, extra_price: Number(e.target.value) } : p))}
+                value={numberInputValue(editing.extra_price)}
+                onChange={(e) => setEditing((p) => (p ? { ...p, extra_price: parseNumberInput(e.target.value) } : p))}
                 className={inputClass}
               />
             </label>
@@ -159,8 +161,8 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Order</span>
               <input
                 type="number"
-                value={editing.display_order ?? ""}
-                onChange={(e) => setEditing((p) => (p ? { ...p, display_order: Number(e.target.value) } : p))}
+                value={numberInputValue(editing.display_order)}
+                onChange={(e) => setEditing((p) => (p ? { ...p, display_order: parseNumberInput(e.target.value) } : p))}
                 className={inputClass}
               />
             </label>

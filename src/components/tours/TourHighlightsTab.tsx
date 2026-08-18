@@ -6,6 +6,7 @@ import { TourHighlight, getHighlights, createHighlight, updateHighlight, deleteH
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
+import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const empty = (): TourHighlight => ({ image: "", title: "", short_description: "", display_order: 0, status: "active" });
 
@@ -39,11 +40,12 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
     if (!editing) return;
     setSaving(true);
     try {
+      const payload = { ...editing, display_order: sanitizeNumber(editing.display_order) };
       if (editing.id) {
-        const updated = await updateHighlight(tourId, editing.id, editing);
+        const updated = await updateHighlight(tourId, editing.id, payload);
         setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
       } else {
-        const created = await createHighlight(tourId, editing);
+        const created = await createHighlight(tourId, payload);
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
@@ -118,8 +120,8 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
               <label key={key}>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
                 <input type={key === "display_order" ? "number" : "text"}
-                  value={(editing as Record<string, unknown>)[key] as string ?? ""}
-                  onChange={(e) => setEditing((p) => p ? { ...p, [key]: key === "display_order" ? Number(e.target.value) : e.target.value } : p)}
+                  value={key === "display_order" ? numberInputValue((editing as Record<string, unknown>)[key] as number) : ((editing as Record<string, unknown>)[key] as string ?? "")}
+                  onChange={(e) => setEditing((p) => p ? { ...p, [key]: key === "display_order" ? parseNumberInput(e.target.value) : e.target.value } : p)}
                   className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
               </label>
             ))}

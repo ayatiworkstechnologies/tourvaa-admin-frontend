@@ -4,14 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuCalendarDays as CalendarDays, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuDownload as Download, LuSquarePen as Edit, LuFilePen as FileEdit, LuImageOff as ImageOff, LuMapPin as MapPin, LuPlus as Plus, LuPowerOff as PowerOff, LuSearch as Search, LuTag as Tag } from "react-icons/lu";
+import { LuCalendarDays as CalendarDays, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuDownload as Download, LuSquarePen as Edit, LuFilePen as FileEdit, LuImageOff as ImageOff, LuMapPin as MapPin, LuPlus as Plus, LuPowerOff as PowerOff, LuSearch as Search, LuTag as Tag, LuTrash2 as Trash2 } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import EmptyState from "@/components/common/EmptyState";
 import LoadingState from "@/components/common/LoadingState";
 import StatusBadge from "@/components/operations/StatusBadge";
 import TourExcelImportButton from "@/components/tours/TourExcelImportButton";
-import { CmsRecord, listCms, updateCmsStatus } from "@/lib/api/services/cmsService";
+import { CmsRecord, deleteCms, listCms, updateCmsStatus } from "@/lib/api/services/cmsService";
 import { exportTourExcel } from "@/lib/api/services/tourImportExportService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -35,11 +35,15 @@ export default function ToursPage() {
   const [stats, setStats] = useState({ total: 0, published: 0, draft: 0, disabled: 0 });
   const [togglingId, setTogglingId] = useState<number | string | null>(null);
   const [exportingId, setExportingId] = useState<number | string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | string | null>(null);
 
   const debouncedSearch = useDebounce(search, 350);
   const canCreate = hasPermission("tours.create");
   const canEdit = hasPermission("tours.edit");
   const canToggle = hasPermission("tours.disable");
+  // Admin-only (this page itself is admin-only - suppliers manage their own
+  // tours at /supplier/tours, which has no delete action at all).
+  const canDelete = hasPermission("tours.delete") || canEdit;
 
   const downloadTour = async (row: CmsRecord) => {
     setExportingId(row.id);
@@ -98,6 +102,21 @@ export default function ToursPage() {
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch]);
+
+  const deleteTour = async (row: CmsRecord) => {
+    if (!confirm(`Delete "${row.title || "this tour"}" permanently? This cannot be undone.`)) return;
+    setDeletingId(row.id);
+    try {
+      await deleteCms("/tours", row.id);
+      toast.success("Tour deleted.");
+      await Promise.all([fetchRows(), fetchStats()]);
+    } catch (error: unknown) {
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(message || "Could not delete this tour.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const toggleStatus = async (row: CmsRecord) => {
     setTogglingId(row.id);
@@ -301,6 +320,18 @@ export default function ToursPage() {
                               : row.status === "published"
                               ? "Disable"
                               : "Publish"}
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            type="button"
+                            disabled={deletingId === row.id}
+                            onClick={() => void deleteTour(row)}
+                            aria-label={`Delete ${row.title || "tour"}`}
+                            title="Delete tour"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#FFCDD2] px-3 py-2 text-xs font-bold text-red-500 hover:bg-[#FFF0F0] disabled:opacity-60"
+                          >
+                            <Trash2 size={14} />
                           </button>
                         )}
                       </div>

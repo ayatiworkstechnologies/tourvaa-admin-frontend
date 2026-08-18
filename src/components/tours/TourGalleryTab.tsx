@@ -6,6 +6,7 @@ import { GalleryImage, getGallery, createGalleryImage, updateGalleryImage, delet
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
+import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const IMAGE_TYPES = ["gallery", "itinerary", "highlight", "banner", "map"];
 const empty = (): GalleryImage => ({ image_path: "", image_title: "", image_alt_text: "", image_caption: "", image_type: "gallery", display_order: 0, status: "active" });
@@ -39,11 +40,12 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
     if (!editing) return;
     setSaving(true);
     try {
+      const payload = { ...editing, display_order: sanitizeNumber(editing.display_order) };
       if (editing.id) {
-        const updated = await updateGalleryImage(tourId, editing.id, editing);
+        const updated = await updateGalleryImage(tourId, editing.id, payload);
         setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
       } else {
-        const created = await createGalleryImage(tourId, editing);
+        const created = await createGalleryImage(tourId, payload);
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
@@ -134,8 +136,8 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
             </label>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Order</span>
-              <input type="number" value={editing.display_order}
-                onChange={(e) => setEditing((p) => p ? { ...p, display_order: Number(e.target.value) } : p)}
+              <input type="number" value={numberInputValue(editing.display_order)}
+                onChange={(e) => setEditing((p) => p ? { ...p, display_order: parseNumberInput(e.target.value) } : p)}
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
             </label>
             <label className="md:col-span-2">
