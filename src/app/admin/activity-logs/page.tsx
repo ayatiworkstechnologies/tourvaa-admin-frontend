@@ -44,6 +44,12 @@ export default function ActivityLogsPage() {
   }, [currentPage]);
 
   const activityLogColumns: DataTableColumn<ActivityLog>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (currentPage - 1) * PAGE_SIZE + index + 1,
+    },
     { key: "action", header: "Action" },
     { key: "entity_type", header: "Entity" },
     { key: "entity_id", header: "Entity ID" },

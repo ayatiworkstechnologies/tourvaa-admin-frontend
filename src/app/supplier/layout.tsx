@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuBanknote as Banknote, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuFileCheck2 as FileCheck, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
+import { LuBanknote as Banknote, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuFileCheck2 as FileCheck, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
@@ -17,6 +17,7 @@ const NAV = [
   { href: "/supplier/bookings", icon: CalendarCheck, label: "Bookings", section: "Operations" },
   { href: "/supplier/earnings", icon: Wallet, label: "Earnings", section: "Operations" },
   { href: "/supplier/payouts", icon: Banknote, label: "Payouts", section: "Operations" },
+  { href: "/supplier/reports", icon: ChartColumn, label: "Reports", section: "Operations" },
   { href: "/supplier/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
   { href: "/supplier/notifications", icon: Bell, label: "Notifications", section: "Communication" },
   { href: "/supplier/profile?tab=documents", icon: FileCheck, label: "Documents", placement: "bottom" as const },
@@ -30,6 +31,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/supplier/bookings": "Bookings",
   "/supplier/earnings": "Earnings",
   "/supplier/payouts": "Payouts",
+  "/supplier/reports": "Reports",
   "/supplier/messages": "Messages",
   "/supplier/notifications": "Notifications",
   "/supplier/profile": "My Profile",

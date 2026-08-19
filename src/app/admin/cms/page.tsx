@@ -246,6 +246,8 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [tourOptions, setTourOptions] = useState<FieldOption[]>([]);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -253,6 +255,7 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
       const res = await api.get(tab.endpoint);
       const data = res.data?.data ?? res.data ?? [];
       setItems(Array.isArray(data) ? data : data.items ?? []);
+      setPage(1);
     } catch {
       toast.error(`Could not load ${tab.label}.`);
     } finally {
@@ -352,16 +355,27 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
     }
   };
 
-  const columns: DataTableColumn<CmsItem>[] = tab.columns.map((col) => ({
-    key: col.key,
-    header: col.header,
-    className: col.className ? `${col.className} text-dash-body` : "text-dash-body",
-    render: (item) => col.render ? col.render(item) : (
-      <span className="line-clamp-2">
-        {item[col.key] != null ? String(item[col.key]) : "-"}
-      </span>
-    ),
-  }));
+  const columns: DataTableColumn<CmsItem>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * pageSize + index + 1,
+    },
+    ...tab.columns.map((col) => ({
+      key: col.key,
+      header: col.header,
+      className: col.className ? `${col.className} text-dash-body` : "text-dash-body",
+      render: (item: CmsItem) => col.render ? col.render(item) : (
+        <span className="line-clamp-2">
+          {item[col.key] != null ? String(item[col.key]) : "-"}
+        </span>
+      ),
+    })),
+  ];
+
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const paginatedItems = items.slice((page - 1) * pageSize, page * pageSize);
 
   const description = TAB_DESCRIPTIONS[tab.key] ?? "Manage this website content section.";
   const visibleFieldCount = tab.formFields.length;
@@ -486,8 +500,13 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
         <DataTable
           ariaLabel={`${tab.label} table`}
           columns={columns}
-          rows={items}
+          rows={paginatedItems}
           loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={items.length}
+          totalPages={totalPages}
+          onPageChange={setPage}
           emptyTitle={`No ${tab.label.toLowerCase()} yet`}
           emptyDescription={`Add ${tab.label.toLowerCase()} to publish content into this website section.`}
           actions={(item) => (
@@ -496,9 +515,11 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
                 <button
                   type="button"
                   onClick={() => openEdit(item)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-body hover:bg-dash-bg"
+                  aria-label="Edit"
+                  title="Edit"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
                 >
-                  <Pencil size={12} /> Edit
+                  <Pencil size={15} />
                 </button>
               )}
               {tab.canDelete !== false && (
@@ -506,9 +527,11 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
                   type="button"
                   disabled={deletingId === item.id}
                   onClick={() => void deleteItem(item.id)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-60"
+                  aria-label="Delete"
+                  title="Delete"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
                 >
-                  <Trash2 size={12} /> Delete
+                  <Trash2 size={15} />
                 </button>
               )}
             </div>

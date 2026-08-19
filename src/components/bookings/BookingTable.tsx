@@ -23,7 +23,14 @@ function money(value: string | number | undefined, currency: string) {
 }
 
 export default function BookingTable({ onCancel, onConfirm, busyBookingId, ...tableProps }: BookingTableProps) {
+  const { page, pageSize } = tableProps;
   const columns: DataTableColumn<Booking>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * pageSize + index + 1,
+    },
     { key: "booking_code", header: "Booking", className: "font-bold text-dash-text" },
     {
       key: "customer_name",

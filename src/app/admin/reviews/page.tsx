@@ -79,6 +79,12 @@ export default function AdminReviewsPage() {
   }
 
   const columns: DataTableColumn<Review>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
     { key: "tour", header: "Tour", render: (r) => r.tour_title ?? `Tour #${r.tour_id}`, className: "font-bold text-dash-text" },
     { key: "customer", header: "Customer", render: (r) => r.customer_name ?? "-", className: "text-dash-muted" },
     { key: "rating", header: "Rating", render: (r) => <Stars rating={r.rating} /> },
@@ -121,7 +127,7 @@ export default function AdminReviewsPage() {
         emptyTitle="No reviews here"
         emptyDescription={`There are no ${activeTab} reviews right now.`}
         actions={activeTab === "pending" ? (r) => (
-          <div className="flex justify-end gap-2">
+          <div className="flex items-center justify-end gap-2">
             <button type="button" disabled={actingId === r.id} onClick={() => moderate(r.id, "approve")}
               className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
               <CheckCircle2 size={14} /> Approve

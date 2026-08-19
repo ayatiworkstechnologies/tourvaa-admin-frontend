@@ -10,7 +10,7 @@ import {
 } from "react-icons/lu";
 
 import AboutReveal from "@/components/public/AboutReveal";
-import publicApi from "@/lib/api/publicClient";
+import publicApi, { subscribeNewsletter } from "@/lib/api/publicClient";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 
 const INPUT_CLASS = "min-h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
@@ -57,11 +57,17 @@ export default function ContactPage() {
     }
   }
 
-  function subscribe(event: FormEvent<HTMLFormElement>) {
+  async function subscribe(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!newsletterEmail.trim()) return;
-    setNewsletterMessage("Thank you — travel tips are on their way!");
-    setNewsletterEmail("");
+    try {
+      await subscribeNewsletter(newsletterEmail.trim());
+      setNewsletterMessage("Thank you — travel tips are on their way!");
+      setNewsletterEmail("");
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setNewsletterMessage(typeof message === "string" ? message : "Could not subscribe right now. Please try again.");
+    }
   }
 
   return (

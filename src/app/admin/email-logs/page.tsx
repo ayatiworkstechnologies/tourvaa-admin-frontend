@@ -67,6 +67,12 @@ export default function EmailLogsPage() {
   }
 
   const columns: DataTableColumn<EmailLog>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
     { key: "recipient_email", header: "Recipient" },
     { key: "subject", header: "Subject", className: "max-w-xs truncate" },
     { key: "template_key", header: "Template", className: "text-dash-muted", render: (log) => log.template_key || "-" },

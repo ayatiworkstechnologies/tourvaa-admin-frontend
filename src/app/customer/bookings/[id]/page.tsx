@@ -259,7 +259,7 @@ function PayNowModal({
           </button>
 
           {/* Test mode */}
-          {gw?.test_mode_available && (
+          {false && gw?.test_mode_available && (
             <>
               <div className="flex items-center gap-2 py-1">
                 <div className="h-px flex-1 bg-amber-200" />

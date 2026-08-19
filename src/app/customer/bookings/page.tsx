@@ -45,7 +45,7 @@ const CUSTOMER_STATUS_LABELS: Record<string, string> = {
   ready_to_travel: "Travel Documents Ready",
   upcoming: "Booking Confirmed",
   ongoing: "Tour In Progress",
-  postponed: "Booking Confirmed",
+  postponed: "Postponed",
   completed: "Completed",
   cancelled: "Cancelled",
   declined: "Supplier Declined",
@@ -144,6 +144,12 @@ export default function CustomerBookingsPage() {
   }, [statusCounts, total]);
 
   const columns: DataTableColumn<Booking>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
     { key: "code", header: "Code", render: (b) => <Link href={`/customer/bookings/${b.id}`} className="hover:text-dash-brand hover:underline">{b.booking_code}</Link>, className: "font-bold text-dash-text" },
     { key: "tour", header: "Tour Name", render: (b) => b.tour_name ?? "-", className: "text-dash-muted" },
     { key: "date", header: "Tour Date", render: (b) => dateText(b.tour_date), className: "hidden text-dash-muted sm:table-cell" },
@@ -224,7 +230,7 @@ export default function CustomerBookingsPage() {
             </Link>
           }
           actions={(b) => (
-            <div className="flex flex-wrap justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {Number(b.amount_pending || 0) > 0 && (
                 <Link
                   href={`/customer/bookings/${b.id}`}

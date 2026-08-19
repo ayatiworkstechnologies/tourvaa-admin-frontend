@@ -127,6 +127,12 @@ export default function AdminAffiliatePayoutsPage() {
 
   const columns: DataTableColumn<AffiliatePayout>[] = [
     {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * 15 + index + 1,
+    },
+    {
       key: "payout",
       header: "Payout",
       render: (p) => (
@@ -201,11 +207,11 @@ export default function AdminAffiliatePayoutsPage() {
                 <div className="flex flex-wrap items-center justify-end gap-1.5">
                   {p.status === "requested" && (
                     <>
-                      <button onClick={() => approve(p.id)} disabled={acting === p.id}
+                      <button type="button" onClick={() => approve(p.id)} disabled={acting === p.id}
                         className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
                         {acting === p.id ? <Loader2 className="animate-spin" size={12} /> : <CheckCircle2 size={12} />} Approve
                       </button>
-                      <button onClick={() => reject(p.id)} disabled={acting === p.id}
+                      <button type="button" onClick={() => reject(p.id)} disabled={acting === p.id}
                         className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50">
                         <XCircle size={12} /> Reject
                       </button>
@@ -213,11 +219,11 @@ export default function AdminAffiliatePayoutsPage() {
                   )}
                   {p.status === "approved" && (
                     <>
-                      <button onClick={() => processing(p.id)} disabled={acting === p.id}
+                      <button type="button" onClick={() => processing(p.id)} disabled={acting === p.id}
                         className="inline-flex items-center gap-1 rounded-lg bg-sky-50 px-2.5 py-1.5 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50">
                         {acting === p.id ? <Loader2 className="animate-spin" size={12} /> : <CheckCircle2 size={12} />} Mark Processing
                       </button>
-                      <button onClick={() => reject(p.id)} disabled={acting === p.id}
+                      <button type="button" onClick={() => reject(p.id)} disabled={acting === p.id}
                         className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50">
                         <XCircle size={12} /> Reject
                       </button>

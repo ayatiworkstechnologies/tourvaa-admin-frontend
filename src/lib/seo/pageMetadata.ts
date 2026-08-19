@@ -118,6 +118,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/supplier/bookings": { title: "Supplier Bookings", description: "Review booking requests, accept paid reservations, and manage tour execution.", index: false },
   "/supplier/bookings/[id]": { title: "Supplier Booking Details", description: "Review reservation details, payment readiness, travellers, and booking status.", index: false },
   "/supplier/earnings": { title: "Supplier Earnings", description: "Track completed booking earnings, reserved funds, and available supplier balance.", index: false },
+  "/supplier/reports": { title: "Supplier Reports", description: "View your own booking, earnings, and traveller reports, with CSV export and print.", index: false },
   "/supplier/messages": { title: "Supplier Messages", description: "Review supplier support conversations and contact the Tourvaa team.", index: false },
   "/supplier/notifications": { title: "Supplier Notifications", description: "Review supplier approval, verification, booking, and account updates from Tourvaa.", index: false },
   "/supplier/payouts": { title: "Supplier Payouts", description: "Review payout history and request eligible supplier earnings.", index: false },

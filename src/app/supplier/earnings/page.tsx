@@ -71,6 +71,8 @@ export default function EarningsPage() {
   const [requestSuccess, setRequestSuccess] = useState("");
 
   const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
+  const [ledgerPage, setLedgerPage] = useState(1);
+  const ledgerPageSize = 10;
 
   const load = async () => {
     setLoading(true);
@@ -83,6 +85,7 @@ export default function EarningsPage() {
       if (ledgerRes.status === "fulfilled") setEntries(ledgerRes.value.data?.items ?? ledgerRes.value.data?.data ?? []);
       if (payoutRes.status === "fulfilled") setPayouts(payoutRes.value.data?.items ?? payoutRes.value.data?.data ?? []);
       if (ledgerRes.status === "rejected" || payoutRes.status === "rejected") setError("Some finance data could not be loaded. Please retry.");
+      setLedgerPage(1);
     } finally {
       setLoading(false);
     }
@@ -190,6 +193,12 @@ export default function EarningsPage() {
   ];
 
   const columns: DataTableColumn<LedgerEntry>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (ledgerPage - 1) * ledgerPageSize + index + 1,
+    },
     { key: "date", header: "Date", className: "whitespace-nowrap text-xs text-dash-muted", render: (e) => dateText(e.created_at) },
     {
       key: "booking",
@@ -277,7 +286,18 @@ export default function EarningsPage() {
 
       {error && <div className="mb-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600"><span className="flex items-center gap-2"><AlertCircle size={16} />{error}</span><button type="button" onClick={load} className="text-xs font-bold underline">Retry</button></div>}
 
-      {loading ? <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl border border-dash-border bg-white" />)}</div> : !error && <div className="rounded-xl border border-dash-border bg-white p-0 shadow-sm"><div className="border-b border-dash-border px-5 py-4"><h2 className="font-black text-dash-text">Ledger Entries</h2><p className="mt-0.5 text-sm text-dash-muted">Each row shows gross value, commission deduction, net payable, and remaining payout balance.</p></div><DataTable ariaLabel="Earnings table" columns={columns} rows={entries} emptyTitle="No ledger entries yet" emptyDescription="Earnings from confirmed bookings will appear here." /></div>}
+      {loading ? <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl border border-dash-border bg-white" />)}</div> : !error && <div className="rounded-xl border border-dash-border bg-white p-0 shadow-sm"><div className="border-b border-dash-border px-5 py-4"><h2 className="font-black text-dash-text">Ledger Entries</h2><p className="mt-0.5 text-sm text-dash-muted">Each row shows gross value, commission deduction, net payable, and remaining payout balance.</p></div><DataTable
+        ariaLabel="Earnings table"
+        columns={columns}
+        rows={entries.slice((ledgerPage - 1) * ledgerPageSize, ledgerPage * ledgerPageSize)}
+        page={ledgerPage}
+        pageSize={ledgerPageSize}
+        total={entries.length}
+        totalPages={Math.max(1, Math.ceil(entries.length / ledgerPageSize))}
+        onPageChange={setLedgerPage}
+        emptyTitle="No ledger entries yet"
+        emptyDescription="Earnings from confirmed bookings will appear here."
+      /></div>}
     </SupplierPageShell>
   );
 }

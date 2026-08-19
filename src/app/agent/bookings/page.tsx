@@ -120,6 +120,12 @@ export default function AgentBookingsPage() {
   ];
 
   const columns: DataTableColumn<Booking>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
     { key: "code", header: "Code", render: (b) => <Link href={`/agent/bookings/${b.id}`} className="hover:text-dash-brand hover:underline">{b.booking_code}</Link>, className: "font-bold text-dash-text" },
     { key: "customer", header: "Customer", render: (b) => b.customer_name ?? "-", className: "hidden text-dash-muted sm:table-cell" },
     { key: "tour", header: "Tour", render: (b) => b.tour_name ?? "-", className: "hidden max-w-[180px] truncate text-dash-muted md:table-cell" },
@@ -185,7 +191,7 @@ export default function AgentBookingsPage() {
               </Link>
           }
           actions={(b) => (
-            <div className="flex justify-end gap-2">
+            <div className="flex items-center justify-end gap-2">
               <Link
                 href={`/agent/bookings/${b.id}`}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs font-semibold text-dash-body shadow-sm hover:bg-[#F3F8FC] hover:text-dash-brand transition-all"

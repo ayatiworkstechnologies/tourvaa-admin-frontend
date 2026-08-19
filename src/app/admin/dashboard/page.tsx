@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuPackageCheck as PackageCheck, LuUsers as Users, LuWarehouse as Warehouse, LuMail as Mail, LuHeadset as Headset, LuFilter as Filter, LuChartColumn as BarChart3, LuCreditCard as CreditCard, LuTrendingUp as TrendingUp, LuUserPlus as UserPlus, LuShield as Shield, LuActivity as Activity, LuTriangleAlert as AlertTriangle, LuClock as Clock, LuChevronRight as ChevronRight, LuHouse as Home, LuRefreshCw as RefreshCw, LuCircleCheckBig as CheckCircle2, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuPackageCheck as PackageCheck, LuUsers as Users, LuWarehouse as Warehouse, LuMail as Mail, LuHeadset as Headset, LuFilter as Filter, LuChartColumn as BarChart3, LuCreditCard as CreditCard, LuTrendingUp as TrendingUp, LuUserPlus as UserPlus, LuShield as Shield, LuActivity as Activity, LuTriangleAlert as AlertTriangle, LuClock as Clock, LuChevronRight as ChevronRight, LuHouse as Home, LuRefreshCw as RefreshCw, LuCircleCheckBig as CheckCircle2, LuCircleX as XCircle, LuMapPin as MapPin } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useDashboard } from "@/hooks/useDashboard";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -12,7 +12,7 @@ import { ReportSnapshot } from "@/lib/api/services/reportService";
 import DatePicker from "@/components/ui/DatePicker";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, LineChart, Line,
 } from "recharts";
 
 // types
@@ -32,8 +32,19 @@ type PendingSupplier = { id: number; supplier_name: string; email?: string; appr
 type PendingAgent   = { id: number; agent_name: string; email?: string; approval_status?: string; status?: string };
 type Country        = { id: number; country_name: string };
 type ChartRow        = { status: string; count: number };
-type Charts           = { booking_status_chart?: ChartRow[]; payment_status_chart?: ChartRow[] };
+type MonthRow        = { month: string; count: number };
+type DestinationRow   = { destination: string; count: number };
+type Charts           = {
+  booking_status_chart?: ChartRow[];
+  payment_status_chart?: ChartRow[];
+  monthly_booking_trend?: MonthRow[];
+  top_destinations?: DestinationRow[];
+};
 type ActivityLog      = { action: string; entity_type: string; entity_id: number };
+type RecentBooking    = { id: number; booking_code: string; tour_name?: string; booking_status: string; created_at?: string };
+type RecentSupplier   = { id: number; supplier_name: string; approval_status?: string; created_at?: string };
+type RecentAgent      = { id: number; agent_name: string; approval_status?: string; created_at?: string };
+type RecentPayment    = { id: number; booking_id?: number; payment_status?: string; captured_amount?: string | number; created_at?: string };
 
 // helpers
 function changeBadge(pct: number) {
@@ -56,14 +67,21 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   const [pendingAgents,    setPendingAgents]    = useState<PendingAgent[]>([]);
   const [charts,           setCharts]           = useState<Charts>({});
   const [activities,       setActivities]       = useState<ActivityLog[]>([]);
+  const [recentBookings,   setRecentBookings]   = useState<RecentBooking[]>([]);
+  const [recentSuppliers,  setRecentSuppliers]  = useState<RecentSupplier[]>([]);
+  const [recentAgents,     setRecentAgents]     = useState<RecentAgent[]>([]);
+  const [recentPayments,   setRecentPayments]   = useState<RecentPayment[]>([]);
+  const [recentTab,        setRecentTab]        = useState<"bookings" | "suppliers" | "agents" | "payments" | "actions">("bookings");
   const [snapshot,         setSnapshot]         = useState<ReportSnapshot | null>(null);
   const [countries,        setCountries]        = useState<Country[]>([]);
   const [loading,          setLoading]          = useState(true);
   const [loadError,        setLoadError]        = useState("");
   const [savingId,         setSavingId]         = useState<string | null>(null);
   const [msg,              setMsg]              = useState("");
-  const [rejectTarget,     setRejectTarget]     = useState<{ type: "supplier" | "agent"; id: number } | null>(null);
+  const [rejectTarget,     setRejectTarget]     = useState<{ id: number } | null>(null);
   const [rejectReason,     setRejectReason]     = useState("Does not meet requirements");
+  const [supplierPage,     setSupplierPage]     = useState(1);
+  const SUPPLIER_PAGE_SIZE = 5;
 
   // filter form state (only applied when user clicks "Apply")
   const [fStart,   setFStart]   = useState("");
@@ -103,7 +121,14 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         setPendingAgents(items.filter((item: PendingAgent) => pendingStatuses.has(String(item.approval_status || "").toLowerCase())));
       }
       if (chartRes.status   === "fulfilled") setCharts(chartRes.value.data?.data ?? {});
-      if (actRes.status     === "fulfilled") setActivities(actRes.value.data?.data?.recent_admin_actions ?? []);
+      if (actRes.status     === "fulfilled") {
+        const recentData = actRes.value.data?.data ?? {};
+        setActivities(recentData.recent_admin_actions ?? []);
+        setRecentBookings(recentData.recent_bookings ?? []);
+        setRecentSuppliers(recentData.recent_suppliers ?? []);
+        setRecentAgents(recentData.recent_agents ?? []);
+        setRecentPayments(recentData.recent_payments ?? []);
+      }
       if (snapRes.status    === "fulfilled") setSnapshot(snapRes.value.data?.data ?? null);
       if (countryRes.status === "fulfilled") setCountries(countryRes.value.data?.items ?? countryRes.value.data?.data ?? []);
       if ([sumRes, suppRes, agentRes, chartRes, actRes, snapRes, countryRes].some((result) => result.status === "rejected")) {
@@ -115,6 +140,13 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   }, [activeFilters]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Clamp back to the last valid page when the list shrinks (e.g. after an
+  // approve/reject removes the last item on the current page).
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(pendingSuppliers.length / SUPPLIER_PAGE_SIZE));
+    setSupplierPage((page) => Math.min(page, totalPages));
+  }, [pendingSuppliers.length]);
 
   // flash message auto-clear
   useEffect(() => {
@@ -145,29 +177,8 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
     finally { setSavingId(null); }
   };
 
-  const approveAgent = async (id: number) => {
-    setSavingId(`a-${id}`);
-    try {
-      await api.patch(`/agents/${id}/approve`);
-      setPendingAgents((p) => p.filter((a) => a.id !== id));
-      setMsg("Agent approved.");
-    } catch { setMsg("Could not approve agent."); }
-    finally { setSavingId(null); }
-  };
-
-  const confirmRejectAgent = async (id: number, reason: string) => {
-    setSavingId(`a-${id}`);
-    try {
-      await api.patch(`/agents/${id}/reject`, { rejection_reason: reason });
-      setPendingAgents((p) => p.filter((a) => a.id !== id));
-      setMsg("Agent rejected.");
-      setRejectTarget(null);
-    } catch { setMsg("Could not reject agent."); }
-    finally { setSavingId(null); }
-  };
-
-  const openRejectPrompt = (type: "supplier" | "agent", id: number) => {
-    setRejectTarget({ type, id });
+  const openRejectPrompt = (id: number) => {
+    setRejectTarget({ id });
     setRejectReason("Does not meet requirements");
   };
 
@@ -365,6 +376,61 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         </div>
       </div>
 
+      {/* 4b. monthly trend + top destinations */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
+          <div className="mb-4 flex items-center gap-2 text-dash-text">
+            <TrendingUp size={18} className="text-dash-brand" />
+            <h2 className="text-base font-black">Monthly Booking Trend</h2>
+          </div>
+          {loading ? (
+            <div className="flex h-55 items-center justify-center text-sm text-dash-muted">Loading...</div>
+          ) : (!charts.monthly_booking_trend || charts.monthly_booking_trend.length === 0) ? (
+            <div className="flex h-55 items-center justify-center text-sm text-dash-muted">No monthly data yet.</div>
+          ) : (
+            <div className="h-55 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={charts.monthly_booking_trend} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7EAF0" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#667085" }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#667085" }} allowDecimals={false} />
+                  <Tooltip cursor={{ stroke: "#E7EAF0" }} contentStyle={{ borderRadius: "10px", border: "1px solid #E7EAF0" }} />
+                  <Line type="monotone" dataKey="count" stroke="#43A9F6" strokeWidth={2.5} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
+          <div className="mb-4 flex items-center gap-2 text-dash-text">
+            <MapPin size={18} className="text-dash-brand" />
+            <h2 className="text-base font-black">Top Destinations</h2>
+          </div>
+          {loading ? (
+            <div className="flex h-55 items-center justify-center text-sm text-dash-muted">Loading...</div>
+          ) : (!charts.top_destinations || charts.top_destinations.length === 0) ? (
+            <div className="flex h-55 items-center justify-center text-sm text-dash-muted">No destination data yet.</div>
+          ) : (
+            <ul className="space-y-2.5">
+              {charts.top_destinations.map((row, i) => {
+                const max = charts.top_destinations?.[0]?.count || 1;
+                return (
+                  <li key={row.destination} className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--portal-soft)] text-[10px] font-black text-dash-brand">{i + 1}</span>
+                    <span className="w-28 shrink-0 truncate text-xs font-bold text-dash-text">{row.destination}</span>
+                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-dash-bg">
+                      <span className="block h-full rounded-full bg-dash-brand" style={{ width: `${Math.max(6, (row.count / max) * 100)}%` }} />
+                    </span>
+                    <span className="w-8 shrink-0 text-right text-xs font-black text-dash-text">{row.count}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+
       {/* 5. reports snapshot (dynamic) */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
@@ -502,43 +568,72 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
               <CheckCircle2 size={16} className="text-emerald-500" /> All clear - no pending approvals.
             </div>
           ) : (
-            <ul className="space-y-2">
-              {pendingSuppliers.map((s) => (
-                <li key={s.id} className="rounded-xl border border-dash-border bg-white p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-bold text-dash-text">{s.supplier_name}</p>
-                      <p className="text-xs text-dash-muted">{s.email || s.approval_status || "Pending registration"}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => approveSupplier(s.id)} disabled={savingId === `s-${s.id}`} className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-100 disabled:opacity-50">
-                        <CheckCircle2 size={12} /> Approve
-                      </button>
-                      <button type="button" onClick={() => openRejectPrompt("supplier", s.id)} disabled={savingId === `s-${s.id}`} className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50">
-                        <XCircle size={12} /> Reject
-                      </button>
-                    </div>
-                  </div>
-                  {rejectTarget?.type === "supplier" && rejectTarget.id === s.id && (
-                    <div className="mt-3 rounded-lg border border-red-100 bg-red-50/60 p-3">
-                      <label className="block text-[10px] font-black uppercase tracking-wide text-red-700">Rejection reason</label>
-                      <textarea
-                        value={rejectReason}
-                        onChange={(event) => setRejectReason(event.target.value)}
-                        onKeyDown={(event) => event.key === "Escape" && cancelRejectPrompt()}
-                        rows={2}
-                        autoFocus
-                        className="mt-1.5 w-full rounded-lg border border-red-200 bg-white p-2 text-xs text-dash-text outline-none focus:border-red-400"
-                      />
-                      <div className="mt-2 flex justify-end gap-2">
-                        <button type="button" onClick={cancelRejectPrompt} className="rounded-lg px-3 py-1.5 text-xs font-bold text-dash-muted hover:bg-white">Cancel</button>
-                        <button type="button" disabled={!rejectReason.trim() || savingId === `s-${s.id}`} onClick={() => confirmRejectSupplier(s.id, rejectReason.trim())} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50">Confirm reject</button>
+            <>
+              <ul className="space-y-2">
+                {pendingSuppliers
+                  .slice((supplierPage - 1) * SUPPLIER_PAGE_SIZE, supplierPage * SUPPLIER_PAGE_SIZE)
+                  .map((s) => (
+                  <li key={s.id} className="rounded-xl border border-dash-border bg-white p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-dash-text">{s.supplier_name}</p>
+                        <p className="text-xs text-dash-muted">{s.email || s.approval_status || "Pending registration"}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => approveSupplier(s.id)} disabled={savingId === `s-${s.id}`} className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-100 disabled:opacity-50">
+                          <CheckCircle2 size={12} /> Approve
+                        </button>
+                        <button type="button" onClick={() => openRejectPrompt(s.id)} disabled={savingId === `s-${s.id}`} className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50">
+                          <XCircle size={12} /> Reject
+                        </button>
                       </div>
                     </div>
-                  )}
-                </li>
-              ))}
-            </ul>
+                    {rejectTarget?.id === s.id && (
+                      <div className="mt-3 rounded-lg border border-red-100 bg-red-50/60 p-3">
+                        <label className="block text-[10px] font-black uppercase tracking-wide text-red-700">Rejection reason</label>
+                        <textarea
+                          value={rejectReason}
+                          onChange={(event) => setRejectReason(event.target.value)}
+                          onKeyDown={(event) => event.key === "Escape" && cancelRejectPrompt()}
+                          rows={2}
+                          autoFocus
+                          className="mt-1.5 w-full rounded-lg border border-red-200 bg-white p-2 text-xs text-dash-text outline-none focus:border-red-400"
+                        />
+                        <div className="mt-2 flex justify-end gap-2">
+                          <button type="button" onClick={cancelRejectPrompt} className="rounded-lg px-3 py-1.5 text-xs font-bold text-dash-muted hover:bg-white">Cancel</button>
+                          <button type="button" disabled={!rejectReason.trim() || savingId === `s-${s.id}`} onClick={() => confirmRejectSupplier(s.id, rejectReason.trim())} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50">Confirm reject</button>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {pendingSuppliers.length > SUPPLIER_PAGE_SIZE && (
+                <div className="mt-3 flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-dash-muted">
+                    Page {supplierPage} of {Math.ceil(pendingSuppliers.length / SUPPLIER_PAGE_SIZE)}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSupplierPage((page) => Math.max(1, page - 1))}
+                      disabled={supplierPage === 1}
+                      className="rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-body hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Prev
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSupplierPage((page) => Math.min(Math.ceil(pendingSuppliers.length / SUPPLIER_PAGE_SIZE), page + 1))}
+                      disabled={supplierPage >= Math.ceil(pendingSuppliers.length / SUPPLIER_PAGE_SIZE)}
+                      className="rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-body hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -562,38 +657,16 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
           ) : (
             <ul className="space-y-2">
               {pendingAgents.map((a) => (
-                <li key={a.id} className="rounded-xl border border-dash-border bg-white p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-bold text-dash-text">{a.agent_name}</p>
-                      <p className="text-xs text-dash-muted">{a.email || a.approval_status || "Pending registration"}</p>
+                <li key={a.id}>
+                  <Link href={`/admin/agents/${a.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-dash-border bg-white p-3 transition hover:border-dash-brand/40 hover:bg-[var(--portal-soft)]">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-dash-text">{a.agent_name}</p>
+                      <p className="truncate text-xs text-dash-muted">{a.email || a.approval_status || "Pending registration"}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => approveAgent(a.id)} disabled={savingId === `a-${a.id}`} className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-100 disabled:opacity-50">
-                        <CheckCircle2 size={12} /> Approve
-                      </button>
-                      <button type="button" onClick={() => openRejectPrompt("agent", a.id)} disabled={savingId === `a-${a.id}`} className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50">
-                        <XCircle size={12} /> Reject
-                      </button>
-                    </div>
-                  </div>
-                  {rejectTarget?.type === "agent" && rejectTarget.id === a.id && (
-                    <div className="mt-3 rounded-lg border border-red-100 bg-red-50/60 p-3">
-                      <label className="block text-[10px] font-black uppercase tracking-wide text-red-700">Rejection reason</label>
-                      <textarea
-                        value={rejectReason}
-                        onChange={(event) => setRejectReason(event.target.value)}
-                        onKeyDown={(event) => event.key === "Escape" && cancelRejectPrompt()}
-                        rows={2}
-                        autoFocus
-                        className="mt-1.5 w-full rounded-lg border border-red-200 bg-white p-2 text-xs text-dash-text outline-none focus:border-red-400"
-                      />
-                      <div className="mt-2 flex justify-end gap-2">
-                        <button type="button" onClick={cancelRejectPrompt} className="rounded-lg px-3 py-1.5 text-xs font-bold text-dash-muted hover:bg-white">Cancel</button>
-                        <button type="button" disabled={!rejectReason.trim() || savingId === `a-${a.id}`} onClick={() => confirmRejectAgent(a.id, rejectReason.trim())} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50">Confirm reject</button>
-                      </div>
-                    </div>
-                  )}
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-brand">
+                      Review <ChevronRight size={12} />
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -641,19 +714,86 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
               <Activity size={16} className="text-dash-brand" />
               <h2 className="text-sm font-black">Recent Activity</h2>
             </div>
-            {activities.length === 0 ? (
-              <p className="text-xs font-semibold text-dash-muted">No recent activities yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {activities.slice(0, 6).map((log: ActivityLog, i: number) => (
-                  <li key={i} className="rounded-lg bg-dash-bg p-2.5">
-                    <p className="text-xs font-bold text-dash-text">{log.action}</p>
-                    <p className="mt-0.5 text-[10px] font-semibold text-dash-muted">
-                      {log.entity_type} #{log.entity_id}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {([
+                ["bookings", "Bookings"],
+                ["suppliers", "Suppliers"],
+                ["agents", "Agents"],
+                ["payments", "Payments"],
+                ["actions", "Admin Actions"],
+              ] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setRecentTab(key)}
+                  className={`rounded-lg px-2.5 py-1 text-[10px] font-black ${recentTab === key ? "bg-dash-brand text-white" : "bg-dash-bg text-dash-muted"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {recentTab === "bookings" && (
+              recentBookings.length === 0 ? <p className="text-xs font-semibold text-dash-muted">No recent bookings yet.</p> : (
+                <ul className="space-y-2">
+                  {recentBookings.map((b) => (
+                    <li key={b.id} className="rounded-lg bg-dash-bg p-2.5">
+                      <p className="text-xs font-bold text-dash-text">{b.booking_code}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-dash-muted">{b.tour_name || "-"} · {b.booking_status.replaceAll("_", " ")}</p>
+                    </li>
+                  ))}
+                </ul>
+              )
+            )}
+            {recentTab === "suppliers" && (
+              recentSuppliers.length === 0 ? <p className="text-xs font-semibold text-dash-muted">No recent suppliers yet.</p> : (
+                <ul className="space-y-2">
+                  {recentSuppliers.map((s) => (
+                    <li key={s.id} className="rounded-lg bg-dash-bg p-2.5">
+                      <p className="text-xs font-bold text-dash-text">{s.supplier_name}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-dash-muted">{(s.approval_status || "-").replaceAll("_", " ")}</p>
+                    </li>
+                  ))}
+                </ul>
+              )
+            )}
+            {recentTab === "agents" && (
+              recentAgents.length === 0 ? <p className="text-xs font-semibold text-dash-muted">No recent agents yet.</p> : (
+                <ul className="space-y-2">
+                  {recentAgents.map((a) => (
+                    <li key={a.id} className="rounded-lg bg-dash-bg p-2.5">
+                      <p className="text-xs font-bold text-dash-text">{a.agent_name}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-dash-muted">{(a.approval_status || "-").replaceAll("_", " ")}</p>
+                    </li>
+                  ))}
+                </ul>
+              )
+            )}
+            {recentTab === "payments" && (
+              recentPayments.length === 0 ? <p className="text-xs font-semibold text-dash-muted">No recent payments yet.</p> : (
+                <ul className="space-y-2">
+                  {recentPayments.map((p) => (
+                    <li key={p.id} className="rounded-lg bg-dash-bg p-2.5">
+                      <p className="text-xs font-bold text-dash-text">{formatCompact(p.captured_amount)}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-dash-muted">Booking #{p.booking_id} · {(p.payment_status || "-").replaceAll("_", " ")}</p>
+                    </li>
+                  ))}
+                </ul>
+              )
+            )}
+            {recentTab === "actions" && (
+              activities.length === 0 ? <p className="text-xs font-semibold text-dash-muted">No recent activities yet.</p> : (
+                <ul className="space-y-2">
+                  {activities.slice(0, 6).map((log: ActivityLog, i: number) => (
+                    <li key={i} className="rounded-lg bg-dash-bg p-2.5">
+                      <p className="text-xs font-bold text-dash-text">{log.action}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-dash-muted">
+                        {log.entity_type} #{log.entity_id}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )
             )}
           </div>
 

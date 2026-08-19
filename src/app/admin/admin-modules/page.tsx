@@ -21,6 +21,10 @@ export default function AdminModulesPage() {
   const [modules, setModules] = useState<AdminModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(modules.length / pageSize));
+  const paginatedModules = modules.slice((page - 1) * pageSize, page * pageSize);
 
   async function load() {
     setLoading(true);
@@ -49,6 +53,12 @@ export default function AdminModulesPage() {
   }
 
   const columns: DataTableColumn<AdminModule>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * pageSize + index + 1,
+    },
     { key: "name", header: "Module", className: "font-bold text-dash-text" },
     { key: "slug", header: "Slug", className: "font-mono text-xs text-dash-subtle" },
     { key: "description", header: "Description", className: "text-dash-muted" },
@@ -75,8 +85,13 @@ export default function AdminModulesPage() {
           <DataTable
             ariaLabel="Admin modules table"
             columns={columns}
-            rows={modules}
+            rows={paginatedModules}
             loading={loading}
+            page={page}
+            pageSize={pageSize}
+            total={modules.length}
+            totalPages={totalPages}
+            onPageChange={setPage}
             emptyTitle="No modules found"
             actions={(module) => (
               <button

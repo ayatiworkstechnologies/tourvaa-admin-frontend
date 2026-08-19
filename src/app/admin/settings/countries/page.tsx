@@ -119,6 +119,12 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
   }
 
   const allColumns: DataTableColumn<Row>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * 20 + index + 1,
+    },
     ...columns,
     {
       key: "status" as keyof Row,

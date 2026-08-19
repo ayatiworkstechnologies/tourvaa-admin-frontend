@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCalendarDays as CalendarDays, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuTruck as Truck, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCalendarDays as CalendarDays, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuMapPin as MapPin, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuTruck as Truck, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
+import api from "@/lib/api/client";
 import ActionModal from "@/components/operations/ActionModal";
 import CompletionChecklist from "@/components/operations/CompletionChecklist";
 import ReviewProfileHero from "@/components/operations/ReviewProfileHero";
@@ -17,12 +18,10 @@ import {
   getReviewRecord,
   partialApproveReviewRecord,
   rejectReviewRecord,
-  rejectSupplierCommissionRequest,
   reviewSupplierDocument,
   reviewSupplierVehicle,
   setSupplierAccountState,
   ReviewRecord,
-  updateCommercialValue,
   updateReviewRecord,
 } from "@/lib/api/services/operationsService";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -36,9 +35,11 @@ type SupplierDocument = DetailObject & { id?: number; file_url?: string; file_pa
 type SupplierVehicle = DetailObject & { id?: number };
 type SupplierContact = DetailObject & { id?: number; email?: string; phone?: string; is_primary?: boolean };
 
-// Mirrors DOC_TYPES in src/components/supplier/profile/DocumentsTab.tsx -- the
-// document types a supplier is asked to upload during onboarding.
-const REQUIRED_DOCUMENT_TYPES = [
+type DocRequirement = { key: string; label: string };
+
+// Fallback only - the source of truth is GET /suppliers/document-requirements
+// (app/services/suppliers.py SUPPLIER_DOCUMENT_TYPES), used if that call fails.
+const FALLBACK_DOCUMENT_TYPES: DocRequirement[] = [
   { key: "company_registration", label: "Company Registration Certificate" },
   { key: "trade_license", label: "Trade License" },
   { key: "tax_certificate", label: "Tax Registration Certificate" },
@@ -128,13 +129,23 @@ export default function SupplierDetailPage() {
   const canApprove = hasPermission("suppliers.approve") && !isApproved && !isBlocked;
   const canReject = hasPermission("suppliers.reject") && !isRejected && !isBlocked;
   const canPartial = !isApproved && !isBlocked && (hasPermission("suppliers.partial_approve") || canApprove);
-  const canCommercial = hasPermission("suppliers.manage_markup");
-  const hasCommissionRequest = record?.commission_request_status === "pending";
   const canBlock = hasPermission("suppliers.edit") || hasPermission("suppliers.approve");
   const canEditLocation = hasPermission("suppliers.edit");
   const canReviewItems = hasPermission("suppliers.approve") || hasPermission("suppliers.reject");
 
   const requestIdRef = useRef(0);
+  const [documentTypes, setDocumentTypes] = useState<DocRequirement[]>(FALLBACK_DOCUMENT_TYPES);
+
+  useEffect(() => {
+    api.get("/suppliers/document-requirements")
+      .then((res) => {
+        const requirements = res.data?.data;
+        if (Array.isArray(requirements) && requirements.length) {
+          setDocumentTypes(requirements.map((item: { document_type: string; label: string }) => ({ key: item.document_type, label: item.label })));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchRecord = useCallback(async () => {
     const requestId = ++requestIdRef.current;
@@ -172,7 +183,7 @@ export default function SupplierDetailPage() {
   const contacts = (record?.contacts ?? []) as SupplierContact[];
   const primaryContact = contacts.find((contact) => contact.is_primary) ?? contacts[0];
 
-  const missingRequiredDocs = REQUIRED_DOCUMENT_TYPES.filter(
+  const missingRequiredDocs = documentTypes.filter(
     (docType) => !documents.some((doc) => doc.document_type === docType.key && doc.status === "approved")
   );
 
@@ -255,7 +266,6 @@ export default function SupplierDetailPage() {
               {canBlock && isBlocked && <button onClick={() => void run(() => setSupplierAccountState(id, "reactivate"), "Supplier account reactivated.")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><CheckCircle2 size={16} /> Reactivate</button>}
               {canBlock && !isBlocked && <button onClick={() => setModal("deactivate")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><Ban size={16} /> Deactivate</button>}
               {canBlock && !isBlocked && <button onClick={() => setModal("suspend")} className="inline-flex items-center gap-2 rounded-xl border border-amber-200 px-4 py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-50"><Ban size={16} /> Suspend</button>}
-              {canCommercial && <button onClick={() => setModal("commercial")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><Percent size={16} /> Commission</button>}
             </div>
           </div>
 
@@ -273,50 +283,6 @@ export default function SupplierDetailPage() {
             contactEmail={primaryContact?.email}
             contactPhone={primaryContact?.phone}
           />
-
-          {record.markup_type && (
-            <div className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
-              <p className="text-xs font-bold uppercase tracking-wide text-dash-subtle">Commission / Markup</p>
-              <p className="mt-1 text-lg font-black text-dash-text">
-                {record.markup_type}: {record.markup_value ?? 0}
-              </p>
-            </div>
-          )}
-
-          {hasCommissionRequest && (
-            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Commission request pending</p>
-                <p className="mt-1 text-lg font-black text-dash-text">{record.commission_request_type}: {record.commission_request_value ?? 0}</p>
-                <p className="mt-1 text-xs text-dash-muted">Submitted from the supplier dashboard for administration approval.</p>
-              </div>
-              {canCommercial && (
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" disabled={saving} onClick={() => void run(() => rejectSupplierCommissionRequest(id), "Commission request rejected.")} className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-5 py-3 text-sm font-black text-red-600 hover:bg-red-50 disabled:opacity-50"><X size={16} />Reject request</button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {record.commission_request_history && record.commission_request_history.length > 0 && (
-            <section className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
-              <h2 className="font-black text-dash-text">Commission request history</h2>
-              <div className="mt-4 space-y-3">
-                {record.commission_request_history.map((entry) => (
-                  <div key={entry.id} className="flex flex-col gap-1 rounded-xl bg-dash-bg p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-bold text-dash-text">{entry.markup_type}: {entry.markup_value}</p>
-                      <StatusBadge value={entry.status} />
-                    </div>
-                    <div className="text-xs text-dash-subtle">
-                      {entry.requested_at && <p>Requested: {new Date(entry.requested_at).toLocaleString()}</p>}
-                      {entry.reviewed_at && <p>Reviewed: {new Date(entry.reviewed_at).toLocaleString()}</p>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
 
           <CompletionCard record={record} />
 
@@ -404,7 +370,7 @@ export default function SupplierDetailPage() {
                       : "bg-amber-50 text-amber-700 ring-amber-100"
                   }`}
                 >
-                  {REQUIRED_DOCUMENT_TYPES.length - missingRequiredDocs.length} of {REQUIRED_DOCUMENT_TYPES.length} required documents approved
+                  {documentTypes.length - missingRequiredDocs.length} of {documentTypes.length} required documents approved
                   {missingRequiredDocs.length > 0 && ` — missing: ${missingRequiredDocs.map((docType) => docType.label).join(", ")}`}
                 </p>
               )}
@@ -544,7 +510,7 @@ export default function SupplierDetailPage() {
             <p className="text-sm leading-6 text-dash-muted">Accepting this supplier immediately unlocks tour creation, departures, bookings, calendar, payments, payouts and operational reports.</p>
             {missingRequiredDocs.length > 0 && (
               <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 ring-1 ring-inset ring-amber-100">
-                ⚠ {missingRequiredDocs.length} of {REQUIRED_DOCUMENT_TYPES.length} required documents are missing or not yet approved: {missingRequiredDocs.map((docType) => docType.label).join(", ")}.
+                ⚠ {missingRequiredDocs.length} of {documentTypes.length} required documents are missing or not yet approved: {missingRequiredDocs.map((docType) => docType.label).join(", ")}.
               </p>
             )}
           </ActionModal>
@@ -552,7 +518,6 @@ export default function SupplierDetailPage() {
           <ActionModal open={modal === "partial"} title="Request supplier changes" saving={saving} submitLabel="Send request" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => partialApproveReviewRecord("suppliers", id, { admin_comments: String(payload.admin_comments || ""), pending_requirements: String(payload.pending_requirements || "") }), "Supplier change request sent.")} fields={[{ name: "pending_requirements", label: "Required changes", type: "textarea" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "deactivate"} title="Deactivate supplier account" saving={saving} submitLabel="Deactivate" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => setSupplierAccountState(id, "deactivate", String(payload.reason || "")), "Supplier account deactivated.")} fields={[{ name: "reason", label: "Reason", type: "textarea" }]} />
           <ActionModal open={modal === "suspend"} title="Suspend supplier account" saving={saving} submitLabel="Suspend" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => setSupplierAccountState(id, "suspend", String(payload.reason || "")), "Supplier account suspended.")} fields={[{ name: "reason", label: "Reason", type: "textarea" }]} />
-          <ActionModal open={modal === "commercial"} title="Update commission / markup" saving={saving} submitLabel="Save" onClose={() => setModal(null)} initialValues={{ value_type: record.markup_type || "percentage", value: record.markup_value ?? 0 }} onSubmit={(payload) => void run(() => updateCommercialValue("suppliers", id, { markup_type: payload.value_type, markup_value: payload.value }), "Commission updated.")} fields={[{ name: "value_type", label: "Commission type", type: "select", options: [{ label: "Percentage", value: "percentage" }, { label: "Fixed", value: "fixed" }] }, { name: "value", label: "Commission / markup value", type: "number" }]} />
           <ActionModal
             open={modal === "reject-item"}
             title={reviewTarget?.type === "vehicle" ? "Reject vehicle" : "Reject document"}

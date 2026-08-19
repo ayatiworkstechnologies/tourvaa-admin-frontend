@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { LuPlus as Plus } from "react-icons/lu";
 import ReviewDetailPage from "@/components/operations/ReviewDetailPage";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
-import api from "@/lib/api/client";
-import { getAffiliateLinks, type AffiliateLink } from "@/lib/api/services/affiliateService";
-
-type Click = { id: number; ref_code?: string; ip_address?: string; referrer?: string; created_at?: string };
-type Conversion = { id: number; booking_id?: number; commission_amount?: string; status?: string; created_at?: string };
-type Payout = { id: number; total_amount?: string; currency?: string; status?: string; created_at?: string };
-type Commissions = { total_earned?: string; total_paid?: string; total_pending?: string; currency?: string };
+import {
+  AffiliateClick,
+  AffiliateCommissionSummary,
+  AffiliateConversion,
+  AffiliateLink,
+  AffiliatePayout,
+  getAffiliateClicks,
+  getAffiliateCommissions,
+  getAffiliateConversions,
+  getAffiliateLinks,
+  getAffiliatePayouts,
+} from "@/lib/api/services/affiliateService";
 
 const TABS = [
   { key: "links", label: "Links" },
@@ -21,35 +26,88 @@ const TABS = [
   { key: "payouts", label: "Payouts" },
 ] as const;
 
+const PAGE_SIZE = 10;
+
 export default function AffiliateDetailPage() {
   const params = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["key"]>("links");
+
   const [links, setLinks] = useState<AffiliateLink[]>([]);
-  const [clicks, setClicks] = useState<Click[]>([]);
-  const [conversions, setConversions] = useState<Conversion[]>([]);
-  const [payouts, setPayouts] = useState<Payout[]>([]);
-  const [commissions, setCommissions] = useState<Commissions | null>(null);
+  const [linksPage, setLinksPage] = useState(1);
+  const [linksTotal, setLinksTotal] = useState(0);
+  const [linksTotalPages, setLinksTotalPages] = useState(1);
+
+  const [clicks, setClicks] = useState<AffiliateClick[]>([]);
+  const [clicksPage, setClicksPage] = useState(1);
+  const [clicksTotal, setClicksTotal] = useState(0);
+  const [clicksTotalPages, setClicksTotalPages] = useState(1);
+
+  const [conversions, setConversions] = useState<AffiliateConversion[]>([]);
+  const [conversionsPage, setConversionsPage] = useState(1);
+  const [conversionsTotal, setConversionsTotal] = useState(0);
+  const [conversionsTotalPages, setConversionsTotalPages] = useState(1);
+
+  const [payouts, setPayouts] = useState<AffiliatePayout[]>([]);
+  const [payoutsPage, setPayoutsPage] = useState(1);
+  const [payoutsTotal, setPayoutsTotal] = useState(0);
+  const [payoutsTotalPages, setPayoutsTotalPages] = useState(1);
+
+  const [commissions, setCommissions] = useState<AffiliateCommissionSummary | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchLinks = useCallback(async (page: number) => {
+    if (!params.id) return;
+    const res = await getAffiliateLinks({ affiliate_id: Number(params.id), page, limit: PAGE_SIZE });
+    setLinks(res.items ?? []);
+    setLinksTotal(res.total ?? 0);
+    setLinksTotalPages(res.total_pages ?? 1);
+  }, [params.id]);
+
+  const fetchClicks = useCallback(async (page: number) => {
+    if (!params.id) return;
+    const res = await getAffiliateClicks(params.id, { page, limit: PAGE_SIZE });
+    setClicks(res.items ?? []);
+    setClicksTotal(res.total ?? 0);
+    setClicksTotalPages(res.total_pages ?? 1);
+  }, [params.id]);
+
+  const fetchConversions = useCallback(async (page: number) => {
+    if (!params.id) return;
+    const res = await getAffiliateConversions(params.id, { page, limit: PAGE_SIZE });
+    setConversions(res.items ?? []);
+    setConversionsTotal(res.total ?? 0);
+    setConversionsTotalPages(res.total_pages ?? 1);
+  }, [params.id]);
+
+  const fetchPayouts = useCallback(async (page: number) => {
+    if (!params.id) return;
+    const res = await getAffiliatePayouts({ affiliate_id: Number(params.id), page, limit: PAGE_SIZE });
+    setPayouts(res.items ?? []);
+    setPayoutsTotal(res.total ?? 0);
+    setPayoutsTotalPages(res.total_pages ?? 1);
+  }, [params.id]);
 
   useEffect(() => {
     if (!params.id) return;
     setLoading(true);
     Promise.allSettled([
-      getAffiliateLinks({ affiliate_id: Number(params.id), limit: 20 }),
-      api.get(`/affiliates/${params.id}/clicks`, { params: { limit: 20 } }),
-      api.get(`/affiliates/${params.id}/conversions`, { params: { limit: 20 } }),
-      api.get("/affiliate-payouts", { params: { affiliate_id: params.id, limit: 20 } }),
-      api.get(`/affiliates/${params.id}/commissions`),
-    ]).then(([linksRes, clicksRes, conversionsRes, payoutsRes, commissionsRes]) => {
-      if (linksRes.status === "fulfilled") setLinks(linksRes.value.items ?? []);
-      if (clicksRes.status === "fulfilled") setClicks(clicksRes.value.data?.items ?? clicksRes.value.data?.data ?? []);
-      if (conversionsRes.status === "fulfilled") setConversions(conversionsRes.value.data?.items ?? conversionsRes.value.data?.data ?? []);
-      if (payoutsRes.status === "fulfilled") setPayouts(payoutsRes.value.data?.items ?? payoutsRes.value.data?.data ?? []);
-      if (commissionsRes.status === "fulfilled") setCommissions(commissionsRes.value.data?.data ?? null);
+      fetchLinks(1),
+      fetchClicks(1),
+      fetchConversions(1),
+      fetchPayouts(1),
+      getAffiliateCommissions(params.id),
+    ]).then(([, , , , commissionsRes]) => {
+      if (commissionsRes.status === "fulfilled") setCommissions(commissionsRes.value);
     }).finally(() => setLoading(false));
-  }, [params.id]);
+  }, [params.id, fetchLinks, fetchClicks, fetchConversions, fetchPayouts]);
 
   const linkColumns: DataTableColumn<AffiliateLink>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (linksPage - 1) * PAGE_SIZE + index + 1,
+    },
     { key: "link", header: "Link", render: (l) => <Link href={`/admin/affiliates/links/${l.id}`} className="font-bold text-dash-brand hover:underline">{l.campaign_name || l.label || l.ref_code}</Link> },
     { key: "target", header: "Tour / Destination", render: (l) => l.tour_title || l.destination_url || "-" },
     { key: "clicks", header: "Clicks", render: (l) => l.total_clicks },
@@ -57,21 +115,39 @@ export default function AffiliateDetailPage() {
     { key: "status", header: "Status", className: "capitalize", render: (l) => l.status },
   ];
 
-  const clickColumns: DataTableColumn<Click>[] = [
-    { key: "ref_code", header: "Ref Code", render: (c) => c.ref_code || "-" },
+  const clickColumns: DataTableColumn<AffiliateClick>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (clicksPage - 1) * PAGE_SIZE + index + 1,
+    },
+    { key: "link_id", header: "Link", render: (c) => `#${c.link_id}` },
     { key: "ip_address", header: "IP", render: (c) => c.ip_address || "-" },
     { key: "referrer", header: "Referrer", className: "max-w-xs truncate", render: (c) => c.referrer || "-" },
-    { key: "created_at", header: "When", render: (c) => (c.created_at ? new Date(c.created_at).toLocaleString() : "-") },
+    { key: "clicked_at", header: "When", render: (c) => (c.clicked_at ? new Date(c.clicked_at).toLocaleString() : "-") },
   ];
 
-  const conversionColumns: DataTableColumn<Conversion>[] = [
-    { key: "booking_id", header: "Booking", render: (c) => (c.booking_id ? `#${c.booking_id}` : "-") },
+  const conversionColumns: DataTableColumn<AffiliateConversion>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (conversionsPage - 1) * PAGE_SIZE + index + 1,
+    },
+    { key: "booking_id", header: "Booking", render: (c) => (c.booking_code || (c.booking_id ? `#${c.booking_id}` : "-")) },
     { key: "commission_amount", header: "Commission", render: (c) => c.commission_amount || "-" },
     { key: "status", header: "Status", render: (c) => c.status || "-" },
-    { key: "created_at", header: "When", render: (c) => (c.created_at ? new Date(c.created_at).toLocaleString() : "-") },
+    { key: "converted_at", header: "When", render: (c) => (c.converted_at ? new Date(c.converted_at).toLocaleString() : "-") },
   ];
 
-  const payoutColumns: DataTableColumn<Payout>[] = [
+  const payoutColumns: DataTableColumn<AffiliatePayout>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (payoutsPage - 1) * PAGE_SIZE + index + 1,
+    },
     { key: "total_amount", header: "Amount", render: (p) => `${p.total_amount ?? "-"} ${p.currency ?? ""}`.trim() },
     { key: "status", header: "Status", render: (p) => p.status || "-" },
     { key: "created_at", header: "Requested", render: (p) => (p.created_at ? new Date(p.created_at).toLocaleString() : "-") },
@@ -86,15 +162,15 @@ export default function AffiliateDetailPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-xl border border-dash-border bg-white p-4">
               <p className="text-xs font-bold uppercase text-dash-subtle">Total Earned</p>
-              <p className="mt-1 text-lg font-black text-dash-text">{commissions.total_earned ?? "0"} {commissions.currency ?? ""}</p>
+              <p className="mt-1 text-lg font-black text-dash-text">{commissions.total_commission ?? "0"}</p>
             </div>
             <div className="rounded-xl border border-dash-border bg-white p-4">
               <p className="text-xs font-bold uppercase text-dash-subtle">Total Paid</p>
-              <p className="mt-1 text-lg font-black text-dash-text">{commissions.total_paid ?? "0"} {commissions.currency ?? ""}</p>
+              <p className="mt-1 text-lg font-black text-dash-text">{commissions.paid_commission ?? "0"}</p>
             </div>
             <div className="rounded-xl border border-dash-border bg-white p-4">
               <p className="text-xs font-bold uppercase text-dash-subtle">Pending</p>
-              <p className="mt-1 text-lg font-black text-dash-text">{commissions.total_pending ?? "0"} {commissions.currency ?? ""}</p>
+              <p className="mt-1 text-lg font-black text-dash-text">{commissions.pending_commission ?? "0"}</p>
             </div>
           </div>
         )}
@@ -121,10 +197,62 @@ export default function AffiliateDetailPage() {
         </div>
 
         <div className="rounded-xl border border-dash-border bg-white shadow-sm">
-          {activeTab === "links" && <DataTable ariaLabel="Affiliate links" columns={linkColumns} rows={links} loading={loading} emptyTitle="No links generated yet" />}
-          {activeTab === "clicks" && <DataTable ariaLabel="Affiliate clicks" columns={clickColumns} rows={clicks} loading={loading} emptyTitle="No clicks recorded" />}
-          {activeTab === "conversions" && <DataTable ariaLabel="Affiliate conversions" columns={conversionColumns} rows={conversions} loading={loading} emptyTitle="No conversions recorded" />}
-          {activeTab === "payouts" && <DataTable ariaLabel="Affiliate payouts" columns={payoutColumns} rows={payouts} loading={loading} emptyTitle="No payouts yet" />}
+          {activeTab === "links" && (
+            <DataTable
+              ariaLabel="Affiliate links"
+              columns={linkColumns}
+              rows={links}
+              loading={loading}
+              page={linksPage}
+              pageSize={PAGE_SIZE}
+              total={linksTotal}
+              totalPages={linksTotalPages}
+              onPageChange={(page) => { setLinksPage(page); void fetchLinks(page); }}
+              emptyTitle="No links generated yet"
+            />
+          )}
+          {activeTab === "clicks" && (
+            <DataTable
+              ariaLabel="Affiliate clicks"
+              columns={clickColumns}
+              rows={clicks}
+              loading={loading}
+              page={clicksPage}
+              pageSize={PAGE_SIZE}
+              total={clicksTotal}
+              totalPages={clicksTotalPages}
+              onPageChange={(page) => { setClicksPage(page); void fetchClicks(page); }}
+              emptyTitle="No clicks recorded"
+            />
+          )}
+          {activeTab === "conversions" && (
+            <DataTable
+              ariaLabel="Affiliate conversions"
+              columns={conversionColumns}
+              rows={conversions}
+              loading={loading}
+              page={conversionsPage}
+              pageSize={PAGE_SIZE}
+              total={conversionsTotal}
+              totalPages={conversionsTotalPages}
+              onPageChange={(page) => { setConversionsPage(page); void fetchConversions(page); }}
+              emptyTitle="No conversions recorded"
+            />
+          )}
+          {activeTab === "payouts" && (
+            <DataTable
+              ariaLabel="Affiliate payouts"
+              columns={payoutColumns}
+              rows={payouts}
+              loading={loading}
+              page={payoutsPage}
+              pageSize={PAGE_SIZE}
+              total={payoutsTotal}
+              totalPages={payoutsTotalPages}
+              onPageChange={(page) => { setPayoutsPage(page); void fetchPayouts(page); }}
+              emptyTitle="No payouts yet"
+            />
+          )}
         </div>
       </div>
     </>

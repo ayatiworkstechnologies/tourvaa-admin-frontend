@@ -112,6 +112,12 @@ export default function SupplierBookingsPage() {
   ];
 
   const columns: DataTableColumn<Booking>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
     { key: "booking_code", header: "Booking", className: "font-mono text-xs text-dash-muted", render: (b) => b.booking_code },
     { key: "tour", header: "Tour", className: "max-w-[200px]", render: (b) => <p className="truncate font-semibold text-dash-text">{b.tour_name ?? b.tour_title ?? "-"}</p> },
     { key: "travel_date", header: "Travel Date", className: "whitespace-nowrap text-dash-muted", render: (b) => b.tour_date ?? b.travel_date ?? "-" },

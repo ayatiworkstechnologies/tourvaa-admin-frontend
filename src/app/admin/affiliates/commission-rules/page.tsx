@@ -107,6 +107,12 @@ export default function AdminAffiliateCommissionRulesPage() {
   }
 
   const columns: DataTableColumn<AffiliateCommissionRule>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (pagination.page - 1) * pagination.limit + index + 1,
+    },
     { key: "name", header: "Rule", className: "text-sm font-bold text-dash-text", render: (r) => r.name || `Rule #${r.id}` },
     { key: "scope", header: "Scope", className: "text-xs font-bold text-dash-muted", render: (r) => scopeLabel(r) },
     { key: "target", header: "Affiliate / Tour / Category", className: "text-xs text-dash-muted", render: (r) => [r.affiliate_id && `Aff #${r.affiliate_id}`, r.tour_id && `Tour #${r.tour_id}`, r.category_id && `Cat #${r.category_id}`].filter(Boolean).join(", ") || "-" },

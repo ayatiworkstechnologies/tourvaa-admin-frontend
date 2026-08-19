@@ -314,6 +314,12 @@ export default function PaymentsPage() {
   );
 
   const columns: DataTableColumn<Payment>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (currentPage - 1) * PAGE_SIZE + index + 1,
+    },
     { key: "payment_code", header: "Code", className: "font-bold text-dash-text", render: (p) => <Link href={`/admin/payments/${p.id}`} className="font-bold text-dash-brand-hover hover:underline">{p.payment_code}</Link> },
     {
       key: "customer_name",

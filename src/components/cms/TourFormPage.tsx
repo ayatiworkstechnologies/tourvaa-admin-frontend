@@ -20,6 +20,8 @@ import { createCms, getCms, listCms, updateCms } from "@/lib/api/services/cmsSer
 import { useToast } from "@/hooks/useToast";
 import api from "@/lib/api/client";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
+import { useCurrency } from "@/hooks/useCurrency";
+import { DiscountInfo, DiscountPriceLine, hasActiveDiscount } from "@/components/public/DiscountPrice";
 
 type Section = "basic" | "location" | "media-seo";
 
@@ -77,9 +79,12 @@ const coreDetailFields: [string, string][] = [
   ["min_booking_size", "Min booking size"],
 ];
 
-const newTextFields: [string, string][] = [
+const basicDetailFields: [string, string][] = [
   ["tour_language", "Tour language"],
   ["suitable_age_range", "Suitable age range"],
+];
+
+const mediaSeoTextFields: [string, string][] = [
   ["slug", "URL slug"],
   ["focus_keyword", "Focus keyword"],
   ["canonical_url", "Canonical URL"],
@@ -127,6 +132,7 @@ export default function TourFormPage({
   onGoToPricing,
 }: Props) {
   const toast = useToast();
+  const { format: formatCurrency } = useCurrency();
   const showBasic = sections.includes("basic");
   const showLocation = sections.includes("location");
   const showMediaSeo = sections.includes("media-seo");
@@ -147,6 +153,13 @@ export default function TourFormPage({
           status: "draft",
           number_of_days: "1",
         }
+  );
+  // active_discount is an object (or null), not a plain string like every
+  // other form field - normalizeTourForm would stringify it to
+  // "[object Object]", so it's tracked separately and read straight off the
+  // raw API response instead of going through `form`.
+  const [activeDiscount, setActiveDiscount] = useState<DiscountInfo | null>(
+    (initialData?.active_discount as DiscountInfo | undefined) ?? null
   );
   const [loading, setLoading] = useState(Boolean(tourId && !initialData));
   const [saving, setSaving] = useState(false);
@@ -229,6 +242,7 @@ export default function TourFormPage({
     try {
       const data = await getCms("/tours", tourId);
       setForm(normalizeTourForm(data));
+      setActiveDiscount((data.active_discount as DiscountInfo | undefined) ?? null);
     } catch {
       toast.error("Could not load tour.");
     } finally {
@@ -241,7 +255,10 @@ export default function TourFormPage({
   }, [fetchTour]);
 
   useEffect(() => {
-    if (initialData) setForm(normalizeTourForm(initialData));
+    if (initialData) {
+      setForm(normalizeTourForm(initialData));
+      setActiveDiscount((initialData.active_discount as DiscountInfo | undefined) ?? null);
+    }
   }, [initialData]);
 
   useEffect(() => {
@@ -285,39 +302,51 @@ export default function TourFormPage({
     setSaving(true);
     const payload: Record<string, unknown> = {};
 
-    for (const [key] of [...textFields, ...descriptionFields, ...seoFields, ...newTextFields]) {
-      payload[key] = form[key]?.trim() ?? "";
+    // Each section only sends its own fields, so e.g. the Media/SEO step
+    // (embedded standalone in TourWizard) doesn't overwrite Basic/Location
+    // data with whatever happens to be in local form state.
+    if (showBasic) {
+      for (const [key] of [...textFields, ...descriptionFields, ...simpleNumberFields, ...coreDetailFields, ...basicDetailFields]) {
+        payload[key] = form[key]?.trim() ?? "";
+      }
+      payload.currency = form.currency || "USD";
+      payload.tour_visibility = form.tour_visibility || "public";
+      payload.featured = form.featured === "true";
+      payload.requires_supplier_confirmation = form.requires_supplier_confirmation !== "false";
+
+      // Simple number fields - use default if blank
+      // price_start_per_person is intentionally omitted -- it's system-
+      // calculated from approved Supplier Pricing (see save_tour's pop), not
+      // a client-editable value.
+      payload.number_of_days = form.number_of_days ? Number(form.number_of_days) : 1;
+      payload.number_of_hours = form.number_of_hours ? Number(form.number_of_hours) : null;
+      payload.number_of_nights = form.number_of_nights ? Number(form.number_of_nights) : null;
+      payload.max_group_size = form.max_group_size ? Number(form.max_group_size) : null;
+      payload.min_booking_size = form.min_booking_size ? Number(form.min_booking_size) : null;
+      payload.pricing_type = form.pricing_type || "per_person";
     }
-    payload.banner_image = form.banner_image?.trim() ?? "";
-    payload.map_image = form.map_image?.trim() ?? "";
-    payload.mobile_cover_image = form.mobile_cover_image?.trim() ?? "";
-    payload.open_graph_image = form.open_graph_image?.trim() ?? "";
-    payload.brochure_pdf = form.brochure_pdf?.trim() ?? "";
-    payload.currency = form.currency || "USD";
-    payload.tour_visibility = form.tour_visibility || "public";
-    payload.featured = form.featured === "true";
-    payload.search_visibility = form.search_visibility !== "false";
-    payload.requires_supplier_confirmation = form.requires_supplier_confirmation !== "false";
 
-    // Simple number fields - use default if blank
-    // price_start_per_person is intentionally omitted -- it's system-
-    // calculated from approved Supplier Pricing (see save_tour's pop), not
-    // a client-editable value.
-    payload.number_of_days = form.number_of_days ? Number(form.number_of_days) : 1;
-    payload.number_of_hours = form.number_of_hours ? Number(form.number_of_hours) : null;
-    payload.number_of_nights = form.number_of_nights ? Number(form.number_of_nights) : null;
-    payload.max_group_size = form.max_group_size ? Number(form.max_group_size) : null;
-    payload.min_booking_size = form.min_booking_size ? Number(form.min_booking_size) : null;
-    payload.pricing_type = form.pricing_type || "per_person";
+    if (showLocation) {
+      payload.supplier_id = form.supplier_id ? Number(form.supplier_id) : null;
+      payload.category_id = form.category_id ? Number(form.category_id) : null;
+      payload.subcategory_ids = selectedSubcategoryIds;
+      payload.country_id = form.country_id ? Number(form.country_id) : null;
+      payload.state_id = selectedStateId ? Number(selectedStateId) : null;
+      payload.city_id = form.city_id ? Number(form.city_id) : null;
+    }
 
-    // FK fields - null when not selected
-    payload.supplier_id = form.supplier_id ? Number(form.supplier_id) : null;
-    payload.country_id = form.country_id ? Number(form.country_id) : null;
-    payload.state_id = selectedStateId ? Number(selectedStateId) : null;
-    payload.city_id = form.city_id ? Number(form.city_id) : null;
-    payload.category_id = form.category_id ? Number(form.category_id) : null;
+    if (showMediaSeo) {
+      for (const [key] of [...seoFields, ...mediaSeoTextFields]) {
+        payload[key] = form[key]?.trim() ?? "";
+      }
+      payload.banner_image = form.banner_image?.trim() ?? "";
+      payload.map_image = form.map_image?.trim() ?? "";
+      payload.mobile_cover_image = form.mobile_cover_image?.trim() ?? "";
+      payload.open_graph_image = form.open_graph_image?.trim() ?? "";
+      payload.brochure_pdf = form.brochure_pdf?.trim() ?? "";
+      payload.search_visibility = form.search_visibility !== "false";
+    }
 
-    payload.subcategory_ids = selectedSubcategoryIds;
     if (tourId && form.updated_at) payload.expected_updated_at = form.updated_at;
 
     try {
@@ -357,6 +386,7 @@ export default function TourFormPage({
     try {
       const data = await getCms("/tours", tourId);
       setForm(normalizeTourForm(data));
+      setActiveDiscount((data.active_discount as DiscountInfo | undefined) ?? null);
       setConflict(null);
     } catch {
       toast.error("Could not reload the tour.");
@@ -387,6 +417,14 @@ export default function TourFormPage({
         />
       )}
 
+      {tourId && (form.status === "pending_approval" || form.status === "repricing_required" || form.pending_review_kind) && (
+        <div className={`${embedded ? "" : "mt-4"} flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3`}>
+          <p className="text-sm font-semibold text-amber-800">
+            This tour has a submission awaiting admin review. Saving changes now will replace that pending version with a new one and restart the review — withdraw the current submission first if you want to keep it intact.
+          </p>
+        </div>
+      )}
+
       {conflict && (
         <div className={`${embedded ? "" : "mt-4"} flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3`}>
           <p className="text-sm font-semibold text-amber-800">{conflict.message}</p>
@@ -407,7 +445,7 @@ export default function TourFormPage({
         </div>
       ) : (
         <form onSubmit={submit} className={`${embedded ? "" : "mx-auto mt-4 max-w-6xl"} space-y-4`}>
-          <div className="flex flex-col gap-3 rounded-2xl border border-[#DCE6F3] bg-white px-4 py-3 shadow-[0_10px_30px_-28px_rgba(28,83,160,.8)] sm:flex-row sm:items-center sm:justify-between">
+          <div id="tour-form-save-bar" className="flex flex-col gap-3 rounded-2xl border border-[#DCE6F3] bg-white px-4 py-3 shadow-[0_10px_30px_-28px_rgba(28,83,160,.8)] sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-black text-dash-text">{tourId ? "Tour essentials" : "Tour setup"}</p>
               <p className="mt-0.5 text-[11px] text-dash-subtle">
@@ -457,6 +495,24 @@ export default function TourFormPage({
                   )}
                 </div>
                 <p className="mt-1 text-[11px] text-dash-subtle">Set per-passenger prices in the Pricing step -- this updates automatically once approved.</p>
+              </label>
+            )}
+            {tourId && activeDiscount && hasActiveDiscount(activeDiscount) && (
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Storefront price</span>
+                <div className={`${inputClass} flex items-center justify-between bg-gray-50`}>
+                  <DiscountPriceLine
+                    original={activeDiscount.original_price_per_person as number}
+                    discounted={activeDiscount.discounted_price_per_person as number}
+                    currency={form.currency ?? "USD"}
+                    format={formatCurrency}
+                    size="sm"
+                  />
+                  <span className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-black text-red-600">
+                    {activeDiscount.discount_percentage}% OFF
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-dash-subtle">Live from an active discount on the Discounts tab -- this is what customers see on the storefront right now.</p>
               </label>
             )}
             {textFields.map(([key, label]) => (
@@ -732,11 +788,11 @@ export default function TourFormPage({
               </p>
             </div>
             <button
-              type="submit"
-              disabled={saving}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition hover:-translate-y-0.5 disabled:opacity-60 ${saveButtonClass}`}
+              type="button"
+              onClick={() => document.getElementById("tour-form-save-bar")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-dash-border px-5 py-2.5 text-sm font-bold text-dash-body transition hover:-translate-y-0.5 hover:bg-dash-bg"
             >
-              <Save size={16} /> {saving ? "Saving..." : isSupplier ? "Save Changes" : "Save Tour"}
+              <Save size={16} /> Go to save
             </button>
           </div>
         </form>

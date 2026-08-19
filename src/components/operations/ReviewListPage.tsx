@@ -179,7 +179,15 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     }
   };
 
+  const serialColumn: DataTableColumn<ReviewRecord> = {
+    key: "no",
+    header: "No",
+    className: "w-20 font-bold text-dash-muted",
+    render: (_row, index) => (page - 1) * 10 + index + 1,
+  };
+
   const defaultColumns: DataTableColumn<ReviewRecord>[] = [
+    serialColumn,
     { key: "code", header: "ID", render: (row) => row.id },
     { key: "name", header: "Name", render: (row) => row.name || row.supplier_name || row.agent_name },
     { key: "type", header: "Type", render: (row) => row.type || row.supplier_type || row.agent_type || row.business_type || "-" },
@@ -190,6 +198,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   ];
 
   const supplierColumns: DataTableColumn<ReviewRecord>[] = [
+    serialColumn,
     ...(canBulkApprove || canBulkReject
       ? [{
           key: "select",
@@ -257,6 +266,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   ];
 
   const agentColumns: DataTableColumn<ReviewRecord>[] = [
+    serialColumn,
     ...(canBulkApprove || canBulkReject
       ? [{
           key: "select",

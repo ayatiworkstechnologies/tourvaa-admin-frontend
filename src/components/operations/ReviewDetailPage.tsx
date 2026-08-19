@@ -53,7 +53,7 @@ export default function ReviewDetailPage({ module, id, title, requiredPermission
   const canApprove = hasPermission(`${module}.approve`);
   const canReject = hasPermission(`${module}.reject`);
   const canPartial = module !== "affiliates" && (hasPermission(`${module}.partial_approve`) || canApprove);
-  const canCommercial = module === "suppliers" ? hasPermission("suppliers.manage_markup") : module === "agents" ? hasPermission("agents.manage_discount") : hasPermission("affiliates.manage_api_link");
+  const canCommercial = module === "agents" ? hasPermission("agents.manage_discount") : hasPermission("affiliates.manage_api_link");
 
   const requestIdRef = useRef(0);
 
@@ -105,7 +105,7 @@ export default function ReviewDetailPage({ module, id, title, requiredPermission
               {canApprove && <button onClick={() => void run(() => approveReviewRecord(module, id), "Approved.")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"><CheckCircle2 size={16} /> Approve</button>}
               {canPartial && <button onClick={() => setModal("partial")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><ShieldHalf size={16} /> Partial</button>}
               {canReject && <button onClick={() => setModal("reject")} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700"><XCircle size={16} /> Reject</button>}
-              {canCommercial && <button onClick={() => setModal(module === "affiliates" ? "api" : "commercial")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg">{module === "affiliates" ? <LinkIcon size={16} /> : <Percent size={16} />} {module === "suppliers" ? "Markup" : module === "agents" ? "Discount" : "API Link"}</button>}
+              {canCommercial && <button onClick={() => setModal(module === "affiliates" ? "api" : "commercial")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg">{module === "affiliates" ? <LinkIcon size={16} /> : <Percent size={16} />} {module === "agents" ? "Discount" : "API Link"}</button>}
             </div>
           </div>
 
@@ -135,7 +135,7 @@ export default function ReviewDetailPage({ module, id, title, requiredPermission
 
           <ActionModal open={modal === "reject"} title="Reject" saving={saving} submitLabel="Reject" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => rejectReviewRecord(module, id, { rejection_reason: String(payload.rejection_reason || ""), admin_comments: String(payload.admin_comments || "") }), "Rejected.")} fields={[{ name: "rejection_reason", label: "Rejection reason" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "partial"} title="Partially approve" saving={saving} submitLabel="Save" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => partialApproveReviewRecord(module as "suppliers" | "agents", id, { admin_comments: String(payload.admin_comments || ""), pending_requirements: String(payload.pending_requirements || "") }), "Partially approved.")} fields={[{ name: "pending_requirements", label: "Pending requirements", type: "textarea" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
-          <ActionModal open={modal === "commercial"} title={module === "suppliers" ? "Set markup" : "Set discount"} saving={saving} submitLabel="Save" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateCommercialValue(module as "suppliers" | "agents", id, module === "suppliers" ? { markup_type: payload.value_type, markup_value: payload.value } : { discount_type: payload.value_type, discount_value: payload.value }), "Updated.")} fields={[{ name: "value_type", label: "Type", type: "select", options: [{ label: "Percentage", value: "percentage" }, { label: "Fixed", value: "fixed" }] }, { name: "value", label: "Value", type: "number" }]} />
+          <ActionModal open={modal === "commercial"} title="Set discount" saving={saving} submitLabel="Save" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateCommercialValue("agents", id, { discount_type: payload.value_type, discount_value: payload.value }), "Updated.")} fields={[{ name: "value_type", label: "Type", type: "select", options: [{ label: "Percentage", value: "percentage" }, { label: "Fixed", value: "fixed" }] }, { name: "value", label: "Value", type: "number" }]} />
           <ActionModal open={modal === "api"} title="Set API link" saving={saving} submitLabel="Save" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateAffiliateApiLink(id, String(payload.api_link || "")), "API link updated.")} fields={[{ name: "api_link", label: "API link" }]} />
         </div>
       ) : (

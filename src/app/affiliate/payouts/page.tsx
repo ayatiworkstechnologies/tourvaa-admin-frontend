@@ -36,16 +36,22 @@ export default function AffiliatePayoutsPage() {
   const [amount, setAmount] = useState("");
   const [methodId, setMethodId] = useState<number | "">("");
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (targetPage: number = page) => {
     setLoading(true);
     try {
       const [payoutsRes, methodsRes, summaryRes] = await Promise.all([
-        getAffiliatePayouts({ limit: 30 }),
+        getAffiliatePayouts({ page: targetPage, limit: pageSize }),
         getPayoutMethods(),
         getWalletSummary(),
       ]);
       setPayouts(payoutsRes.items ?? []);
+      setTotal(payoutsRes.total ?? 0);
+      setTotalPages(payoutsRes.total_pages ?? 1);
       setMethods(methodsRes);
       setSummary(summaryRes);
     } catch {
@@ -54,7 +60,7 @@ export default function AffiliatePayoutsPage() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -76,6 +82,12 @@ export default function AffiliatePayoutsPage() {
   }
 
   const columns: DataTableColumn<AffiliatePayout>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * pageSize + index + 1,
+    },
     { key: "payout_code", header: "Payout Code", className: "font-mono text-xs text-dash-body", render: (p) => p.payout_code },
     { key: "amount", header: "Amount", className: "font-bold text-purple-700", render: (p) => money(p.total_amount, p.currency) },
     { key: "payment_method", header: "Method", className: "text-xs capitalize text-dash-muted", render: (p) => (p.payment_method || "").replaceAll("_", " ") },
@@ -143,6 +155,11 @@ export default function AffiliatePayoutsPage() {
           columns={columns}
           rows={payouts}
           loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={(nextPage) => { setPage(nextPage); void load(nextPage); }}
           emptyTitle="No payouts yet"
           emptyDescription="Payout history will appear here once you request a payout."
         />

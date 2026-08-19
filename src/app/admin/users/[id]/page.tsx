@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { LuArrowLeft as ArrowLeft, LuCircleCheckBig as Check, LuPower as Power } from "react-icons/lu";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import api from "@/lib/api/client";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -63,7 +63,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     ["Registered", new Date(user.created_at).toLocaleString()],
     ["Last login", user.last_login_at ? new Date(user.last_login_at).toLocaleString() : "Never"],
   ];
-  return <DashboardLayout title="User details" menus={dashboard.menus} user={dashboard.user}><div className="space-y-6">
+  return <ModuleWrapper title="User details" requiredPermission="users.view"><div className="space-y-6">
     <Link href="/admin/users" className="inline-flex items-center gap-2 text-sm font-bold text-dash-brand"><ArrowLeft size={16} />Back to users</Link>
     <section className="rounded-2xl border border-dash-border bg-white p-6">
       <div className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-2xl font-black text-dash-text">{user.name}</h1><p className="mt-1 text-sm text-dash-muted">{user.email}</p></div><span className="rounded-full bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700">{(user.account_status || "ACTIVE").replaceAll("_", " ")}</span></div>
@@ -74,5 +74,5 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       </div>
     </section>
     <section className="rounded-2xl border border-dash-border bg-white p-6"><h2 className="font-black text-dash-text">Account history</h2><div className="mt-4 space-y-3">{(user.status_history || []).map((entry) => <div key={entry.id} className="border-l-2 border-blue-200 pl-4"><p className="text-sm font-bold text-dash-text">{entry.to_status.replaceAll("_", " ")}</p><p className="text-xs text-dash-muted">{entry.reason || "Status updated"} · {new Date(entry.created_at).toLocaleString()}</p></div>)}{!user.status_history?.length && <p className="text-sm text-dash-muted">No status changes recorded.</p>}</div></section>
-  </div></DashboardLayout>;
+  </div></ModuleWrapper>;
 }

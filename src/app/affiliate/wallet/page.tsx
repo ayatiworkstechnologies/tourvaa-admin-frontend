@@ -19,24 +19,36 @@ export default function AffiliateWalletPage() {
   const [summary, setSummary] = useState<AffiliateWalletSummary | null>(null);
   const [transactions, setTransactions] = useState<AffiliateWalletTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (targetPage: number = page) => {
     setLoading(true);
     try {
-      const [s, t] = await Promise.all([getWalletSummary(), getWalletTransactions({ limit: 30 })]);
+      const [s, t] = await Promise.all([getWalletSummary(), getWalletTransactions({ page: targetPage, limit: pageSize })]);
       setSummary(s);
       setTransactions(t.items ?? []);
+      setTotal(t.total ?? 0);
+      setTotalPages(t.total_pages ?? 1);
     } catch (e) {
       toast.error(getApiErrorMessage(e) || "Could not load wallet.");
     } finally {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page]);
 
   useEffect(() => { void load(); }, [load]);
 
   const columns: DataTableColumn<AffiliateWalletTransaction>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * pageSize + index + 1,
+    },
     { key: "type", header: "Type", render: (t) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${typeCls(t.transaction_type)}`}>{t.transaction_type.replaceAll("_", " ")}</span> },
     { key: "amount", header: "Amount", className: "font-bold text-dash-text", render: (t) => money(t.amount, t.currency) },
     { key: "description", header: "Description", className: "text-xs text-dash-muted", render: (t) => t.description || "-" },
@@ -68,7 +80,18 @@ export default function AffiliateWalletPage() {
         <div className="border-b border-dash-border px-5 py-4">
           <h2 className="font-bold text-dash-text">Transaction History</h2>
         </div>
-        <DataTable ariaLabel="Wallet transactions" columns={columns} rows={transactions} loading={loading} emptyTitle="No transactions yet" />
+        <DataTable
+          ariaLabel="Wallet transactions"
+          columns={columns}
+          rows={transactions}
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={(nextPage) => { setPage(nextPage); void load(nextPage); }}
+          emptyTitle="No transactions yet"
+        />
       </div>
     </div>
   );

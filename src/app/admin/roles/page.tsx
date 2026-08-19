@@ -334,27 +334,33 @@ export default function RolesPage() {
             onPageChange={setPage}
             emptyTitle="No roles found."
             actions={(role) => (
-              <div className="flex justify-end gap-2">
+              <div className="flex items-center justify-end gap-2">
                 <button
+                  type="button"
                   onClick={() => openPermissions(role)}
-                  className="rounded-xl border border-dash-border/80 bg-white p-2 text-dash-muted shadow-sm hover:bg-[#F3F8FC] hover:text-dash-brand transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
+                  aria-label="Assign permissions"
                   title="Assign permissions"
                 >
-                  <KeyRound size={16} />
+                  <KeyRound size={15} />
                 </button>
                 <button
+                  type="button"
                   onClick={() => openEdit(role)}
-                  className="rounded-xl border border-dash-border/80 bg-white p-2 text-dash-muted shadow-sm hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
+                  aria-label="Edit role"
                   title="Edit role"
                 >
-                  <Edit size={16} />
+                  <Edit size={15} />
                 </button>
                 <button
+                  type="button"
                   onClick={() => deleteRole(role)}
-                  className="rounded-xl border border-dash-border/80 bg-white p-2 text-dash-muted shadow-sm hover:bg-red-50 hover:text-red-600 transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"
+                  aria-label="Delete role"
                   title="Delete role"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={15} />
                 </button>
               </div>
             )}

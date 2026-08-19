@@ -217,21 +217,23 @@ export default function DynamicModulePage({
           onPageChange={setPage}
           emptyTitle="No records found."
           actions={(item) => (
-            <div className="flex justify-end gap-2">
+            <div className="flex items-center justify-end gap-2">
               <button
+                type="button"
                 onClick={() => openEdit(item)}
                 aria-label={`Edit ${title} record`}
                 title={`Edit ${title} record`}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-dash-border text-dash-muted hover:bg-[#E7F5FF] hover:text-dash-brand-hover"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-[#E7F5FF] hover:text-dash-brand-hover"
               >
                 <Edit size={15} />
               </button>
 
               <button
+                type="button"
                 onClick={() => deleteItem(item.id)}
                 aria-label={`Delete ${title} record`}
                 title={`Delete ${title} record`}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-dash-border text-dash-muted hover:bg-red-50 hover:text-red-600"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"
               >
                 <Trash2 size={15} />
               </button>

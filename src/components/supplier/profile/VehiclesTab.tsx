@@ -25,6 +25,8 @@ type Vehicle = {
   approval_status: string;
 };
 
+const MAX_VEHICLE_PHOTOS = 6;
+
 const VEHICLE_TYPES = [
   "sedan", "suv", "van", "minibus", "bus", "luxury", "4wd", "yacht", "speedboat", "other",
 ];
@@ -171,7 +173,11 @@ export default function VehiclesTab() {
     }
   }
 
-  async function uploadPhotos(vehicleId: number, files: FileList) {
+  async function uploadPhotos(vehicleId: number, files: FileList, existingCount: number) {
+    if (existingCount + files.length > MAX_VEHICLE_PHOTOS) {
+      toast.error(`A vehicle can have at most ${MAX_VEHICLE_PHOTOS} photos (${existingCount} already uploaded).`);
+      return;
+    }
     setUploadingField("photos");
     const fd = new FormData();
     Array.from(files).forEach(f => fd.append("files", f));
@@ -298,7 +304,10 @@ export default function VehiclesTab() {
                     />
                     {/* Vehicle Photos */}
                     <div className="rounded-xl border border-dash-border bg-white p-4">
-                      <p className="mb-2 text-xs font-bold uppercase text-dash-muted">Vehicle Photos</p>
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-xs font-bold uppercase text-dash-muted">Vehicle Photos</p>
+                        <p className="text-xs text-dash-muted">{v.vehicle_photos.length} / {MAX_VEHICLE_PHOTOS}</p>
+                      </div>
                       {v.vehicle_photos.length > 0 && (
                         <div className="mb-2 flex flex-wrap gap-2">
                           {v.vehicle_photos.map((url, i) => (
@@ -313,16 +322,20 @@ export default function VehiclesTab() {
                           ))}
                         </div>
                       )}
-                      <label className="cursor-pointer">
-                        <input type="file" accept={IMAGE_ACCEPT} multiple className="hidden"
-                          aria-label="Upload vehicle photos"
-                          disabled={uploadingField === "photos"}
-                          onChange={e => { if (e.target.files?.length) void uploadPhotos(v.id, e.target.files); }} />
-                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition-colors">
-                          {uploadingField === "photos" ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-                          Add Photos
-                        </span>
-                      </label>
+                      {v.vehicle_photos.length >= MAX_VEHICLE_PHOTOS ? (
+                        <p className="text-xs text-dash-muted">Maximum of {MAX_VEHICLE_PHOTOS} photos reached. Remove a photo to add another.</p>
+                      ) : (
+                        <label className="cursor-pointer">
+                          <input type="file" accept={IMAGE_ACCEPT} multiple className="hidden"
+                            aria-label="Upload vehicle photos"
+                            disabled={uploadingField === "photos"}
+                            onChange={e => { if (e.target.files?.length) void uploadPhotos(v.id, e.target.files, v.vehicle_photos.length); e.target.value = ""; }} />
+                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition-colors">
+                            {uploadingField === "photos" ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                            Add Photos
+                          </span>
+                        </label>
+                      )}
                     </div>
                   </div>
                 </div>

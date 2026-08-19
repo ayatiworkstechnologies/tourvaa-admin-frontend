@@ -28,6 +28,10 @@ import {
   LuWallet as Wallet,
   LuZap as Zap,
 } from "react-icons/lu";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from "recharts";
 import DatePicker from "@/components/ui/DatePicker";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -84,6 +88,10 @@ type Filters = {
   end_date: string;
   status: string;
 };
+
+type ChartRow = { status: string; count: number };
+type MonthRow = { month: string; count: number };
+const CHART_COLORS = ["#16833A", "#43A9F6", "#F59E0B", "#EF4444", "#8B5CF6"];
 
 const EMPTY_FILTERS: Filters = { start_date: "", end_date: "", status: "" };
 
@@ -148,7 +156,7 @@ function PendingSupplierDashboard() {
   const completion = Math.round((checks.filter(Boolean).length / checks.length) * 100);
   const missingDocuments = !profile.documents?.length;
   const status = supplierApprovalStatus(user);
-  const lockedModules = ["Tours", "Bookings", "Calendar", "Earnings", "Payouts", "Reports"];
+  const lockedModules = ["Tours", "Bookings", "Calendar", "Earnings", "Payouts"];
 
   return (
     <div className="min-h-screen bg-[#F5FAF7] px-4 py-6 sm:px-6 xl:px-8">
@@ -224,6 +232,8 @@ function ApprovedSupplierDashboard() {
   const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [tourCounts, setTourCounts] = useState({ total: 0, published: 0 });
+  const [monthlyBookings, setMonthlyBookings] = useState<MonthRow[]>([]);
+  const [paymentStatusChart, setPaymentStatusChart] = useState<ChartRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -249,9 +259,15 @@ function ApprovedSupplierDashboard() {
       api.get("/supplier-payouts", { params: { limit: 20 } }),
       api.get("/tours", { params: { limit: 1 } }),
       api.get("/tours", { params: { limit: 1, status: "published" } }),
+      api.get("/dashboard/charts", { params: summaryParams }),
     ]);
 
-    const [summaryResult, bookingResult, ledgerResult, payoutResult, toursResult, publishedToursResult] = results;
+    const [summaryResult, bookingResult, ledgerResult, payoutResult, toursResult, publishedToursResult, chartsResult] = results;
+    if (chartsResult.status === "fulfilled") {
+      const chartData = chartsResult.value.data?.data ?? {};
+      setMonthlyBookings(chartData.monthly_bookings ?? []);
+      setPaymentStatusChart(chartData.payment_status_chart ?? []);
+    }
     if (summaryResult.status === "fulfilled") setSummary(summaryResult.value.data?.data ?? {});
     if (bookingResult.status === "fulfilled") {
       setBookings(bookingResult.value.data?.items ?? bookingResult.value.data?.data ?? []);
@@ -580,6 +596,51 @@ function ApprovedSupplierDashboard() {
               )}
             </div>
           </aside>
+        </section>
+
+        <section className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-[#DCEBE2] bg-white p-5 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)]">
+            <h2 className="text-[15px] font-black text-[#123024]">Monthly Bookings</h2>
+            <p className="mt-1 text-[11px] text-[#6D8276]">Bookings on your tours over the last 6 months.</p>
+            {loading ? (
+              <div className="mt-4 h-48 animate-pulse rounded-xl bg-slate-100" />
+            ) : monthlyBookings.length === 0 ? (
+              <div className="mt-4 flex h-48 items-center justify-center text-sm text-[#6D8276]">No monthly data yet.</div>
+            ) : (
+              <div className="mt-4 h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyBookings} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5EFE9" />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6D8276" }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6D8276" }} allowDecimals={false} />
+                    <Tooltip cursor={{ fill: "#F1F9F4" }} contentStyle={{ borderRadius: "10px", border: "1px solid #E5EFE9" }} />
+                    <Bar dataKey="count" fill="#16833A" radius={[4, 4, 0, 0]} barSize={28} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-[#DCEBE2] bg-white p-5 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)]">
+            <h2 className="text-[15px] font-black text-[#123024]">Payment Status</h2>
+            <p className="mt-1 text-[11px] text-[#6D8276]">Payment status across your bookings.</p>
+            {loading ? (
+              <div className="mt-4 h-48 animate-pulse rounded-xl bg-slate-100" />
+            ) : paymentStatusChart.length === 0 ? (
+              <div className="mt-4 flex h-48 items-center justify-center text-sm text-[#6D8276]">No payment data yet.</div>
+            ) : (
+              <div className="mt-4 flex h-48 w-full items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={paymentStatusChart} cx="50%" cy="50%" innerRadius={48} outerRadius={70} paddingAngle={4} dataKey="count" nameKey="status">
+                      {paymentStatusChart.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={{ borderRadius: "10px", border: "1px solid #E5EFE9" }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(330px,.75fr)]">

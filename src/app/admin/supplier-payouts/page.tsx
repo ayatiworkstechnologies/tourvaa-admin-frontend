@@ -155,6 +155,12 @@ export default function SupplierPayoutsAdminPage() {
 
   const columns: DataTableColumn<Payout>[] = [
     {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * pageSize + index + 1,
+    },
+    {
       key: "payout",
       header: "Payout",
       render: (p) => (
@@ -292,15 +298,15 @@ export default function SupplierPayoutsAdminPage() {
             emptyTitle="No payout requests found"
             emptyDescription="Supplier payout requests will appear here after suppliers submit them."
             actions={(p) => (
-              <div className="flex justify-end gap-1.5">
+              <div className="flex items-center justify-end gap-1.5">
                 {p.status === "pending" && (
-                  <button onClick={() => approvePayout(p.id)} disabled={acting === p.id}
+                  <button type="button" onClick={() => approvePayout(p.id)} disabled={acting === p.id}
                     className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
                     {acting === p.id ? <Loader2 className="animate-spin" size={12} /> : <CheckCircle2 size={12} />} Approve
                   </button>
                 )}
                 {p.status === "approved" && (
-                  <button onClick={() => markPaid(p.id)} disabled={acting === p.id}
+                  <button type="button" onClick={() => markPaid(p.id)} disabled={acting === p.id}
                     className="inline-flex items-center gap-1 rounded-lg bg-sky-50 px-2.5 py-1.5 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50">
                     {acting === p.id ? <Loader2 className="animate-spin" size={12} /> : <CheckCircle2 size={12} />} Mark Paid
                   </button>

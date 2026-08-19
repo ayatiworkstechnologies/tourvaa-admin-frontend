@@ -97,6 +97,12 @@ export default function AgentInvoicesPage() {
   }
 
   const columns: DataTableColumn<Invoice>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
     { key: "invoice_number", header: "Invoice #", className: "font-bold text-dash-text", render: (inv) => inv.invoice_number ?? `INV-${inv.id}` },
     { key: "booking", header: "Booking", className: "hidden text-dash-muted sm:table-cell", render: (inv) => inv.booking_id ? <Link href={`/agent/bookings/${inv.booking_id}`} className="font-bold text-dash-brand hover:underline">{inv.booking_code ?? `Booking #${inv.booking_id}`}</Link> : "-" },
     { key: "customer", header: "Customer", className: "hidden text-dash-muted md:table-cell", render: (inv) => inv.customer_name ?? (inv.customer_id ? `Customer #${inv.customer_id}` : "-") },
@@ -130,7 +136,7 @@ export default function AgentInvoicesPage() {
           emptyTitle="No invoices yet"
           emptyDescription="Invoices will appear here after bookings are confirmed."
           actions={(inv) => (
-            <div className="flex justify-end">
+            <div className="flex items-center justify-end">
               <button
                 type="button"
                 onClick={() => downloadInvoice(inv)}

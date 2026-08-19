@@ -69,6 +69,12 @@ export default function CustomerInvoicesPage() {
   }, [page]);
 
   const columns: DataTableColumn<Invoice>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
     { key: "invoice", header: "Invoice", render: (i) => i.invoice_number || `#${i.id}`, className: "font-bold text-dash-text" },
     { key: "booking", header: "Booking", render: (i) => i.booking_id ? <Link className="font-semibold text-dash-brand hover:underline" href={`/customer/bookings/${i.booking_id}`}>{i.booking_code || `Booking #${i.booking_id}`}</Link> : "-" },
     { key: "status", header: "Status", render: (i) => <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-bold capitalize text-slate-700">{(i.status || "generated").replaceAll("_", " ")}</span> },

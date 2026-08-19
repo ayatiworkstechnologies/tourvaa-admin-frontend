@@ -96,6 +96,12 @@ export default function SessionsPage() {
   }
 
   const sessionColumns: DataTableColumn<UserSession>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (currentPage - 1) * PAGE_SIZE + index + 1,
+    },
     { key: "user", header: "User", render: (session) => session.user_name || `User #${session.user_id}` },
     { key: "session_id", header: "Session" },
     { key: "status", header: "Status" },
@@ -105,6 +111,12 @@ export default function SessionsPage() {
   ];
 
   const loginHistoryColumns: DataTableColumn<LoginHistoryEntry>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (historyPage - 1) * PAGE_SIZE + index + 1,
+    },
     { key: "email", header: "Email" },
     {
       key: "status",

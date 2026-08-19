@@ -7,22 +7,16 @@ import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import DataTable from "@/components/ui/DataTable";
 import CurrencySelect from "@/components/ui/CurrencySelect";
-import api from "@/lib/api/client";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
-// Two-layer pricing model: adult_price/child_price are the supplier's own
-// net asking price.
-//  1. Commission is carved OUT of that price -> what the supplier is paid
-//     (mirrors services.tours._apply_commission). The supplier's agreed
-//     rate (fetched from /suppliers/me) is always the floor - they may
-//     raise it, never lower it.
-//  2. Tourvaa's retail markup is added ON TOP of the same price -> the
-//     storefront/customer price (mirrors services.tours._apply_markup).
-//     Admin-only; never shown to a supplier.
-function supplierReceives(price: number, commissionPercent: number): number {
-  return Math.max(0, Math.round(price * (1 - commissionPercent / 100) * 100) / 100);
-}
+const MIN_ADMIN_MARKUP = 5;
+const MAX_ADMIN_MARKUP = 15;
 
+// Tourvaa pays the supplier their own adult_price/child_price in full - no
+// commission is deducted from it. Tourvaa's entire commission is an
+// admin-only retail markup (5-15%) added ON TOP of the supplier's price to
+// produce the storefront/customer price (mirrors services.tours._apply_markup).
+// Never shown to a supplier.
 function storefrontPrice(price: number, markupPercent: number): number {
   return Math.max(0, Math.round(price * (1 + markupPercent / 100) * 100) / 100);
 }
@@ -36,8 +30,8 @@ function formatSlabAmount(amount: number, currency: string): string {
 
 const empty = (): PricingSlab => ({
   passenger_from: 1, passenger_to: 4, adult_price: 0, child_price: 0,
-  supplier_price: 0, markup_type: "percentage", markup_value: 0, final_price: 0,
-  admin_markup_type: "percentage", admin_markup_value: 0,
+  supplier_price: 0, final_price: 0,
+  admin_markup_value: MIN_ADMIN_MARKUP,
   currency: "USD", status: "active",
 });
 
@@ -48,27 +42,6 @@ export default function TourPricingTab({ tourId, role = "admin" }: { tourId: str
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<PricingSlab | null>(null);
   const [saving, setSaving] = useState(false);
-  const [agreedCommission, setAgreedCommission] = useState(10);
-
-  useEffect(() => {
-    if (isSupplier) {
-      // The supplier's own agreed commission rate - the floor they may
-      // raise but never lower per slab.
-      api.get("/suppliers/me")
-        .then((res) => {
-          const value = Number(res.data?.data?.markup_value);
-          if (Number.isFinite(value)) setAgreedCommission(value);
-        })
-        .catch(() => {});
-    } else {
-      api.get("/settings/public")
-        .then((res) => {
-          const value = Number(res.data?.data?.supplier_commission_percentage);
-          if (Number.isFinite(value)) setAgreedCommission(value);
-        })
-        .catch(() => {});
-    }
-  }, [isSupplier]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,8 +71,7 @@ export default function TourPricingTab({ tourId, role = "admin" }: { tourId: str
         passenger_to: sanitizeNumber(editing.passenger_to, 1),
         adult_price: sanitizeNumber(editing.adult_price),
         child_price: sanitizeNumber(editing.child_price),
-        markup_value: Math.max(agreedCommission, sanitizeNumber(editing.markup_value)),
-        admin_markup_value: Math.max(0, sanitizeNumber(editing.admin_markup_value)),
+        admin_markup_value: Math.min(MAX_ADMIN_MARKUP, Math.max(MIN_ADMIN_MARKUP, sanitizeNumber(editing.admin_markup_value))),
       };
       if (editing.id) {
         const updated = await updatePricing(tourId, editing.id, payload);
@@ -140,8 +112,7 @@ export default function TourPricingTab({ tourId, role = "admin" }: { tourId: str
 
   if (loading) return <Loader label="Loading pricing..." />;
 
-  const editingCommission = editing ? Math.max(agreedCommission, sanitizeNumber(editing.markup_value)) : agreedCommission;
-  const editingMarkup = sanitizeNumber(editing?.admin_markup_value);
+  const editingMarkup = sanitizeNumber(editing?.admin_markup_value) || MIN_ADMIN_MARKUP;
 
   return (
     <div className="space-y-8">
@@ -151,8 +122,8 @@ export default function TourPricingTab({ tourId, role = "admin" }: { tourId: str
             <h2 className="text-xl font-bold text-dash-text">{isSupplier ? "Supplier Pricing" : "Tour Pricing"}</h2>
             <p className="text-sm text-dash-subtle">
               {isSupplier
-                ? "Your price per pax-range slab. This is your net supplier price - Tourvaa will apply a retail markup before publishing your tour to cover agent commissions, transaction fees, marketing, and operating costs."
-                : "Admin-only markup added on top of the supplier price, to cover fees and maintenance. This is the price shown at the storefront."}
+                ? "Your price per pax-range slab. Tourvaa pays you this price in full - there is no commission deducted. Tourvaa adds its own retail markup separately before publishing your tour."
+                : `Admin-only commission (${MIN_ADMIN_MARKUP}-${MAX_ADMIN_MARKUP}%) added on top of the supplier's price. This is the price shown at the storefront; the supplier is paid their own price in full.`}
             </p>
           </div>
           <button
@@ -182,24 +153,11 @@ export default function TourPricingTab({ tourId, role = "admin" }: { tourId: str
                 { key: "adult_price", header: isSupplier ? "Adult Price" : "Supplier Price (Adult)", render: (item) => formatSlabAmount(item.adult_price, item.currency) },
                 { key: "child_price", header: isSupplier ? "Child Price" : "Supplier Price (Child)", render: (item) => formatSlabAmount(item.child_price, item.currency) },
                 ...(isSupplier
-                  ? [
-                      {
-                        key: "commission",
-                        header: "Commission %",
-                        className: "text-dash-subtle",
-                        render: (item: PricingSlab) => `${item.markup_value}%`,
-                      },
-                      {
-                        key: "supplier_receives",
-                        header: "Supplier Receives",
-                        className: "font-bold text-dash-brand",
-                        render: (item: PricingSlab) => formatSlabAmount(item.supplier_final_adult_price ?? supplierReceives(item.adult_price, item.markup_value), item.currency),
-                      },
-                    ]
+                  ? []
                   : [
                       {
                         key: "markup",
-                        header: "Tourvaa Markup",
+                        header: "Tourvaa Commission",
                         className: "text-dash-subtle",
                         render: (item: PricingSlab) => `${item.admin_markup_value}%`,
                       },
@@ -214,9 +172,9 @@ export default function TourPricingTab({ tourId, role = "admin" }: { tourId: str
               ]}
               rows={items}
               actions={(item) => (
-                <div className="flex gap-2 justify-end">
-                  <button type="button" onClick={() => setEditing({ ...item })} aria-label="Edit pricing slab" title="Edit pricing slab" className="rounded-lg border border-dash-border p-1.5 hover:bg-[#F2F4F7]"><Pencil size={13} /></button>
-                  <button type="button" onClick={() => remove(item.id!)} aria-label="Delete pricing slab" title="Delete pricing slab" className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500"><Trash2 size={13} /></button>
+                <div className="flex items-center justify-end gap-2">
+                  <button type="button" onClick={() => setEditing({ ...item })} aria-label="Edit pricing slab" title="Edit pricing slab" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"><Pencil size={15} /></button>
+                  <button type="button" onClick={() => remove(item.id!)} aria-label="Delete pricing slab" title="Delete pricing slab" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
                 </div>
               )}
             />
@@ -232,18 +190,10 @@ export default function TourPricingTab({ tourId, role = "admin" }: { tourId: str
             <div className="grid gap-4 md:grid-cols-3">
               {numField("passenger_from", "Pax from")}
               {numField("passenger_to", "Pax to")}
-              {isSupplier ? (
+              {!isSupplier && (
                 <label>
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Commission %</span>
-                  <input type="number" min={agreedCommission} value={numberInputValue(editing.markup_value)}
-                    onChange={(e) => setEditing((p) => p ? { ...p, markup_value: parseNumberInput(e.target.value) } : p)}
-                    className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-                  <span className="mt-1 block text-xs text-dash-subtle">Your agreed commission is applied automatically. You may increase it for higher visibility.</span>
-                </label>
-              ) : (
-                <label>
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tourvaa Markup %</span>
-                  <input type="number" min={0} value={numberInputValue(editing.admin_markup_value)}
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tourvaa Commission % ({MIN_ADMIN_MARKUP}-{MAX_ADMIN_MARKUP})</span>
+                  <input type="number" min={MIN_ADMIN_MARKUP} max={MAX_ADMIN_MARKUP} value={numberInputValue(editing.admin_markup_value)}
                     onChange={(e) => setEditing((p) => p ? { ...p, admin_markup_value: parseNumberInput(e.target.value) } : p)}
                     className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
                 </label>
@@ -253,23 +203,23 @@ export default function TourPricingTab({ tourId, role = "admin" }: { tourId: str
                 <CurrencySelect value={editing.currency} onChange={(code) => setEditing((p) => p ? { ...p, currency: code } : p)} />
               </label>
               {numField("adult_price", isSupplier ? "Adult price" : "Supplier price (adult)")}
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{isSupplier ? "Supplier receives" : "Storefront price"}</span>
-                <input type="text" disabled
-                  value={isSupplier
-                    ? formatSlabAmount(supplierReceives(editing.adult_price, editingCommission), editing.currency)
-                    : formatSlabAmount(storefrontPrice(editing.adult_price, editingMarkup), editing.currency)}
-                  className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
-              </label>
+              {!isSupplier && (
+                <label>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Storefront price</span>
+                  <input type="text" disabled
+                    value={formatSlabAmount(storefrontPrice(editing.adult_price, editingMarkup), editing.currency)}
+                    className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
+                </label>
+              )}
               {numField("child_price", isSupplier ? "Child price" : "Supplier price (child)")}
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{isSupplier ? "Supplier receives" : "Storefront price"}</span>
-                <input type="text" disabled
-                  value={isSupplier
-                    ? formatSlabAmount(supplierReceives(editing.child_price, editingCommission), editing.currency)
-                    : formatSlabAmount(storefrontPrice(editing.child_price, editingMarkup), editing.currency)}
-                  className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
-              </label>
+              {!isSupplier && (
+                <label>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Storefront price</span>
+                  <input type="text" disabled
+                    value={formatSlabAmount(storefrontPrice(editing.child_price, editingMarkup), editing.currency)}
+                    className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-subtle" />
+                </label>
+              )}
               <label>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
                 <select value={editing.status} onChange={(e) => setEditing((p) => p ? { ...p, status: e.target.value } : p)}
@@ -281,9 +231,9 @@ export default function TourPricingTab({ tourId, role = "admin" }: { tourId: str
             </div>
             <p className="mt-4 rounded-xl bg-dash-bg p-3 text-xs text-dash-subtle">
               {isSupplier ? (
-                <><strong className="text-dash-body">Note:</strong> The prices entered above are your net supplier prices. Tourvaa will apply a retail markup before publishing your tour to cover agent commissions, transaction fees, marketing, and operating costs.</>
+                <><strong className="text-dash-body">Note:</strong> The prices entered above are what Tourvaa pays you in full - no commission is deducted. Tourvaa adds its own retail markup separately before publishing your tour.</>
               ) : (
-                <><strong className="text-dash-body">Note:</strong> This markup is only visible in the Admin Portal and is added on top of the supplier&apos;s price to produce the storefront price shown to customers.</>
+                <><strong className="text-dash-body">Note:</strong> This commission is only visible in the Admin Portal and is added on top of the supplier&apos;s price to produce the storefront price shown to customers. The supplier is always paid their own price in full.</>
               )}
             </p>
             <div className="mt-4 flex justify-end gap-3">

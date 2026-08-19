@@ -35,6 +35,8 @@ function statusClass(status?: string) {
 export default function CustomerCancellationsPage() {
   const [rows, setRows] = useState<Cancellation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     let active = true;
@@ -46,7 +48,16 @@ export default function CustomerCancellationsPage() {
     return () => { active = false; };
   }, []);
 
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const paginatedRows = rows.slice((page - 1) * pageSize, page * pageSize);
+
   const columns: DataTableColumn<Cancellation>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * pageSize + index + 1,
+    },
     { key: "booking", header: "Booking", render: (c) => <Link className="font-bold text-dash-brand hover:underline" href={`/customer/bookings/${c.booking_id}`}>{c.booking_code || `Booking #${c.booking_id}`}</Link> },
     { key: "tour", header: "Tour", render: (c) => c.tour_name || "-", className: "text-dash-muted" },
     { key: "reason", header: "Reason", render: (c) => c.reason || "-", className: "hidden max-w-xs truncate text-dash-muted md:table-cell" },
@@ -63,7 +74,19 @@ export default function CustomerCancellationsPage() {
         action={{ label: "Request from Booking", href: "/customer/bookings", icon: FileText }}
       />
       <div className="mt-4">
-        <DataTable ariaLabel="Customer cancellations" columns={columns} rows={rows} loading={loading} page={1} pageSize={rows.length || 10} total={rows.length} totalPages={1} emptyTitle="No cancellation requests" emptyDescription="Cancellation requests submitted from booking details will appear here." />
+        <DataTable
+          ariaLabel="Customer cancellations"
+          columns={columns}
+          rows={paginatedRows}
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={rows.length}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          emptyTitle="No cancellation requests"
+          emptyDescription="Cancellation requests submitted from booking details will appear here."
+        />
       </div>
     </CustomerPageShell>
   );

@@ -242,6 +242,12 @@ export default function ChatbotFAQPage() {
 
   const sessionColumns: DataTableColumn<ChatSession>[] = [
     {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (sessionsPage - 1) * sessionsPageSize + index + 1,
+    },
+    {
       key: "user",
       header: "Visitor",
       render: (session) => (
@@ -336,16 +342,22 @@ export default function ChatbotFAQPage() {
                       : "Add your first FAQ to train the AI assistant."
                   }
                   actions={(faq) => (
-                    <div className="flex justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2">
                       <button
+                        type="button"
                         onClick={() => openEdit(faq)}
-                        className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover"
+                        aria-label="Edit FAQ"
+                        title="Edit FAQ"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
                       >
                         <Edit size={15} />
                       </button>
                       <button
+                        type="button"
                         onClick={() => remove(faq)}
-                        className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-red-50 hover:text-red-600"
+                        aria-label="Delete FAQ"
+                        title="Delete FAQ"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 size={15} />
                       </button>
@@ -373,6 +385,7 @@ export default function ChatbotFAQPage() {
                   emptyDescription="Sessions appear once visitors start chatting with the assistant."
                   actions={(session) => (
                     <button
+                      type="button"
                       onClick={() => void toggleSessionExpand(session)}
                       className="rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover"
                     >

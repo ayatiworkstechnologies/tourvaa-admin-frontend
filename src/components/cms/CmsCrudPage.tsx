@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LuSquarePen as Edit, LuPlus as Plus } from "react-icons/lu";
+import { LuSquarePen as Edit, LuPlus as Plus, LuPower as Power } from "react-icons/lu";
 
 import ActionModal from "@/components/operations/ActionModal";
 import StatusBadge from "@/components/operations/StatusBadge";
@@ -113,7 +113,16 @@ export default function CmsCrudPage({
         </section>
         <DataTable
           ariaLabel={title}
-          columns={[...columns, { key: "status", header: "Status", render: (row) => <StatusBadge value={String(row.status || "")} /> }]}
+          columns={[
+            {
+              key: "no",
+              header: "No",
+              className: "w-20 font-bold text-dash-muted",
+              render: (_row, index) => (page - 1) * 10 + index + 1,
+            },
+            ...columns,
+            { key: "status", header: "Status", render: (row) => <StatusBadge value={String(row.status || "")} /> },
+          ]}
           rows={rows}
           loading={loading}
           page={page}
@@ -127,7 +136,7 @@ export default function CmsCrudPage({
           }}
           onPageChange={setPage}
           actions={(row) => (
-            <div className="flex justify-end gap-2">
+            <div className="flex items-center justify-end gap-2">
               {hasPermission(editPermission) && (
                 <button
                   type="button"
@@ -135,9 +144,11 @@ export default function CmsCrudPage({
                     setEditing(row);
                     setOpen(true);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]"
+                  aria-label="Edit"
+                  title="Edit"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-[#E7F5FF] hover:text-dash-brand-hover"
                 >
-                  <Edit size={14} /> Edit
+                  <Edit size={15} />
                 </button>
               )}
               {hasPermission(editPermission) && (
@@ -147,9 +158,11 @@ export default function CmsCrudPage({
                     const nextStatus = row.status === "active" || row.status === "published" ? "inactive" : "active";
                     void updateCmsStatus(endpoint, row.id, nextStatus).then(fetchRows);
                   }}
-                  className="rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-muted hover:bg-dash-bg"
+                  aria-label="Toggle status"
+                  title="Toggle status"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-dash-bg"
                 >
-                  Toggle
+                  <Power size={15} />
                 </button>
               )}
             </div>

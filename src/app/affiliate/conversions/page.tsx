@@ -49,6 +49,12 @@ export default function ConversionsPage() {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   const columns: DataTableColumn<Conversion>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
     { key: "date", header: "Date", className: "text-xs text-dash-body", render: (c) => c.created_at ? new Date(c.created_at).toLocaleDateString() : "-" },
     { key: "booking", header: "Booking", className: "font-mono text-xs text-dash-body", render: (c) => c.booking_code || `#${c.id}` },
     { key: "booking_amount", header: "Booking Amount", className: "text-xs text-dash-body", render: (c) => `${c.currency} ${Number(c.booking_amount || 0).toLocaleString()}` },

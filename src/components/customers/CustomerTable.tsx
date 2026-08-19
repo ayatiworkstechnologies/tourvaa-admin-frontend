@@ -127,10 +127,11 @@ export default function CustomerTable({
       onPageChange={onPageChange}
       emptyTitle="No customers found."
         actions={(customer) => (
-          <div className="flex justify-end gap-2">
+          <div className="flex items-center justify-end gap-2">
             <Link
               href={`/admin/customers/${customer.id}`}
-              className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
+              aria-label="View customer"
               title="View customer"
             >
               <Eye size={15} />
@@ -140,7 +141,8 @@ export default function CustomerTable({
                 type="button"
                 disabled={savingId === customer.id}
                 onClick={() => onReset(customer)}
-                className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover disabled:opacity-60"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover disabled:opacity-60"
+                aria-label="Reset password"
                 title="Reset password"
               >
                 <KeyRound size={15} />
@@ -152,7 +154,8 @@ export default function CustomerTable({
                     type="button"
                     disabled={savingId === customer.id}
                     onClick={() => onUnblock(customer)}
-                    className="rounded-lg border border-dash-border p-2 text-emerald-600 hover:bg-emerald-50 disabled:opacity-60"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-emerald-600 transition-colors hover:bg-emerald-50"
+                    aria-label="Unblock customer"
                     title="Unblock customer"
                   >
                     <Unlock size={15} />
@@ -163,7 +166,8 @@ export default function CustomerTable({
                     type="button"
                     disabled={savingId === customer.id}
                     onClick={() => onBlock(customer)}
-                    className="rounded-lg border border-dash-border p-2 text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-red-600 transition-colors hover:bg-red-50"
+                    aria-label="Block customer"
                     title="Block customer"
                   >
                     <Lock size={15} />

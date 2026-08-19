@@ -15,6 +15,7 @@ import {
   LuUserRound as UserRound,
   LuWallet as Wallet,
 } from "react-icons/lu";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -87,6 +88,9 @@ function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-xl bg-slate-100 ${className}`} />;
 }
 
+type ChartRow = { status: string; count: number };
+const CHART_COLORS = ["#0865D9", "#F59E0B", "#EF4444", "#10B981", "#8B5CF6"];
+
 export default function CustomerDashboardPage() {
   const { user } = useAuthContext();
   const { format, formatExact } = useCurrency();
@@ -94,6 +98,7 @@ export default function CustomerDashboardPage() {
   const toast = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [paymentStatusChart, setPaymentStatusChart] = useState<ChartRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
@@ -101,12 +106,14 @@ export default function CustomerDashboardPage() {
     setLoading(true);
     setLoadError("");
     try {
-      const [profileResult, bookingResult] = await Promise.allSettled([
+      const [profileResult, bookingResult, chartsResult] = await Promise.allSettled([
         api.get("/customers/me"),
         api.get("/customer/bookings", { params: { limit: BOOKINGS_PREVIEW } }),
+        api.get("/dashboard/charts"),
       ]);
       if (profileResult.status === "fulfilled") setProfile(profileResult.value.data?.data ?? null);
       if (bookingResult.status === "fulfilled") setBookings(bookingResult.value.data?.items ?? bookingResult.value.data?.data ?? []);
+      if (chartsResult.status === "fulfilled") setPaymentStatusChart(chartsResult.value.data?.data?.payment_status_chart ?? []);
       if (profileResult.status === "rejected" && bookingResult.status === "rejected") {
         setLoadError("Your dashboard could not be loaded. Please try again.");
       }
@@ -279,6 +286,40 @@ export default function CustomerDashboardPage() {
           </div>
         )}
       </CustomerSection>
+
+      {(loading || paymentStatusChart.length > 0) && (
+        <CustomerSection className="mt-4" title="Payment Overview">
+          <div className="p-5 sm:p-6">
+            {loading ? (
+              <Skeleton className="h-40" />
+            ) : (
+              <div className="flex flex-col items-center gap-4 sm:flex-row">
+                <div className="h-40 w-40 shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={paymentStatusChart} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={4} dataKey="count" nameKey="status">
+                        {paymentStatusChart.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip contentStyle={{ borderRadius: "10px", border: "1px solid #E6EDF6" }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <ul className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-1">
+                  {paymentStatusChart.map((row, i) => (
+                    <li key={row.status} className="flex items-center justify-between gap-2 rounded-xl bg-[#F9FBFF] px-3 py-2">
+                      <span className="flex items-center gap-2 text-xs font-bold text-[#0C2043]">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                        {humanStatus(row.status)}
+                      </span>
+                      <span className="text-xs font-black text-[#0C2043]">{row.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </CustomerSection>
+      )}
 
       <CustomerSection className="mt-4" title="My Wishlist">
         <div className="flex items-center justify-end border-b border-[#E6EDF6] px-5 py-3 sm:px-6">

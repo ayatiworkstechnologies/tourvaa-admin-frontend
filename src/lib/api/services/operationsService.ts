@@ -25,8 +25,6 @@ export type ReviewRecord = {
   rejection_reason?: string | null;
   admin_comments?: string | null;
   pending_requirements?: string | null;
-  markup_type?: string | null;
-  markup_value?: number;
   discount_type?: string | null;
   discount_value?: number;
   commission_request_type?: string | null;
@@ -53,15 +51,6 @@ export type ReviewRecord = {
     notes?: string | null;
     changed_by?: number | null;
     created_at?: string;
-  }>;
-  commission_request_history?: Array<{
-    id: number;
-    markup_type: string;
-    markup_value: number;
-    status: string;
-    requested_at?: string | null;
-    reviewed_at?: string | null;
-    reviewed_by?: number | null;
   }>;
   business_info?: Record<string, unknown> | null;
   marketing_info?: Record<string, unknown> | null;
@@ -136,19 +125,13 @@ export async function bulkRejectAgents(agentIds: number[], rejection_reason: str
   return response.data.data;
 }
 
-export async function rejectSupplierCommissionRequest(id: string | number) {
-  const response = await api.post<{ data: ReviewRecord }>(`/suppliers/${id}/commission-request/reject`);
-  return response.data.data;
-}
-
 export async function rejectAgentCommissionRequest(id: string | number) {
   const response = await api.post<{ data: ReviewRecord }>(`/agents/${id}/commission-request/reject`);
   return response.data.data;
 }
 
-export async function updateCommercialValue(module: "suppliers" | "agents", id: string | number, payload: Record<string, unknown>) {
-  const path = module === "suppliers" ? "markup" : "discount";
-  const response = await api.patch<{ data: ReviewRecord }>(`/${module}/${id}/${path}`, payload);
+export async function updateCommercialValue(module: "agents", id: string | number, payload: Record<string, unknown>) {
+  const response = await api.patch<{ data: ReviewRecord }>(`/${module}/${id}/discount`, payload);
   return response.data.data;
 }
 

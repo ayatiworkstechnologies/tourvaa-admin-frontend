@@ -138,7 +138,7 @@ export default function BookingPaymentModal({
             <button type="button" onClick={payWithPayPal} disabled={Boolean(loading) || !gateways?.paypal} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0070BA] px-4 py-3 text-sm font-black text-white disabled:opacity-40">
               {loading === "paypal" ? <Loader2 size={17} className="animate-spin" /> : null} Pay with PayPal
             </button>
-            {gateways?.test_mode_available && (
+            {false && gateways?.test_mode_available && (
               <button type="button" onClick={payWithTestGateway} disabled={Boolean(loading)} className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 py-3 text-sm font-black text-amber-800 disabled:opacity-50">
                 {loading === "test" ? <Loader2 size={17} className="animate-spin" /> : null} Simulate test payment
               </button>

@@ -17,6 +17,7 @@ import {
 } from "react-icons/lu";
 
 import AboutReveal from "@/components/public/AboutReveal";
+import { subscribeNewsletter } from "@/lib/api/publicClient";
 
 const categories = [
   { title: "Visa & Passport Info", text: "Key entry requirements and validity guidelines for every continent.", image: "/images/about/priya.jpg", href: "#popular-advice" },
@@ -49,11 +50,17 @@ export default function TravelAdvicePage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
 
-  function subscribe(event: FormEvent<HTMLFormElement>) {
+  async function subscribe(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!email.trim()) return;
-    setMessage("Thank you — travel tips are on their way!");
-    setEmail("");
+    try {
+      await subscribeNewsletter(email.trim());
+      setMessage("Thank you — travel tips are on their way!");
+      setEmail("");
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setMessage(typeof detail === "string" ? detail : "Could not subscribe right now. Please try again.");
+    }
   }
 
   return (

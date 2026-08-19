@@ -2,17 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck, LuPercent as Percent } from "react-icons/lu";
+import { LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck } from "react-icons/lu";
 import CompanyInfoTab from "@/components/supplier/profile/CompanyInfoTab";
 import DocumentsTab from "@/components/supplier/profile/DocumentsTab";
-import CommissionRequestTab from "@/components/supplier/profile/CommissionRequestTab";
 import VehiclesTab from "@/components/supplier/profile/VehiclesTab";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 
 const TABS = [
   { id: "company", label: "Company & Security", icon: Building },
   { id: "vehicles", label: "My Vehicles", icon: Bus },
-  { id: "commission", label: "Commission Request", icon: Percent },
   { id: "documents", label: "Verification Documents", icon: FileCheck },
 ];
 
@@ -30,7 +28,7 @@ export default function UnifiedSupplierProfilePage() {
 
   return (
     <SupplierPageShell>
-      <SupplierPageHeader title="My Profile" description="Manage your company identity, account security, fleet, commercial request, and verification documents." icon={Building} eyebrow="Supplier Account" />
+      <SupplierPageHeader title="My Profile" description="Manage your company identity, account security, fleet, and verification documents." icon={Building} eyebrow="Supplier Account" />
 
       <div className="mt-4 flex overflow-x-auto rounded-2xl border border-[#DCEBE2] bg-white p-2 shadow-[0_8px_24px_-22px_rgba(15,82,48,.7)]">
         {TABS.map((tab) => {
@@ -59,7 +57,6 @@ export default function UnifiedSupplierProfilePage() {
             in-progress form edits on inactive tabs survive switching. */}
         <div className={activeTab === "company" ? "" : "hidden"}><CompanyInfoTab /></div>
         <div className={activeTab === "vehicles" ? "" : "hidden"}><VehiclesTab /></div>
-        <div className={activeTab === "commission" ? "" : "hidden"}><CommissionRequestTab /></div>
         <div className={activeTab === "documents" ? "" : "hidden"}><DocumentsTab /></div>
       </div>
     </SupplierPageShell>

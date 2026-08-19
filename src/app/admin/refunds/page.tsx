@@ -60,6 +60,8 @@ export default function RefundsPage() {
   // Refund rules state
   const [rules, setRules] = useState<RefundRule[]>([]);
   const [rulesLoading, setRulesLoading] = useState(true);
+  const [rulePage, setRulePage] = useState(1);
+  const rulePageSize = 10;
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [ruleForm, setRuleForm] = useState({ tour_id: "", days_before_tour_min: "", days_before_tour_max: "", refund_percentage: "", description: "" });
   const [savingRule, setSavingRule] = useState(false);
@@ -178,6 +180,12 @@ export default function RefundsPage() {
 
   const reqColumns: DataTableColumn<CancellationRequest>[] = [
     {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (reqPage - 1) * 10 + index + 1,
+    },
+    {
       key: "booking",
       header: "Booking",
       className: "font-semibold text-dash-text",
@@ -209,6 +217,12 @@ export default function RefundsPage() {
   ];
 
   const ruleColumns: DataTableColumn<RefundRule>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (rulePage - 1) * rulePageSize + index + 1,
+    },
     {
       key: "scope",
       header: "Scope",
@@ -276,6 +290,11 @@ export default function RefundsPage() {
                 columns={reqColumns}
                 rows={requests}
                 loading={reqLoading}
+                page={reqPage}
+                pageSize={10}
+                total={reqHasMore ? reqPage * 10 + 1 : (reqPage - 1) * 10 + requests.length}
+                totalPages={reqHasMore ? reqPage + 1 : reqPage}
+                onPageChange={(nextPage) => { setReqPage(nextPage); void fetchRequests(nextPage); }}
                 emptyTitle="No cancellation requests"
                 emptyDescription="All requests have been processed."
                 actions={(req) => (
@@ -415,28 +434,6 @@ export default function RefundsPage() {
                 }}
               />
             </div>
-            {/* Pagination */}
-            {!reqLoading && (reqPage > 1 || reqHasMore) && (
-              <div className="flex items-center justify-end gap-3 border-t border-dash-border p-4">
-                <button
-                  type="button"
-                  disabled={reqPage === 1}
-                  onClick={() => { setReqPage(p => p - 1); void fetchRequests(reqPage - 1); }}
-                  className="rounded-lg border border-dash-border px-3 py-1.5 text-sm font-semibold text-dash-muted hover:bg-dash-bg disabled:opacity-40"
-                >
-                  Prev
-                </button>
-                <span className="text-sm text-dash-muted">Page {reqPage}</span>
-                <button
-                  type="button"
-                  disabled={!reqHasMore}
-                  onClick={() => { setReqPage(p => p + 1); void fetchRequests(reqPage + 1); }}
-                  className="rounded-lg border border-dash-border px-3 py-1.5 text-sm font-semibold text-dash-muted hover:bg-dash-bg disabled:opacity-40"
-                >
-                  Next
-                </button>
-              </div>
-            )}
           </div>
         )}
 
@@ -535,12 +532,17 @@ export default function RefundsPage() {
                 <DataTable
                   ariaLabel="Refund Rules"
                   columns={ruleColumns}
-                  rows={rules}
+                  rows={rules.slice((rulePage - 1) * rulePageSize, rulePage * rulePageSize)}
                   loading={rulesLoading}
+                  page={rulePage}
+                  pageSize={rulePageSize}
+                  total={rules.length}
+                  totalPages={Math.max(1, Math.ceil(rules.length / rulePageSize))}
+                  onPageChange={setRulePage}
                   emptyTitle="No refund rules configured"
                   emptyDescription="Add rules to automate refund calculations."
                   actions={(rule) => (
-                    <div className="flex justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2">
                       <button
                         type="button"
                         onClick={() => void deleteRule(rule.id)}

@@ -329,9 +329,9 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
               ]}
               rows={entries}
               actions={(item) => (
-                <div className="flex gap-2 justify-end">
-                  <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border p-1.5 hover:bg-[#F2F4F7]"><Pencil size={13} /></button>
-                  <button type="button" onClick={() => removeEntry(item.id!)} className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500"><Trash2 size={13} /></button>
+                <div className="flex items-center justify-end gap-2">
+                  <button type="button" onClick={() => setEditing({ ...item })} aria-label="Edit calendar entry" title="Edit calendar entry" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"><Pencil size={15} /></button>
+                  <button type="button" onClick={() => removeEntry(item.id!)} aria-label="Delete calendar entry" title="Delete calendar entry" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
                 </div>
               )}
             />

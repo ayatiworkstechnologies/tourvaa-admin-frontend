@@ -150,6 +150,12 @@ export default function AgentCustomersPage() {
 
   const columns: DataTableColumn<Customer>[] = [
     {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
+    {
       key: "customer",
       header: "Customer",
       render: (c) => (

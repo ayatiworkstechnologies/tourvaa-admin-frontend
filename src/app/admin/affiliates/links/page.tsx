@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuCirclePause as PauseCircle, LuCirclePlay as PlayCircle, LuCopy as Copy, LuLoaderCircle as Loader2, LuPlus as Plus, LuRefreshCw as RefreshCw } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuCirclePause as PauseCircle, LuCirclePlay as PlayCircle, LuCopy as Copy, LuCopyPlus as CopyPlus, LuLoaderCircle as Loader2, LuPlus as Plus, LuRefreshCw as RefreshCw } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { usePagination } from "@/hooks/usePagination";
@@ -96,6 +96,12 @@ export default function AdminAffiliateLinksPage() {
 
   const columns: DataTableColumn<AffiliateLink>[] = [
     {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (pagination.page - 1) * pagination.limit + index + 1,
+    },
+    {
       key: "link",
       header: "Link",
       render: (l) => (
@@ -179,20 +185,36 @@ export default function AdminAffiliateLinksPage() {
               emptyTitle="No affiliate links found"
               emptyDescription="Generate a link to start tracking affiliate referrals."
               actions={(l) => (
-                <div className="flex items-center justify-end gap-1.5">
-                  <button onClick={() => copyLink(l)} title="Copy link"
-                    className="inline-flex items-center gap-1 rounded-lg border border-dash-border px-2.5 py-1.5 text-xs font-bold text-dash-body hover:bg-dash-bg-muted">
-                    <Copy size={12} />
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => copyLink(l)}
+                    aria-label="Copy link"
+                    title="Copy link"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
+                  >
+                    <Copy size={15} />
                   </button>
-                  <button onClick={() => duplicate(l)} disabled={acting === l.id}
-                    className="inline-flex items-center gap-1 rounded-lg border border-dash-border px-2.5 py-1.5 text-xs font-bold text-dash-body hover:bg-dash-bg-muted disabled:opacity-50">
-                    {acting === l.id ? <Loader2 className="animate-spin" size={12} /> : "Duplicate"}
+                  <button
+                    type="button"
+                    onClick={() => duplicate(l)}
+                    disabled={acting === l.id}
+                    aria-label="Duplicate link"
+                    title="Duplicate link"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover disabled:opacity-50"
+                  >
+                    {acting === l.id ? <Loader2 className="animate-spin" size={15} /> : <CopyPlus size={15} />}
                   </button>
                   {l.status !== "deleted" && (
-                    <button onClick={() => toggleStatus(l)} disabled={acting === l.id}
-                      className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold disabled:opacity-50 ${l.status === "active" ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}>
-                      {l.status === "active" ? <PauseCircle size={12} /> : <PlayCircle size={12} />}
-                      {l.status === "active" ? "Disable" : "Activate"}
+                    <button
+                      type="button"
+                      onClick={() => toggleStatus(l)}
+                      disabled={acting === l.id}
+                      aria-label={l.status === "active" ? "Disable link" : "Activate link"}
+                      title={l.status === "active" ? "Disable link" : "Activate link"}
+                      className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border transition-colors disabled:opacity-50 ${l.status === "active" ? "text-amber-600 hover:bg-amber-50" : "text-emerald-600 hover:bg-emerald-50"}`}
+                    >
+                      {l.status === "active" ? <PauseCircle size={15} /> : <PlayCircle size={15} />}
                     </button>
                   )}
                 </div>

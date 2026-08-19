@@ -239,21 +239,17 @@ export type PricingSlab = {
   passenger_to: number;
   adult_price: number;
   child_price: number;
-  // adult_price/child_price are the supplier's own net asking price.
-  // markup_value is the supplier's commission % (server floors it at the
-  // supplier's agreed rate); supplier_final_* (server-computed) is what the
-  // supplier is paid after that commission. admin_markup_value is the
-  // Tourvaa-only retail markup added on top of the same price; only an
-  // admin actor's submitted value is honoured; storefront_* (server-
-  // computed) is the resulting customer-facing price. supplier_price/
-  // final_price are legacy/unused.
+  // adult_price/child_price are the supplier's own net asking price -
+  // Tourvaa pays that price in full, no commission is deducted, so
+  // supplier_final_* (server-computed) simply mirrors it. admin_markup_value
+  // is Tourvaa's own commission (5-15%), an admin-only retail markup added
+  // on top of the same price; only an admin actor's submitted value is
+  // honoured; storefront_* (server-computed) is the resulting
+  // customer-facing price. supplier_price/final_price are legacy/unused.
   supplier_price: number;
-  markup_type: string;
-  markup_value: number;
   final_price: number;
   supplier_final_adult_price?: number | null;
   supplier_final_child_price?: number | null;
-  admin_markup_type: string;
   admin_markup_value: number;
   storefront_adult_price?: number | null;
   storefront_child_price?: number | null;

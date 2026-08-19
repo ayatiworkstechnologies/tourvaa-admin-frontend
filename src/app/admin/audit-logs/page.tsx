@@ -65,6 +65,12 @@ export default function AuditLogsPage() {
 
   const columns: DataTableColumn<AuditLog>[] = [
     {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
+    {
       key: "timestamp",
       header: "Timestamp",
       className: "text-xs text-dash-muted whitespace-nowrap",

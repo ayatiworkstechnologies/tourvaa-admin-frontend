@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { LuSquarePen as Edit, LuMail as Mail, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
+import { LuSquarePen as Edit, LuMail as Mail, LuPlus as Plus, LuTrash2 as Trash2, LuX as X, LuEye as Eye } from "react-icons/lu";
 
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import ModuleWrapper from "@/components/common/ModuleWrapper";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useUsers } from "@/hooks/useUsers";
 import { useRoles } from "@/hooks/useRoles";
@@ -306,7 +306,7 @@ export default function UsersPage() {
   ];
 
   return (
-    <DashboardLayout title="Users" menus={dashboard.menus} user={dashboard.user}>
+    <ModuleWrapper title="Users" requiredPermission="users.view">
       <div className="space-y-6">
       <section className="rounded-2xl border border-dash-border bg-white p-6">
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -393,31 +393,41 @@ export default function UsersPage() {
             emptyTitle="No users found"
             emptyDescription="There are currently no approved or rejected users."
             actions={(user) => (
-              <div className="flex justify-end gap-2">
-                <Link href={`/admin/users/${user.id}`} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-dash-border px-3 text-xs font-bold text-blue-600 hover:bg-blue-50">View</Link>
+              <div className="flex items-center justify-end gap-2">
+                <Link
+                  href={`/admin/users/${user.id}`}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
+                  aria-label={`View ${user.name}`}
+                  title={`View ${user.name}`}
+                >
+                  <Eye size={15} />
+                </Link>
                 <button
+                  type="button"
                   disabled={saving}
                   onClick={() => handleSendReset(user.id)}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-dash-border text-gray-500 hover:bg-sky-50 hover:text-dash-brand-hover"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
                   aria-label={`Send password reset email to ${user.name}`}
                   title="Send password reset email"
                 >
                   <Mail size={15} />
                 </button>
                 <button
+                  type="button"
                   onClick={() => openEdit(user)}
                   aria-label={`Edit ${user.name}`}
                   title={`Edit ${user.name}`}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-dash-border text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
                 >
                   <Edit size={15} />
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => deleteUser(user.id)}
                   aria-label={`Delete ${user.name}`}
                   title={`Delete ${user.name}`}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-dash-border text-gray-500 hover:bg-red-50 hover:text-red-600"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 size={15} />
                 </button>
@@ -692,7 +702,7 @@ export default function UsersPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </ModuleWrapper>
   );
 }
 

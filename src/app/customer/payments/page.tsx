@@ -60,6 +60,12 @@ export default function CustomerPaymentsPage() {
   }, [page]);
 
   const columns: DataTableColumn<Payment>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * limit + index + 1,
+    },
     { key: "code", header: "Payment", render: (p) => p.payment_code || `#${p.id}`, className: "font-bold text-dash-text" },
     { key: "booking", header: "Booking", render: (p) => p.booking_id ? <Link className="font-semibold text-dash-brand hover:underline" href={`/customer/bookings/${p.booking_id}`}>{p.booking_code || `Booking #${p.booking_id}`}</Link> : "-" },
     { key: "method", header: "Method", render: (p) => (p.payment_method || "-").replaceAll("_", " "), className: "hidden capitalize text-dash-muted sm:table-cell" },

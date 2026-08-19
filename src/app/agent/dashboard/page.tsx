@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuFileText as FileText, LuMapPinned as MapPinned, LuPackageCheck as PackageCheck, LuUsers as Users } from "react-icons/lu";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from "recharts";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -38,6 +42,10 @@ type AgentProfile = {
   commission_request_status?: "pending" | "approved" | "rejected" | null;
 };
 
+type ChartRow = { status: string; count: number };
+type MonthRow = { month: string; count: number };
+const CHART_COLORS = ["#43A9F6", "#1D3E64", "#F59E0B", "#EF4444", "#10B981"];
+
 function statusColors(s: string) {
   const v = (s || "").toLowerCase();
   if (["active", "confirmed", "paid", "completed", "published"].includes(v)) return "bg-emerald-50 text-emerald-700";
@@ -52,6 +60,8 @@ export default function AgentDashboardPage() {
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [agentProfile, setAgentProfile] = useState<AgentProfile | null>(null);
+  const [monthlyBookings, setMonthlyBookings] = useState<MonthRow[]>([]);
+  const [paymentStatusChart, setPaymentStatusChart] = useState<ChartRow[]>([]);
   const [commissionType, setCommissionType] = useState<"percentage" | "fixed">("percentage");
   const [commissionValue, setCommissionValue] = useState("");
   const [commissionMessage, setCommissionMessage] = useState("");
@@ -73,14 +83,20 @@ export default function AgentDashboardPage() {
           end_date: filters.end_date || undefined,
           booking_status: filters.status || undefined,
         };
-        const [sumRes, bookRes, agentRes] = await Promise.allSettled([
+        const [sumRes, bookRes, agentRes, chartsRes] = await Promise.allSettled([
           api.get("/dashboard/summary", { params: summaryParams }),
           api.get("/bookings", { params: bookingParams }),
           api.get("/agents/me"),
+          api.get("/dashboard/charts", { params: summaryParams }),
         ]);
         if (sumRes.status === "fulfilled") setSummary(sumRes.value.data?.data ?? {});
         if (bookRes.status === "fulfilled") setBookings(bookRes.value.data?.items ?? bookRes.value.data?.data ?? []);
         if (agentRes.status === "fulfilled") setAgentProfile(agentRes.value.data?.data ?? null);
+        if (chartsRes.status === "fulfilled") {
+          const chartData = chartsRes.value.data?.data ?? {};
+          setMonthlyBookings(chartData.monthly_bookings ?? []);
+          setPaymentStatusChart(chartData.payment_status_chart ?? []);
+        }
 
         const rejections = [sumRes, bookRes, agentRes].filter((r) => r.status === "rejected") as PromiseRejectedResult[];
         if (rejections.length > 0) {
@@ -209,6 +225,52 @@ export default function AgentDashboardPage() {
           </button>
         </div>
       </AgentSection>
+
+      {/* Booking & payment trends */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <AgentSection title="Monthly Bookings" description="Bookings you've made over the last 6 months.">
+          <div className="p-5">
+            {loading ? (
+              <div className="h-48 animate-pulse rounded-xl bg-dash-bg" />
+            ) : monthlyBookings.length === 0 ? (
+              <div className="flex h-48 items-center justify-center text-sm text-dash-muted">No monthly data yet.</div>
+            ) : (
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyBookings} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7EAF0" />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#667085" }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#667085" }} allowDecimals={false} />
+                    <Tooltip cursor={{ fill: "#F7F9FC" }} contentStyle={{ borderRadius: "10px", border: "1px solid #E7EAF0" }} />
+                    <Bar dataKey="count" fill="#43A9F6" radius={[4, 4, 0, 0]} barSize={28} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </AgentSection>
+
+        <AgentSection title="Payment Status" description="Payment status across your customer bookings.">
+          <div className="p-5">
+            {loading ? (
+              <div className="h-48 animate-pulse rounded-xl bg-dash-bg" />
+            ) : paymentStatusChart.length === 0 ? (
+              <div className="flex h-48 items-center justify-center text-sm text-dash-muted">No payment data yet.</div>
+            ) : (
+              <div className="flex h-48 w-full items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={paymentStatusChart} cx="50%" cy="50%" innerRadius={48} outerRadius={70} paddingAngle={4} dataKey="count" nameKey="status">
+                      {paymentStatusChart.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={{ borderRadius: "10px", border: "1px solid #E7EAF0" }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </AgentSection>
+      </div>
 
       {/* Two-column panels */}
       <div className="mt-4 grid gap-4 lg:grid-cols-2">

@@ -273,30 +273,40 @@ export default function EmailTemplatesPage() {
               onPageChange={setPage}
               emptyTitle="No email templates found."
               actions={(template) => (
-                <div className="flex justify-end gap-2">
+                <div className="flex items-center justify-end gap-2">
                   <button
+                    type="button"
                     onClick={() => openPreview(template)}
-                    className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
+                    aria-label="Preview design"
                     title="Preview design"
                   >
                     <Eye size={15} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => openTestEmail(template)}
-                    className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
+                    aria-label="Send test email"
                     title="Send test email"
                   >
                     <Send size={15} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => openEdit(template)}
-                    className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-sky-50 hover:text-dash-brand-hover"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
+                    aria-label="Edit template"
+                    title="Edit template"
                   >
                     <Edit size={15} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => remove(template)}
-                    className="rounded-lg border border-dash-border p-2 text-dash-muted hover:bg-red-50 hover:text-red-600"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"
+                    aria-label="Delete template"
+                    title="Delete template"
                   >
                     <Trash2 size={15} />
                   </button>

@@ -54,6 +54,12 @@ export default function CheckoutSessionsPage() {
   useEffect(() => { void load(); }, [load]);
 
   const columns: DataTableColumn<CheckoutSession>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (page - 1) * PAGE_SIZE + index + 1,
+    },
     { key: "session_key", header: "Session Key", className: "font-mono text-xs text-dash-subtle" },
     { key: "step", header: "Step", className: "capitalize" },
     { key: "status", header: "Status", render: (s) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusCls(s.status)}`}>{s.status}</span> },

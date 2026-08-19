@@ -125,7 +125,11 @@ check("invoice downloads validate real PDFs and delay URL cleanup", invoices.inc
 check("invoice downloads are shared by every portal", ["src/app/admin/invoices/page.tsx", "src/app/customer/invoices/page.tsx", "src/app/supplier/invoices/page.tsx", "src/app/agent/invoices/page.tsx", "src/app/agent/bookings/[id]/page.tsx"].every((path) => read(path).includes("downloadInvoicePdf")));
 
 const dashboard = read("src/app/admin/dashboard/page.tsx");
-check("dashboard approval actions match supplier and agent endpoints", dashboard.includes("/suppliers/${id}/approve") && dashboard.includes("/agents/${id}/approve"));
+// The dashboard keeps an inline approve/reject action for suppliers, but
+// agent approvals are reviewed on the agent detail page instead (see
+// app/admin/agents/[id]/page.tsx, which calls approveReviewRecord("agents", id)).
+check("dashboard approval actions call the supplier approve endpoint", dashboard.includes("/suppliers/${id}/approve"));
+check("dashboard links pending agents to their review page instead of approving inline", dashboard.includes("/admin/agents/${a.id}") && !dashboard.includes("/agents/${id}/approve") && !dashboard.includes("/agents/${a.id}/approve"));
 
 const tourApproval = read("src/app/admin/tour-approval/page.tsx");
 check("tour review uses version approval endpoints", tourApproval.includes("/tours/pending-approval") && tourApproval.includes("/versions/${v.id}/approve"));

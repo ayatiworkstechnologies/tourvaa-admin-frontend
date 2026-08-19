@@ -144,6 +144,12 @@ export default function InvoicesPage() {
   }, [currentPage]);
 
   const invoiceColumns: DataTableColumn<Invoice>[] = [
+    {
+      key: "no",
+      header: "No",
+      className: "w-20 font-bold text-dash-muted",
+      render: (_row, index) => (currentPage - 1) * PAGE_SIZE + index + 1,
+    },
     { key: "invoice_number", header: "Invoice" },
     { key: "booking_id", header: "Booking" },
     { key: "status", header: "Status" },

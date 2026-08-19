@@ -10,8 +10,11 @@ import { useToast } from "@/hooks/useToast";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type Document = { id: number; document_type: string; file_url: string; status: string; uploaded_at?: string; notes?: string };
+type DocRequirement = { key: string; label: string };
 
-const DOC_TYPES = [
+// Fallback only - the source of truth is GET /suppliers/document-requirements
+// (app/services/suppliers.py SUPPLIER_DOCUMENT_TYPES), used if that call fails.
+const FALLBACK_DOC_TYPES: DocRequirement[] = [
   { key: "company_registration", label: "Company Registration Certificate" },
   { key: "trade_license", label: "Trade License" },
   { key: "tax_certificate", label: "Tax Registration Certificate" },
@@ -31,6 +34,7 @@ export default function DocumentsTab() {
   const toast = useToast();
   const { dashboard } = useAuthContext();
   const [supplierId, setSupplierId] = useState<number | null>(null);
+  const [docTypes, setDocTypes] = useState<DocRequirement[]>(FALLBACK_DOC_TYPES);
   const [docs, setDocs] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
@@ -51,6 +55,14 @@ export default function DocumentsTab() {
         setLoading(false);
         setError("Supplier account details could not be loaded.");
       });
+    api.get("/suppliers/document-requirements")
+      .then(res => {
+        const requirements = res.data?.data;
+        if (Array.isArray(requirements) && requirements.length) {
+          setDocTypes(requirements.map((item: { document_type: string; label: string }) => ({ key: item.document_type, label: item.label })));
+        }
+      })
+      .catch(() => {});
   }, [dashboard, retryKey]);
 
   const load = useCallback(async () => {
@@ -114,7 +126,7 @@ export default function DocumentsTab() {
   }
 
   const docMap = Object.fromEntries(docs.map(d => [d.document_type, d]));
-  const allUploaded = DOC_TYPES.every(t => docMap[t.key]);
+  const allUploaded = docTypes.every(t => docMap[t.key]);
 
   return (
     <div className="space-y-6">
@@ -142,7 +154,7 @@ export default function DocumentsTab() {
         <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="animate-pulse h-20 rounded-xl border border-dash-border bg-white" />)}</div>
       ) : (
         <div className="space-y-4">
-          {DOC_TYPES.map(({ key, label }) => {
+          {docTypes.map(({ key, label }) => {
             const doc = docMap[key];
             return (
               <div key={key} className="rounded-xl border border-dash-border bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
