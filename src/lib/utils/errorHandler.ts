@@ -57,7 +57,17 @@ export function getApiErrorMessage(error: unknown) {
     (typeof detail?.message === "string" && detail.message) ||
     "";
 
-  if (error.response?.status === 401) return "Your session has expired. Please log in again.";
+  if (error.response?.status === 401) {
+    // The backend already sends a specific, accurate detail for every 401
+    // case (e.g. "Invalid email or password" on a failed login, "Token has
+    // expired" on a stale session, "Session has been revoked") - always
+    // overriding that with a blanket "session expired" message was wrong
+    // for the *first* case in particular: a fresh login attempt with a bad
+    // password would tell the user their session had expired, when they
+    // were never logged in this session at all. Only fall back to the
+    // generic copy when the backend didn't send anything more specific.
+    return serverMessage || "Your session has expired. Please log in again.";
+  }
   if (error.response?.status === 403) {
     return serverMessage || "Access denied. You do not have permission for this action.";
   }

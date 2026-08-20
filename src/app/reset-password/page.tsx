@@ -12,7 +12,14 @@ import { passwordHelp, validatePassword } from "@/lib/utils/validators";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.detail || fallback;
+    // error.response is only set when the backend actually replied with an
+    // error status - a missing response means the request never reached (or
+    // never returned from) the backend at all (CORS block, wrong API base
+    // URL, network drop, timeout, 5xx proxy error). Labeling that case with
+    // the "invalid/expired" copy hides the real cause and makes an
+    // infrastructure problem look identical to a genuinely bad token.
+    if (!error.response) return "Could not reach the server. Check your connection and try again.";
+    return error.response.data?.detail || fallback;
   }
 
   return fallback;
