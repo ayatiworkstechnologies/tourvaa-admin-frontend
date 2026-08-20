@@ -19,17 +19,16 @@ const CURRENCY_COUNTRY_OVERRIDES: Record<string, string> = {
   XDR: "UN",
 };
 
-function flagFromCountryCode(countryCode: string): string | null {
-  if (countryCode === "UN" || countryCode.length !== 2) return null;
-  const codePoints = [...countryCode.toUpperCase()].map((char) => 127397 + char.charCodeAt(0));
-  return String.fromCodePoint(...codePoints);
-}
-
-/** Best-effort flag emoji for an ISO 4217 currency code. Falls back to a
- * globe glyph for supranational/basket currencies with no single flag. */
-export function currencyFlag(code: string): string {
+/** Best-effort ISO 3166-1 alpha-2 country code for an ISO 4217 currency
+ * code, lowercased to match the `flag-icons` package's CSS class names
+ * (`fi-us`, `fi-in`, ...). Flag *emoji* were tried first but Windows
+ * Chrome/Edge has no flag glyphs in its default fonts and just renders the
+ * raw two-letter regional-indicator text instead of a flag - `flag-icons`
+ * ships actual SVGs so it renders consistently everywhere. Returns null for
+ * supranational/basket currencies with no single representative flag. */
+export function currencyCountryCode(code: string): string | null {
   const country = CURRENCY_COUNTRY_OVERRIDES[code] ?? code.slice(0, 2);
-  return flagFromCountryCode(country) ?? "🌐";
+  return country === "UN" || country.length !== 2 ? null : country.toLowerCase();
 }
 
 /** Currency symbol via Intl, which already knows every ISO 4217 code -

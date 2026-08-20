@@ -1,3 +1,8 @@
+/* flag-icons before tailwindcss: its .fi class sets a fixed em-based
+   width/line-height that must lose to our width/height sizing utilities on
+   the same element, and Tailwind utilities only win a same-specificity
+   cascade tie when they're declared later in the stylesheet. */
+@import "flag-icons/css/flag-icons.min.css";
 @import "tailwindcss";
 
 /*

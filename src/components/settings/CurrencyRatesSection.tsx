@@ -1,12 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw } from "react-icons/lu";
+import { LuGlobe as Globe, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw } from "react-icons/lu";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 import { useToast } from "@/hooks/useToast";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
-import { currencyFlag, currencySymbol } from "@/lib/utils/currencyDisplay";
+import { currencyCountryCode, currencySymbol } from "@/lib/utils/currencyDisplay";
+import FlagIcon from "@/components/ui/FlagIcon";
+
+function CurrencyFlagBadge({ code, size = "sm" }: { code: string; size?: "sm" | "lg" }) {
+  const country = currencyCountryCode(code);
+  const dims = size === "lg" ? "h-11 w-11 shadow-sm" : "h-9 w-9";
+  const bg = size === "lg" ? "bg-white" : "bg-dash-bg-muted";
+  if (!country) return <span className={`flex ${dims} ${bg} shrink-0 items-center justify-center rounded-full text-dash-subtle`}><Globe size={size === "lg" ? 20 : 16} /></span>;
+  return <FlagIcon countryCode={country} square className={`${dims} ${bg} shrink-0 rounded-full bg-cover`} />;
+}
 
 type RatesPayload = {
   base: string;
@@ -59,7 +68,7 @@ export default function CurrencyRatesSection() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dash-border bg-dash-bg p-4">
         <div className="flex items-center gap-3 text-sm">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-2xl shadow-sm" aria-hidden="true">{currencyFlag(data.base)}</span>
+          <CurrencyFlagBadge code={data.base} size="lg" />
           <div>
             <p className="font-bold text-dash-text">Base currency: {data.base} <span className="font-normal text-dash-muted">({currencySymbol(data.base)})</span></p>
             <p className="text-xs text-dash-muted">
@@ -83,7 +92,7 @@ export default function CurrencyRatesSection() {
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {rateEntries.map(([code, rate]) => (
           <div key={code} className="flex items-center gap-3 rounded-xl border border-dash-border p-3 text-sm transition-colors hover:border-dash-brand/40 hover:bg-dash-bg">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-dash-bg-muted text-lg" aria-hidden="true">{currencyFlag(code)}</span>
+            <CurrencyFlagBadge code={code} />
             <div className="min-w-0">
               <p className="flex items-baseline gap-1.5 font-bold text-dash-text">
                 {code}

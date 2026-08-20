@@ -12,6 +12,7 @@ import {
   LuSearch as Search,
   LuUsers as Users,
 } from "react-icons/lu";
+import FlagIcon from "@/components/ui/FlagIcon";
 
 const MONTH_CODES: Record<string, string> = { Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06", Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12" };
 
@@ -44,12 +45,6 @@ const FALLBACK_COUNTRIES: DestinationCountry[] = [
   { country_name: "United Arab Emirates", country_code: "AE" },
   { country_name: "Türkiye", country_code: "TR" },
 ];
-
-function countryFlag(countryCode: string) {
-  const code = countryCode.trim().toUpperCase();
-  if (!/^[A-Z]{2}$/.test(code)) return "🌍";
-  return String.fromCodePoint(...Array.from(code).map((letter) => 127397 + letter.charCodeAt(0)));
-}
 
 export default function HeroFilterBar({ countries = [], onPanelOpenChange }: { countries?: DestinationCountry[]; onPanelOpenChange?: (isOpen: boolean) => void }) {
   const router = useRouter();
@@ -136,7 +131,7 @@ export default function HeroFilterBar({ countries = [], onPanelOpenChange }: { c
 const panelClass = "hero-filter-panel absolute left-0 top-[calc(100%+10px)] z-50 w-full min-w-64 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-[0_18px_45px_rgba(15,23,42,.28)] md:left-0";
 
 function DestinationPanel({ countries, selected, onSelect }: { countries: DestinationCountry[]; selected: string; onSelect: (value: string) => void }) {
-  return <div className={panelClass}><p className="rounded-md bg-slate-50 px-3 py-2 text-center text-[10px] font-semibold text-blue-600">Available destinations</p><div className="mt-2 max-h-72 space-y-1 overflow-y-auto overscroll-contain pr-1">{countries.map((country) => <button key={country.country_code || country.country_name} type="button" onClick={() => onSelect(country.country_name)} className={`flex w-full items-center gap-3 rounded-md border px-3 py-2 text-[11px] font-semibold transition ${selected === country.country_name ? "border-blue-400 bg-blue-50" : "border-transparent hover:bg-slate-50"}`}><span className="text-base" aria-hidden="true">{countryFlag(country.country_code)}</span>{country.country_name}</button>)}</div></div>;
+  return <div className={panelClass}><p className="rounded-md bg-slate-50 px-3 py-2 text-center text-[10px] font-semibold text-blue-600">Available destinations</p><div className="mt-2 max-h-72 space-y-1 overflow-y-auto overscroll-contain pr-1">{countries.map((country) => <button key={country.country_code || country.country_name} type="button" onClick={() => onSelect(country.country_name)} className={`flex w-full items-center gap-3 rounded-md border px-3 py-2 text-[11px] font-semibold transition ${selected === country.country_name ? "border-blue-400 bg-blue-50" : "border-transparent hover:bg-slate-50"}`}><FlagIcon countryCode={country.country_code} className="h-[15px] w-5 shrink-0 rounded-sm border border-slate-200 bg-cover bg-slate-100" />{country.country_name}</button>)}</div></div>;
 }
 
 function monthMeta(monthsAhead: number) {
