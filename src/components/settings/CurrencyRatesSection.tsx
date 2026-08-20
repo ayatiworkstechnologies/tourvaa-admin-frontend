@@ -6,6 +6,7 @@ import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 import { useToast } from "@/hooks/useToast";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import { currencyFlag, currencySymbol } from "@/lib/utils/currencyDisplay";
 
 type RatesPayload = {
   base: string;
@@ -57,13 +58,16 @@ export default function CurrencyRatesSection() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dash-border bg-dash-bg p-4">
-        <div className="text-sm">
-          <p className="font-bold text-dash-text">Base currency: {data.base}</p>
-          <p className="text-xs text-dash-muted">
-            Source: {data.source} {data.is_stale && <span className="font-bold text-amber-700">(stale fallback)</span>}
-            {data.rate_date ? ` · Rate date: ${data.rate_date}` : ""}
-            {data.fetched_at ? ` · Fetched: ${new Date(data.fetched_at).toLocaleString()}` : ""}
-          </p>
+        <div className="flex items-center gap-3 text-sm">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-2xl shadow-sm" aria-hidden="true">{currencyFlag(data.base)}</span>
+          <div>
+            <p className="font-bold text-dash-text">Base currency: {data.base} <span className="font-normal text-dash-muted">({currencySymbol(data.base)})</span></p>
+            <p className="text-xs text-dash-muted">
+              Source: {data.source} {data.is_stale && <span className="font-bold text-amber-700">(stale fallback)</span>}
+              {data.rate_date ? ` · Rate date: ${data.rate_date}` : ""}
+              {data.fetched_at ? ` · Fetched: ${new Date(data.fetched_at).toLocaleString()}` : ""}
+            </p>
+          </div>
         </div>
         <button
           type="button"
@@ -78,9 +82,15 @@ export default function CurrencyRatesSection() {
 
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {rateEntries.map(([code, rate]) => (
-          <div key={code} className="rounded-xl border border-dash-border p-3 text-sm">
-            <p className="font-bold text-dash-text">{code}</p>
-            <p className="text-dash-muted">{Number(rate).toFixed(4)}</p>
+          <div key={code} className="flex items-center gap-3 rounded-xl border border-dash-border p-3 text-sm transition-colors hover:border-dash-brand/40 hover:bg-dash-bg">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-dash-bg-muted text-lg" aria-hidden="true">{currencyFlag(code)}</span>
+            <div className="min-w-0">
+              <p className="flex items-baseline gap-1.5 font-bold text-dash-text">
+                {code}
+                <span className="text-xs font-normal text-dash-muted">{currencySymbol(code)}</span>
+              </p>
+              <p className="text-dash-muted">{Number(rate).toFixed(4)}</p>
+            </div>
           </div>
         ))}
       </div>

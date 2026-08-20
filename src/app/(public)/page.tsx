@@ -107,10 +107,23 @@ function mapPublicTour(tour: PublicTour): Tour {
   };
 }
 
-function mapDestination(item: CmsDestination, tourCounts: Map<string, number>) {
-  const matchedCount = tourCounts.get(item.title.trim().toLowerCase());
-  const count = matchedCount != null ? `${matchedCount} package${matchedCount === 1 ? "" : "s"}` : item.description || "Explore packages";
-  return { name: item.title, count, image: item.image ? mediaUrl(item.image) : PLACEHOLDER_IMAGE, price: null as number | null, currency: "USD" };
+// "Places Worth Exploring" is driven off the real per-country tour counts
+// (not the admin-curated CMS destination list) so a newly-added country with
+// published tours shows up here automatically, with an accurate package
+// count, instead of requiring someone to remember to add a matching CMS
+// "popular destination" card. The CMS list is only consulted for a nicer
+// destination image when one happens to match by name.
+function topDestinationsFromCountries(countries: PublicCountry[], cmsDestinations: CmsDestination[], limit: number) {
+  const cmsByName = new Map(cmsDestinations.map((item) => [item.title.trim().toLowerCase(), item]));
+  return [...countries]
+    .filter((country) => (country.tour_count || 0) > 0)
+    .sort((a, b) => (b.tour_count || 0) - (a.tour_count || 0))
+    .slice(0, limit)
+    .map((country) => {
+      const cmsMatch = cmsByName.get(country.country_name.trim().toLowerCase());
+      const count = `${country.tour_count} package${country.tour_count === 1 ? "" : "s"}`;
+      return { name: country.country_name, count, image: cmsMatch?.image ? mediaUrl(cmsMatch.image) : PLACEHOLDER_IMAGE, price: null as number | null, currency: "USD" };
+    });
 }
 
 function mapReview(item: CmsReview) {
@@ -443,12 +456,9 @@ export default function Home() {
         setTrendingTours(mapped.slice(0, 5));
         setHandpickedTours(mapped.slice(5, 10));
       }
-      if (destinationResult.status === "fulfilled" && destinationResult.value.length) {
-        const tourCounts = new Map<string, number>();
-        if (countryResult.status === "fulfilled") {
-          countryResult.value.forEach((country) => tourCounts.set(country.country_name.trim().toLowerCase(), country.tour_count || 0));
-        }
-        const places = destinationResult.value.slice(0, 5).map((item) => mapDestination(item, tourCounts));
+      if (countryResult.status === "fulfilled" && countryResult.value.length) {
+        const cmsDestinations = destinationResult.status === "fulfilled" ? destinationResult.value : [];
+        const places = topDestinationsFromCountries(countryResult.value, cmsDestinations, 5);
         setDynamicPlaces(places);
         // Not available_only -- that requires a configured TourCalendar
         // departure and would silently return no price for every
@@ -460,7 +470,11 @@ export default function Home() {
             const result = priceResults[index];
             if (result.status !== "fulfilled" || !result.value.items.length) return place;
             const cheapest = result.value.items[0];
-            return { ...place, price: cheapest.price_start_per_person, currency: cheapest.currency || "USD" };
+            // Only borrow a tour photo for the destination card when no CMS
+            // image was already matched - the curated CMS image is the
+            // better shot when one exists.
+            const image = place.image === PLACEHOLDER_IMAGE && cheapest.banner_image ? mediaUrl(cheapest.banner_image) : place.image;
+            return { ...place, image, price: cheapest.price_start_per_person, currency: cheapest.currency || "USD" };
           }));
         });
       }

@@ -19,7 +19,6 @@ import {
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import CurrencySelector from "@/components/public/CurrencySelector";
-import { useCurrency } from "@/hooks/useCurrency";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 
 const browseLinks = [
@@ -39,7 +38,6 @@ export default function PublicHeader() {
   const profileRef = useRef<HTMLDivElement>(null);
   const { isLoggedIn, dashboard, user, logout } = useAuthContext();
   const { wishlistCount, compareCount } = useTravelStore();
-  const { symbol: currencySymbol } = useCurrency();
   const dashboardPath = getDashboardPath(dashboard?.user?.role?.slug ?? "");
   const roleSlug = dashboard?.user?.role?.slug ?? "";
   const profilePath =
@@ -136,10 +134,7 @@ export default function PublicHeader() {
               </span>
             )}
           </Link>
-          <span className="flex items-center gap-1 text-[9px] font-semibold">
-            <span className="text-[15px] leading-none" aria-hidden="true">{currencySymbol}</span>
-            <CurrencySelector inverse={transparent} plain />
-          </span>
+          <CurrencySelector inverse={transparent} plain />
           <div ref={profileRef} className="relative">
             <button
               type="button"
