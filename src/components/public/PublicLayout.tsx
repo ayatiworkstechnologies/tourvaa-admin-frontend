@@ -28,11 +28,11 @@ export default function PublicLayout({
           style={fontVars}
           className="public-site min-h-screen bg-white font-[family-name:var(--font-body)] text-slate-950"
         >
-          <PublicHeader />
+          <div className="print:hidden"><PublicHeader /></div>
           <div className="public-page-enter">{children}</div>
-          <PublicFooter />
-          <ChatWidget />
-          <ElfsightTranslator />
+          <div className="print:hidden"><PublicFooter /></div>
+          <div className="print:hidden"><ChatWidget /></div>
+          <div className="print:hidden"><ElfsightTranslator /></div>
         </div>
       </TravelStoreProvider>
     </PublicSettingsProvider>

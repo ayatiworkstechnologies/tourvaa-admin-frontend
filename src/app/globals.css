@@ -518,6 +518,33 @@ button {
   }
 }
 
+/* "Download Itinerary"/"Download PDF" on the tour detail page go through
+   window.print() (browser Print-to-PDF) rather than a generated file, so the
+   printed/saved output needs its own page setup - tighter margins, resolved
+   animation states, and forcing background colors to actually print (Chrome
+   drops them by default) so badges/highlight chips aren't just outlined
+   boxes on the page. */
+@media print {
+  @page {
+    margin: 14mm 12mm;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  * ,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
 /* Repositioning the Elfsight Website Translator widget (which portals to
    <body> with its own fixed top/right) is handled in JS - see
    ElfsightTranslator.tsx. A plain CSS rule here doesn't survive Tailwind's
