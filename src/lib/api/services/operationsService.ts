@@ -27,6 +27,7 @@ export type ReviewRecord = {
   pending_requirements?: string | null;
   discount_type?: string | null;
   discount_value?: number;
+  commission_percentage?: string | number | null;
   commission_request_type?: string | null;
   commission_request_value?: number | null;
   commission_request_status?: string | null;

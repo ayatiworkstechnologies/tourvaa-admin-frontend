@@ -10,7 +10,7 @@ import DatePicker from "@/components/ui/DatePicker";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const STATUSES = ["available", "unavailable", "sold_out", "blocked"];
-const emptyEntry = (): CalendarEntry => ({ tour_date: "", start_date: null, end_date: null, available_seats: 10, booked_seats: 0, status: "available" });
+const emptyEntry = (): CalendarEntry => ({ tour_date: "", available_seats: 10, booked_seats: 0, status: "available" });
 
 const WEEKDAYS = [
   { value: 0, label: "Monday" }, { value: 1, label: "Tuesday" }, { value: 2, label: "Wednesday" },
@@ -105,13 +105,13 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
 
   const saveEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editing || !editing.start_date) {
+    if (!editing || !editing.tour_date) {
       toast.error("Select a date.");
       return;
     }
     setSaving(true);
     try {
-      const payload = { ...editing, tour_date: editing.start_date, available_seats: sanitizeNumber(editing.available_seats), booked_seats: sanitizeNumber(editing.booked_seats) };
+      const payload = { ...editing, available_seats: sanitizeNumber(editing.available_seats), booked_seats: sanitizeNumber(editing.booked_seats) };
       if (editing.id) {
         const updated = await updateCalendarEntry(tourId, editing.id, payload);
         setEntries((prev) => prev.map((i) => i.id === updated.id ? updated : i));
@@ -314,7 +314,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
             <DataTable
               ariaLabel="Tour Calendar"
               columns={[
-                { key: "date", header: "Date", render: (item) => item.start_date?.toString().slice(0, 10) || item.tour_date?.toString().slice(0, 10) },
+                { key: "date", header: "Date", render: (item) => item.tour_date?.toString().slice(0, 10) },
                 { key: "available", header: "Available", render: (item) => item.available_seats },
                 { key: "booked", header: "Booked", render: (item) => item.booked_seats },
                 {
@@ -345,19 +345,16 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
               <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
-              {[["start_date", "Start date"], ["end_date", "End date"]].map(([key, lbl]) => (
-                <div key={key}>
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
-                  <DatePicker
-                    value={(editing as Record<string, unknown>)[key]?.toString().slice(0, 10) ?? ""}
-                    onChange={(date) => setEditing((previous) => previous ? { ...previous, [key]: date || null } : previous)}
-                    minDate={key === "end_date" ? (editing.start_date?.toString().slice(0, 10) || todayStr()) : todayStr()}
-                    maxDate={key === "start_date" ? editing.end_date?.toString().slice(0, 10) || undefined : undefined}
-                    placeholder={`Select ${lbl.toLowerCase()}`}
-                    clearable={key !== "start_date"}
-                  />
-                </div>
-              ))}
+              <div>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Date</span>
+                <DatePicker
+                  value={editing.tour_date?.toString().slice(0, 10) ?? ""}
+                  onChange={(date) => setEditing((previous) => previous ? { ...previous, tour_date: date || "" } : previous)}
+                  minDate={todayStr()}
+                  placeholder="Select date"
+                  clearable={false}
+                />
+              </div>
               {[["available_seats", "Available seats"], ["booked_seats", "Booked seats"]].map(([key, lbl]) => (
                 <label key={key}>
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>

@@ -64,6 +64,9 @@ export default function AgentDashboardPage() {
   const [paymentStatusChart, setPaymentStatusChart] = useState<ChartRow[]>([]);
   const [commissionType, setCommissionType] = useState<"percentage" | "fixed">("percentage");
   const [commissionValue, setCommissionValue] = useState("");
+  const [calcAmount, setCalcAmount] = useState("");
+  const [calcResult, setCalcResult] = useState<{ gross_amount: string; commission_amount: string } | null>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
   const [commissionMessage, setCommissionMessage] = useState("");
   const [commissionSubmitting, setCommissionSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -134,6 +137,20 @@ export default function AgentDashboardPage() {
     }
   };
 
+  const runCommissionCalculator = async () => {
+    const amount = Number(calcAmount);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    setCalcLoading(true);
+    try {
+      const res = await api.get("/agents/me/commission-calculator", { params: { amount } });
+      setCalcResult(res.data?.data ?? null);
+    } catch {
+      setCalcResult(null);
+    } finally {
+      setCalcLoading(false);
+    }
+  };
+
   const stats = [
     { label: "Total Bookings", value: summary.total_bookings ?? 0, icon: CalendarCheck, sub: "Filtered", href: "/agent/bookings" },
     { label: "Active Customers", value: summary.active_customers ?? 0, icon: Users, sub: "Filtered", href: "/agent/customers" },
@@ -195,6 +212,18 @@ export default function AgentDashboardPage() {
               <button type="button" disabled={commissionSubmitting || agentProfile?.commission_request_status === "pending"} onClick={() => void requestCommission()} className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-50">{commissionSubmitting ? "Sending…" : agentProfile?.commission_request_status === "pending" ? "Pending approval" : "Send request"}</button>
             </div>
             {commissionMessage && <p className="mt-2 text-xs font-semibold text-dash-muted">{commissionMessage}</p>}
+
+            <p className="mt-6 text-sm font-bold text-dash-text">Commission calculator</p>
+            <p className="mt-1 text-xs text-dash-muted">See what Tourvaa would pay you at your approved rate for a given booking amount.</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
+              <input type="number" min="0" step="0.01" value={calcAmount} onChange={(event) => setCalcAmount(event.target.value)} placeholder="Booking amount" className="rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+              <button type="button" disabled={calcLoading} onClick={() => void runCommissionCalculator()} className="rounded-xl border border-dash-border px-5 py-2.5 text-sm font-black text-dash-body hover:bg-dash-bg-muted disabled:opacity-50">{calcLoading ? "Calculating…" : "Calculate"}</button>
+            </div>
+            {calcResult && (
+              <p className="mt-2 text-sm text-dash-body">
+                You would earn <strong className="text-emerald-700">{calcResult.commission_amount}</strong> on a {calcResult.gross_amount} booking.
+              </p>
+            )}
           </div>
         </div>
       </AgentSection>

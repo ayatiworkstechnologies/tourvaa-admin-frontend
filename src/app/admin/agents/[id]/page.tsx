@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
+import api from "@/lib/api/client";
 import ActionModal from "@/components/operations/ActionModal";
 import CompletionChecklist from "@/components/operations/CompletionChecklist";
 import ReviewProfileHero from "@/components/operations/ReviewProfileHero";
@@ -97,6 +98,16 @@ export default function AgentDetailPage() {
   const [activeTab, setActiveTab] = useState<"business" | "invoicing" | "documents">("business");
   const [reviewDocumentId, setReviewDocumentId] = useState<number | null>(null);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [agentCommissionMax, setAgentCommissionMax] = useState<number | null>(null);
+
+  useEffect(() => {
+    api.get("/settings/public")
+      .then((res) => {
+        const raw = res.data?.data?.agent_commission_max_percentage;
+        if (raw !== undefined) setAgentCommissionMax(Number(raw));
+      })
+      .catch(() => {});
+  }, []);
 
   const approvalStatus = String(record?.approval_status || "").toLowerCase();
   const accountStatus = String(record?.status || "").toLowerCase();
@@ -328,7 +339,7 @@ export default function AgentDetailPage() {
           <ActionModal open={modal === "reject"} title="Reject agent" saving={saving} submitLabel="Reject" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => rejectReviewRecord("agents", id, { rejection_reason: String(payload.rejection_reason || ""), admin_comments: String(payload.admin_comments || "") }), "Agent rejected.")} fields={[{ name: "rejection_reason", label: "Rejection reason" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "partial"} title="Request agent changes" saving={saving} submitLabel="Send request" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => partialApproveReviewRecord("agents", id, { admin_comments: String(payload.admin_comments || ""), pending_requirements: String(payload.pending_requirements || "") }), "Agent change request sent.")} fields={[{ name: "pending_requirements", label: "Required changes", type: "textarea" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "block"} title="Block agent" saving={saving} submitLabel="Block" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateReviewRecord("agents", id, { status: "blocked", admin_comments: String(payload.admin_comments || "") }), "Agent blocked.")} fields={[{ name: "admin_comments", label: "Block reason / admin note", type: "textarea" }]} />
-          <ActionModal open={modal === "commercial"} title="Update discount" saving={saving} submitLabel="Save" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateCommercialValue("agents", id, { discount_type: payload.value_type, discount_value: payload.value }), "Discount updated.")} fields={[{ name: "value_type", label: "Discount type", type: "select", options: [{ label: "Percentage", value: "percentage" }, { label: "Fixed", value: "fixed" }] }, { name: "value", label: "Discount value", type: "number" }]} />
+          <ActionModal open={modal === "commercial"} title="Update discount" saving={saving} submitLabel="Save" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateCommercialValue("agents", id, { discount_type: payload.value_type, discount_value: payload.value }), "Discount updated.")} fields={[{ name: "value_type", label: "Discount type", type: "select", options: [{ label: "Percentage", value: "percentage" }, { label: "Fixed", value: "fixed" }] }, { name: "value", label: `Discount value${agentCommissionMax !== null ? ` (max ${agentCommissionMax}% if percentage)` : ""}`, type: "number" }]} />
           <ActionModal open={modal === "reject-document"} title="Reject agent document" saving={saving} submitLabel="Reject and request re-upload" onClose={() => { setModal(null); setReviewDocumentId(null); }} onSubmit={rejectDocument} fields={[{ name: "rejection_reason", label: "Reason and re-upload instructions", type: "textarea" }]} />
           <LocationEditModal
             open={locationModalOpen}

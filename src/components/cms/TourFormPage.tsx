@@ -302,10 +302,18 @@ export default function TourFormPage({
     setSaving(true);
     const payload: Record<string, unknown> = {};
 
-    // Each section only sends its own fields, so e.g. the Media/SEO step
-    // (embedded standalone in TourWizard) doesn't overwrite Basic/Location
-    // data with whatever happens to be in local form state.
-    if (showBasic) {
+    // The backend's PUT /tours/{id} requires the full TourPayload on every
+    // save (title, etc. are non-optional there's no partial-update
+    // support), so an edit must always send every section's fields, not
+    // just the one currently shown - otherwise saving from e.g. the
+    // Media/SEO step alone 422s with "title: Field required". This is safe
+    // because fetchTour() above always hydrates `form` with the complete
+    // tour on edit (tourId set), so the other sections' values in `form`
+    // are real server data, not stale/blank local state. Only when
+    // creating a brand-new tour (no tourId yet) do we still gate by the
+    // section actually shown, since there is no prior tour to preserve.
+    const isEditingExistingTour = Boolean(tourId);
+    if (showBasic || isEditingExistingTour) {
       for (const [key] of [...textFields, ...descriptionFields, ...simpleNumberFields, ...coreDetailFields, ...basicDetailFields]) {
         payload[key] = form[key]?.trim() ?? "";
       }
@@ -326,7 +334,7 @@ export default function TourFormPage({
       payload.pricing_type = form.pricing_type || "per_person";
     }
 
-    if (showLocation) {
+    if (showLocation || isEditingExistingTour) {
       payload.supplier_id = form.supplier_id ? Number(form.supplier_id) : null;
       payload.category_id = form.category_id ? Number(form.category_id) : null;
       payload.subcategory_ids = selectedSubcategoryIds;
@@ -335,7 +343,7 @@ export default function TourFormPage({
       payload.city_id = form.city_id ? Number(form.city_id) : null;
     }
 
-    if (showMediaSeo) {
+    if (showMediaSeo || isEditingExistingTour) {
       for (const [key] of [...seoFields, ...mediaSeoTextFields]) {
         payload[key] = form[key]?.trim() ?? "";
       }

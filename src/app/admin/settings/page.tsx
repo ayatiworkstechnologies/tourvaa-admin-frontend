@@ -28,6 +28,13 @@ const booleanSettingKeys = new Set([
   "force_site_currency",
 ]);
 
+const commissionSettingKeys: { key: string; label: string; description: string }[] = [
+  { key: "supplier_commission_percentage", label: "Tourvaa Tour Commission (Minimum)", description: "Tourvaa's own platform commission on every tour booking, deducted from the supplier's price. This is the floor - suppliers may agree to a higher rate, but it can never go lower." },
+  { key: "agent_commission_max_percentage", label: "Maximum Agent Commission", description: "The ceiling on what Tourvaa pays an agent per booking. Agent commission requests above this are rejected." },
+  { key: "affiliate_commission_max_percentage", label: "Maximum Affiliate Commission", description: "The ceiling on what Tourvaa pays an affiliate per booking, whether set as their base rate or in a commission rule." },
+];
+const commissionSettingKeySet = new Set(commissionSettingKeys.map((c) => c.key));
+
 type Setting = {
   id: number;
   key: string;
@@ -55,7 +62,7 @@ export default function SettingsPage() {
       // rows are a disconnected, unencrypted copy that the real payment
       // gateway code never reads - PaymentSettingsSection/ApiSettingsSection
       // below talk to the actual encrypted PaymentSetting/ApiSetting tables.
-      .filter((setting) => setting.key !== "default_currency" && setting.group !== "payment" && setting.group !== "api")
+      .filter((setting) => setting.key !== "default_currency" && setting.group !== "payment" && setting.group !== "api" && !commissionSettingKeySet.has(setting.key))
       .reduce<Record<string, Setting[]>>((groups, setting) => {
         groups[setting.group] = groups[setting.group] || [];
         groups[setting.group].push(setting);
@@ -179,6 +186,50 @@ export default function SettingsPage() {
             <p className="mb-5 text-sm text-dash-muted">Live exchange rates used for display conversion (booking/payment amounts always stay in their original currency).</p>
             <CurrencyRatesSection />
           </section>
+        )}
+
+        {activeGroup === "booking" && (
+          <form onSubmit={saveSettings}>
+            <section className="rounded-2xl border border-dash-border bg-white p-6">
+              <h3 className="mb-1 text-lg font-bold text-dash-text">Commission Settings</h3>
+              <p className="mb-5 text-sm text-dash-muted">
+                Set the commission percentages Tourvaa applies to suppliers, agents and affiliates. These apply platform-wide, across every account and tour.
+              </p>
+              <div className="grid gap-4 md:grid-cols-3">
+                {commissionSettingKeys.map(({ key, label, description }) => (
+                  <label key={key} className="block rounded-xl border border-dash-border bg-dash-bg p-4">
+                    <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step="0.01"
+                        value={form[key] ?? ""}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            [key]: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-dash-border bg-white px-4 py-2.5 pr-9 text-sm outline-none focus:border-dash-brand"
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-bold text-dash-muted">%</span>
+                    </div>
+                    <p className="mt-2 text-xs text-dash-subtle">{description}</p>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button
+                  disabled={saving}
+                  className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Save Commission Settings"}
+                </button>
+              </div>
+            </section>
+          </form>
         )}
 
         {activeGenericGroup && (

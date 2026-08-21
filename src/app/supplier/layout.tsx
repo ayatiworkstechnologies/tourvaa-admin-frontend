@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LuBanknote as Banknote, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuFileCheck2 as FileCheck, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -9,6 +9,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { canAccessSupplierRoute, isApprovedSupplier, isSupplierOperationalRoute } from "@/lib/auth/supplierAccess";
+import api from "@/lib/api/client";
 
 const NAV = [
   { href: "/supplier/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -35,6 +36,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/supplier/messages": "Messages",
   "/supplier/notifications": "Notifications",
   "/supplier/profile": "My Profile",
+  "/supplier/onboarding": "Getting Started",
 };
 
 function getTitle(pathname: string) {
@@ -71,6 +73,19 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   }, [loading, isLoggedIn, dashboard, router]);
 
   const approved = isApprovedSupplier(user);
+  const onboardingCheckedRef = useRef(false);
+
+  useEffect(() => {
+    if (loading || !isLoggedIn || !approved) return;
+    if (onboardingCheckedRef.current) return;
+    if (pathname === "/supplier/onboarding") { onboardingCheckedRef.current = true; return; }
+    api.get("/suppliers/me")
+      .then((res) => {
+        onboardingCheckedRef.current = true;
+        if (!res.data?.data?.onboarding_completed_at) router.replace("/supplier/onboarding");
+      })
+      .catch(() => { onboardingCheckedRef.current = true; });
+  }, [loading, isLoggedIn, approved, pathname, router]);
   const navItems = NAV.map((item) => ({
     ...item,
     locked: !approved && isSupplierOperationalRoute(item.href),

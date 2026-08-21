@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send } from "react-icons/lu";
+import { LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
@@ -10,6 +10,7 @@ import {
   Conversation,
   ConversationThread,
   ParticipantType,
+  deleteOwnMessage,
   getConversationThread,
   getUnreadSummary,
   listConversations,
@@ -48,6 +49,7 @@ export default function AdminMessagesPage() {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [unreadSummary, setUnreadSummary] = useState<Record<ParticipantType, number>>({ agent: 0, supplier: 0, customer: 0, affiliate: 0 });
   const threadEndRef = useRef<HTMLDivElement>(null);
 
@@ -109,29 +111,46 @@ export default function AdminMessagesPage() {
   useMessagingSocket(
     useCallback(
       (event) => {
-        if (event.type !== "new_message") return;
-        const { conversation, message } = event;
-        const isOpenThread = selectedId === conversation.id;
-        const displayedConversation = isOpenThread ? { ...conversation, admin_unread_count: 0 } : conversation;
+        if (event.type === "new_message") {
+          const { conversation, message } = event;
+          const isOpenThread = selectedId === conversation.id;
+          const displayedConversation = isOpenThread ? { ...conversation, admin_unread_count: 0 } : conversation;
 
-        setConversations((prev) => {
-          const exists = prev.some((c) => c.id === conversation.id);
-          const next = exists ? prev.map((c) => (c.id === conversation.id ? displayedConversation : c)) : conversation.participant_type === tab ? [displayedConversation, ...prev] : prev;
-          return [...next].sort((a, b) => new Date(b.last_message_at || b.created_at).getTime() - new Date(a.last_message_at || a.created_at).getTime());
-        });
+          setConversations((prev) => {
+            const exists = prev.some((c) => c.id === conversation.id);
+            const next = exists ? prev.map((c) => (c.id === conversation.id ? displayedConversation : c)) : conversation.participant_type === tab ? [displayedConversation, ...prev] : prev;
+            return [...next].sort((a, b) => new Date(b.last_message_at || b.created_at).getTime() - new Date(a.last_message_at || a.created_at).getTime());
+          });
 
-        if (message.sender_role !== "admin" && !isOpenThread) {
-          setUnreadSummary((summary) => ({ ...summary, [conversation.participant_type]: (summary[conversation.participant_type] || 0) + 1 }));
+          if (message.sender_role !== "admin" && !isOpenThread) {
+            setUnreadSummary((summary) => ({ ...summary, [conversation.participant_type]: (summary[conversation.participant_type] || 0) + 1 }));
+          }
+
+          setThread((prev) => {
+            if (!prev || prev.id !== conversation.id) return prev;
+            return { ...conversation, messages: [...prev.messages, message] };
+          });
+          return;
         }
-
-        setThread((prev) => {
-          if (!prev || prev.id !== conversation.id) return prev;
-          return { ...conversation, messages: [...prev.messages, message] };
-        });
+        if (event.type === "message_deleted") {
+          setThread((prev) => (prev && prev.id === event.conversation_id ? { ...prev, messages: prev.messages.map((m) => (m.id === event.message.id ? event.message : m)) } : prev));
+        }
       },
       [tab, selectedId]
     )
   );
+
+  async function removeMessage(messageId: number) {
+    setDeletingId(messageId);
+    try {
+      const updated = await deleteOwnMessage(messageId);
+      setThread((prev) => (prev ? { ...prev, messages: prev.messages.map((m) => (m.id === messageId ? updated : m)) } : prev));
+    } catch {
+      setError("Could not delete that message.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function sendReply(event: React.FormEvent) {
     event.preventDefault();
@@ -220,11 +239,23 @@ export default function AdminMessagesPage() {
               <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
                 {thread?.messages.length === 0 && <p className="text-center text-sm text-dash-subtle">No messages in this conversation yet.</p>}
                 {thread?.messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender_role === "admin" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "admin" ? "bg-dash-text text-white" : "bg-dash-bg text-dash-text"}`}>
-                      <p className="whitespace-pre-wrap">{msg.body}</p>
+                  <div key={msg.id} className={`group flex items-end gap-1.5 ${msg.sender_role === "admin" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "admin" ? "bg-dash-text text-white" : "bg-dash-bg text-dash-text"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
+                      <p className="whitespace-pre-wrap">{msg.is_deleted ? "This message was deleted." : msg.body}</p>
                       <p className={`mt-1 text-[10px] ${msg.sender_role === "admin" ? "text-white/60" : "text-dash-subtle"}`}>{timeAgo(msg.created_at)}</p>
                     </div>
+                    {!msg.is_deleted && msg.sender_role === "admin" && (
+                      <button
+                        type="button"
+                        onClick={() => removeMessage(msg.id)}
+                        disabled={deletingId === msg.id}
+                        aria-label="Delete message"
+                        title="Delete message"
+                        className="mb-1 hidden h-6 w-6 items-center justify-center rounded-lg text-dash-subtle hover:bg-black/5 hover:text-red-600 group-hover:flex disabled:opacity-50"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 ))}
                 <div ref={threadEndRef} />

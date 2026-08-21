@@ -9,7 +9,8 @@ export type ChatMessage = {
   sender_role: SenderRole;
   sender_user_id: number | null;
   sender_name: string | null;
-  body: string;
+  body: string | null;
+  is_deleted?: boolean;
   created_at: string;
 };
 
@@ -75,6 +76,14 @@ export async function issueWsTicket() {
   return response.data?.data?.ticket as string;
 }
 
+/** Deletes a message the caller themselves sent, in an admin-support
+ * conversation (works for the admin's own reply, or a supplier/agent/
+ * customer/affiliate's own message to admin). */
+export async function deleteOwnMessage(messageId: number) {
+  const response = await api.delete(`/messages/${messageId}`);
+  return response.data?.data as ChatMessage;
+}
+
 // --- Booking-scoped direct messaging: customer/agent <-> supplier --------
 
 export type BookingSenderRole = "customer" | "agent" | "supplier";
@@ -85,7 +94,8 @@ export type BookingMessage = {
   sender_role: BookingSenderRole;
   sender_user_id: number | null;
   sender_name: string | null;
-  body: string;
+  body: string | null;
+  is_deleted?: boolean;
   created_at: string;
 };
 
@@ -141,4 +151,11 @@ export async function replySupplierBookingConversation(conversationId: number, b
 export async function getSupplierBookingUnreadCount() {
   const response = await api.get("/supplier/booking-messages/unread-count");
   return (response.data?.data?.unread as number) ?? 0;
+}
+
+/** Deletes a message the caller themselves sent in a booking-scoped
+ * conversation (customer/agent <-> supplier). Own messages only. */
+export async function deleteOwnBookingMessage(messageId: number) {
+  const response = await api.delete(`/messages/booking/${messageId}`);
+  return response.data?.data as BookingMessage;
 }

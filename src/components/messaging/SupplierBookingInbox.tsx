@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send } from "react-icons/lu";
+import { LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
 
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import {
   BookingConversation,
   BookingConversationThread,
   BookingMessage,
+  deleteOwnBookingMessage,
   getSupplierBookingConversationThread,
   listSupplierBookingConversations,
   replySupplierBookingConversation,
@@ -39,6 +40,7 @@ export default function SupplierBookingInbox() {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const threadEndRef = useRef<HTMLDivElement>(null);
 
   const loadList = useCallback(async () => {
@@ -78,22 +80,39 @@ export default function SupplierBookingInbox() {
   useMessagingSocket(
     useCallback(
       (event) => {
-        if (event.type !== "new_booking_message") return;
-        const { conversation, message } = event;
-        const isOpenThread = selectedId === conversation.id;
-        const displayed = isOpenThread ? { ...conversation, supplier_unread_count: 0 } : conversation;
+        if (event.type === "new_booking_message") {
+          const { conversation, message } = event;
+          const isOpenThread = selectedId === conversation.id;
+          const displayed = isOpenThread ? { ...conversation, supplier_unread_count: 0 } : conversation;
 
-        setConversations((prev) => {
-          const exists = prev.some((c) => c.id === conversation.id);
-          const next = exists ? prev.map((c) => (c.id === conversation.id ? displayed : c)) : [displayed, ...prev];
-          return [...next].sort((a, b) => new Date(b.last_message_at || b.created_at).getTime() - new Date(a.last_message_at || a.created_at).getTime());
-        });
+          setConversations((prev) => {
+            const exists = prev.some((c) => c.id === conversation.id);
+            const next = exists ? prev.map((c) => (c.id === conversation.id ? displayed : c)) : [displayed, ...prev];
+            return [...next].sort((a, b) => new Date(b.last_message_at || b.created_at).getTime() - new Date(a.last_message_at || a.created_at).getTime());
+          });
 
-        setThread((prev) => (prev && prev.id === conversation.id ? { ...conversation, messages: [...prev.messages, message] } : prev));
+          setThread((prev) => (prev && prev.id === conversation.id ? { ...conversation, messages: [...prev.messages, message] } : prev));
+          return;
+        }
+        if (event.type === "booking_message_deleted") {
+          setThread((prev) => (prev && prev.id === event.conversation_id ? { ...prev, messages: prev.messages.map((m) => (m.id === event.message.id ? event.message : m)) } : prev));
+        }
       },
       [selectedId]
     )
   );
+
+  async function removeMessage(messageId: number) {
+    setDeletingId(messageId);
+    try {
+      const updated = await deleteOwnBookingMessage(messageId);
+      setThread((prev) => (prev ? { ...prev, messages: prev.messages.map((m) => (m.id === messageId ? updated : m)) } : prev));
+    } catch {
+      setError("Could not delete that message.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function sendReply(event: React.FormEvent) {
     event.preventDefault();
@@ -165,11 +184,23 @@ export default function SupplierBookingInbox() {
             <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
               {thread?.messages.length === 0 && <p className="text-center text-sm text-dash-subtle">No messages in this conversation yet.</p>}
               {thread?.messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender_role === "supplier" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "supplier" ? "bg-dash-text text-white" : "bg-dash-bg text-dash-text"}`}>
-                    <p className="whitespace-pre-wrap">{msg.body}</p>
+                <div key={msg.id} className={`group flex items-end gap-1.5 ${msg.sender_role === "supplier" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "supplier" ? "bg-dash-text text-white" : "bg-dash-bg text-dash-text"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
+                    <p className="whitespace-pre-wrap">{msg.is_deleted ? "This message was deleted." : msg.body}</p>
                     <p className={`mt-1 text-[10px] ${msg.sender_role === "supplier" ? "text-white/60" : "text-dash-subtle"}`}>{timeAgo(msg.created_at)}</p>
                   </div>
+                  {!msg.is_deleted && msg.sender_role === "supplier" && (
+                    <button
+                      type="button"
+                      onClick={() => removeMessage(msg.id)}
+                      disabled={deletingId === msg.id}
+                      aria-label="Delete message"
+                      title="Delete message"
+                      className="mb-1 hidden h-6 w-6 items-center justify-center rounded-lg text-dash-subtle hover:bg-black/5 hover:text-red-600 group-hover:flex disabled:opacity-50"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
               ))}
               <div ref={threadEndRef} />

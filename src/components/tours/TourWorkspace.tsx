@@ -284,11 +284,21 @@ export function TourWorkspaceStepper({
               } ${active ? colors.progressActive : done ? colors.progressDone : colors.progressIdle}`}
             >
               <span
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black ${
+                className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black ${
                   active || done ? colors.progressNumber : colors.progressMuted
                 }`}
               >
-                {done ? <Check size={12} /> : index + 1}
+                {/* Always show the step number, even once visited - a
+                    checkmark replacing it made a completed step
+                    unidentifiable at a glance (e.g. "Pricing" losing its
+                    "5"). The checkmark is now a small overlay badge instead
+                    of a replacement. */}
+                {index + 1}
+                {done && (
+                  <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-600 text-white ring-2 ring-white">
+                    <Check size={8} strokeWidth={3} />
+                  </span>
+                )}
               </span>
               <span className={`whitespace-nowrap text-[11px] font-bold ${active ? colors.progressText : "text-dash-subtle"}`}>
                 {step.label}

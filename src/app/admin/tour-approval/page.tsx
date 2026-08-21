@@ -101,7 +101,7 @@ export default function TourApprovalPage() {
     setProcessingId(v.id);
     try {
       await api.patch(`/tours/${v.tour_id}/versions/${v.id}/approve`);
-      toast.success("Tour version approved and published.");
+      toast.success("Tour version approved. Publish it separately from the tour's status control to make it live.");
       setVersions(prev => prev.filter(x => x.id !== v.id));
     } catch {
       toast.error("Could not approve tour version.");

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCalendarDays as CalendarDays, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuMapPin as MapPin, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuTruck as Truck, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCalendarDays as CalendarDays, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuTruck as Truck, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
 import api from "@/lib/api/client";
 import ActionModal from "@/components/operations/ActionModal";
@@ -114,7 +114,7 @@ export default function SupplierDetailPage() {
   const [record, setRecord] = useState<ReviewRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [modal, setModal] = useState<"accept" | "reject" | "partial" | "commercial" | "deactivate" | "suspend" | "reject-item" | null>(null);
+  const [modal, setModal] = useState<"accept" | "reject" | "partial" | "deactivate" | "suspend" | "reject-item" | null>(null);
   const [activeTab, setActiveTab] = useState<"business" | "invoicing" | "documents" | "vehicles">("business");
   const [reviewTarget, setReviewTarget] = useState<{ type: "document" | "vehicle"; id: number } | null>(null);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
@@ -132,9 +132,49 @@ export default function SupplierDetailPage() {
   const canBlock = hasPermission("suppliers.edit") || hasPermission("suppliers.approve");
   const canEditLocation = hasPermission("suppliers.edit");
   const canReviewItems = hasPermission("suppliers.approve") || hasPermission("suppliers.reject");
+  const canCommission = hasPermission("suppliers.edit") || hasPermission("suppliers.approve");
 
   const requestIdRef = useRef(0);
   const [documentTypes, setDocumentTypes] = useState<DocRequirement[]>(FALLBACK_DOCUMENT_TYPES);
+  const [minCommissionRate, setMinCommissionRate] = useState<number | null>(null);
+  const [commissionInput, setCommissionInput] = useState("");
+  const [commissionSaving, setCommissionSaving] = useState(false);
+  const [commissionError, setCommissionError] = useState("");
+
+  async function saveSupplierCommission(clear: boolean) {
+    if (!clear) {
+      const value = Number(commissionInput);
+      if (commissionInput === "" || Number.isNaN(value)) {
+        setCommissionError("Enter a valid commission percentage.");
+        return;
+      }
+      if (minCommissionRate !== null && value < minCommissionRate) {
+        setCommissionError(`Commission cannot be lower than the platform minimum of ${minCommissionRate}%.`);
+        return;
+      }
+    }
+    setCommissionSaving(true);
+    setCommissionError("");
+    try {
+      await updateReviewRecord("suppliers", id, { commission_percentage: clear ? null : Number(commissionInput) });
+      toast.success(clear ? "Commission override cleared - now tracking the platform rate." : "Commission updated.");
+      setCommissionInput("");
+      await fetchRecord();
+    } catch (error) {
+      setCommissionError(getApiErrorMessage(error));
+    } finally {
+      setCommissionSaving(false);
+    }
+  }
+
+  useEffect(() => {
+    api.get("/settings/public")
+      .then((res) => {
+        const raw = res.data?.data?.supplier_commission_percentage;
+        if (raw !== undefined) setMinCommissionRate(Number(raw));
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     api.get("/suppliers/document-requirements")
@@ -285,6 +325,42 @@ export default function SupplierDetailPage() {
           />
 
           <CompletionCard record={record} />
+
+          <section className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><Percent size={18} /></span>
+                <div>
+                  <p className="text-xs font-bold uppercase text-dash-subtle">Commission Rate</p>
+                  <p className="text-lg font-black text-dash-text">
+                    {record.commission_percentage !== undefined && record.commission_percentage !== null
+                      ? `${record.commission_percentage}% (override)`
+                      : minCommissionRate !== null
+                        ? `Using the platform rate (${minCommissionRate}%) - updates automatically if that changes`
+                        : "Using the platform rate"}
+                  </p>
+                </div>
+              </div>
+              {minCommissionRate !== null && <p className="text-xs text-dash-subtle">Platform minimum: <strong>{minCommissionRate}%</strong>. Leave blank to always track the platform rate; an explicit override can never go lower.</p>}
+            </div>
+            {canCommission && (
+              <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-dash-border pt-4">
+                <label>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Set an override rate (%)</span>
+                  <input type="number" min={minCommissionRate ?? 0} step="0.01" value={commissionInput} onChange={(e) => setCommissionInput(e.target.value)} placeholder={record.commission_percentage != null ? String(record.commission_percentage) : String(minCommissionRate ?? "")} className="w-48 rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+                </label>
+                <button type="button" onClick={() => void saveSupplierCommission(false)} disabled={commissionSaving} className="rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60">
+                  {commissionSaving ? "Saving..." : "Set Override"}
+                </button>
+                {record.commission_percentage != null && (
+                  <button type="button" onClick={() => void saveSupplierCommission(true)} disabled={commissionSaving} className="rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg">
+                    Clear Override
+                  </button>
+                )}
+                {commissionError && <p className="w-full text-xs font-semibold text-red-600">{commissionError}</p>}
+              </div>
+            )}
+          </section>
 
           {contacts.length > 0 && (
             <section className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">

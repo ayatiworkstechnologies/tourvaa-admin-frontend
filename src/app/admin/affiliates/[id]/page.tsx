@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { LuPlus as Plus } from "react-icons/lu";
+import api from "@/lib/api/client";
+import { updateReviewRecord } from "@/lib/api/services/operationsService";
 import ReviewDetailPage from "@/components/operations/ReviewDetailPage";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import {
@@ -54,6 +56,73 @@ export default function AffiliateDetailPage() {
 
   const [commissions, setCommissions] = useState<AffiliateCommissionSummary | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [commissionRate, setCommissionRate] = useState<string | null>(null);
+  const [maxCommissionRate, setMaxCommissionRate] = useState<number | null>(null);
+  const [rateInput, setRateInput] = useState("");
+  const [rateSaving, setRateSaving] = useState(false);
+  const [rateError, setRateError] = useState("");
+
+  const [calcAmount, setCalcAmount] = useState("");
+  const [calcResult, setCalcResult] = useState<{ gross_amount: string; commission_amount: string; commission_percentage: string | null } | null>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
+
+  const loadCommissionRate = useCallback(async () => {
+    if (!params.id) return;
+    try {
+      const [affiliateRes, settingsRes] = await Promise.allSettled([
+        api.get(`/affiliates/${params.id}`),
+        api.get("/settings/public"),
+      ]);
+      if (affiliateRes.status === "fulfilled") setCommissionRate(affiliateRes.value.data?.data?.commission_percentage ?? null);
+      if (settingsRes.status === "fulfilled") {
+        const raw = settingsRes.value.data?.data?.affiliate_commission_max_percentage;
+        if (raw !== undefined) setMaxCommissionRate(Number(raw));
+      }
+    } catch {
+      // Non-fatal - the tabs below are the primary content of this page.
+    }
+  }, [params.id]);
+
+  useEffect(() => { void loadCommissionRate(); }, [loadCommissionRate]);
+
+  async function saveCommissionRate() {
+    const value = Number(rateInput);
+    if (!rateInput || Number.isNaN(value)) {
+      setRateError("Enter a valid commission percentage.");
+      return;
+    }
+    if (maxCommissionRate !== null && value > maxCommissionRate) {
+      setRateError(`Commission cannot exceed the platform maximum of ${maxCommissionRate}%.`);
+      return;
+    }
+    setRateSaving(true);
+    setRateError("");
+    try {
+      await updateReviewRecord("affiliates", params.id as string, { commission_percentage: value });
+      await loadCommissionRate();
+      setRateInput("");
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setRateError(typeof msg === "string" ? msg : "Failed to update commission.");
+    } finally {
+      setRateSaving(false);
+    }
+  }
+
+  async function runCommissionCalculator() {
+    const amount = Number(calcAmount);
+    if (!Number.isFinite(amount) || amount <= 0 || !params.id) return;
+    setCalcLoading(true);
+    try {
+      const res = await api.get(`/affiliates/${params.id}/commission-calculator`, { params: { amount } });
+      setCalcResult(res.data?.data ?? null);
+    } catch {
+      setCalcResult(null);
+    } finally {
+      setCalcLoading(false);
+    }
+  }
 
   const fetchLinks = useCallback(async (page: number) => {
     if (!params.id) return;
@@ -158,6 +227,39 @@ export default function AffiliateDetailPage() {
       <ReviewDetailPage module="affiliates" id={params.id} title="Affiliate Detail" requiredPermission="affiliates.view" />
 
       <div className="mt-6 space-y-4 px-6 pb-6">
+        <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-dash-border bg-white p-4">
+          <div>
+            <p className="text-xs font-bold uppercase text-dash-subtle">Base Commission Rate</p>
+            <p className="mt-1 text-lg font-black text-dash-text">{commissionRate ?? "0"}%</p>
+            <p className="mt-1 text-xs text-dash-muted">Used when no more specific commission rule matches. {maxCommissionRate !== null && <>Platform maximum: <strong>{maxCommissionRate}%</strong>.</>}</p>
+          </div>
+          <div className="flex items-end gap-2">
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">New rate (%)</span>
+              <input type="number" min={0} max={maxCommissionRate ?? 100} step="0.01" value={rateInput} onChange={(e) => setRateInput(e.target.value)} className="w-32 rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-dash-brand" />
+            </label>
+            <button type="button" onClick={() => void saveCommissionRate()} disabled={rateSaving} className="rounded-xl bg-dash-brand px-4 py-2.5 text-xs font-bold text-white disabled:opacity-60">{rateSaving ? "Saving..." : "Update Rate"}</button>
+          </div>
+          {rateError && <p className="w-full text-xs font-semibold text-red-600">{rateError}</p>}
+
+          <div className="w-full border-t border-dash-border pt-3">
+            <p className="mb-2 text-xs font-bold uppercase text-dash-subtle">Commission Calculator</p>
+            <div className="flex flex-wrap items-end gap-2">
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Booking amount</span>
+                <input type="number" min={0} step="0.01" value={calcAmount} onChange={(e) => setCalcAmount(e.target.value)} className="w-40 rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-dash-brand" />
+              </label>
+              <button type="button" onClick={() => void runCommissionCalculator()} disabled={calcLoading} className="rounded-xl border border-dash-border px-4 py-2.5 text-xs font-bold text-dash-body hover:bg-dash-bg-muted disabled:opacity-60">{calcLoading ? "Calculating..." : "Calculate"}</button>
+              {calcResult && (
+                <p className="text-sm text-dash-body">
+                  Tourvaa would pay <strong className="text-emerald-700">{calcResult.commission_amount}</strong>
+                  {calcResult.commission_percentage ? ` (${calcResult.commission_percentage}%)` : ""} on a {calcResult.gross_amount} booking.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
         {commissions && (
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-xl border border-dash-border bg-white p-4">

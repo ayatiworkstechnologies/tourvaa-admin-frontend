@@ -35,6 +35,7 @@ import TourPricingTab from "@/components/tours/TourPricingTab";
 import TourCalendarTab from "@/components/tours/TourCalendarTab";
 import TourExtensionsTab from "@/components/tours/TourExtensionsTab";
 import TourDiscountsTab from "@/components/tours/TourDiscountsTab";
+import TourGroupDiscountTab from "@/components/tours/TourGroupDiscountTab";
 import TourSimilarTab from "@/components/tours/TourSimilarTab";
 
 type Tour = {
@@ -73,6 +74,7 @@ const SECONDARY_TABS = [
   { key: "calendar", label: "Calendar" },
   { key: "extensions", label: "Extensions" },
   { key: "discounts", label: "Discounts" },
+  { key: "group-discounts", label: "Group Discounts" },
   { key: "similar", label: "Similar Tours" },
 ];
 
@@ -492,6 +494,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
         {activeKey === "calendar" && <TourCalendarTab tourId={tourId} />}
         {activeKey === "extensions" && <TourExtensionsTab tourId={tourId} />}
         {activeKey === "discounts" && <TourDiscountsTab tourId={tourId} />}
+        {activeKey === "group-discounts" && <TourGroupDiscountTab tourId={tourId} />}
         {activeKey === "similar" && <TourSimilarTab tourId={tourId} />}
       </TourWorkspaceContent>
 

@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuLoaderCircle as Loader2, LuSend as Send } from "react-icons/lu";
+import { LuLoaderCircle as Loader2, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
 
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
-import { BookingConversationThread, BookingMessage, getBookingConversation, sendBookingConversationMessage } from "@/lib/api/services/messagingService";
+import { BookingConversationThread, BookingMessage, deleteOwnBookingMessage, getBookingConversation, sendBookingConversationMessage } from "@/lib/api/services/messagingService";
 
 function timeAgo(value?: string | null) {
   if (!value) return "";
@@ -30,6 +30,7 @@ export default function BookingMessageThread({ bookingId }: { bookingId: number 
   const [error, setError] = useState("");
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -56,12 +57,30 @@ export default function BookingMessageThread({ bookingId }: { bookingId: number 
   useMessagingSocket(
     useCallback(
       (event) => {
-        if (event.type !== "new_booking_message" || event.conversation.booking_id !== bookingId) return;
-        setThread((prev) => (prev && prev.id === event.conversation.id ? { ...event.conversation, messages: [...prev.messages, event.message] } : prev));
+        if (event.type === "new_booking_message") {
+          if (event.conversation.booking_id !== bookingId) return;
+          setThread((prev) => (prev && prev.id === event.conversation.id ? { ...event.conversation, messages: [...prev.messages, event.message] } : prev));
+          return;
+        }
+        if (event.type === "booking_message_deleted") {
+          setThread((prev) => (prev && prev.id === event.conversation_id ? { ...prev, messages: prev.messages.map((m) => (m.id === event.message.id ? event.message : m)) } : prev));
+        }
       },
       [bookingId]
     )
   );
+
+  async function removeMessage(messageId: number) {
+    setDeletingId(messageId);
+    try {
+      const updated = await deleteOwnBookingMessage(messageId);
+      setThread((prev) => (prev ? { ...prev, messages: prev.messages.map((m) => (m.id === messageId ? updated : m)) } : prev));
+    } catch {
+      setError("Could not delete that message.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
@@ -93,9 +112,21 @@ export default function BookingMessageThread({ bookingId }: { bookingId: number 
           <p className="py-4 text-center text-sm text-dash-muted">No messages yet. Send one below to get started.</p>
         ) : (
           thread?.messages.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.sender_role === "supplier" ? "justify-start" : "justify-end"}`}>
-              <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "supplier" ? "bg-dash-bg text-dash-text" : "bg-dash-brand text-white"}`}>
-                <p className="whitespace-pre-wrap">{msg.body}</p>
+            <div key={msg.id} className={`group flex items-end gap-1.5 ${msg.sender_role === "supplier" ? "justify-start" : "justify-end"}`}>
+              {!msg.is_deleted && msg.sender_role !== "supplier" && (
+                <button
+                  type="button"
+                  onClick={() => removeMessage(msg.id)}
+                  disabled={deletingId === msg.id}
+                  aria-label="Delete message"
+                  title="Delete message"
+                  className="mb-1 hidden h-6 w-6 items-center justify-center rounded-lg text-white/60 hover:bg-black/10 hover:text-white group-hover:flex disabled:opacity-50"
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+              <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "supplier" ? "bg-dash-bg text-dash-text" : "bg-dash-brand text-white"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
+                <p className="whitespace-pre-wrap">{msg.is_deleted ? "This message was deleted." : msg.body}</p>
                 <p className={`mt-1 text-[10px] ${msg.sender_role === "supplier" ? "text-dash-subtle" : "text-white/70"}`}>{timeAgo(msg.created_at)}</p>
               </div>
             </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuLoaderCircle as Loader2, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
+import { LuCalculator as Calculator, LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuLoaderCircle as Loader2, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
@@ -24,6 +24,25 @@ type LedgerEntry = {
   created_at?: string;
   updated_at?: string;
   notes?: string;
+};
+
+type CommissionBreakdown = {
+  gross_amount: string;
+  group_discount_amount: string;
+  discounted_amount: string;
+  commission_percentage: string;
+  commission_amount: string;
+  net_earnings: string;
+};
+
+type CommissionCalculatorResult = {
+  adults: number;
+  children: number;
+  adult_price: string;
+  child_price: string;
+  adult_breakdown: CommissionBreakdown;
+  child_breakdown: CommissionBreakdown;
+  total: CommissionBreakdown;
 };
 
 type Payout = {
@@ -73,6 +92,86 @@ export default function EarningsPage() {
   const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
   const [ledgerPage, setLedgerPage] = useState(1);
   const ledgerPageSize = 10;
+
+  const [myCommissionRate, setMyCommissionRate] = useState<string | null>(null);
+  const [minCommissionRate, setMinCommissionRate] = useState<number | null>(null);
+  const [commissionInput, setCommissionInput] = useState("");
+  const [commissionSaving, setCommissionSaving] = useState(false);
+  const [commissionError, setCommissionError] = useState("");
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [calcAdults, setCalcAdults] = useState("1");
+  const [calcChildren, setCalcChildren] = useState("0");
+  const [calcAdultPrice, setCalcAdultPrice] = useState("");
+  const [calcChildPrice, setCalcChildPrice] = useState("");
+  const [calcResult, setCalcResult] = useState<CommissionCalculatorResult | null>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
+  const [calcError, setCalcError] = useState("");
+
+  const loadCommissionProfile = async () => {
+    try {
+      const [profileRes, settingsRes] = await Promise.allSettled([
+        api.get("/suppliers/me"),
+        api.get("/settings/public"),
+      ]);
+      if (profileRes.status === "fulfilled") {
+        setMyCommissionRate(profileRes.value.data?.data?.commission_percentage ?? null);
+      }
+      if (settingsRes.status === "fulfilled") {
+        const raw = settingsRes.value.data?.data?.supplier_commission_percentage;
+        setMinCommissionRate(raw !== undefined ? Number(raw) : null);
+      }
+    } catch {
+      // Non-fatal - the earnings ledger below is the primary content of this page.
+    }
+  };
+
+  useEffect(() => { void loadCommissionProfile(); }, []);
+
+  async function saveCommissionRate() {
+    const value = Number(commissionInput);
+    if (!commissionInput || Number.isNaN(value)) {
+      setCommissionError("Enter a valid commission percentage.");
+      return;
+    }
+    if (minCommissionRate !== null && value < minCommissionRate) {
+      setCommissionError(`Commission cannot be lower than the platform minimum of ${minCommissionRate}%.`);
+      return;
+    }
+    setCommissionSaving(true);
+    setCommissionError("");
+    try {
+      await api.patch("/suppliers/me", { commission_percentage: value });
+      await loadCommissionProfile();
+      setCommissionInput("");
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setCommissionError(typeof msg === "string" ? msg : "Failed to update commission.");
+    } finally {
+      setCommissionSaving(false);
+    }
+  }
+
+  async function runCommissionCalculator() {
+    setCalcLoading(true);
+    setCalcError("");
+    setCalcResult(null);
+    try {
+      const res = await api.get("/suppliers/me/commission-calculator", {
+        params: {
+          adults: Number(calcAdults) || 0,
+          children: Number(calcChildren) || 0,
+          adult_price: calcAdultPrice === "" ? undefined : Number(calcAdultPrice),
+          child_price: calcChildPrice === "" ? undefined : Number(calcChildPrice),
+        },
+      });
+      setCalcResult(res.data?.data ?? null);
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setCalcError(typeof msg === "string" ? msg : "Failed to calculate commission.");
+    } finally {
+      setCalcLoading(false);
+    }
+  }
 
   const load = async () => {
     setLoading(true);
@@ -282,6 +381,71 @@ export default function EarningsPage() {
         <div className="rounded-2xl border border-transparent bg-white p-5 shadow-sm ring-1 ring-slate-100"><p className="text-xs font-bold uppercase text-dash-muted">Average Commission</p><p className="mt-2 text-2xl font-black text-dash-text">{summary.avgCommission.toFixed(2)}%</p></div>
         <div className="rounded-2xl border border-transparent bg-white p-5 shadow-sm ring-1 ring-slate-100"><p className="text-xs font-bold uppercase text-dash-muted">Payouts In Progress</p><p className="mt-2 text-2xl font-black text-dash-text">{money(summary.pendingPayoutTotal, summary.currency)}</p></div>
         <div className="rounded-2xl border border-transparent bg-white p-5 shadow-sm ring-1 ring-slate-100"><p className="text-xs font-bold uppercase text-dash-muted">Released Payouts</p><p className="mt-2 text-2xl font-black text-dash-text">{money(summary.paidPayoutTotal, summary.currency)}</p></div>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-transparent bg-white p-5 shadow-sm ring-1 ring-slate-100">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-black text-dash-text"><Calculator size={16} /> Commission Calculator</p>
+            <p className="mt-1 text-xs text-dash-muted">
+              Your current commission rate: <strong>{myCommissionRate ?? (minCommissionRate !== null ? `${minCommissionRate} (platform minimum)` : "-")}%</strong>
+              {minCommissionRate !== null && <> &middot; Platform minimum: <strong>{minCommissionRate}%</strong></>}
+            </p>
+          </div>
+          <button type="button" onClick={() => setCalculatorOpen((v) => !v)} className="rounded-xl border border-dash-border px-4 py-2 text-xs font-bold text-dash-body hover:bg-dash-bg-muted">
+            {calculatorOpen ? "Hide" : "Open Calculator"}
+          </button>
+        </div>
+
+        {calculatorOpen && (
+          <div className="mt-5 space-y-5 border-t border-dash-border pt-5">
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase text-dash-muted">Raise your commission rate</p>
+              <div className="flex flex-wrap items-end gap-3">
+                <label>
+                  <span className={labelCls}>New rate (%)</span>
+                  <input type="number" min={minCommissionRate ?? 0} step="0.01" value={commissionInput} onChange={(e) => setCommissionInput(e.target.value)} className={inputCls} placeholder={myCommissionRate ?? String(minCommissionRate ?? "")} />
+                </label>
+                <button type="button" onClick={saveCommissionRate} disabled={commissionSaving} className="rounded-xl bg-dash-brand px-4 py-2.5 text-xs font-bold text-white disabled:opacity-60">
+                  {commissionSaving ? "Saving..." : "Update Rate"}
+                </button>
+              </div>
+              {commissionError && <p className="mt-2 text-xs font-semibold text-red-600">{commissionError}</p>}
+              <p className="mt-2 text-xs text-dash-subtle">You may raise your commission above the platform minimum, but never lower it below {minCommissionRate ?? "the platform minimum"}%.</p>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase text-dash-muted">Estimate a booking</p>
+              <div className="grid gap-3 sm:grid-cols-4">
+                <label><span className={labelCls}>Adults</span><input type="number" min={0} value={calcAdults} onChange={(e) => setCalcAdults(e.target.value)} className={inputCls} /></label>
+                <label><span className={labelCls}>Children</span><input type="number" min={0} value={calcChildren} onChange={(e) => setCalcChildren(e.target.value)} className={inputCls} /></label>
+                <label><span className={labelCls}>Your adult price</span><input type="number" min={0} step="0.01" value={calcAdultPrice} onChange={(e) => setCalcAdultPrice(e.target.value)} className={inputCls} /></label>
+                <label><span className={labelCls}>Your child price</span><input type="number" min={0} step="0.01" value={calcChildPrice} onChange={(e) => setCalcChildPrice(e.target.value)} className={inputCls} /></label>
+              </div>
+              <button type="button" onClick={runCommissionCalculator} disabled={calcLoading} className="mt-3 rounded-xl border border-dash-border px-4 py-2 text-xs font-bold text-dash-body hover:bg-dash-bg-muted disabled:opacity-60">
+                {calcLoading ? "Calculating..." : "Calculate"}
+              </button>
+              {calcError && <p className="mt-2 text-xs font-semibold text-red-600">{calcError}</p>}
+
+              {calcResult && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {([["Adults", calcResult.adult_breakdown], ["Children", calcResult.child_breakdown], ["Total", calcResult.total]] as const).map(([label, b]) => (
+                    <div key={label} className="rounded-xl border border-dash-border bg-dash-bg p-4">
+                      <p className="text-xs font-bold uppercase text-dash-muted">{label}</p>
+                      <dl className="mt-2 space-y-1 text-xs text-dash-body">
+                        <div className="flex justify-between"><dt>Gross amount</dt><dd className="font-semibold">{b.gross_amount}</dd></div>
+                        <div className="flex justify-between"><dt>Group discount</dt><dd className="font-semibold text-amber-600">-{b.group_discount_amount}</dd></div>
+                        <div className="flex justify-between"><dt>Discounted amount</dt><dd className="font-semibold">{b.discounted_amount}</dd></div>
+                        <div className="flex justify-between"><dt>Commission ({b.commission_percentage}%)</dt><dd className="font-semibold text-amber-600">-{b.commission_amount}</dd></div>
+                        <div className="flex justify-between border-t border-dash-border pt-1"><dt className="font-bold">Your net earnings</dt><dd className="font-black text-emerald-700">{b.net_earnings}</dd></div>
+                      </dl>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {error && <div className="mb-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600"><span className="flex items-center gap-2"><AlertCircle size={16} />{error}</span><button type="button" onClick={load} className="text-xs font-bold underline">Retry</button></div>}

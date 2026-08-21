@@ -5,7 +5,9 @@ import { issueWsTicket, BookingConversation, BookingMessage, ChatMessage, Conver
 
 export type MessagingSocketEvent =
   | { type: "new_message"; conversation: Conversation; message: ChatMessage }
-  | { type: "new_booking_message"; conversation: BookingConversation; message: BookingMessage };
+  | { type: "new_booking_message"; conversation: BookingConversation; message: BookingMessage }
+  | { type: "message_deleted"; conversation_id: number; message: ChatMessage }
+  | { type: "booking_message_deleted"; conversation_id: number; message: BookingMessage };
 
 const INITIAL_RETRY_MS = 2000;
 const MAX_RETRY_MS = 30000;
@@ -51,7 +53,14 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data) as MessagingSocketEvent;
-          if (data.type === "new_message" || data.type === "new_booking_message") onMessageRef.current(data);
+          if (
+            data.type === "new_message" ||
+            data.type === "new_booking_message" ||
+            data.type === "message_deleted" ||
+            data.type === "booking_message_deleted"
+          ) {
+            onMessageRef.current(data);
+          }
         } catch {
           // Ignore malformed frames.
         }

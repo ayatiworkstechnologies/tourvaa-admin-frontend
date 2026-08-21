@@ -239,15 +239,16 @@ export type PricingSlab = {
   passenger_to: number;
   adult_price: number;
   child_price: number;
-  // adult_price/child_price are the supplier's own net asking price -
-  // Tourvaa pays that price in full, no commission is deducted, so
-  // supplier_final_* (server-computed) simply mirrors it. admin_markup_value
-  // is Tourvaa's own commission (5-15%), an admin-only retail markup added
-  // on top of the same price; only an admin actor's submitted value is
-  // honoured; storefront_* (server-computed) is the resulting
-  // customer-facing price. supplier_price/final_price are legacy/unused.
-  supplier_price: number;
-  final_price: number;
+  // adult_price/child_price are the supplier's own net asking price.
+  // supplier_final_* (server-computed) mirrors it. admin_markup_value is
+  // Tourvaa's own retail markup (5-15%, admin-only) added on top to produce
+  // the storefront/customer-facing price - separate from Tourvaa's
+  // commission, which is deducted from the supplier's own price and is set
+  // on the supplier's profile / this tour's Commission field, not here.
+  // Only an admin actor's submitted admin_markup_value is honoured. The
+  // backend also has legacy supplier_price/final_price columns, but neither
+  // is read by any pricing logic and final_price is always
+  // server-overwritten, so this type omits them.
   supplier_final_adult_price?: number | null;
   supplier_final_child_price?: number | null;
   admin_markup_value: number;
@@ -259,6 +260,20 @@ export type PricingSlab = {
 
 export async function getPricing(tourId: number | string): Promise<PricingSlab[]> {
   const r = await api.get<{ data: PricingSlab[] }>(`${base(tourId)}/pricing`);
+  return r.data.data;
+}
+
+// ── Tour-level commission override ───────────────────────────────────────────
+// Admin-only override of Tourvaa's commission for this specific tour -
+// wins over the supplier's own commission_percentage, which wins over the
+// platform minimum. See models.cms.Tour.commission_percentage.
+
+export async function getTourCommission(tourId: number | string): Promise<string | null> {
+  const r = await api.get<{ data: { commission_percentage: string | null } }>(`${base(tourId)}`);
+  return r.data.data.commission_percentage;
+}
+export async function updateTourCommission(tourId: number | string, commissionPercentage: number | null): Promise<{ commission_percentage: string | null }> {
+  const r = await api.patch<{ data: { commission_percentage: string | null } }>(`${base(tourId)}/commission`, { commission_percentage: commissionPercentage });
   return r.data.data;
 }
 export async function createPricing(tourId: number | string, data: PricingSlab): Promise<PricingSlab> {
@@ -339,8 +354,6 @@ export type CalendarEntry = {
   id?: number;
   tour_id?: number;
   tour_date: string;
-  start_date?: string | null;
-  end_date?: string | null;
   available_seats: number;
   booked_seats: number;
   status: string;
@@ -438,6 +451,37 @@ export async function updateDiscount(tourId: number | string, id: number, data: 
 }
 export async function deleteDiscount(tourId: number | string, id: number): Promise<void> {
   await api.delete(`${base(tourId)}/discounts/${id}`);
+}
+
+// ── Group discount tiers ──────────────────────────────────────────────────────
+// Supplier-defined, applies to the whole Tour (every pricing slab) - not a
+// per-slab discount. See TourGroupDiscountTier / GroupDiscountTierPayload
+// on the backend.
+
+export type GroupDiscountTier = {
+  id?: number;
+  tour_id?: number;
+  min_pax: number;
+  max_pax: number;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  status: string;
+};
+
+export async function getGroupDiscountTiers(tourId: number | string): Promise<GroupDiscountTier[]> {
+  const r = await api.get<{ data: GroupDiscountTier[] }>(`${base(tourId)}/group-discount-tiers`);
+  return r.data.data;
+}
+export async function createGroupDiscountTier(tourId: number | string, data: GroupDiscountTier): Promise<GroupDiscountTier> {
+  const r = await api.post<{ data: GroupDiscountTier }>(`${base(tourId)}/group-discount-tiers`, data);
+  return r.data.data;
+}
+export async function updateGroupDiscountTier(tourId: number | string, id: number, data: GroupDiscountTier): Promise<GroupDiscountTier> {
+  const r = await api.put<{ data: GroupDiscountTier }>(`${base(tourId)}/group-discount-tiers/${id}`, data);
+  return r.data.data;
+}
+export async function deleteGroupDiscountTier(tourId: number | string, id: number): Promise<void> {
+  await api.delete(`${base(tourId)}/group-discount-tiers/${id}`);
 }
 
 
