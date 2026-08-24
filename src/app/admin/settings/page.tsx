@@ -34,6 +34,10 @@ const commissionSettingKeys: { key: string; label: string; description: string }
   { key: "affiliate_commission_max_percentage", label: "Maximum Affiliate Commission", description: "The ceiling on what Tourvaa pays an affiliate per booking, whether set as their base rate or in a commission rule." },
 ];
 const commissionSettingKeySet = new Set(commissionSettingKeys.map((c) => c.key));
+// Default (not ceiling/minimum) commission %s are managed on the dedicated
+// Default Commissions page (/admin/settings/default-commissions) instead --
+// excluded here too so they don't also show up editable in a generic tab.
+const defaultCommissionKeySet = new Set(["agent_default_commission_percentage", "affiliate_default_commission_value"]);
 
 type Setting = {
   id: number;
@@ -62,7 +66,7 @@ export default function SettingsPage() {
       // rows are a disconnected, unencrypted copy that the real payment
       // gateway code never reads - PaymentSettingsSection/ApiSettingsSection
       // below talk to the actual encrypted PaymentSetting/ApiSetting tables.
-      .filter((setting) => setting.key !== "default_currency" && setting.group !== "payment" && setting.group !== "api" && !commissionSettingKeySet.has(setting.key))
+      .filter((setting) => setting.key !== "default_currency" && setting.group !== "payment" && setting.group !== "api" && !commissionSettingKeySet.has(setting.key) && !defaultCommissionKeySet.has(setting.key))
       .reduce<Record<string, Setting[]>>((groups, setting) => {
         groups[setting.group] = groups[setting.group] || [];
         groups[setting.group].push(setting);

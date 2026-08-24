@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck } from "react-icons/lu";
+import { LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck, LuPercent as Percent } from "react-icons/lu";
 import CompanyInfoTab from "@/components/supplier/profile/CompanyInfoTab";
 import DocumentsTab from "@/components/supplier/profile/DocumentsTab";
 import VehiclesTab from "@/components/supplier/profile/VehiclesTab";
+import CommissionTab from "@/components/supplier/profile/CommissionTab";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 
 const TABS = [
   { id: "company", label: "Company & Security", icon: Building },
   { id: "vehicles", label: "My Vehicles", icon: Bus },
   { id: "documents", label: "Verification Documents", icon: FileCheck },
+  { id: "commission", label: "Commission %", icon: Percent },
 ];
 
 export default function UnifiedSupplierProfilePage() {
@@ -58,6 +60,7 @@ export default function UnifiedSupplierProfilePage() {
         <div className={activeTab === "company" ? "" : "hidden"}><CompanyInfoTab /></div>
         <div className={activeTab === "vehicles" ? "" : "hidden"}><VehiclesTab /></div>
         <div className={activeTab === "documents" ? "" : "hidden"}><DocumentsTab /></div>
+        <div className={activeTab === "commission" ? "" : "hidden"}><CommissionTab /></div>
       </div>
     </SupplierPageShell>
   );

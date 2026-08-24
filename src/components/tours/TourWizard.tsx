@@ -3,25 +3,24 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  LuCircleAlert as AlertCircle,
   LuArrowLeft as ArrowLeft,
   LuArrowRight as ArrowRight,
-  LuCircleCheckBig as CheckCircle2,
+  LuCircleAlert as AlertCircle,
   LuEye as Eye,
-  LuLoaderCircle as Loader2,
   LuMapPinned as MapPinned,
   LuRotateCcw as RotateCcw,
-  LuSendHorizontal as SendHorizontal,
+  LuLoaderCircle as Loader2,
 } from "react-icons/lu";
 
 import api from "@/lib/api/client";
 import TourFormPage from "@/components/cms/TourFormPage";
-import {
-  TourWorkspaceContent,
-  TourWorkspaceHeader,
-  TourWorkspaceStepper,
-  TourWorkspaceTabs,
-} from "@/components/tours/TourWorkspace";
+import { TourWorkspaceContent, TourWorkspaceHeader } from "@/components/tours/TourWorkspace";
+import { WizardSidebar } from "@/components/tours/wizard/WizardSidebar";
+import { WizardMobileProgress } from "@/components/tours/wizard/WizardMobileProgress";
+import { WizardStickyActionBar, type WizardBarButton } from "@/components/tours/wizard/WizardStickyActionBar";
+import { WizardReviewSubmit } from "@/components/tours/wizard/WizardReviewSubmit";
+import { useStepCompletion } from "@/components/tours/wizard/useStepCompletion";
+import { WIZARD_STEPS } from "@/components/tours/wizard/steps";
 import TourOverviewTab from "@/components/tours/TourOverviewTab";
 import PhysicalRatingField from "@/components/tours/PhysicalRatingField";
 import TourHighlightsTab from "@/components/tours/TourHighlightsTab";
@@ -57,27 +56,6 @@ type ReviewComment = {
   status: string;
 };
 
-const PRIMARY_STEPS = [
-  { key: "basic", label: "Basic Details" },
-  { key: "location", label: "Location & Category" },
-  { key: "overview", label: "Overview & Highlights" },
-  { key: "itinerary", label: "Itinerary" },
-  { key: "pricing", label: "Pricing" },
-  { key: "accommodation", label: "Accommodation" },
-  { key: "activities", label: "Activities & Add-ons" },
-  { key: "policies", label: "Inclusions & Policies" },
-  { key: "media", label: "Gallery & Media/SEO" },
-  { key: "review", label: "Review & Submit" },
-];
-
-const SECONDARY_TABS = [
-  { key: "calendar", label: "Calendar" },
-  { key: "extensions", label: "Extensions" },
-  { key: "discounts", label: "Discounts" },
-  { key: "group-discounts", label: "Group Discounts" },
-  { key: "similar", label: "Similar Tours" },
-];
-
 function statusColors(status: string) {
   const value = (status || "").toLowerCase();
   if (["active", "published"].includes(value))
@@ -105,8 +83,8 @@ function reviewBanner(tour: Tour): { label: string; message: string } | null {
   if (tour.status !== "published" || !tour.pending_review_kind) return null;
   if (tour.pending_review_kind === "repricing_required") {
     return {
-      label: "Repricing Required",
-      message: "Supplier pricing changed. The published price stays active until an admin recalculates and approves it.",
+      label: "Pricing Updated",
+      message: "Supplier pricing changed and is already live. Admin still needs to review and approve the change.",
     };
   }
   return {
@@ -120,15 +98,38 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   const isSupplier = role === "supplier";
   const basePath = isSupplier ? "/supplier/tours" : "/admin/tours";
 
-  const [group, setGroup] = useState<"primary" | "secondary">("primary");
   const [activeIndex, setActiveIndex] = useState(0);
   const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([0]));
+  // Set right before an external "Save & Continue" button submits a
+  // TourFormPage-backed step via the HTML `form` attribute -- read inside
+  // that step's onSaved to decide whether to also advance, so the same
+  // in-form "Save" button (which should NOT jump steps) and the wizard's
+  // external continue button (which SHOULD) can share one submit handler.
+  // Plain state (not a ref) so it's never read/written from render output
+  // construction -- only from effects/handlers.
+  const [advanceAfterSave, setAdvanceAfterSave] = useState(false);
 
-  const selectPrimaryStep = (index: number) => {
-    setGroup("primary");
+  const selectStep = useCallback((index: number) => {
     setActiveIndex(index);
     setVisitedSteps((prev) => new Set(prev).add(index));
-  };
+  }, []);
+
+  const goNext = useCallback(() => {
+    selectStep(Math.min(WIZARD_STEPS.length - 1, activeIndex + 1));
+  }, [activeIndex, selectStep]);
+
+  // TourFormPage-backed steps have a real single form to submit; every
+  // other step's data already saves per-row through its own add/edit
+  // modal, so there is no separate batch "save" action there -- only
+  // "Save & Continue" (navigate), matching how the rows actually persist.
+  const currentFormId = ({ basic: "wizard-form-basic", location: "wizard-form-location", media: "wizard-form-media", seo: "wizard-form-seo" } as Record<string, string>)[WIZARD_STEPS[activeIndex]?.id];
+
+  const submitCurrentForm = useCallback((advance: boolean) => {
+    setAdvanceAfterSave(advance);
+    (document.getElementById(currentFormId) as HTMLFormElement | null)?.requestSubmit();
+  }, [currentFormId]);
+  const submitCurrentFormAndSave = useCallback(() => submitCurrentForm(false), [submitCurrentForm]);
+  const submitCurrentFormAndContinue = useCallback(() => submitCurrentForm(true), [submitCurrentForm]);
 
   const [tour, setTour] = useState<Tour | null>(null);
   const [loadingTour, setLoadingTour] = useState(Boolean(tourId));
@@ -167,6 +168,8 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     void fetchTour();
     void fetchComments();
   }, [fetchTour, fetchComments]);
+
+  const { statuses, refresh: refreshCompletion } = useStepCompletion(tourId, tour);
 
   const resolveComment = async (commentId: number) => {
     if (!tourId) return;
@@ -213,43 +216,62 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     }
   };
 
+  const afterFormSaved = useCallback(() => {
+    void fetchTour(false);
+    void refreshCompletion();
+    if (advanceAfterSave) {
+      setAdvanceAfterSave(false);
+      goNext();
+    }
+  }, [fetchTour, refreshCompletion, goNext, advanceAfterSave]);
+
   // Create mode: no tour yet, only the essentials form can be shown. The
-  // remaining 9 steps have nowhere to save to until a tour id exists, so the
-  // stepper is shown read-only (step 1 active, the rest visibly locked)
-  // purely to preview the flow ahead rather than as real navigation.
+  // remaining 11 steps have nowhere to save to until a tour id exists.
   if (!tourId) {
     return (
       <>
         <TourWorkspaceHeader
           role={role}
           title="Create New Tour"
-          description="Start with the essentials below. Saving creates the tour and unlocks the full 10-step editor for itinerary, pricing, media, and more."
+          description="Start with the essentials below. Saving creates the tour and unlocks the full 12-step editor for itinerary, pricing, media, and more."
           icon={MapPinned}
           eyebrow={isSupplier ? "Tour Builder" : "Admin Tour Builder"}
           actions={[{ label: isSupplier ? "Back to My Tours" : "Back to Tours", href: basePath, icon: ArrowLeft, variant: "secondary" }]}
         />
-        <TourWorkspaceStepper
-          role={role}
-          steps={PRIMARY_STEPS}
-          activeIndex={0}
-          visitedIndexes={new Set()}
-          onSelect={() => {}}
-          disabled
-        />
-        <TourWorkspaceContent role={role} stepLabel={`Step 1 of ${PRIMARY_STEPS.length} · ${PRIMARY_STEPS[0].label}`}>
-          <TourFormPage
-            embedded
-            role={role}
-            sections={["basic"]}
-            onSaved={(saved) => {
-              const id = (saved as { id?: number } | undefined)?.id;
-              router.push(id ? `${basePath}/${id}/edit` : basePath);
-            }}
-          />
-        </TourWorkspaceContent>
-        <p className="mt-3 text-center text-[11px] font-semibold text-dash-subtle">
-          Steps 2–{PRIMARY_STEPS.length} unlock once you save the basics above.
-        </p>
+        <div className="mt-4 flex flex-col gap-4 lg:flex-row">
+          <WizardSidebar role={role} activeIndex={0} visitedIndexes={new Set()} statuses={{}} onSelect={() => {}} disabled />
+          <div className="min-w-0 flex-1">
+            <WizardMobileProgress role={role} activeIndex={0} />
+            <TourWorkspaceContent role={role} stepLabel={`Step ${WIZARD_STEPS[0].number} of ${WIZARD_STEPS.length} · ${WIZARD_STEPS[0].label}`}>
+              <TourFormPage
+                embedded
+                role={role}
+                sections={["basic-core"]}
+                formId="wizard-form-create"
+                onSaved={(saved) => {
+                  const id = (saved as { id?: number } | undefined)?.id;
+                  router.push(id ? `${basePath}/${id}/edit` : basePath);
+                }}
+              />
+            </TourWorkspaceContent>
+            <WizardStickyActionBar
+              role={role}
+              left={[{ key: "cancel", label: "Cancel", onClick: () => router.push(basePath), variant: "ghost" }]}
+              right={[
+                {
+                  key: "continue",
+                  label: "Save & Continue",
+                  icon: ArrowRight,
+                  variant: "primary",
+                  onClick: () => (document.getElementById("wizard-form-create") as HTMLFormElement | null)?.requestSubmit(),
+                },
+              ]}
+            />
+            <p className="mt-3 text-center text-[11px] font-semibold text-dash-subtle">
+              Steps 2–{WIZARD_STEPS.length} unlock once you save the basics above.
+            </p>
+          </div>
+        </div>
       </>
     );
   }
@@ -290,15 +312,33 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     isSupplier &&
     tour &&
     (["pending_approval", "repricing_required"].includes((tour.status ?? "").toLowerCase()) || Boolean(banner));
-  const activeKey = group === "primary" ? PRIMARY_STEPS[activeIndex].key : SECONDARY_TABS[activeIndex].key;
+  const activeStep = WIZARD_STEPS[activeIndex];
+  const activeKey = activeStep.id;
   const openCommentsForStep = comments.filter((c) => c.section === activeKey);
+  const isFirstStep = activeIndex === 0;
+  const isReviewStep = activeKey === "review";
+
+  const saveLabel = isSupplier ? "Save Changes" : "Save Draft";
+
+  const leftButtons: WizardBarButton[] = [
+    { key: "prev", label: "Previous", icon: ArrowLeft, variant: "secondary", disabled: isFirstStep, onClick: () => selectStep(Math.max(0, activeIndex - 1)) },
+  ];
+  const rightButtons: WizardBarButton[] = [];
+  if (!isReviewStep) {
+    if (currentFormId) {
+      rightButtons.push({ key: "save", label: saveLabel, variant: "secondary", onClick: submitCurrentFormAndSave });
+      rightButtons.push({ key: "continue", label: "Save & Continue", icon: ArrowRight, variant: "primary", onClick: submitCurrentFormAndContinue });
+    } else {
+      rightButtons.push({ key: "continue", label: "Save & Continue", icon: ArrowRight, variant: "primary", onClick: goNext });
+    }
+  }
 
   return (
     <>
       <TourWorkspaceHeader
         role={role}
         title={tour?.title ?? "Edit Tour"}
-        description="Complete the 10-step editor below. Each step saves independently, so you can leave and come back anytime."
+        description="Complete the 12-step editor below. Each step saves independently, so you can leave and come back anytime."
         icon={MapPinned}
         eyebrow={tour?.tour_code ? `Tour Editor · ${tour.tour_code}` : "Tour Editor"}
         actions={[
@@ -336,193 +376,137 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
         </div>
       )}
 
-      {group === "primary" ? (
-        <TourWorkspaceStepper
-          role={role}
-          steps={PRIMARY_STEPS}
-          activeIndex={activeIndex}
-          visitedIndexes={visitedSteps}
-          onSelect={selectPrimaryStep}
-        />
-      ) : (
-        <TourWorkspaceTabs
-          role={role}
-          tabs={PRIMARY_STEPS}
-          activeIndex={-1}
-          onSelect={selectPrimaryStep}
-        />
-      )}
-
-      <div className="mt-6 flex items-center gap-3 px-1">
-        <span className="whitespace-nowrap text-[10px] font-black uppercase tracking-wide text-dash-subtle">Marketing & availability</span>
-        <div className="h-px flex-1 bg-dash-border" />
-      </div>
-      <TourWorkspaceTabs
-        role={role}
-        tabs={SECONDARY_TABS}
-        activeIndex={group === "secondary" ? activeIndex : -1}
-        onSelect={(index) => { setGroup("secondary"); setActiveIndex(index); }}
-      />
-
-      {openCommentsForStep.length > 0 && (
-        <div className="mt-4 space-y-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
-          <p className="text-xs font-black uppercase tracking-wide text-amber-700">Admin feedback for this step</p>
-          {openCommentsForStep.map((c) => (
-            <div key={c.id} className="flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-white p-3">
-              <div className="min-w-0">
-                <span className={`mr-2 rounded-full border px-2 py-0.5 text-[10px] font-bold capitalize ${SEVERITY_STYLES[c.severity] ?? SEVERITY_STYLES.minor}`}>
-                  {c.severity}
-                </span>
-                <span className="text-sm text-dash-body">{c.comment}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => void resolveComment(c.id)}
-                className="shrink-0 rounded-lg border border-dash-border px-2.5 py-1 text-xs font-bold text-dash-subtle hover:bg-dash-bg"
-              >
-                Mark resolved
-              </button>
-            </div>
-          ))}
+      {tour?.status && ["pending_approval", "repricing_required"].includes((tour.status ?? "").toLowerCase()) && (
+        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-800">
+            This tour has a submission awaiting admin review. Saving changes now will replace that pending version with a new one and restart the review — withdraw the current submission first if you want to keep it intact.
+          </p>
         </div>
       )}
 
-      <TourWorkspaceContent
-        role={role}
-        stepLabel={
-          group === "primary"
-            ? `Step ${activeIndex + 1} of ${PRIMARY_STEPS.length} · ${PRIMARY_STEPS[activeIndex].label}`
-            : SECONDARY_TABS[activeIndex]?.label
-        }
-      >
-        {activeKey === "basic" && (
-          <TourFormPage
-            tourId={tourId}
-            embedded
-            role={role}
-            sections={["basic"]}
-            initialData={tour ?? undefined}
-            onSaved={() => fetchTour(false)}
-            onGoToPricing={() => selectPrimaryStep(PRIMARY_STEPS.findIndex((s) => s.key === "pricing"))}
-          />
-        )}
-        {activeKey === "location" && (
-          <div className="space-y-6">
-            <TourFormPage tourId={tourId} embedded role={role} sections={["location"]} initialData={tour ?? undefined} onSaved={() => fetchTour(false)} />
-            <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
-              <h2 className="text-xl font-black text-dash-text">Physical Rating</h2>
-              <p className="mt-1 text-sm text-dash-subtle">How physically demanding this tour is for travellers.</p>
-              <div className="mt-5">
-                <PhysicalRatingField tourId={tourId} />
-              </div>
-            </div>
-          </div>
-        )}
-        {activeKey === "overview" && (
-          <div className="space-y-6">
-            <TourOverviewTab tourId={tourId} />
-            <TourHighlightsTab tourId={tourId} />
-          </div>
-        )}
-        {activeKey === "itinerary" && <TourItineraryTab tourId={tourId} numberOfDays={tour?.number_of_days ? Number(tour.number_of_days) : undefined} />}
-        {activeKey === "pricing" && <TourPricingTab tourId={tourId} role={role} />}
-        {activeKey === "accommodation" && <TourAccommodationExtraTab tourId={tourId} />}
-        {activeKey === "activities" && <TourOptionalActivityTab tourId={tourId} />}
-        {activeKey === "policies" && (
-          <div className="space-y-6">
-            <TourItemsTab tourId={tourId} segment="inclusions" label="Inclusions" />
-            <TourItemsTab tourId={tourId} segment="exclusions" label="Exclusions" />
-            <CancellationPolicySection tourId={tourId} />
-          </div>
-        )}
-        {activeKey === "media" && (
-          <div className="space-y-6">
-            <TourGalleryTab tourId={tourId} />
-            <TourFormPage tourId={tourId} embedded role={role} sections={["media-seo"]} initialData={tour ?? undefined} onSaved={() => fetchTour(false)} />
-          </div>
-        )}
-        {activeKey === "review" && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-dash-border bg-white p-6">
-              <h2 className="text-xl font-bold text-dash-text">Review & Submit</h2>
-              <p className="mt-1 text-sm text-dash-subtle">
-                {isSupplier
-                  ? "Once every section looks right, submit this tour for admin review. You can keep editing drafts and resubmit if changes are requested."
-                  : "Approvals happen from the Tour Approval queue, so changes from suppliers get a deliberate review step before going live."}
-              </p>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                {isSupplier ? (
-                  <>
-                    {canSubmit && (
-                      <button
-                        type="button"
-                        onClick={handleSubmitForApproval}
-                        disabled={submitting}
-                        className="inline-flex items-center gap-2 rounded-xl bg-[#16833A] px-4 py-2.5 text-xs font-black text-white shadow-md shadow-emerald-100 hover:bg-[#117331] disabled:opacity-60"
-                      >
-                        {submitting ? <Loader2 size={15} className="animate-spin" /> : <SendHorizontal size={15} />}
-                        {submitting ? "Submitting…" : "Submit for Approval"}
-                      </button>
-                    )}
-                    {submitSuccess && (
-                      <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700">
-                        <CheckCircle2 size={15} />
-                        Submitted for approval!
-                      </span>
-                    )}
-                    <a href={`/supplier/tours/${tourId}/preview`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-xs font-black text-dash-body hover:bg-dash-bg">
-                      <Eye size={15} /> Preview
-                    </a>
-                  </>
-                ) : (
-                  <>
-                    <a href="/admin/tour-approval" className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-xs font-black text-white shadow-md hover:bg-dash-brand-hover">
-                      <SendHorizontal size={15} /> Go to Tour Approval queue
-                    </a>
-                    {tour?.slug && (
-                      <a href={`/tours/${tourId}/${tour.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-xs font-black text-dash-body hover:bg-dash-bg">
-                        <Eye size={15} /> Preview public page
-                      </a>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="mt-4 flex flex-col gap-4 lg:flex-row">
+        <WizardSidebar role={role} activeIndex={activeIndex} visitedIndexes={visitedSteps} statuses={statuses} onSelect={selectStep} />
+        <div className="min-w-0 flex-1">
+          <WizardMobileProgress role={role} activeIndex={activeIndex} />
 
-        {activeKey === "calendar" && <TourCalendarTab tourId={tourId} />}
-        {activeKey === "extensions" && <TourExtensionsTab tourId={tourId} />}
-        {activeKey === "discounts" && <TourDiscountsTab tourId={tourId} />}
-        {activeKey === "group-discounts" && <TourGroupDiscountTab tourId={tourId} />}
-        {activeKey === "similar" && <TourSimilarTab tourId={tourId} />}
-      </TourWorkspaceContent>
-
-      {group === "primary" && (
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => selectPrimaryStep(Math.max(0, activeIndex - 1))}
-            disabled={activeIndex === 0}
-            className="inline-flex items-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-xs font-black text-dash-body transition hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ArrowLeft size={15} /> Back
-          </button>
-          {activeIndex < PRIMARY_STEPS.length - 1 ? (
-            <button
-              type="button"
-              onClick={() => selectPrimaryStep(Math.min(PRIMARY_STEPS.length - 1, activeIndex + 1))}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 ${
-                isSupplier ? "bg-[#16833A] shadow-emerald-200 hover:bg-[#117331]" : "bg-dash-brand shadow-blue-200 hover:bg-dash-brand-hover"
-              }`}
-            >
-              Continue: {PRIMARY_STEPS[activeIndex + 1].label} <ArrowRight size={15} />
-            </button>
-          ) : (
-            <span className="text-[11px] font-bold text-dash-subtle">You&apos;re on the last step.</span>
+          {openCommentsForStep.length > 0 && (
+            <div className="mt-4 space-y-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+              <p className="text-xs font-black uppercase tracking-wide text-amber-700">Admin feedback for this step</p>
+              {openCommentsForStep.map((c) => (
+                <div key={c.id} className="flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-white p-3">
+                  <div className="min-w-0">
+                    <span className={`mr-2 rounded-full border px-2 py-0.5 text-[10px] font-bold capitalize ${SEVERITY_STYLES[c.severity] ?? SEVERITY_STYLES.minor}`}>
+                      {c.severity}
+                    </span>
+                    <span className="text-sm text-dash-body">{c.comment}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void resolveComment(c.id)}
+                    className="shrink-0 rounded-lg border border-dash-border px-2.5 py-1 text-xs font-bold text-dash-subtle hover:bg-dash-bg"
+                  >
+                    Mark resolved
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
+
+          <TourWorkspaceContent role={role} stepLabel={`Step ${activeStep.number} of ${WIZARD_STEPS.length} · ${activeStep.label}`}>
+            {activeKey === "basic" && (
+              <TourFormPage
+                tourId={tourId}
+                embedded
+                role={role}
+                sections={["basic-core"]}
+                formId="wizard-form-basic"
+                initialData={tour ?? undefined}
+                onSaved={afterFormSaved}
+                onGoToPricing={() => selectStep(WIZARD_STEPS.findIndex((s) => s.id === "pricing"))}
+              />
+            )}
+            {activeKey === "location" && (
+              <div className="space-y-6">
+                <TourFormPage tourId={tourId} embedded role={role} sections={["location"]} formId="wizard-form-location" initialData={tour ?? undefined} onSaved={afterFormSaved} />
+                <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+                  <h2 className="text-xl font-black text-dash-text">Physical Rating</h2>
+                  <p className="mt-1 text-sm text-dash-subtle">How physically demanding this tour is for travellers.</p>
+                  <div className="mt-5">
+                    <PhysicalRatingField tourId={tourId} />
+                  </div>
+                </div>
+              </div>
+            )}
+            {activeKey === "overview" && (
+              <div className="space-y-6">
+                <TourOverviewTab tourId={tourId} />
+                <TourHighlightsTab tourId={tourId} />
+              </div>
+            )}
+            {activeKey === "itinerary" && <TourItineraryTab tourId={tourId} numberOfDays={tour?.number_of_days ? Number(tour.number_of_days) : undefined} />}
+            {activeKey === "pricing" && (
+              <div className="space-y-6">
+                <TourPricingTab tourId={tourId} role={role} tourStatus={tour?.status as string | undefined} />
+                <div id="tour-discounts-section">
+                  <TourDiscountsTab tourId={tourId} />
+                </div>
+                <TourGroupDiscountTab tourId={tourId} />
+              </div>
+            )}
+            {activeKey === "calendar" && <TourCalendarTab tourId={tourId} />}
+            {activeKey === "accommodation" && (
+              <div className="space-y-6">
+                <TourAccommodationExtraTab tourId={tourId} />
+                <TourOptionalActivityTab tourId={tourId} />
+              </div>
+            )}
+            {activeKey === "policies" && (
+              <div className="space-y-6">
+                <TourItemsTab tourId={tourId} segment="inclusions" label="Inclusions" />
+                <TourItemsTab tourId={tourId} segment="exclusions" label="Exclusions" />
+                <CancellationPolicySection tourId={tourId} />
+              </div>
+            )}
+            {activeKey === "extensions" && (
+              <div className="space-y-6">
+                <TourExtensionsTab tourId={tourId} />
+                <TourSimilarTab tourId={tourId} />
+              </div>
+            )}
+            {activeKey === "media" && (
+              <div className="space-y-6">
+                <TourGalleryTab tourId={tourId} />
+                <TourFormPage tourId={tourId} embedded role={role} sections={["media"]} formId="wizard-form-media" initialData={tour ?? undefined} onSaved={afterFormSaved} />
+              </div>
+            )}
+            {activeKey === "seo" && (
+              <TourFormPage tourId={tourId} embedded role={role} sections={["seo", "settings"]} formId="wizard-form-seo" initialData={tour ?? undefined} onSaved={afterFormSaved} />
+            )}
+            {activeKey === "review" && tour && (
+              <WizardReviewSubmit
+                role={role}
+                tourId={tourId}
+                basePath={basePath}
+                isSupplier={isSupplier}
+                status={String(tour.status ?? "")}
+                statuses={statuses}
+                onEditStep={selectStep}
+                canSubmit={Boolean(canSubmit)}
+                submitting={submitting}
+                submitSuccess={submitSuccess}
+                submitError={submitError}
+                onSubmitForApproval={handleSubmitForApproval}
+                canWithdraw={Boolean(canWithdraw)}
+                withdrawing={withdrawing}
+                onWithdraw={handleWithdraw}
+                hasPendingReview={Boolean(banner)}
+              />
+            )}
+          </TourWorkspaceContent>
+
+          <WizardStickyActionBar role={role} left={leftButtons} right={rightButtons} />
         </div>
-      )}
+      </div>
     </>
   );
 }

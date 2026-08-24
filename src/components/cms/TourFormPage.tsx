@@ -23,7 +23,7 @@ import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import { useCurrency } from "@/hooks/useCurrency";
 import { DiscountInfo, DiscountPriceLine, hasActiveDiscount } from "@/components/public/DiscountPrice";
 
-type Section = "basic" | "location" | "media-seo";
+type Section = "basic-core" | "settings" | "location" | "media" | "seo";
 
 type Props = {
   tourId?: string;
@@ -33,9 +33,13 @@ type Props = {
   initialData?: Record<string, unknown>;
   sections?: Section[];
   onGoToPricing?: () => void;
+  /** Assigned to the underlying <form> so an external button (e.g. the
+   * wizard's sticky "Save & Continue") can submit it via the HTML `form`
+   * attribute without needing a ref or duplicating the save logic. */
+  formId?: string;
 };
 
-const ALL_SECTIONS: Section[] = ["basic", "location", "media-seo"];
+const ALL_SECTIONS: Section[] = ["basic-core", "settings", "location", "media", "seo"];
 
 type DropdownOption = { id: number; label: string };
 type SubcategoryOption = { id: number; label: string; category_id: number | null };
@@ -130,12 +134,15 @@ export default function TourFormPage({
   initialData,
   sections = ALL_SECTIONS,
   onGoToPricing,
+  formId,
 }: Props) {
   const toast = useToast();
   const { format: formatCurrency } = useCurrency();
-  const showBasic = sections.includes("basic");
+  const showBasic = sections.includes("basic-core");
+  const showSettings = sections.includes("settings");
   const showLocation = sections.includes("location");
-  const showMediaSeo = sections.includes("media-seo");
+  const showMedia = sections.includes("media");
+  const showSeo = sections.includes("seo");
   const isSupplier = role === "supplier";
   const inputClass = `w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition ${
     isSupplier
@@ -313,7 +320,7 @@ export default function TourFormPage({
     // creating a brand-new tour (no tourId yet) do we still gate by the
     // section actually shown, since there is no prior tour to preserve.
     const isEditingExistingTour = Boolean(tourId);
-    if (showBasic || isEditingExistingTour) {
+    if (showBasic || showSettings || isEditingExistingTour) {
       for (const [key] of [...textFields, ...descriptionFields, ...simpleNumberFields, ...coreDetailFields, ...basicDetailFields]) {
         payload[key] = form[key]?.trim() ?? "";
       }
@@ -343,7 +350,7 @@ export default function TourFormPage({
       payload.city_id = form.city_id ? Number(form.city_id) : null;
     }
 
-    if (showMediaSeo || isEditingExistingTour) {
+    if (showMedia || showSeo || isEditingExistingTour) {
       for (const [key] of [...seoFields, ...mediaSeoTextFields]) {
         payload[key] = form[key]?.trim() ?? "";
       }
@@ -452,7 +459,7 @@ export default function TourFormPage({
           <Loader label="Loading tour..." />
         </div>
       ) : (
-        <form onSubmit={submit} className={`${embedded ? "" : "mx-auto mt-4 max-w-6xl"} space-y-4`}>
+        <form onSubmit={submit} id={formId} className={`${embedded ? "" : "mx-auto mt-4 max-w-6xl"} space-y-4`}>
           <div id="tour-form-save-bar" className="flex flex-col gap-3 rounded-2xl border border-[#DCE6F3] bg-white px-4 py-3 shadow-[0_10px_30px_-28px_rgba(28,83,160,.8)] sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-black text-dash-text">{tourId ? "Tour essentials" : "Tour setup"}</p>
@@ -571,6 +578,26 @@ export default function TourFormPage({
               <input value={form.suitable_age_range ?? ""} onChange={(e) => update("suitable_age_range", e.target.value)} placeholder="e.g. 12+" className={inputClass} />
             </label>
 
+          </FormSection>
+          )}
+
+          {showBasic && (
+          <FormSection role={role} icon={AlignLeft} title="Descriptions" description="Shown on the public tour page.">
+            {descriptionFields.map(([key, label]) => (
+              <label key={key} className="md:col-span-2">
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
+                <textarea
+                  value={form[key] ?? ""}
+                  onChange={(e) => update(key, e.target.value)}
+                  className={`min-h-28 ${inputClass}`}
+                />
+              </label>
+            ))}
+          </FormSection>
+          )}
+
+          {showSettings && (
+          <FormSection role={role} icon={FileText} title="Publishing settings" description="Visibility and booking behavior for this tour.">
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Visibility</span>
               <select value={form.tour_visibility ?? "public"} onChange={(e) => update("tour_visibility", e.target.value)} className={inputClass}>
@@ -594,21 +621,6 @@ export default function TourFormPage({
                 Off: a fully paid booking with an assigned supplier confirms immediately, without waiting on supplier acceptance.
               </p>
             )}
-          </FormSection>
-          )}
-
-          {showBasic && (
-          <FormSection role={role} icon={AlignLeft} title="Descriptions" description="Shown on the public tour page.">
-            {descriptionFields.map(([key, label]) => (
-              <label key={key} className="md:col-span-2">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
-                <textarea
-                  value={form[key] ?? ""}
-                  onChange={(e) => update(key, e.target.value)}
-                  className={`min-h-28 ${inputClass}`}
-                />
-              </label>
-            ))}
           </FormSection>
           )}
 
@@ -741,7 +753,7 @@ export default function TourFormPage({
           </>
           )}
 
-          {showMediaSeo && (
+          {showMedia && (
           <FormSection role={role} icon={ImageIcon} title="Media" description="Images and downloads for the tour listing.">
             <AdminAssetUpload label="Banner image" value={form.banner_image ?? ""} onChange={(value) => update("banner_image", value)} />
             <AdminAssetUpload label="Map image" value={form.map_image ?? ""} onChange={(value) => update("map_image", value)} />
@@ -754,7 +766,7 @@ export default function TourFormPage({
           </FormSection>
           )}
 
-          {showMediaSeo && (
+          {showSeo && (
           <FormSection role={role} icon={Search} title="SEO" description="Metadata for search engines and social sharing.">
             {seoFields.map(([key, label]) => (
               <label key={key} className={key === "seo_description" ? "md:col-span-2" : ""}>

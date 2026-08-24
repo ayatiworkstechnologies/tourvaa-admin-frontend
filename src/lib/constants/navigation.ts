@@ -24,6 +24,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Affiliates", module: "affiliates", href: "/admin/affiliates", icon: UsersRound, permissions: ["affiliates.view", "view-affiliates"], section: "Business" },
   { label: "Affiliate Links", module: "affiliate_links", href: "/admin/affiliates/links", icon: Link2, permissions: ["affiliate_links.view"], section: "Business" },
   { label: "Commission Rules", module: "affiliate_commission_rules", href: "/admin/affiliates/commission-rules", icon: Percent, permissions: ["affiliate_commission_rules.view"], section: "Business" },
+  { label: "Default Commissions", module: "default_commissions", href: "/admin/settings/default-commissions", icon: Percent, permissions: ["settings.view", "view-settings"], section: "Business" },
   { label: "Affiliate Payouts", module: "affiliate_payouts", href: "/admin/affiliates/payouts", icon: Banknote, permissions: ["affiliate_payouts.approve", "affiliate_payouts.view"], section: "Business" },
   { label: "Countries", module: "countries", href: "/admin/settings/countries", icon: FileText, permissions: ["countries.view", "view-countries", "cities.view", "view-cities"], section: "Tour Management" },
   { label: "Tours", module: "tours", href: "/admin/tours", icon: MapPinned, permissions: ["tours.view", "view-tours"], section: "Tour Management" },

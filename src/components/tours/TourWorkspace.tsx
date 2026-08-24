@@ -13,7 +13,7 @@ type WorkspaceAction = {
   variant?: "primary" | "secondary";
 };
 
-const theme = {
+export const theme = {
   admin: {
     border: "border-[#DCE6F5]",
     glow: "bg-[#EAF3FF]",

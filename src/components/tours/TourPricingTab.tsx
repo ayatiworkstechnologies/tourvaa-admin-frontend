@@ -1,84 +1,139 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LuPercent as Percent, LuSave as Save } from "react-icons/lu";
-import { PricingSlab, getPricing, createPricing, updatePricing } from "@/lib/api/services/tourDetailService";
+import { LuBadgeDollarSign as BadgeDollarSign, LuInfo as Info, LuPencil as Pencil, LuPercent as Percent, LuPlus as Plus, LuSave as Save, LuSparkles as Sparkles, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
+import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } from "@/lib/api/services/tourDetailService";
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
+import DataTable from "@/components/ui/DataTable";
 import CurrencySelect from "@/components/ui/CurrencySelect";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
-// admin_markup_value is a legacy field the backend schema still accepts
-// but no longer applies to pricing - the price entered below is exactly
-// what the customer is charged (services.tours._apply_pricing_computation).
-// Tourvaa's commission is deducted from that same price instead - see the
-// Tourvaa Tour Commission card below and the supplier's profile. This
-// constant is only used to keep sending a schema-valid value on save.
-const DEFAULT_ADMIN_MARKUP = 10;
+const STATUSES = ["active", "inactive"];
 
-// A tour now has exactly ONE base price (for 1 person) rather than a
-// separate absolute price per pax-range slab. Larger group sizes are
-// priced as a percentage discount off this base price, set on the Group
-// Discounts tab - covers every possible traveller count with one row.
-const BASE_PAX_FROM = 1;
-const BASE_PAX_TO = 999;
-
-const empty = (): PricingSlab => ({
-  passenger_from: BASE_PAX_FROM, passenger_to: BASE_PAX_TO, adult_price: 0, child_price: 0,
-  admin_markup_value: DEFAULT_ADMIN_MARKUP,
-  currency: "USD", status: "active",
+const emptySlab = (defaults: { currency: string; commission: number }): PricingSlab => ({
+  passenger_from: 1, passenger_to: 4, adult_price: 0, child_price: 0,
+  commission_percentage: defaults.commission,
+  currency: defaults.currency, status: "active",
 });
 
-export default function TourPricingTab({ tourId, role = "admin" }: { tourId: string; role?: "admin" | "supplier" }) {
+function fmt(n: number | null | undefined, currency: string) {
+  const value = n ?? 0;
+  return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+}
+
+function SectionCard({
+  icon: Icon,
+  iconTone,
+  title,
+  description,
+  action,
+  children,
+}: {
+  icon: React.ElementType;
+  iconTone: "brand" | "emerald";
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-dash-border-soft bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-dash-border-soft px-5 py-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconTone === "emerald" ? "bg-emerald-50 text-emerald-700" : "bg-[#EDF5FF] text-dash-brand-hover"}`}>
+            <Icon size={18} />
+          </span>
+          <div>
+            <h2 className="text-lg font-black text-dash-text">{title}</h2>
+            <p className="text-xs font-medium text-dash-subtle">{description}</p>
+          </div>
+        </div>
+        {action}
+      </div>
+      <div className="p-5 sm:p-6">{children}</div>
+    </section>
+  );
+}
+
+function ActionButtons({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div className="flex items-center justify-end gap-2">
+      <button type="button" onClick={onEdit} aria-label="Edit" title="Edit" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:border-dash-brand/40 hover:bg-sky-50 hover:text-dash-brand-hover">
+        <Pencil size={15} />
+      </button>
+      <button type="button" onClick={onDelete} aria-label="Delete" title="Delete" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+        <Trash2 size={15} />
+      </button>
+    </div>
+  );
+}
+
+export default function TourPricingTab({
+  tourId,
+  role = "admin",
+  tourStatus,
+}: {
+  tourId: string;
+  role?: "admin" | "supplier";
+  /** Live tour status, passed down from the wizard's already-loaded tour
+   * record -- used only to show the repricing notice inline; the actual
+   * behavior is entirely backend-driven (services.tours._apply_pricing_computation). */
+  tourStatus?: string;
+}) {
   const toast = useToast();
   const isSupplier = role === "supplier";
-  const [base, setBase] = useState<PricingSlab | null>(null);
+  const isLiveTour = ["active", "published"].includes((tourStatus ?? "").toLowerCase());
+  const accent = isSupplier
+    ? { solidBtn: "bg-[#16833A] hover:bg-[#117331] shadow-emerald-100", ring: "border-[#16833A]", chip: "bg-emerald-50 text-emerald-700" }
+    : { solidBtn: "bg-dash-brand hover:bg-dash-brand-hover shadow-blue-100", ring: "border-dash-brand", chip: "bg-[#EDF5FF] text-dash-brand-hover" };
+
+  const [slabs, setSlabs] = useState<PricingSlab[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState<PricingSlab | null>(null);
+  const [markupEditing, setMarkupEditing] = useState<PricingSlab | null>(null);
 
-  // Read-only - the commission rate itself is set on the supplier's
-  // profile (or the platform minimum if the supplier has no rate of their
-  // own), not editable from here. This just shows what it means for the
-  // prices entered below - see services.bookings.resolve_effective_commission_percentage
-  // for the same resolution order.
-  const [commissionRate, setCommissionRate] = useState<number | null>(null);
+  // Read-only -- the supplier's agreed commission floor (this slab-level
+  // rate can be raised, never lowered below it) is set on the supplier's
+  // profile, or the platform minimum if they have no rate of their own.
+  // See services.bookings.resolve_effective_commission_percentage, the
+  // same resolution order applied server-side per slab.
+  const [commissionFloor, setCommissionFloor] = useState<number | null>(null);
+  const [defaultCurrency, setDefaultCurrency] = useState("USD");
 
-  const loadCommissionRate = useCallback(async () => {
+  const loadCommissionFloor = useCallback(async () => {
     try {
       if (isSupplier) {
         const res = await api.get("/suppliers/me");
         const own = res.data?.data?.commission_percentage;
-        if (own != null) { setCommissionRate(Number(own)); return; }
+        if (own != null) { setCommissionFloor(Number(own)); return; }
       } else {
         const tourRes = await api.get(`/tours/${tourId}`);
         const supplierId = tourRes.data?.data?.supplier_id;
+        if (tourRes.data?.data?.currency) setDefaultCurrency(String(tourRes.data.data.currency));
         if (supplierId) {
           const supplierRes = await api.get(`/suppliers/${supplierId}`);
           const own = supplierRes.data?.data?.commission_percentage;
-          if (own != null) { setCommissionRate(Number(own)); return; }
+          if (own != null) { setCommissionFloor(Number(own)); return; }
         }
       }
       const settingsRes = await api.get("/settings/public");
       const min = settingsRes.data?.data?.supplier_commission_percentage;
-      if (min !== undefined) setCommissionRate(Number(min));
+      if (min !== undefined) setCommissionFloor(Number(min));
     } catch {
-      // Non-fatal - the price form itself is the primary content of this tab.
+      // Non-fatal -- the price form itself is the primary content of this tab.
     }
   }, [tourId, isSupplier]);
 
-  useEffect(() => { void loadCommissionRate(); }, [loadCommissionRate]);
+  useEffect(() => { void loadCommissionFloor(); }, [loadCommissionFloor]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const slabs = await getPricing(tourId);
-      // Any tour created before this single-base-price model may still have
-      // several active rows - if so, treat the lowest pax_from as the base
-      // (the "starting from 1 person" price), matching the one-time backend
-      // consolidation that already ran for existing tours.
-      const active = slabs.filter((s) => s.status === "active").sort((a, b) => a.passenger_from - b.passenger_from);
-      setBase(active[0] ?? null);
+      const rows = await getPricing(tourId);
+      setSlabs(rows.sort((a, b) => a.passenger_from - b.passenger_from));
     } catch {
       toast.error("Failed to load pricing.");
     } finally {
@@ -86,111 +141,294 @@ export default function TourPricingTab({ tourId, role = "admin" }: { tourId: str
     }
   }, [tourId, toast]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
-  const save = async (e: React.FormEvent) => {
+  // Falls back to 0 only for math/validation before the real floor has
+  // resolved -- the table badge (below) shows a loading placeholder
+  // instead of a misleading "0" in that brief window.
+  const resolvedFloor = commissionFloor ?? 0;
+
+  const openNewSlab = () => setEditing(emptySlab({ currency: defaultCurrency, commission: resolvedFloor }));
+
+  const saveSlab = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!base) return;
+    if (!editing) return;
+    if (editing.commission_percentage != null && editing.commission_percentage < resolvedFloor) {
+      toast.error(`Commission % cannot be lower than your agreed rate of ${resolvedFloor}%.`);
+      return;
+    }
     setSaving(true);
     try {
       const payload: PricingSlab = {
-        ...base,
-        passenger_from: BASE_PAX_FROM,
-        passenger_to: BASE_PAX_TO,
-        adult_price: sanitizeNumber(base.adult_price),
-        child_price: sanitizeNumber(base.child_price),
-        admin_markup_value: DEFAULT_ADMIN_MARKUP,
+        ...editing,
+        passenger_from: sanitizeNumber(editing.passenger_from, 1),
+        passenger_to: sanitizeNumber(editing.passenger_to, 1),
+        adult_price: sanitizeNumber(editing.adult_price),
+        child_price: sanitizeNumber(editing.child_price),
+        commission_percentage: editing.commission_percentage == null ? null : sanitizeNumber(editing.commission_percentage, resolvedFloor),
       };
-      const saved = base.id ? await updatePricing(tourId, base.id, payload) : await createPricing(tourId, payload);
-      setBase(saved);
-      toast.success("Saved.");
+      if (editing.id) {
+        const updated = await updatePricing(tourId, editing.id, payload);
+        setSlabs((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+      } else {
+        const created = await createPricing(tourId, payload);
+        setSlabs((prev) => [...prev, created].sort((a, b) => a.passenger_from - b.passenger_from));
+      }
+      setEditing(null);
+      toast.success("Pricing slab saved.");
     } catch (error: unknown) {
-      const message = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(message || "Failed to save.");
+      const message = (error as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
+      toast.error(message?.detail || message?.message || "Failed to save pricing slab.");
     } finally {
       setSaving(false);
     }
   };
 
+  const removeSlab = async (id: number) => {
+    if (!confirm("Delete this pricing slab?")) return;
+    try {
+      await deletePricing(tourId, id);
+      setSlabs((prev) => prev.filter((s) => s.id !== id));
+    } catch {
+      toast.error("Failed to delete.");
+    }
+  };
+
+  const saveMarkup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!markupEditing?.id) return;
+    setSaving(true);
+    try {
+      const updated = await updatePricing(tourId, markupEditing.id, markupEditing);
+      setSlabs((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+      setMarkupEditing(null);
+      toast.success("Publishable price updated.");
+    } catch {
+      toast.error("Failed to save.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const goToDiscounts = () => document.getElementById("tour-discounts-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   if (loading) return <Loader label="Loading pricing..." />;
 
-  const form = base ?? empty();
-  const rate = commissionRate ?? 0;
-  const adultCommission = Math.round(form.adult_price * rate) / 100;
-  const childCommission = Math.round(form.child_price * rate) / 100;
-  const adultNet = Math.round((form.adult_price - adultCommission) * 100) / 100;
-  const childNet = Math.round((form.child_price - childCommission) * 100) / 100;
-  const fmt = (n: number) => `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${form.currency}`;
+  const rangeBadge = (r: PricingSlab) => (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>{r.passenger_from}–{r.passenger_to} pax</span>
+  );
+
+  const supplierColumns = [
+    { key: "range", header: "Pax Range", render: rangeBadge },
+    { key: "adult", header: "Adult Price (Tourvaa)", render: (r: PricingSlab) => <span className="font-semibold text-dash-text">{fmt(r.adult_price, r.currency)}</span> },
+    { key: "adult_net", header: "Supplier Receives", render: (r: PricingSlab) => <span className="font-bold text-emerald-700">{fmt(r.supplier_final_adult_price, r.currency)}</span> },
+    { key: "child", header: "Child Price (Tourvaa)", render: (r: PricingSlab) => <span className="font-semibold text-dash-text">{fmt(r.child_price, r.currency)}</span> },
+    { key: "child_net", header: "Supplier Receives", render: (r: PricingSlab) => <span className="font-bold text-emerald-700">{fmt(r.supplier_final_child_price, r.currency)}</span> },
+    { key: "commission", header: "Commission", render: (r: PricingSlab) => <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body"><Percent size={10} />{r.commission_percentage ?? commissionFloor ?? "…"}</span> },
+    { key: "currency", header: "Currency", render: (r: PricingSlab) => <span className="text-dash-subtle">{r.currency}</span> },
+    { key: "status", header: "Status", render: (r: PricingSlab) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${r.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.status}</span> },
+  ];
+
+  const addButton = (
+    <button type="button" onClick={openNewSlab}
+      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 ${accent.solidBtn}`}>
+      <Plus size={15} /> {isSupplier ? "New Pricing Slab" : "Add Slab"}
+    </button>
+  );
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-xl font-bold text-dash-text">{isSupplier ? "Supplier Pricing" : "Tour Pricing"}</h2>
-          <p className="text-sm text-dash-subtle">
-            One base price per person (for 1 traveller) - this is exactly what a solo customer is charged, with no markup added on top.
-            For larger groups, set a percentage (or fixed) discount off this price on the <strong>Group Discounts</strong> tab, by traveller-count range - not a separate price to type in here.
-          </p>
-        </div>
-
-        <form onSubmit={save} className="rounded-xl border border-dash-border bg-white p-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Adult price (per person, charged to customer)</span>
-              <input type="number" value={numberInputValue(form.adult_price)}
-                onChange={(e) => setBase((p) => ({ ...(p ?? empty()), adult_price: parseNumberInput(e.target.value) }))}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Child price (per person, charged to customer)</span>
-              <input type="number" value={numberInputValue(form.child_price)}
-                onChange={(e) => setBase((p) => ({ ...(p ?? empty()), child_price: parseNumberInput(e.target.value) }))}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
-              <CurrencySelect value={form.currency} onChange={(code) => setBase((p) => ({ ...(p ?? empty()), currency: code }))} />
-            </label>
+    <div className="space-y-6">
+      <SectionCard
+        icon={BadgeDollarSign}
+        iconTone={isSupplier ? "emerald" : "brand"}
+        title={isSupplier ? "Supplier Pricing" : "Supplier Price to Tourvaa"}
+        description={isSupplier
+          ? "Your price per pax-range slab. Your agreed commission is applied automatically."
+          : "The supplier's own price and agreed commission, per pax-range slab."}
+        action={addButton}
+      >
+        {isSupplier && isLiveTour && (
+          <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-800">
+            <Info size={16} className="mt-0.5 shrink-0" />
+            <span>Saving takes this price live immediately. Admin will also be notified to review the change.</span>
           </div>
-          <div className="mt-4 flex justify-end">
-            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
-              <Save size={14} /> {saving ? "Saving..." : "Save Base Price"}
+        )}
+
+        <DataTable
+          ariaLabel="Supplier pricing"
+          columns={supplierColumns}
+          rows={slabs}
+          actions={(r) => <ActionButtons onEdit={() => setEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />}
+          emptyTitle="No pricing slabs yet"
+          emptyDescription="Add a pricing slab so this tour becomes bookable."
+          emptyAction={
+            <button type="button" onClick={openNewSlab} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black text-white shadow-md ${accent.solidBtn}`}>
+              <Plus size={15} /> {isSupplier ? "New Pricing Slab" : "Add Slab"}
             </button>
-          </div>
-        </form>
+          }
+        />
 
-        <div className="rounded-xl border border-dash-border bg-dash-bg p-5">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-dash-text"><Percent size={16} /> Tourvaa Commission (read-only)</h3>
-          <p className="mt-1 text-xs text-dash-subtle">
-            {isSupplier
-              ? "This is your commission rate - set on your profile, not editable here."
-              : "This is the supplier's commission rate - set on the supplier's profile, not editable here."} It shows what Tourvaa deducts from the prices above before payout.
-          </p>
-          <p className="mt-2 text-sm font-semibold text-dash-body">
-            Rate: <strong>{commissionRate !== null ? `${commissionRate}%` : "-"}</strong>
-          </p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg bg-white p-3">
-              <p className="text-xs font-bold uppercase text-dash-subtle">Adult</p>
-              <dl className="mt-1 space-y-1 text-xs text-dash-body">
-                <div className="flex justify-between"><dt>Price</dt><dd className="font-semibold">{fmt(form.adult_price)}</dd></div>
-                <div className="flex justify-between"><dt>Commission ({commissionRate ?? 0}%)</dt><dd className="font-semibold text-amber-600">-{fmt(adultCommission)}</dd></div>
-                <div className="flex justify-between border-t border-dash-border pt-1"><dt className="font-bold">Supplier earns</dt><dd className="font-black text-emerald-700">{fmt(adultNet)}</dd></div>
-              </dl>
+        {isSupplier && (
+          <label className="mt-4 flex items-center gap-2.5 rounded-xl border border-dash-border bg-dash-bg px-4 py-3 text-sm font-semibold text-dash-body">
+            <input type="checkbox" onChange={(e) => e.target.checked && goToDiscounts()} className="h-4 w-4 accent-[#16833A]" />
+            Do you wish to add a discount?
+          </label>
+        )}
+
+        <p className="mt-4 flex items-start gap-2 rounded-xl border border-dash-border bg-dash-bg p-3 text-xs text-dash-subtle">
+          <Sparkles size={14} className="mt-0.5 shrink-0 text-dash-subtle" />
+          <span><strong className="text-dash-body">Note:</strong> The prices entered above are your net supplier prices. Tourvaa will apply a retail markup before publishing your tour to cover agent commissions, transaction fees, marketing, and operating costs.</span>
+        </p>
+      </SectionCard>
+
+      {!isSupplier && (
+        <SectionCard
+          icon={Percent}
+          iconTone="brand"
+          title="Publishable Price"
+          description="Admin-only markup added on top of the supplier's price to produce the storefront price. Suppliers never see this section."
+        >
+          <DataTable
+            ariaLabel="Publishable price"
+            columns={[
+              { key: "range", header: "Pax Range", render: rangeBadge },
+              { key: "adult", header: "Supplier Price (Adult)", render: (r: PricingSlab) => <span className="font-semibold text-dash-text">{fmt(r.adult_price, r.currency)}</span> },
+              { key: "child", header: "Supplier Price (Child)", render: (r: PricingSlab) => <span className="font-semibold text-dash-text">{fmt(r.child_price, r.currency)}</span> },
+              { key: "markup", header: "Tourvaa Commission", render: (r: PricingSlab) => <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body"><Percent size={10} />{r.admin_markup_value ?? 0}</span> },
+              { key: "storefront", header: "Storefront Price", render: (r: PricingSlab) => <span className="font-black text-emerald-700">{fmt(r.storefront_adult_price, r.currency)}</span> },
+              { key: "currency", header: "Currency", render: (r: PricingSlab) => <span className="text-dash-subtle">{r.currency}</span> },
+            ]}
+            rows={slabs}
+            actions={(r) => <ActionButtons onEdit={() => setMarkupEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />}
+            emptyTitle="No pricing slabs yet"
+            emptyDescription="Add a pricing slab in Supplier Price to Tourvaa above first."
+          />
+        </SectionCard>
+      )}
+
+      {editing && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950/35 px-4 py-8" role="dialog" aria-modal="true">
+          <form onSubmit={saveSlab} className={`w-full max-w-2xl rounded-2xl border-2 bg-white p-6 shadow-2xl ${accent.ring}`}>
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-black text-dash-text">
+                <BadgeDollarSign size={18} className={isSupplier ? "text-emerald-700" : "text-dash-brand-hover"} />
+                {editing.id ? "Edit Pricing Slab" : "New Pricing Slab"}
+              </h3>
+              <button type="button" onClick={() => setEditing(null)} aria-label="Close" className="text-dash-subtle hover:text-dash-text"><X size={18} /></button>
             </div>
-            <div className="rounded-lg bg-white p-3">
-              <p className="text-xs font-bold uppercase text-dash-subtle">Child</p>
-              <dl className="mt-1 space-y-1 text-xs text-dash-body">
-                <div className="flex justify-between"><dt>Price</dt><dd className="font-semibold">{fmt(form.child_price)}</dd></div>
-                <div className="flex justify-between"><dt>Commission ({commissionRate ?? 0}%)</dt><dd className="font-semibold text-amber-600">-{fmt(childCommission)}</dd></div>
-                <div className="flex justify-between border-t border-dash-border pt-1"><dt className="font-bold">Supplier earns</dt><dd className="font-black text-emerald-700">{fmt(childNet)}</dd></div>
-              </dl>
+            <div className="grid gap-4 md:grid-cols-3">
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pax From</span>
+                <input type="number" min={1} value={numberInputValue(editing.passenger_from)} onChange={(e) => setEditing((p) => p ? { ...p, passenger_from: parseNumberInput(e.target.value) } : p)}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pax To</span>
+                <input type="number" min={1} value={numberInputValue(editing.passenger_to)} onChange={(e) => setEditing((p) => p ? { ...p, passenger_to: parseNumberInput(e.target.value) } : p)}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Commission %</span>
+                <input type="number" min={resolvedFloor} step="0.01" value={numberInputValue(editing.commission_percentage)} onChange={(e) => setEditing((p) => p ? { ...p, commission_percentage: parseNumberInput(e.target.value) } : p)}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
+                <span className="mt-1 block text-[11px] text-dash-subtle">Agreed rate ({resolvedFloor}%) applies automatically -- raise it, never lower it.</span>
+              </label>
+
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Adult Price (your price to Tourvaa)</span>
+                <input type="number" value={numberInputValue(editing.adult_price)} onChange={(e) => setEditing((p) => p ? { ...p, adult_price: parseNumberInput(e.target.value) } : p)}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Child Price (your price to Tourvaa)</span>
+                <input type="number" value={numberInputValue(editing.child_price)} onChange={(e) => setEditing((p) => p ? { ...p, child_price: parseNumberInput(e.target.value) } : p)}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
+                <CurrencySelect value={editing.currency} onChange={(code) => setEditing((p) => p ? { ...p, currency: code } : p)} />
+              </label>
             </div>
-          </div>
+
+            <div className="mt-4 grid gap-3 rounded-xl bg-dash-bg p-4 sm:grid-cols-2">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier receives (adult)</p>
+                <p className="mt-1 text-xl font-black text-emerald-700">
+                  {fmt(sanitizeNumber(editing.adult_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier receives (child)</p>
+                <p className="mt-1 text-xl font-black text-emerald-700">
+                  {fmt(sanitizeNumber(editing.child_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
+                </p>
+              </div>
+            </div>
+
+            <label className="mt-4 block max-w-xs">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
+              <select value={editing.status} onChange={(e) => setEditing((p) => p ? { ...p, status: e.target.value } : p)}
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10">
+                {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+
+            <div className="mt-6 flex justify-end gap-3 border-t border-dash-border pt-4">
+              <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg">Cancel</button>
+              <button type="submit" disabled={saving} className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 ${accent.solidBtn}`}>
+                <Save size={14} /> {saving ? "Saving..." : "Save Slab"}
+              </button>
+            </div>
+          </form>
         </div>
-      </div>
+      )}
+
+      {markupEditing && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true">
+          <form onSubmit={saveMarkup} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-black text-dash-text"><Percent size={16} className="text-dash-brand-hover" /> Edit Slab</h3>
+              <button type="button" onClick={() => setMarkupEditing(null)} aria-label="Close" className="text-dash-subtle hover:text-dash-text"><X size={18} /></button>
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pax From</span>
+                <p className="rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">{markupEditing.passenger_from}</p>
+              </div>
+              <div>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pax To</span>
+                <p className="rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">{markupEditing.passenger_to}</p>
+              </div>
+              <div>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier Price (Adult)</span>
+                <p className="rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">{fmt(markupEditing.adult_price, markupEditing.currency)}</p>
+              </div>
+              <div>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier Price (Child)</span>
+                <p className="rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">{fmt(markupEditing.child_price, markupEditing.currency)}</p>
+              </div>
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tourvaa Commission %</span>
+                <input type="number" step="0.01" value={numberInputValue(markupEditing.admin_markup_value)} onChange={(e) => setMarkupEditing((p) => p ? { ...p, admin_markup_value: parseNumberInput(e.target.value) } : p)}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
+              </label>
+              <div>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Storefront Price (Adult)</span>
+                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-black text-emerald-700">
+                  {fmt(sanitizeNumber(markupEditing.adult_price) * (1 + sanitizeNumber(markupEditing.admin_markup_value) / 100), markupEditing.currency)}
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 flex items-start gap-2 rounded-xl border border-dash-border bg-dash-bg p-3 text-xs text-dash-subtle">
+              <Info size={14} className="mt-0.5 shrink-0" />
+              <span>No minimum or maximum for this Commission %. Only visible in the Admin Portal, added on top of the supplier&apos;s price to produce the storefront price shown to customers.</span>
+            </p>
+            <button type="submit" disabled={saving} className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-dash-brand-hover disabled:cursor-not-allowed disabled:opacity-60">
+              <Save size={14} /> {saving ? "Saving..." : "Save Slab"}
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

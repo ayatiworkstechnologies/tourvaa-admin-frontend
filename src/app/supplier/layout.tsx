@@ -10,6 +10,7 @@ import Header from "@/components/layout/Header";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { canAccessSupplierRoute, isApprovedSupplier, isSupplierOperationalRoute } from "@/lib/auth/supplierAccess";
 import api from "@/lib/api/client";
+import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
 
 const NAV = [
   { href: "/supplier/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -54,6 +55,9 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [approvalNotice, setApprovalNotice] = useState(false);
+  // null = not yet checked. Checked right after login, before the
+  // approval/onboarding logic below - see CommissionConsentModal.
+  const [commissionAccepted, setCommissionAccepted] = useState<boolean | null>(null);
 
   useEffect(() => {
     const close = () => setSidebarOpen(false);
@@ -71,6 +75,13 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
       if (slug && slug !== "supplier") router.replace(getDashboardPath(slug));
     }
   }, [loading, isLoggedIn, dashboard, router]);
+
+  useEffect(() => {
+    if (loading || !isLoggedIn) { setCommissionAccepted(null); return; }
+    api.get("/suppliers/me")
+      .then((res) => setCommissionAccepted(Boolean(res.data?.data?.commission_accepted_at)))
+      .catch(() => setCommissionAccepted(true)); // fail open - don't block on a transient error
+  }, [loading, isLoggedIn]);
 
   const approved = isApprovedSupplier(user);
   const onboardingCheckedRef = useRef(false);
@@ -115,6 +126,31 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   }
 
   if (!isLoggedIn || !user) return null;
+
+  if (commissionAccepted === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-dash-bg">
+        <div className="flex items-center gap-3 rounded-xl bg-white px-5 py-4 text-sm font-semibold text-dash-muted shadow ring-1 ring-dash-border">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-dash-brand border-t-transparent" />
+          Loading…
+        </div>
+      </div>
+    );
+  }
+
+  if (!commissionAccepted) {
+    return (
+      <div className="min-h-screen bg-dash-bg" style={portalThemeStyles.supplier}>
+        <CommissionConsentModal
+          settingsKey="supplier_commission_percentage"
+          acceptEndpoint="/suppliers/me/accept-commission"
+          title="Your Default Commission to Tourvaa"
+          description="This is the commission Tourvaa deducts from your own price on every booking. You must agree to this rate before you can upload verification documents or continue."
+          onAccepted={() => setCommissionAccepted(true)}
+        />
+      </div>
+    );
+  }
 
   const pageTitle = getTitle(pathname);
 

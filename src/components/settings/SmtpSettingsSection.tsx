@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { LuSend as Send } from "react-icons/lu";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 
@@ -41,6 +42,10 @@ export default function SmtpSettingsSection() {
   const [useSsl, setUseSsl] = useState(true);
   const [useStarttls, setUseStarttls] = useState(false);
   const [timeoutSeconds, setTimeoutSeconds] = useState("20");
+
+  const [testEmail, setTestEmail] = useState("");
+  const [testSending, setTestSending] = useState(false);
+  const [testMessage, setTestMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -97,6 +102,28 @@ export default function SmtpSettingsSection() {
     }
   };
 
+  const sendTest = async () => {
+    if (!testEmail.trim()) {
+      setTestMessage({ tone: "error", text: "Enter an email address to send the test to." });
+      return;
+    }
+    setTestSending(true);
+    setTestMessage(null);
+    try {
+      const res = await api.post("/settings/smtp/test", { to_email: testEmail.trim() });
+      const usedCustom = res.data?.data?.used_custom_smtp;
+      setTestMessage({
+        tone: "success",
+        text: `Test email sent to ${testEmail.trim()}${usedCustom === false ? " using the platform default mail server (custom SMTP is disabled or has no host saved)." : "."}`,
+      });
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
+      setTestMessage({ tone: "error", text: detail?.message ?? detail?.detail ?? "Could not send test email." });
+    } finally {
+      setTestSending(false);
+    }
+  };
+
   if (loading) return <Loader label="Loading SMTP settings..." />;
   if (!summary) return null;
 
@@ -145,6 +172,34 @@ export default function SmtpSettingsSection() {
           </label>
           <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Timeout (seconds)</span><input type="number" value={timeoutSeconds} onChange={(e) => setTimeoutSeconds(e.target.value)} className={inputClass} /></label>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-dash-border p-5">
+        <h4 className="mb-1 font-bold text-dash-text">Send Test Email</h4>
+        <p className="mb-4 text-xs text-dash-subtle">
+          Sends a real email using whichever configuration is currently saved and active -- your custom SMTP
+          settings above if enabled with a host, otherwise the platform default. Save any changes first so the
+          test reflects them.
+        </p>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="min-w-56 flex-1">
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Send to</span>
+            <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="you@example.com" className={inputClass} />
+          </label>
+          <button
+            type="button"
+            onClick={() => void sendTest()}
+            disabled={testSending}
+            className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body transition-colors hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Send size={15} /> {testSending ? "Sending..." : "Send Test Email"}
+          </button>
+        </div>
+        {testMessage && (
+          <p className={`mt-3 rounded-lg px-3 py-2 text-xs font-semibold ${testMessage.tone === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+            {testMessage.text}
+          </p>
+        )}
       </div>
 
       <div className="flex justify-end">

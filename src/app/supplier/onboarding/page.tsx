@@ -10,6 +10,7 @@ import Loader from "@/components/ui/Loader";
 type SupplierProfile = {
   supplier_name?: string;
   commission_percentage?: string | number | null;
+  commission_accepted_at?: string | null;
   business_info?: Record<string, unknown> | null;
   documents?: { document_type?: string; status?: string }[];
 };
@@ -24,7 +25,6 @@ export default function SupplierOnboardingPage() {
   const [profile, setProfile] = useState<SupplierProfile | null>(null);
   const [docRequirements, setDocRequirements] = useState<DocRequirement[]>([]);
   const [platformMinRate, setPlatformMinRate] = useState<number | null>(null);
-  const [commissionAccepted, setCommissionAccepted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [finishing, setFinishing] = useState(false);
 
@@ -48,7 +48,6 @@ export default function SupplierOnboardingPage() {
   // the live platform rate rather than show a blank "-%" for any account
   // that predates that, or where approval happened through another path.
   const effectiveRate = profile?.commission_percentage ?? platformMinRate;
-  const onCommissionStep = step === 2;
 
   async function finish() {
     setFinishing(true);
@@ -116,10 +115,14 @@ export default function SupplierOnboardingPage() {
                 <p className="mt-1 text-2xl font-black text-[#123024]">{effectiveRate ?? "-"}%</p>
               </div>
               <p className="mt-3 text-xs text-[#647B6E]">Use the Commission Calculator on your Earnings page any time to see exactly what a booking will pay out after commission.</p>
-              <label className="mt-4 flex items-start gap-2.5 rounded-xl border border-[#DCEBE2] bg-white p-3">
-                <input type="checkbox" checked={commissionAccepted} onChange={(e) => setCommissionAccepted(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#16833A]" />
-                <span className="text-sm font-semibold text-[#123024]">I accept Tourvaa&apos;s commission rate of {effectiveRate ?? "-"}% to continue.</span>
-              </label>
+              <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-[#DCEBE2] bg-white p-3">
+                <CheckCircle2 size={16} className="shrink-0 text-[#16833A]" />
+                <span className="text-sm font-semibold text-[#123024]">
+                  {profile?.commission_accepted_at
+                    ? `You accepted Tourvaa's commission rate of ${effectiveRate ?? "-"}% on ${new Date(profile.commission_accepted_at).toLocaleDateString()}.`
+                    : `You accepted Tourvaa's commission rate of ${effectiveRate ?? "-"}% when you first logged in.`}
+                </span>
+              </div>
             </div>
           )}
 
@@ -153,7 +156,7 @@ export default function SupplierOnboardingPage() {
           <div className="mt-6 flex justify-between gap-3">
             <button type="button" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0} className="rounded-xl border border-[#DCEBE2] px-4 py-2.5 text-sm font-bold text-[#365A45] disabled:opacity-40">Back</button>
             {step < STEPS.length - 1 ? (
-              <button type="button" onClick={() => setStep((s) => s + 1)} disabled={onCommissionStep && !commissionAccepted} className="rounded-xl bg-[#16833A] px-5 py-2.5 text-sm font-black text-white hover:bg-[#117331] disabled:cursor-not-allowed disabled:opacity-40">Continue</button>
+              <button type="button" onClick={() => setStep((s) => s + 1)} className="rounded-xl bg-[#16833A] px-5 py-2.5 text-sm font-black text-white hover:bg-[#117331] disabled:cursor-not-allowed disabled:opacity-40">Continue</button>
             ) : (
               <button type="button" onClick={() => void finish()} disabled={finishing} className="rounded-xl bg-[#16833A] px-5 py-2.5 text-sm font-black text-white hover:bg-[#117331] disabled:opacity-60">{finishing ? "Finishing..." : "Go to dashboard"}</button>
             )}

@@ -239,19 +239,26 @@ export type PricingSlab = {
   passenger_to: number;
   adult_price: number;
   child_price: number;
-  // adult_price/child_price are the supplier's own net asking price.
-  // supplier_final_* (server-computed) mirrors it. admin_markup_value is
-  // Tourvaa's own retail markup (5-15%, admin-only) added on top to produce
-  // the storefront/customer-facing price - separate from Tourvaa's
-  // commission, which is deducted from the supplier's own price and is set
-  // on the supplier's profile / this tour's Commission field, not here.
-  // Only an admin actor's submitted admin_markup_value is honoured. The
-  // backend also has legacy supplier_price/final_price columns, but neither
-  // is read by any pricing logic and final_price is always
+  // adult_price/child_price are the supplier's own net asking price
+  // ("Your Price to Tourvaa"). Two independent layers are computed
+  // server-side from them (services.tours._apply_pricing_computation):
+  //  - commission_percentage (this slab's own rate, floor-enforced
+  //    against the supplier's agreed rate) -> supplier_final_*_price
+  //    ("Supplier Receives"). Any actor may submit/raise it.
+  //  - admin_markup_value (admin-only, no min/max) -> storefront_*_price,
+  //    what bookings.py actually charges the customer at checkout. Only
+  //    an admin actor's submitted admin_markup_value is honoured; a
+  //    supplier's submission of this field is ignored server-side, and
+  //    routers.tours strips it (plus storefront_*) from supplier
+  //    responses entirely -- these fields are simply absent from what a
+  //    supplier actor receives, not just zeroed.
+  // The backend also has legacy supplier_price/final_price columns, but
+  // neither is read by any pricing logic and final_price is always
   // server-overwritten, so this type omits them.
+  commission_percentage?: number | null;
   supplier_final_adult_price?: number | null;
   supplier_final_child_price?: number | null;
-  admin_markup_value: number;
+  admin_markup_value?: number;
   storefront_adult_price?: number | null;
   storefront_child_price?: number | null;
   currency: string;

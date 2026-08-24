@@ -8,6 +8,8 @@ import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
+import api from "@/lib/api/client";
+import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
 
 const NAV = [
   { href: "/agent/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -45,12 +47,20 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   const { isLoggedIn, loading, user, dashboard } = useAuthContext();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [commissionAccepted, setCommissionAccepted] = useState<boolean | null>(null);
 
   useEffect(() => {
     const close = () => setSidebarOpen(false);
     window.addEventListener("tourvaa:close-mobile-sidebar", close);
     return () => window.removeEventListener("tourvaa:close-mobile-sidebar", close);
   }, []);
+
+  useEffect(() => {
+    if (loading || !isLoggedIn) { setCommissionAccepted(null); return; }
+    api.get("/agents/me")
+      .then((res) => setCommissionAccepted(Boolean(res.data?.data?.commission_accepted_at)))
+      .catch(() => setCommissionAccepted(true));
+  }, [loading, isLoggedIn]);
 
   useEffect(() => {
     if (!loading && !isLoggedIn) router.replace(`/login?redirect=${pathname}`);
@@ -75,6 +85,31 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   }
 
   if (!isLoggedIn || !user) return null;
+
+  if (commissionAccepted === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-dash-bg">
+        <div className="flex items-center gap-3 rounded-xl bg-white px-5 py-4 text-sm font-semibold text-dash-muted shadow ring-1 ring-dash-border">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-dash-brand border-t-transparent" />
+          Loading…
+        </div>
+      </div>
+    );
+  }
+
+  if (!commissionAccepted) {
+    return (
+      <div className="min-h-screen bg-dash-bg" style={portalThemeStyles.agent}>
+        <CommissionConsentModal
+          settingsKey="agent_default_commission_percentage"
+          acceptEndpoint="/agents/me/accept-commission"
+          title="Your Default Commission from Tourvaa"
+          description="This is the commission Tourvaa pays you on every booking you make. You must agree to this rate before you can upload verification documents or continue."
+          onAccepted={() => setCommissionAccepted(true)}
+        />
+      </div>
+    );
+  }
 
   const pageTitle = getTitle(pathname);
 
