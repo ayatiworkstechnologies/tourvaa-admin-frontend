@@ -75,19 +75,18 @@ export default function PublicHeader() {
       document.removeEventListener("keydown", escape);
     };
   }, []);
-  const transparent = isHome && !scrolled;
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${transparent ? "bg-transparent text-white" : "border-b border-slate-100 bg-white/95 text-slate-900 shadow-sm backdrop-blur-xl"}`}
+      className="sticky top-0 z-50 border-b border-slate-100/80 bg-white/95 text-slate-900 shadow-[0_1px_3px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all duration-300"
     >
-      <div className="mx-auto flex h-20 max-w-[1480px] min-w-0 items-center justify-between gap-4 py-2 pl-4 pr-36 sm:pl-7 sm:pr-36 lg:pl-12 lg:pr-40">
+      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:px-8 lg:px-12">
         <Link
           href="/"
-          className="text-2xl font-black tracking-tight text-[#1478f2]"
+          className="text-2xl font-black tracking-tight text-slate-900 transition hover:opacity-90 sm:text-3xl"
         >
           Tourvaa
         </Link>
-        <nav aria-label="Primary navigation" className="hidden min-w-0 flex-1 items-center justify-center gap-3 lg:flex xl:gap-5">
+        <nav aria-label="Primary navigation" className="hidden min-w-0 flex-1 items-center justify-center gap-4 lg:flex xl:gap-6">
           {browseLinks.map(([label, href]) => {
             const route = href.split("?")[0];
             const active = !href.includes("?") && (pathname === route || (route !== "/" && pathname.startsWith(`${route}/`)));
@@ -96,59 +95,59 @@ export default function PublicHeader() {
                 key={label}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`whitespace-nowrap text-xs font-bold transition hover:text-blue-500 ${active ? "text-blue-500" : ""}`}
+                className={`whitespace-nowrap text-xs font-bold transition hover:text-pub-secondary ${active ? "text-pub-secondary" : "text-slate-700"}`}
               >
                 {label}
               </Link>
             );
           })}
         </nav>
-        <nav aria-label="Account and trip tools" className="hidden shrink-0 items-center gap-4 lg:flex lg:gap-6">
+        <nav aria-label="Account and trip tools" className="hidden shrink-0 items-center gap-5 lg:flex lg:gap-7">
           <Link
             href="/wishlist"
-            className="group relative flex flex-col items-center gap-1 text-[9px] font-semibold"
+            className="group relative flex flex-col items-center gap-1 text-[10px] font-medium text-slate-700 transition hover:text-pub-secondary"
           >
             <Heart
-              size={17}
-              className="transition group-hover:-translate-y-1 group-hover:text-blue-600"
+              size={18}
+              className="stroke-[1.8] transition group-hover:-translate-y-0.5 group-hover:text-pub-secondary"
             />
-            Wishlist
+            <span>Wishlist</span>
             {wishlistCount > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-pub-secondary px-1 text-[8px] font-black text-white">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}
           </Link>
           <Link
             href="/compare"
-            className="group relative flex flex-col items-center gap-1 text-[9px] font-semibold"
+            className="group relative flex flex-col items-center gap-1 text-[10px] font-medium text-slate-700 transition hover:text-pub-secondary"
           >
             <Scale
-              size={17}
-              className="transition group-hover:-translate-y-1 group-hover:text-blue-600"
+              size={18}
+              className="stroke-[1.8] transition group-hover:-translate-y-0.5 group-hover:text-pub-secondary"
             />
-            Compare
+            <span>Compare</span>
             {compareCount > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-pub-secondary px-1 text-[8px] font-black text-white">
                 {compareCount}
               </span>
             )}
           </Link>
-          <CurrencySelector inverse={transparent} plain />
+          <CurrencySelector plain />
           <div ref={profileRef} className="relative">
             <button
               type="button"
               onClick={() => setProfileOpen((value) => !value)}
               aria-expanded={profileOpen}
               aria-haspopup="menu"
-              className="group flex flex-col items-center gap-0.5 text-[9px] font-semibold"
+              className="group flex flex-col items-center gap-1 text-[10px] font-medium text-slate-700 transition hover:text-pub-secondary"
             >
               <User
-                size={17}
-                className="transition group-hover:-translate-y-1 group-hover:text-blue-600"
+                size={18}
+                className="stroke-[1.8] transition group-hover:-translate-y-0.5 group-hover:text-pub-secondary"
               />
               <span className="flex items-center gap-0.5">
-                Profile{" "}
+                Profile
                 <ChevronDown
                   size={9}
                   className={`transition ${profileOpen ? "rotate-180" : ""}`}
@@ -168,13 +167,16 @@ export default function PublicHeader() {
               ))}
           </div>
         </nav>
-        <button
-          onClick={() => setOpen(!open)}
-          aria-label="Toggle navigation"
-          className="lg:hidden"
-        >
-          {open ? <X /> : <Menu />}
-        </button>
+        <div className="flex items-center gap-3 lg:hidden">
+          <CurrencySelector plain />
+          <button
+            onClick={() => setOpen(!open)}
+            aria-label="Toggle navigation"
+            className="p-1.5 rounded-lg text-slate-800 hover:bg-slate-100"
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
       {open && (
         <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg lg:hidden">
@@ -193,7 +195,7 @@ export default function PublicHeader() {
           <Link
             href="/wishlist"
             onClick={() => setOpen(false)}
-            className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-blue-50 px-3 py-3 text-xs font-bold text-blue-700"
+            className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"
           >
             <Heart size={15} />
             Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
@@ -201,7 +203,7 @@ export default function PublicHeader() {
           <Link
             href="/compare"
             onClick={() => setOpen(false)}
-            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-blue-50 px-3 py-3 text-xs font-bold text-blue-700"
+            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"
           >
             <Scale size={15} />
             Compare {compareCount > 0 && `(${compareCount})`}
@@ -215,7 +217,7 @@ export default function PublicHeader() {
                 <Link
                   href={dashboardPath}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white"
+                  className="flex items-center gap-3 rounded-xl bg-pub-secondary px-4 py-3 text-sm font-bold text-white"
                 >
                   <LayoutDashboard size={17} />
                   Open My Dashboard
@@ -224,18 +226,18 @@ export default function PublicHeader() {
                   <Link
                     href={bookingsPath}
                     onClick={() => setOpen(false)}
-                    className="flex items-center gap-3 rounded-xl border border-blue-100 px-4 py-3 text-sm font-bold text-slate-700"
+                    className="flex items-center gap-3 rounded-xl border border-pub-secondary/20 px-4 py-3 text-sm font-bold text-slate-700"
                   >
-                    <CalendarCheck size={17} className="text-blue-600" />
+                    <CalendarCheck size={17} className="text-pub-secondary" />
                     My Bookings
                   </Link>
                 )}
                 <Link
                   href={profilePath}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-xl border border-blue-100 px-4 py-3 text-sm font-bold text-slate-700"
+                  className="flex items-center gap-3 rounded-xl border border-pub-secondary/20 px-4 py-3 text-sm font-bold text-slate-700"
                 >
-                  <User size={17} className="text-blue-600" />
+                  <User size={17} className="text-pub-secondary" />
                   My Profile
                 </Link>
                 <button
@@ -258,14 +260,14 @@ export default function PublicHeader() {
                     onClick={() => setOpen(false)}
                     className="flex flex-1 items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 text-sm font-bold text-slate-700"
                   >
-                    <Icon size={17} className="text-blue-600" />
+                    <Icon size={17} className="text-pub-secondary" />
                     {label}
                   </Link>
                   {registerHref && (
                     <Link
                       href={registerHref}
                       onClick={() => setOpen(false)}
-                      className="flex shrink-0 items-center rounded-xl border border-blue-100 px-3 text-xs font-black text-blue-600"
+                      className="flex shrink-0 items-center rounded-xl border border-pub-secondary/20 px-3 text-xs font-black text-pub-secondary"
                     >
                       Register
                     </Link>
@@ -312,7 +314,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
       {profileOptions.map(({ label, note, href, registerHref, icon: Icon }) => (
         <div
           key={label}
-          className="group flex items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-blue-50"
+          className="group flex items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-pub-secondary/10"
         >
           <Link
             role="menuitem"
@@ -320,7 +322,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="flex min-w-0 flex-1 items-center gap-3 py-1"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pub-secondary/10 text-pub-secondary transition group-hover:bg-pub-secondary group-hover:text-white">
               <Icon size={18} />
             </span>
             <span className="min-w-0 flex-1">
@@ -335,12 +337,12 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
               role="menuitem"
               href={registerHref}
               onClick={onClose}
-              className="shrink-0 rounded-lg border border-blue-100 px-2.5 py-1.5 text-[9px] font-black text-blue-600 hover:bg-blue-600 hover:text-white"
+              className="shrink-0 rounded-lg border border-pub-secondary/20 px-2.5 py-1.5 text-[9px] font-black text-pub-secondary hover:bg-pub-secondary hover:text-white"
             >
               Register
             </Link>
           ) : (
-            <span className="pr-1 text-blue-500 transition group-hover:translate-x-1">
+            <span className="pr-1 text-pub-secondary transition group-hover:translate-x-1">
               ›
             </span>
           )}
@@ -414,9 +416,9 @@ function AccountMenuLink({
       role="menuitem"
       href={href}
       onClick={onClose}
-      className="group flex items-center gap-3 rounded-xl px-3 py-3 text-xs font-bold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+      className="group flex items-center gap-3 rounded-xl px-3 py-3 text-xs font-bold text-slate-700 transition hover:bg-pub-secondary/10 hover:text-pub-secondary"
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pub-secondary/10 text-pub-secondary transition group-hover:bg-pub-secondary group-hover:text-white">
         <Icon size={16} />
       </span>
       {label}

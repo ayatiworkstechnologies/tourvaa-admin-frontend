@@ -2,7 +2,7 @@ import PublicFooter from "@/components/public/PublicFooter";
 import PublicHeader from "@/components/public/PublicHeader";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
 import ChatWidget from "@/components/public/ChatWidget";
-import ElfsightTranslator from "@/components/public/ElfsightTranslator";
+import GoogleTranslateScript from "@/components/public/GoogleTranslateScript";
 import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
 
 // The public site used to load its own Outfit/Work_Sans fonts, scoped here
@@ -32,7 +32,7 @@ export default function PublicLayout({
           <div className="public-page-enter">{children}</div>
           <div className="print:hidden"><PublicFooter /></div>
           <div className="print:hidden"><ChatWidget /></div>
-          <div className="print:hidden"><ElfsightTranslator /></div>
+          <GoogleTranslateScript />
         </div>
       </TravelStoreProvider>
     </PublicSettingsProvider>

@@ -20,16 +20,16 @@
  * `border-dash`, `bg-dash-subtle`, etc. instead of inventing new hex values.
  */
 @theme {
-  /* Public marketing site - travel/tourism palette (sky blue + adventure
-   * orange), distinct from the --color-dash-* dashboard tokens above. */
-  --color-pub-primary: #0EA5E9;
-  --color-pub-primary-dark: #0369A1;
-  --color-pub-secondary: #38BDF8;
-  --color-pub-accent: #EA580C;
-  --color-pub-bg: #F0F9FF;
-  --color-pub-fg: #0C4A6E;
+  /* Public marketing site brand palette (midnight navy + burnt orange +
+   * vivid blue), distinct from the --color-dash-* dashboard tokens above. */
+  --color-pub-primary: #081827;
+  --color-pub-primary-dark: #050f18;
+  --color-pub-secondary: #2563EB;
+  --color-pub-accent: #D9601C;
+  --color-pub-bg: #FBF7F5;
+  --color-pub-fg: #0F172A;
   --color-pub-muted: #64748B;
-  --color-pub-border: #BAE6FD;
+  --color-pub-border: #E2E8F0;
 
   --color-dash-text: #121826;
   --color-dash-body: #344054;
@@ -400,11 +400,12 @@ button {
   transform: translateY(-2px);
 }
 
-/* Scroll-reveal block */
+/* Scroll-reveal block with smooth hardware acceleration */
 .reveal-block {
   opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1);
+  transform: translateY(24px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 .reveal-block.is-visible {
   opacity: 1;
@@ -550,9 +551,38 @@ button {
   }
 }
 
-/* Repositioning the Elfsight Website Translator widget (which portals to
-   <body> with its own fixed top/right) is handled in JS - see
-   ElfsightTranslator.tsx. A plain CSS rule here doesn't survive Tailwind's
-   build: its selector targets a class that's only ever injected at runtime
-   by Elfsight's script and never appears as literal text in our own source,
-   so Tailwind's content scanner treats the rule as unused and drops it. */
+/* Google Translate clean styling */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+#google_translate_element {
+  position: absolute !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  overflow: hidden !important;
+}
+
+.skiptranslate {
+  display: inline;
+}
