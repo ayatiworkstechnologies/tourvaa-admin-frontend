@@ -1,7 +1,10 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/seo/pageMetadata";
+import { slugifyTourSegment } from "@/lib/utils/tourUrl";
 
-const pages: Array<{
+const API_BASE = (process.env.API_PROXY_TARGET || "http://127.0.0.1:8000").replace(/\/+$/, "");
+
+const staticPages: Array<{
   path: string;
   changeFrequency: "weekly" | "monthly" | "yearly";
   priority: number;
@@ -22,10 +25,67 @@ const pages: Array<{
   { path: "/accessibility", changeFrequency: "yearly", priority: 0.3 },
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  return pages.map((page) => ({
+async function safeJson(path: string): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 3600 } });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function tourEntries(): Promise<MetadataRoute.Sitemap> {
+  const entries: MetadataRoute.Sitemap = [];
+  const limit = 100;
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const json = await safeJson(`/api/public/tours?page=${page}&limit=${limit}`);
+    if (!json) break;
+    totalPages = json.total_pages || 1;
+    for (const tour of json.items || []) {
+      const countrySlug = tour.country_slug || slugifyTourSegment(tour.country_name || "worldwide");
+      entries.push({
+        url: `${SITE_URL}/tours/${countrySlug}/${tour.slug}`,
+        changeFrequency: "weekly",
+        priority: 0.85,
+      });
+    }
+    page += 1;
+  } while (page <= totalPages);
+  return entries;
+}
+
+async function countryEntries(): Promise<MetadataRoute.Sitemap> {
+  const json = await safeJson("/api/public/countries");
+  if (!json) return [];
+  return (json.items || [])
+    .filter((c: { tour_count?: number }) => (c.tour_count ?? 0) > 0)
+    .map((c: { country_name: string }) => ({
+      url: `${SITE_URL}/tours/${slugifyTourSegment(c.country_name)}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+}
+
+async function blogEntries(): Promise<MetadataRoute.Sitemap> {
+  const json = await safeJson("/api/cms/blogs?active_only=true&limit=200");
+  if (!json) return [];
+  return (json.items || json.data || []).map((blog: { slug: string; updated_at?: string }) => ({
+    url: `${SITE_URL}/blogs/${blog.slug}`,
+    lastModified: blog.updated_at,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [tours, countries, blogs] = await Promise.all([tourEntries(), countryEntries(), blogEntries()]);
+  const staticEntries: MetadataRoute.Sitemap = staticPages.map((page) => ({
     url: `${SITE_URL}${page.path}`,
     changeFrequency: page.changeFrequency,
     priority: page.priority,
   }));
+  return [...staticEntries, ...countries, ...tours, ...blogs];
 }
