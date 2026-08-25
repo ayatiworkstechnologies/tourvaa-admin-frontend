@@ -48,15 +48,11 @@ type TabConfig = {
 
 const TAB_DESCRIPTIONS: Record<string, string> = {
   banners: "Hero banners and homepage calls to action.",
-  "popular-destinations": "Featured destination blocks shown on the website.",
-  "popular-tours": "Pinned tours for high-visibility website sections.",
-  "tours-on-deals": "Deal labels and sorted promotional tour lists.",
-  blogs: "Editorial content, publishing status, and featured images.",
-  "customer-reviews": "Customer testimonials and display ordering.",
-  "help-centre": "Support questions grouped by help category.",
-  policies: "Legal and policy pages used by the public website.",
-  "promotional-popups": "Popup campaigns, timing, and call-to-action content.",
-  "external-links": "Footer, header, social, and support links.",
+  "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order.",
+  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Only tours with an active discount can be picked.",
+  "popular-destinations": "Country images shown in Countries Worth Exploring (the country list itself is calculated automatically from real tour counts).",
+  "customer-reviews": "Customer testimonials shown in the homepage Testimonials section.",
+  "help-centre": "Questions and answers shown in the homepage FAQ section.",
 };
 const TABS: TabConfig[] = [
   {
@@ -79,27 +75,8 @@ const TABS: TabConfig[] = [
     ],
   },
   {
-    key: "popular-destinations",
-    label: "Destinations",
-    endpoint: "/cms/popular-destinations",
-    columns: [
-      { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Destination image"), className: "w-32" },
-      { key: "title", header: "Title" },
-      { key: "country_id", header: "Country ID" },
-      { key: "city_id", header: "City ID" },
-    ],
-    formFields: [
-      { key: "title", label: "Title", type: "text", required: true },
-      { key: "country_id", label: "Country ID", type: "number" },
-      { key: "image", label: "Image", type: "asset" },
-      { key: "city_id", label: "City ID", type: "number" },
-      { key: "description", label: "Description", type: "textarea" },
-      { key: "sort_order", label: "Sort Order", type: "number" },
-    ],
-  },
-  {
     key: "popular-tours",
-    label: "Popular Tours",
+    label: "Trending Tour Packages",
     endpoint: "/cms/popular-tours",
     canEdit: false,
     columns: [
@@ -108,13 +85,13 @@ const TABS: TabConfig[] = [
       { key: "sort_order", header: "Sort" },
     ],
     formFields: [
-      { key: "tour_id", label: "Tour", type: "select", required: true },
+      { key: "tour_id", label: "Tour (discounted only)", type: "select", required: true },
       { key: "sort_order", label: "Sort Order", type: "number" },
     ],
   },
   {
     key: "tours-on-deals",
-    label: "Deals",
+    label: "Top Deals",
     endpoint: "/cms/tours-on-deals",
     columns: [
       { key: "tour_title", header: "Tour" },
@@ -129,27 +106,27 @@ const TABS: TabConfig[] = [
     ],
   },
   {
-    key: "blogs",
-    label: "Blogs",
-    endpoint: "/cms/blogs",
+    key: "popular-destinations",
+    label: "Countries",
+    endpoint: "/cms/popular-destinations",
     columns: [
-      { key: "featured_image", header: "Preview", render: (item) => renderImagePreview(item, "featured_image", "Blog image"), className: "w-32" },
+      { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Destination image"), className: "w-32" },
       { key: "title", header: "Title" },
-      { key: "slug", header: "Slug" },
-      { key: "status", header: "Status" },
+      { key: "country_id", header: "Country ID" },
+      { key: "city_id", header: "City ID" },
     ],
     formFields: [
-      { key: "title", label: "Title", type: "text", required: true },
-      { key: "slug", label: "Slug", type: "text", required: true },
-      { key: "content", label: "Content", type: "textarea" },
-      { key: "status", label: "Status", type: "select", options: ["draft", "published"] },
-      { key: "tags", label: "Tags (comma-separated)", type: "text" },
-      { key: "featured_image", label: "Featured Image", type: "asset" },
+      { key: "title", label: "Title (must match country name)", type: "text", required: true },
+      { key: "country_id", label: "Country ID", type: "number" },
+      { key: "image", label: "Image", type: "asset" },
+      { key: "city_id", label: "City ID", type: "number" },
+      { key: "description", label: "Description", type: "textarea" },
+      { key: "sort_order", label: "Sort Order", type: "number" },
     ],
   },
   {
     key: "customer-reviews",
-    label: "Reviews",
+    label: "Testimonials",
     endpoint: "/cms/customer-reviews",
     columns: [
       { key: "reviewer_image", header: "Photo", render: (item) => renderImagePreview(item, "reviewer_image", "Reviewer image"), className: "w-32" },
@@ -167,7 +144,7 @@ const TABS: TabConfig[] = [
   },
   {
     key: "help-centre",
-    label: "Help Centre",
+    label: "FAQ",
     endpoint: "/cms/help-centre",
     columns: [
       { key: "question", header: "Question" },
@@ -177,59 +154,6 @@ const TABS: TabConfig[] = [
       { key: "question", label: "Question", type: "text", required: true },
       { key: "answer", label: "Answer", type: "textarea", required: true },
       { key: "category", label: "Category", type: "text", required: true },
-      { key: "sort_order", label: "Sort Order", type: "number" },
-    ],
-  },
-  {
-    key: "policies",
-    label: "Policies",
-    endpoint: "/cms/policies",
-    createMethod: "put",
-    updateMethod: "put",
-    updatePath: "collection",
-    canDelete: false,
-    columns: [
-      { key: "slug", header: "Slug" },
-      { key: "title", header: "Title" },
-    ],
-    formFields: [
-      { key: "slug", label: "Slug", type: "select", options: ["terms-and-conditions", "cookie-policy", "cancellation-policy", "privacy-policy"], required: true },
-      { key: "title", label: "Title", type: "text", required: true },
-      { key: "content", label: "Content", type: "textarea", required: true },
-    ],
-  },
-  {
-    key: "promotional-popups",
-    label: "Popups",
-    endpoint: "/cms/promotional-popups",
-    columns: [
-      { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Popup image"), className: "w-32" },
-      { key: "title", header: "Title" },
-      { key: "is_active", header: "Active", render: (item) => (item.is_active ? "Yes" : "No") },
-    ],
-    formFields: [
-      { key: "title", label: "Title", type: "text", required: true },
-      { key: "content", label: "Content", type: "textarea" },
-      { key: "image", label: "Image", type: "asset" },
-      { key: "cta_url", label: "CTA URL", type: "url" },
-      { key: "cta_text", label: "CTA Text", type: "text" },
-      { key: "display_after_seconds", label: "Display After Seconds", type: "number" },
-      { key: "display_frequency", label: "Display Frequency", type: "select", options: ["once", "daily", "always"] },
-    ],
-  },
-  {
-    key: "external-links",
-    label: "External Links",
-    endpoint: "/cms/external-links",
-    columns: [
-      { key: "label", header: "Label" },
-      { key: "url", header: "URL" },
-      { key: "location", header: "Location" },
-    ],
-    formFields: [
-      { key: "label", label: "Label", type: "text", required: true },
-      { key: "url", label: "URL", type: "url", required: true },
-      { key: "location", label: "Location", type: "select", options: ["footer", "header", "social", "support"] },
       { key: "sort_order", label: "Sort Order", type: "number" },
     ],
   },
@@ -272,12 +196,17 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
       .then((res) => {
         if (cancelled) return;
         const data = res.data?.data ?? res.data?.items ?? res.data ?? [];
-        const rows = Array.isArray(data) ? data : data.items ?? [];
-        setTourOptions(rows.map((tour: CmsItem) => {
+        const rows: CmsItem[] = Array.isArray(data) ? data : data.items ?? [];
+        // "Trending Tour Packages" is only ever filled with discounted tours.
+        const filteredRows = tab.key === "popular-tours"
+          ? rows.filter((tour) => typeof tour.discount_percentage === "number" && tour.discount_percentage > 0)
+          : rows;
+        setTourOptions(filteredRows.map((tour: CmsItem) => {
           const id = String(tour.id ?? "");
           const title = typeof tour.title === "string" ? tour.title : `Tour #${id}`;
           const code = typeof tour.tour_code === "string" && tour.tour_code ? `${tour.tour_code} - ` : "";
-          return { value: id, label: `${code}${title}` };
+          const discount = typeof tour.discount_percentage === "number" && tour.discount_percentage > 0 ? ` (-${tour.discount_percentage}%)` : "";
+          return { value: id, label: `${code}${title}${discount}` };
         }).filter((option: { value: string }) => option.value));
       })
       .catch(() => {
@@ -577,7 +506,7 @@ export default function CmsPage() {
         </section>
 
         <section className="rounded-xl border border-dash-border bg-white p-3">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {TABS.map(tab => {
               const active = activeTab === tab.key;
               return (

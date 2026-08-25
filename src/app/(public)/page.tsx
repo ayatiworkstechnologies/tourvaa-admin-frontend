@@ -37,12 +37,16 @@ import {
   CmsReview,
   fetchCustomerReviews,
   fetchFeaturedTours,
+  fetchHelpCentre,
   fetchHomepageBanners,
   fetchPopularDestinations,
+  fetchPopularTours,
   fetchPublicCategories,
   fetchPublicCities,
   fetchPublicCountries,
+  fetchPublicTourDetail,
   fetchPublicTours,
+  fetchToursOnDeals,
   PublicCountry,
   PublicTour,
 } from "@/lib/api/publicClient";
@@ -1372,6 +1376,7 @@ export default function Home() {
   const [handpickedTours, setHandpickedTours] = useState<Tour[]>(CURATED_HANDPICKED_TOURS);
   const [countriesWorthExploring, setCountriesWorthExploring] = useState<CountryWorthExploring[]>(CURATED_COUNTRIES_WORTH_EXPLORING);
   const [dynamicReviews, setDynamicReviews] = useState<{ quote: string; name: string; city: string; tourName: string; initials: string; rating: number; image?: string | null }[]>(CURATED_REVIEWS);
+  const [dynamicFaqs, setDynamicFaqs] = useState<{ question: string; answer: string }[]>(FAQS);
   const [directoryCountries, setDirectoryCountries] = useState<string[]>(DIRECTORY_COUNTRIES);
   const [directoryCities, setDirectoryCities] = useState<string[]>(DIRECTORY_CITIES);
   const [directoryCategories, setDirectoryCategories] = useState<string[]>(DIRECTORY_CATEGORIES);
@@ -1382,13 +1387,16 @@ export default function Home() {
     let active = true;
     Promise.allSettled([
       fetchHomepageBanners(),
-      fetchFeaturedTours(24),
+      fetchFeaturedTours(20),
       fetchPopularDestinations(),
       fetchCustomerReviews(),
       fetchPublicCountries(),
       fetchPublicCities(),
       fetchPublicCategories(),
-    ]).then(([bannerResult, tourResult, destinationResult, reviewResult, countryResult, cityResult, categoryResult]) => {
+      fetchPopularTours(),
+      fetchToursOnDeals(),
+      fetchHelpCentre(),
+    ]).then(([bannerResult, tourResult, destinationResult, reviewResult, countryResult, cityResult, categoryResult, popularTourResult, dealTourResult, helpResult]) => {
       if (!active) return;
       if (bannerResult.status === "fulfilled" && bannerResult.value.length) setBanners(bannerResult.value);
       if (tourResult.status === "fulfilled" && tourResult.value.length) {
@@ -1396,9 +1404,12 @@ export default function Home() {
         // Each section gets its own non-overlapping slice of live tours so the
         // three "sections" don't just repeat the same items; curated data is
         // kept only as a per-section fallback when that slice comes up empty.
-        const trendingSlice = mapped.slice(0, 8);
-        const topDealsSlice = mapped.slice(8, 16);
-        const handpickedSlice = mapped.slice(16, 24);
+        // Trending/Top Deals get overridden below by their CMS-picked lists
+        // when the admin has pinned tours there, so Handpicked (which has no
+        // CMS list of its own) gets the larger share of this generic fetch.
+        const trendingSlice = mapped.slice(0, 6);
+        const topDealsSlice = mapped.slice(6, 12);
+        const handpickedSlice = mapped.slice(12, 20);
         if (trendingSlice.length) setTrendingTours(trendingSlice);
         if (topDealsSlice.length) setTopDeals(topDealsSlice);
         if (handpickedSlice.length) setHandpickedTours(handpickedSlice);
@@ -1418,18 +1429,11 @@ export default function Home() {
           })
         );
 
-        // Enrich countries worth exploring with matched counts and images
-        setCountriesWorthExploring((prev) =>
-          prev.map((item) => {
-            const countryMatch = countryResult.value.find((c) => c.country_name.toLowerCase() === item.name.toLowerCase());
-            const cmsMatch = cmsMap.get(item.name.toLowerCase());
-            return {
-              ...item,
-              count: countryMatch?.tour_count ? `${countryMatch.tour_count} Packages` : item.count,
-              image: cmsMatch?.image ? mediaUrl(cmsMatch.image) : item.image,
-            };
-          })
-        );
+        // "Countries Worth Exploring" - the top countries by real published
+        // tour count, not a hardcoded name list; images come from the CMS
+        // Destinations list when a title match exists.
+        const topCountries = topDestinationsFromCountries(countryResult.value, cmsDestinations, 6);
+        if (topCountries.length) setCountriesWorthExploring(topCountries);
 
         setSearchCountries(countryResult.value);
         setDirectoryCountries(countryResult.value.map((c) => c.country_name));
@@ -1446,6 +1450,45 @@ export default function Home() {
           setDynamicReviews(cmsReviews);
         }
       }
+      if (helpResult.status === "fulfilled" && helpResult.value.length) {
+        const cmsFaqs = helpResult.value
+          .filter((h) => h.is_active !== false)
+          .map((h) => ({ question: h.question, answer: h.answer }));
+        if (cmsFaqs.length > 0) setDynamicFaqs(cmsFaqs);
+      }
+
+      // "Trending Tour Packages" - admin-picked via CMS "Popular Tours"
+      // (admin/cms > Popular Tours). Each entry only carries the tour id, so
+      // the full tour record is resolved separately before rendering.
+      if (popularTourResult.status === "fulfilled" && popularTourResult.value.length) {
+        const refs = popularTourResult.value.filter((r) => r.is_active !== false);
+        Promise.allSettled(refs.map((ref) => fetchPublicTourDetail(ref.tour_id))).then((results) => {
+          if (!active) return;
+          const tours = results
+            .filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof fetchPublicTourDetail>>> => r.status === "fulfilled")
+            .map((r) => mapPublicTour(r.value));
+          if (tours.length) setTrendingTours(tours);
+        });
+      }
+
+      // "Top Deals" - admin-picked via CMS "Deals" (admin/cms > Deals), same
+      // resolve-by-id pattern, plus the admin's deal_label overrides the
+      // generic "Save 25%" badge when set.
+      if (dealTourResult.status === "fulfilled" && dealTourResult.value.length) {
+        const refs = dealTourResult.value.filter((r) => r.is_active !== false);
+        Promise.allSettled(refs.map((ref) => fetchPublicTourDetail(ref.tour_id))).then((results) => {
+          if (!active) return;
+          const tours = refs
+            .map((ref, index) => ({ ref, result: results[index] }))
+            .filter((entry): entry is { ref: (typeof refs)[number]; result: PromiseFulfilledResult<Awaited<ReturnType<typeof fetchPublicTourDetail>>> } => entry.result.status === "fulfilled")
+            .map(({ ref, result }) => {
+              const mapped = mapPublicTour(result.value);
+              return ref.deal_label ? { ...mapped, discountBadge: ref.deal_label } : mapped;
+            });
+          if (tours.length) setTopDeals(tours);
+        });
+      }
+
       setLoadingHome(false);
     });
     return () => { active = false; };
@@ -1598,7 +1641,7 @@ export default function Home() {
 
         <Reveal><AirportTransfersBanner /></Reveal>
 
-        <Reveal><FaqSection /></Reveal>
+        <Reveal><FaqSection faqs={dynamicFaqs} /></Reveal>
 
         <Reveal><TestimonialsSection reviews={dynamicReviews} loading={loadingHome && !dynamicReviews.length} /></Reveal>
 
@@ -1711,7 +1754,7 @@ const FAQS = [
   },
 ];
 
-function FaqSection() {
+function FaqSection({ faqs = FAQS }: { faqs?: { question: string; answer: string }[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(1); // Question 2 open by default as shown in mockup
 
   const toggle = (index: number) => {
@@ -1726,7 +1769,7 @@ function FaqSection() {
         </h2>
 
         <div className="space-y-3.5">
-          {FAQS.map((faq, index) => {
+          {faqs.map((faq, index) => {
             const isOpen = openIndex === index;
             return (
               <div

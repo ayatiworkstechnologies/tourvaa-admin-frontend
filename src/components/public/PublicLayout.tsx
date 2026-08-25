@@ -1,3 +1,4 @@
+import AnnouncementBar from "@/components/public/AnnouncementBar";
 import PublicFooter from "@/components/public/PublicFooter";
 import PublicHeader from "@/components/public/PublicHeader";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
@@ -28,6 +29,7 @@ export default function PublicLayout({
           style={fontVars}
           className="public-site min-h-screen bg-white font-[family-name:var(--font-body)] text-slate-950"
         >
+          <div className="print:hidden"><AnnouncementBar /></div>
           <div className="print:hidden"><PublicHeader /></div>
           <div className="public-page-enter">{children}</div>
           <div className="print:hidden"><PublicFooter /></div>

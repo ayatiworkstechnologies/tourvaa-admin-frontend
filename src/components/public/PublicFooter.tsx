@@ -35,6 +35,8 @@ const companyLinks = [
 const loginLinks = [
   ["Travellers Login", "/login"],
   ["Agents login", "/agent-portal/login"],
+  ["Affiliate login", "/affiliate-portal/login"],
+  ["Supplier login", "/supplier-portal/login"],
 ] as const;
 
 export default function PublicFooter() {

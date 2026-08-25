@@ -112,6 +112,22 @@ export type CmsBanner = { id: number; title: string; subtitle: string | null; im
 export type CmsDestination = { id: number; title: string; image: string | null; description: string | null; sort_order: number; is_active: boolean };
 export type CmsReview = { id: number; reviewer_name: string; reviewer_image: string | null; rating: number; review_text: string; tour_name: string | null; country: string | null; sort_order: number; is_active: boolean };
 export type CmsExternalLink = { id: number; label: string; url: string; open_in_new_tab: boolean; location: string; sort_order: number; is_active: boolean };
+export type CmsPopularTour = { id: number; tour_id: number; tour_title: string; tour_code: string; sort_order: number; is_active: boolean };
+export type CmsDealTour = { id: number; tour_id: number; tour_title: string; tour_code: string; deal_label: string | null; discount_percentage: number | null; sort_order: number; is_active: boolean };
+export type CmsHelpArticle = { id: number; question: string; answer: string; category: string; sort_order: number; is_active: boolean };
+export type CmsPromoPopup = {
+  id: number;
+  title: string;
+  content: string | null;
+  image: string | null;
+  cta_text: string | null;
+  cta_url: string | null;
+  display_after_seconds: number | null;
+  display_frequency: string | null;
+  is_active: boolean;
+  valid_from: string | null;
+  valid_until: string | null;
+};
 export type CmsBlog = {
   id: number;
   title: string;
@@ -179,6 +195,26 @@ export async function fetchPopularDestinations() {
 export async function fetchCustomerReviews() {
   const res = await cmsApi.get("/customer-reviews", { params: { active_only: true, limit: 12 } });
   return (res.data.items || res.data.data || []) as CmsReview[];
+}
+
+export async function fetchPopularTours() {
+  const res = await cmsApi.get("/popular-tours", { params: { active_only: true, limit: 20 } });
+  return (res.data.items || res.data.data || []) as CmsPopularTour[];
+}
+
+export async function fetchToursOnDeals() {
+  const res = await cmsApi.get("/tours-on-deals", { params: { active_only: true, limit: 20 } });
+  return (res.data.items || res.data.data || []) as CmsDealTour[];
+}
+
+export async function fetchHelpCentre() {
+  const res = await cmsApi.get("/help-centre", { params: { active_only: true, limit: 50 } });
+  return (res.data.items || res.data.data || []) as CmsHelpArticle[];
+}
+
+export async function fetchPromotionalPopups() {
+  const res = await cmsApi.get("/promotional-popups", { params: { active_only: true, limit: 20 } });
+  return (res.data.items || res.data.data || []) as CmsPromoPopup[];
 }
 
 export async function fetchFooterLinks() {
