@@ -28,6 +28,7 @@ import {
   LuUsers as Users,
   LuX as X,
 } from "react-icons/lu";
+import { FaSquareCheck } from "react-icons/fa6";
 import { useToast } from "@/hooks/useToast";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
 import {
@@ -38,6 +39,8 @@ import {
   fetchFeaturedTours,
   fetchHomepageBanners,
   fetchPopularDestinations,
+  fetchPublicCategories,
+  fetchPublicCities,
   fetchPublicCountries,
   fetchPublicTours,
   PublicCountry,
@@ -519,8 +522,23 @@ function topDestinationsFromCountries(countries: PublicCountry[], cmsDestination
 }
 
 function mapReview(item: CmsReview) {
-  const initials = item.reviewer_name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-  return { quote: item.review_text, name: item.reviewer_name, city: item.country || "Verified traveller", tourName: item.tour_name || "", initials, rating: Math.max(1, Math.min(5, item.rating || 5)) };
+  const name = item.reviewer_name || "Verified traveller";
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "VT";
+  return {
+    quote: item.review_text,
+    name,
+    image: item.reviewer_image ? mediaUrl(item.reviewer_image) : null,
+    city: item.country || "Verified traveller",
+    tourName: item.tour_name || "",
+    initials,
+    rating: Math.max(1, Math.min(5, item.rating || 5)),
+  };
 }
 
 function Reveal({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -852,7 +870,7 @@ function FavouriteCountriesSection({
                 {`${country.name} tours`}
               </h3>
               <div className="mt-2 flex items-start gap-1.5 text-[11px] sm:text-xs text-white/90 leading-snug">
-                <span className="mt-0.5 shrink-0 text-emerald-400 font-bold">☑</span>
+                <FaSquareCheck size={12} className="mt-0.5 shrink-0 text-emerald-400" />
                 <p className="line-clamp-3 text-white/85 drop-shadow">
                   {country.snippet}
                 </p>
@@ -1143,7 +1161,7 @@ function HandpickedTourCard({ tour }: { tour: Tour }) {
         <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-[11px] text-slate-600">
           {tour.features.slice(0, 3).map((feature, index) => (
             <p key={index} className="flex items-center gap-2">
-              <span className="shrink-0 text-slate-500 font-semibold">☑</span>
+              <FaSquareCheck size={12} className="shrink-0 text-slate-400" />
               <span className="truncate">{feature.text}</span>
             </p>
           ))}
@@ -1353,20 +1371,37 @@ export default function Home() {
   const [trendingTours, setTrendingTours] = useState<Tour[]>(CURATED_TRENDING_TOURS);
   const [handpickedTours, setHandpickedTours] = useState<Tour[]>(CURATED_HANDPICKED_TOURS);
   const [countriesWorthExploring, setCountriesWorthExploring] = useState<CountryWorthExploring[]>(CURATED_COUNTRIES_WORTH_EXPLORING);
-  const [dynamicReviews, setDynamicReviews] = useState<{ quote: string; name: string; city: string; tourName: string; initials: string; rating: number }[]>(CURATED_REVIEWS);
+  const [dynamicReviews, setDynamicReviews] = useState<{ quote: string; name: string; city: string; tourName: string; initials: string; rating: number; image?: string | null }[]>(CURATED_REVIEWS);
+  const [directoryCountries, setDirectoryCountries] = useState<string[]>(DIRECTORY_COUNTRIES);
+  const [directoryCities, setDirectoryCities] = useState<string[]>(DIRECTORY_CITIES);
+  const [directoryCategories, setDirectoryCategories] = useState<string[]>(DIRECTORY_CATEGORIES);
   const [searchCountries, setSearchCountries] = useState<PublicCountry[]>([]);
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([fetchHomepageBanners(), fetchFeaturedTours(10), fetchPopularDestinations(), fetchCustomerReviews(), fetchPublicCountries()]).then(([bannerResult, tourResult, destinationResult, reviewResult, countryResult]) => {
+    Promise.allSettled([
+      fetchHomepageBanners(),
+      fetchFeaturedTours(24),
+      fetchPopularDestinations(),
+      fetchCustomerReviews(),
+      fetchPublicCountries(),
+      fetchPublicCities(),
+      fetchPublicCategories(),
+    ]).then(([bannerResult, tourResult, destinationResult, reviewResult, countryResult, cityResult, categoryResult]) => {
       if (!active) return;
       if (bannerResult.status === "fulfilled" && bannerResult.value.length) setBanners(bannerResult.value);
       if (tourResult.status === "fulfilled" && tourResult.value.length) {
         const mapped = tourResult.value.map((tour) => mapPublicTour(tour));
-        setTrendingTours([...CURATED_TRENDING_TOURS, ...mapped]);
-        setHandpickedTours([...CURATED_HANDPICKED_TOURS, ...mapped.slice(4)]);
-        setTopDeals([...CURATED_TOP_DEALS, ...mapped]);
+        // Each section gets its own non-overlapping slice of live tours so the
+        // three "sections" don't just repeat the same items; curated data is
+        // kept only as a per-section fallback when that slice comes up empty.
+        const trendingSlice = mapped.slice(0, 8);
+        const topDealsSlice = mapped.slice(8, 16);
+        const handpickedSlice = mapped.slice(16, 24);
+        if (trendingSlice.length) setTrendingTours(trendingSlice);
+        if (topDealsSlice.length) setTopDeals(topDealsSlice);
+        if (handpickedSlice.length) setHandpickedTours(handpickedSlice);
       }
       if (countryResult.status === "fulfilled" && countryResult.value.length) {
         const cmsDestinations = destinationResult.status === "fulfilled" ? destinationResult.value : [];
@@ -1395,9 +1430,22 @@ export default function Home() {
             };
           })
         );
+
+        setSearchCountries(countryResult.value);
+        setDirectoryCountries(countryResult.value.map((c) => c.country_name));
       }
-      if (countryResult.status === "fulfilled") setSearchCountries(countryResult.value);
-      if (reviewResult.status === "fulfilled" && reviewResult.value.length) setDynamicReviews([...CURATED_REVIEWS, ...reviewResult.value.slice(0, 6).map(mapReview)]);
+      if (cityResult.status === "fulfilled" && cityResult.value.length) {
+        setDirectoryCities(cityResult.value.map((c) => c.city_name));
+      }
+      if (categoryResult.status === "fulfilled" && categoryResult.value.length) {
+        setDirectoryCategories(categoryResult.value.map((c) => c.category_name));
+      }
+      if (reviewResult.status === "fulfilled" && reviewResult.value.length) {
+        const cmsReviews = reviewResult.value.filter((r) => r.is_active !== false).map(mapReview);
+        if (cmsReviews.length > 0) {
+          setDynamicReviews(cmsReviews);
+        }
+      }
       setLoadingHome(false);
     });
     return () => { active = false; };
@@ -1448,6 +1496,15 @@ export default function Home() {
               </p>
             )}
 
+            {banner?.cta_text && banner?.cta_url && (
+              <Link
+                href={banner.cta_url}
+                className="animate-fade-up delay-100 mt-4 inline-flex items-center gap-2 rounded-full bg-pub-accent px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg transition hover:brightness-110"
+              >
+                {banner.cta_text}
+              </Link>
+            )}
+
             {/* Filter Search Bar */}
             <div className={`mt-6 sm:mt-8 w-full relative z-50 transition-all duration-300`}>
               <HeroFilterBar countries={searchCountries} onPanelOpenChange={setSearchPanelOpen} />
@@ -1458,10 +1515,10 @@ export default function Home() {
               <span className="font-normal text-white/95">Tourvaa travellers rate us</span>
               <span className="font-bold text-white">Excellent</span>
               <span className="inline-flex items-center gap-0.5 mx-1">
-                <Star size={14} className="fill-[#1478f2] text-[#1478f2]" />
-                <Star size={14} className="fill-[#1478f2] text-[#1478f2]" />
-                <Star size={14} className="fill-[#1478f2] text-[#1478f2]" />
-                <Star size={14} className="fill-[#1478f2] text-[#1478f2]" />
+                <Star size={14} className="fill-pub-secondary text-pub-secondary" />
+                <Star size={14} className="fill-pub-secondary text-pub-secondary" />
+                <Star size={14} className="fill-pub-secondary text-pub-secondary" />
+                <Star size={14} className="fill-pub-secondary text-pub-secondary" />
                 <Star size={14} className="fill-white/40 text-white/60" />
               </span>
               <span className="font-bold text-white">4.5</span>
@@ -1475,7 +1532,7 @@ export default function Home() {
               <div className="flex items-center justify-between gap-3 rounded-xl sm:rounded-2xl border border-white/20 bg-slate-950/40 backdrop-blur-md px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm text-white shadow-xl transition-all">
                 <div className="flex items-center gap-2 shrink-0">
                   <Globe size={15} className="text-white/80 shrink-0" />
-                  <span className="rounded-full border border-white/25 bg-white/20 px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white">
+                  <span className="rounded-full bg-pub-accent px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white">
                     OFFER
                   </span>
                 </div>
@@ -1545,7 +1602,13 @@ export default function Home() {
 
         <Reveal><TestimonialsSection reviews={dynamicReviews} loading={loadingHome && !dynamicReviews.length} /></Reveal>
 
-        <Reveal><ExploreDirectorySection /></Reveal>
+        <Reveal>
+          <ExploreDirectorySection
+            countries={directoryCountries}
+            cities={directoryCities}
+            categories={directoryCategories}
+          />
+        </Reveal>
       </div>
     </main>
   );
@@ -1708,7 +1771,17 @@ function FaqSection() {
   );
 }
 
-const CURATED_REVIEWS = [
+type ReviewItem = {
+  quote: string;
+  name: string;
+  city: string;
+  tourName: string;
+  initials: string;
+  rating: number;
+  image?: string | null;
+};
+
+const CURATED_REVIEWS: ReviewItem[] = [
   {
     quote: "Booked a 7-day Rajasthan tour through Tourvaa. Everything was flawless — hotels, transport, guides. I didn't have to think once.",
     name: "Priya Menon",
@@ -1778,7 +1851,7 @@ function TestimonialsSection({
   reviews: items,
   loading,
 }: {
-  reviews: { quote: string; name: string; city: string; tourName: string; initials: string; rating: number }[];
+  reviews: { quote: string; name: string; city: string; tourName: string; initials: string; rating: number; image?: string | null }[];
   loading?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -1850,9 +1923,17 @@ function TestimonialsSection({
 
                   <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1478f2] text-xs font-bold text-white shadow-sm">
-                        {review.initials}
-                      </span>
+                      {review.image ? (
+                        <img
+                          src={review.image}
+                          alt={review.name}
+                          className="h-10 w-10 shrink-0 rounded-full object-cover shadow-sm border border-slate-100"
+                        />
+                      ) : (
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1478f2] text-xs font-bold text-white shadow-sm">
+                          {review.initials}
+                        </span>
+                      )}
                       <div className="min-w-0">
                         <h3 className="truncate text-xs sm:text-sm font-bold text-slate-900">{review.name}</h3>
                         <p className="truncate text-[11px] text-slate-400">{review.city}</p>
@@ -1873,15 +1954,23 @@ function TestimonialsSection({
   );
 }
 
-function ExploreDirectorySection() {
+function ExploreDirectorySection({
+  countries = DIRECTORY_COUNTRIES,
+  cities = DIRECTORY_CITIES,
+  categories = DIRECTORY_CATEGORIES,
+}: {
+  countries?: string[];
+  cities?: string[];
+  categories?: string[];
+}) {
   const [activeTab, setActiveTab] = useState<"countries" | "cities" | "categories">("countries");
 
   const items =
     activeTab === "countries"
-      ? DIRECTORY_COUNTRIES
+      ? (countries.length > 0 ? countries.slice(0, 24) : DIRECTORY_COUNTRIES)
       : activeTab === "cities"
-      ? DIRECTORY_CITIES
-      : DIRECTORY_CATEGORIES;
+      ? (cities.length > 0 ? cities.slice(0, 24) : DIRECTORY_CITIES)
+      : (categories.length > 0 ? categories.slice(0, 24) : DIRECTORY_CATEGORIES);
 
   const getHref = (item: string) => {
     if (activeTab === "countries") return `/tours?country=${encodeURIComponent(item)}`;
