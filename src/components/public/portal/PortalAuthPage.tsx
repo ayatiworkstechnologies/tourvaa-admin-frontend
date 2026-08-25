@@ -30,7 +30,7 @@ export type PortalAuthConfig = {
   theme: PortalTheme;
   /** Role slug returned by the API (e.g. "supplier", "customer", "agent-reseller") - used to reject a login from the wrong account type. */
   roleSlug: string;
-  accountType: "CUSTOMER" | "AGENT" | "SUPPLIER";
+  accountType: "CUSTOMER" | "AGENT" | "SUPPLIER" | "AFFILIATE";
   /** Base path of this portal, e.g. "/supplier-portal" - used to build the overview link. */
   portalPath: string;
   /** Only a "redirect" target under this prefix is honored post-login, e.g. "/supplier/". */
@@ -93,6 +93,20 @@ const THEME_CLASSES: Record<PortalTheme, {
     badgeText: "text-indigo-700",
     heroBg: "bg-indigo-950",
     heroGradient: "from-indigo-950/95 via-indigo-900/65 to-slate-950/35",
+  },
+  purple: {
+    bgRadial: "bg-[radial-gradient(circle_at_10%_10%,#f3e8ff_0%,transparent_30%),#f8fafc]",
+    focusBorder: "focus:border-purple-500",
+    focusRing: "focus:ring-purple-50",
+    button: "bg-purple-700",
+    buttonHover: "hover:bg-purple-800",
+    buttonShadow: "shadow-purple-200",
+    link: "text-purple-700",
+    tabActive: "text-purple-700",
+    badgeBg: "bg-purple-50",
+    badgeText: "text-purple-700",
+    heroBg: "bg-purple-950",
+    heroGradient: "from-purple-950/95 via-purple-900/65 to-slate-950/35",
   },
 };
 

@@ -94,12 +94,21 @@ export default function NewAffiliateLinkPage() {
 
   const previewCode = customAlias.trim() || "{auto-generated}";
   const previewUrl = typeof window !== "undefined" ? `${window.location.origin}/r/${previewCode}` : `/r/${previewCode}`;
+  const ALIAS_PATTERN = /^[a-z0-9][a-z0-9-]{2,59}$/;
+  const aliasError = customAlias.trim() && !ALIAS_PATTERN.test(customAlias.trim())
+    ? "Alias must be 3-60 lowercase letters, numbers or hyphens, starting with a letter or number."
+    : "";
+
+  function setAlias(raw: string) {
+    setCustomAlias(raw.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!affiliateId) { toast.error("Select an affiliate."); return; }
     if (linkType === "tour" && !tourId) { toast.error("Select a tour for a TOUR link."); return; }
     if (linkType === "custom" && !destinationUrl.trim()) { toast.error("Enter a destination path for a CUSTOM link."); return; }
+    if (aliasError) { toast.error(aliasError); return; }
 
     setSaving(true);
     try {
@@ -258,13 +267,18 @@ export default function NewAffiliateLinkPage() {
         <section className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
           <h2 className="mb-4 font-bold text-dash-text">URL</h2>
           <label className={labelCls}>Custom Alias (optional)</label>
-          <input value={customAlias} onChange={(e) => setCustomAlias(e.target.value.toLowerCase())} placeholder="john-srilanka-august" className={inputCls} />
+          <input value={customAlias} onChange={(e) => setAlias(e.target.value)} placeholder="john-srilanka-august" className={inputCls} maxLength={60} />
           <p className="mt-2 rounded-lg bg-dash-bg-muted px-3 py-2 font-mono text-xs text-dash-subtle">{previewUrl}</p>
+          {aliasError ? (
+            <p className="mt-1.5 text-xs font-semibold text-red-600">{aliasError}</p>
+          ) : (
+            <p className="mt-1.5 text-xs text-dash-subtle">3-60 lowercase letters, numbers, or hyphens. Leave blank to auto-generate.</p>
+          )}
         </section>
 
         <div className="flex justify-end gap-3">
           <button type="button" onClick={() => router.back()} className="rounded-xl border border-dash-border bg-white px-5 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg-muted">Cancel</button>
-          <button type="submit" disabled={saving} className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60">
+          <button type="submit" disabled={saving || Boolean(aliasError)} className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60">
             {saving ? "Generating…" : "Generate & Activate"}
           </button>
         </div>

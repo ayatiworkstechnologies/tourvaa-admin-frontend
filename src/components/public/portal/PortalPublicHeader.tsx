@@ -3,12 +3,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-export type PortalTheme = "emerald" | "blue" | "indigo";
+export type PortalTheme = "emerald" | "blue" | "indigo" | "purple";
 
 const THEME_CLASSES: Record<PortalTheme, { bg: string; border: string; accent: string; button: string }> = {
   emerald: { bg: "bg-emerald-950", border: "border-emerald-900/10", accent: "text-emerald-300", button: "text-emerald-800" },
   blue: { bg: "bg-blue-950", border: "border-blue-900/10", accent: "text-blue-300", button: "text-blue-800" },
   indigo: { bg: "bg-indigo-950", border: "border-indigo-900/10", accent: "text-indigo-300", button: "text-indigo-800" },
+  purple: { bg: "bg-purple-950", border: "border-purple-900/10", accent: "text-purple-300", button: "text-purple-800" },
 };
 
 export default function PortalPublicHeader({

@@ -8,13 +8,16 @@ import {
   LuArrowLeft as ArrowLeft,
   LuBriefcase as Briefcase,
   LuCalculator as Calculator,
+  LuCheck as Check,
   LuCircleCheckBig as CheckCircle2,
   LuCoins as Coins,
+  LuEye as Eye,
   LuFileText as FileText,
   LuLink as LinkIcon,
   LuPercent as Percent,
   LuPlus as Plus,
   LuReceipt as Receipt,
+  LuX as X,
   LuCircleX as XCircle,
 } from "react-icons/lu";
 
@@ -26,10 +29,12 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import StatusBadge from "@/components/operations/StatusBadge";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
 import {
   approveReviewRecord,
   getReviewRecord,
   rejectReviewRecord,
+  reviewAffiliateDocument,
   ReviewRecord,
   updateAffiliateApiLink,
   updateReviewRecord,
@@ -50,7 +55,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 
 type DetailValue = string | number | boolean | null | undefined;
-type AffiliateDocument = { id?: number; document_type?: string; document_name?: string; status?: string; uploaded_at?: string };
+type AffiliateDocument = { id?: number; document_type?: string; document_name?: string; status?: string; uploaded_at?: string; mime_type?: string; rejection_reason?: string; file_url?: string; file_path?: string };
 
 const PROFILE_TABS = [
   { key: "marketing" as const, label: "Marketing Info", icon: Briefcase },
@@ -123,7 +128,8 @@ export default function AffiliateDetailPage() {
   const [record, setRecord] = useState<ReviewRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [modal, setModal] = useState<"reject" | "api" | null>(null);
+  const [modal, setModal] = useState<"reject" | "api" | "reject-document" | null>(null);
+  const [reviewDocumentId, setReviewDocumentId] = useState<number | null>(null);
   const [profileTab, setProfileTab] = useState<"marketing" | "invoicing" | "documents">("marketing");
   const [performanceTab, setPerformanceTab] = useState<"links" | "clicks" | "conversions" | "payouts">("links");
 
@@ -165,6 +171,7 @@ export default function AffiliateDetailPage() {
   const canApprove = hasPermission("affiliates.approve") && !isApproved && !isBlocked;
   const canReject = hasPermission("affiliates.reject") && !isRejected && !isBlocked;
   const canCommercial = hasPermission("affiliates.manage_api_link");
+  const canReviewDocuments = hasPermission("affiliates.approve") || hasPermission("affiliates.reject");
 
   const requestIdRef = useRef(0);
 
@@ -206,6 +213,25 @@ export default function AffiliateDetailPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const viewDocument = async (documentId: number) => {
+    try {
+      await openPrivateDocument("affiliate", documentId);
+    } catch {
+      toast.error("Could not open affiliate document.");
+    }
+  };
+
+  const approveDocument = (documentId: number) =>
+    void run(() => reviewAffiliateDocument(id, documentId, { status: "approved" }), "Document approved.");
+
+  const rejectDocument = (payload: Record<string, string | number>) => {
+    if (reviewDocumentId === null) return;
+    void run(
+      () => reviewAffiliateDocument(id, reviewDocumentId, { status: "rejected", rejection_reason: String(payload.rejection_reason || "") }),
+      "Document rejected and re-upload requested."
+    );
   };
 
   async function saveCommissionRate() {
@@ -441,12 +467,28 @@ export default function AffiliateDetailPage() {
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {documents.map((doc, index) => (
                       <div key={doc.id ?? index} className="rounded-xl border border-dash-border p-4">
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="mb-3 flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
                             <FileText size={16} className="text-dash-brand" />
                             <p className="text-sm font-bold text-dash-text">{valueText(doc.document_name || doc.document_type)}</p>
                           </div>
                           <StatusBadge value={String(doc.status || "pending")} />
+                        </div>
+                        {doc.rejection_reason && (
+                          <p className="mb-3 rounded-lg bg-red-50 p-2 text-xs font-semibold text-red-600">{doc.rejection_reason}</p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {(doc.file_url || doc.file_path) && doc.id !== undefined && (
+                            <button type="button" onClick={() => void viewDocument(doc.id!)} className="inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-[#7E22CE] hover:bg-[#F3E8FD]">
+                              <Eye size={14} /> View document
+                            </button>
+                          )}
+                          {canReviewDocuments && doc.status !== "approved" && doc.id !== undefined && (
+                            <button type="button" onClick={() => approveDocument(doc.id!)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"><Check size={14} />Accept</button>
+                          )}
+                          {canReviewDocuments && doc.status !== "rejected" && doc.id !== undefined && (
+                            <button type="button" onClick={() => { setReviewDocumentId(doc.id!); setModal("reject-document"); }} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50"><X size={14} />Reject</button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -496,6 +538,7 @@ export default function AffiliateDetailPage() {
 
           <ActionModal open={modal === "reject"} title="Reject affiliate" saving={saving} submitLabel="Reject" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => rejectReviewRecord("affiliates", id, { rejection_reason: String(payload.rejection_reason || ""), admin_comments: String(payload.admin_comments || "") }), "Affiliate rejected.")} fields={[{ name: "rejection_reason", label: "Rejection reason" }, { name: "admin_comments", label: "Admin comments", type: "textarea" }]} />
           <ActionModal open={modal === "api"} title="Set API link" saving={saving} submitLabel="Save" onClose={() => setModal(null)} onSubmit={(payload) => void run(() => updateAffiliateApiLink(id, String(payload.api_link || "")), "API link updated.")} fields={[{ name: "api_link", label: "API link" }]} />
+          <ActionModal open={modal === "reject-document"} title="Reject affiliate document" saving={saving} submitLabel="Reject and request re-upload" onClose={() => { setModal(null); setReviewDocumentId(null); }} onSubmit={rejectDocument} fields={[{ name: "rejection_reason", label: "Reason and re-upload instructions", type: "textarea" }]} />
         </div>
       ) : (
         <section className="rounded-xl border border-dash-border bg-white p-10 text-center text-dash-muted">Affiliate not found.</section>

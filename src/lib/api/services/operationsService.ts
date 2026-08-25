@@ -164,6 +164,15 @@ export async function setSupplierAccountState(
   return response.data.data;
 }
 
+export async function reviewAffiliateDocument(
+  affiliateId: string | number,
+  documentId: number,
+  payload: { status: "approved" | "rejected"; rejection_reason?: string }
+) {
+  const response = await api.patch(`/affiliates/${affiliateId}/documents/${documentId}/review`, payload);
+  return response.data.data;
+}
+
 export async function reviewAgentDocument(
   agentId: string | number,
   documentId: number,

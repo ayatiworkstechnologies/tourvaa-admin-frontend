@@ -28,6 +28,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/login": { title: "Sign In", description: "Sign in to your Tourvaa customer, supplier, agent, affiliate, or administration account.", index: false },
   "/supplier-portal": { title: "Become a Supplier", description: "Partner with Tourvaa to list your tours, manage bookings, and get paid - see what's included and what's required to join." },
   "/agent-portal": { title: "Become an Agent", description: "Partner with Tourvaa as a travel agent to book for clients, track commissions, and manage everything from one dashboard." },
+  "/affiliate-portal": { title: "Become an Affiliate", description: "Partner with Tourvaa as an affiliate to promote tours, generate referral links, and earn commission on every booking." },
   "/register": { title: "Create an Account", description: "Create your Tourvaa customer account to save travellers, manage bookings, payments, invoices, and support.", index: false },
   "/account-status": { title: "Account Status", description: "Check the verification and activation status of your Tourvaa account.", index: false },
   "/auth/verify-email": { title: "Verify Email", description: "Verify your Tourvaa email and create a secure password.", index: false },
@@ -47,6 +48,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/privacy-policy": { title: "Privacy Policy", description: "Read how Tourvaa collects, uses, and protects your personal information across account, booking, and payment activity." },
   "/agent-portal/login": { title: "Agent Sign In", description: "Sign in to your Tourvaa agent account to book for clients, track commissions, and manage your agency dashboard.", index: false },
   "/supplier-portal/login": { title: "Supplier Sign In", description: "Sign in to your Tourvaa supplier account to manage tours, bookings, and payouts.", index: false },
+  "/affiliate-portal/login": { title: "Affiliate Sign In", description: "Sign in to your Tourvaa affiliate account to manage referral links, track conversions, and view payouts.", index: false },
 
   "/admin": { title: "Administration", description: "Open the secure Tourvaa administration workspace.", index: false },
   "/admin/login": { title: "Admin Sign In", description: "Sign in securely to the Tourvaa administration console.", index: false },

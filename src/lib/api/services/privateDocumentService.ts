@@ -6,7 +6,7 @@ import api from "@/lib/api/client";
 // from res.cloudinary.com, which Cloudinary's authenticated delivery doesn't
 // grant CORS for. Disk-backed (legacy) documents still stream as a blob from
 // this same-origin endpoint, so that path stays CORS-free.
-export async function openPrivateDocument(ownerType: "supplier" | "agent", documentId: number) {
+export async function openPrivateDocument(ownerType: "supplier" | "agent" | "affiliate", documentId: number) {
   const response = await api.get(`/private-documents/${ownerType}/${documentId}`, { responseType: "blob" });
   const contentType = String(response.headers["content-type"] || "application/octet-stream");
 

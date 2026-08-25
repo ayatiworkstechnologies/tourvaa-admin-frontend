@@ -1,101 +1,57 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2 } from "react-icons/lu";
-import api from "@/lib/api/client";
-import { useAuthContext } from "@/providers/AuthProvider";
-import { useToast } from "@/hooks/useToast";
+import { useSearchParams } from "next/navigation";
+import { LuBuilding as Building, LuFileCheck as FileCheck } from "react-icons/lu";
+import CompanyInfoTab from "@/components/affiliate/profile/CompanyInfoTab";
+import DocumentsTab from "@/components/affiliate/profile/DocumentsTab";
 
-type ProfileForm = { name: string; phone: string; website_url: string };
+const TABS = [
+  { id: "company", label: "Company & Security", icon: Building },
+  { id: "documents", label: "Verification Documents", icon: FileCheck },
+];
 
 export default function AffiliateProfilePage() {
-  const toast = useToast();
-  const { user, dashboard, refreshSession, hasPermission } = useAuthContext();
-  const canEdit = hasPermission("affiliates.approve");
-  const affiliateId = dashboard?.user?.affiliate_id ?? null;
-  const [form, setForm] = useState<ProfileForm>({ name: "", phone: "", website_url: "" });
-  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState("company");
 
   useEffect(() => {
-    if (user) setForm(f => ({ ...f, name: user.name || "" }));
-    if (!affiliateId) return;
-    api.get(`/affiliates/${affiliateId}`).then(res => {
-      const d = res.data?.data ?? res.data ?? {};
-      setForm(f => ({
-        ...f,
-        name: d.name || user?.name || "",
-        phone: d.phone || "",
-        website_url: d.website_url || "",
-      }));
-    }).catch(() => toast.error("Failed to load profile details."));
-  }, [affiliateId, user, toast]);
-
-  const set = (k: keyof ProfileForm, v: string) => { setState("idle"); setForm(f => ({ ...f, [k]: v })); };
-
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    if (!affiliateId) return;
-    setState("saving");
-    try {
-      await api.put(`/affiliates/${affiliateId}`, form);
-      await refreshSession();
-      setState("saved");
-      toast.success("Profile updated.");
-    } catch {
-      setState("error");
-      toast.error("Could not update profile.");
-    }
-  }
-
-  const initials = (form.name || user?.name || "A").split(" ").map(p => p[0]).join("").toUpperCase().slice(0, 2);
+    setActiveTab(TABS.some((tab) => tab.id === requestedTab) ? requestedTab! : "company");
+  }, [requestedTab]);
 
   return (
     <div className="p-6 md:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-black text-dash-text">My Profile</h1>
-        <p className="mt-1 text-sm text-dash-muted">Update your affiliate account details.</p>
+        <p className="mt-1 text-sm text-dash-muted">Update your affiliate account details, marketing info, invoicing, and documents.</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <div className="rounded-xl border border-dash-border bg-white p-6 shadow-sm">
-          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-purple-600 text-xl font-black text-white">{initials}</div>
-          <p className="mt-4 font-bold text-dash-text">{form.name || user?.name}</p>
-          <p className="text-sm text-dash-muted">{user?.email}</p>
-          <span className="mt-3 inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700">Affiliate Partner</span>
-          <div className="mt-4 rounded-xl border border-dash-border bg-[#F9FAFB] p-3 text-xs text-dash-muted">
-            Use the Referral Links section to create and share your unique tracking URLs.
-          </div>
-        </div>
-
-        <form onSubmit={save} className="rounded-xl border border-dash-border bg-white p-6 shadow-sm">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="font-bold text-dash-text">Edit Profile</h2>
-            <button type="submit" disabled={state === "saving" || !canEdit}
-              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-purple-700 disabled:opacity-60">
-              {state === "saving" ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
-              {canEdit ? "Save Changes" : "Profile Managed by Admin"}
+      <div className="flex overflow-x-auto rounded-2xl border border-dash-border bg-white p-2 shadow-sm">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              type="button"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200 whitespace-nowrap ${
+                isActive
+                  ? "bg-purple-600 text-white shadow-sm"
+                  : "text-dash-muted hover:bg-purple-50 hover:text-dash-text"
+              }`}
+            >
+              <Icon size={18} className={isActive ? "text-white" : "text-dash-subtle"} />
+              {tab.label}
             </button>
-          </div>
+          );
+        })}
+      </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {([
-              ["name", "Full Name", "Your legal name"],
-              ["phone", "Phone", "+971 or +91"],
-              ["website_url", "Website / Blog", "https://yourblog.com"],
-            ] as [keyof ProfileForm, string, string][]).map(([key, label, ph]) => (
-              <label key={key} className="block">
-                <span className="text-xs font-bold uppercase text-dash-muted">{label}</span>
-                <input value={form[key]} onChange={e => set(key, e.target.value)} placeholder={ph} disabled={!canEdit}
-                  className="mt-1 w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 disabled:bg-dash-bg disabled:text-dash-muted" />
-              </label>
-            ))}
-          </div>
-
-          {!canEdit && <p className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">Contact Tourvaa administration to change affiliate account details.</p>}
-
-          {state === "saved" && <p className="mt-4 text-sm font-bold text-emerald-700">Profile updated successfully.</p>}
-          {state === "error" && <p className="mt-4 text-sm font-bold text-red-600">Could not save. Please try again.</p>}
-        </form>
+      <div className="mt-4 w-full rounded-2xl border border-dash-border bg-white p-5 shadow-sm sm:p-6">
+        <div className={activeTab === "company" ? "" : "hidden"}><CompanyInfoTab /></div>
+        <div className={activeTab === "documents" ? "" : "hidden"}><DocumentsTab /></div>
       </div>
     </div>
   );

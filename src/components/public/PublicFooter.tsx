@@ -24,11 +24,11 @@ const companyLinks = [
 ] as const;
 
 const loginLinks = [
-  ["Travellers Login", "/login?role=traveller"],
-  ["Agents Login", "/agent-portal/login"],
+  
   ["Supplier Login", "/supplier-portal/login"],
   ["Become a Supplier", "/supplier-portal"],
   ["Become an Agent", "/agent-portal"],
+  ["Become an Affiliate", "/affiliate-portal"],
 ] as const;
 
 function isSocialLink(link: CmsExternalLink) {
