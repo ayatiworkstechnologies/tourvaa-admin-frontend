@@ -48,6 +48,9 @@ export type PublicTourDetail = PublicTour & {
   start_location: string;
   finish_location: string;
   map_image: string | null;
+  image_alt_text?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
   booking_deposit: number | null;
   balance_payment_deadline_days: number | null;
   overview: {
@@ -109,6 +112,21 @@ export type CmsBanner = { id: number; title: string; subtitle: string | null; im
 export type CmsDestination = { id: number; title: string; image: string | null; description: string | null; sort_order: number; is_active: boolean };
 export type CmsReview = { id: number; reviewer_name: string; reviewer_image: string | null; rating: number; review_text: string; tour_name: string | null; country: string | null; sort_order: number; is_active: boolean };
 export type CmsExternalLink = { id: number; label: string; url: string; open_in_new_tab: boolean; location: string; sort_order: number; is_active: boolean };
+export type CmsBlog = {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string | null;
+  featured_image: string | null;
+  author: string | null;
+  tags: string[] | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  status: string;
+  published_at: string | null;
+  created_at: string;
+};
 
 export async function fetchPublicTours(params: Record<string, string | number | boolean>) {
   const res = await publicApi.get("/tours", { params });
@@ -166,6 +184,17 @@ export async function fetchCustomerReviews() {
 export async function fetchFooterLinks() {
   const res = await cmsApi.get("/external-links", { params: { location: "footer", limit: 100 } });
   return ((res.data.items || res.data.data || []) as CmsExternalLink[]).filter((item) => item.is_active);
+}
+
+export async function fetchPublicBlogs() {
+  const res = await cmsApi.get("/blogs", { params: { active_only: true, limit: 100 } });
+  return (res.data.items || res.data.data || []) as CmsBlog[];
+}
+
+export async function fetchPublicBlogBySlug(slug: string) {
+  const res = await cmsApi.get("/blogs", { params: { active_only: true, slug, limit: 1 } });
+  const items = (res.data.items || res.data.data || []) as CmsBlog[];
+  return items[0] ?? null;
 }
 
 export async function fetchPublicSettings() {

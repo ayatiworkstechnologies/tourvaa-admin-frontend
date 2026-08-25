@@ -1,45 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LuArrowRight as ArrowRight } from "react-icons/lu";
+import { CmsBlog, fetchPublicBlogs } from "@/lib/api/publicClient";
+import { mediaUrl } from "@/lib/utils/mediaUrl";
 
 /* eslint-disable @next/next/no-img-element */
 
-const posts = [
-  {
-    slug: "top-5-monsoon-destinations",
-    title: "Top 5 Monsoon Destinations in India",
-    date: "June 10, 2026",
-    category: "Travel Tips",
-    readTime: "5 min read",
-    img: "https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=900&q=75",
-    excerpt: "Discover why the monsoon season is the best time to explore India's lush landscapes and hidden waterfalls. From the Western Ghats to the Northeast, we pick the top routes.",
-  },
-  {
-    slug: "solo-travel-guide",
-    title: "The Complete Solo Traveller's Guide",
-    date: "May 28, 2026",
-    category: "Guide",
-    readTime: "8 min read",
-    img: "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=900&q=75",
-    excerpt: "Everything you need to know about planning a safe, rewarding solo journey through South Asia - from budgeting and packing to booking and staying connected.",
-  },
-  {
-    slug: "wildlife-photography-tips",
-    title: "Wildlife Photography Tips from the Field",
-    date: "May 15, 2026",
-    category: "Photography",
-    readTime: "6 min read",
-    img: "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=900&q=75",
-    excerpt: "Expert advice from our partner naturalists on capturing the perfect safari shot without disturbing the wildlife around you.",
-  },
-];
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=900&q=75";
 
-const categories = ["All", ...Array.from(new Set(posts.map((post) => post.category)))];
+function readTime(content: string | null) {
+  const words = (content || "").replace(/<[^>]+>/g, " ").trim().split(/\s+/).filter(Boolean).length;
+  return `${Math.max(1, Math.round(words / 200))} min read`;
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
+
+function toPost(blog: CmsBlog) {
+  return {
+    slug: blog.slug,
+    title: blog.title,
+    date: formatDate(blog.published_at || blog.created_at),
+    category: blog.tags?.[0] || "Travel",
+    readTime: readTime(blog.content),
+    img: blog.featured_image ? mediaUrl(blog.featured_image) : FALLBACK_IMAGE,
+    excerpt: blog.excerpt || "",
+  };
+}
 
 export default function BlogsPage() {
+  const [posts, setPosts] = useState<ReturnType<typeof toPost>[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
+
+  useEffect(() => {
+    let active = true;
+    fetchPublicBlogs()
+      .then((blogs) => { if (active) setPosts(blogs.map(toPost)); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const categories = ["All", ...Array.from(new Set(posts.map((post) => post.category)))];
   const filteredPosts = activeCategory === "All" ? posts : posts.filter((post) => post.category === activeCategory);
   const [featured, ...rest] = filteredPosts;
 
@@ -73,7 +79,11 @@ export default function BlogsPage() {
           ))}
         </div>
 
-        {!featured ? (
+        {loading ? (
+          <div className="rounded-3xl border border-dashed border-zinc-200 bg-white py-20 text-center">
+            <p className="text-lg font-bold text-zinc-500">Loading articles…</p>
+          </div>
+        ) : !featured ? (
           <div className="rounded-3xl border border-dashed border-zinc-200 bg-white py-20 text-center">
             <p className="text-lg font-bold text-zinc-500">No articles in this category yet.</p>
           </div>

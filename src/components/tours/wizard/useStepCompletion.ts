@@ -77,7 +77,7 @@ export function useStepCompletion(tourId: string | undefined, tour: Tour | null)
     7: (counts.inclusions ?? 0) > 0 || (counts.exclusions ?? 0) > 0 ? "complete" : "optional",
     8: (counts.extensions ?? 0) > 0 || (counts.similar ?? 0) > 0 ? "complete" : "optional",
     9: String(tour?.banner_image ?? "").trim() || (counts.gallery ?? 0) > 0 ? "complete" : "missing",
-    10: String(tour?.seo_title ?? "").trim() ? "complete" : "optional",
+    10: String(tour?.seo_title ?? "").trim() && String(tour?.seo_description ?? "").trim() ? "complete" : "optional",
   };
 
   return { statuses, counts, loading, refresh };
