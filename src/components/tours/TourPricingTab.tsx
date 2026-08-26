@@ -45,9 +45,10 @@ function PriceCell({
   const original = value ?? 0;
   const discounted = original * (1 - discountPercent / 100);
   return (
-    <div className="leading-tight">
-      <span className="block text-xs font-medium text-dash-subtle line-through">{fmt(original, currency)}</span>
+    <div className="flex flex-col items-start gap-0.5 leading-tight">
+      <span className="text-xs font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{fmt(original, currency)}</span>
       <span className={valueClassName}>{fmt(discounted, currency)}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Price after discount</span>
     </div>
   );
 }
@@ -257,12 +258,11 @@ export default function TourPricingTab({
   const supplierColumns = [
     { key: "range", header: "Pax Range", render: rangeBadge },
     { key: "adult", header: "Adult Price (Tourvaa)", render: (r: PricingSlab) => <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text" /> },
-    { key: "adult_net", header: "Supplier Receives", render: (r: PricingSlab) => <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700" /> },
+    { key: "adult_net", header: "Supplier Receives (You)", render: (r: PricingSlab) => <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700" /> },
     { key: "child", header: "Child Price (Tourvaa)", render: (r: PricingSlab) => <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text" /> },
-    { key: "child_net", header: "Supplier Receives", render: (r: PricingSlab) => <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700" /> },
-    { key: "commission", header: "Commission", render: (r: PricingSlab) => <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body"><Percent size={10} />{r.commission_percentage ?? commissionFloor ?? "…"}</span> },
+    { key: "child_net", header: "Supplier Receives (You)", render: (r: PricingSlab) => <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700" /> },
+    { key: "commission", header: "Tourvaa Commission", render: (r: PricingSlab) => <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body"><Percent size={10} />{r.commission_percentage ?? commissionFloor ?? "…"}</span> },
     { key: "currency", header: "Currency", render: (r: PricingSlab) => <span className="text-dash-subtle">{r.currency}</span> },
-    { key: "status", header: "Status", render: (r: PricingSlab) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${r.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.status}</span> },
   ];
 
   const addButton = (
@@ -287,6 +287,13 @@ export default function TourPricingTab({
           <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-800">
             <Info size={16} className="mt-0.5 shrink-0" />
             <span>Saving takes this price live immediately. Admin will also be notified to review the change.</span>
+          </div>
+        )}
+
+        {discountPercent != null && discountPercent > 0 && (
+          <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+            <Percent size={16} className="mt-0.5 shrink-0" />
+            <span>An active discount of {discountPercent}% is applied for its duration. Original prices are struck through; the discounted price is shown below each.</span>
           </div>
         )}
 
@@ -328,10 +335,10 @@ export default function TourPricingTab({
             ariaLabel="Publishable price"
             columns={[
               { key: "range", header: "Pax Range", render: rangeBadge },
-              { key: "adult", header: "Supplier Price (Adult)", render: (r: PricingSlab) => <span className="font-semibold text-dash-text">{fmt(r.adult_price, r.currency)}</span> },
-              { key: "child", header: "Supplier Price (Child)", render: (r: PricingSlab) => <span className="font-semibold text-dash-text">{fmt(r.child_price, r.currency)}</span> },
+              { key: "adult", header: "Supplier Price (Adult)", render: (r: PricingSlab) => <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text" /> },
+              { key: "child", header: "Supplier Price (Child)", render: (r: PricingSlab) => <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text" /> },
               { key: "markup", header: "Tourvaa Commission", render: (r: PricingSlab) => <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body"><Percent size={10} />{r.admin_markup_value ?? 0}</span> },
-              { key: "storefront", header: "Storefront Price", render: (r: PricingSlab) => <span className="font-black text-emerald-700">{fmt(r.storefront_adult_price, r.currency)}</span> },
+              { key: "storefront", header: "Storefront Price", render: (r: PricingSlab) => <PriceCell value={r.storefront_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700" /> },
               { key: "currency", header: "Currency", render: (r: PricingSlab) => <span className="text-dash-subtle">{r.currency}</span> },
             ]}
             rows={slabs}

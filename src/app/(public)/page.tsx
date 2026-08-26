@@ -1499,19 +1499,23 @@ export default function Home() {
     return () => { active = false; };
   }, []);
 
-  useEffect(() => {
-    if (banners.length < 2) return;
-    const timer = window.setInterval(() => setBannerIndex((index) => (index + 1) % banners.length), 7000);
-    return () => window.clearInterval(timer);
-  }, [banners.length]);
-
-  const [showOfferBanner, setShowOfferBanner] = useState(true);
-
   const banner = banners[bannerIndex];
   const heroImage = banner?.image
     ? mediaUrl(banner.image)
     : "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=2000&q=85";
   const heroVideo = banner?.video ? mediaUrl(banner.video) : null;
+
+  // A video banner advances on its own "ended" event (below) so it always
+  // plays in full instead of getting cut off mid-playback by a fixed timer -
+  // the interval below only drives rotation while the CURRENT banner is a
+  // plain image.
+  useEffect(() => {
+    if (banners.length < 2 || heroVideo) return;
+    const timer = window.setInterval(() => setBannerIndex((index) => (index + 1) % banners.length), 7000);
+    return () => window.clearInterval(timer);
+  }, [banners.length, heroVideo]);
+
+  const [showOfferBanner, setShowOfferBanner] = useState(true);
   const heroTitle = banner?.title || "Endless destinations. One easy search.";
 
   return (
@@ -1527,7 +1531,8 @@ export default function Home() {
                 src={heroVideo}
                 poster={heroImage}
                 autoPlay
-                loop
+                loop={banners.length < 2}
+                onEnded={banners.length > 1 ? () => setBannerIndex((index) => (index + 1) % banners.length) : undefined}
                 muted
                 playsInline
                 className="h-full w-full object-cover object-center scale-105"

@@ -28,6 +28,20 @@ function formatAmount(amount: number, currency: string): string {
   return `${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
+/** Same struck-through-original/discounted-below treatment used on the
+ * Pricing tab and the Discounts tab - shows the supplier's base per-person
+ * slab price struck through, with this tier's actual per-person price
+ * below it. */
+function GroupPriceCell({ basePersonPrice, tier, currency }: { basePersonPrice: number; tier: GroupDiscountTier; currency: string }) {
+  const discounted = discountedPerPersonPrice(basePersonPrice, tier);
+  return (
+    <div className="flex flex-col items-start gap-0.5 leading-tight">
+      <span className="text-xs font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{formatAmount(basePersonPrice, currency)}</span>
+      <span className="font-bold text-green-700">{formatAmount(discounted, currency)}</span>
+    </div>
+  );
+}
+
 export default function TourGroupDiscountTab({ tourId }: { tourId: string }) {
   const toast = useToast();
   const [items, setItems] = useState<GroupDiscountTier[]>([]);
@@ -135,14 +149,12 @@ export default function TourGroupDiscountTab({ tourId }: { tourId: string }) {
                 {
                   key: "adult_price",
                   header: "Price (Adult)",
-                  className: "font-bold text-green-700",
-                  render: (item) => basePrice ? formatAmount(discountedPerPersonPrice(basePrice.adult_price, item), basePrice.currency) : "Set a base price first",
+                  render: (item) => basePrice ? <GroupPriceCell basePersonPrice={basePrice.adult_price} tier={item} currency={basePrice.currency} /> : "Set a base price first",
                 },
                 {
                   key: "child_price",
                   header: "Price (Child)",
-                  className: "font-bold text-green-700",
-                  render: (item) => basePrice ? formatAmount(discountedPerPersonPrice(basePrice.child_price, item), basePrice.currency) : "-",
+                  render: (item) => basePrice ? <GroupPriceCell basePersonPrice={basePrice.child_price} tier={item} currency={basePrice.currency} /> : "-",
                 },
                 {
                   key: "status",

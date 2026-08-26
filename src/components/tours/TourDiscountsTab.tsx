@@ -7,7 +7,32 @@ import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 import DatePicker from "@/components/ui/DatePicker";
+import api from "@/lib/api/client";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
+
+function fmt(n: number, currency: string) {
+  return `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+}
+
+/** Preview of this discount's real effect on the tour's starting price -
+ * same struck-through-original/discounted-below treatment used in the
+ * pricing table (TourPricingTab.tsx), so a discount rule's actual impact is
+ * visible right here instead of just its abstract "10% off" text. */
+function DiscountPricePreview({ item, basePrice, currency }: { item: TourDiscount; basePrice: number; currency: string }) {
+  if (basePrice <= 0) return null;
+  const discounted = item.discount_type === "percentage"
+    ? basePrice * (1 - item.discount_value / 100)
+    : Math.max(0, basePrice - item.discount_value);
+  if (discounted >= basePrice) return null;
+
+  return (
+    <div className="mt-2 flex items-center gap-2 rounded-lg bg-dash-bg px-3 py-2">
+      <span className="text-xs font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{fmt(basePrice, currency)}</span>
+      <span className="text-sm font-black text-emerald-700">{fmt(discounted, currency)}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">after discount</span>
+    </div>
+  );
+}
 
 const empty = (): TourDiscount => ({
   discount_name: "", discount_code: null, discount_type: "percentage",
@@ -21,6 +46,8 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourDiscount | null>(null);
   const [saving, setSaving] = useState(false);
+  const [basePrice, setBasePrice] = useState(0);
+  const [currency, setCurrency] = useState("USD");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,6 +65,16 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    api.get(`/tours/${tourId}`).then((res) => {
+      const tour = res.data?.data;
+      if (tour?.price_start_per_person != null) setBasePrice(Number(tour.price_start_per_person));
+      if (tour?.currency) setCurrency(String(tour.currency));
+    }).catch(() => {
+      // Non-fatal -- the discount list itself is the primary content of this tab.
+    });
+  }, [tourId]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +138,7 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
                   {item.discount_value}{item.discount_type === "percentage" ? "%" : ""} off
                   {item.minimum_booking_amount > 0 ? ` - min. ${item.minimum_booking_amount}` : ""}
                 </p>
+                <DiscountPricePreview item={item} basePrice={basePrice} currency={currency} />
                 {(item.start_date || item.end_date) && (
                   <p className="text-xs text-dash-subtle">
                     {item.start_date?.slice(0, 10)} → {item.end_date?.slice(0, 10)}
