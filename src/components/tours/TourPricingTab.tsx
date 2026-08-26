@@ -23,6 +23,35 @@ function fmt(n: number | null | undefined, currency: string) {
   return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
+/** Strikes through the original price and shows the discounted price below
+ * it when the tour has an active discount - same discount_percentage the
+ * public storefront applies (Tour.active_discount, see services/cms.py
+ * _active_discount), reused here so every price a supplier/admin sees
+ * matches what the customer actually pays. */
+function PriceCell({
+  value,
+  currency,
+  discountPercent,
+  valueClassName,
+}: {
+  value: number | null | undefined;
+  currency: string;
+  discountPercent: number | null;
+  valueClassName: string;
+}) {
+  if (!discountPercent) {
+    return <span className={valueClassName}>{fmt(value, currency)}</span>;
+  }
+  const original = value ?? 0;
+  const discounted = original * (1 - discountPercent / 100);
+  return (
+    <div className="leading-tight">
+      <span className="block text-xs font-medium text-dash-subtle line-through">{fmt(original, currency)}</span>
+      <span className={valueClassName}>{fmt(discounted, currency)}</span>
+    </div>
+  );
+}
+
 function SectionCard({
   icon: Icon,
   iconTone,
@@ -102,15 +131,22 @@ export default function TourPricingTab({
   // same resolution order applied server-side per slab.
   const [commissionFloor, setCommissionFloor] = useState<number | null>(null);
   const [defaultCurrency, setDefaultCurrency] = useState("USD");
+  // Same active_discount the public storefront computes (see
+  // services/cms.py _active_discount) - reused here so the strikethrough
+  // price shown to admin/supplier matches what the customer actually pays.
+  const [discountPercent, setDiscountPercent] = useState<number | null>(null);
 
   const loadCommissionFloor = useCallback(async () => {
     try {
+      const tourRes = await api.get(`/tours/${tourId}`);
+      const activeDiscount = tourRes.data?.data?.active_discount;
+      setDiscountPercent(activeDiscount?.discount_percentage ?? null);
+
       if (isSupplier) {
         const res = await api.get("/suppliers/me");
         const own = res.data?.data?.commission_percentage;
         if (own != null) { setCommissionFloor(Number(own)); return; }
       } else {
-        const tourRes = await api.get(`/tours/${tourId}`);
         const supplierId = tourRes.data?.data?.supplier_id;
         if (tourRes.data?.data?.currency) setDefaultCurrency(String(tourRes.data.data.currency));
         if (supplierId) {
@@ -220,10 +256,10 @@ export default function TourPricingTab({
 
   const supplierColumns = [
     { key: "range", header: "Pax Range", render: rangeBadge },
-    { key: "adult", header: "Adult Price (Tourvaa)", render: (r: PricingSlab) => <span className="font-semibold text-dash-text">{fmt(r.adult_price, r.currency)}</span> },
-    { key: "adult_net", header: "Supplier Receives", render: (r: PricingSlab) => <span className="font-bold text-emerald-700">{fmt(r.supplier_final_adult_price, r.currency)}</span> },
-    { key: "child", header: "Child Price (Tourvaa)", render: (r: PricingSlab) => <span className="font-semibold text-dash-text">{fmt(r.child_price, r.currency)}</span> },
-    { key: "child_net", header: "Supplier Receives", render: (r: PricingSlab) => <span className="font-bold text-emerald-700">{fmt(r.supplier_final_child_price, r.currency)}</span> },
+    { key: "adult", header: "Adult Price (Tourvaa)", render: (r: PricingSlab) => <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text" /> },
+    { key: "adult_net", header: "Supplier Receives", render: (r: PricingSlab) => <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700" /> },
+    { key: "child", header: "Child Price (Tourvaa)", render: (r: PricingSlab) => <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text" /> },
+    { key: "child_net", header: "Supplier Receives", render: (r: PricingSlab) => <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700" /> },
     { key: "commission", header: "Commission", render: (r: PricingSlab) => <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body"><Percent size={10} />{r.commission_percentage ?? commissionFloor ?? "…"}</span> },
     { key: "currency", header: "Currency", render: (r: PricingSlab) => <span className="text-dash-subtle">{r.currency}</span> },
     { key: "status", header: "Status", render: (r: PricingSlab) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${r.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.status}</span> },

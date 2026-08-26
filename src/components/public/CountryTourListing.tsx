@@ -10,6 +10,7 @@ import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import TourCard from "@/components/public/TourCard";
+import { PublicTourGridSkeleton, PublicEmptyState } from "@/components/public/PublicSkeletonLoader";
 
 const FALLBACK = "/images/tour-card-fallback.jpg";
 const HERO_FALLBACK = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80";
@@ -304,8 +305,19 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               <div className="flex rounded-lg bg-slate-50 p-1"><button type="button" aria-label="Grid view" onClick={() => setView("grid")} className={`flex h-8 w-8 items-center justify-center rounded transition-all ${view === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}><Grid size={17} /></button><button type="button" aria-label="List view" onClick={() => setView("list")} className={`flex h-8 w-8 items-center justify-center rounded transition-all ${view === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}><List size={18} /></button></div>
             </div>
 
-            {pagedTours.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 py-24 text-center"><Filter size={34} className="mx-auto text-slate-300" /><h2 className="mt-5 text-xl font-black">No tours match these filters</h2><p className="mt-1.5 text-sm font-semibold text-slate-500">Try widening your search or clearing a filter.</p><button type="button" onClick={clearFilters} className="mt-5 inline-flex rounded-lg bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-md">Clear filters</button></div>
+            {loading ? (
+              <div className="py-4">
+                <PublicTourGridSkeleton count={6} />
+              </div>
+            ) : pagedTours.length === 0 ? (
+              <div className="py-8">
+                <PublicEmptyState
+                  title="No tours match these filters"
+                  description="Try widening your search keywords, adjusting duration, or clearing a filter to see all available packages."
+                  actionLabel="Clear All Filters"
+                  onReset={clearFilters}
+                />
+              </div>
             ) : (
               <div className={`grid items-start gap-8 ${view === "grid" ? "md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"}`}>
                 {pagedTours.map((tour) => (

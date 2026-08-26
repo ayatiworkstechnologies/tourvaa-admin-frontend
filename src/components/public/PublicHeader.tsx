@@ -18,12 +18,13 @@ import {
 } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
-import CurrencySelector from "@/components/public/CurrencySelector";
+import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelector";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 
 const browseLinks = [
   ["Destinations", "/destinations"],
   ["Tour Packages", "/tours"],
+  ["External Day Trips", "/external-day-trips"],
   ["Deals", "/tours?sort=price_asc"],
   ["Travel Advice", "/travel-advice"],
   ["About Tourvaa", "/about"],
@@ -133,7 +134,7 @@ export default function PublicHeader() {
               </span>
             )}
           </Link>
-          <CurrencySelector plain />
+          <LanguageCurrencySelector plain />
           <div ref={profileRef} className="relative">
             <button
               type="button"
@@ -168,7 +169,7 @@ export default function PublicHeader() {
           </div>
         </nav>
         <div className="flex items-center gap-3 lg:hidden">
-          <CurrencySelector plain />
+          <LanguageCurrencySelector plain />
           <button
             onClick={() => setOpen(!open)}
             aria-label="Toggle navigation"

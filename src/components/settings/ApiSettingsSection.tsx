@@ -9,6 +9,8 @@ type ApiSummary = {
   email_api_key: string; // masked, display-only
   sms_api_key: string; // masked, display-only
   brightlane_external_link: string;
+  viator_api_key: string; // masked, display-only
+  viator_affiliate_pid: string; // not a secret - shown in full
 };
 
 const inputClass = "w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand";
@@ -25,6 +27,8 @@ export default function ApiSettingsSection() {
   const [emailApiKey, setEmailApiKey] = useState("");
   const [smsApiKey, setSmsApiKey] = useState("");
   const [brightlaneLink, setBrightlaneLink] = useState("");
+  const [viatorApiKey, setViatorApiKey] = useState("");
+  const [viatorAffiliatePid, setViatorAffiliatePid] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -36,6 +40,8 @@ export default function ApiSettingsSection() {
       setEmailApiKey("");
       setSmsApiKey("");
       setBrightlaneLink(data.brightlane_external_link || "");
+      setViatorApiKey("");
+      setViatorAffiliatePid(data.viator_affiliate_pid || "");
     } finally {
       setLoading(false);
     }
@@ -48,10 +54,14 @@ export default function ApiSettingsSection() {
     setSaving(true);
     setMessage("");
     try {
-      const payload: Record<string, unknown> = { brightlane_external_link: brightlaneLink };
+      const payload: Record<string, unknown> = {
+        brightlane_external_link: brightlaneLink,
+        viator_affiliate_pid: viatorAffiliatePid,
+      };
       if (googleMapsKey.trim()) payload.google_map_api_key = googleMapsKey.trim();
       if (emailApiKey.trim()) payload.email_api_key = emailApiKey.trim();
       if (smsApiKey.trim()) payload.sms_api_key = smsApiKey.trim();
+      if (viatorApiKey.trim()) payload.viator_api_key = viatorApiKey.trim();
 
       await api.put("/settings/api", payload);
       setMessage("API settings updated successfully.");
@@ -85,6 +95,14 @@ export default function ApiSettingsSection() {
         <label>
           <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Brightlane external link</span>
           <input value={brightlaneLink} onChange={(e) => setBrightlaneLink(e.target.value)} className={inputClass} />
+        </label>
+        <label>
+          <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Viator API key (exp-api-key)</span>
+          <input type="password" value={viatorApiKey} onChange={(e) => setViatorApiKey(e.target.value)} placeholder={summary.viator_api_key ? `Saved: ${summary.viator_api_key} (leave blank to keep)` : "Not set"} className={inputClass} />
+        </label>
+        <label>
+          <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Viator affiliate Partner ID (PID)</span>
+          <input value={viatorAffiliatePid} onChange={(e) => setViatorAffiliatePid(e.target.value)} placeholder="P00000000" className={inputClass} />
         </label>
       </div>
       <div className="flex justify-end">

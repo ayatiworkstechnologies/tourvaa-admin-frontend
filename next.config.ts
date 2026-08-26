@@ -9,26 +9,19 @@ const apiProxyTarget = (
 ).replace(/\/$/, "");
 const apiProxyOrigin = new URL(apiProxyTarget).origin;
 
-// 'unsafe-eval' is only needed for dev-mode tooling (HMR/fast refresh) -
-// a production build should not require it. 'unsafe-inline' stays in both
-// script-src and style-src for now: Next.js/Tailwind emit inline
-// scripts/styles that would need nonce-based CSP wiring to remove safely,
-// which is a larger change than this fix's scope.
-// The Elfsight Website Translator widget (platform.js) loads its own
-// scripts/styles from *.elfsight.com/*.elfsightcdn.com (per
-// https://help.elfsight.com/article/1581 - both must be allowlisted or the
-// browser silently blocks the widget and it never renders), but the actual
-// phrase-translation API calls it makes at runtime go to a THIRD, distinct
-// domain - phrase-translator.wu.elfsightcompute.com - discovered via a
-// browser console CSP violation, not documented anywhere. Without
-// *.elfsightcompute.com in connect-src the widget UI renders fine but
-// picking a language silently fails to translate anything.
-const elfsightHosts =
-  "https://elfsight.com https://*.elfsight.com https://elfsightcdn.com https://*.elfsightcdn.com https://*.elfsightcompute.com";
+// Google Translate loads its widget from translate.google.com and
+// serves translated assets from translate.googleapis.com / *.gstatic.com.
+// translate.googleapis.com is also used for runtime XHR translation calls.
+// fonts.googleapis.com / fonts.gstatic.com are needed if translated pages
+// reference Google Fonts via the translate iframe.
+const googleTranslateHosts =
+  "https://translate.google.com https://translate.googleapis.com https://*.gstatic.com";
+const googleFontHosts =
+  "https://fonts.googleapis.com https://fonts.gstatic.com";
 const scriptSrc =
   process.env.NODE_ENV === "production"
-    ? `script-src 'self' 'unsafe-inline' ${elfsightHosts};`
-    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${elfsightHosts};`;
+    ? `script-src 'self' 'unsafe-inline' ${googleTranslateHosts};`
+    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${googleTranslateHosts};`;
 
 // The Turbopack/webpack dev-mode HMR client connects back over its own
 // ws://<host>:<port>/_next/webpack-hmr socket. 'self' in connect-src is
@@ -45,8 +38,8 @@ const devHmrHosts = "ws://localhost:* ws://127.0.0.1:*";
 const publicWsUrl = (process.env.NEXT_PUBLIC_WS_URL || apiProxyOrigin.replace(/^http/, "ws")).replace(/\/$/, "");
 const connectSrc =
   process.env.NODE_ENV === "production"
-    ? `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com;`
-    : `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${elfsightHosts} wss://elfsight.com wss://*.elfsight.com ${devHmrHosts};`;
+    ? `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${googleTranslateHosts};`
+    : `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${googleTranslateHosts} ${devHmrHosts};`;
 
 const nextConfig: NextConfig = {
   // Produces the minimal server bundle consumed by the production Docker image.
@@ -56,6 +49,16 @@ const nextConfig: NextConfig = {
   // the build with ENOENT on .next/next-server.js.nft.json.
   ...(process.env.NEXT_OUTPUT_STANDALONE === "true" ? { output: "standalone" as const } : {}),
   skipTrailingSlashRedirect: true,
+  experimental: {
+    // Next 16's rewrites()/proxy layer buffers the whole request body in
+    // memory before forwarding it, capped at 10MB by default - silently
+    // killing the request with a bare 500 (not a clean 413) once exceeded.
+    // /api/uploads/admin-asset accepts video up to 50MB
+    // (MAX_ADMIN_VIDEO_SIZE in the backend's uploads router), so this must
+    // stay comfortably above that or every video upload 500s before it
+    // even reaches the backend.
+    proxyClientMaxBodySize: "60mb",
+  },
   // Next's dev-server DNS-rebinding protection only allows "localhost" by
   // default, silently dropping HMR websocket connections (and, with them,
   // hydration) when the app is opened via http://127.0.0.1:3000 instead.
@@ -68,7 +71,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${elfsightHosts}; img-src 'self' data: blob: https: ${apiProxyOrigin}; ${connectSrc} font-src 'self' data: ${elfsightHosts}; frame-ancestors 'none';`,
+              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${googleTranslateHosts} ${googleFontHosts}; img-src 'self' data: blob: https: ${apiProxyOrigin}; media-src 'self' blob: https: ${apiProxyOrigin}; ${connectSrc} font-src 'self' data: ${googleFontHosts} ${googleTranslateHosts}; frame-ancestors 'none';`,
           },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },

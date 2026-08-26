@@ -208,10 +208,11 @@ export default function SupplierToursPage() {
           />
         ) : (
           <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
-            {tours.map((tour) => {
+            {tours.map((tour, index) => {
               const normalizedStatus = tour.status?.toLowerCase();
               const canSubmit = ["draft", "rejected"].includes(normalizedStatus);
               const isPending = ["pending_approval", "submitted"].includes(normalizedStatus);
+              const seqNumber = (page - 1) * limit + index + 1;
               return (
                 <article key={tour.id} className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#DCE8E0] bg-white shadow-[0_10px_30px_-25px_rgba(15,82,48,.75)] transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_18px_38px_-25px_rgba(15,82,48,.65)]">
                   <div className="relative h-40 overflow-hidden bg-[#EAF7EF]">
@@ -227,7 +228,7 @@ export default function SupplierToursPage() {
                   </div>
 
                   <div className="flex flex-1 flex-col p-5">
-                    <p className="text-[9px] font-black uppercase tracking-[.12em] text-[#16833A]">{tour.tour_code || `Tour #${tour.id}`}</p>
+                    <p className="text-[9px] font-black uppercase tracking-[.12em] text-[#16833A]">{`Tour #${seqNumber}`}</p>
                     <h2 className="mt-2 line-clamp-2 text-base font-black leading-snug text-[#123024]">{tour.title}</h2>
 
                     <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-[#647A6E]">

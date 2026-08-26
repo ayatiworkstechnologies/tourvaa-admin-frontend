@@ -1457,9 +1457,11 @@ export default function Home() {
         if (cmsFaqs.length > 0) setDynamicFaqs(cmsFaqs);
       }
 
-      // "Trending Tour Packages" - admin-picked via CMS "Popular Tours"
-      // (admin/cms > Popular Tours). Each entry only carries the tour id, so
-      // the full tour record is resolved separately before rendering.
+      // "Trending Tour Packages" AND "Handpicked Tours for You" - both
+      // admin-picked via the same CMS "Popular Tours"/"Handpicked" tabs
+      // (admin/cms), since there's no separate backend list for Handpicked
+      // yet. Each entry only carries the tour id, so the full tour record is
+      // resolved separately before rendering.
       if (popularTourResult.status === "fulfilled" && popularTourResult.value.length) {
         const refs = popularTourResult.value.filter((r) => r.is_active !== false);
         Promise.allSettled(refs.map((ref) => fetchPublicTourDetail(ref.tour_id))).then((results) => {
@@ -1467,7 +1469,10 @@ export default function Home() {
           const tours = results
             .filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof fetchPublicTourDetail>>> => r.status === "fulfilled")
             .map((r) => mapPublicTour(r.value));
-          if (tours.length) setTrendingTours(tours);
+          if (tours.length) {
+            setTrendingTours(tours);
+            setHandpickedTours(tours);
+          }
         });
       }
 
@@ -1506,6 +1511,7 @@ export default function Home() {
   const heroImage = banner?.image
     ? mediaUrl(banner.image)
     : "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=2000&q=85";
+  const heroVideo = banner?.video ? mediaUrl(banner.video) : null;
   const heroTitle = banner?.title || "Endless destinations. One easy search.";
 
   return (
@@ -1513,14 +1519,27 @@ export default function Home() {
       {/* Contained Hero Section */}
       <div className="relative z-30 mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-8 pt-3 pb-4 sm:pb-6">
         <section className="relative flex min-h-[520px] sm:min-h-[560px] lg:min-h-[600px] w-full flex-col justify-between items-center rounded-2xl sm:rounded-3xl lg:rounded-[28px] p-5 sm:p-8 lg:p-10 text-center text-white shadow-[0_12px_40px_rgba(15,23,42,0.12)]">
-          {/* Background image & gradient overlay (clipped to rounded corners) */}
+          {/* Background image/video & gradient overlay (clipped to rounded corners) */}
           <div className="absolute inset-0 overflow-hidden rounded-2xl sm:rounded-3xl lg:rounded-[28px] pointer-events-none">
-            <img
-              key={heroImage}
-              src={heroImage}
-              alt={banner?.title || "Scenic mountain lake landscape"}
-              className="h-full w-full object-cover object-center scale-105 transition-transform duration-1000"
-            />
+            {heroVideo ? (
+              <video
+                key={heroVideo}
+                src={heroVideo}
+                poster={heroImage}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="h-full w-full object-cover object-center scale-105"
+              />
+            ) : (
+              <img
+                key={heroImage}
+                src={heroImage}
+                alt={banner?.title || "Scenic mountain lake landscape"}
+                className="h-full w-full object-cover object-center scale-105 transition-transform duration-1000"
+              />
+            )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/55" />
           </div>
 

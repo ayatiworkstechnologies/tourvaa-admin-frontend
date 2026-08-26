@@ -8,9 +8,9 @@ import { useDebounce } from "@/hooks/useDebounce";
 import api from "@/lib/api/client";
 import { createAffiliateLink } from "@/lib/api/services/affiliateService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import TourPicker from "@/components/tours/TourPicker";
 
 type AffiliateOption = { id: number; name: string; affiliate_code: string; email: string; status: string; approval_status: string };
-type TourOption = { id: number; title: string; slug: string; status: string };
 
 const inputCls = "w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-dash-brand";
 const labelCls = "mb-1.5 block text-xs font-bold uppercase tracking-wide text-dash-muted";
@@ -29,11 +29,7 @@ export default function NewAffiliateLinkPage() {
   const [selectedAffiliate, setSelectedAffiliate] = useState<AffiliateOption | null>(null);
 
   const [linkType, setLinkType] = useState<"tour" | "custom">("custom");
-  const [tourSearch, setTourSearch] = useState("");
-  const debouncedTourSearch = useDebounce(tourSearch);
-  const [tourOptions, setTourOptions] = useState<TourOption[]>([]);
   const [tourId, setTourId] = useState<number | null>(null);
-  const [selectedTour, setSelectedTour] = useState<TourOption | null>(null);
   const [destinationUrl, setDestinationUrl] = useState("");
 
   const [campaignName, setCampaignName] = useState("");
@@ -69,27 +65,11 @@ export default function NewAffiliateLinkPage() {
     return () => { cancelled = true; };
   }, [debouncedAffiliateSearch]);
 
-  useEffect(() => {
-    if (linkType !== "tour") { setTourOptions([]); return; }
-    let cancelled = false;
-    api.get("/tours", { params: { search: debouncedTourSearch, status: "published", limit: 8 } })
-      .then((res) => { if (!cancelled) setTourOptions(res.data?.items ?? res.data?.data ?? []); })
-      .catch(() => { if (!cancelled) setTourOptions([]); });
-    return () => { cancelled = true; };
-  }, [linkType, debouncedTourSearch]);
-
   function pickAffiliate(a: AffiliateOption) {
     setSelectedAffiliate(a);
     setAffiliateId(a.id);
     setAffiliateSearch(a.name);
     setAffiliateOptions([]);
-  }
-
-  function pickTour(t: TourOption) {
-    setSelectedTour(t);
-    setTourId(t.id);
-    setTourSearch(t.title);
-    setTourOptions([]);
   }
 
   const previewCode = customAlias.trim() || "{auto-generated}";
@@ -175,20 +155,9 @@ export default function NewAffiliateLinkPage() {
             </div>
 
             {linkType === "tour" ? (
-              <div className="relative">
+              <div>
                 <label className={labelCls}>Tour *</label>
-                <input value={tourSearch} onChange={(e) => { setTourSearch(e.target.value); setTourId(null); setSelectedTour(null); }}
-                  placeholder="Search published tours" className={inputCls} />
-                {tourOptions.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full rounded-xl border border-dash-border bg-white shadow-lg">
-                    {tourOptions.map((t) => (
-                      <button type="button" key={t.id} onClick={() => pickTour(t)} className="block w-full px-3 py-2 text-left text-sm font-semibold text-dash-text hover:bg-dash-bg-muted">
-                        {t.title}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {selectedTour && <p className="mt-1.5 text-xs font-semibold text-emerald-700">Selected: {selectedTour.title}</p>}
+                <TourPicker value={tourId} onChange={(id) => setTourId(id)} placeholder="Search published tours" />
               </div>
             ) : (
               <div>

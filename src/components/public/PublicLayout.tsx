@@ -1,10 +1,11 @@
 import AnnouncementBar from "@/components/public/AnnouncementBar";
+import CookieConsentBanner from "@/components/public/CookieConsentBanner";
 import PublicFooter from "@/components/public/PublicFooter";
 import PublicHeader from "@/components/public/PublicHeader";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
 import ChatWidget from "@/components/public/ChatWidget";
-import GoogleTranslateScript from "@/components/public/GoogleTranslateScript";
 import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
+import NetworkStatusBanner from "@/components/public/NetworkStatusBanner";
 
 // The public site used to load its own Outfit/Work_Sans fonts, scoped here
 // via --font-heading/--font-body. The whole app now shares one variable
@@ -34,7 +35,8 @@ export default function PublicLayout({
           <div className="public-page-enter">{children}</div>
           <div className="print:hidden"><PublicFooter /></div>
           <div className="print:hidden"><ChatWidget /></div>
-          <GoogleTranslateScript />
+          <div className="print:hidden"><CookieConsentBanner /></div>
+          <div className="print:hidden"><NetworkStatusBanner /></div>
         </div>
       </TravelStoreProvider>
     </PublicSettingsProvider>

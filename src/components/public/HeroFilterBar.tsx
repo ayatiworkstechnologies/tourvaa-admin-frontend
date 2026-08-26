@@ -96,7 +96,7 @@ export default function HeroFilterBar({
   const [travelDate, setTravelDate] = useState("");
   const [duration, setDuration] = useState("");
   const [adults, setAdults] = useState(2);
-  const [children, setChildren] = useState(1);
+  const [children, setChildren] = useState(0);
 
   useEffect(() => {
     const close = (event: MouseEvent) => {

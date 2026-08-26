@@ -108,7 +108,7 @@ export type PublicCategory = { id: number; category_name: string; slug: string; 
 export type PublicSubcategory = { id: number; subcategory_name: string; slug: string; category_name: string };
 export type PublicCountry = { id: number; country_name: string; country_code: string; tour_count?: number };
 export type PublicCity = { id: number; city_name: string; country_id: number; tour_count?: number };
-export type CmsBanner = { id: number; title: string; subtitle: string | null; image: string; cta_text: string | null; cta_url: string | null; sort_order: number; is_active: boolean };
+export type CmsBanner = { id: number; title: string; subtitle: string | null; image: string | null; video: string | null; cta_text: string | null; cta_url: string | null; sort_order: number; is_active: boolean };
 export type CmsDestination = { id: number; title: string; image: string | null; description: string | null; sort_order: number; is_active: boolean };
 export type CmsReview = { id: number; reviewer_name: string; reviewer_image: string | null; rating: number; review_text: string; tour_name: string | null; country: string | null; sort_order: number; is_active: boolean };
 export type CmsExternalLink = { id: number; label: string; url: string; open_in_new_tab: boolean; location: string; sort_order: number; is_active: boolean };
@@ -165,6 +165,29 @@ export async function fetchPublicTourDetail(idOrSlug: number | string, countrySl
 export async function fetchPublicCategories() {
   const res = await publicApi.get("/categories");
   return res.data.items as PublicCategory[];
+}
+
+export type ExternalDayTrip = {
+  product_code: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  rating: number | null;
+  review_count: number | null;
+  from_price: number | null;
+  currency: string | null;
+  duration_label: string | null;
+  booking_url: string;
+};
+
+export async function fetchExternalDayTrips() {
+  const res = await publicApi.get("/external-day-trips");
+  return res.data as {
+    configured: boolean;
+    destination_name: string;
+    stale: boolean;
+    items: ExternalDayTrip[];
+  };
 }
 
 export async function fetchPublicSubcategories(category?: string) {

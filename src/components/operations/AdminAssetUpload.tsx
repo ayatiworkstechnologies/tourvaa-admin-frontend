@@ -7,12 +7,16 @@ import api from "@/lib/api/client";
 import {
   IMAGE_AND_PDF_ACCEPT,
   IMAGE_AND_PDF_FORMAT_LABEL,
+  VIDEO_ACCEPT,
+  VIDEO_FORMAT_LABEL,
 } from "@/lib/uploads/imageFormats";
 
 type Props = {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  /** "video" accepts MP4/WEBM (up to 50MB) instead of images/PDF (up to 10MB). */
+  kind?: "asset" | "video";
 };
 
 function isImageUrl(value: string) {
@@ -23,10 +27,19 @@ function isImageUrl(value: string) {
   return /\.(png|jpe?g|webp|avif|gif|svg)(\?.*)?$/i.test(value);
 }
 
-export default function AdminAssetUpload({ label, value, onChange }: Props) {
+function isVideoUrl(value: string) {
+  return /\.(mp4|webm|mov)(\?.*)?$/i.test(value);
+}
+
+export default function AdminAssetUpload({ label, value, onChange, kind = "asset" }: Props) {
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
+
+  const isVideoKind = kind === "video";
+  const accept = isVideoKind ? VIDEO_ACCEPT : IMAGE_AND_PDF_ACCEPT;
+  const formatLabel = isVideoKind ? VIDEO_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
+  const maxSizeLabel = isVideoKind ? "50MB" : "10MB";
 
   const upload = async (file: File | null) => {
     if (!file) return;
@@ -41,13 +54,14 @@ export default function AdminAssetUpload({ label, value, onChange }: Props) {
       onChange(response.data.data.url);
     } catch (uploadError: unknown) {
       const detail = (uploadError as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : `Upload failed. Try ${IMAGE_AND_PDF_FORMAT_LABEL} under 10MB.`);
+      setError(typeof detail === "string" ? detail : `Upload failed. Try ${formatLabel} under ${maxSizeLabel}.`);
     } finally {
       setUploading(false);
     }
   };
 
-  const showPreview = value && isImageUrl(value);
+  const showImagePreview = value && isImageUrl(value);
+  const showVideoPreview = value && isVideoUrl(value);
 
   return (
     <div>
@@ -55,10 +69,12 @@ export default function AdminAssetUpload({ label, value, onChange }: Props) {
 
       {value ? (
         <div className="relative overflow-hidden rounded-xl border border-dash-border">
-          {showPreview ? (
+          {showImagePreview ? (
             <div className="relative aspect-video w-full bg-[#F0F3F8]">
               <Image src={value} alt={label} fill unoptimized className="object-cover" />
             </div>
+          ) : showVideoPreview ? (
+            <video src={value} controls muted className="aspect-video w-full bg-black object-contain" />
           ) : (
             <div className="flex items-center gap-2 bg-dash-bg px-4 py-6 text-sm font-semibold text-dash-muted">
               <FileText size={16} /> File attached
@@ -99,12 +115,12 @@ export default function AdminAssetUpload({ label, value, onChange }: Props) {
                 <UploadCloud size={18} />
               </span>
               <span className="text-xs font-bold text-dash-body">Click to upload or drag & drop</span>
-              <span className="text-[11px] text-dash-subtle">{IMAGE_AND_PDF_FORMAT_LABEL} - up to 10MB</span>
+              <span className="text-[11px] text-dash-subtle">{formatLabel} - up to {maxSizeLabel}</span>
             </>
           )}
           <input
             type="file"
-            accept={IMAGE_AND_PDF_ACCEPT}
+            accept={accept}
             onChange={(event) => void upload(event.target.files?.[0] || null)}
             className="hidden"
             disabled={uploading}

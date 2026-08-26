@@ -35,6 +35,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/terms": { title: "Terms & Conditions", description: "Review the terms governing Tourvaa accounts, tour bookings, payments, cancellations, suppliers, and platform use." },
   "/travel-advice": { title: "Travel Advice & Guides", description: "Prepare for your next journey with Tourvaa visa, health, insurance, packing, money, safety, and destination advice." },
   "/tours": { title: "Browse Tours", description: "Compare curated tours by destination, dates, duration, availability, and price, then book securely with Tourvaa." },
+  "/external-day-trips": { title: "External Day Trips", description: "Browse day trips and activities from Viator, bookable directly on their site.", index: false },
   "/tours/[id]": { title: "Tour Details", description: "Review tour itinerary, inclusions, available dates, optional experiences, accommodation, and pricing on Tourvaa." },
   "/tours/[id]/[slug]": { title: "Tour Details", description: "Review tour itinerary, inclusions, available dates, optional experiences, accommodation, and pricing on Tourvaa." },
   "/tours/[country]/[slug]": { title: "Tour Details", description: "Review tour itinerary, inclusions, available dates, optional experiences, accommodation, and pricing on Tourvaa." },

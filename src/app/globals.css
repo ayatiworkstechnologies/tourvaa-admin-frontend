@@ -586,3 +586,149 @@ body {
 .skiptranslate {
   display: inline;
 }
+
+/* 404 Flight & Aviation Animations */
+@keyframes planeFlyGlide {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-14deg);
+  }
+  25% {
+    transform: translate3d(12px, -16px, 0) rotate(-8deg);
+  }
+  50% {
+    transform: translate3d(24px, 0px, 0) rotate(-12deg);
+  }
+  75% {
+    transform: translate3d(12px, 14px, 0) rotate(-18deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-14deg);
+  }
+}
+
+@keyframes planeFlyAcross {
+  0% {
+    transform: translate3d(-180px, 120px, 0) rotate(-28deg) scale(0.8);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(720px, -240px, 0) rotate(-32deg) scale(1.15);
+    opacity: 0;
+  }
+}
+
+@keyframes flightContrail {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes cloudDriftSlow {
+  0% {
+    transform: translate3d(-15px, 0, 0);
+  }
+  50% {
+    transform: translate3d(25px, 0, 0);
+  }
+  100% {
+    transform: translate3d(-15px, 0, 0);
+  }
+}
+
+@keyframes cloudDriftFast {
+  0% {
+    transform: translate3d(20px, 0, 0);
+  }
+  50% {
+    transform: translate3d(-20px, 0, 0);
+  }
+  100% {
+    transform: translate3d(20px, 0, 0);
+  }
+}
+
+@keyframes pulseBeacon {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(217, 93, 44, 0.6);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 16px rgba(217, 93, 44, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(217, 93, 44, 0);
+  }
+}
+
+.animate-plane-glide {
+  animation: planeFlyGlide 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-plane-fly {
+  animation: planeFlyAcross 14s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform, opacity;
+}
+
+.animate-contrail {
+  stroke-dasharray: 12 12;
+  animation: flightContrail 30s linear infinite;
+}
+
+.animate-cloud-slow {
+  animation: cloudDriftSlow 12s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-cloud-fast {
+  animation: cloudDriftFast 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-beacon {
+  animation: pulseBeacon 2.5s infinite;
+}
+
+/* Shimmer Skeleton Loading Animation */
+@keyframes shimmerWave {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmerWave 1.8s infinite;
+}
+

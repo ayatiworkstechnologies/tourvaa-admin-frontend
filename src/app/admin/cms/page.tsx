@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
-import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil, LuX as X, LuCheck as Check, LuGlobe as Globe, LuRefreshCw as RefreshCw } from "react-icons/lu";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil, LuX as X, LuCheck as Check, LuGlobe as Globe, LuRefreshCw as RefreshCw, LuChevronDown as ChevronDown } from "react-icons/lu";
 import api from "@/lib/api/client";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
@@ -37,7 +37,7 @@ type TabConfig = {
   label: string;
   endpoint: string;
   columns: { key: string; header: string; render?: (item: CmsItem) => React.ReactNode; className?: string }[];
-  formFields: { key: string; label: string; type: "text" | "textarea" | "select" | "url" | "number" | "asset"; options?: FieldOption[]; required?: boolean }[];
+  formFields: { key: string; label: string; type: "text" | "textarea" | "select" | "url" | "number" | "asset" | "video"; options?: FieldOption[]; required?: boolean }[];
   createMethod?: "post" | "put";
   updateMethod?: "put" | "patch";
   updatePath?: "item" | "collection";
@@ -49,7 +49,8 @@ type TabConfig = {
 const TAB_DESCRIPTIONS: Record<string, string> = {
   banners: "Hero banners and homepage calls to action.",
   "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order.",
-  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Only tours with an active discount can be picked.",
+  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Only tours with an active discount can be picked. Shares its list with Handpicked Tours.",
+  "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section. Shares the same pinned-tours list as Trending Tour Packages (no separate backend list exists yet) - only tours with an active discount can be picked.",
   "popular-destinations": "Country images shown in Countries Worth Exploring (the country list itself is calculated automatically from real tour counts).",
   "customer-reviews": "Customer testimonials shown in the homepage Testimonials section.",
   "help-centre": "Questions and answers shown in the homepage FAQ section.",
@@ -63,12 +64,14 @@ const TABS: TabConfig[] = [
       { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Banner image"), className: "w-32" },
       { key: "title", header: "Title" },
       { key: "subtitle", header: "Subtitle" },
+      { key: "video", header: "Video", render: (item) => (getStringValue(item, "video") ? "Yes" : "-") },
       { key: "is_active", header: "Active", render: (item) => (item.is_active ? "Yes" : "No") },
     ],
     formFields: [
       { key: "title", label: "Title", type: "text", required: true },
       { key: "subtitle", label: "Subtitle", type: "text" },
-      { key: "image", label: "Image", type: "asset", required: true },
+      { key: "image", label: "Image (add this or a video below - at least one is required)", type: "asset" },
+      { key: "video", label: "Video (add this or an image above - plays instead of the image when set)", type: "video" },
       { key: "cta_url", label: "CTA URL", type: "url" },
       { key: "cta_text", label: "CTA Text", type: "text" },
       { key: "sort_order", label: "Sort Order", type: "number" },
@@ -77,6 +80,21 @@ const TABS: TabConfig[] = [
   {
     key: "popular-tours",
     label: "Trending Tour Packages",
+    endpoint: "/cms/popular-tours",
+    canEdit: false,
+    columns: [
+      { key: "tour_title", header: "Tour" },
+      { key: "tour_code", header: "Code" },
+      { key: "sort_order", header: "Sort" },
+    ],
+    formFields: [
+      { key: "tour_id", label: "Tour (discounted only)", type: "select", required: true },
+      { key: "sort_order", label: "Sort Order", type: "number" },
+    ],
+  },
+  {
+    key: "handpicked-tours",
+    label: "Handpicked",
     endpoint: "/cms/popular-tours",
     canEdit: false,
     columns: [
@@ -159,6 +177,84 @@ const TABS: TabConfig[] = [
   },
 ];
 
+// ---- TourPickerSelect ------------------------------------------------------
+// A native <select> can't render an image per <option>, so the "Tour" field
+// on tour-picker tabs (Trending/Handpicked/Top Deals) uses this custom
+// dropdown instead, showing each tour's banner thumbnail next to its title.
+function TourPickerSelect({
+  options,
+  images,
+  value,
+  onChange,
+}: {
+  options: FieldOption[];
+  images: Record<string, string>;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const close = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+
+  const selected = options.find((opt) => (typeof opt === "string" ? opt : opt.value) === value);
+  const selectedLabel = selected ? (typeof selected === "string" ? selected : selected.label) : "Select...";
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-dash-border px-3 py-2.5 text-left text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
+      >
+        <span className={value ? "text-dash-text" : "text-dash-subtle"}>{selectedLabel}</span>
+        <ChevronDown size={16} className={`shrink-0 text-dash-muted transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-dash-border bg-white p-1.5 shadow-lg">
+          {options.length === 0 && <p className="px-3 py-2 text-xs text-dash-muted">No tours available.</p>}
+          {options.map((opt) => {
+            const optValue = typeof opt === "string" ? opt : opt.value;
+            const optLabel = typeof opt === "string" ? opt : opt.label;
+            const src = images[optValue];
+            return (
+              <button
+                key={optValue}
+                type="button"
+                onClick={() => {
+                  onChange(optValue);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm transition ${
+                  optValue === value ? "bg-[#EDF5FF] font-bold text-[#0369A1]" : "text-dash-body hover:bg-dash-bg"
+                }`}
+              >
+                {src ? (
+                  <span className="relative h-10 w-14 shrink-0 overflow-hidden rounded-md border border-dash-border bg-dash-bg">
+                    <Image src={src} alt="" fill unoptimized className="object-cover" sizes="56px" />
+                  </span>
+                ) : (
+                  <span className="flex h-10 w-14 shrink-0 items-center justify-center rounded-md border border-dash-border bg-dash-bg text-[9px] font-semibold text-dash-subtle">
+                    No img
+                  </span>
+                )}
+                <span className="line-clamp-2">{optLabel}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---- CmsTabPanel ---------------------------------------------------------
 function CmsTabPanel({ tab }: { tab: TabConfig }) {
   const toast = useToast();
@@ -170,6 +266,7 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [tourOptions, setTourOptions] = useState<FieldOption[]>([]);
+  const [tourImages, setTourImages] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -189,7 +286,7 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
 
   useEffect(() => { void fetchItems(); }, [fetchItems]);
   useEffect(() => {
-    if (tab.key !== "popular-tours" && tab.key !== "tours-on-deals") return;
+    if (tab.endpoint !== "/cms/popular-tours" && tab.endpoint !== "/cms/tours-on-deals") return;
 
     let cancelled = false;
     api.get("/tours", { params: { page: 1, limit: 200 } })
@@ -197,8 +294,9 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
         if (cancelled) return;
         const data = res.data?.data ?? res.data?.items ?? res.data ?? [];
         const rows: CmsItem[] = Array.isArray(data) ? data : data.items ?? [];
-        // "Trending Tour Packages" is only ever filled with discounted tours.
-        const filteredRows = tab.key === "popular-tours"
+        // "Trending Tour Packages" and "Handpicked" both share /cms/popular-tours
+        // and are only ever filled with discounted tours.
+        const filteredRows = tab.endpoint === "/cms/popular-tours"
           ? rows.filter((tour) => typeof tour.discount_percentage === "number" && tour.discount_percentage > 0)
           : rows;
         setTourOptions(filteredRows.map((tour: CmsItem) => {
@@ -208,13 +306,21 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
           const discount = typeof tour.discount_percentage === "number" && tour.discount_percentage > 0 ? ` (-${tour.discount_percentage}%)` : "";
           return { value: id, label: `${code}${title}${discount}` };
         }).filter((option: { value: string }) => option.value));
+        setTourImages(Object.fromEntries(
+          rows
+            .filter((tour) => typeof tour.banner_image === "string" && tour.banner_image)
+            .map((tour) => [String(tour.id ?? ""), tour.banner_image as string])
+        ));
       })
       .catch(() => {
-        if (!cancelled) setTourOptions([]);
+        if (!cancelled) {
+          setTourOptions([]);
+          setTourImages({});
+        }
       });
 
     return () => { cancelled = true; };
-  }, [tab.key]);
+  }, [tab.endpoint]);
 
   const openCreate = () => {
     setEditingItem(null);
@@ -284,6 +390,8 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
     }
   };
 
+  const isTourPickerTab = tab.endpoint === "/cms/popular-tours" || tab.endpoint === "/cms/tours-on-deals";
+
   const columns: DataTableColumn<CmsItem>[] = [
     {
       key: "no",
@@ -291,6 +399,25 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
       className: "w-20 font-bold text-dash-muted",
       render: (_row, index) => (page - 1) * pageSize + index + 1,
     },
+    ...(isTourPickerTab
+      ? [
+          {
+            key: "tour_image",
+            header: "Preview",
+            className: "w-32",
+            render: (item: CmsItem) => {
+              const src = tourImages[String(item.tour_id ?? "")];
+              return src ? (
+                <div className="relative h-14 w-24 overflow-hidden rounded-lg border border-dash-border bg-dash-bg">
+                  <Image src={src} alt={getStringValue(item, "tour_title") || "Tour"} fill unoptimized className="object-cover" sizes="96px" />
+                </div>
+              ) : (
+                <span className="text-xs font-semibold text-dash-subtle">No image</span>
+              );
+            },
+          },
+        ]
+      : []),
     ...tab.columns.map((col) => ({
       key: col.key,
       header: col.header,
@@ -361,15 +488,16 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             {tab.formFields.map(f => (
-              <div key={f.key} className={f.type === "textarea" || f.type === "asset" ? "sm:col-span-2" : ""}>
-                {f.type !== "asset" && (
+              <div key={f.key} className={f.type === "textarea" || f.type === "asset" || f.type === "video" ? "sm:col-span-2" : ""}>
+                {f.type !== "asset" && f.type !== "video" && (
                   <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
                     {f.label}{f.required && " *"}
                   </label>
                 )}
-                {f.type === "asset" ? (
+                {f.type === "asset" || f.type === "video" ? (
                   <AdminAssetUpload
                     label={`${f.label}${f.required ? " *" : ""}`}
+                    kind={f.type}
                     value={formValues[f.key] ?? ""}
                     onChange={(value) => setFormValues(v => ({ ...v, [f.key]: value }))}
                   />
@@ -380,6 +508,13 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
                     onChange={e => setFormValues(v => ({ ...v, [f.key]: e.target.value }))}
                     className="w-full resize-none rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
                   />
+                ) : f.type === "select" && f.key === "tour_id" ? (
+                  <TourPickerSelect
+                    options={tourOptions}
+                    images={tourImages}
+                    value={formValues[f.key] ?? ""}
+                    onChange={(value) => setFormValues(v => ({ ...v, [f.key]: value }))}
+                  />
                 ) : f.type === "select" ? (
                   <select
                     value={formValues[f.key] ?? ""}
@@ -387,7 +522,7 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
                     className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
                   >
                     <option value="">Select...</option>
-                    {(f.key === "tour_id" ? tourOptions : f.options)?.map(opt => {
+                    {f.options?.map(opt => {
                       const value = typeof opt === "string" ? opt : opt.value;
                       const label = typeof opt === "string" ? opt : opt.label;
                       return <option key={value} value={value}>{label}</option>;
