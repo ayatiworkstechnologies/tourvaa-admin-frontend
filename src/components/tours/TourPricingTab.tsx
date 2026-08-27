@@ -6,7 +6,6 @@ import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } 
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
-import DataTable from "@/components/ui/DataTable";
 import CurrencySelect from "@/components/ui/CurrencySelect";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
@@ -251,20 +250,6 @@ export default function TourPricingTab({
 
   if (loading) return <Loader label="Loading pricing..." />;
 
-  const rangeBadge = (r: PricingSlab) => (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>{r.passenger_from}–{r.passenger_to} pax</span>
-  );
-
-  const supplierColumns = [
-    { key: "range", header: "Pax Range", render: rangeBadge },
-    { key: "adult", header: "Adult Price (Tourvaa)", render: (r: PricingSlab) => <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text" /> },
-    { key: "adult_net", header: "Supplier Receives (You)", render: (r: PricingSlab) => <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700" /> },
-    { key: "child", header: "Child Price (Tourvaa)", render: (r: PricingSlab) => <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text" /> },
-    { key: "child_net", header: "Supplier Receives (You)", render: (r: PricingSlab) => <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700" /> },
-    { key: "commission", header: "Tourvaa Commission", render: (r: PricingSlab) => <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body"><Percent size={10} />{r.commission_percentage ?? commissionFloor ?? "…"}</span> },
-    { key: "currency", header: "Currency", render: (r: PricingSlab) => <span className="text-dash-subtle">{r.currency}</span> },
-  ];
-
   const addButton = (
     <button type="button" onClick={openNewSlab}
       className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 ${accent.solidBtn}`}>
@@ -297,19 +282,68 @@ export default function TourPricingTab({
           </div>
         )}
 
-        <DataTable
-          ariaLabel="Supplier pricing"
-          columns={supplierColumns}
-          rows={slabs}
-          actions={(r) => <ActionButtons onEdit={() => setEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />}
-          emptyTitle="No pricing slabs yet"
-          emptyDescription="Add a pricing slab so this tour becomes bookable."
-          emptyAction={
-            <button type="button" onClick={openNewSlab} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black text-white shadow-md ${accent.solidBtn}`}>
+        {/* Supplier Pricing Table */}
+        {slabs.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-dash-border bg-dash-bg/30 p-12 text-center">
+            <p className="text-sm font-bold text-dash-text">No pricing slabs yet</p>
+            <p className="mt-1 text-xs text-dash-subtle">Add a pricing slab so this tour becomes bookable.</p>
+            <button type="button" onClick={openNewSlab}
+              className={`mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black text-white shadow-md ${accent.solidBtn}`}>
               <Plus size={15} /> {isSupplier ? "New Pricing Slab" : "Add Slab"}
             </button>
-          }
-        />
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-dash-border-soft">
+            {/* Table header */}
+            <div className={`grid ${isSupplier ? "grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_1fr_auto]" : "grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_auto]"} gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3`}>
+              {(isSupplier
+                ? ["PAX RANGE", "ADULT (TOURVAA)", "YOU RECEIVE", "CHILD (TOURVAA)", "YOU RECEIVE", "COMMISSION", "ACTIONS"]
+                : ["PAX RANGE", "ADULT PRICE", "CHILD PRICE", "COMMISSION", "CURRENCY", "ACTIONS"]
+              ).map((h) => (
+                <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
+              ))}
+            </div>
+
+            {/* Rows */}
+            {slabs.map((r, idx) => (
+              <div key={r.id ?? idx}
+                className={`grid ${isSupplier ? "grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_1fr_auto]" : "grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_auto]"} items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30`}
+              >
+                {/* Pax range badge */}
+                <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
+                  {r.passenger_from}–{r.passenger_to} pax
+                </span>
+
+                {/* Adult price */}
+                <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
+
+                {isSupplier && (
+                  /* Supplier net (adult) */
+                  <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700 text-sm" />
+                )}
+
+                {/* Child price */}
+                <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
+
+                {isSupplier ? (
+                  /* Supplier net (child) */
+                  <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700 text-sm" />
+                ) : (
+                  /* Currency for admin view */
+                  <span className="text-sm text-dash-subtle">{r.currency}</span>
+                )}
+
+                {/* Commission badge */}
+                <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
+                  <Percent size={10} />{r.commission_percentage ?? commissionFloor ?? "…"}
+                </span>
+
+                {/* Actions */}
+                <ActionButtons onEdit={() => setEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />
+              </div>
+            ))}
+          </div>
+        )}
 
         {isSupplier && (
           <label className="mt-4 flex items-center gap-2.5 rounded-xl border border-dash-border bg-dash-bg px-4 py-3 text-sm font-semibold text-dash-body">
@@ -331,21 +365,41 @@ export default function TourPricingTab({
           title="Publishable Price"
           description="Admin-only markup added on top of the supplier's price to produce the storefront price. Suppliers never see this section."
         >
-          <DataTable
-            ariaLabel="Publishable price"
-            columns={[
-              { key: "range", header: "Pax Range", render: rangeBadge },
-              { key: "adult", header: "Supplier Price (Adult)", render: (r: PricingSlab) => <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text" /> },
-              { key: "child", header: "Supplier Price (Child)", render: (r: PricingSlab) => <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text" /> },
-              { key: "markup", header: "Tourvaa Commission", render: (r: PricingSlab) => <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body"><Percent size={10} />{r.admin_markup_value ?? 0}</span> },
-              { key: "storefront", header: "Storefront Price", render: (r: PricingSlab) => <PriceCell value={r.storefront_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700" /> },
-              { key: "currency", header: "Currency", render: (r: PricingSlab) => <span className="text-dash-subtle">{r.currency}</span> },
-            ]}
-            rows={slabs}
-            actions={(r) => <ActionButtons onEdit={() => setMarkupEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />}
-            emptyTitle="No pricing slabs yet"
-            emptyDescription="Add a pricing slab in Supplier Price to Tourvaa above first."
-          />
+          {/* Admin Publishable Price Table */}
+          {slabs.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-dash-border bg-dash-bg/30 p-10 text-center">
+              <p className="text-sm font-bold text-dash-text">No pricing slabs yet</p>
+              <p className="mt-1 text-xs text-dash-subtle">Add a pricing slab in Supplier Price to Tourvaa above first.</p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-dash-border-soft">
+              {/* Header */}
+              <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
+                {["PAX RANGE", "SUPPLIER (ADULT)", "SUPPLIER (CHILD)", "COMMISSION", "STOREFRONT PRICE", "CURRENCY", "ACTIONS"].map((h) => (
+                  <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
+                ))}
+              </div>
+
+              {/* Rows */}
+              {slabs.map((r, idx) => (
+                <div key={r.id ?? idx}
+                  className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1fr_auto] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30"
+                >
+                  <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
+                    {r.passenger_from}–{r.passenger_to} pax
+                  </span>
+                  <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
+                  <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
+                  <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
+                    <Percent size={10} />{r.admin_markup_value ?? 0}
+                  </span>
+                  <PriceCell value={r.storefront_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700 text-sm" />
+                  <span className="text-sm text-dash-subtle">{r.currency}</span>
+                  <ActionButtons onEdit={() => setMarkupEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />
+                </div>
+              ))}
+            </div>
+          )}
         </SectionCard>
       )}
 
@@ -370,12 +424,13 @@ export default function TourPricingTab({
                 <input type="number" min={1} value={numberInputValue(editing.passenger_to)} onChange={(e) => setEditing((p) => p ? { ...p, passenger_to: parseNumberInput(e.target.value) } : p)}
                   className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
               </label>
-              <label>
+              <div>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Commission %</span>
-                <input type="number" min={resolvedFloor} step="0.01" value={numberInputValue(editing.commission_percentage)} onChange={(e) => setEditing((p) => p ? { ...p, commission_percentage: parseNumberInput(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
-                <span className="mt-1 block text-[11px] text-dash-subtle">Agreed rate ({resolvedFloor}%) applies automatically -- raise it, never lower it.</span>
-              </label>
+                <p className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">
+                  {editing.commission_percentage ?? resolvedFloor}%
+                </p>
+                <span className="mt-1 block text-[11px] text-dash-subtle">Read-only -- set from your agreed rate ({resolvedFloor}%). Contact admin to change it.</span>
+              </div>
 
               <label>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Adult Price (your price to Tourvaa)</span>
