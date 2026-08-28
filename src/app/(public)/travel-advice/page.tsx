@@ -18,6 +18,7 @@ import {
 
 import AboutReveal from "@/components/public/AboutReveal";
 import { subscribeNewsletter } from "@/lib/api/publicClient";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 const categories = [
   { title: "Visa & Passport Info", text: "Key entry requirements and validity guidelines for every continent.", image: "/images/about/priya.jpg", href: "#popular-advice" },
@@ -58,8 +59,7 @@ export default function TravelAdvicePage() {
       setMessage("Thank you — travel tips are on their way!");
       setEmail("");
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setMessage(typeof detail === "string" ? detail : "Could not subscribe right now. Please try again.");
+      setMessage(getApiErrorMessage(err));
     }
   }
 

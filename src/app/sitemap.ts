@@ -27,7 +27,9 @@ const staticPages: Array<{
 
 async function safeJson(path: string): Promise<any> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 3600 } });
+    // cache: "no-store" - see the comment on fetchTourForSeo in
+    // src/lib/seo/tourMetadata.ts for why this isn't { next: { revalidate } }.
+    const res = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {

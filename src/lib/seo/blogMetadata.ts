@@ -23,8 +23,10 @@ const API_BASE = (process.env.API_PROXY_TARGET || "http://127.0.0.1:8000").repla
  * proxy at request time, not from server code. */
 export async function fetchBlogForServer(slug: string): Promise<ServerBlog | null> {
   try {
+    // cache: "no-store" - see the comment on fetchTourForSeo in
+    // tourMetadata.ts for why this isn't { next: { revalidate } }.
     const res = await fetch(`${API_BASE}/api/cms/blogs?active_only=true&slug=${encodeURIComponent(slug)}&limit=1`, {
-      next: { revalidate: 300 },
+      cache: "no-store",
     });
     if (!res.ok) return null;
     const json = await res.json();

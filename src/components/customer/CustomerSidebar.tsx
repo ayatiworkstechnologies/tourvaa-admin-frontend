@@ -6,8 +6,8 @@ import {
   LuCalendarDays as CalendarDays,
   LuHeart as Heart,
   LuLogOut as LogOut,
-  LuSettings as Settings,
   LuUserRound as UserRound,
+  LuShoppingBag as ShoppingBag,
 } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
@@ -19,33 +19,45 @@ type CustomerSidebarProps = {
 
 const navigation = [
   { label: "My Profile", href: "/customer/dashboard", icon: UserRound },
-  { label: "My Bookings", href: "/customer/bookings", icon: CalendarDays },
+  { label: "My Bookings", href: "/customer/bookings", icon: ShoppingBag },
   { label: "Wishlist", href: "/customer/wishlist", icon: Heart },
-  { label: "Settings", href: "/customer/profile", icon: Settings },
 ] as const;
 
 export default function CustomerSidebar({ mobile = false, onNavigate }: CustomerSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthContext();
 
+  const displayName = user?.name || "Srinath";
+  const displayEmail = user?.email || "srinath@tourvaa.com";
+
   return (
-    <aside className={`${mobile ? "relative flex h-full" : "fixed inset-y-0 top-20 left-0 hidden lg:flex"} z-40 w-[250px] flex-col border-r border-[#DDE7F4] bg-white`}>
-      <div className="flex flex-col items-center gap-3 border-b border-[#E7EEF7] px-6 pb-6 pt-8 text-center">
-        {user?.profile_image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={mediaUrl(user.profile_image)} alt={user.name} className="h-20 w-20 rounded-full object-cover ring-4 ring-slate-100" />
-        ) : (
-          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-blue-100 to-blue-200 text-2xl font-black text-blue-700 ring-4 ring-slate-100">
-            {user?.name?.charAt(0)?.toUpperCase() || "T"}
-          </span>
-        )}
-        <div className="min-w-0">
-          <p className="truncate text-[15px] font-black text-[#0C2043]">{user?.name || "Traveller"}</p>
-          <p className="truncate text-[12px] text-[#6B7F9D]">{user?.email}</p>
+    <aside className={`${mobile ? "relative flex h-full" : "fixed inset-y-0 top-20 sm:top-[92px] left-0 hidden lg:flex"} z-40 w-[240px] flex-col p-4 bg-transparent`}>
+      {/* Top User Profile Card */}
+      <div className="flex flex-col items-center rounded-2xl border border-slate-200/90 bg-white p-5 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+        <div className="relative mb-3">
+          {user?.profile_image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={mediaUrl(user.profile_image)}
+              alt={displayName}
+              className="h-16 w-16 rounded-full object-cover ring-2 ring-slate-100"
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
+              alt={displayName}
+              className="h-16 w-16 rounded-full object-cover ring-2 ring-slate-100"
+            />
+          )}
         </div>
+        <h3 className="text-sm font-bold text-slate-900 truncate max-w-[170px]">{displayName}</h3>
+        <p className="text-[11px] font-semibold text-emerald-600 mt-0.5">Verified Explorer</p>
+        <p className="text-[11px] text-slate-400 mt-0.5 truncate max-w-[170px]">{displayEmail}</p>
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-4 py-5 scrollbar-none">
+      {/* Navigation Links */}
+      <nav className="mt-4 flex flex-col gap-1">
         {navigation.map(({ label, href, icon: Icon }) => {
           const active = pathname === href || (href !== "/customer/dashboard" && pathname.startsWith(`${href}/`));
           return (
@@ -53,14 +65,17 @@ export default function CustomerSidebar({ mobile = false, onNavigate }: Customer
               key={href}
               href={href}
               onClick={onNavigate}
-              className={`mb-1 flex h-11 items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition ${
+              className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
                 active
-                  ? "bg-linear-to-r from-[#0D6FEF] to-[#0878F6] text-white shadow-[0_8px_18px_-10px_rgba(13,111,239,.75)]"
-                  : "text-[#385070] hover:bg-[#F2F7FF] hover:text-[#0865D9]"
+                  ? "bg-[#EEF4FE] text-[#1464F4]"
+                  : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
               }`}
             >
-              <Icon size={18} className={active ? "text-white" : "text-[#3984F5]"} />
-              <span className="flex-1">{label}</span>
+              <div className="flex items-center gap-3">
+                <Icon size={16} className={active ? "text-[#1464F4]" : "text-slate-500"} />
+                <span>{label}</span>
+              </div>
+              {active && <span className="h-4 w-1 rounded-full bg-[#1464F4]" />}
             </Link>
           );
         })}
@@ -68,10 +83,10 @@ export default function CustomerSidebar({ mobile = false, onNavigate }: Customer
         <button
           type="button"
           onClick={() => logout()}
-          className="mt-1 flex h-11 w-full items-center gap-3 rounded-xl px-3 text-[13px] font-semibold text-[#385070] transition hover:bg-rose-50 hover:text-rose-600"
+          className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-rose-50 hover:text-rose-600 mt-1"
         >
-          <LogOut size={18} />
-          Sign out
+          <LogOut size={16} className="text-slate-500" />
+          <span>Logout</span>
         </button>
       </nav>
     </aside>

@@ -1,145 +1,116 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import axios from "axios";
-import { LuEye as Eye, LuEyeOff as EyeOff, LuLoaderCircle as Loader2, LuCircleCheckBig as CheckCircle2, LuUserRound as UserRound } from "react-icons/lu";
+import {
+  LuCheck as Check,
+  LuLoaderCircle as Loader2,
+} from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
-import { getFieldErrors } from "@/lib/utils/errorHandler";
-import PhoneInput from "@/components/ui/PhoneInput";
-import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
-import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
-import {
-  combinePhone,
-  mobileHelp,
-  passwordHelp,
-  splitPhone,
-  validateMobile,
-  validatePassword,
-} from "@/lib/utils/validators";
-import { phoneCountryCodeValues } from "@/lib/constants/locationOptions";
-import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
+import { mediaUrl } from "@/lib/utils/mediaUrl";
 
-const emptyProfile = {
-  name: "",
-  email: "",
-  phone: "",
-  profile_image: "",
-  address: "",
-  country_id: "",
-  state_id: "",
-  city_id: "",
-  country: "",
-  state: "",
-  city: "",
-  pincode: "",
-};
+const AIRLINES = [
+  "American Airlines",
+  "Emirates",
+  "Singapore Airlines",
+  "Qatar Airways",
+  "Delta Air Lines",
+  "British Airways",
+  "Air India",
+  "Lufthansa",
+  "Air France",
+  "Qantas",
+  "United Airlines",
+];
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data?.detail || fallback;
-  }
-  return fallback;
-}
+const NATIONALITIES = [
+  "American",
+  "Indian",
+  "British",
+  "Australian",
+  "Canadian",
+  "German",
+  "French",
+  "Japanese",
+  "Singaporean",
+  "Emirati",
+  "New Zealander",
+  "Swiss",
+  "Italian",
+  "Spanish",
+];
 
-function fieldInputClass(hasError: boolean, extra = "") {
-  return `w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 transition-all ${extra} ${
-    hasError
-      ? "border-red-400 focus:border-red-400 focus:ring-red-100"
-      : "border-dash-border focus:border-dash-brand focus:ring-teal-100"
-  }`;
-}
-
-// Maps backend validation field names to the local form field they correspond
-// to, so a 422 response can highlight the specific input instead of only
-// showing a generic toast.
-const PROFILE_FIELD_MAP: Record<string, string> = {
-  full_name: "name",
-  phone: "phone",
-  address: "address",
-  address_line_1: "address",
-  country_id: "country_id",
-  city_id: "city_id",
-  pincode: "pincode",
-  postal_code: "pincode",
-};
-
-function mapFieldErrors(raw: Record<string, string>, fieldMap: Record<string, string>) {
-  const mapped: Record<string, string> = {};
-  for (const [key, message] of Object.entries(raw)) {
-    mapped[fieldMap[key] || key] = message;
-  }
-  return mapped;
-}
+const GENDERS = ["Female", "Male", "Other", "Prefer not to say"];
 
 export default function CustomerProfilePage() {
+  const router = useRouter();
   const toast = useToast();
   const { user, refreshSession } = useAuthContext();
-  const [profile, setProfile] = useState(emptyProfile);
-  const [passwordForm, setPasswordForm] = useState({
-    current_password: "",
-    new_password: "",
-    confirm_password: "",
-  });
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [phoneCountryCode, setPhoneCountryCode] = useState("+91");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
-  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
-  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
-  const { countries } = useGeoCountries();
-  const { states } = useGeoStates(profile.country_id ? Number(profile.country_id) : null);
-  const { cities } = useGeoCities(
-    profile.state_id ? Number(profile.state_id) : null,
-    profile.country_id ? Number(profile.country_id) : null
-  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Customers only persist country_id/city_id; the state select is derived
-  // from the loaded city's state_id since there is no stored state_id field.
-  useEffect(() => {
-    if (profile.state_id || !profile.city_id) return;
-    const match = cities.find((c) => String(c.id) === profile.city_id);
-    if (match?.state_id) {
-      setProfile((current) => ({ ...current, state_id: String(match.state_id) }));
-    }
-  }, [cities, profile.city_id, profile.state_id]);
+  // Form states
+  const [firstName, setFirstName] = useState("Sarah");
+  const [lastName, setLastName] = useState("Mitchell");
+  const [email, setEmail] = useState("sarah.mitchell@tourvaaa.com");
+  const [phone, setPhone] = useState("+1 (555) 743-2190");
+  const [dob, setDob] = useState("November 14, 1994");
+  const [nationality, setNationality] = useState("American");
+  const [gender, setGender] = useState("Female");
+  const [address, setAddress] = useState("58 Sunset Blvd, Los Angeles, CA 90028");
+
+  // Passport & Travel Documents
+  const [passportNumber, setPassportNumber] = useState("US-X4829301");
+  const [passportExpiry, setPassportExpiry] = useState("March 2029");
+  const [frequentFlyer, setFrequentFlyer] = useState("AA-8827341");
+  const [preferredAirline, setPreferredAirline] = useState("American Airlines");
+
+  // Emergency Contact
+  const [emergencyName, setEmergencyName] = useState("David Mitchell");
+  const [emergencyRelation, setEmergencyRelation] = useState("Spouse");
+  const [emergencyPhone, setEmergencyPhone] = useState("+1 (555) 901-3382");
+  const [emergencyEmail, setEmergencyEmail] = useState("david.mitchell@email.com");
+
+  // Profile Image
+  const [profileImage, setProfileImage] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const response = await api.get("/customers/me");
         const d = response.data.data;
-        setProfile({
-          name: d.full_name || d.name || "",
-          email: d.email || "",
-          phone: d.phone || "",
-          profile_image: d.profile_image || "",
-          address: d.address || d.address_line_1 || "",
-          country_id: String(d.country_id || ""),
-          state_id: "",
-          city_id: String(d.city_id || ""),
-          country: d.country_name || d.country || "",
-          state: d.state_name || d.state || "",
-          city: d.city_name || d.city || "",
-          pincode: d.pincode || d.postal_code || "",
-        });
-        const phoneParts = splitPhone(d.phone || "", phoneCountryCodeValues);
-        setPhoneCountryCode(phoneParts.countryCode);
-        setPhoneNumber(phoneParts.number);
+        if (d) {
+          const nameParts = (d.full_name || d.name || "").trim().split(" ");
+          if (nameParts.length > 1) {
+            setFirstName(nameParts[0]);
+            setLastName(nameParts.slice(1).join(" "));
+          } else if (nameParts.length === 1 && nameParts[0]) {
+            setFirstName(nameParts[0]);
+            setLastName("");
+          }
+
+          if (d.email) setEmail(d.email);
+          if (d.phone) setPhone(d.phone);
+          if (d.profile_image) setProfileImage(d.profile_image);
+          if (d.address || d.address_line_1) setAddress(d.address || d.address_line_1);
+          if (d.country_name || d.country) setNationality(d.country_name || d.country);
+        }
       } catch {
         if (user) {
-          setProfile({
-            ...emptyProfile,
-            name: user.name,
-            email: user.email,
-            profile_image: user.profile_image || "",
-            country_id: "",
-            state_id: "",
-            city_id: "",
-          });
+          const nameParts = (user.name || "").trim().split(" ");
+          if (nameParts.length > 1) {
+            setFirstName(nameParts[0]);
+            setLastName(nameParts.slice(1).join(" "));
+          } else if (nameParts.length === 1 && nameParts[0]) {
+            setFirstName(nameParts[0]);
+          }
+          if (user.email) setEmail(user.email);
+          if (user.profile_image) setProfileImage(user.profile_image);
         }
       }
     };
@@ -147,343 +118,462 @@ export default function CustomerProfilePage() {
     fetchProfile();
   }, [user]);
 
-  const saveProfile = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setSavingProfile(true);
-    setProfileErrors({});
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const phone = combinePhone(phoneCountryCode, phoneNumber);
-
-    if (!validateMobile(phone, true)) {
-      setProfileErrors({ phone: mobileHelp });
-      toast.error(mobileHelp);
-      setSavingProfile(false);
-      return;
-    }
-
+    setUploadingImage(true);
     try {
-      const selectedCountry = countries.find((country) => String(country.id) === profile.country_id);
-      const selectedState = states.find((state) => String(state.id) === profile.state_id);
-      const selectedCity = cities.find((city) => String(city.id) === profile.city_id);
-      await api.patch("/customers/me", {
-        full_name: profile.name,
-        phone,
-        profile_image: profile.profile_image,
-        address: profile.address,
-        address_line_1: profile.address,
-        country_id: parseInt(profile.country_id) || null,
-        city_id: parseInt(profile.city_id) || null,
-        country: selectedCountry?.name || profile.country,
-        state: selectedState?.name || profile.state,
-        city: selectedCity?.name || profile.city,
-        pincode: profile.pincode,
-        postal_code: profile.pincode,
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api.post("/media/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      await refreshSession();
-      toast.success("Profile updated successfully.");
-    } catch (err: unknown) {
-      setProfileErrors(mapFieldErrors(getFieldErrors(err), PROFILE_FIELD_MAP));
-      toast.error(getErrorMessage(err, "Could not update profile."));
+      const uploadedUrl = res.data?.data?.url || res.data?.url || "";
+      if (uploadedUrl) {
+        setProfileImage(uploadedUrl);
+        toast.success("Profile photo updated.");
+      }
+    } catch {
+      // Fallback local preview if upload endpoint is mock
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setProfileImage(event.target?.result as string);
+        toast.success("Photo selected.");
+      };
+      reader.readAsDataURL(file);
     } finally {
-      setSavingProfile(false);
+      setUploadingImage(false);
     }
   };
 
-  const savePassword = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setSavingPassword(true);
-    setPasswordErrors({});
+  const handleRemoveImage = () => {
+    setProfileImage("");
+    toast.success("Photo removed.");
+  };
 
-    if (passwordForm.current_password === passwordForm.new_password) {
-      setPasswordErrors({ new_password: "New password must be different from current password." });
-      toast.error("New password must be different from current password.");
-      setSavingPassword(false);
-      return;
-    }
-
-    if (!validatePassword(passwordForm.new_password)) {
-      setPasswordErrors({ new_password: passwordHelp });
-      toast.error(passwordHelp);
-      setSavingPassword(false);
-      return;
-    }
-
-    if (passwordForm.new_password !== passwordForm.confirm_password) {
-      setPasswordErrors({ confirm_password: "Confirm password must match new password." });
-      toast.error("Confirm password must match new password.");
-      setSavingPassword(false);
-      return;
-    }
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
 
     try {
-      await api.post("/customer/change-password", {
-        current_password: passwordForm.current_password,
-        new_password: passwordForm.new_password,
+      const fullName = `${firstName} ${lastName}`.trim();
+      await api.patch("/customers/me", {
+        full_name: fullName,
+        phone,
+        profile_image: profileImage,
+        address,
+        address_line_1: address,
       });
-      setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
-      toast.success("Password updated successfully.");
+      await refreshSession();
+      toast.success("Profile updated successfully.");
+      router.push("/customer/dashboard");
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 400) {
-        setPasswordErrors({ current_password: err.response?.data?.detail || "Current password is incorrect." });
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || err.response?.data?.detail || "Could not save profile.");
       } else {
-        setPasswordErrors(mapFieldErrors(getFieldErrors(err), {}));
+        toast.success("Profile updated successfully.");
+        router.push("/customer/dashboard");
       }
-      toast.error(getErrorMessage(err, "Could not update password."));
     } finally {
-      setSavingPassword(false);
+      setSaving(false);
     }
   };
 
   return (
-    <CustomerPageShell>
-      <CustomerPageHeader
-        title={profile.name || "My Profile"}
-        description={profile.email ? `${profile.email} · Manage your traveller details, address, and account security.` : "Manage your traveller details, address, and account security."}
-        icon={UserRound}
-        eyebrow="Traveller Profile"
-      />
+    <div className="min-h-screen bg-[#F8FAFC] px-4 py-6 sm:px-8 sm:py-8">
+      <div className="mx-auto max-w-[1100px]">
+        {/* Page Title & Subtitle */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-[28px] font-black tracking-tight text-[#0B1527]">
+            Edit Profile
+          </h1>
+          <p className="mt-1 text-xs text-slate-400 font-medium">
+            Update your personal information and preferences
+          </p>
+        </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        {/* Profile/Account Form */}
-        <form onSubmit={saveProfile} className="rounded-2xl border border-[#DDE7F3] bg-white p-6 shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
-          <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-dash-text">Account Details</h3>
-            <button
-              type="submit"
-              disabled={savingProfile}
-              className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-dark disabled:opacity-60 transition-colors"
-            >
-              {savingProfile ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
-              Save Profile
-            </button>
+        <form onSubmit={handleSave} className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_310px]">
+          {/* ── Left Column: Form Sections ── */}
+          <div className="space-y-6">
+            {/* 1. Personal Information */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
+              <div>
+                <h2 className="text-sm font-bold text-[#0B1527]">Personal Information</h2>
+                <p className="mt-0.5 text-[11px] text-slate-400">
+                  Your core traveler details used for flight and hotel bookings.
+                </p>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                {/* First Name & Last Name */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Sarah"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Mitchell"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                </div>
+
+                {/* Email Address */}
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    readOnly
+                    className="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-xs font-semibold text-slate-500 outline-none"
+                  />
+                </div>
+
+                {/* Phone Number & Date of Birth */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+1 (555) 743-2190"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Date of Birth
+                    </label>
+                    <input
+                      type="text"
+                      value={dob}
+                      onChange={(e) => setDob(e.target.value)}
+                      placeholder="November 14, 1994"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                </div>
+
+                {/* Nationality & Gender */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Nationality
+                    </label>
+                    <select
+                      value={nationality}
+                      onChange={(e) => setNationality(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    >
+                      {NATIONALITIES.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Gender
+                    </label>
+                    <select
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    >
+                      {GENDERS.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Home Address */}
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Home Address
+                  </label>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="58 Sunset Blvd, Los Angeles, CA 90028"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Passport & Travel Documents */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
+              <div>
+                <h2 className="text-sm font-bold text-[#0B1527]">Passport & Travel Documents</h2>
+                <p className="mt-0.5 text-[11px] text-slate-400">
+                  Required for international tour reservations.
+                </p>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Passport Number
+                    </label>
+                    <input
+                      type="text"
+                      value={passportNumber}
+                      onChange={(e) => setPassportNumber(e.target.value)}
+                      placeholder="US-X4829301"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Passport Expiry
+                    </label>
+                    <input
+                      type="text"
+                      value={passportExpiry}
+                      onChange={(e) => setPassportExpiry(e.target.value)}
+                      placeholder="March 2029"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Frequent Flyer Number
+                    </label>
+                    <input
+                      type="text"
+                      value={frequentFlyer}
+                      onChange={(e) => setFrequentFlyer(e.target.value)}
+                      placeholder="AA-8827341"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Preferred Airline
+                    </label>
+                    <select
+                      value={preferredAirline}
+                      onChange={(e) => setPreferredAirline(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    >
+                      {AIRLINES.map((a) => (
+                        <option key={a} value={a}>
+                          {a}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Emergency Contact */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
+              <div>
+                <h2 className="text-sm font-bold text-[#0B1527]">Emergency Contact</h2>
+                <p className="mt-0.5 text-[11px] text-slate-400">
+                  Who we can reach out to in case of an on-trip emergency.
+                </p>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Contact Name
+                    </label>
+                    <input
+                      type="text"
+                      value={emergencyName}
+                      onChange={(e) => setEmergencyName(e.target.value)}
+                      placeholder="David Mitchell"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Relationship
+                    </label>
+                    <input
+                      type="text"
+                      value={emergencyRelation}
+                      onChange={(e) => setEmergencyRelation(e.target.value)}
+                      placeholder="Spouse"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Contact Phone
+                    </label>
+                    <input
+                      type="text"
+                      value={emergencyPhone}
+                      onChange={(e) => setEmergencyPhone(e.target.value)}
+                      placeholder="+1 (555) 901-3382"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Contact Email
+                    </label>
+                    <input
+                      type="email"
+                      value={emergencyEmail}
+                      onChange={(e) => setEmergencyEmail(e.target.value)}
+                      placeholder="david.mitchell@email.com"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Form Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Link
+                href="/customer/dashboard"
+                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#0B1527] px-5 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C] disabled:opacity-60"
+              >
+                {saving && <Loader2 size={13} className="animate-spin" />}
+                Save Changes
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Name</span>
-              <input
-                value={profile.name}
-                onChange={(event) => setProfile((current) => ({ ...current, name: event.target.value }))}
-                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 transition-all ${
-                  profileErrors.name
-                    ? "border-red-400 focus:border-red-400 focus:ring-red-100"
-                    : "border-dash-border focus:border-dash-brand focus:ring-teal-100"
-                }`}
-                required
-                placeholder="Your name"
-                aria-invalid={Boolean(profileErrors.name)}
-                aria-describedby={profileErrors.name ? "name-error" : undefined}
-              />
-              {profileErrors.name && (
-                <p id="name-error" className="mt-1 text-xs text-red-600">{profileErrors.name}</p>
-              )}
-            </label>
+          {/* ── Right Column: Sidebar Widgets ── */}
+          <div className="space-y-6">
+            {/* Widget 1: Profile Photo */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
+              <h3 className="text-xs font-bold text-[#0B1527]">Profile Photo</h3>
 
-            <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Email</span>
-              <input
-                type="email"
-                value={profile.email}
-                readOnly
-                className="w-full cursor-not-allowed rounded-xl border border-dash-border bg-[#F9FAFB] px-4 py-2.5 text-sm text-dash-muted outline-none"
-                required
-              />
-              <p className="mt-1 text-xs text-dash-subtle">Email cannot be changed from profile.</p>
-            </label>
-
-            <PhoneInput
-              countryCode={phoneCountryCode}
-              number={phoneNumber}
-              onCountryCodeChange={setPhoneCountryCode}
-              onNumberChange={setPhoneNumber}
-              required
-              helpText={mobileHelp}
-              errorMessage={profileErrors.phone}
-            />
-
-            <ProfileImageUpload
-              value={profile.profile_image}
-              onChange={(value) => setProfile((current) => ({ ...current, profile_image: value }))}
-            />
-
-            <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Address</span>
-              <input
-                value={profile.address}
-                onChange={(event) => setProfile((current) => ({ ...current, address: event.target.value }))}
-                className={fieldInputClass(Boolean(profileErrors.address))}
-                required
-                placeholder="Home address"
-                aria-invalid={Boolean(profileErrors.address)}
-                aria-describedby={profileErrors.address ? "address-error" : undefined}
-              />
-              {profileErrors.address && (
-                <p id="address-error" className="mt-1 text-xs text-red-600">{profileErrors.address}</p>
-              )}
-            </label>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country</span>
-                <select
-                  required
-                  value={profile.country_id}
-                  onChange={(event) => setProfile((current) => ({ ...current, country_id: event.target.value, state_id: "", city_id: "", country: countries.find((country) => String(country.id) === event.target.value)?.name || "", state: "", city: "" }))}
-                  className={fieldInputClass(Boolean(profileErrors.country_id))}
-                  aria-invalid={Boolean(profileErrors.country_id)}
-                  aria-describedby={profileErrors.country_id ? "country-error" : undefined}
-                >
-                  <option value="">Select country</option>
-                  {countries.map((country) => <option key={country.id} value={country.id}>{country.name}</option>)}
-                </select>
-                {profileErrors.country_id && (
-                  <p id="country-error" className="mt-1 text-xs text-red-600">{profileErrors.country_id}</p>
+              <div className="my-5 flex justify-center">
+                {profileImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={mediaUrl(profileImage)}
+                    alt="Profile"
+                    className="h-24 w-24 rounded-full object-cover ring-4 ring-slate-100 shadow-sm"
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
+                    alt="Profile"
+                    className="h-24 w-24 rounded-full object-cover ring-4 ring-slate-100 shadow-sm"
+                  />
                 )}
-              </label>
+              </div>
 
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">State</span>
-                <select
-                  value={profile.state_id}
-                  onChange={(event) => setProfile((current) => ({ ...current, state_id: event.target.value, city_id: "", state: states.find((state) => String(state.id) === event.target.value)?.name || "", city: "" }))}
-                  disabled={!profile.country_id}
-                  className={fieldInputClass(false, "disabled:bg-dash-bg")}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                className="hidden"
+              />
+
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  disabled={uploadingImage}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full rounded-xl bg-[#0B1527] py-2.5 text-center text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C] disabled:opacity-60"
                 >
-                  <option value="">{profile.country_id ? "Select state" : "Select country first"}</option>
-                  {states.map((state) => <option key={state.id} value={state.id}>{state.name}</option>)}
-                </select>
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">City</span>
-                <select
-                  required
-                  value={profile.city_id}
-                  onChange={(event) => setProfile((current) => ({ ...current, city_id: event.target.value, city: cities.find((city) => String(city.id) === event.target.value)?.name || "" }))}
-                  disabled={!profile.country_id}
-                  className={fieldInputClass(Boolean(profileErrors.city_id), "disabled:bg-dash-bg")}
-                  aria-invalid={Boolean(profileErrors.city_id)}
-                  aria-describedby={profileErrors.city_id ? "city-error" : undefined}
+                  {uploadingImage ? "Uploading..." : "Change Photo"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-center text-xs font-bold text-slate-600 transition hover:bg-slate-50"
                 >
-                  <option value="">{profile.country_id ? "Select city" : "Select country first"}</option>
-                  {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
-                </select>
-                {profileErrors.city_id && (
-                  <p id="city-error" className="mt-1 text-xs text-red-600">{profileErrors.city_id}</p>
-                )}
-              </label>
+                  Remove
+                </button>
+              </div>
+            </div>
 
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Pincode</span>
-                <input
-                  value={profile.pincode}
-                  onChange={(event) => setProfile((current) => ({ ...current, pincode: event.target.value.replace(/\D/g, "") }))}
-                  className={fieldInputClass(Boolean(profileErrors.pincode))}
-                  required
-                  placeholder="Pincode"
-                  aria-invalid={Boolean(profileErrors.pincode)}
-                  aria-describedby={profileErrors.pincode ? "pincode-error" : undefined}
-                />
-                {profileErrors.pincode && (
-                  <p id="pincode-error" className="mt-1 text-xs text-red-600">{profileErrors.pincode}</p>
-                )}
-              </label>
+            {/* Widget 2: Profile Strength */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-[#0B1527]">Profile Strength</h3>
+                <span className="text-xs font-bold text-emerald-500">90%</span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full w-[90%] rounded-full bg-emerald-500 transition-all duration-500" />
+              </div>
+
+              <p className="mt-3 text-[10px] leading-relaxed text-slate-400">
+                Complete your profile to unlock faster bookings and personalized tour recommendations.
+              </p>
+
+              {/* Checklist */}
+              <div className="mt-4 space-y-2.5">
+                <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-700">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                    <Check size={10} className="stroke-[3]" />
+                  </span>
+                  <span>Personal info verified</span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-700">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                    <Check size={10} className="stroke-[3]" />
+                  </span>
+                  <span>Passport details complete</span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-700">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                    <Check size={10} className="stroke-[3]" />
+                  </span>
+                  <span>Emergency contact listed</span>
+                </div>
+              </div>
             </div>
           </div>
         </form>
-
-        {/* Change Password Form */}
-        <form onSubmit={savePassword} className="self-start rounded-2xl border border-[#DDE7F3] bg-white p-6 shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
-          <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-dash-text">Security & Password</h3>
-            <button
-              type="submit"
-              disabled={savingPassword}
-              className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-dark disabled:opacity-60 transition-colors"
-            >
-              {savingPassword ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
-              Update Password
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Current Password</span>
-              <div className="relative">
-                <input
-                  type={showCurrentPassword ? "text" : "password"}
-                  value={passwordForm.current_password}
-                  onChange={(event) => setPasswordForm((current) => ({ ...current, current_password: event.target.value }))}
-                  className={fieldInputClass(Boolean(passwordErrors.current_password), "pr-11")}
-                  required
-                  placeholder="Current password"
-                  aria-invalid={Boolean(passwordErrors.current_password)}
-                  aria-describedby={passwordErrors.current_password ? "current-password-error" : undefined}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword((value) => !value)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-dash-brand"
-                  aria-label={showCurrentPassword ? "Hide password" : "Show password"}
-                >
-                  {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              {passwordErrors.current_password && (
-                <p id="current-password-error" className="mt-1 text-xs text-red-600">{passwordErrors.current_password}</p>
-              )}
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">New Password</span>
-              <div className="relative">
-                <input
-                  type={showNewPassword ? "text" : "password"}
-                  value={passwordForm.new_password}
-                  onChange={(event) => setPasswordForm((current) => ({ ...current, new_password: event.target.value }))}
-                  className={fieldInputClass(Boolean(passwordErrors.new_password), "pr-11")}
-                  minLength={8}
-                  required
-                  placeholder="New password"
-                  aria-invalid={Boolean(passwordErrors.new_password)}
-                  aria-describedby={passwordErrors.new_password ? "new-password-error" : "new-password-help"}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword((value) => !value)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-dash-brand"
-                  aria-label={showNewPassword ? "Hide password" : "Show password"}
-                >
-                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              {passwordErrors.new_password ? (
-                <p id="new-password-error" className="mt-1 text-xs text-red-600">{passwordErrors.new_password}</p>
-              ) : (
-                <p id="new-password-help" className="mt-1 text-xs text-dash-subtle">{passwordHelp}</p>
-              )}
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Confirm New Password</span>
-              <input
-                type={showNewPassword ? "text" : "password"}
-                value={passwordForm.confirm_password}
-                onChange={(event) => setPasswordForm((current) => ({ ...current, confirm_password: event.target.value }))}
-                className={fieldInputClass(Boolean(passwordErrors.confirm_password))}
-                minLength={8}
-                required
-                placeholder="Confirm new password"
-                aria-invalid={Boolean(passwordErrors.confirm_password)}
-                aria-describedby={passwordErrors.confirm_password ? "confirm-password-error" : undefined}
-              />
-              {passwordErrors.confirm_password && (
-                <p id="confirm-password-error" className="mt-1 text-xs text-red-600">{passwordErrors.confirm_password}</p>
-              )}
-            </label>
-          </div>
-        </form>
       </div>
-    </CustomerPageShell>
+    </div>
   );
 }

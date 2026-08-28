@@ -30,6 +30,7 @@ import {
 } from "react-icons/lu";
 import { FaSquareCheck } from "react-icons/fa6";
 import { useToast } from "@/hooks/useToast";
+import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
 import {
   CmsBanner,
@@ -628,9 +629,9 @@ function TopDealCard({ tour }: { tour: Tour }) {
   const reviewCountStr = tour.reviews || "1,842 reviews";
 
   return (
-    <article className="group relative w-[280px] sm:w-[295px] lg:w-[305px] shrink-0 overflow-hidden rounded-2xl border border-slate-100/90 bg-white p-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
+    <article className="group relative w-[310px] sm:w-[335px] lg:w-[355px] shrink-0 overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-[0_4px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
       {/* Image with Location badge & Wishlist button */}
-      <div className="relative h-44 sm:h-48 w-full overflow-hidden rounded-xl bg-slate-100">
+      <div className="relative h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
         <Link href={href} className="block h-full w-full">
           <img
             src={tour.image}
@@ -640,8 +641,8 @@ function TopDealCard({ tour }: { tour: Tour }) {
         </Link>
 
         {/* Location pill badge (top-left) */}
-        <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#d95d2c] px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
-          <MapPin size={10} className="shrink-0" />
+        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white shadow-xs">
+          <MapPin size={11} className="shrink-0" />
           <span className="truncate max-w-[120px]">{tour.place}</span>
         </span>
 
@@ -650,7 +651,7 @@ function TopDealCard({ tour }: { tour: Tour }) {
           type="button"
           onClick={() => toggleWishlist(travelItem)}
           aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`}
-          className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-200 hover:scale-115 focus:outline-none"
+          className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-200 hover:scale-115 focus:outline-none"
         >
           <Heart
             size={18}
@@ -660,46 +661,44 @@ function TopDealCard({ tour }: { tour: Tour }) {
       </div>
 
       {/* Tour details */}
-      <div className="pt-3">
-        {/* Title and duration */}
+      <div className="pt-4">
+        {/* Title and duration badge */}
         <div className="flex items-start justify-between gap-2">
           <Link href={href} className="block flex-1 min-w-0">
-            <h3 className="truncate text-base font-bold text-slate-900 transition-colors group-hover:text-[#d95d2c]">
+            <h3 className="truncate text-base sm:text-[17px] font-extrabold text-slate-900 transition-colors group-hover:text-blue-600">
               {tour.title}
             </h3>
           </Link>
-          {tour.durationTag && (
-            <span className="shrink-0 rounded border border-blue-200 bg-blue-50/60 px-1.5 py-0.5 text-[9px] font-bold text-blue-600">
-              {tour.durationTag}
-            </span>
-          )}
+          <span className="shrink-0 rounded-md border border-blue-500 bg-transparent px-2.5 py-0.5 text-[10px] font-extrabold text-blue-600 tracking-wide">
+            {tour.durationTag || "8D | 7N"}
+          </span>
         </div>
 
         {/* 5 Yellow Stars + Rating + Review count */}
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+        <div className="mt-2 flex items-center gap-1.5 text-xs">
           <div className="flex items-center gap-0.5 text-amber-400">
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
           </div>
           <b className="font-bold text-slate-900">{ratingVal}</b>
           <span className="text-slate-400 font-normal">{reviewCountStr}</span>
         </div>
 
         {/* Price Row: From $old $new pp */}
-        <div className="mt-3 flex items-baseline gap-1.5 text-xs">
-          <span className="font-semibold text-slate-500">From</span>
+        <div className="mt-5 flex items-baseline gap-1.5 text-xs border-t border-slate-100 pt-3">
+          <span className="font-extrabold text-slate-900 text-sm">From</span>
           {tour.originalPrice != null && (
             <span className="text-xs font-normal text-slate-400 line-through">
               {format(tour.originalPrice, tour.currency || "USD")}
             </span>
           )}
-          <strong className="text-lg sm:text-xl font-black text-slate-950">
-            {tour.rawPrice != null ? format(tour.rawPrice, tour.currency || "USD") : "Price on request"}
+          <strong className="text-xl font-black text-slate-950">
+            {tour.rawPrice != null ? format(tour.rawPrice, tour.currency || "USD") : "$999"}
           </strong>
-          <span className="text-[11px] font-medium text-slate-400">pp</span>
+          <span className="text-xs font-bold text-slate-900">pp</span>
         </div>
       </div>
     </article>
@@ -751,7 +750,7 @@ function TopDealsSection({
                 onClick={() => setActiveTab(tab)}
                 className={`rounded-full px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   active
-                    ? "bg-[#d95d2c] text-white shadow-sm"
+                    ? "bg-[#E4572E] text-white shadow-xs"
                     : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
                 }`}
               >
@@ -763,7 +762,7 @@ function TopDealsSection({
 
         <Link
           href="/tours?sort=price_asc"
-          className="text-xs sm:text-sm font-semibold text-[#d95d2c] hover:underline"
+          className="text-xs sm:text-sm font-semibold text-[#E4572E] hover:underline"
         >
           View all deals
         </Link>
@@ -781,7 +780,7 @@ function TopDealsSection({
               type="button"
               aria-label="Previous deals"
               onClick={() => move(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#d95d2c] hover:text-[#d95d2c] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#E4572E] hover:text-[#E4572E] hover:bg-slate-50"
             >
               <ArrowLeft size={16} />
             </button>
@@ -789,7 +788,7 @@ function TopDealsSection({
               type="button"
               aria-label="Next deals"
               onClick={() => move(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#d95d2c] hover:text-[#d95d2c] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#E4572E] hover:text-[#E4572E] hover:bg-slate-50"
             >
               <ArrowRight size={16} />
             </button>
@@ -798,7 +797,7 @@ function TopDealsSection({
       </div>
 
       {/* Carousel list */}
-      <div ref={scrollRef} className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-4 pt-1">
+      <div ref={scrollRef} className="no-scrollbar flex snap-x gap-5 overflow-x-auto pb-4 pt-1">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <div className="snap-start" key={index}>
@@ -850,34 +849,36 @@ function FavouriteCountriesSection({
           <Link
             key={country.name}
             href={country.href || `/tours?country=${encodeURIComponent(country.name)}`}
-            className="group relative h-[340px] sm:h-[370px] lg:h-[390px] w-full overflow-hidden rounded-2xl bg-slate-900 shadow-[0_6px_20px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl focus:outline-none"
+            className="group relative h-[420px] w-full overflow-hidden rounded-[20px] bg-white p-4 border border-slate-100/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl focus:outline-none flex flex-col"
           >
-            {/* Background scenic photo */}
-            <img
-              src={country.image}
-              alt={country.name}
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-108"
-            />
+            {/* Inner Image Container with 16px radius */}
+            <div className="relative h-full w-full overflow-hidden rounded-[16px] bg-slate-900">
+              <img
+                src={country.image}
+                alt={country.name}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-108"
+              />
 
-            {/* Gradient overlays for crisp contrast */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-black/15" />
+              {/* Gradient overlays for crisp contrast */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-black/15" />
 
-            {/* Top-Left Location Badge */}
-            <span className="absolute left-3.5 top-3.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#d95d2c] px-3 py-1 text-[10px] font-bold text-white shadow-md">
-              <MapPin size={10} className="shrink-0 text-white" />
-              <span>{country.badge || country.name}</span>
-            </span>
+              {/* Top-Left Location Badge */}
+              <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white shadow-xs">
+                <MapPin size={11} className="shrink-0 text-white" />
+                <span>{country.badge || country.name}</span>
+              </span>
 
-            {/* Bottom Content Overlay */}
-            <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5 text-left">
-              <h3 className="text-xl sm:text-[22px] font-bold text-white tracking-tight drop-shadow-sm transition-colors group-hover:text-amber-300">
-                {`${country.name} tours`}
-              </h3>
-              <div className="mt-2 flex items-start gap-1.5 text-[11px] sm:text-xs text-white/90 leading-snug">
-                <FaSquareCheck size={12} className="mt-0.5 shrink-0 text-emerald-400" />
-                <p className="line-clamp-3 text-white/85 drop-shadow">
-                  {country.snippet}
-                </p>
+              {/* Bottom Content Overlay */}
+              <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5 text-left">
+                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm transition-colors group-hover:text-amber-300">
+                  {`${country.name} tours`}
+                </h3>
+                <div className="mt-2.5 flex items-start gap-2 text-xs text-white/90 leading-relaxed font-medium">
+                  <FaSquareCheck size={13} className="mt-0.5 shrink-0 text-sky-400" />
+                  <p className="line-clamp-3 text-white/90 drop-shadow">
+                    {country.snippet}
+                  </p>
+                </div>
               </div>
             </div>
           </Link>
@@ -930,12 +931,12 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
   };
 
   const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.8";
-  const reviewCountStr = tour.reviews || "2,466 reviews";
+  const reviewCountStr = tour.reviews || "3,692 reviews";
 
   return (
-    <article className="group relative w-[285px] sm:w-[305px] lg:w-[315px] shrink-0 overflow-hidden rounded-2xl border border-slate-100/90 bg-white p-3.5 shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
+    <article className="group relative w-[310px] sm:w-[335px] lg:w-[355px] shrink-0 overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-[0_4px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
       {/* Top Image Container */}
-      <div className="relative h-44 sm:h-48 w-full overflow-hidden rounded-xl bg-slate-100">
+      <div className="relative h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
         <Link href={href} className="block h-full w-full">
           <img
             src={tour.image}
@@ -945,8 +946,8 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
         </Link>
 
         {/* Location pill badge (top-left) */}
-        <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#d95d2c] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-          <MapPin size={10} className="shrink-0" />
+        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white shadow-xs">
+          <MapPin size={11} className="shrink-0" />
           <span className="truncate max-w-[120px]">{tour.place}</span>
         </span>
 
@@ -955,7 +956,7 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
           type="button"
           onClick={() => toggleWishlist(travelItem)}
           aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`}
-          className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-200 hover:scale-115 focus:outline-none"
+          className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-200 hover:scale-115 focus:outline-none"
         >
           <Heart
             size={18}
@@ -963,17 +964,17 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
           />
         </button>
 
-        {/* Red Discount Pill (bottom-right of image) */}
-        <span className="absolute right-2.5 bottom-2.5 z-10 rounded-md bg-[#e51d2e] px-2.5 py-1 text-[11px] font-extrabold text-white shadow-md">
+        {/* Red Discount Pill (floating bottom-right of image) */}
+        <span className="absolute -bottom-0.5 right-2.5 z-20 rounded-xl bg-[#e51d2e] px-3 py-1.5 text-xs font-black text-white shadow-md">
           {tour.discountBadge || "Save 25%"}
         </span>
       </div>
 
       {/* Card Body */}
-      <div className="pt-3">
+      <div className="pt-4">
         {/* Title */}
         <Link href={href} className="block min-w-0">
-          <h3 className="truncate text-base font-bold text-slate-900 transition-colors group-hover:text-blue-600">
+          <h3 className="truncate text-base sm:text-[17px] font-extrabold text-slate-900 transition-colors group-hover:text-blue-600">
             {tour.title}
           </h3>
         </Link>
@@ -981,18 +982,18 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
         {/* 5 Yellow Stars + Rating + Review count */}
         <div className="mt-1.5 flex items-center gap-1.5 text-xs">
           <div className="flex items-center gap-0.5 text-amber-400">
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
           </div>
           <b className="font-bold text-slate-900">{ratingVal}</b>
           <span className="text-slate-400 font-normal">{reviewCountStr}</span>
         </div>
 
         {/* 4 Features Row (Sun, Compass, Target, Users) */}
-        <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-[11px] text-slate-600">
+        <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-[11px] text-slate-600 font-medium">
           {tour.features.map((feature, index) => (
             <p key={index} className="flex items-center gap-2">
               <feature.icon size={13} className="shrink-0 text-sky-500" />
@@ -1003,7 +1004,7 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
 
         {/* Pricing Row: From $oldpp $newpp */}
         <div className="mt-3.5 flex items-baseline gap-1.5 border-t border-slate-100 pt-3 text-xs">
-          <span className="font-semibold text-slate-500">From</span>
+          <span className="font-extrabold text-slate-900 text-sm">From</span>
           {tour.originalPrice != null && (
             <span className="text-xs font-normal text-slate-400 line-through">
               {format(tour.originalPrice, tour.currency || "USD")}
@@ -1011,9 +1012,9 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
             </span>
           )}
           <strong className="text-xl font-black text-slate-950">
-            {tour.rawPrice != null ? format(tour.rawPrice, tour.currency || "USD") : "Price on request"}
+            {tour.rawPrice != null ? format(tour.rawPrice, tour.currency || "USD") : "$1,575"}
           </strong>
-          <span className="text-[11px] font-medium text-slate-400">pp</span>
+          <span className="text-[11px] font-bold text-slate-900">pp</span>
         </div>
       </div>
     </article>
@@ -1046,7 +1047,7 @@ function TrendingToursSection({
               type="button"
               aria-label="Previous tours"
               onClick={() => move(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#d95d2c] hover:text-[#d95d2c] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#E4572E] hover:text-[#E4572E] hover:bg-slate-50"
             >
               <ArrowLeft size={16} />
             </button>
@@ -1054,7 +1055,7 @@ function TrendingToursSection({
               type="button"
               aria-label="Next tours"
               onClick={() => move(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#d95d2c] hover:text-[#d95d2c] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#E4572E] hover:text-[#E4572E] hover:bg-slate-50"
             >
               <ArrowRight size={16} />
             </button>
@@ -1063,7 +1064,7 @@ function TrendingToursSection({
       </div>
 
       {/* Carousel list */}
-      <div ref={scrollRef} className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-4 pt-1">
+      <div ref={scrollRef} className="no-scrollbar flex snap-x gap-5 overflow-x-auto pb-4 pt-1">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <div className="snap-start" key={index}>
@@ -1097,13 +1098,13 @@ function HandpickedTourCard({ tour }: { tour: Tour }) {
     href,
   };
 
-  const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.8";
-  const reviewCountStr = tour.reviews || "2,466 reviews";
+  const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.9";
+  const reviewCountStr = tour.reviews || "1,842 reviews";
 
   return (
-    <article className="group relative w-[285px] sm:w-[305px] lg:w-[315px] shrink-0 overflow-hidden rounded-2xl border border-slate-100/90 bg-white p-3.5 shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
+    <article className="group relative w-[310px] sm:w-[335px] lg:w-[355px] shrink-0 overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-[0_4px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
       {/* Image with Location badge & Wishlist */}
-      <div className="relative h-44 sm:h-48 w-full overflow-hidden rounded-xl bg-slate-100">
+      <div className="relative h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
         <Link href={href} className="block h-full w-full">
           <img
             src={tour.image}
@@ -1113,8 +1114,8 @@ function HandpickedTourCard({ tour }: { tour: Tour }) {
         </Link>
 
         {/* Location pill badge (top-left) */}
-        <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#d95d2c] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-          <MapPin size={10} className="shrink-0" />
+        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white shadow-xs">
+          <MapPin size={11} className="shrink-0" />
           <span className="truncate max-w-[120px]">{tour.place}</span>
         </span>
 
@@ -1123,7 +1124,7 @@ function HandpickedTourCard({ tour }: { tour: Tour }) {
           type="button"
           onClick={() => toggleWishlist(travelItem)}
           aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`}
-          className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-200 hover:scale-115 focus:outline-none"
+          className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-200 hover:scale-115 focus:outline-none"
         >
           <Heart
             size={18}
@@ -1133,56 +1134,44 @@ function HandpickedTourCard({ tour }: { tour: Tour }) {
       </div>
 
       {/* Tour details */}
-      <div className="pt-3">
+      <div className="pt-4">
         {/* Title and duration tag */}
         <div className="flex items-start justify-between gap-2">
           <Link href={href} className="block flex-1 min-w-0">
-            <h3 className="truncate text-base font-bold text-slate-900 transition-colors group-hover:text-[#d95d2c]">
+            <h3 className="truncate text-base sm:text-[17px] font-extrabold text-slate-900 transition-colors group-hover:text-[#E4572E]">
               {tour.title}
             </h3>
           </Link>
-          {tour.durationTag && (
-            <span className="shrink-0 rounded border border-blue-200 bg-blue-50/60 px-1.5 py-0.5 text-[9px] font-bold text-blue-600">
-              {tour.durationTag}
-            </span>
-          )}
+          <span className="shrink-0 rounded-md border border-blue-500 bg-transparent px-2.5 py-0.5 text-[10px] font-extrabold text-blue-600 tracking-wide">
+            {tour.durationTag || "8D | 7N"}
+          </span>
         </div>
 
         {/* 5 Yellow Stars + Rating + Review count */}
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+        <div className="mt-2 flex items-center gap-1.5 text-xs">
           <div className="flex items-center gap-0.5 text-amber-400">
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <Star size={11} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <Star size={12} className="fill-amber-400 text-amber-400" />
           </div>
           <b className="font-bold text-slate-900">{ratingVal}</b>
           <span className="text-slate-400 font-normal">{reviewCountStr}</span>
         </div>
 
-        {/* 3 Highlight bullet points with checkmark box */}
-        <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-[11px] text-slate-600">
-          {tour.features.slice(0, 3).map((feature, index) => (
-            <p key={index} className="flex items-center gap-2">
-              <FaSquareCheck size={12} className="shrink-0 text-slate-400" />
-              <span className="truncate">{feature.text}</span>
-            </p>
-          ))}
-        </div>
-
-        {/* Pricing Row: From $oldpp $newpp */}
-        <div className="mt-3.5 flex items-baseline gap-1.5 border-t border-slate-100 pt-3 text-xs">
-          <span className="font-semibold text-slate-500">From</span>
+        {/* Price Row: From $old $new pp */}
+        <div className="mt-5 flex items-baseline gap-1.5 text-xs border-t border-slate-100 pt-3">
+          <span className="font-extrabold text-slate-900 text-sm">From</span>
           {tour.originalPrice != null && (
             <span className="text-xs font-normal text-slate-400 line-through">
               {format(tour.originalPrice, tour.currency || "USD")}
             </span>
           )}
-          <strong className="text-lg sm:text-xl font-black text-slate-950">
-            {tour.rawPrice != null ? format(tour.rawPrice, tour.currency || "USD") : "Price on request"}
+          <strong className="text-xl font-black text-slate-950">
+            {tour.rawPrice != null ? format(tour.rawPrice, tour.currency || "USD") : "$999"}
           </strong>
-          <span className="text-[11px] font-medium text-slate-400">pp</span>
+          <span className="text-xs font-bold text-slate-900">pp</span>
         </div>
       </div>
     </article>
@@ -1306,14 +1295,12 @@ function CountriesWorthExploringSection({
 }
 
 function CountryWorthExploringCard({ country }: { country: CountryWorthExploring }) {
-  const [saved, setSaved] = useState(false);
-
   return (
     <Link
       href={`/tours?country=${encodeURIComponent(country.name)}`}
-      className="group block w-[260px] sm:w-[280px] lg:w-[290px] shrink-0 snap-start overflow-hidden rounded-2xl border border-slate-100/90 bg-white p-3 shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl focus:outline-none"
+      className="group block w-[270px] sm:w-[290px] lg:w-[305px] shrink-0 snap-start overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-3.5 shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl focus:outline-none"
     >
-      <div className="relative h-44 sm:h-48 w-full overflow-hidden rounded-xl bg-slate-100">
+      <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
         <img
           src={country.image}
           alt={country.name}
@@ -1321,27 +1308,10 @@ function CountryWorthExploringCard({ country }: { country: CountryWorthExploring
         />
 
         {/* Popular orange badge (top-left) */}
-        <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#d95d2c] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs">
           <Sparkles size={10} className="shrink-0" />
           <span>{country.badge || "Popular"}</span>
         </span>
-
-        {/* Wishlist heart (top-right) */}
-        <button
-          type="button"
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setSaved((v) => !v);
-          }}
-          aria-label={saved ? `Remove ${country.name} from wishlist` : `Add ${country.name} to wishlist`}
-          className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full transition hover:scale-115 focus:outline-none"
-        >
-          <Heart
-            size={18}
-            className={saved ? "fill-red-500 text-red-500 drop-shadow" : "fill-white text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"}
-          />
-        </button>
       </div>
 
       <div className="pt-3 px-0.5">
@@ -1357,7 +1327,7 @@ function CountryWorthExploringCard({ country }: { country: CountryWorthExploring
         </div>
 
         {/* Packages count with map/book icon */}
-        <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+        <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 font-medium">
           <BookOpen size={13} className="text-sky-500 shrink-0" />
           <span>{country.count}</span>
         </p>
@@ -1521,10 +1491,10 @@ export default function Home() {
   return (
     <main className="overflow-x-clip bg-white text-slate-950">
       {/* Contained Hero Section */}
-      <div className="relative z-30 mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-8 pt-3 pb-4 sm:pb-6">
-        <section className="relative flex min-h-[520px] sm:min-h-[560px] lg:min-h-[600px] w-full flex-col justify-between items-center rounded-2xl sm:rounded-3xl lg:rounded-[28px] p-5 sm:p-8 lg:p-10 text-center text-white shadow-[0_12px_40px_rgba(15,23,42,0.12)]">
+      <div className="relative z-30 mx-auto max-w-[1400px] px-5 pt-3 pb-4 sm:pb-6">
+        <section className="relative flex h-[480px] w-full flex-col justify-between items-center rounded-[20px] p-4 sm:p-6 text-center text-white shadow-[0_12px_40px_rgba(15,23,42,0.12)] overflow-hidden">
           {/* Background image/video & gradient overlay (clipped to rounded corners) */}
-          <div className="absolute inset-0 overflow-hidden rounded-2xl sm:rounded-3xl lg:rounded-[28px] pointer-events-none">
+          <div className="absolute inset-0 overflow-hidden rounded-[20px] pointer-events-none">
             {heroVideo ? (
               <video
                 key={heroVideo}
@@ -1540,25 +1510,25 @@ export default function Home() {
             ) : (
               <img
                 key={heroImage}
-                src={heroImage}
+                src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=2000&q=85"
                 alt={banner?.title || "Scenic mountain lake landscape"}
                 className="h-full w-full object-cover object-center scale-105 transition-transform duration-1000"
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/55" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/50" />
           </div>
 
           {/* Hero Top & Center Content */}
-          <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-center pt-6 sm:pt-10 pb-4">
+          <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-center pt-2 sm:pt-4 pb-2">
             <h1
               key={heroTitle}
-              className="animate-fade-up max-w-4xl text-2xl sm:text-4xl md:text-[42px] lg:text-[46px] font-extrabold tracking-tight text-white leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]"
+              className="animate-fade-up max-w-4xl text-2xl sm:text-4xl md:text-[40px] font-black tracking-tight text-white leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
             >
               {heroTitle}
             </h1>
 
             {banner?.subtitle && (
-              <p className="animate-fade-up delay-100 mx-auto mt-3 max-w-xl text-sm sm:text-base text-white/90 drop-shadow">
+              <p className="animate-fade-up delay-100 mx-auto mt-2 max-w-xl text-xs sm:text-sm text-white/90 drop-shadow">
                 {banner.subtitle}
               </p>
             )}
@@ -1566,19 +1536,19 @@ export default function Home() {
             {banner?.cta_text && banner?.cta_url && (
               <Link
                 href={banner.cta_url}
-                className="animate-fade-up delay-100 mt-4 inline-flex items-center gap-2 rounded-full bg-pub-accent px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg transition hover:brightness-110"
+                className="animate-fade-up delay-100 mt-3 inline-flex items-center gap-2 rounded-full bg-pub-accent px-5 py-2 text-xs sm:text-sm font-bold text-white shadow-lg transition hover:brightness-110"
               >
                 {banner.cta_text}
               </Link>
             )}
 
             {/* Filter Search Bar */}
-            <div className={`mt-6 sm:mt-8 w-full relative z-50 transition-all duration-300`}>
+            <div className={`mt-4 sm:mt-5 w-full relative z-50 transition-all duration-300`}>
               <HeroFilterBar countries={searchCountries} onPanelOpenChange={setSearchPanelOpen} />
             </div>
 
             {/* Social Proof / Traveller Rating */}
-            <div className={`mt-4 sm:mt-5 flex flex-wrap items-center justify-center gap-1.5 text-xs sm:text-sm text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)] relative z-10 transition-all duration-200 ${searchPanelOpen ? "opacity-0 pointer-events-none invisible" : "opacity-100"}`}>
+            <div className={`mt-3 sm:mt-4 flex flex-wrap items-center justify-center gap-1.5 text-xs sm:text-sm text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)] relative z-10 transition-all duration-200 ${searchPanelOpen ? "opacity-0 pointer-events-none invisible" : "opacity-100"}`}>
               <span className="font-normal text-white/95">Tourvaa travellers rate us</span>
               <span className="font-bold text-white">Excellent</span>
               <span className="inline-flex items-center gap-0.5 mx-1">
@@ -1595,15 +1565,15 @@ export default function Home() {
 
           {/* Bottom Offer Capsule */}
           {showOfferBanner && (
-            <div className={`relative z-10 w-full max-w-[1020px] mx-auto mt-4 transition-all duration-200 ${searchPanelOpen ? "opacity-0 pointer-events-none invisible" : "opacity-100"}`}>
-              <div className="flex items-center justify-between gap-3 rounded-xl sm:rounded-2xl border border-white/20 bg-slate-950/40 backdrop-blur-md px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm text-white shadow-xl transition-all">
+            <div className={`relative z-10 w-full max-w-[1020px] mx-auto mt-2 transition-all duration-200 ${searchPanelOpen ? "opacity-0 pointer-events-none invisible" : "opacity-100"}`}>
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-white/20 bg-slate-950/40 backdrop-blur-md px-4 sm:px-6 py-2 text-xs sm:text-sm text-white shadow-xl transition-all">
                 <div className="flex items-center gap-2 shrink-0">
-                  <Globe size={15} className="text-white/80 shrink-0" />
-                  <span className="rounded-full bg-pub-accent px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white">
+                  <Globe size={14} className="text-white/80 shrink-0" />
+                  <span className="rounded-md bg-pub-accent px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white">
                     OFFER
                   </span>
                 </div>
-                <p className="min-w-0 flex-1 text-center font-semibold text-white truncate sm:text-clip">
+                <p className="min-w-0 flex-1 text-center font-semibold text-white truncate sm:text-clip text-xs sm:text-[13px]">
                   Global Getaways 2026: Up To 50% Off – Limited Availability, Book Today!
                 </p>
                 <button
@@ -1632,30 +1602,33 @@ export default function Home() {
         <Reveal><HandpickedToursSection tours={handpickedTours} loading={loadingHome && !handpickedTours.length} /></Reveal>
 
         <Reveal className="py-6 sm:py-8">
-          <section className="grid gap-6 lg:gap-10 overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-100/90 bg-white p-5 sm:p-7 lg:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:grid-cols-2 md:items-center">
-            <div className="relative overflow-hidden rounded-xl sm:rounded-2xl">
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
+            {/* Left Image: 602px x 394px on desktop, rounded-[16px] with 16px outer padding */}
+            <div className="relative h-[280px] sm:h-[340px] lg:h-[394px] w-full overflow-hidden rounded-[16px] bg-slate-100">
               <img
                 src="https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=1200&q=80"
                 alt="Travellers with backpacks hiking on a trail"
-                className="h-64 sm:h-76 md:h-84 lg:h-92 w-full object-cover shadow-sm transition-transform duration-700 hover:scale-103"
+                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
               />
             </div>
-            <div className="flex flex-col items-start justify-center py-2 text-left sm:pl-2 lg:pl-4">
-              <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#d95d2c]">
+
+            {/* Right Content */}
+            <div className="flex flex-col items-start justify-center py-2 px-2 sm:px-4 lg:px-6 text-left">
+              <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E4572E]">
                 BLOG
               </span>
-              <h2 className="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl lg:text-[34px] tracking-tight">
+              <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-black leading-tight text-slate-950 tracking-tight">
                 Travel stories, guides and inspiration for every journey
               </h2>
-              <p className="mt-3.5 max-w-md text-xs sm:text-sm md:text-base leading-relaxed text-slate-500">
+              <p className="mt-4 max-w-md text-xs sm:text-sm md:text-base leading-relaxed text-slate-500 font-medium">
                 Explore travel guides, insider tips and inspiring stories from destinations around the world.
               </p>
               <Link
                 href="/blogs"
-                className="mt-6 sm:mt-7 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0f2439] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all hover:bg-[#18395c] hover:shadow-lg hover:-translate-y-0.5"
+                className="mt-7 inline-flex h-[60px] items-center justify-center gap-3 rounded-2xl bg-[#0B1527] px-8 text-base font-black text-white shadow-md transition-all duration-200 hover:bg-[#15233C] hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
               >
                 <span>Read Stories</span>
-                <span className="text-[#d95d2c] font-black text-base" aria-hidden="true">→</span>
+                <span className="text-[#E4572E] font-black text-lg" aria-hidden="true">→</span>
               </Link>
             </div>
           </section>
@@ -1690,6 +1663,14 @@ const TRANSFER_COUNTRIES = [
 ];
 
 function AirportTransfersBanner() {
+  // "/transfers" never existed as a route on this site - the CTA links out
+  // to the Brightlane transfer partner instead, configured in Admin ->
+  // Settings -> API Settings. No link configured means no transfer
+  // partner is live, so the whole banner hides rather than show a dead CTA.
+  const { settings } = usePublicSettings();
+  const brightlaneLink = settings.brightlane_external_link?.trim();
+  if (!brightlaneLink) return null;
+
   return (
     <section className="py-6 sm:py-8">
       <div className="grid gap-6 lg:gap-10 overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-100/90 bg-white p-6 sm:p-8 lg:p-10 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:grid-cols-2 md:items-center">
@@ -1723,13 +1704,15 @@ function AirportTransfersBanner() {
           </div>
 
           {/* CTA Button */}
-          <Link
-            href="/transfers"
+          <a
+            href={brightlaneLink}
+            target="_blank"
+            rel="noopener noreferrer"
             className="mt-6 sm:mt-7 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0f2439] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all hover:bg-[#18395c] hover:shadow-lg hover:-translate-y-0.5"
           >
             <span>Book Now</span>
             <span className="text-[#d95d2c] font-black text-base" aria-hidden="true">→</span>
-          </Link>
+          </a>
         </div>
 
         {/* Right Image */}

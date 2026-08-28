@@ -8,7 +8,9 @@ type PublicCountry = { country_name: string; tour_count?: number };
 
 async function findCountryBySlug(slug: string): Promise<PublicCountry | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/public/countries`, { next: { revalidate: 300 } });
+    // cache: "no-store" - see the comment on fetchTourForSeo in
+    // tourMetadata.ts for why this isn't { next: { revalidate } }.
+    const res = await fetch(`${API_BASE}/api/public/countries`, { cache: "no-store" });
     if (!res.ok) return null;
     const json = await res.json();
     const items = (json?.items || []) as PublicCountry[];

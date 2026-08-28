@@ -48,7 +48,7 @@ function GuestPrompt({ onClose, returnPath, isLoggedIn }: { onClose: () => void;
           <button
             type="button"
             onClick={() => { onClose(); router.push(`/login?role=traveller&redirect=${encodeURIComponent(returnPath)}`); }}
-            className="flex items-center justify-center gap-2 rounded-xl bg-teal-500 py-3 text-sm font-bold text-white hover:bg-sky-600"
+            className="flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-3 text-sm font-bold text-white hover:bg-teal-700"
           >
             <LogIn size={15} /> Customer login
           </button>

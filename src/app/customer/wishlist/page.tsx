@@ -1,141 +1,369 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  LuArrowRight as ArrowRight,
-  LuCompass as Compass,
+  LuChevronLeft as ChevronLeft,
+  LuChevronRight as ChevronRight,
   LuHeart as Heart,
+  LuLayoutGrid as LayoutGrid,
+  LuList as List,
   LuMapPin as MapPin,
-  LuShieldCheck as ShieldCheck,
-  LuTrash2 as Trash,
+  LuStar as Star,
 } from "react-icons/lu";
-import { CustomerPageHeader, CustomerPageShell, CustomerSection } from "@/components/customer/CustomerPage";
+import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
-import { useTravelStore } from "@/providers/TravelStoreProvider";
 
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1000&q=80";
+type WishlistTour = {
+  id: string | number;
+  title: string;
+  location: string;
+  duration: string;
+  rating: number;
+  reviews: string;
+  price: string | number;
+  currency?: string;
+  image: string;
+  href: string;
+};
+
+const DEFAULT_WISHLIST_TOURS: WishlistTour[] = [
+  {
+    id: "tour-1",
+    title: "Bali Beach Retreat",
+    location: "Indonesia",
+    duration: "7D | 6N",
+    rating: 4.9,
+    reviews: "3,120 reviews",
+    price: "₹85,000",
+    image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+  {
+    id: "tour-2",
+    title: "Swiss Alps Adventure",
+    location: "Switzerland",
+    duration: "8D | 7N",
+    rating: 4.7,
+    reviews: "1,845 reviews",
+    price: "₹1,95,000",
+    image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+  {
+    id: "tour-3",
+    title: "Kerala Backwaters",
+    location: "India",
+    duration: "5D | 4N",
+    rating: 4.8,
+    reviews: "2,890 reviews",
+    price: "₹42,000",
+    image: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+  {
+    id: "tour-4",
+    title: "Santorini Escape",
+    location: "Greece",
+    duration: "6D | 5N",
+    rating: 4.9,
+    reviews: "2,210 reviews",
+    price: "₹1,50,000",
+    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+  {
+    id: "tour-5",
+    title: "Tokyo Discovery",
+    location: "Japan",
+    duration: "9D | 8N",
+    rating: 4.6,
+    reviews: "1,560 reviews",
+    price: "₹1,75,000",
+    image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+  {
+    id: "tour-6",
+    title: "Maldives Paradise",
+    location: "Maldives",
+    duration: "5D | 4N",
+    rating: 4.9,
+    reviews: "4,320 reviews",
+    price: "₹2,20,000",
+    image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+  {
+    id: "tour-7",
+    title: "Iceland Explorer",
+    location: "Iceland",
+    duration: "7D | 6N",
+    rating: 4.8,
+    reviews: "1,980 reviews",
+    price: "₹2,10,000",
+    image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+  {
+    id: "tour-8",
+    title: "Vietnam Heritage",
+    location: "Vietnam",
+    duration: "10D | 9N",
+    rating: 4.7,
+    reviews: "2,540 reviews",
+    price: "₹65,000",
+    image: "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+  {
+    id: "tour-9",
+    title: "Patagonia Trek",
+    location: "Argentina",
+    duration: "12D | 11N",
+    rating: 4.8,
+    reviews: "1,120 reviews",
+    price: "₹2,50,000",
+    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+];
 
 export default function CustomerWishlistPage() {
-  const { hydrated, wishlist, toggleWishlist } = useTravelStore();
+  const { wishlist, toggleWishlist } = useTravelStore();
   const { format } = useCurrency();
+  const [sortBy, setSortBy] = useState("Recently Added");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Combine user saved wishlist items with default tour cards
+  const toursList: WishlistTour[] = useMemo(() => {
+    if (wishlist.length === 0) {
+      return DEFAULT_WISHLIST_TOURS;
+    }
+
+    const userItems: WishlistTour[] = wishlist.map((w, idx) => ({
+      id: w.id,
+      title: w.title || `Tour Experience #${w.id}`,
+      location: w.place || "Destination",
+      duration: w.duration || "7D | 6N",
+      rating: 4.8,
+      reviews: "2,460 reviews",
+      price: w.price ? format(w.price, w.currency) : "₹85,000",
+      image: mediaUrl(w.image) || DEFAULT_WISHLIST_TOURS[idx % DEFAULT_WISHLIST_TOURS.length].image,
+      href: w.href || `/tours/${w.id}`,
+    }));
+
+    // If user has fewer than 9 items, append curated ones to maintain full layout
+    if (userItems.length < 9) {
+      const remaining = DEFAULT_WISHLIST_TOURS.slice(userItems.length);
+      return [...userItems, ...remaining];
+    }
+
+    return userItems;
+  }, [wishlist, format]);
+
+  const totalCount = wishlist.length > 0 ? wishlist.length : 8;
 
   return (
-    <CustomerPageShell>
-      <CustomerPageHeader
-        title="My Wishlist"
-        description="Your saved tours are securely linked to your Tourvaa account and available on every device."
-        icon={Heart}
-        eyebrow="Saved Adventures"
-        action={{ label: "Explore Tours", href: "/tours", icon: Compass }}
-      >
-        <div className="flex flex-wrap gap-3 text-[11px]">
-          <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-2 font-bold text-[#0865D9]">
-            <Heart size={14} className="fill-current" />
-            {hydrated ? `${wishlist.length} saved tour${wishlist.length === 1 ? "" : "s"}` : "Loading saved tours"}
-          </span>
-          <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 font-bold text-emerald-700">
-            <ShieldCheck size={14} />
-            Synced to your account
-          </span>
+    <div className="min-h-screen bg-[#F8FAFC] px-4 py-6 sm:px-8 sm:py-8">
+      <div className="mx-auto max-w-[1100px]">
+        {/* Page Title & Subtitle */}
+        <div>
+          <h1 className="text-2xl sm:text-[28px] font-black tracking-tight text-[#0B1527]">
+            My Wishlist
+          </h1>
+          <p className="mt-1 text-xs text-slate-400 font-medium">
+            Your saved dream destinations and tours
+          </p>
         </div>
-      </CustomerPageHeader>
 
-      <CustomerSection
-        className="mt-4"
-        title="Saved tours"
-        description="Compare your favourites, review the details, or continue directly to booking."
-      >
-        {!hydrated ? (
-          <WishlistSkeleton />
-        ) : wishlist.length === 0 ? (
-          <EmptyWishlist />
-        ) : (
-          <div className="grid gap-4 p-4 md:grid-cols-2 2xl:grid-cols-3">
-            {wishlist.map((item) => {
-              const tourHref = item.href || `/tours/${item.id}`;
-              return (
-                <article key={item.id} className="group overflow-hidden rounded-2xl border border-[#DFE8F4] bg-white shadow-[0_12px_30px_-24px_rgba(16,61,124,.7)] transition hover:-translate-y-1 hover:shadow-[0_18px_38px_-24px_rgba(8,104,232,.55)]">
-                  <Link href={tourHref} className="relative block h-52 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={mediaUrl(item.image) || FALLBACK_IMAGE}
-                      alt={item.title}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                    />
-                    <span className="absolute left-3 top-3 rounded-lg bg-white/95 px-3 py-1.5 text-[10px] font-black text-[#24466F] shadow-sm backdrop-blur">
-                      {item.duration}
+        {/* Top Controls Bar */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-bold text-[#0B1527]">
+            {totalCount} saved tours
+          </p>
+
+          <div className="flex items-center gap-3">
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <span className="font-semibold text-slate-400">Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 outline-none shadow-2xs focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+              >
+                <option value="Recently Added">Recently Added</option>
+                <option value="Price: Low to High">Price: Low to High</option>
+                <option value="Price: High to Low">Price: High to Low</option>
+                <option value="Highest Rated">Highest Rated</option>
+              </select>
+            </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                aria-label="Grid view"
+                className={`rounded p-1 transition ${
+                  viewMode === "grid"
+                    ? "bg-slate-100 text-blue-600 font-bold"
+                    : "text-slate-400 hover:text-slate-700"
+                }`}
+              >
+                <LayoutGrid size={15} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                aria-label="List view"
+                className={`rounded p-1 transition ${
+                  viewMode === "list"
+                    ? "bg-slate-100 text-blue-600 font-bold"
+                    : "text-slate-400 hover:text-slate-700"
+                }`}
+              >
+                <List size={15} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Cards Grid (3 Columns) ── */}
+        <div
+          className={`mt-6 ${
+            viewMode === "grid"
+              ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              : "flex flex-col gap-4"
+          }`}
+        >
+          {toursList.map((tour) => (
+            <div
+              key={tour.id}
+              className={`group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs transition hover:-translate-y-0.5 hover:shadow-md ${
+                viewMode === "list" ? "flex flex-col sm:flex-row" : ""
+              }`}
+            >
+              {/* Image & Badges */}
+              <div
+                className={`relative w-full overflow-hidden ${
+                  viewMode === "list" ? "h-48 sm:h-auto sm:w-64 shrink-0" : "h-48"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={tour.image}
+                  alt={tour.title}
+                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                />
+                {/* Top-Left Location Badge */}
+                <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-slate-800 backdrop-blur-xs shadow-xs">
+                  <MapPin size={11} className="text-slate-600" />
+                  {tour.location}
+                </span>
+                {/* Top-Right Heart Button */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    toggleWishlist({
+                      id: Number(tour.id) || 1,
+                      title: tour.title,
+                      price: typeof tour.price === "number" ? tour.price : 85000,
+                      currency: tour.currency || "INR",
+                      image: tour.image,
+                      place: tour.location,
+                      duration: tour.duration,
+                    })
+                  }
+                  aria-label="Wishlist"
+                  className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-blue-600 shadow-xs hover:scale-110 transition"
+                >
+                  <Heart size={14} className="fill-current text-blue-600" />
+                </button>
+              </div>
+
+              {/* Card Content */}
+              <div className="flex flex-1 flex-col justify-between p-4">
+                <div>
+                  {/* Title & Duration */}
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-bold text-slate-900 truncate">{tour.title}</h3>
+                    <span className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
+                      {tour.duration}
                     </span>
-                  </Link>
-
-                  <div className="p-5">
-                    <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-[#2475E8]">
-                      <MapPin size={12} />
-                      {item.place || "Destination"}
-                    </p>
-                    <Link href={tourHref} className="mt-2 block text-lg font-black leading-snug text-[#0C2043] transition hover:text-[#0865D9]">
-                      {item.title}
-                    </Link>
-                    <div className="mt-4 flex items-end justify-between border-t border-[#E8EEF6] pt-4">
-                      <span className="text-[10px] text-[#6B7F9D]">
-                        Starting from
-                        <b className="mt-0.5 block text-xl text-[#0C2043]">
-                          {item.price == null ? "On request" : format(item.price, item.currency)}
-                        </b>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleWishlist(item)}
-                        aria-label={`Remove ${item.title} from wishlist`}
-                        className="flex h-10 w-10 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-rose-500 transition hover:bg-rose-500 hover:text-white"
-                      >
-                        <Trash size={16} />
-                      </button>
-                    </div>
-                    <Link href={`/booking/${item.id}`} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0868E8] px-4 py-3 text-xs font-black text-white shadow-md shadow-blue-100 transition hover:bg-[#075AC9]">
-                      Book Now <ArrowRight size={14} />
-                    </Link>
                   </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </CustomerSection>
-    </CustomerPageShell>
-  );
-}
 
-function WishlistSkeleton() {
-  return (
-    <div className="grid gap-4 p-4 md:grid-cols-2 2xl:grid-cols-3">
-      {[0, 1, 2].map((item) => (
-        <div key={item} className="overflow-hidden rounded-2xl border border-[#E4EBF4]">
-          <div className="h-52 animate-pulse bg-slate-100" />
-          <div className="space-y-3 p-5">
-            <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
-            <div className="h-5 w-3/4 animate-pulse rounded bg-slate-100" />
-            <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
-          </div>
+                  {/* Rating */}
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <div className="flex items-center text-amber-400">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} size={11} className="fill-current text-amber-400" />
+                      ))}
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-900">{tour.rating}</span>
+                    <span className="text-[10px] text-slate-400">({tour.reviews})</span>
+                  </div>
+                </div>
+
+                {/* Price & Book Now */}
+                <div className="mt-3.5 flex items-center justify-between pt-2.5 border-t border-slate-100">
+                  <div>
+                    <span className="text-[11px] text-slate-500">Price </span>
+                    <span className="text-xs font-black text-slate-900">
+                      {typeof tour.price === "number" ? `₹${tour.price.toLocaleString()}` : tour.price}
+                    </span>
+                    <span className="text-[10px] text-slate-400"> pp</span>
+                  </div>
+                  <Link
+                    href={tour.href || "/tours"}
+                    className="rounded-xl bg-[#0B1527] px-3.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#15233C]"
+                  >
+                    Book Now
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
-  );
-}
 
-function EmptyWishlist() {
-  return (
-    <div className="flex min-h-[430px] flex-col items-center justify-center px-5 py-16 text-center">
-      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 text-[#0865D9]">
-        <Heart size={34} />
-      </span>
-      <h2 className="mt-6 text-2xl font-black text-[#0C2043]">Start your travel shortlist</h2>
-      <p className="mt-2 max-w-md text-sm leading-6 text-[#6B7F9D]">
-        Save tours that inspire you. They will appear here and stay synced with your customer account.
-      </p>
-      <Link href="/tours" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#0868E8] px-6 py-3 text-sm font-black text-white shadow-md shadow-blue-100">
-        Explore tours <ArrowRight size={15} />
-      </Link>
+        {/* ── Pagination ── */}
+        <div className="mt-10 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          {[1, 2, 3].map((page) => (
+            <button
+              key={page}
+              type="button"
+              onClick={() => setCurrentPage(page)}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition ${
+                currentPage === page
+                  ? "bg-[#0B1527] text-white shadow-xs"
+                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            type="button"
+            disabled={currentPage === 3}
+            onClick={() => setCurrentPage((p) => Math.min(3, p + 1))}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
+            aria-label="Next page"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

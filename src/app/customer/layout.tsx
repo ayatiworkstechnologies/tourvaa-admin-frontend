@@ -53,22 +53,22 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   return (
     <PublicSettingsProvider>
       <TravelStoreProvider>
-        <div className="customer-public-portal min-h-screen bg-dash-bg" style={portalThemeStyles.customer}>
+        <div className="customer-public-portal min-h-screen bg-[#F8FAFC]">
         <CustomerPortalHeader />
 
-        <div className="pt-20 sm:pt-[92px]">
+        <div className="pt-20 sm:pt-[84px]">
           <CustomerSidebar />
 
           {sidebarOpen && (
             <div className="fixed inset-x-0 bottom-0 top-20 z-50 lg:hidden">
               <button type="button" className="absolute inset-0 bg-slate-950/35 backdrop-blur-[2px]" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" />
-              <div className="relative h-full w-[250px] bg-white shadow-2xl">
+              <div className="relative h-full w-[240px] bg-white shadow-2xl p-4">
                 <CustomerSidebar mobile onNavigate={() => setSidebarOpen(false)} />
               </div>
             </div>
           )}
 
-          <div className="flex min-h-[calc(100vh-80px)] min-w-0 flex-col lg:ml-[250px]">
+          <div className="flex min-h-[calc(100vh-84px)] min-w-0 flex-col lg:ml-[250px]">
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}

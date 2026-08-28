@@ -2,20 +2,40 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuBedDouble as Bed, LuBriefcase as Suitcase, LuBus as Bus, LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuCheck as Check, LuCircleCheckBig as CheckCircle, LuCompass as Compass, LuDownload as Download, LuHeart as Heart, LuHouse as House, LuImage as ImageIcon, LuMapPin as MapPin, LuMessageCircle as MessageCircle, LuMinus as Minus, LuPlus as Plus, LuScale as Scale, LuShieldCheck as ShieldCheck, LuSparkles as Sparkles, LuStar as Star, LuTag as Tag, LuUserRound as User, LuUsers as Users, LuUtensils as Utensils, LuX as X, LuZap as Zap } from "react-icons/lu";
+import {
+  LuActivity as Activity,
+  LuArrowRight as ArrowRight,
+  LuBedDouble as Bed,
+  LuCalendar as Calendar,
+  LuCheck as Check,
+  LuChevronDown as ChevronDown,
+  LuChevronUp as ChevronUp,
+  LuClock as Clock,
+  LuCompass as Compass,
+  LuFileText as FileText,
+  LuHeart as Heart,
+  LuHotel as Hotel,
+  LuHouse as Home,
+  LuInfo as Info,
+  LuMap as MapIcon,
+  LuMapPin as MapPin,
+  LuMinus as Minus,
+  LuPlus as Plus,
+  LuShieldCheck as ShieldCheck,
+  LuStar as Star,
+  LuUser as User,
+  LuUsers as Users,
+  LuUtensils as Utensils,
+  LuWifi as Wifi,
+  LuX as X,
+  LuZap as Zap,
+} from "react-icons/lu";
 import { PublicTour, PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
-import { DiscountBanner, hasActiveDiscount } from "@/components/public/DiscountPrice";
-import TourCard from "@/components/public/TourCard";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
-import { slugifyTourSegment } from "@/lib/utils/tourUrl";
-import { ADDON_CATEGORIES } from "@/lib/constants/addonCategories";
-
-const FALLBACK = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85";
-
-type AddOnItem = { id: number; name: string; description: string; priceLabel: string; category: string; image: string | null };
+import { publicTourUrl } from "@/lib/utils/tourUrl";
 
 type Props = {
   tour: PublicTourDetail;
@@ -29,733 +49,1188 @@ type Props = {
   modal?: React.ReactNode;
 };
 
-export default function TourDetailExperience({ tour, images, initialTravelDate, initialAdults, initialChildren, onBook, onWishlist, wishlisted, modal }: Props) {
+const FALLBACK_GALLERY = [
+  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80",
+];
+
+const FALLBACK_HIGHLIGHTS = [
+  {
+    title: "Milford Sound Scenic Cruise",
+    desc: "Glide through towering fjords, cascading waterfalls, and misty peaks in Fiordland National Park.",
+    img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    title: "Waitomo Glowworm Caves",
+    desc: "Marvel at thousands of luminous glowworms illuminating subterranean limestone caverns by boat.",
+    img: "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    title: "Rotorua Geothermal Valley",
+    desc: "Witness bubbling mud pools, natural geysers, and authentic Māori cultural traditions.",
+    img: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    title: "Queenstown Gondola & Luge",
+    desc: "Ride high above Lake Wakatipu for panoramic views and thrilling scenic alpine luge rides.",
+    img: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    title: "Lake Tekapo & Mt Cook",
+    desc: "Gaze upon turquoise alpine glacial waters and New Zealand's highest majestic snow-capped peak.",
+    img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    title: "Auckland Harbour Sailing",
+    desc: "Sail across the sparkling Waitematā Harbour with sweeping vistas of the City of Sails skyline.",
+    img: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=400&q=80",
+  },
+];
+
+const FALLBACK_ITINERARY = [
+  {
+    day: 1,
+    title: "Welcome & City Orientation",
+    desc: "Arrive at the destination, meet your tour director, and enjoy a guided orientation tour of the city. In the evening, join your fellow travellers for a welcome dinner.",
+    bullets: [
+      "Airport meet & greet with private transfer to hotel",
+      "Panoramic orientation tour of key landmark highlights",
+      "Welcome dinner with regional cuisine",
+    ],
+    photos: [
+      "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=300&q=80",
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=300&q=80",
+    ],
+  },
+  {
+    day: 2,
+    title: "Scenic Countryside & Cultural Heritage",
+    desc: "Travel through scenic countryside and agricultural valleys. Experience historic monuments, subterranean cave wonders, or local heritage villages.",
+    bullets: [
+      "Guided excursion through landmark historic attractions",
+      "Scenic countryside drive with panoramic photo stops",
+      "Traditional evening feast and cultural performance",
+    ],
+  },
+  {
+    day: 3,
+    title: "Nature Trails & Geothermal Wonders",
+    desc: "Explore spectacular nature reserves, alpine lakes, or bubbling geothermal parks with an experienced local nature guide.",
+    bullets: [
+      "Guided walk through iconic natural wonders",
+      "Visit to local craft workshops and wildlife sanctuaries",
+      "Evening at leisure to unwind in mineral spas or boutique cafes",
+    ],
+  },
+  {
+    day: 4,
+    title: "Alpine Peaks & Lake Cruise",
+    desc: "Journey towards alpine mountain ranges with breathtaking vista stops, followed by an afternoon scenic lake cruise.",
+    bullets: [
+      "Scenic transfer across mountain passes and plains",
+      "2-hour scenic nature cruise on pristine waters",
+      "Evening arrival at alpine resort accommodation",
+    ],
+  },
+  {
+    day: 5,
+    title: "National Park Wilderness Exploration",
+    desc: "A full day dedicated to exploring World Heritage national parks, fjordlands, or majestic canyons with included picnic lunch.",
+    bullets: [
+      "Full-day excursion to UNESCO World Heritage natural park",
+      "Boutique nature cruise or safari with scenic lunch",
+      "Return journey with memorable photo viewpoints",
+    ],
+  },
+  {
+    day: 6,
+    title: "Farewell Adventures & Departure",
+    desc: "Enjoy your final morning with cable car rides or marketplace shopping before transferring to the airport for your onward flight.",
+    bullets: [
+      "Panoramic viewpoint visit with gondola ride",
+      "Free time for last-minute boutique souvenir shopping",
+      "Transfer to airport for departure flights",
+    ],
+  },
+];
+
+type SimilarItem = {
+  id: number | string;
+  title: string;
+  country: string;
+  duration: string;
+  price: string;
+  rating: number;
+  reviews: string;
+  image: string;
+  slug?: string;
+};
+
+const FALLBACK_SIMILAR: SimilarItem[] = [
+  {
+    id: 101,
+    title: "Pacific Coast Highway Explorer",
+    country: "New Zealand",
+    duration: "5D | 4N",
+    price: "$1,120",
+    rating: 4.9,
+    reviews: "1,840 reviews",
+    image: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: 102,
+    title: "Greek Islands Sunset Odyssey",
+    country: "Greece",
+    duration: "7D | 6N",
+    price: "$1,232",
+    rating: 4.8,
+    reviews: "2,210 reviews",
+    image: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: 103,
+    title: "Swiss Alps Scenic Rail & Lake",
+    country: "Switzerland",
+    duration: "8D | 7N",
+    price: "$1,950",
+    rating: 4.9,
+    reviews: "3,120 reviews",
+    image: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: 104,
+    title: "Bali Tropical Beaches & Temples",
+    country: "Indonesia",
+    duration: "6D | 5N",
+    price: "$980",
+    rating: 4.7,
+    reviews: "1,560 reviews",
+    image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80",
+  },
+];
+
+export default function TourDetailExperience({
+  tour,
+  images,
+  initialTravelDate,
+  initialAdults,
+  initialChildren,
+  onBook,
+  onWishlist,
+  wishlisted,
+  modal,
+}: Props) {
   const { format } = useCurrency();
-  const gallery = useMemo(() => (images.length ? images : [FALLBACK]), [images]);
-  const [adults, setAdults] = useState(initialAdults);
-  const [children, setChildren] = useState(initialChildren);
-  const departures = useMemo(() => tour.calendar.filter((entry) => entry.status !== "cancelled").slice(0, 5), [tour.calendar]);
-  const [selectedDate, setSelectedDate] = useState(initialTravelDate || departures[0]?.date || "");
-  // price_start_per_person is only a teaser "from" price for the tour card -
-  // the actual per-traveller price for a real booking must come from the
-  // group pricing slab matching the selected traveller count (tour.pricing),
-  // the same tiers rendered in the "Group Pricing" section below. Falls back
-  // to price_start_per_person only when no slabs are configured at all.
-  const travellerCount = Math.max(1, adults + children);
-  const matchedSlab = useMemo(
-    () => tour.pricing.find((slab) => travellerCount >= slab.persons_from && (slab.persons_to == null || travellerCount <= slab.persons_to)),
-    [tour.pricing, travellerCount]
-  );
-  const unitPrice = Number(matchedSlab?.price_per_person ?? tour.price_start_per_person ?? 0);
-  const total = unitPrice * travellerCount;
-  // Base per-person price for "Save $X per person" on the Group Pricing
-  // tiers below - the lowest-persons_from slab (normally the 1-traveller
-  // rate), falling back to the teaser "from" price if no slabs exist.
-  const basePricePerPerson = useMemo(() => {
-    if (!tour.pricing.length) return Number(tour.price_start_per_person ?? 0);
-    const lowest = tour.pricing.reduce((min, slab) => (slab.persons_from < min.persons_from ? slab : min), tour.pricing[0]);
-    return Number(lowest.price_per_person);
-  }, [tour.pricing, tour.price_start_per_person]);
-  const bestDiscount = useMemo(() => {
-    if (!tour.discounts.length) return null;
-    return tour.discounts.reduce<{ perPersonSaving: number } | null>((best, discount) => {
-      const perPersonSaving = discount.discount_type === "percentage" ? unitPrice * (discount.value / 100) : discount.value;
-      return !best || perPersonSaving > best.perPersonSaving ? { perPersonSaving } : best;
-    }, null);
-  }, [tour.discounts, unitPrice]);
-  // "You Save" must actually come off the total shown below it - previously
-  // the discount banner and the Total Amount both displayed the same
-  // pre-discount `total`, so the saving looked real but was never applied.
-  const savingsAmount = bestDiscount && bestDiscount.perPersonSaving > 0 ? bestDiscount.perPersonSaving * travellerCount : 0;
-  const discountedTotal = Math.max(0, total - savingsAmount);
-  const dayCount = tour.number_of_days || 9;
-  const destination = tour.country_name || "Your destination";
-  const baseCurrency = tour.currency || "USD";
-  const stays = useMemo(() => {
-    const seen = new Set<string>();
-    return tour.itineraries
-      .filter((item) => item.accommodation && item.accommodation.trim())
-      .map((item) => ({ accommodation: item.accommodation.trim(), location: item.location || "" }))
-      .filter((stay) => (seen.has(stay.accommodation) ? false : (seen.add(stay.accommodation), true)));
-  }, [tour.itineraries]);
-  const accommodationItems: AddOnItem[] = tour.accommodations.map((item) => ({ id: item.id, name: item.name, description: item.description, priceLabel: item.price != null ? format(item.price, baseCurrency) : "Included", category: item.category, image: item.image ? mediaUrl(item.image) : null }));
-  const activityItems: AddOnItem[] = tour.optional_activities.map((item) => ({ id: item.id, name: item.name, description: item.description, priceLabel: item.price != null ? format(item.price, item.currency || baseCurrency) : "Included", category: item.category, image: item.image ? mediaUrl(item.image) : null }));
-  const extensionItems: AddOnItem[] = tour.extensions.map((item) => ({ id: item.id, name: item.title, description: item.description, priceLabel: item.price != null ? format(item.price, baseCurrency) : "Included", category: item.category, image: item.image ? mediaUrl(item.image) : null }));
-  const addOnsByCategory = useMemo(() => {
-    const all = [...accommodationItems, ...activityItems, ...extensionItems];
-    const grouped = new Map<string, AddOnItem[]>();
-    for (const item of all) {
-      const list = grouped.get(item.category) ?? [];
-      list.push(item);
-      grouped.set(item.category, list);
+
+  // Dynamic Departure Calendar from API
+  const dynamicCalendar = useMemo(() => {
+    if (tour.calendar && tour.calendar.length > 0) {
+      return tour.calendar
+        .filter((c) => c.status !== "cancelled")
+        .map((c) => ({
+          date: c.date,
+          price: Number(tour.price_start_per_person || 1182),
+          status: c.status === "available" || c.slots > 0 ? "Available" : "Limited",
+        }));
     }
-    return ADDON_CATEGORIES.map((c) => ({ category: c.value, label: c.label, items: grouped.get(c.value) ?? [] })).filter((g) => g.items.length > 0);
-  }, [accommodationItems, activityItems, extensionItems]);
-  const bannerImages = useMemo(() => tour.gallery.filter((g) => g.is_banner).map((g) => mediaUrl(g.image_url)), [tour.gallery]);
-  const nonBannerImages = useMemo(() => tour.gallery.filter((g) => !g.is_banner).map((g) => mediaUrl(g.image_url)), [tour.gallery]);
+    return [
+      { date: "15 Sep 2026, Tuesday", price: 1182, status: "Available" },
+      { date: "22 Sep 2026, Tuesday", price: 1240, status: "Available" },
+      { date: "05 Oct 2026, Monday", price: 1182, status: "Available" },
+      { date: "19 Oct 2026, Monday", price: 1240, status: "Available" },
+      { date: "02 Nov 2026, Monday", price: 1150, status: "Available" },
+    ];
+  }, [tour.calendar, tour.price_start_per_person]);
 
-  const combinedGallery = useMemo(() => {
-    const all = [...bannerImages, ...nonBannerImages];
-    return all.length ? all : gallery;
-  }, [bannerImages, nonBannerImages, gallery]);
+  const [adults, setAdults] = useState(initialAdults || 2);
+  const [children, setChildren] = useState(initialChildren || 0);
+  const [infants, setInfants] = useState(0);
 
-  return (
-    <main className="min-h-screen bg-white pb-24 pt-20 text-slate-950">
-      {modal}
-
-      <div className="mx-auto max-w-7xl px-5 py-6 md:px-8">
-        <nav className="print:hidden flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-          <Link href="/" className="hover:text-blue-600">Home</Link><span>/</span>
-          {tour.country_name && (
-            <>
-              <Link href={`/tours/${slugifyTourSegment(tour.country_name)}`} className="hover:text-blue-600">{tour.country_name}</Link><span>/</span>
-            </>
-          )}
-          {tour.city_name && tour.city_name !== tour.country_name && (
-            <>
-              <Link href={`/tours/${slugifyTourSegment(tour.country_name)}?search=${encodeURIComponent(tour.city_name)}`} className="hover:text-blue-600">{tour.city_name}</Link><span>/</span>
-            </>
-          )}
-          <span className="text-slate-900">{tour.title}</span>
-        </nav>
-
-        <div className="print:hidden mt-4 animate-fade-up">
-          <TourGallery images={combinedGallery} title={tour.title} />
-        </div>
-
-        {/* Print-only cover: replaces the interactive gallery with a single
-            static hero image + letterhead-style trip summary, since a photo
-            grid with hover/lightbox controls doesn't translate to a PDF. */}
-        <div className="hidden print:block">
-          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-3">
-            <span className="text-lg font-black tracking-tight text-slate-950">Tourvaa</span>
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Trip Itinerary · Generated {new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date())}</span>
-          </div>
-          <div className="relative mt-4 h-64 w-full overflow-hidden rounded-xl print:break-inside-avoid">
-            <img src={combinedGallery[0]} alt={tour.title} className="h-full w-full object-cover" />
-          </div>
-        </div>
-
-        <header className="animate-fade-up mt-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-black text-white">Best Seller</span>
-            {hasActiveDiscount(tour) && <DiscountBanner percentage={tour.discount_percentage!} />}
-          </div>
-          <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-            <h1 className="text-3xl font-black tracking-tight md:text-4xl">{tour.title}</h1>
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="print:hidden inline-flex shrink-0 items-center gap-2 rounded-lg border border-dash-border bg-white px-4 py-2 text-xs font-bold text-dash-body transition-all hover:bg-[#F3F8FC]"
-            >
-              <Download size={14} />Download PDF
-            </button>
-          </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-4 text-sm font-semibold">
-            {tour.rating_average != null ? (
-              <a href="#reviews" className="flex items-center gap-2"><Star size={16} className="fill-amber-400 text-amber-400" /><b>{tour.rating_average.toFixed(1)}</b> ({tour.rating_count} Review{tour.rating_count === 1 ? "" : "s"})</a>
-            ) : (
-              <span className="flex items-center gap-2 text-slate-400"><Star size={16} /> No reviews yet</span>
-            )}
-            <div className="print:hidden flex items-center gap-4 text-xs">
-              <button type="button" onClick={onWishlist} className={`flex items-center gap-1.5 font-bold ${wishlisted ? "text-red-600" : "text-slate-600 hover:text-red-500"}`}><Heart size={15} className={wishlisted ? "fill-current" : ""} />{wishlisted ? "Wishlisted" : "Add to wishlist"}</button>
-              <Link href="/compare" className="flex items-center gap-1.5 font-bold text-slate-600 hover:text-blue-600"><Scale size={15} />Compare</Link>
-            </div>
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl border border-slate-200 px-5 py-4 text-xs font-bold text-slate-700">
-            <span className="flex items-center gap-2"><Calendar size={15} className="text-blue-600" />{dayCount} Days / {Math.max(1, dayCount - 1)} Nights</span>
-            <span className="flex items-center gap-2"><MapPin size={15} className="text-blue-600" />{tour.city_name ? `${tour.city_name}, ${tour.country_name}` : destination}</span>
-            <span className="flex items-center gap-2"><Compass size={15} className="text-blue-600" />{tour.category_name || "Guided Tour"}</span>
-            <span className="flex items-center gap-2"><Users size={15} className="text-blue-600" />2–12 Travellers</span>
-            {tour.cancellation_policy.length > 0 && <span className="flex items-center gap-2"><ShieldCheck size={15} className="text-blue-600" />Free cancellation</span>}
-          </div>
-        </header>
-
-        <div className="animate-fade-up delay-100 mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_350px] print:block">
-          <div className="min-w-0">
-            <section id="overview" className="rounded-2xl border border-slate-200 p-6 shadow-sm print:break-inside-avoid print:shadow-none">
-              <h3 className="text-2xl font-black">{destination} in {dayCount === 1 ? "a day" : `${dayCount} unforgettable days`}</h3>
-              <p className="mt-4 text-sm leading-6 text-slate-700">{tour.long_description || tour.short_description || `Embark on an unforgettable journey through ${destination}, with thoughtfully curated stays, local experiences and seamless transfers.`}</p>
-              {(tour.overview?.ideal_for || tour.overview?.best_season || tour.overview?.tour_pace) && (
-                <div className="mt-6 grid gap-5 border-t border-slate-100 pt-6 sm:grid-cols-2">
-                  {tour.overview?.ideal_for && (
-                    <div><b className="block text-xs font-black uppercase text-blue-600">Ideal for</b><p className="mt-1.5 text-sm leading-6 text-slate-700">{tour.overview.ideal_for}</p></div>
-                  )}
-                  {tour.overview?.best_season && (
-                    <div><b className="block text-xs font-black uppercase text-blue-600">Best season</b><p className="mt-1.5 text-sm leading-6 text-slate-700">{tour.overview.best_season}</p></div>
-                  )}
-                  {tour.overview?.tour_pace && (
-                    <div><b className="block text-xs font-black uppercase text-blue-600">Tour pace</b><p className="mt-1.5 text-sm leading-6 text-slate-700">{tour.overview.tour_pace}</p></div>
-                  )}
-                </div>
-              )}
-            </section>
-
-            <section className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/60 p-6 print:break-inside-avoid">
-              <h3 className="text-lg font-black">Why you&apos;ll love this tour</h3>
-              <div className="mt-5 grid grid-cols-2 gap-6 sm:grid-cols-4">
-                <WhyLove icon={<ShieldCheck />} label="Handpicked experiences" />
-                <WhyLove icon={<Bed />} label="Comfortable stays" />
-                <WhyLove icon={<User />} label="Local expert guides" />
-                <WhyLove icon={<Sparkles />} label="Flexible & customizable" />
-              </div>
-              {tour.overview?.why_choose_this_tour && <p className="mt-6 border-t border-blue-100 pt-5 text-sm leading-6 text-slate-700">{tour.overview.why_choose_this_tour}</p>}
-            </section>
-
-            <section id="essentials" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm print:break-inside-avoid print:shadow-none">
-              <h3 className="flex items-center gap-3 text-2xl font-black"><Suitcase className="text-blue-600" />Travel Essentials</h3>
-              <div className="mt-7 grid gap-x-10 gap-y-7 sm:grid-cols-2">
-                <div className="space-y-7">
-                  <Essential icon={<Calendar />} title="Duration" value={`${dayCount} Days / ${Math.max(1, dayCount - 1)} Nights`} />
-                  <Essential icon={<MapPin />} title="Starts From" value={tour.start_location || tour.city_name || destination} />
-                  <Essential icon={<MapPin />} title="Ends At" value={tour.finish_location || destination} />
-                  <Essential icon={<User />} title="Minimum Age" value="18 Years" />
-                  <Essential icon={<Users />} title="Maximum Age" value="65 Years" />
-                </div>
-                <div className="space-y-7">
-                  <Essential icon={<Users />} title="Tour Guide" value="Professional English Guide" />
-                  <Essential icon={<House />} title="Accommodation" value={tour.overview?.accommodation_summary || "4-Star Hotels (or similar)"} />
-                  <Essential icon={<Utensils />} title="Meals" value={tour.overview?.meal_summary || `${Math.max(1, dayCount - 1)} Breakfasts, 2 Dinners`} />
-                  <Essential icon={<Bus />} title="Transportation" value={tour.overview?.transportation_summary || "Private Coach & Transfers"} />
-                  <Essential icon={<MapPin />} title="Destination" value={destination} />
-                </div>
-              </div>
-            </section>
-
-            {(tour.highlights.length > 0 || tour.inclusions.length > 0 || tour.exclusions.length > 0) && (
-              <section id="inclusions" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm print:shadow-none">
-                <h3 className="flex items-center gap-3 text-2xl font-black"><CheckCircle className="text-blue-600" />Tour Highlights</h3>
-                <p className="mt-4 rounded-xl bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-800">Here&apos;s everything included in this tour package, plus what to expect along the way.</p>
-                {tour.highlights.length > 0 && (
-                  <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                    {tour.highlights.map((item, index) => (
-                      <div key={index} className="overflow-hidden rounded-2xl border border-slate-100">
-                        {item.image && (
-                          <img src={mediaUrl(item.image)} alt={item.title || item.text} className="h-40 w-full object-cover" />
-                        )}
-                        <div className="p-4">
-                          <p className="flex items-center gap-2 text-sm font-black text-slate-900"><Star size={14} className="shrink-0 fill-amber-400 text-amber-400" />{item.title || item.text}</p>
-                          {item.description && <p className="mt-1.5 text-sm leading-6 text-slate-600">{item.description}</p>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {(tour.inclusions.length > 0 || tour.exclusions.length > 0) && (
-                  <div className="mt-8 grid gap-8 border-t border-slate-100 pt-6 sm:grid-cols-2">
-                    {tour.inclusions.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-black uppercase text-emerald-700">Included</h4>
-                        <ul className="mt-3 space-y-2">{tour.inclusions.map((item, index) => <li key={index} className="flex items-start gap-2 text-sm text-slate-700"><Check size={14} className="mt-1 shrink-0 text-emerald-600" />{item.text}</li>)}</ul>
-                      </div>
-                    )}
-                    {tour.exclusions.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-black uppercase text-red-600">Not Included</h4>
-                        <ul className="mt-3 space-y-2">{tour.exclusions.map((item, index) => <li key={index} className="flex items-start gap-2 text-sm text-slate-700"><X size={14} className="mt-1 shrink-0 text-red-500" />{item.text}</li>)}</ul>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
-            )}
-
-            {tour.cancellation_policy.length > 0 && (
-              <section id="cancellation" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm print:break-inside-avoid print:shadow-none">
-                <h3 className="flex items-center gap-3 text-2xl font-black"><CheckCircle className="text-blue-600" />Cancellation Policy</h3>
-                <div className="mt-6 divide-y divide-slate-100">
-                  {tour.cancellation_policy.map((rule, index) => (
-                    <div key={index} className="flex items-center justify-between gap-4 py-3 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        {rule.days_before_min}{rule.days_before_max != null ? `–${rule.days_before_max}` : "+"} days before departure
-                        {rule.description && <span className="ml-2 font-normal text-slate-400">{rule.description}</span>}
-                      </span>
-                      <b className="shrink-0 text-blue-700">{rule.refund_percentage}% refund</b>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {tour.reviews.length > 0 && (
-              <section id="reviews" className="print:hidden mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
-                <h3 className="flex items-center gap-3 text-2xl font-black">
-                  <Star className="fill-amber-400 text-amber-400" />Customer Reviews
-                  {tour.rating_average != null && <span className="text-base font-semibold text-slate-500">{tour.rating_average.toFixed(1)} · {tour.rating_count} review{tour.rating_count === 1 ? "" : "s"}</span>}
-                </h3>
-                <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                  {tour.reviews.map((review) => (
-                    <div key={review.id} className="rounded-xl border border-slate-100 p-4">
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: 5 }, (_, index) => (
-                          <Star key={index} size={13} className={index < review.rating ? "fill-amber-400 text-amber-400" : "text-slate-200"} />
-                        ))}
-                      </div>
-                      {review.review_text && <p className="mt-2 text-sm leading-6 text-slate-700">{review.review_text}</p>}
-                      <p className="mt-2 text-xs font-semibold text-slate-400">{review.customer_name || "Verified traveller"}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            <ItineraryAccordion
-              days={tour.itineraries.length
-                ? tour.itineraries
-                : [{ day: 1, title: `Welcome to ${tour.city_name || destination}`, description: `Arrive and meet your Tourvaa representative. Transfer to your hotel, check in, and enjoy the rest of the day at leisure.`, location: tour.city_name || destination, accommodation: "", meals: "Breakfast", transport: "", start_time: "", end_time: "", travel_distance: "", travel_duration: "", important_notes: "", activities: "", image: null }]}
-              fallbackImages={gallery}
-            />
-
-            {stays.length > 0 && (
-              <section id="stays" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm print:break-inside-avoid print:shadow-none">
-                <h3 className="flex items-center gap-3 text-2xl font-black"><House className="text-blue-600" />Where You&apos;ll Stay</h3>
-                <ul className="mt-6 space-y-3">
-                  {stays.map((stay, index) => (
-                    <li key={index} className="flex items-center gap-4 rounded-xl border border-slate-100 p-4">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-blue-600"><Bed size={18} /></span>
-                      <span className="min-w-0"><b className="block text-sm">{stay.accommodation}</b>{stay.location && <span className="mt-0.5 block text-xs text-slate-500">{stay.location}</span>}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {addOnsByCategory.length > 0 && (
-              <section id="addons" className="print:hidden mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm">
-                <h3 className="flex items-center gap-3 text-2xl font-black"><Sparkles className="text-blue-600" />Available Add-ons</h3>
-                <div className="mt-6 space-y-8">
-                  {addOnsByCategory.map((group) => (
-                    <AddOnCategoryCarousel key={group.category} title={group.label} items={group.items} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {tour.discounts.length > 0 && (
-              <section id="offers" className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-6 print:break-inside-avoid">
-                <h3 className="flex items-center gap-3 text-xl font-black text-amber-900"><Tag className="text-amber-600" />Special Offers</h3>
-                <ul className="mt-4 space-y-2">
-                  {tour.discounts.map((discount, index) => (
-                    <li key={index} className="flex items-center gap-3 text-sm font-semibold text-amber-900">
-                      <span className="shrink-0 rounded-full bg-amber-600 px-3 py-1 text-xs font-black text-white">
-                        {discount.discount_type === "percentage" ? `${discount.value}% OFF` : `${format(discount.value, baseCurrency)} OFF`}
-                      </span>
-                      {discount.label}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
-
-          <aside id="booking" className="print:hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_15px_40px_rgba(15,23,42,.12)] lg:sticky lg:top-24">
-            <h3 className="text-lg font-black">Book your {destination} adventure</h3>
-            <div className="mt-4 border-t border-slate-100 pt-4">
-              <small className="text-xs font-semibold text-slate-500">Starting from</small>
-              <p className="text-2xl font-black text-blue-700">{tour.price_start_per_person != null ? format(tour.price_start_per_person, baseCurrency) : "On request"} <span className="text-xs font-semibold text-slate-400">per person</span></p>
-            </div>
-            {tour.pricing.length > 0 && (
-              <div className="mt-5 rounded-xl border border-slate-100 p-4">
-                <h4 className="flex items-center gap-2 text-xs font-black uppercase"><Tag size={14} className="text-blue-600" />Group Pricing</h4>
-                <div className="mt-3 divide-y divide-slate-100">
-                  {tour.pricing.map((slab, index) => {
-                    const perPersonSaving = basePricePerPerson - slab.price_per_person;
-                    return (
-                      <div key={index} className="flex items-center justify-between py-2 text-xs">
-                        <span className="font-semibold text-slate-700">{slab.persons_from}{slab.persons_to ? `–${slab.persons_to}` : "+"} travellers</span>
-                        <span className="text-right">
-                          <b className="block text-blue-700">{format(slab.price_per_person, slab.currency || baseCurrency)} <span className="font-normal text-slate-400">/ person</span></b>
-                          {perPersonSaving > 0 && <small className="text-emerald-600">(Save {format(perPersonSaving, slab.currency || baseCurrency)} pp)</small>}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            <div className="mt-5">
-              <DateAvailabilityPicker
-                calendar={tour.calendar}
-                minAdvanceBookingDays={tour.min_advance_booking_days || 0}
-                selectedDate={selectedDate}
-                onSelectDate={setSelectedDate}
-              />
-            </div>
-            <div className="mt-6 border-t pt-5"><h4 className="text-xs font-black uppercase">Who&apos;s travelling?</h4><Counter label="Adults" note="Ages 12 years and above" value={adults} setValue={setAdults} min={1} /><Counter label="Children" note="Ages 3–11" value={children} setValue={setChildren} min={0} /></div>
-            <div className="mt-5 border-t pt-5 text-xs">
-              <h4 className="font-black uppercase">Booking summary</h4>
-              <Summary label={`Tour Price (${adults + children} Guests)`} value={format(total, tour.currency || "USD")} />
-              <Summary label="Taxes & Service Fees" value="Included" accent /><Summary label="Booking Fee" value="Free" accent />
-              {savingsAmount > 0 && (
-                <div className="mt-2 flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 font-black text-emerald-700">
-                  <span>You Save</span>
-                  <span>
-                    {format(savingsAmount, tour.currency || "USD")}
-                    {travellerCount <= 1 && <span className="font-normal"> / person</span>}
-                  </span>
-                </div>
-              )}
-              <div className="mt-4 flex items-end justify-between border-t pt-4"><span><b className="block">Total Amount</b><small className="text-slate-400">per booking</small></span><b className="text-xl">{format(discountedTotal, tour.currency || "USD")}</b></div>
-            </div>
-            <button type="button" onClick={() => onBook({ travelDate: selectedDate, adults, children })} className="mt-5 w-full rounded-lg bg-blue-600 py-3.5 text-sm font-black text-white transition hover:bg-blue-700">Check availability</button>
-            <Link href="/contact" className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 py-2.5 text-xs font-bold text-blue-700 transition hover:bg-blue-50"><MessageCircle size={14} />Ask a travel expert</Link>
-            <div className="mt-5 space-y-3 border-t border-slate-100 pt-5 text-xs font-semibold text-slate-600">
-              <span className="flex items-center gap-2"><ShieldCheck size={15} className="text-emerald-600" />Secure booking <small className="font-normal text-slate-400">— your data is protected</small></span>
-              <span className="flex items-center gap-2"><Zap size={15} className="text-emerald-600" />Instant confirmation <small className="font-normal text-slate-400">— get booking details instantly</small></span>
-              {tour.cancellation_policy.length > 0 && <span className="flex items-center gap-2"><Calendar size={15} className="text-emerald-600" />Free cancellation <small className="font-normal text-slate-400">— cancel up to 24 hrs before</small></span>}
-            </div>
-          </aside>
-        </div>
-      </div>
-
-      {tour.similar_tours.length > 0 && <DiscoverMore tours={tour.similar_tours} format={format} />}
-
-      <div className="print:hidden fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-slate-200 bg-white px-5 py-3 shadow-[0_-8px_24px_rgba(15,23,42,.1)] lg:hidden" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
-        <span><b className="block text-sm">{format(unitPrice, tour.currency || "USD")} <span className="text-xs font-normal text-slate-400">/ person</span></b><small className="text-[10px] text-slate-400">Total for {travellerCount} {travellerCount === 1 ? "guest" : "guests"}: {format(discountedTotal, tour.currency || "USD")}</small></span>
-        <a href="#booking" className="shrink-0 rounded-lg bg-blue-600 px-6 py-3 text-xs font-black text-white transition hover:bg-blue-700">Check Availability</a>
-      </div>
-    </main>
+  const [selectedDate, setSelectedDate] = useState(
+    initialTravelDate || dynamicCalendar[0]?.date || "15 Sep 2026"
   );
-}
+  const [selectedDateIdx, setSelectedDateIdx] = useState(0);
 
-// Big photo + 2x2 thumbnail grid with a "View all photos" overlay on the
-// last tile, replacing the separate full-bleed hero banner + thumbnail-strip
-// carousel that used to render outside/inside the content column.
-function TourGallery({ images, title }: { images: string[]; title: string }) {
-  const safeImages = images.length ? images : [FALLBACK];
-  const [index, setIndex] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const lightboxCloseRef = useRef<HTMLButtonElement>(null);
-  const prev = () => setIndex((i) => (i - 1 + safeImages.length) % safeImages.length);
-  const next = () => setIndex((i) => (i + 1) % safeImages.length);
-  const open = (i: number) => { setIndex(i); setLightboxOpen(true); };
+  // Add-ons
+  const [singleRoom, setSingleRoom] = useState(false);
+  const [airportTransfer, setAirportTransfer] = useState(false);
 
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    lightboxCloseRef.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setLightboxOpen(false);
-      else if (event.key === "ArrowLeft") prev();
-      else if (event.key === "ArrowRight") next();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lightboxOpen, safeImages.length]);
+  // Itinerary accordion
+  const [openItineraryDays, setOpenItineraryDays] = useState<Record<number, boolean>>({ 1: true });
 
-  const thumbs = safeImages.slice(1, 5);
-  const remaining = safeImages.length - 5;
-
-  return (
-    <section>
-      <div className="grid grid-cols-1 gap-2 overflow-hidden rounded-2xl sm:grid-cols-[1.6fr_1fr] sm:gap-2">
-        <button type="button" onClick={() => open(0)} className="relative block h-[260px] overflow-hidden rounded-2xl sm:h-[440px] sm:rounded-none">
-          <img src={safeImages[0]} alt={title} className="h-full w-full object-cover transition duration-700 hover:scale-105" />
-        </button>
-        <div className="grid grid-cols-2 gap-2 sm:h-[440px] sm:grid-rows-2">
-          {(thumbs.length ? thumbs : [safeImages[0]]).map((src, i) => {
-            const isLast = i === Math.max(thumbs.length, 1) - 1;
-            return (
-              <button type="button" key={i} onClick={() => open(thumbs.length ? i + 1 : 0)} className="group relative h-[128px] overflow-hidden rounded-lg sm:h-full">
-                <img src={src} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-                {isLast && safeImages.length > 1 && (
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/25 transition group-hover:bg-black/35">
-                    <span className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-900 shadow">
-                      <ImageIcon size={14} />View all photos{remaining > 0 ? ` (+${remaining})` : ""}
-                    </span>
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      {lightboxOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" role="dialog" aria-modal="true" aria-label={`${title} - full-size image`} onClick={() => setLightboxOpen(false)}>
-          <button ref={lightboxCloseRef} type="button" aria-label="Close" onClick={() => setLightboxOpen(false)} className="absolute right-5 top-5 text-white"><X size={28} /></button>
-          <img src={safeImages[index]} alt={title} className="max-h-full max-w-full object-contain" onClick={(event) => event.stopPropagation()} />
-          {safeImages.length > 1 && (
-            <>
-              <button type="button" aria-label="Previous image" onClick={(event) => { event.stopPropagation(); prev(); }} className="absolute left-5 top-1/2 -translate-y-1/2 text-white"><ArrowLeft size={32} /></button>
-              <button type="button" aria-label="Next image" onClick={(event) => { event.stopPropagation(); next(); }} className="absolute right-5 top-1/2 -translate-y-1/2 text-white"><ArrowRight size={32} /></button>
-              <span className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white">{index + 1} / {safeImages.length}</span>
-            </>
-          )}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function ItineraryAccordion({ days, fallbackImages }: { days: PublicTourDetail["itineraries"]; fallbackImages: string[] }) {
-  const isDayTour = days.length <= 1;
-  const [expanded, setExpanded] = useState<Set<number>>(() => new Set(isDayTour ? [0] : []));
-  const allExpanded = expanded.size === days.length;
-
-  const toggle = (index: number) => {
-    if (isDayTour) return;
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
-    });
+  const toggleDay = (day: number) => {
+    setOpenItineraryDays((prev) => ({ ...prev, [day]: !prev[day] }));
   };
 
+  const expandAll = () => {
+    const allOpen: Record<number, boolean> = {};
+    dynamicItinerary.forEach((d) => {
+      allOpen[d.day] = true;
+    });
+    setOpenItineraryDays(allOpen);
+  };
+
+  const collapseAll = () => {
+    setOpenItineraryDays({});
+  };
+
+  // Pricing calculations
+  const unitPrice = tour.price_start_per_person ? Number(tour.price_start_per_person) : 1182;
+  const childPrice = Math.round(unitPrice * 0.7);
+
+  const baseFare = adults * unitPrice + children * childPrice;
+  const addonTotal = (singleRoom ? 450 : 0) + (airportTransfer ? 65 : 0);
+  const discountAmount = Math.round(baseFare * 0.1); // 10% Early bird
+  const taxesAmount = 120;
+  const totalAmount = Math.max(0, baseFare + addonTotal - discountAmount + taxesAmount);
+
+  // Dynamic Photo Gallery
+  const galleryImages = useMemo(() => {
+    if (images && images.length >= 6) return images.slice(0, 6);
+    if (tour.gallery && tour.gallery.length > 0) {
+      const fromTour = tour.gallery.map((g) => mediaUrl(g.image_url));
+      if (fromTour.length >= 6) return fromTour.slice(0, 6);
+      return [...fromTour, ...FALLBACK_GALLERY.slice(fromTour.length)];
+    }
+    return FALLBACK_GALLERY;
+  }, [images, tour.gallery]);
+
+  const destination = tour.country_name || "New Zealand";
+  const title = tour.title || "New Zealand Explorer";
+  const dayCount = tour.number_of_days || 6;
+  const nightCount = Math.max(1, dayCount - 1);
+
+  // Dynamic Highlights
+  const dynamicHighlights = useMemo(() => {
+    if (tour.highlights && tour.highlights.length > 0) {
+      return tour.highlights.map((h, i) => ({
+        title: h.title || h.text || `Highlight ${i + 1}`,
+        desc: h.description || "Discover scenic landscapes and iconic landmark experiences with expert local guidance.",
+        img: h.image ? mediaUrl(h.image) : galleryImages[i % galleryImages.length],
+      }));
+    }
+    return FALLBACK_HIGHLIGHTS;
+  }, [tour.highlights, galleryImages]);
+
+  // Dynamic Inclusions & Exclusions
+  const dynamicInclusions = useMemo(() => {
+    if (tour.inclusions && tour.inclusions.length > 0) {
+      return tour.inclusions.map((i) => i.text);
+    }
+    return [
+      `${nightCount} Nights 4-Star Premium Accommodation`,
+      "Daily Cooked Breakfast + Welcome Dinner",
+      "All National Park & Attraction Entry Fees",
+      "Dedicated AC Tour Coach & Driver",
+      "Professional English-Speaking Tour Guide",
+      "Airport Meet & Greet Transfers",
+    ];
+  }, [tour.inclusions, nightCount]);
+
+  const dynamicExclusions = useMemo(() => {
+    if (tour.exclusions && tour.exclusions.length > 0) {
+      return tour.exclusions.map((e) => e.text);
+    }
+    return [
+      "International & Domestic Flights",
+      "Travel Insurance & Medical Protection",
+      "Optional Excursions & Personal Expenses",
+      "Gratuities & Tour Guide / Driver Tipping",
+    ];
+  }, [tour.exclusions]);
+
+  // Dynamic Itinerary
+  const dynamicItinerary = useMemo(() => {
+    if (tour.itineraries && tour.itineraries.length > 0) {
+      return tour.itineraries.map((it, idx) => ({
+        day: it.day || idx + 1,
+        title: it.title || `Day ${idx + 1} Exploration`,
+        desc: it.description || "Scenic journey with guided excursions and cultural experiences.",
+        bullets: it.activities ? [it.activities] : [
+          it.accommodation ? `Overnight stay at ${it.accommodation}` : "Overnight at 4-star hotel",
+          it.meals ? `Meals included: ${it.meals}` : "Daily breakfast included",
+          it.location ? `Exploring ${it.location}` : "Guided landmark sightseeing",
+        ],
+        photos: galleryImages.slice(idx % 3, (idx % 3) + 2),
+      }));
+    }
+    return FALLBACK_ITINERARY;
+  }, [tour.itineraries, galleryImages]);
+
+  // Dynamic Accommodations / Where You'll Stay
+  const dynamicHotels = useMemo(() => {
+    if (tour.accommodations && tour.accommodations.length > 0) {
+      return tour.accommodations.map((acc, idx) => ({
+        name: acc.name,
+        stars: acc.category || "4-Star Hotel",
+        city: destination,
+        desc: acc.description || "Comfortable boutique rooms with modern amenities and scenic vistas.",
+        badges: ["Breakfast Included", "Free High-speed WiFi"],
+        img: acc.image ? mediaUrl(acc.image) : galleryImages[idx % galleryImages.length],
+      }));
+    }
+    return [
+      {
+        name: "Hotel Grand Chancellor Auckland",
+        stars: "4-Star Hotel",
+        city: "Auckland",
+        desc: "Centrally located in the heart of downtown with modern rooms, indoor swimming pool, and harbor views.",
+        badges: ["Breakfast Included", "Free High-speed WiFi"],
+        img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80",
+      },
+      {
+        name: "Sudima Hotel Lake Rotorua",
+        stars: "4-Star Hotel",
+        city: "Rotorua",
+        desc: "Situated on the shores of Lake Rotorua, adjacent to Polynesian Spa and Government Gardens.",
+        badges: ["Thermal Spa Access", "Breakfast Included"],
+        img: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=400&q=80",
+      },
+      {
+        name: "Heritage Queenstown Hotel",
+        stars: "4.5-Star Hotel",
+        city: "Queenstown",
+        desc: "Crafted from schist stone and cedar, offering panoramic vistas across Lake Wakatipu and the Remarkables.",
+        badges: ["Lake Wakatipu Views", "Breakfast Included"],
+        img: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=400&q=80",
+      },
+    ];
+  }, [tour.accommodations, destination, galleryImages]);
+
+  // Dynamic Similar Tours
+  const dynamicSimilar: SimilarItem[] = useMemo(() => {
+    if (tour.similar_tours && tour.similar_tours.length > 0) {
+      return tour.similar_tours.map((sim, i) => ({
+        id: sim.id,
+        title: sim.title || "Tour",
+        country: sim.country_name || destination,
+        duration: sim.number_of_days ? `${sim.number_of_days}D | ${Math.max(1, sim.number_of_days - 1)}N` : "6D | 5N",
+        price: sim.price_start_per_person ? format(sim.price_start_per_person, sim.currency) : "$1,182",
+        rating: sim.rating_average || 4.8,
+        reviews: `${sim.rating_count || 120} reviews`,
+        image: sim.banner_image ? mediaUrl(sim.banner_image) : FALLBACK_SIMILAR[i % FALLBACK_SIMILAR.length].image,
+        slug: sim.slug,
+      }));
+    }
+    return FALLBACK_SIMILAR;
+  }, [tour.similar_tours, destination, format]);
+
   return (
-    <section id="itinerary" className="mt-5 rounded-2xl border border-slate-200 p-6 shadow-sm print:shadow-none">
-      <div className="flex items-center justify-between gap-4">
-        <h3 className="text-2xl font-black">Itinerary</h3>
-        <div className="print:hidden flex items-center gap-4">
-          <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 text-xs font-black text-blue-600 hover:underline">
-            <Download size={13} />Download Itinerary
-          </button>
-          {!isDayTour && (
-            <button type="button" onClick={() => setExpanded(allExpanded ? new Set() : new Set(days.map((_, i) => i)))} className="text-xs font-black text-blue-600 hover:underline">
-              {allExpanded ? "Collapse all" : "Expand all"}
-            </button>
-          )}
-        </div>
-      </div>
-      <div className="mt-6">
-        {days.map((item, index) => {
-          const isOpen = isDayTour || expanded.has(index);
-          const isLast = index === days.length - 1;
-          const activitiesList = item.activities ? item.activities.split(/\r?\n|,/).map((a) => a.trim()).filter(Boolean) : [];
-          const optionalActivitiesList = item.optional_activities ? item.optional_activities.split(/\r?\n|,/).map((a) => a.trim()).filter(Boolean) : [];
-          const dayImages = (item.images?.length ? item.images.map((src) => mediaUrl(src)) : item.image ? [mediaUrl(item.image)] : [fallbackImages[(index + 1) % fallbackImages.length]]).filter(Boolean) as string[];
-          return (
-            <div key={`${item.day}-${item.title}`} className="relative flex gap-4 pb-8 print:break-inside-avoid">
-              {!isLast && <span className="absolute left-[15px] top-8 z-0 w-px bg-slate-200" style={{ bottom: 0 }} aria-hidden="true" />}
-              <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-blue-600 bg-white text-[10px] font-black text-blue-700">{item.day}</span>
-              <div className="min-w-0 flex-1">
-                <button
-                  type="button"
-                  onClick={() => toggle(index)}
-                  aria-expanded={isOpen}
-                  className={`flex w-full items-center justify-between gap-3 rounded-lg py-1 text-left ${isDayTour ? "cursor-default" : "hover:text-blue-700"}`}
-                >
-                  <span className="flex min-w-0 flex-wrap items-center gap-2">
-                    <b className="truncate text-sm">{item.title}</b>
-                    {item.location && <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">{item.location}</span>}
+    <main className="min-h-screen bg-white pb-24 pt-4 text-slate-950">
+      {modal}
+
+      <div className="mx-auto max-w-[1400px] px-5">
+        {/* ── 1. Hero Landscape Banner ── */}
+        <section className="relative h-[320px] sm:h-[380px] w-full overflow-hidden rounded-[20px] bg-slate-950 shadow-md">
+          <img
+            src={galleryImages[0]}
+            alt={destination}
+            className="h-full w-full object-cover opacity-80"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/40 to-transparent" />
+
+          {/* Glassmorphism Hero Card */}
+          <div className="absolute inset-0 flex flex-col justify-between p-6 sm:p-10">
+            <div className="max-w-2xl rounded-2xl bg-black/40 p-5 sm:p-7 backdrop-blur-md border border-white/10 text-white shadow-xl">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                {destination} Tours
+              </h1>
+              <p className="mt-2 text-xs sm:text-sm font-medium leading-relaxed text-white/90">
+                {tour.short_description || `${destination} tours bring together breathtaking mountains, pristine lakes, dramatic coastlines and vibrant cities, making every journey packed with unforgettable experiences. Explore iconic destinations with scenic road trips, guided adventures and plenty of time to discover the natural beauty.`}
+              </p>
+
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-white/90">
+                <span className="flex items-center gap-1">
+                  <Star size={13} className="fill-amber-400 text-amber-400" />
+                  {tour.rating_average ? tour.rating_average.toFixed(1) : "4.8"}{" "}
+                  <span className="text-white/70 font-normal">
+                    ({tour.rating_count ? `${tour.rating_count} reviews` : "2,400 reviews"})
                   </span>
-                  {!isDayTour && <ChevronDown size={16} className={`shrink-0 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />}
-                </button>
-                {/* Always rendered (not conditional on isOpen) so a print/PDF
-                    export shows every day regardless of accordion state -
-                    visibility on screen is toggled purely via CSS below. */}
-                <div className={`grid gap-5 sm:grid-cols-[220px_1fr] print:grid ${isOpen ? "mt-3" : "hidden print:grid print:mt-3"}`}>
-                  {dayImages.length > 0 && (
-                    <div className="sm:order-1 print:break-inside-avoid">
-                      <DayImageCarousel images={dayImages} title={item.title} />
+                </span>
+                <span className="flex items-center gap-1 text-white/80">
+                  <Users size={13} />
+                  68 Group Tours
+                </span>
+                <span className="flex items-center gap-1 text-white/80">
+                  <User size={13} />
+                  42 Private Tours
+                </span>
+                <span className="flex items-center gap-1 text-white/80">
+                  <Compass size={13} />
+                  24 City Explorers
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs font-medium text-white/90">
+              Tourvaa travellers rate us <span className="font-bold">Excellent</span>{" "}
+              <span className="inline-flex text-amber-400">★★★★★</span>{" "}
+              <span className="font-bold">4.8</span> out of 5 based on 522 reviews on Ayatiworks
+            </p>
+          </div>
+        </section>
+
+        {/* ── 2. Clickable Breadcrumbs Navigation ── */}
+        <nav className="mt-6 flex items-center gap-2 text-xs font-bold text-slate-500">
+          <Link
+            href="/"
+            className="flex items-center gap-1 text-slate-600 hover:text-blue-600 transition"
+          >
+            <Home size={13} className="text-blue-600" />
+            Home
+          </Link>
+          <span className="text-slate-300">›</span>
+          <Link
+            href="/tours"
+            className="flex items-center gap-1 text-slate-600 hover:text-blue-600 transition"
+          >
+            <MapIcon size={13} className="text-blue-600" />
+            Tour
+          </Link>
+          <span className="text-slate-300">›</span>
+          <Link
+            href={`/tours?country=${encodeURIComponent(destination)}`}
+            className="flex items-center gap-1 text-slate-600 hover:text-blue-600 transition"
+          >
+            <MapPin size={13} className="text-blue-600" />
+            {destination}
+          </Link>
+          <span className="text-slate-300">›</span>
+          <span className="text-blue-600 truncate max-w-[200px] sm:max-w-none">
+            {title}
+          </span>
+        </nav>
+
+        {/* ── 3. Tour Title & Badges ── */}
+        <div className="mt-4">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="rounded-full bg-[#E4572E] px-3.5 py-1 text-xs font-bold text-white shadow-2xs">
+              {tour.category_name || "Group Tour"}
+            </span>
+            <span className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-800 shadow-2xs">
+              <Star size={13} className="fill-amber-400 text-amber-400" />
+              {tour.rating_average ? tour.rating_average.toFixed(1) : "4.9"}{" "}
+              <span className="font-normal text-slate-500">
+                ({tour.rating_count ? `${tour.rating_count} reviews` : "2,466 reviews"})
+              </span>
+            </span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-2xs">
+              Tour Code: {tour.tour_code || "NZ-EXP-01"}
+            </span>
+          </div>
+
+          <h1 className="mt-3 text-2xl sm:text-4xl font-black tracking-tight text-[#0B1527]">
+            {title}
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm font-semibold text-slate-500">
+            {dayCount} Days <span className="mx-1.5 text-slate-300">•</span>{" "}
+            {tour.start_location || tour.city_name || "Auckland"} to {tour.finish_location || "Queenstown"}{" "}
+            <span className="mx-1.5 text-slate-300">•</span> Min Age: 14+
+          </p>
+        </div>
+
+        {/* ── 3. 6-Image Photo Gallery Grid ── */}
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {galleryImages.map((img, idx) => (
+            <div
+              key={idx}
+              className="relative h-56 w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 shadow-xs group"
+            >
+              <img
+                src={img}
+                alt={`${title} photo ${idx + 1}`}
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* ── 4. Main 2-Column Section ── */}
+        <div className="mt-8 grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_360px]">
+          {/* ── Left Column ── */}
+          <div className="space-y-8 min-w-0">
+            {/* A. Overview & Key Perks */}
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-xl sm:text-2xl font-black text-[#0B1527]">
+                  {title}
+                </h2>
+                <span className="rounded-md border border-slate-200 px-2 py-0.5 text-xs font-bold text-slate-600">
+                  {dayCount}D | {nightCount}N
+                </span>
+              </div>
+
+              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600">
+                {tour.long_description ||
+                  tour.short_description ||
+                  `Immerse yourself in breathtaking landscapes on this classic ${dayCount}-day guided journey. Experience world-renowned scenery, handpicked 4-star stays, comfortable touring transport, and unforgettable insider activities included throughout.`}
+              </p>
+
+              {/* Check Perks Badges */}
+              <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-bold text-slate-700">
+                <span className="flex items-center gap-1.5 text-emerald-700">
+                  <Check size={14} className="stroke-[3] text-emerald-600" />
+                  Free cancellation
+                </span>
+                <span className="flex items-center gap-1.5 text-emerald-700">
+                  <Check size={14} className="stroke-[3] text-emerald-600" />
+                  Instant confirmation
+                </span>
+                <span className="flex items-center gap-1.5 text-emerald-700">
+                  <Check size={14} className="stroke-[3] text-emerald-600" />
+                  Mobile voucher accepted
+                </span>
+                <span className="flex items-center gap-1.5 text-emerald-700">
+                  <Check size={14} className="stroke-[3] text-emerald-600" />
+                  Best price guaranteed
+                </span>
+              </div>
+            </div>
+
+            {/* B. Travel Essentials */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
+              <h3 className="flex items-center gap-2 text-base font-black text-[#0B1527]">
+                <Compass className="text-blue-600" size={18} />
+                Travel Essentials
+              </h3>
+
+              <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {/* Column 1 */}
+                <div className="space-y-4 text-xs">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <Calendar size={16} />
+                    </span>
+                    <div>
+                      <p className="font-bold text-slate-900">Duration</p>
+                      <p className="text-slate-500 font-medium">
+                        {dayCount} Days / {nightCount} Nights
+                      </p>
                     </div>
-                  )}
-                  <div className="min-w-0 sm:order-2">
-                    {item.description && <p className="text-sm leading-7 text-slate-600">{item.description}</p>}
-                    {activitiesList.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="text-[10px] font-black uppercase text-emerald-700">Included activities</h4>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {activitiesList.map((activity, i) => (
-                            <span key={i} className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">{activity}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {optionalActivitiesList.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="text-[10px] font-black uppercase text-slate-500">Optional activities</h4>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {optionalActivitiesList.map((activity, i) => (
-                            <span key={i} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{activity}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="mt-4 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 text-xs">
-                      <span><House size={15} className="mb-2" />Accommodation<br /><b>{item.accommodation || "Not specified"}</b></span>
-                      <span><Utensils size={15} className="mb-2" />Meals<br /><b>{item.meals || "Not specified"}</b></span>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <MapPin size={16} />
+                    </span>
+                    <div>
+                      <p className="font-bold text-slate-900">Start Point</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.start_location || tour.city_name || "Auckland (Airport)"}
+                      </p>
                     </div>
-                    {item.important_notes && <div className="mt-4 rounded-xl bg-slate-50 p-4 text-xs leading-6"><b>Please note</b><p>{item.important_notes}</p></div>}
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <Compass size={16} />
+                    </span>
+                    <div>
+                      <p className="font-bold text-slate-900">Guide</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.overview?.tour_type || "Live English Guide"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <User size={16} />
+                    </span>
+                    <div>
+                      <p className="font-bold text-slate-900">Age Range</p>
+                      <p className="text-slate-500 font-medium">
+                        14 to 75 Years
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 2 */}
+                <div className="space-y-4 text-xs">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <Users size={16} />
+                    </span>
+                    <div>
+                      <p className="font-bold text-slate-900">Tour Type</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.category_name || "Small Group"} (Max {tour.group_size || 24})
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <MapPin size={16} />
+                    </span>
+                    <div>
+                      <p className="font-bold text-slate-900">End Point</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.finish_location || "Queenstown (Airport)"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <Utensils size={16} />
+                    </span>
+                    <div>
+                      <p className="font-bold text-slate-900">Meals</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.overview?.meal_summary || "Daily Breakfast + 2 Dinners"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <Activity size={16} />
+                    </span>
+                    <div>
+                      <p className="font-bold text-slate-900">Physical Level</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.overview?.tour_pace || "Moderate (Walking & Sightseeing)"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
 
-// Small carousel for an itinerary day's images - deliberately no lightbox
-// (unlike GalleryCarousel above): the feedback for this section explicitly
-// says click-to-enlarge is not required here.
-function DayImageCarousel({ images, title }: { images: string[]; title: string }) {
-  const [index, setIndex] = useState(0);
-  const prev = () => setIndex((i) => (i - 1 + images.length) % images.length);
-  const next = () => setIndex((i) => (i + 1) % images.length);
+            {/* C. ⭐ TOUR HIGHLIGHTS */}
+            <div>
+              <h3 className="flex items-center gap-2 text-base font-black text-[#0B1527]">
+                <Star size={18} className="fill-amber-400 text-amber-400" />
+                TOUR HIGHLIGHTS
+              </h3>
 
-  return (
-    <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
-      <img src={images[index]} alt={title} className="h-full w-full object-cover" />
-      {images.length > 1 && (
-        <div className="print:hidden">
-          <button type="button" aria-label="Previous image" onClick={prev} className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow hover:bg-white"><ArrowLeft size={14} /></button>
-          <button type="button" aria-label="Next image" onClick={next} className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow hover:bg-white"><ArrowRight size={14} /></button>
-          <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white">{index + 1} / {images.length}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Essential({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) { return <div className="flex gap-4"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-blue-600">{icon}</span><span><b className="block text-sm">{title}</b><small className="text-slate-500">{value}</small></span></div>; }
-function WhyLove({ icon, label }: { icon: React.ReactNode; label: string }) { return <div className="flex flex-col items-center gap-2 text-center"><span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm">{icon}</span><span className="text-xs font-bold text-slate-700">{label}</span></div>; }
-function Counter({ label, note, value, setValue, min }: { label: string; note: string; value: number; setValue: (value: number) => void; min: number }) { return <div className="mt-4 flex items-center justify-between"><span><b className="block text-xs">{label}</b><small className="text-[9px] text-slate-400">{note}</small></span><span className="flex items-center gap-3"><button type="button" aria-label={`Decrease ${label.toLowerCase()}`} onClick={() => setValue(Math.max(min, value - 1))} className="rounded border p-1"><Minus size={12} /></button><b className="w-5 text-center text-xs">{String(value).padStart(2, "0")}</b><button type="button" aria-label={`Increase ${label.toLowerCase()}`} onClick={() => setValue(value + 1)} className="rounded border p-1"><Plus size={12} /></button></span></div>; }
-function Summary({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) { return <div className="mt-3 flex justify-between"><span>{label}</span><b className={accent ? "text-emerald-500" : ""}>{value}</b></div>; }
-function shortDateLabel(value: string) { const date = new Date(`${value}T00:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date); }
-
-function monthKey(value: string) { return value.slice(0, 7); }
-function monthLabel(key: string) {
-  const [year, month] = key.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date(year, (month || 1) - 1, 1));
-}
-
-// Dropdown of months with bookable dates, showing seats (no price) per date,
-// replacing the flat 5-row departure list. Only shows dates on/after the
-// tour's minimum-advance-booking window.
-function DateAvailabilityPicker({ calendar, minAdvanceBookingDays, selectedDate, onSelectDate }: {
-  calendar: PublicTourDetail["calendar"];
-  minAdvanceBookingDays: number;
-  selectedDate: string;
-  onSelectDate: (date: string) => void;
-}) {
-  const earliestBookable = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + minAdvanceBookingDays);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }, [minAdvanceBookingDays]);
-
-  const bookableDates = useMemo(
-    () => [...calendar].filter((entry) => entry.status !== "cancelled" && entry.date >= earliestBookable).sort((a, b) => a.date.localeCompare(b.date)),
-    [calendar, earliestBookable]
-  );
-
-  const months = useMemo(() => {
-    const seen = new Set<string>();
-    const list: string[] = [];
-    for (const entry of bookableDates) {
-      const key = monthKey(entry.date);
-      if (!seen.has(key)) { seen.add(key); list.push(key); }
-    }
-    return list;
-  }, [bookableDates]);
-
-  const [selectedMonth, setSelectedMonth] = useState(() => (selectedDate ? monthKey(selectedDate) : months[0] || monthKey(earliestBookable)));
-  useEffect(() => {
-    if (months.length && !months.includes(selectedMonth)) setSelectedMonth(months[0]);
-  }, [months, selectedMonth]);
-
-  const [visibleCount, setVisibleCount] = useState(8);
-  useEffect(() => { setVisibleCount(8); }, [selectedMonth]);
-
-  const monthDates = useMemo(() => bookableDates.filter((entry) => monthKey(entry.date) === selectedMonth), [bookableDates, selectedMonth]);
-  const monthIndex = months.indexOf(selectedMonth);
-
-  if (bookableDates.length === 0) {
-    return <div className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-xs text-slate-500">No upcoming dates available right now.</div>;
-  }
-
-  return (
-    <div>
-      <div className="flex items-center justify-between gap-2">
-        <button type="button" aria-label="Previous month" disabled={monthIndex <= 0} onClick={() => setSelectedMonth(months[monthIndex - 1])}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 disabled:opacity-30"><ArrowLeft size={14} /></button>
-        <span className="text-sm font-black">{monthLabel(selectedMonth)}</span>
-        <button type="button" aria-label="Next month" disabled={monthIndex >= months.length - 1} onClick={() => setSelectedMonth(months[monthIndex + 1])}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 disabled:opacity-30"><ArrowRight size={14} /></button>
-      </div>
-      <div className="mt-3 grid grid-cols-4 gap-2">
-        {monthDates.slice(0, visibleCount).map((entry) => {
-          const isSelected = selectedDate === entry.date;
-          const isSoldOut = entry.status === "sold_out" || entry.slots <= 0;
-          return (
-            <button
-              key={entry.date}
-              type="button"
-              disabled={isSoldOut}
-              onClick={() => onSelectDate(entry.date)}
-              className={`rounded-lg border p-2 text-left text-xs transition ${isSelected ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-blue-300"} ${isSoldOut ? "cursor-not-allowed opacity-50" : ""}`}
-            >
-              <b className="block">{shortDateLabel(entry.date)}</b>
-              <span className={isSoldOut ? "font-bold text-red-500" : entry.slots <= 5 ? "font-bold text-amber-500" : "text-slate-500"}>
-                {isSoldOut ? "Sold Out" : `${entry.slots} Seats Left`}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      {monthDates.length > visibleCount && (
-        <button type="button" onClick={() => setVisibleCount((n) => n + 8)} className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline">
-          Show more dates <ArrowRight size={12} />
-        </button>
-      )}
-      <div className="mt-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
-        <b>Can&apos;t find a date that suits you?</b>
-        <p className="mt-1">
-          <a href="/contact" className="text-blue-600 hover:underline">Get in touch with us</a>, or discover{" "}
-          <a href="#similar-tours" className="text-blue-600 hover:underline">similar tours available in {monthLabel(selectedMonth)}</a>.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Each add-on category scrolls independently, matching the category-based
-// horizontal carousel requested in feedback (replaces the old fixed
-// Accommodation/Activities/Extensions grid grouping).
-function AddOnCategoryCarousel({ title, items }: { title: string; items: AddOnItem[] }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const move = (direction: number) => ref.current?.scrollBy({ left: direction * 260, behavior: "smooth" });
-  if (!items.length) return null;
-  return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-black uppercase text-slate-700">{title}</h4>
-        <div className="flex gap-2">
-          <button type="button" aria-label={`Previous ${title} add-ons`} onClick={() => move(-1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 hover:border-blue-400"><ArrowLeft size={13} /></button>
-          <button type="button" aria-label={`Next ${title} add-ons`} onClick={() => move(1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 hover:border-blue-400"><ArrowRight size={13} /></button>
-        </div>
-      </div>
-      <div ref={ref} className="no-scrollbar mt-3 flex snap-x gap-4 overflow-x-auto pb-1">
-        {items.map((item) => (
-          <div key={item.id} className="w-[220px] shrink-0 snap-start overflow-hidden rounded-xl border border-slate-100">
-            <div className="h-28 w-full bg-slate-100">
-              {item.image ? <img src={item.image} alt={item.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-slate-300"><Sparkles size={24} /></div>}
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {dynamicHighlights.map((h, i) => (
+                  <div
+                    key={i}
+                    className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs transition hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="h-36 w-full overflow-hidden bg-slate-100">
+                      <img src={h.img} alt={h.title} className="h-full w-full object-cover" />
+                    </div>
+                    <div className="p-3.5">
+                      <h4 className="text-xs font-bold text-slate-900 leading-snug">{h.title}</h4>
+                      <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{h.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="p-3">
-              <b className="block truncate text-sm text-slate-900">{item.name}</b>
-              {item.description && <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{item.description}</p>}
-              <b className="mt-1.5 block text-sm text-blue-700">{item.priceLabel}</b>
+
+            {/* D. 🛡️ Your Tour Package Details (Included / Not Included) */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
+              <h3 className="flex items-center gap-2 text-base font-black text-[#0B1527]">
+                <ShieldCheck size={18} className="text-blue-600" />
+                Your Tour Package Details
+              </h3>
+
+              <div className="mt-6 grid grid-cols-1 gap-8 sm:grid-cols-2">
+                {/* INCLUDED */}
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-emerald-700">
+                    <Check size={14} className="stroke-[3]" />
+                    INCLUDED
+                  </h4>
+                  <ul className="mt-3 space-y-2.5 text-xs text-slate-700 font-medium">
+                    {dynamicInclusions.map((inc, iIdx) => (
+                      <li key={iIdx} className="flex items-start gap-2">
+                        <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[2.5]" />
+                        <span>{inc}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* NOT INCLUDED */}
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-red-600">
+                    <X size={14} className="stroke-[3]" />
+                    NOT INCLUDED
+                  </h4>
+                  <ul className="mt-3 space-y-2.5 text-xs text-slate-700 font-medium">
+                    {dynamicExclusions.map((exc, eIdx) => (
+                      <li key={eIdx} className="flex items-start gap-2">
+                        <X size={14} className="mt-0.5 shrink-0 text-red-500 stroke-[2.5]" />
+                        <span>{exc}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Note callout */}
+              <div className="mt-6 rounded-xl bg-amber-50/80 p-3 text-[11px] font-medium text-amber-800 flex items-center gap-2 border border-amber-200/60">
+                <Info size={14} className="shrink-0 text-amber-600" />
+                <span>Flexible cancellation available up to 30 days before departure with 100% deposit refund guarantee.</span>
+              </div>
+            </div>
+
+            {/* E. 🗺️ Itinerary (Accordion) */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-base font-black text-[#0B1527]">
+                  <Compass size={18} className="text-blue-600" />
+                  Itinerary
+                </h3>
+
+                <div className="flex items-center gap-3 text-xs font-bold text-blue-600">
+                  <button type="button" onClick={expandAll} className="hover:underline">
+                    Expand All
+                  </button>
+                  <span className="text-slate-300">•</span>
+                  <button type="button" onClick={collapseAll} className="hover:underline">
+                    Collapse All
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 divide-y divide-slate-100">
+                {dynamicItinerary.map((day) => {
+                  const isOpen = Boolean(openItineraryDays[day.day]);
+
+                  return (
+                    <div key={day.day} className="py-4">
+                      <button
+                        type="button"
+                        onClick={() => toggleDay(day.day)}
+                        className="flex w-full items-center justify-between text-left text-xs font-bold text-[#0B1527] transition hover:text-blue-600"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <span className="flex h-6 w-14 shrink-0 items-center justify-center rounded-md bg-[#0B1527] text-[10px] font-black text-white">
+                            Day {day.day}
+                          </span>
+                          <span className="text-sm font-bold">{day.title}</span>
+                        </span>
+                        {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
+
+                      {isOpen && (
+                        <div className="mt-3.5 pl-16 space-y-3">
+                          <p className="text-xs leading-relaxed text-slate-600 font-medium">
+                            {day.desc}
+                          </p>
+
+                          {day.bullets && day.bullets.length > 0 && (
+                            <ul className="space-y-1.5 text-xs text-slate-700 font-medium">
+                              {day.bullets.map((b, bIdx) => (
+                                <li key={bIdx} className="flex items-start gap-2">
+                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />
+                                  <span>{b}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          {day.photos && day.photos.length > 0 && (
+                            <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
+                              {day.photos.map((p, pIdx) => (
+                                <div key={pIdx} className="h-20 w-28 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                                  <img src={p} alt="" className="h-full w-full object-cover" />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* F. 🏨 Where You'll Stay */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
+              <h3 className="flex items-center gap-2 text-base font-black text-[#0B1527]">
+                <Hotel size={18} className="text-blue-600" />
+                Where You&apos;ll Stay
+              </h3>
+
+              <div className="mt-5 space-y-4">
+                {dynamicHotels.map((hotel, hIdx) => (
+                  <div
+                    key={hIdx}
+                    className="flex flex-col sm:flex-row items-start gap-4 rounded-2xl border border-slate-100 bg-[#F9FBFE] p-4 transition hover:shadow-xs"
+                  >
+                    <div className="h-24 w-36 shrink-0 overflow-hidden rounded-xl bg-slate-200">
+                      <img src={hotel.img} alt={hotel.name} className="h-full w-full object-cover" />
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-1">
+                        <h4 className="text-xs font-bold text-slate-900">{hotel.name}</h4>
+                        <span className="rounded bg-blue-100 px-2 py-0.5 text-[9px] font-bold text-blue-700">
+                          {hotel.stars}
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-[11px] leading-relaxed text-slate-500 font-medium">
+                        {hotel.desc}
+                      </p>
+
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                        {hotel.badges.map((b, bI) => (
+                          <span
+                            key={bI}
+                            className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700"
+                          >
+                            <Check size={11} className="stroke-[3]" />
+                            {b}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* G. 📅 Availability & Pricing */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
+              <h3 className="flex items-center gap-2 text-base font-black text-[#0B1527]">
+                <Calendar size={18} className="text-blue-600" />
+                Availability &amp; Pricing
+              </h3>
+
+              <div className="mt-5 overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <th className="pb-3">DEPARTURE DATE</th>
+                      <th className="pb-3">PRICE PER PERSON</th>
+                      <th className="pb-3 text-right">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {dynamicCalendar.map((dep, dIdx) => (
+                      <tr key={dIdx} className="hover:bg-slate-50/60 transition">
+                        <td className="py-3.5">
+                          <p className="text-xs font-bold text-slate-900">{dep.date}</p>
+                          <p className="text-[10px] text-emerald-600 font-semibold">{dep.status}</p>
+                        </td>
+                        <td className="py-3.5 text-xs font-black text-slate-900">
+                          {format(dep.price, tour.currency || "USD")}
+                        </td>
+                        <td className="py-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedDate(dep.date);
+                              setSelectedDateIdx(dIdx);
+                            }}
+                            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                              selectedDate === dep.date
+                                ? "bg-[#0B1527] text-white shadow-xs"
+                                : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                            }`}
+                          >
+                            {selectedDate === dep.date ? "Selected" : "Select Date"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-function DiscoverMore({ tours, format }: { tours: PublicTour[]; format: (amount: number | string | null | undefined, currency?: string) => string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const move = (direction: number) => ref.current?.scrollBy({ left: direction * 320, behavior: "smooth" });
-  return (
-    <section id="similar-tours" className="mx-auto mt-14 max-w-7xl px-5 md:px-8">
-      <div className="mb-5 flex items-center justify-between"><h3 className="text-2xl font-black">Similar Tours</h3><div className="flex gap-2"><button type="button" aria-label="Previous tours" onClick={() => move(-1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 transition hover:border-blue-500 hover:text-blue-600"><ArrowLeft size={15} /></button><button type="button" aria-label="Next tours" onClick={() => move(1)} className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 transition hover:border-blue-500 hover:text-blue-600"><ArrowRight size={15} /></button></div></div>
-      <div ref={ref} className="no-scrollbar flex snap-x gap-5 overflow-x-auto pb-2">
-        {tours.map((related) => <div className="w-[280px] shrink-0 snap-start" key={related.id}><TourCard tour={related} format={format} variant="compact" /></div>)}
+          {/* ── Right Column: Sticky Booking Widget ── */}
+          <div className="lg:sticky lg:top-20">
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+              <h3 className="text-sm font-bold text-[#0B1527]">
+                Book your {destination} tour
+              </h3>
+
+              {/* Date selection tabs */}
+              <div className="mt-4 space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Select Departure
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {dynamicCalendar.slice(0, 3).map((dep, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDate(dep.date);
+                        setSelectedDateIdx(i);
+                      }}
+                      className={`rounded-xl border p-2 text-center transition ${
+                        selectedDate === dep.date
+                          ? "border-blue-600 bg-blue-50/80 shadow-2xs"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <p className="text-[9px] font-semibold text-slate-500 truncate">
+                        {dep.date.split(",")[0]}
+                      </p>
+                      <p className="text-xs font-black text-slate-900">
+                        {format(dep.price, tour.currency || "USD")}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Guest counters */}
+              <div className="mt-5 space-y-3 border-t border-slate-100 pt-4">
+                {/* Adults */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">Adults (12+ yrs)</p>
+                    <p className="text-[10px] text-slate-400">
+                      {format(unitPrice, tour.currency || "USD")} each
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={adults <= 1}
+                      onClick={() => setAdults((a) => Math.max(1, a - 1))}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="w-5 text-center text-xs font-black text-slate-900">{adults}</span>
+                    <button
+                      type="button"
+                      onClick={() => setAdults((a) => a + 1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Children */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">Children (2-11 yrs)</p>
+                    <p className="text-[10px] text-slate-400">
+                      {format(childPrice, tour.currency || "USD")} each
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={children <= 0}
+                      onClick={() => setChildren((c) => Math.max(0, c - 1))}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="w-5 text-center text-xs font-black text-slate-900">{children}</span>
+                    <button
+                      type="button"
+                      onClick={() => setChildren((c) => c + 1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Infants */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">Infants (&lt;2 yrs)</p>
+                    <p className="text-[10px] text-emerald-600 font-semibold">Free</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={infants <= 0}
+                      onClick={() => setInfants((i) => Math.max(0, i - 1))}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="w-5 text-center text-xs font-black text-slate-900">{infants}</span>
+                    <button
+                      type="button"
+                      onClick={() => setInfants((i) => i + 1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Add-ons */}
+              <div className="mt-5 space-y-2 border-t border-slate-100 pt-4">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Optional Add-Ons
+                </label>
+
+                <label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-100 p-2.5 text-xs transition hover:bg-slate-50">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={singleRoom}
+                      onChange={(e) => setSingleRoom(e.target.checked)}
+                      className="h-4 w-4 rounded accent-blue-600"
+                    />
+                    <span className="font-semibold text-slate-700">Single Room Supplement</span>
+                  </div>
+                  <span className="font-bold text-slate-900">
+                    +{format(450, tour.currency || "USD")}
+                  </span>
+                </label>
+
+                <label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-100 p-2.5 text-xs transition hover:bg-slate-50">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={airportTransfer}
+                      onChange={(e) => setAirportTransfer(e.target.checked)}
+                      className="h-4 w-4 rounded accent-blue-600"
+                    />
+                    <span className="font-semibold text-slate-700">Airport Express Transfer</span>
+                  </div>
+                  <span className="font-bold text-slate-900">
+                    +{format(65, tour.currency || "USD")}
+                  </span>
+                </label>
+              </div>
+
+              {/* Price Summary Breakdown */}
+              <div className="mt-5 space-y-2 border-t border-slate-100 pt-4 text-xs font-medium text-slate-600">
+                <div className="flex justify-between">
+                  <span>Base Fare ({adults} Adult{adults > 1 ? "s" : ""})</span>
+                  <span className="font-semibold text-slate-900">
+                    {format(baseFare, tour.currency || "USD")}
+                  </span>
+                </div>
+                <div className="flex justify-between text-emerald-600">
+                  <span>Early Bird Discount (10%)</span>
+                  <span>-{format(discountAmount, tour.currency || "USD")}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Taxes &amp; Service Fees</span>
+                  <span className="font-semibold text-slate-900">
+                    {format(taxesAmount, tour.currency || "USD")}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-sm">
+                  <span className="font-bold text-slate-900">Total Amount</span>
+                  <span className="text-xl font-black text-[#0B1527]">
+                    {format(totalAmount, tour.currency || "USD")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Book CTA */}
+              <button
+                type="button"
+                onClick={() =>
+                  onBook({
+                    travelDate: selectedDate,
+                    adults,
+                    children,
+                  })
+                }
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B1527] py-3.5 text-xs font-bold text-white shadow-md transition hover:bg-[#15233C]"
+              >
+                Proceed to Book
+                <ArrowRight size={13} />
+              </button>
+
+              <p className="mt-3 text-center text-[10px] font-semibold text-slate-400 flex items-center justify-center gap-2">
+                <span>🔒 Secure 256-Bit SSL</span>
+                <span>•</span>
+                <span>⚡ Instant Confirmation</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 5. Dynamic Similar Tours Rail ── */}
+        <section className="mt-16">
+          <h3 className="text-xl font-black text-[#0B1527]">
+            Similar Tours
+          </h3>
+
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {dynamicSimilar.map((sim) => {
+              const simLink = sim.slug
+                ? publicTourUrl({ country_name: sim.country, title: sim.title, slug: sim.slug })
+                : `/tours/${sim.id}`;
+
+              return (
+                <div
+                  key={sim.id}
+                  className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs transition hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between"
+                >
+                  <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                    <img src={sim.image} alt={sim.title} className="h-full w-full object-cover" />
+                    <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-slate-800 backdrop-blur-xs shadow-xs">
+                      <MapPin size={11} className="text-slate-600" />
+                      {sim.country}
+                    </span>
+                    <button
+                      type="button"
+                      className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-red-500 shadow-xs hover:scale-110 transition"
+                    >
+                      <Heart size={14} className="fill-current text-red-500" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 flex flex-1 flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <Link
+                          href={simLink}
+                          className="text-xs font-bold text-slate-900 truncate hover:text-blue-600 transition"
+                        >
+                          {sim.title}
+                        </Link>
+                        <span className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
+                          {sim.duration}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <Star size={12} className="fill-amber-400 text-amber-400" />
+                        <span className="text-xs font-bold text-slate-900">
+                          {typeof sim.rating === "number" ? sim.rating.toFixed(1) : sim.rating}
+                        </span>
+                        <span className="text-[10px] text-slate-400">({sim.reviews})</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3.5 flex items-center justify-between pt-2.5 border-t border-slate-100">
+                      <div>
+                        <span className="text-[11px] text-slate-500">Price </span>
+                        <span className="text-xs font-black text-slate-900">{sim.price}</span>
+                        <span className="text-[10px] text-slate-400"> pp</span>
+                      </div>
+                      <Link
+                        href={simLink}
+                        className="rounded-xl bg-[#0B1527] px-3.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#15233C]"
+                      >
+                        Book Now
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </div>
-    </section>
+    </main>
   );
 }

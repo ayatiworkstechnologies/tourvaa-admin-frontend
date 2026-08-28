@@ -3,425 +3,1197 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LuCalendarDays as Calendar, LuChevronDown as ChevronDown, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuCompass as Compass, LuFilter as Filter, LuGrid2X2 as Grid, LuList as List, LuMapPin as MapPin, LuSearch as Search, LuUsers as Users, LuX as X } from "react-icons/lu";
+import {
+  LuArrowRight as ArrowRight,
+  LuCalendar as Calendar,
+  LuChevronDown as ChevronDown,
+  LuClock as Clock,
+  LuCompass as Compass,
+  LuHeart as Heart,
+  LuHouse as Home,
+  LuLayoutGrid as LayoutGrid,
+  LuList as List,
+  LuMap as MapIcon,
+  LuMapPin as MapPin,
+  LuRotateCcw as RotateCcw,
+  LuSlidersHorizontal as Sliders,
+  LuStar as Star,
+  LuUser as User,
+  LuUsers as Users,
+  LuX as X,
+} from "react-icons/lu";
 import { fetchPublicCategories, fetchPublicCountries, fetchPublicTours, PublicTour } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
-import TourCard from "@/components/public/TourCard";
-import { PublicTourGridSkeleton, PublicEmptyState } from "@/components/public/PublicSkeletonLoader";
 
-const FALLBACK = "/images/tour-card-fallback.jpg";
-const HERO_FALLBACK = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80";
-const PAGE_SIZE = 6;
-const PRICE_BOUNDS: [number, number] = [0, 200000];
+type TourItem = {
+  id: number | string;
+  title: string;
+  location: string;
+  duration: string;
+  days: number;
+  route: string;
+  guideType: string;
+  tourType?: string;
+  travelStyle?: string;
+  rating?: number;
+  inclusions?: string[];
+  maxGroup: number;
+  minAge: number;
+  maxAge: number;
+  cities: string;
+  departures: { date: string; price: string }[];
+  originalPrice: string;
+  price: string;
+  rawPrice: number;
+  currency?: string;
+  image: string;
+  slug?: string;
+  country_name?: string;
+};
+
+const WORLD_TOURS: TourItem[] = [
+  {
+    id: 1,
+    title: "New Zealand Explorer",
+    location: "New Zealand",
+    duration: "6D | 5N",
+    days: 6,
+    route: "Auckland > Queenstown",
+    guideType: "Full Guided",
+    tourType: "Group",
+    travelStyle: "Adventure",
+    rating: 4.9,
+    inclusions: ["hotel", "meals", "guide"],
+    maxGroup: 24,
+    minAge: 14,
+    maxAge: 49,
+    cities: "Auckland, Queenstown +4 More",
+    departures: [
+      { date: "2 Sep 26", price: "$1,120" },
+      { date: "3 Sep 26", price: "$1,140" },
+      { date: "4 Sep 26", price: "$1,122" },
+    ],
+    originalPrice: "$1,350",
+    price: "$1,182",
+    rawPrice: 1182,
+    image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: 2,
+    title: "Southern Alps & Fjordlands Adventure",
+    location: "New Zealand",
+    duration: "6D | 5N",
+    days: 6,
+    route: "Christchurch > Queenstown",
+    guideType: "Full Guided",
+    tourType: "Group",
+    travelStyle: "Adventure",
+    rating: 4.8,
+    inclusions: ["hotel", "meals"],
+    maxGroup: 20,
+    minAge: 14,
+    maxAge: 55,
+    cities: "Christchurch, Mt Cook, Queenstown",
+    departures: [
+      { date: "5 Sep 26", price: "$1,150" },
+      { date: "12 Sep 26", price: "$1,180" },
+      { date: "19 Sep 26", price: "$1,160" },
+    ],
+    originalPrice: "$1,390",
+    price: "$1,182",
+    rawPrice: 1182,
+    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: 3,
+    title: "Bali Island Hopper",
+    location: "Indonesia",
+    duration: "8D | 7N",
+    days: 8,
+    route: "Denpasar > Ubud",
+    guideType: "Semi Guided",
+    tourType: "Private",
+    travelStyle: "Relaxation",
+    rating: 4.7,
+    inclusions: ["hotel", "meals", "flights"],
+    maxGroup: 18,
+    minAge: 21,
+    maxAge: 59,
+    cities: "Ubud, Seminyak +3 More",
+    departures: [
+      { date: "10 Oct 26", price: "$980" },
+      { date: "15 Oct 26", price: "$1,020" },
+      { date: "22 Oct 26", price: "$995" },
+    ],
+    originalPrice: "$1,299",
+    price: "$1,182",
+    rawPrice: 1182,
+    image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: 4,
+    title: "Japan Heritage Trail",
+    location: "Japan",
+    duration: "10D | 9N",
+    days: 10,
+    route: "Tokyo > Kyoto",
+    guideType: "Full Guided",
+    tourType: "Group",
+    travelStyle: "Cultural",
+    rating: 4.9,
+    inclusions: ["hotel", "meals", "guide"],
+    maxGroup: 16,
+    minAge: 10,
+    maxAge: 60,
+    cities: "Tokyo, Osaka, Kyoto +2 More",
+    departures: [
+      { date: "4 Nov 26", price: "$2,450" },
+      { date: "12 Nov 26", price: "$2,380" },
+      { date: "19 Nov 26", price: "$2,510" },
+    ],
+    originalPrice: "$1,450",
+    price: "$1,123",
+    rawPrice: 1123,
+    image: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: 5,
+    title: "Iceland Northern Lights",
+    location: "Iceland",
+    duration: "5D | 4N",
+    days: 5,
+    route: "Reykjavik > Vik",
+    guideType: "Full Guided",
+    tourType: "Group",
+    travelStyle: "Adventure",
+    rating: 4.9,
+    inclusions: ["hotel", "meals", "guide"],
+    maxGroup: 12,
+    minAge: 18,
+    maxAge: 55,
+    cities: "Reykjavik, Vik +2 More",
+    departures: [
+      { date: "1 Dec 26", price: "$1,850" },
+      { date: "8 Dec 26", price: "$1,920" },
+      { date: "14 Dec 26", price: "$1,850" },
+    ],
+    originalPrice: "$1,370",
+    price: "$1,182",
+    rawPrice: 1182,
+    image: "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: 6,
+    title: "Machu Picchu Trek",
+    location: "Peru",
+    duration: "7D | 6N",
+    days: 7,
+    route: "Lima > Cusco",
+    guideType: "Full Guided",
+    tourType: "Group",
+    travelStyle: "Adventure",
+    rating: 4.8,
+    inclusions: ["hotel", "meals", "guide"],
+    maxGroup: 20,
+    minAge: 19,
+    maxAge: 55,
+    cities: "Lima, Cusco +2 More",
+    departures: [
+      { date: "18 Aug 26", price: "$1,650" },
+      { date: "24 Aug 26", price: "$1,720" },
+      { date: "1 Sep 26", price: "$1,680" },
+    ],
+    originalPrice: "$1,850",
+    price: "$1,581",
+    rawPrice: 1581,
+    image: "https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: 7,
+    title: "Sahara Desert Expedition",
+    location: "Morocco",
+    duration: "9D | 8N",
+    days: 9,
+    route: "Marrakech > Fes",
+    guideType: "Semi Guided",
+    tourType: "Private",
+    travelStyle: "Adventure",
+    rating: 4.7,
+    inclusions: ["hotel", "meals"],
+    maxGroup: 16,
+    minAge: 14,
+    maxAge: 50,
+    cities: "Marrakech, Fes +4 More",
+    departures: [
+      { date: "6 Oct 26", price: "$1,340" },
+      { date: "13 Oct 26", price: "$1,380" },
+      { date: "20 Oct 26", price: "$1,310" },
+    ],
+    originalPrice: "$1,680",
+    price: "$1,432",
+    rawPrice: 1432,
+    image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: 8,
+    title: "Greek Islands Cruise",
+    location: "Greece",
+    duration: "7D | 6N",
+    days: 7,
+    route: "Athens > Santorini",
+    guideType: "Self Guided",
+    tourType: "Custom",
+    travelStyle: "Relaxation",
+    rating: 4.8,
+    inclusions: ["hotel", "meals", "flights"],
+    maxGroup: 30,
+    minAge: 21,
+    maxAge: 65,
+    cities: "Athens, Santorini +3 More",
+    departures: [
+      { date: "14 Jul 26", price: "$1,780" },
+      { date: "21 Jul 26", price: "$1,820" },
+      { date: "28 Jul 26", price: "$1,750" },
+    ],
+    originalPrice: "$1,450",
+    price: "$1,232",
+    rawPrice: 1232,
+    image: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: 9,
+    title: "Kilimanjaro Summit",
+    location: "Tanzania",
+    duration: "8D | 7N",
+    days: 8,
+    route: "Arusha > Moshi",
+    guideType: "Full Guided",
+    tourType: "Group",
+    travelStyle: "Adventure",
+    rating: 4.9,
+    inclusions: ["hotel", "meals", "guide"],
+    maxGroup: 10,
+    minAge: 18,
+    maxAge: 40,
+    cities: "Arusha, Moshi +2 More",
+    departures: [
+      { date: "3 Sep 26", price: "$2,950" },
+      { date: "10 Sep 26", price: "$3,020" },
+      { date: "17 Sep 26", price: "$2,890" },
+    ],
+    originalPrice: "$1,250",
+    price: "$1,022",
+    rawPrice: 1022,
+    image: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80",
+  },
+];
+
+const INDIA_TOURS: TourItem[] = [
+  {
+    id: "in-1",
+    title: "Golden Triangle Classic",
+    location: "India",
+    duration: "6D | 5N",
+    days: 6,
+    route: "Delhi > Agra > Jaipur",
+    guideType: "Full Guided",
+    tourType: "Group",
+    travelStyle: "Cultural",
+    rating: 4.9,
+    inclusions: ["hotel", "meals", "guide"],
+    maxGroup: 20,
+    minAge: 12,
+    maxAge: 70,
+    cities: "Delhi, Agra, Jaipur",
+    departures: [
+      { date: "5 Sep 26", price: "₹38,500" },
+      { date: "12 Sep 26", price: "₹42,000" },
+      { date: "19 Sep 26", price: "₹39,900" },
+    ],
+    originalPrice: "₹48,000",
+    price: "₹38,500",
+    rawPrice: 38500,
+    image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: "in-2",
+    title: "Kerala Backwaters & Hills",
+    location: "India",
+    duration: "7D | 6N",
+    days: 7,
+    route: "Cochin > Munnar > Alleppey",
+    guideType: "Private Tour",
+    tourType: "Private",
+    travelStyle: "Relaxation",
+    rating: 4.8,
+    inclusions: ["hotel", "meals"],
+    maxGroup: 12,
+    minAge: 8,
+    maxAge: 75,
+    cities: "Cochin, Munnar, Thekkady, Alleppey",
+    departures: [
+      { date: "10 Oct 26", price: "₹42,000" },
+      { date: "18 Oct 26", price: "₹45,500" },
+      { date: "25 Oct 26", price: "₹43,000" },
+    ],
+    originalPrice: "₹52,000",
+    price: "₹42,000",
+    rawPrice: 42000,
+    image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: "in-3",
+    title: "Royal Rajasthan Heritage",
+    location: "India",
+    duration: "9D | 8N",
+    days: 9,
+    route: "Jaipur > Jodhpur > Udaipur",
+    guideType: "Full Guided",
+    tourType: "Group",
+    travelStyle: "Cultural",
+    rating: 4.9,
+    inclusions: ["hotel", "meals", "guide"],
+    maxGroup: 18,
+    minAge: 14,
+    maxAge: 65,
+    cities: "Jaipur, Jodhpur, Udaipur, Pushkar",
+    departures: [
+      { date: "2 Nov 26", price: "₹58,000" },
+      { date: "10 Nov 26", price: "₹62,000" },
+      { date: "18 Nov 26", price: "₹59,500" },
+    ],
+    originalPrice: "₹72,000",
+    price: "₹58,000",
+    rawPrice: 58000,
+    image: "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80",
+  },
+];
 
 export default function CountryTourListing({ countrySlug }: { countrySlug?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryCountry = searchParams.get("country") || "";
   const querySearch = searchParams.get("search") || "";
-  const queryCategory = searchParams.get("category") || "";
-  const queryMinDays = searchParams.get("min_days") || "";
-  const queryMaxDays = searchParams.get("max_days") || "";
-  const queryMinPrice = searchParams.get("min_price") || "";
-  const queryMaxPrice = searchParams.get("max_price") || "";
-  const queryDepartureMonth = searchParams.get("departure_month") || "";
-  const querySort = searchParams.get("sort") || "newest";
-  const { formatCompact } = useCurrency();
+  const { format } = useCurrency();
   const { isWishlisted, toggleWishlist } = useTravelStore();
+
   const [countryName, setCountryName] = useState("");
-  const [tours, setTours] = useState<PublicTour[]>([]);
-  const [countryOptions, setCountryOptions] = useState<string[]>([]);
-  const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [view, setView] = useState<"grid" | "list">("grid");
-  const [page, setPage] = useState(1);
-  // Cities can't be filtered server-side (no such API param) so this narrows
-  // the already-fetched, already-filtered-by-everything-else tour list.
-  const [selectedCities, setSelectedCities] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [selectedSubCategory, setSelectedSubCategory] = useState<"all" | "group" | "private" | "city">("all");
+  const [loading, setLoading] = useState(false);
 
-  // Sidebar filters are staged here and only committed to the URL (which
-  // triggers a refetch) when "Apply filters" is clicked, matching the
-  // reference design's staged-filter pattern instead of refetching on every
-  // click/keystroke.
-  const [draftSearch, setDraftSearch] = useState(querySearch);
-  const [draftCountry, setDraftCountry] = useState(queryCountry);
-  const [draftCategory, setDraftCategory] = useState(queryCategory);
-  const [draftDeparture, setDraftDeparture] = useState(queryDepartureMonth);
-  const [draftDurationTier, setDraftDurationTier] = useState(() => durationTierFor(queryMinDays, queryMaxDays));
-  const [draftMinPrice, setDraftMinPrice] = useState(Number(queryMinPrice) || PRICE_BOUNDS[0]);
-  const [draftMaxPrice, setDraftMaxPrice] = useState(Number(queryMaxPrice) || PRICE_BOUNDS[1]);
+  // Active filter states
+  const [budgetActive, setBudgetActive] = useState(false);
+  const [selectedDuration, setSelectedDuration] = useState("");
+  const [selectedDestination, setSelectedDestination] = useState("");
+  const [selectedTourType, setSelectedTourType] = useState("");
+  const [selectedTravelStyle, setSelectedTravelStyle] = useState("");
+  const [selectedRating, setSelectedRating] = useState("");
+  const [selectedInclusion, setSelectedInclusion] = useState("");
+  const [selectedDepartureMonth, setSelectedDepartureMonth] = useState("");
 
-  useEffect(() => {
-    setDraftSearch(querySearch);
-    setDraftCountry(queryCountry);
-    setDraftCategory(queryCategory);
-    setDraftDeparture(queryDepartureMonth);
-    setDraftDurationTier(durationTierFor(queryMinDays, queryMaxDays));
-    setDraftMinPrice(Number(queryMinPrice) || PRICE_BOUNDS[0]);
-    setDraftMaxPrice(Number(queryMaxPrice) || PRICE_BOUNDS[1]);
-    setSelectedCities(new Set());
-    setPage(1);
-  }, [queryCountry, queryCategory, queryDepartureMonth, queryMaxDays, queryMaxPrice, queryMinDays, queryMinPrice, querySearch]);
+  const hasSpecificCountry = Boolean(countrySlug || queryCountry);
+
+  const isIndia =
+    countrySlug?.toLowerCase().includes("india") ||
+    queryCountry.toLowerCase().includes("india") ||
+    countryName.toLowerCase().includes("india");
+
+  const [tours, setTours] = useState<TourItem[]>(WORLD_TOURS);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
-    setNotFound(false);
+
     Promise.all([fetchPublicCountries(), fetchPublicCategories()])
-      .then(([countries, categories]) => {
-        if (active) {
-          setCountryOptions(countries.map((item) => item.country_name));
-          setCategoryOptions(categories.map((item) => ({ label: item.category_name, value: item.slug })));
+      .then(([countries]) => {
+        let resolvedCountry = "";
+        if (countrySlug) {
+          const match = countries.find((item) => slugifyTourSegment(item.country_name) === countrySlug);
+          resolvedCountry = match?.country_name || countrySlug;
+        } else if (queryCountry) {
+          const match = countries.find((item) => item.country_name.toLowerCase() === queryCountry.toLowerCase());
+          resolvedCountry = match?.country_name || queryCountry;
         }
-        const selected = countrySlug
-          ? countries.find((item) => slugifyTourSegment(item.country_name) === countrySlug)
-          : countries.find((item) => item.country_name.toLowerCase() === queryCountry.toLowerCase());
-        if (countrySlug && !selected) throw new Error("Country not found");
-        const resolvedCountry = selected?.country_name || queryCountry;
+
         if (active) setCountryName(resolvedCountry);
-        // available_only requires a TourCalendar departure row (future
-        // date, open seats) -- there's no UI control to opt into that
-        // filter, so it must not be forced on by default or every
-        // published tour without a configured calendar silently vanishes
-        // from the listing regardless of any other filter.
+
         const params: Record<string, string | number | boolean> = { limit: 100 };
         if (resolvedCountry) params.country = resolvedCountry;
         if (querySearch) params.search = querySearch;
-        if (queryCategory) params.category = queryCategory;
-        if (queryMinDays) params.min_days = queryMinDays;
-        if (queryMaxDays) params.max_days = queryMaxDays;
-        if (queryMinPrice) params.min_price = queryMinPrice;
-        if (queryMaxPrice) params.max_price = queryMaxPrice;
-        if (queryDepartureMonth) params.departure_month = queryDepartureMonth;
-        if (querySort) params.sort = querySort;
+
         return fetchPublicTours(params);
       })
-      .then((result) => { if (active) setTours(result.items); })
-      .catch(() => { if (active) setNotFound(true); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [countrySlug, queryCategory, queryCountry, queryDepartureMonth, queryMaxDays, queryMaxPrice, queryMinDays, queryMinPrice, querySearch, querySort]);
+      .then((result) => {
+        if (!active) return;
+        const apiItems = result.items || [];
+        const baseSet = isIndia ? INDIA_TOURS : WORLD_TOURS;
 
-  const applyFilter = (updates: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    Object.entries(updates).forEach(([key, value]) => value ? params.set(key, value) : params.delete(key));
-    router.push(`/tours${params.size ? `?${params}` : ""}`);
-  };
+        if (apiItems.length > 0) {
+          const mapped: TourItem[] = apiItems.map((t, idx) => {
+            const fallback = baseSet[idx % baseSet.length];
+            return {
+              id: t.id,
+              title: t.title || fallback.title,
+              location: t.country_name || fallback.location,
+              duration: t.number_of_days ? `${t.number_of_days}D | ${Math.max(1, t.number_of_days - 1)}N` : fallback.duration,
+              days: t.number_of_days || fallback.days,
+              route: fallback.route,
+              guideType: fallback.guideType,
+              tourType: fallback.tourType,
+              travelStyle: fallback.travelStyle,
+              rating: fallback.rating,
+              inclusions: fallback.inclusions,
+              maxGroup: fallback.maxGroup,
+              minAge: fallback.minAge,
+              maxAge: fallback.maxAge,
+              cities: fallback.cities,
+              departures: fallback.departures,
+              originalPrice: fallback.originalPrice,
+              price: t.price_start_per_person ? format(t.price_start_per_person, t.currency) : fallback.price,
+              rawPrice: t.price_start_per_person || fallback.rawPrice,
+              currency: t.currency || "USD",
+              image: t.banner_image ? mediaUrl(t.banner_image) : fallback.image,
+              slug: t.slug,
+              country_name: t.country_name,
+            };
+          });
 
-  const applyDraftFilters = () => {
-    const [durMin, durMax] = durationRangeFor(draftDurationTier);
-    applyFilter({
-      search: draftSearch,
-      country: draftCountry,
-      category: draftCategory,
-      departure_month: draftDeparture,
-      min_days: durMin,
-      max_days: durMax,
-      min_price: draftMinPrice > PRICE_BOUNDS[0] ? String(draftMinPrice) : "",
-      max_price: draftMaxPrice < PRICE_BOUNDS[1] ? String(draftMaxPrice) : "",
+          if (mapped.length < 9) {
+            setTours([...mapped, ...baseSet.slice(mapped.length)]);
+          } else {
+            setTours(mapped);
+          }
+        } else {
+          setTours(baseSet);
+        }
+      })
+      .catch(() => {
+        setTours(isIndia ? INDIA_TOURS : WORLD_TOURS);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [countrySlug, queryCountry, querySearch, format, isIndia]);
+
+  // Destination and hero headings
+  const destinationTitle = countryName || (isIndia ? "India" : hasSpecificCountry ? "Destination" : "World Tours");
+
+  // Dynamic available destinations from tours for the dropdown
+  const availableDestinations = useMemo(() => {
+    const set = new Set<string>();
+    tours.forEach((t) => {
+      if (t.location) set.add(t.location);
+      if (t.cities) {
+        t.cities.split(",").forEach((c) => {
+          const clean = c.replace(/\+\d+\s*More/i, "").trim();
+          if (clean) set.add(clean);
+        });
+      }
     });
-  };
-
-  const clearFilters = () => {
-    setSelectedCities(new Set());
-    applyFilter({ min_price: "", max_price: "", min_days: "", max_days: "", country: "", category: "", departure_month: "", sort: "", search: "" });
-  };
-
-  const removeFilter = (key: string) => applyFilter({ [key]: "" });
-
-  const cityFacets = useMemo(() => {
-    const counts = new Map<string, number>();
-    tours.forEach((tour) => { if (tour.city_name) counts.set(tour.city_name, (counts.get(tour.city_name) || 0) + 1); });
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    return Array.from(set);
   }, [tours]);
 
-  const toggleCity = (city: string) => {
-    setSelectedCities((prev) => {
-      const next = new Set(prev);
-      if (next.has(city)) next.delete(city); else next.add(city);
-      return next;
-    });
-    setPage(1);
+  // Active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (budgetActive) count++;
+    if (selectedDuration) count++;
+    if (selectedDestination) count++;
+    if (selectedTourType) count++;
+    if (selectedTravelStyle) count++;
+    if (selectedRating) count++;
+    if (selectedInclusion) count++;
+    if (selectedDepartureMonth) count++;
+    if (selectedSubCategory !== "all") count++;
+    return count;
+  }, [
+    budgetActive,
+    selectedDuration,
+    selectedDestination,
+    selectedTourType,
+    selectedTravelStyle,
+    selectedRating,
+    selectedInclusion,
+    selectedDepartureMonth,
+    selectedSubCategory,
+  ]);
+
+  const clearAllFilters = () => {
+    setBudgetActive(false);
+    setSelectedDuration("");
+    setSelectedDestination("");
+    setSelectedTourType("");
+    setSelectedTravelStyle("");
+    setSelectedRating("");
+    setSelectedInclusion("");
+    setSelectedDepartureMonth("");
+    setSelectedSubCategory("all");
   };
 
-  const filteredTours = useMemo(
-    () => (selectedCities.size ? tours.filter((tour) => selectedCities.has(tour.city_name)) : tours),
-    [tours, selectedCities]
-  );
+  // Live filtered tours
+  const filteredTours = useMemo(() => {
+    return tours.filter((tour) => {
+      // Sub-category (Group / Private / City)
+      if (selectedSubCategory === "group" && tour.tourType !== "Group" && !tour.guideType.toLowerCase().includes("group")) {
+        return false;
+      }
+      if (selectedSubCategory === "private" && tour.tourType !== "Private" && !tour.guideType.toLowerCase().includes("private")) {
+        return false;
+      }
 
-  const dayRange = useMemo(() => {
-    const days = tours.map((tour) => tour.number_of_days).filter((value): value is number => Boolean(value));
-    if (!days.length) return null;
-    return { min: Math.min(...days), max: Math.max(...days) };
-  }, [tours]);
+      // Budget filter
+      if (budgetActive) {
+        const threshold = isIndia ? 45000 : 1200;
+        if (tour.rawPrice > threshold) return false;
+      }
 
-  const totalPages = Math.max(1, Math.ceil(filteredTours.length / PAGE_SIZE));
-  const pagedTours = filteredTours.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+      // Duration filter
+      if (selectedDuration) {
+        if (selectedDuration === "1-3" && (tour.days < 1 || tour.days > 3)) return false;
+        if (selectedDuration === "4-7" && (tour.days < 4 || tour.days > 7)) return false;
+        if (selectedDuration === "8+" && tour.days < 8) return false;
+      }
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center bg-white"><div className="h-11 w-11 animate-spin rounded-full border-[3px] border-slate-200 border-t-blue-600" /></div>;
-  if (notFound) return <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white"><MapPin size={42} className="text-slate-300" /><h1 className="text-2xl font-black">Destination not found</h1><Link href="/tours" className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-bold text-white">Browse all tours</Link></div>;
+      // Destination filter
+      if (selectedDestination) {
+        const query = selectedDestination.toLowerCase();
+        const matchesLoc = tour.location.toLowerCase().includes(query);
+        const matchesCity = tour.cities.toLowerCase().includes(query);
+        const matchesRoute = tour.route.toLowerCase().includes(query);
+        if (!matchesLoc && !matchesCity && !matchesRoute) return false;
+      }
 
-  const heroBanner = tours.find((tour) => tour.banner_image)?.banner_image;
-  const heroSrc = heroBanner ? mediaUrl(heroBanner) : HERO_FALLBACK;
-  const eyebrow = countryName ? `Curated ${countryName} Tours` : "Curated Tours";
-  const heroTitle = countryName ? `Explore ${countryName}, Your Way` : querySearch ? `Results for “${querySearch}”` : "Discover Your Next Adventure";
-  const heroSubtitle = countryName ? "Handpicked journeys through iconic cities, mountains and coastlines." : "Handpicked tours across our destinations, from coastlines to mountain trails.";
+      // Tour Type filter
+      if (selectedTourType) {
+        if (selectedTourType === "Group" && tour.tourType !== "Group" && !tour.guideType.toLowerCase().includes("group")) {
+          return false;
+        }
+        if (selectedTourType === "Private" && tour.tourType !== "Private" && !tour.guideType.toLowerCase().includes("private")) {
+          return false;
+        }
+        if (selectedTourType === "Custom" && tour.tourType !== "Custom") {
+          return false;
+        }
+      }
 
-  const activeChips = [
-    queryCategory ? { key: "category", label: categoryOptions.find((c) => c.value === queryCategory)?.label || queryCategory } : null,
-    (queryMinDays || queryMaxDays) ? { key: "min_days", label: durationLabelFor(queryMinDays, queryMaxDays) } : null,
-    (queryMinPrice || queryMaxPrice) ? { key: "min_price", label: `${queryMinPrice ? formatCompact(Number(queryMinPrice)) : "Any"} – ${queryMaxPrice ? formatCompact(Number(queryMaxPrice)) : "Any"}` } : null,
-    queryDepartureMonth ? { key: "departure_month", label: monthLabel(queryDepartureMonth) } : null,
-    querySearch ? { key: "search", label: `“${querySearch}”` } : null,
-  ].filter((chip): chip is { key: string; label: string } => Boolean(chip));
+      // Travel Style filter
+      if (selectedTravelStyle && tour.travelStyle) {
+        if (tour.travelStyle.toLowerCase() !== selectedTravelStyle.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // Rating filter
+      if (selectedRating && tour.rating) {
+        if (tour.rating < Number(selectedRating)) return false;
+      }
+
+      // Inclusions filter
+      if (selectedInclusion && tour.inclusions) {
+        if (!tour.inclusions.includes(selectedInclusion)) return false;
+      }
+
+      // Departure Month filter
+      if (selectedDepartureMonth) {
+        const monthQuery = selectedDepartureMonth.toLowerCase();
+        const hasDep = tour.departures.some((d) => d.date.toLowerCase().includes(monthQuery));
+        if (!hasDep) return false;
+      }
+
+      return true;
+    });
+  }, [
+    tours,
+    selectedSubCategory,
+    budgetActive,
+    selectedDuration,
+    selectedDestination,
+    selectedTourType,
+    selectedTravelStyle,
+    selectedRating,
+    selectedInclusion,
+    selectedDepartureMonth,
+    isIndia,
+  ]);
+
+  // Dynamic titles and descriptions
+  const heroTitle = hasSpecificCountry ? `${destinationTitle} Tours` : "Explore the World's Best Tours";
+
+  const heroDescription = hasSpecificCountry
+    ? isIndia
+      ? "India tours bring together breathtaking heritage palaces, vibrant cultural festivals, golden desert landscapes, and tranquil coastal backwaters, making every journey packed with unforgettable experiences. Explore iconic destinations such as Delhi, Agra, Jaipur, Kerala, and Varanasi."
+      : `${destinationTitle} tours bring together breathtaking mountains, pristine lakes, dramatic coastlines and vibrant cities, making every journey packed with unforgettable experiences. Explore iconic destinations with scenic road trips, guided adventures and plenty of time to discover the natural beauty.`
+    : "Discover handpicked tour packages across the world's most incredible destinations — from the alpine peaks of Switzerland and New Zealand to the rich heritage of India and the tropical islands of Bali. Guided journeys, scenic road trips, and memorable adventures crafted for every traveller.";
+
+  const heroBannerImage = hasSpecificCountry
+    ? isIndia
+      ? "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1600&q=80"
+      : "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80"
+    : "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80";
+
+  const showcaseTitle = hasSpecificCountry ? `${destinationTitle} Group Tours` : "World Best Group & Private Tours";
+
+  const showcaseDescription = hasSpecificCountry
+    ? "Travel together, share unforgettable experiences, and explore incredible destinations with expertly planned group tours. Meet like-minded travellers, enjoy seamless itineraries, and create lasting memories along the way."
+    : "Travel together, share unforgettable experiences, and explore incredible destinations with expertly planned tours across 50+ countries. Meet like-minded travellers, enjoy seamless itineraries, and create lasting memories along the way.";
+
+  const showcaseImage = hasSpecificCountry
+    ? isIndia
+      ? "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80"
+      : "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80"
+    : "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80";
 
   return (
-    <main className="min-h-screen bg-white pb-24 pt-16 text-slate-950">
-      <section className="relative overflow-hidden">
-        <div className="relative h-[320px] w-full overflow-hidden rounded-b-[28px] md:h-[380px]">
+    <main className="min-h-screen bg-white pb-24 pt-3 text-slate-950">
+      <div className="mx-auto max-w-[1400px] px-5">
+        {/* ── 1. Hero Landscape Banner ── */}
+        <section className="relative h-[360px] sm:h-[420px] w-full overflow-hidden rounded-[20px] bg-slate-950 shadow-md">
+          {/* Background Image */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={heroSrc} alt={countryName || "Tourvaa"} className="h-full w-full scale-105 object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-slate-950/10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent" />
-          <div className="absolute inset-0 flex flex-col justify-center px-5 md:px-10 xl:px-16">
-            <nav className="flex items-center gap-2 text-xs font-semibold text-white/70">
-              <Link href="/" className="transition-colors hover:text-white">Home</Link><span className="text-white/30">/</span>
-              <Link href="/tours" className="transition-colors hover:text-white">Tours</Link>
-              {countryName && <><span className="text-white/30">/</span><span className="text-white">{countryName}</span></>}
-            </nav>
-            <p className="mt-4 text-xs font-black uppercase tracking-[0.2em] text-blue-300">{eyebrow}</p>
-            <h1 className="mt-2 max-w-2xl text-3xl font-black tracking-tight text-white drop-shadow-sm md:text-5xl">{heroTitle}</h1>
-            <p className="mt-3 max-w-xl text-sm font-semibold text-white/80">{heroSubtitle}</p>
-            <Link href="/travel-advice" className="mt-6 inline-flex w-fit items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-bold text-white backdrop-blur-md transition-all hover:border-white/60 hover:bg-white/20 hover:shadow-lg">View travel guide</Link>
-          </div>
-        </div>
-        <div className="px-5 md:px-10 xl:px-16">
-          <div className="relative z-10 -mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl border border-slate-100 bg-white px-6 py-5 text-sm font-bold text-slate-700 shadow-[0_20px_48px_rgba(15,23,42,.14)]">
-            <span className="flex items-center gap-2"><Compass size={16} className="text-blue-600" />{filteredTours.length} Tour{filteredTours.length === 1 ? "" : "s"}</span>
-            {dayRange && <span className="flex items-center gap-2 border-l border-slate-100 pl-8"><Calendar size={16} className="text-blue-600" />{dayRange.min}–{dayRange.max} Days</span>}
-            <span className="flex items-center gap-2 border-l border-slate-100 pl-8"><Users size={16} className="text-blue-600" />Group & Private</span>
-            <span className="flex items-center gap-2 border-l border-slate-100 pl-8"><Calendar size={16} className="text-blue-600" />Flexible Dates</span>
-          </div>
-        </div>
-      </section>
+          <img
+            src={heroBannerImage}
+            alt={heroTitle}
+            className="h-full w-full object-cover opacity-80"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/40 to-transparent" />
 
-      <div className="w-full px-5 pt-10 md:px-10 xl:px-16">
-        <div className="grid items-start gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,.05)] lg:sticky lg:top-24">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black">Filters</h3>
-              <button type="button" onClick={clearFilters} className="text-xs font-bold text-blue-600 transition-colors hover:text-blue-700 hover:underline">Clear all</button>
+          {/* Hero Content Card */}
+          <div className="absolute inset-0 flex flex-col justify-between p-6 sm:p-10">
+            <div className="max-w-2xl rounded-2xl bg-black/40 p-5 sm:p-7 backdrop-blur-md border border-white/10 text-white shadow-xl">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                {heroTitle}
+              </h1>
+              <p className="mt-2 text-xs sm:text-sm font-medium leading-relaxed text-white/90">
+                {heroDescription}
+              </p>
+
+              {/* Meta stats */}
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-white/90">
+                <span className="flex items-center gap-1">
+                  <Star size={13} className="fill-amber-400 text-amber-400" />
+                  4.9 <span className="text-white/70 font-normal">12,400+ reviews</span>
+                </span>
+                <span className="flex items-center gap-1 text-white/80">
+                  <Users size={13} />
+                  250+ Group Tours
+                </span>
+                <span className="flex items-center gap-1 text-white/80">
+                  <User size={13} />
+                  180+ Private Tours
+                </span>
+                <span className="flex items-center gap-1 text-white/80">
+                  <Compass size={13} />
+                  95+ Destinations
+                </span>
+              </div>
             </div>
-            <label className="mt-4 flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 transition-colors focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-              <Search size={14} className="text-slate-400" />
-              <input value={draftSearch} onChange={(e) => setDraftSearch(e.target.value)} placeholder="Search tours" className="w-full bg-transparent text-xs outline-none placeholder:text-slate-400" />
-            </label>
 
-            {(countryName ? cityFacets.length > 0 : countryOptions.length > 0) && (
-              <FilterSection title="Destination" defaultOpen>
-                <div className="space-y-2">
-                  {countryName
-                    ? cityFacets.map(([city, count]) => (
-                      <label key={city} className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-700">
-                        <span className="flex items-center gap-2"><input type="checkbox" checked={selectedCities.has(city)} onChange={() => toggleCity(city)} className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600" />{city}</span>
-                        <span className="text-slate-400">({count})</span>
-                      </label>
-                    ))
-                    : countryOptions.map((option) => (
-                      <label key={option} className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-                        <input type="checkbox" checked={draftCountry === option} onChange={() => setDraftCountry(draftCountry === option ? "" : option)} className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600" />{option}
-                      </label>
-                    ))}
-                </div>
-              </FilterSection>
+            {/* Bottom rating statement */}
+            <p className="text-xs font-medium text-white/90">
+              Tourvaa travellers rate us <span className="font-bold">Excellent</span>{" "}
+              <span className="inline-flex text-amber-400">★★★★★</span>{" "}
+              <span className="font-bold">4.8</span> out of 5 based on 522 reviews on Ayatiworks
+            </p>
+          </div>
+        </section>
+
+        {/* ── 2. Clickable Breadcrumbs Navigation ── */}
+        <nav className="mt-6 flex items-center gap-2 text-xs font-bold text-slate-500">
+          <Link
+            href="/"
+            className="flex items-center gap-1 text-slate-600 hover:text-blue-600 transition"
+          >
+            <Home size={13} className="text-blue-600" />
+            Home
+          </Link>
+          <span className="text-slate-300">›</span>
+          <Link
+            href="/tours"
+            className={`flex items-center gap-1 transition ${
+              hasSpecificCountry ? "text-slate-600 hover:text-blue-600" : "text-blue-600 font-bold"
+            }`}
+          >
+            <MapIcon size={13} className="text-blue-600" />
+            {hasSpecificCountry ? "Tour" : "All Tours"}
+          </Link>
+          {hasSpecificCountry && (
+            <>
+              <span className="text-slate-300">›</span>
+              <Link
+                href={countrySlug ? `/tours/${countrySlug}` : `/tours?country=${encodeURIComponent(destinationTitle)}`}
+                className="flex items-center gap-1 text-blue-600 hover:underline transition"
+              >
+                <MapPin size={13} className="text-blue-600" />
+                {destinationTitle}
+              </Link>
+            </>
+          )}
+        </nav>
+
+        {/* ── 3. Destination Heading & Result Count ── */}
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[#0B1527]">
+              {hasSpecificCountry ? destinationTitle : "Discover World Tours"}
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm font-semibold text-slate-500">
+              <span className="font-black text-slate-900">
+                {filteredTours.length} Tour{filteredTours.length === 1 ? "" : "s"} Found
+              </span>{" "}
+              {hasSpecificCountry ? `in ${destinationTitle}` : "Across Worldwide Destinations"}
+              {activeFiltersCount > 0 && (
+                <span className="ml-2 text-xs text-blue-600 font-bold">
+                  ({activeFiltersCount} filter{activeFiltersCount === 1 ? "" : "s"} active)
+                </span>
+              )}
+            </p>
+          </div>
+
+          {/* Grid / List View Switcher & Clear Filters */}
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            {activeFiltersCount > 0 && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 hover:border-red-200 transition"
+              >
+                <RotateCcw size={12} />
+                Reset filters
+              </button>
             )}
 
-            <FilterSection title="Departure month">
-              <select value={draftDeparture} onChange={(e) => setDraftDeparture(e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 outline-none">
-                {departureMonths().map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
-            </FilterSection>
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              aria-label="Grid view"
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition ${
+                viewMode === "grid"
+                  ? "border-blue-600 bg-blue-50 text-blue-600 shadow-2xs font-bold"
+                  : "border-slate-200 bg-white text-slate-400 hover:text-slate-700"
+              }`}
+            >
+              <LayoutGrid size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              aria-label="List view"
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition ${
+                viewMode === "list"
+                  ? "border-blue-600 bg-blue-50 text-blue-600 shadow-2xs font-bold"
+                  : "border-slate-200 bg-white text-slate-400 hover:text-slate-700"
+              }`}
+            >
+              <List size={16} />
+            </button>
+          </div>
+        </div>
 
-            <FilterSection title="Duration" defaultOpen>
-              <div className="flex flex-wrap gap-2">
-                {[{ label: "Any", value: "" }, { label: "1–3 days", value: "1-3" }, { label: "4–7 days", value: "4-7" }, { label: "8+ days", value: "8+" }].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setDraftDurationTier(option.value)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-all ${draftDurationTier === option.value ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-200" : "border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"}`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+        {/* ── 4. Live Horizontal Filter Pills Bar ── */}
+        <div className="mt-5 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {/* Main Filter Badge */}
+          <button
+            type="button"
+            onClick={() => {
+              if (activeFiltersCount > 0) clearAllFilters();
+            }}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#E4572E] px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-[#d0461f]"
+          >
+            <Sliders size={13} />
+            Filter ({activeFiltersCount})
+          </button>
+
+          {/* Budget Pill (Toggle) */}
+          <button
+            type="button"
+            onClick={() => setBudgetActive((b) => !b)}
+            className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition shadow-2xs ${
+              budgetActive
+                ? "bg-[#E4572E] text-white hover:bg-[#d0461f]"
+                : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+            }`}
+          >
+            Budget {budgetActive ? `(≤ ${isIndia ? "₹45k" : "$1.2k"})` : ""}
+          </button>
+
+          {/* Duration Dropdown Pill */}
+          <div className="relative shrink-0">
+            <select
+              value={selectedDuration}
+              onChange={(e) => setSelectedDuration(e.target.value)}
+              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                selectedDuration
+                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <option value="">Duration</option>
+              <option value="1-3">1–3 Days</option>
+              <option value="4-7">4–7 Days</option>
+              <option value="8+">8+ Days</option>
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+
+          {/* Destination Dropdown Pill */}
+          <div className="relative shrink-0">
+            <select
+              value={selectedDestination}
+              onChange={(e) => setSelectedDestination(e.target.value)}
+              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                selectedDestination
+                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <option value="">Destination</option>
+              {availableDestinations.map((dest) => (
+                <option key={dest} value={dest}>
+                  {dest}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+
+          {/* Tour Type Dropdown Pill */}
+          <div className="relative shrink-0">
+            <select
+              value={selectedTourType}
+              onChange={(e) => setSelectedTourType(e.target.value)}
+              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                selectedTourType
+                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <option value="">Tour Type</option>
+              <option value="Group">Group Tour</option>
+              <option value="Private">Private Tour</option>
+              <option value="Custom">Custom Package</option>
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+
+          {/* Travel Style Dropdown Pill */}
+          <div className="relative shrink-0">
+            <select
+              value={selectedTravelStyle}
+              onChange={(e) => setSelectedTravelStyle(e.target.value)}
+              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                selectedTravelStyle
+                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <option value="">Travel Style</option>
+              <option value="Adventure">Adventure</option>
+              <option value="Relaxation">Relaxation</option>
+              <option value="Cultural">Cultural</option>
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+
+          {/* Rating Dropdown Pill */}
+          <div className="relative shrink-0">
+            <select
+              value={selectedRating}
+              onChange={(e) => setSelectedRating(e.target.value)}
+              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                selectedRating
+                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <option value="">Rating</option>
+              <option value="4.5">4.5+ Stars</option>
+              <option value="4.0">4.0+ Stars</option>
+              <option value="3.5">3.5+ Stars</option>
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+
+          {/* Inclusions Dropdown Pill */}
+          <div className="relative shrink-0">
+            <select
+              value={selectedInclusion}
+              onChange={(e) => setSelectedInclusion(e.target.value)}
+              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                selectedInclusion
+                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <option value="">Inclusions</option>
+              <option value="hotel">Hotel Included</option>
+              <option value="meals">Meals Included</option>
+              <option value="flights">Flights Included</option>
+              <option value="guide">Guide Included</option>
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+
+          {/* Departure Month Dropdown Pill */}
+          <div className="relative shrink-0">
+            <select
+              value={selectedDepartureMonth}
+              onChange={(e) => setSelectedDepartureMonth(e.target.value)}
+              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                selectedDepartureMonth
+                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <option value="">Departure Month</option>
+              <option value="Sep">Sep 2026</option>
+              <option value="Oct">Oct 2026</option>
+              <option value="Nov">Nov 2026</option>
+              <option value="Dec">Dec 2026</option>
+              <option value="Aug">Aug 2026</option>
+              <option value="Jul">Jul 2026</option>
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+        </div>
+
+        {/* ── 5. ⭐ Featured Category Showcase Banner Card ── */}
+        <section className="mt-8 rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs">
+          <div className="grid grid-cols-1 gap-6 items-center md:grid-cols-2">
+            {/* Left side content */}
+            <div>
+              <h3 className="text-xl sm:text-2xl font-black text-[#0B1527]">
+                {showcaseTitle}
+              </h3>
+              <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-slate-600 font-medium">
+                {showcaseDescription}
+              </p>
+
+              {/* 3 Category Filter Buttons */}
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubCategory(selectedSubCategory === "group" ? "all" : "group")}
+                  className={`rounded-xl px-5 py-2.5 text-xs font-bold transition ${
+                    selectedSubCategory === "group"
+                      ? "bg-[#0B1527] text-white shadow-xs"
+                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Group Tour
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubCategory(selectedSubCategory === "private" ? "all" : "private")}
+                  className={`rounded-xl px-5 py-2.5 text-xs font-bold transition ${
+                    selectedSubCategory === "private"
+                      ? "bg-[#0B1527] text-white shadow-xs"
+                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Private Tour
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubCategory(selectedSubCategory === "city" ? "all" : "city")}
+                  className={`rounded-xl px-5 py-2.5 text-xs font-bold transition ${
+                    selectedSubCategory === "city"
+                      ? "bg-[#0B1527] text-white shadow-xs"
+                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  City Explore
+                </button>
               </div>
-            </FilterSection>
+            </div>
 
-            <FilterSection title="Price range" defaultOpen>
-              <PriceRangeSlider min={draftMinPrice} max={draftMaxPrice} bounds={PRICE_BOUNDS} onChange={(lo, hi) => { setDraftMinPrice(lo); setDraftMaxPrice(hi); }} format={formatCompact} />
-            </FilterSection>
-
-            {categoryOptions.length > 0 && (
-              <FilterSection title="Category">
-                <div className="space-y-2">
-                  {categoryOptions.map((option) => (
-                    <label key={option.value} className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-                      <input type="checkbox" checked={draftCategory === option.value} onChange={() => setDraftCategory(draftCategory === option.value ? "" : option.value)} className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600" />{option.label}
-                    </label>
-                  ))}
-                </div>
-              </FilterSection>
-            )}
-
-            <button type="button" onClick={applyDraftFilters} className="mt-6 w-full rounded-lg bg-blue-600 py-3 text-sm font-black text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200">Apply filters</button>
-          </aside>
-
-          <div className="min-w-0">
-            {activeChips.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 pb-6">
-                {activeChips.map((chip) => (
-                  <span key={chip.key} className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:border-slate-300">
-                    {chip.label}
-                    <button type="button" aria-label={`Remove ${chip.label} filter`} onClick={() => removeFilter(chip.key)} className="text-slate-400 transition-colors hover:text-slate-700"><X size={12} /></button>
-                  </span>
-                ))}
-                <button type="button" onClick={clearFilters} className="text-xs font-bold text-blue-600 hover:underline">Clear all</button>
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-6">
-              <FilterSelect
-                label="Sort by"
-                prefix="Sort by:"
-                value={querySort}
-                active={querySort !== "newest"}
-                options={[{ label: "Recommended", value: "newest" }, { label: "Price: Low to high", value: "price_asc" }, { label: "Price: High to low", value: "price_desc" }, { label: "Shortest first", value: "duration_asc" }]}
-                onChange={(value) => applyFilter({ sort: value })}
+            {/* Right side image */}
+            <div className="relative h-56 sm:h-64 w-full overflow-hidden rounded-2xl bg-slate-100 shadow-xs">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={showcaseImage}
+                alt={showcaseTitle}
+                className="h-full w-full object-cover transition duration-500 hover:scale-105"
               />
-              <div className="flex rounded-lg bg-slate-50 p-1"><button type="button" aria-label="Grid view" onClick={() => setView("grid")} className={`flex h-8 w-8 items-center justify-center rounded transition-all ${view === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}><Grid size={17} /></button><button type="button" aria-label="List view" onClick={() => setView("list")} className={`flex h-8 w-8 items-center justify-center rounded transition-all ${view === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}><List size={18} /></button></div>
             </div>
-
-            {loading ? (
-              <div className="py-4">
-                <PublicTourGridSkeleton count={6} />
-              </div>
-            ) : pagedTours.length === 0 ? (
-              <div className="py-8">
-                <PublicEmptyState
-                  title="No tours match these filters"
-                  description="Try widening your search keywords, adjusting duration, or clearing a filter to see all available packages."
-                  actionLabel="Clear All Filters"
-                  onReset={clearFilters}
-                />
-              </div>
-            ) : (
-              <div className={`grid items-start gap-8 ${view === "grid" ? "md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"}`}>
-                {pagedTours.map((tour) => (
-                  <TourCard
-                    key={tour.id}
-                    tour={tour}
-                    format={formatCompact}
-                    variant="search"
-                    view={view}
-                    wishlisted={isWishlisted(tour.id)}
-                    onWishlist={() => toggleWishlist({ id: tour.id, title: tour.title, place: tour.country_name, image: tour.banner_image ? mediaUrl(tour.banner_image) : FALLBACK, price: tour.price_start_per_person, currency: tour.currency || "USD", duration: tour.number_of_days ? `${tour.number_of_days} days` : "Flexible", href: publicTourUrl(tour) })}
-                  />
-                ))}
-              </div>
-            )}
-
-            {totalPages > 1 && (
-              <div className="mt-10 flex items-center justify-center gap-2">
-                <button type="button" aria-label="Previous page" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 transition-colors hover:border-blue-300 hover:text-blue-600 disabled:pointer-events-none disabled:opacity-30"><ChevronLeft size={16} /></button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
-                  <button key={num} type="button" onClick={() => setPage(num)} className={`flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-bold transition-all ${page === num ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-200" : "border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"}`}>{num}</button>
-                ))}
-                <button type="button" aria-label="Next page" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 transition-colors hover:border-blue-300 hover:text-blue-600 disabled:pointer-events-none disabled:opacity-30"><ChevronRight size={16} /></button>
-              </div>
-            )}
           </div>
-        </div>
+        </section>
+
+        {/* ── 6. 3-Column Tour Card Grid or Empty State ── */}
+        {filteredTours.length === 0 ? (
+          <div className="mt-12 flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-slate-50 p-12 text-center">
+            <MapPin size={36} className="text-slate-400" />
+            <h3 className="mt-3 text-lg font-black text-slate-900">No tours match your filters</h3>
+            <p className="mt-1 text-xs text-slate-500 max-w-sm">
+              Try adjusting or clearing your selected filters to discover other available journeys across our destinations.
+            </p>
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="mt-5 rounded-xl bg-[#0B1527] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#15233C] transition"
+            >
+              Clear All Filters
+            </button>
+          </div>
+        ) : (
+          <div
+            className={`mt-8 ${
+              viewMode === "grid"
+                ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                : "flex flex-col gap-6"
+            }`}
+          >
+            {filteredTours.map((tour, idx) => {
+              const tourLink = tour.slug
+                ? publicTourUrl({ country_name: tour.country_name || tour.location, title: tour.title, slug: tour.slug })
+                : `/tours/${tour.id}`;
+
+              return (
+                <div
+                  key={`${tour.id}-${idx}`}
+                  className={`group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                    viewMode === "list" ? "sm:flex-row" : ""
+                  }`}
+                >
+                  {/* ── Card Image Header ── */}
+                  <div
+                    className={`relative w-full overflow-hidden ${
+                      viewMode === "list" ? "h-56 sm:h-auto sm:w-80 shrink-0" : "h-52"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={tour.image}
+                      alt={tour.title}
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                    />
+                    {/* Location badge top-left */}
+                    <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-slate-800 backdrop-blur-xs shadow-xs">
+                      <MapPin size={11} className="text-slate-600" />
+                      {tour.location}
+                    </span>
+
+                    {/* Heart button top-right */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toggleWishlist({
+                          id: typeof tour.id === "number" ? tour.id : 1,
+                          title: tour.title,
+                          place: tour.location,
+                          duration: tour.duration,
+                          image: tour.image,
+                          price: tour.rawPrice,
+                          currency: tour.currency || "USD",
+                          href: tourLink,
+                        })
+                      }
+                      aria-label="Save tour to wishlist"
+                      className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-red-500 shadow-xs hover:scale-110 transition"
+                    >
+                      <Heart size={14} className="fill-current text-red-500" />
+                    </button>
+                  </div>
+
+                  {/* ── Card Body ── */}
+                  <div className="flex flex-1 flex-col justify-between p-4 sm:p-5">
+                    <div>
+                      {/* Title and Duration Badge */}
+                      <div className="flex items-start justify-between gap-2">
+                        <Link
+                          href={tourLink}
+                          className="text-sm font-bold text-[#0B1527] transition hover:text-blue-600 line-clamp-1"
+                        >
+                          {tour.title}
+                        </Link>
+                        <span className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
+                          {tour.duration}
+                        </span>
+                      </div>
+
+                      {/* Specifications Grid */}
+                      <div className="mt-3.5 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10px] text-slate-600 font-medium">
+                        {/* Left Column */}
+                        <div className="space-y-1.5">
+                          <p className="flex items-center gap-1.5 truncate">
+                            <Clock size={11} className="text-blue-500 shrink-0" />
+                            <span>{tour.days} Days</span>
+                          </p>
+                          <p className="flex items-center gap-1.5 truncate">
+                            <MapPin size={11} className="text-blue-500 shrink-0" />
+                            <span className="truncate">{tour.route}</span>
+                          </p>
+                          <p className="flex items-center gap-1.5 truncate">
+                            <Compass size={11} className="text-blue-500 shrink-0" />
+                            <span>{tour.guideType}</span>
+                          </p>
+                          <p className="flex items-center gap-1.5 truncate">
+                            <Users size={11} className="text-blue-500 shrink-0" />
+                            <span>Max Group Size: {tour.maxGroup}</span>
+                          </p>
+                        </div>
+
+                        {/* Right Column */}
+                        <div className="space-y-1.5">
+                          <p className="flex items-center gap-1.5 truncate">
+                            <User size={11} className="text-blue-500 shrink-0" />
+                            <span>Minimum age: {tour.minAge}</span>
+                          </p>
+                          <p className="flex items-center gap-1.5 truncate">
+                            <User size={11} className="text-blue-500 shrink-0" />
+                            <span>Maximum age: {tour.maxAge}</span>
+                          </p>
+                          <p className="flex items-center gap-1.5 truncate">
+                            <MapPin size={11} className="text-blue-500 shrink-0" />
+                            <span className="truncate">{tour.cities}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Upcoming Departure Dates Strip */}
+                      <div className="mt-4 grid grid-cols-4 gap-1 rounded-xl border border-slate-100 bg-[#F9FBFE] p-1.5 text-center">
+                        {tour.departures.map((dep, dIdx) => (
+                          <div key={dIdx} className="rounded-lg bg-white py-1 px-0.5 border border-slate-100 shadow-2xs">
+                            <p className="text-[8px] font-semibold text-slate-400 truncate">{dep.date}</p>
+                            <p className="text-[10px] font-bold text-slate-900 leading-tight">{dep.price}</p>
+                          </div>
+                        ))}
+                        <div className="flex items-center justify-center rounded-lg py-1 text-[10px] font-bold text-slate-700 hover:bg-white transition cursor-pointer">
+                          +More
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── Card Footer ── */}
+                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                      <div>
+                        <span className="text-[10px] text-slate-400">From </span>
+                        <span className="text-[10px] line-through text-slate-400 mr-1">{tour.originalPrice} pp</span>
+                        <span className="text-sm font-black text-slate-900">{tour.price}</span>
+                        <span className="text-[10px] text-slate-400"> pp</span>
+                      </div>
+                      <Link
+                        href={tourLink}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
+                      >
+                        View tour
+                        <ArrowRight size={12} />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </main>
   );
-}
-
-function FilterSection({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="mt-5 border-t border-slate-100 pt-5">
-      <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between text-xs font-black uppercase tracking-wide text-slate-700 transition-colors hover:text-blue-600">
-        {title}<ChevronDown size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && <div className="mt-3">{children}</div>}
-    </div>
-  );
-}
-
-function PriceRangeSlider({ min, max, bounds, onChange, format }: { min: number; max: number; bounds: [number, number]; onChange: (min: number, max: number) => void; format: (n: number) => string }) {
-  const [lo, hi] = bounds;
-  const pct = (v: number) => ((v - lo) / (hi - lo)) * 100;
-  const thumb = "[&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow [&::-webkit-slider-thumb]:pointer-events-auto";
-  return (
-    <div>
-      <div className="relative h-1.5 rounded-full bg-slate-200">
-        <div className="absolute h-1.5 rounded-full bg-blue-600" style={{ left: `${pct(min)}%`, right: `${100 - pct(max)}%` }} />
-        <input type="range" min={lo} max={hi} step={1000} value={min} onChange={(e) => onChange(Math.min(Number(e.target.value), max), max)} className={`pointer-events-none absolute inset-0 z-10 w-full appearance-none bg-transparent ${thumb}`} />
-        <input type="range" min={lo} max={hi} step={1000} value={max} onChange={(e) => onChange(min, Math.max(Number(e.target.value), min))} className={`pointer-events-none absolute inset-0 z-20 w-full appearance-none bg-transparent ${thumb}`} />
-      </div>
-      <div className="mt-3 flex justify-between text-xs font-semibold text-slate-500"><span>{format(min)}</span><span>{format(max)}{max >= hi ? "+" : ""}</span></div>
-    </div>
-  );
-}
-
-function FilterSelect({ label, value, active, options, onChange, prefix }: { label: string; value: string; active: boolean; options: { label: string; value: string }[]; onChange: (value: string) => void; prefix?: string }) {
-  return (
-    <label className={`relative flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition-all ${active ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-200" : "border-slate-200 bg-white hover:border-blue-300 hover:text-blue-600"}`}>
-      {prefix && <span className={active ? "text-white/80" : "text-slate-400"}>{prefix}</span>}
-      <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} className="cursor-pointer appearance-none bg-transparent py-0 pl-0 pr-5 text-xs font-semibold outline-none">
-        <option value={value} disabled hidden>{options.find((option) => option.value === value)?.label || label}</option>
-        {options.map((option) => <option key={`${label}-${option.value}`} value={option.value} className="bg-white text-slate-900">{option.label}</option>)}
-      </select>
-      <ChevronDown size={13} className="pointer-events-none absolute right-2" />
-    </label>
-  );
-}
-
-function departureMonths() {
-  const today = new Date();
-  const options = [{ label: "Any departure month", value: "" }];
-  for (let offset = 0; offset < 12; offset += 1) {
-    const date = new Date(today.getFullYear(), today.getMonth() + offset, 1);
-    options.push({ label: new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(date), value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}` });
-  }
-  return options;
-}
-
-function monthLabel(key: string) {
-  const [year, month] = key.split("-").map(Number);
-  return new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(new Date(year, (month || 1) - 1, 1));
-}
-
-function durationTierFor(minDays: string, maxDays: string) {
-  if (minDays === "1" && maxDays === "3") return "1-3";
-  if (minDays === "4" && maxDays === "7") return "4-7";
-  if (minDays === "8" && !maxDays) return "8+";
-  return "";
-}
-
-function durationRangeFor(tier: string): [string, string] {
-  if (tier === "1-3") return ["1", "3"];
-  if (tier === "4-7") return ["4", "7"];
-  if (tier === "8+") return ["8", ""];
-  return ["", ""];
-}
-
-function durationLabelFor(minDays: string, maxDays: string) {
-  if (minDays && maxDays) return `${minDays}–${maxDays} Days`;
-  if (minDays) return `${minDays}+ Days`;
-  return `Up to ${maxDays} Days`;
 }

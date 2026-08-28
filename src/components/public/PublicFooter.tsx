@@ -18,10 +18,10 @@ import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 
 const supportLinks = [
   ["Contact", "/contact"],
-  ["Legal Notice", "/legal"],
+  ["Legal Notice", "/terms"],
   ["Privacy Policy.", "/privacy-policy"],
   ["General Terms and Conditions", "/terms"],
-  ["Plan Your Trip", "/plan-your-trip"],
+  ["Plan Your Trip", "/contact"],
 ] as const;
 
 const companyLinks = [

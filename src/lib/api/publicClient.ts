@@ -221,12 +221,15 @@ export async function fetchCustomerReviews() {
 }
 
 export async function fetchPopularTours() {
-  const res = await cmsApi.get("/popular-tours", { params: { active_only: true, limit: 20 } });
+  // published_only: true - a pinned tour can be unpublished after pinning;
+  // without this the homepage would try to fetch a tour it can't see and
+  // 404. See services/website_cms.py list_popular_tours.
+  const res = await cmsApi.get("/popular-tours", { params: { active_only: true, published_only: true, limit: 20 } });
   return (res.data.items || res.data.data || []) as CmsPopularTour[];
 }
 
 export async function fetchToursOnDeals() {
-  const res = await cmsApi.get("/tours-on-deals", { params: { active_only: true, limit: 20 } });
+  const res = await cmsApi.get("/tours-on-deals", { params: { active_only: true, published_only: true, limit: 20 } });
   return (res.data.items || res.data.data || []) as CmsDealTour[];
 }
 

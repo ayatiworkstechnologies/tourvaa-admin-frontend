@@ -35,12 +35,14 @@ function toPost(blog: CmsBlog) {
 export default function BlogsPage() {
   const [posts, setPosts] = useState<ReturnType<typeof toPost>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
 
   useEffect(() => {
     let active = true;
     fetchPublicBlogs()
       .then((blogs) => { if (active) setPosts(blogs.map(toPost)); })
+      .catch(() => { if (active) setError(true); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
@@ -82,6 +84,11 @@ export default function BlogsPage() {
         {loading ? (
           <div className="rounded-3xl border border-dashed border-zinc-200 bg-white py-20 text-center">
             <p className="text-lg font-bold text-zinc-500">Loading articles…</p>
+          </div>
+        ) : error ? (
+          <div className="rounded-3xl border border-dashed border-red-200 bg-red-50 py-20 text-center">
+            <p className="text-lg font-bold text-red-600">Couldn&apos;t load articles right now.</p>
+            <p className="mt-2 text-sm text-red-500">Please try refreshing the page.</p>
           </div>
         ) : !featured ? (
           <div className="rounded-3xl border border-dashed border-zinc-200 bg-white py-20 text-center">

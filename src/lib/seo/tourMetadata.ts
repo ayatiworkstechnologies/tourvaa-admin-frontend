@@ -22,7 +22,17 @@ const API_BASE = (process.env.API_PROXY_TARGET || "http://127.0.0.1:8000").repla
 
 export async function fetchTourForSeo(path: string): Promise<TourSeoData | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/public${path}`, { next: { revalidate: 300 } });
+    // cache: "no-store", not { next: { revalidate } } - on Windows, Next's
+    // Data Cache write path (triggered whenever a `next.revalidate` fetch
+    // gets a real, cacheable response) crashes the render worker with
+    // "Jest worker encountered N child process exceptions, exceeding retry
+    // limit". Confirmed by isolation: this only ever crashed on requests
+    // that got real tour data back (the write path only fires on success);
+    // a 404/no-match response never triggered it. Every other server-side
+    // SEO fetch in this codebase (blogMetadata.ts, countryMetadata.ts,
+    // sitemap.ts, llms.txt/route.ts) hit the exact same crash and got the
+    // same fix - keep them consistent if you touch one.
+    const res = await fetch(`${API_BASE}/api/public${path}`, { cache: "no-store" });
     if (!res.ok) return null;
     const json = await res.json();
     return (json?.data as TourSeoData) ?? null;

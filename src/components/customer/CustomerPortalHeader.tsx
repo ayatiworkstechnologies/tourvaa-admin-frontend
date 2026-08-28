@@ -9,8 +9,7 @@ import {
   LuUserRound as User,
 } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
-import CurrencySelector from "@/components/public/CurrencySelector";
-import { useCurrency } from "@/hooks/useCurrency";
+import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelector";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 
 export default function CustomerPortalHeader() {
@@ -18,7 +17,6 @@ export default function CustomerPortalHeader() {
   const profileRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuthContext();
   const { wishlistCount, compareCount } = useTravelStore();
-  const { symbol: currencySymbol } = useCurrency();
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
@@ -34,44 +32,43 @@ export default function CustomerPortalHeader() {
   }, []);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-100 bg-white/95 text-slate-900 shadow-sm backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-[1480px] min-w-0 items-center justify-between gap-4 py-2 pl-4 pr-6 sm:h-[92px] sm:pl-7 lg:pl-12">
-        <Link href="/customer/dashboard" className="text-2xl font-black tracking-tight text-[#1478f2]">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-100 bg-white text-slate-900 shadow-xs">
+      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-4 px-6 sm:h-[84px] lg:px-8">
+        <Link href="/customer/dashboard" className="text-2xl font-extrabold tracking-tight text-[#0B1527]">
           Tourvaa
         </Link>
-        <nav className="flex items-center gap-4 lg:gap-6">
-          <Link href="/customer/wishlist" className="group relative flex flex-col items-center gap-1 text-[9px] font-semibold">
-            <Heart size={17} className="transition group-hover:-translate-y-1 group-hover:text-blue-600" />
-            Wishlist
+        <nav className="flex items-center gap-5 sm:gap-7">
+          <Link href="/customer/wishlist" className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-700 hover:text-blue-600 transition">
+            <Heart size={18} className="stroke-[1.8] transition group-hover:-translate-y-0.5" />
+            <span>Wishlist</span>
             {wishlistCount > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}
           </Link>
-          <Link href="/compare" className="group relative flex flex-col items-center gap-1 text-[9px] font-semibold">
-            <Scale size={17} className="transition group-hover:-translate-y-1 group-hover:text-blue-600" />
-            Compare
+          <Link href="/compare" className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-700 hover:text-blue-600 transition">
+            <Scale size={18} className="stroke-[1.8] transition group-hover:-translate-y-0.5" />
+            <span>Compare</span>
             {compareCount > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">
                 {compareCount}
               </span>
             )}
           </Link>
-          <span className="flex items-center gap-1 text-[9px] font-semibold">
-            <span className="text-[15px] leading-none" aria-hidden="true">{currencySymbol}</span>
-            <CurrencySelector plain />
-          </span>
+          <div className="flex items-center">
+            <LanguageCurrencySelector />
+          </div>
           <div ref={profileRef} className="relative">
             <button
               type="button"
               onClick={() => setProfileOpen((value) => !value)}
               aria-expanded={profileOpen}
               aria-haspopup="menu"
-              className="group flex flex-col items-center gap-0.5 text-[9px] font-semibold"
+              className="group flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-700 hover:text-blue-600 transition"
             >
-              <User size={17} className="transition group-hover:-translate-y-1 group-hover:text-blue-600" />
-              Profile
+              <User size={18} className="stroke-[1.8] transition group-hover:-translate-y-0.5" />
+              <span>Profile</span>
             </button>
             {profileOpen && (
               <div
@@ -92,7 +89,7 @@ export default function CustomerPortalHeader() {
                     <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
                       <User size={16} />
                     </span>
-                    Profile
+                    Profile Settings
                   </Link>
                   <button
                     type="button"

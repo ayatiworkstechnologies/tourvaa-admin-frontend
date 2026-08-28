@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -67,22 +67,34 @@ function StatusIcon({ status }: { status: string }) {
 function Field({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-wide text-dash-subtle">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-dash-text">{value || "-"}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+      <p className="mt-1 text-xs font-semibold text-slate-800">{value || "-"}</p>
     </div>
   );
 }
 
-function Panel({ title, icon: Icon, iconColor = "text-dash-brand", iconBg = "bg-[var(--portal-soft)]", children }: { title: string; icon?: React.ComponentType<{ size?: number; className?: string }>; iconColor?: string; iconBg?: string; children: React.ReactNode }) {
+function Panel({
+  title,
+  icon: Icon,
+  iconColor = "text-[#0B1527]",
+  iconBg = "bg-slate-100",
+  children,
+}: {
+  title: string;
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
+  iconColor?: string;
+  iconBg?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="rounded-2xl border border-transparent bg-white p-6 shadow-sm ring-1 ring-slate-100 transition hover:shadow-md">
+    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="mb-4 flex items-center gap-2.5">
         {Icon && (
-          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
+          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
             <Icon size={15} className={iconColor} />
           </div>
         )}
-        <h3 className="text-xs font-black uppercase tracking-wider text-dash-muted">{title}</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#0B1527]">{title}</h3>
       </div>
       {children}
     </div>
@@ -479,19 +491,22 @@ export default function CustomerBookingDetailPage() {
       {!loading && booking && (
         <>
           {/* Booking header */}
-          <div className="relative mb-4 overflow-hidden rounded-2xl border border-[#DCE7F5] bg-white p-6 shadow-[0_12px_40px_-32px_rgba(21,77,151,.55)] md:p-7">
-            <div className="pointer-events-none absolute -right-12 -top-20 h-52 w-52 rounded-full bg-[#E9F3FF] blur-2xl" />
+          <div className="relative mb-6 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)] md:p-7">
             <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-mono text-[11px] font-bold uppercase tracking-wide text-[#2475E8]">{booking.booking_code}</p>
-                <h2 className="mt-1 text-2xl font-black leading-tight text-[#0C2043] md:text-3xl">{booking.tour_name || "Tour Booking"}</h2>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  BOOKING CODE: <span className="font-mono text-[#1B64F2]">#{booking.booking_code.replace(/^#/, "")}</span>
+                </p>
+                <h2 className="mt-1 text-xl font-black leading-tight text-[#0B1527] md:text-2xl">
+                  {booking.tour_name || "Tour Booking"}
+                </h2>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="flex items-center gap-1 rounded-full border border-[#DCE5F0] bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">
+                  <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
                     <StatusIcon status={booking.booking_status} />
                     {booking.booking_status.replaceAll("_", " ")}
                   </span>
                   {booking.payment_status && (
-                    <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-bold text-[#0865D9]">
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600">
                       {booking.payment_status.replaceAll("_", " ")}
                     </span>
                   )}
@@ -499,22 +514,31 @@ export default function CustomerBookingDetailPage() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 {canPay && (
-                  <button type="button" onClick={() => setShowPayModal(true)}
-                    className="flex items-center gap-2 rounded-xl bg-[#0868E8] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-100 hover:bg-[#075AC9] transition-all">
-                    <CreditCard size={16} />
+                  <button
+                    type="button"
+                    onClick={() => setShowPayModal(true)}
+                    className="flex items-center gap-2 rounded-xl bg-[#0B1527] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#15233C] transition"
+                  >
+                    <CreditCard size={15} />
                     Pay Now ({format(pendingAmount, booking.currency)})
                   </button>
                 )}
                 {canCancel && !showCancel && (
-                  <button type="button" onClick={() => setShowCancel(true)}
-                    className="flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-all">
-                    <XCircle size={16} /> Request Cancellation
+                  <button
+                    type="button"
+                    onClick={() => setShowCancel(true)}
+                    className="flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition"
+                  >
+                    <XCircle size={15} /> Request Cancellation
                   </button>
                 )}
                 {canReview && !showReview && (
-                  <button type="button" onClick={() => setShowReview(true)}
-                    className="flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-50 transition-all">
-                    <Star size={16} /> Submit Review
+                  <button
+                    type="button"
+                    onClick={() => setShowReview(true)}
+                    className="flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-xs font-bold text-amber-700 hover:bg-amber-50 transition"
+                  >
+                    <Star size={15} /> Submit Review
                   </button>
                 )}
               </div>

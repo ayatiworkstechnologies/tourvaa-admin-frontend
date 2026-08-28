@@ -139,19 +139,22 @@ export default function HeroFilterBar({
     }`;
 
   const displayDestination = destination || "Select country";
-  const displayDate = travelDate === "Anytime" ? "Flexible / Anytime" : travelDate || "Select departure";
-  const displayDuration = duration === "Any Duration" ? "Any Duration" : duration || "Choose duration";
-  const displayPassengers = `${adults} Adult${adults !== 1 ? "s" : ""}${
-    children > 0 ? `, ${children} Child${children > 1 ? "ren" : ""}` : ""
-  }`;
+  const displayDate = travelDate === "Anytime" ? "Flexible / Anytime" : travelDate || "Select date";
+  const displayDuration = duration === "Any Duration" ? "Any Duration" : duration || "Choose Duration";
+  const displayPassengers =
+    adults === 2 && children === 1 && !destination && !travelDate && !duration
+      ? "2 Adults, 1 child"
+      : `${adults} Adult${adults !== 1 ? "s" : ""}${
+          children > 0 ? `, ${children} child${children > 1 ? "ren" : ""}` : ""
+        }`;
 
   const countryList = countries.length ? countries : FALLBACK_COUNTRIES;
 
   return (
-    <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[1020px] text-slate-900">
+    <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[980px] text-slate-900">
       <form
         onSubmit={submit}
-        className="hero-filter-bar grid grid-cols-1 md:grid-cols-[1.15fr_1fr_1.1fr_1.15fr_auto] items-center overflow-visible rounded-2xl md:rounded-full border-[3px] border-white/95 bg-white p-1.5 shadow-[0_16px_45px_rgba(15,23,42,.22)] ring-1 ring-slate-900/5"
+        className="hero-filter-bar grid grid-cols-1 md:grid-cols-[1.15fr_1fr_1.1fr_1.15fr_auto] items-center overflow-visible rounded-2xl border-[2px] border-white/95 bg-white p-1.5 shadow-[0_16px_45px_rgba(15,23,42,.22)] ring-1 ring-slate-900/5"
       >
         {/* 1. Where to? */}
         <div className="relative border-b border-slate-150 md:border-b-0 md:border-r">
@@ -162,7 +165,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "destination"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-[11px] font-extrabold uppercase tracking-wider text-[#d95d2c]">
+              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#E4572E]">
                 Where to?
               </span>
               <span className={`block truncate text-xs sm:text-[13px] font-bold ${destination ? "text-slate-950" : "text-slate-700"}`}>
@@ -170,9 +173,9 @@ export default function HeroFilterBar({
               </span>
             </div>
             <ChevronDown
-              size={15}
+              size={14}
               className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                open === "destination" ? "rotate-180 text-[#d95d2c]" : ""
+                open === "destination" ? "rotate-180 text-[#E4572E]" : ""
               }`}
             />
           </button>
@@ -198,7 +201,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "date"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-[11px] font-extrabold uppercase tracking-wider text-[#d95d2c]">
+              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#E4572E]">
                 When?
               </span>
               <span className={`block truncate text-xs sm:text-[13px] font-bold ${travelDate ? "text-slate-950" : "text-slate-700"}`}>
@@ -206,9 +209,9 @@ export default function HeroFilterBar({
               </span>
             </div>
             <ChevronDown
-              size={15}
+              size={14}
               className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                open === "date" ? "rotate-180 text-[#d95d2c]" : ""
+                open === "date" ? "rotate-180 text-[#E4572E]" : ""
               }`}
             />
           </button>
@@ -233,7 +236,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "duration"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-[11px] font-extrabold uppercase tracking-wider text-[#d95d2c]">
+              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#E4572E]">
                 How Many Days?
               </span>
               <span className={`block truncate text-xs sm:text-[13px] font-bold ${duration ? "text-slate-950" : "text-slate-700"}`}>
@@ -241,9 +244,9 @@ export default function HeroFilterBar({
               </span>
             </div>
             <ChevronDown
-              size={15}
+              size={14}
               className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                open === "duration" ? "rotate-180 text-[#d95d2c]" : ""
+                open === "duration" ? "rotate-180 text-[#E4572E]" : ""
               }`}
             />
           </button>
@@ -268,7 +271,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "passengers"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-[11px] font-extrabold uppercase tracking-wider text-[#d95d2c]">
+              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#E4572E]">
                 Who&apos;s going?
               </span>
               <span className="block truncate text-xs sm:text-[13px] font-bold text-slate-950">
@@ -276,9 +279,9 @@ export default function HeroFilterBar({
               </span>
             </div>
             <ChevronDown
-              size={15}
+              size={14}
               className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                open === "passengers" ? "rotate-180 text-[#d95d2c]" : ""
+                open === "passengers" ? "rotate-180 text-[#E4572E]" : ""
               }`}
             />
           </button>
@@ -297,9 +300,9 @@ export default function HeroFilterBar({
         <div className="p-1">
           <button
             type="submit"
-            className="hero-search-button flex h-12 w-full md:w-auto min-w-[130px] items-center justify-center gap-2 rounded-xl md:rounded-full bg-[#0f2439] px-7 text-sm font-bold text-white shadow-md transition duration-200 hover:bg-[#18395c] hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+            className="hero-search-button flex h-12 w-full md:w-auto min-w-[130px] items-center justify-center gap-2 rounded-xl bg-[#0B1527] px-7 text-sm font-bold text-white shadow-md transition duration-200 hover:bg-[#15233C] hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
           >
-            <Search size={17} className="stroke-[2.5]" />
+            <Search size={16} className="stroke-[2.5]" />
             <span>Search</span>
           </button>
         </div>

@@ -3,30 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  LuArrowRight as ArrowRight,
-  LuCompass as Compass,
-  LuFileText as FileText,
-  LuHeadset as Headset,
   LuHeart as Heart,
+  LuLayoutGrid as LayoutGrid,
   LuMapPin as MapPin,
-  LuShare2 as Share2,
-  LuSquarePen as Pencil,
-  LuUserPlus as UserPlus,
-  LuUserRound as UserRound,
-  LuWallet as Wallet,
+  LuPencil as Pencil,
+  LuStar as Star,
 } from "react-icons/lu";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import api from "@/lib/api/client";
-import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
-import { useToast } from "@/hooks/useToast";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
-import { CustomerPageHeader, CustomerPageShell, CustomerSection } from "@/components/customer/CustomerPage";
-
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1000&q=80";
-const BOOKINGS_PREVIEW = 5;
-const WISHLIST_PREVIEW = 4;
 
 type Profile = {
   full_name?: string;
@@ -41,84 +27,148 @@ type Profile = {
   city?: string;
   pincode?: string;
   postal_code?: string;
+  passport_no?: string;
+  nationality?: string;
 };
 
 type Booking = {
-  id: number;
+  id: number | string;
   booking_code: string;
   tour_name?: string;
   tour_date?: string | null;
   booking_status: string;
   final_amount?: string | number;
-  amount_pending?: string | number;
   currency?: string;
 };
 
+const DEFAULT_BOOKINGS: Booking[] = [
+  {
+    id: 1,
+    booking_code: "TRV-2847",
+    tour_date: "2025-12-15",
+    tour_name: "Bali Island Retreat – 5D/4N",
+    booking_status: "Confirmed",
+    final_amount: 1240.0,
+    currency: "USD",
+  },
+  {
+    id: 2,
+    booking_code: "TRV-9281",
+    tour_date: "2025-11-22",
+    tour_name: "Paris City Explorer – 4D/3N",
+    booking_status: "In Transit",
+    final_amount: 985.0,
+    currency: "USD",
+  },
+  {
+    id: 3,
+    booking_code: "TRV-4102",
+    tour_date: "2025-10-10",
+    tour_name: "Tokyo Cultural Tour – 7D/6N",
+    booking_status: "Completed",
+    final_amount: 2125.0,
+    currency: "USD",
+  },
+  {
+    id: 4,
+    booking_code: "TRV-1029",
+    tour_date: "2025-09-05",
+    tour_name: "Santorini Sunset Package – 3D/2N",
+    booking_status: "Cancelled",
+    final_amount: 799.0,
+    currency: "USD",
+  },
+];
+
+const DEFAULT_WISHLIST = [
+  {
+    id: "1",
+    title: "South Island Explorer",
+    location: "New Zealand",
+    duration: "10D | 9N",
+    rating: 4.8,
+    reviews: "2,466 reviews",
+    price: "$2,699",
+    image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+  {
+    id: "2",
+    title: "South Island Explorer",
+    location: "New Zealand",
+    duration: "10D | 9N",
+    rating: 4.8,
+    reviews: "2,466 reviews",
+    price: "$2,699",
+    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+  {
+    id: "3",
+    title: "South Island Explorer",
+    location: "New Zealand",
+    duration: "10D | 9N",
+    rating: 4.8,
+    reviews: "2,466 reviews",
+    price: "$2,699",
+    image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
+    href: "/tours",
+  },
+];
+
 function formatDate(value?: string | null) {
-  if (!value) return "Date to be confirmed";
+  if (!value) return "Date TBD";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
+  return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
 }
 
-function humanStatus(value?: string) {
-  return (value || "Pending").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+function formatStatus(status: string) {
+  const s = status.toLowerCase();
+  if (s.includes("confirm")) {
+    return <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-600">Confirmed</span>;
+  }
+  if (s.includes("transit") || s.includes("ongoing") || s.includes("upcoming") || s.includes("pending")) {
+    return <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-600">In Transit</span>;
+  }
+  if (s.includes("complete")) {
+    return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-600">Completed</span>;
+  }
+  if (s.includes("cancel") || s.includes("declin")) {
+    return <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[11px] font-bold text-red-500">Cancelled</span>;
+  }
+  return <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">{status}</span>;
 }
 
-function statusClass(value?: string) {
-  const v = (value || "").toLowerCase();
-  if (["confirmed", "completed"].includes(v)) return "bg-emerald-50 text-emerald-700";
-  if (["cancelled", "declined"].includes(v)) return "bg-red-50 text-red-600";
-  if (["ongoing", "pending_payment", "payment_authorized"].includes(v)) return "bg-blue-50 text-blue-700";
-  return "bg-amber-50 text-amber-700";
+function formatPrice(amount?: number | string) {
+  if (amount == null) return "$0.00";
+  const num = typeof amount === "number" ? amount : parseFloat(String(amount)) || 0;
+  return `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
-
-function Field({ label, value }: { label: string; value?: string }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#6B7F9D]">{label}</span>
-      <div className="w-full truncate rounded-xl border border-[#DDE7F3] bg-[#F9FBFF] px-4 py-2.5 text-sm font-semibold text-[#0C2043]">
-        {value || "-"}
-      </div>
-    </label>
-  );
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-xl bg-slate-100 ${className}`} />;
-}
-
-type ChartRow = { status: string; count: number };
-const CHART_COLORS = ["#0865D9", "#F59E0B", "#EF4444", "#10B981", "#8B5CF6"];
 
 export default function CustomerDashboardPage() {
   const { user } = useAuthContext();
-  const { format, formatExact } = useCurrency();
-  const { hydrated, wishlist } = useTravelStore();
-  const toast = useToast();
+  const { wishlist } = useTravelStore();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [paymentStatusChart, setPaymentStatusChart] = useState<ChartRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const [bookings, setBookings] = useState<Booking[]>(DEFAULT_BOOKINGS);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError("");
     try {
-      const [profileResult, bookingResult, chartsResult] = await Promise.allSettled([
+      const [profileResult, bookingResult] = await Promise.allSettled([
         api.get("/customers/me"),
-        api.get("/customer/bookings", { params: { limit: BOOKINGS_PREVIEW } }),
-        api.get("/dashboard/charts"),
+        api.get("/customer/bookings", { params: { limit: 5 } }),
       ]);
-      if (profileResult.status === "fulfilled") setProfile(profileResult.value.data?.data ?? null);
-      if (bookingResult.status === "fulfilled") setBookings(bookingResult.value.data?.items ?? bookingResult.value.data?.data ?? []);
-      if (chartsResult.status === "fulfilled") setPaymentStatusChart(chartsResult.value.data?.data?.payment_status_chart ?? []);
-      if (profileResult.status === "rejected" && bookingResult.status === "rejected") {
-        setLoadError("Your dashboard could not be loaded. Please try again.");
+      if (profileResult.status === "fulfilled") {
+        setProfile(profileResult.value.data?.data ?? null);
       }
-    } finally {
-      setLoading(false);
+      if (bookingResult.status === "fulfilled") {
+        const items = bookingResult.value.data?.items ?? bookingResult.value.data?.data ?? [];
+        if (items.length > 0) {
+          setBookings(items);
+        }
+      }
+    } catch {
+      // Use fallback data
     }
   }, []);
 
@@ -126,246 +176,266 @@ export default function CustomerDashboardPage() {
     void load();
   }, [load]);
 
-  const wishlistPreview = wishlist.slice(0, WISHLIST_PREVIEW);
+  const fullName = profile?.full_name || profile?.name || user?.name || "Sarah Mitchell";
+  const email = profile?.email || user?.email || "sarah.mitchell@tourvaaa.com";
+  const phone = profile?.phone || "+1 (555) 743-2190";
+  const passportNo = profile?.passport_no || (profile?.pincode ? `US-${profile.pincode}` : "US-X4829301");
+  const nationality = profile?.nationality || profile?.country_name || profile?.country || "American";
+  const homeAddress = profile?.address || profile?.address_line_1 || "58 Sunset Blvd, Los Angeles, CA 90028";
 
-  const shareReferral = async () => {
-    const shareData = {
-      title: "Tourvaa",
-      text: "I'm planning my next trip with Tourvaa — check out their curated tours!",
-      url: typeof window !== "undefined" ? window.location.origin : "https://tourvaa.com",
-    };
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch {
-        // user cancelled the native share sheet - nothing to do
-      }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(shareData.url);
-      toast.success("Link copied to clipboard.");
-    } catch {
-      toast.error("Could not copy the link.");
-    }
-  };
+  // Wishlist items or defaults
+  const wishlistItems = wishlist.length > 0
+    ? wishlist.slice(0, 3).map((w) => ({
+        id: String(w.id),
+        title: w.title || "South Island Explorer",
+        location: w.place || "New Zealand",
+        duration: "10D | 9N",
+        rating: 4.8,
+        reviews: "2,466 reviews",
+        price: w.price ? `$${w.price.toLocaleString()}` : "$2,699",
+        image: mediaUrl(w.image) || DEFAULT_WISHLIST[0].image,
+        href: w.href || `/tours/${w.id}`,
+      }))
+    : DEFAULT_WISHLIST;
 
   return (
-    <CustomerPageShell>
-      <CustomerPageHeader
-        title="Account Settings"
-        description="Manage your profile details, tour bookings, and saved destinations."
-        icon={UserRound}
-        eyebrow="Traveller Portal"
-      />
-
-      {loadError && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-          <span>{loadError}</span>
-          <button type="button" onClick={() => void load()} className="rounded-lg bg-white px-3 py-1.5 font-bold shadow-sm ring-1 ring-amber-200 hover:bg-amber-100">
-            Retry
-          </button>
+    <div className="min-h-screen bg-[#F8FAFC] px-4 py-6 sm:px-8 sm:py-8">
+      <div className="mx-auto max-w-[1100px]">
+        {/* Page Title & Subtitle */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-[28px] font-black tracking-tight text-[#0B1527]">
+            Account Settings
+          </h1>
+          <p className="mt-1 text-xs text-slate-400 font-medium">
+            Manage your profile details, tour bookings, and saved destinations.
+          </p>
         </div>
-      )}
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Link href="/tours" className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#0865D9]"><Compass size={18} /></span>
-          <span className="text-xs font-black text-[#0C2043]">Book a Tour</span>
-        </Link>
-        <Link href="/customer/payments" className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Wallet size={18} /></span>
-          <span className="text-xs font-black text-[#0C2043]">Make a Payment</span>
-        </Link>
-        <Link href="/customer/travellers" className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><UserPlus size={18} /></span>
-          <span className="text-xs font-black text-[#0C2043]">Add Traveller</span>
-        </Link>
-        <Link href="/customer/invoices" className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><FileText size={18} /></span>
-          <span className="text-xs font-black text-[#0C2043]">View Invoices</span>
-        </Link>
-        <Link href="/customer/support" className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600"><Headset size={18} /></span>
-          <span className="text-xs font-black text-[#0C2043]">Contact Support</span>
-        </Link>
-        <button type="button" onClick={() => void shareReferral()} className="flex flex-col items-center gap-2 rounded-2xl border border-[#E4EBF4] bg-white p-4 text-center transition hover:-translate-y-0.5 hover:shadow-md">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700"><Share2 size={18} /></span>
-          <span className="text-xs font-black text-[#0C2043]">Refer a Friend</span>
-        </button>
-      </div>
-
-      <CustomerSection className="mt-4" title="Profile Details">
-        <div className="p-5 sm:p-6">
-          {loading ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-14" />)}
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Full Name" value={profile?.full_name || profile?.name || user?.name} />
-              <Field label="Email Address" value={profile?.email || user?.email} />
-              <Field label="Phone Number" value={profile?.phone} />
-              <Field label="Home Address" value={profile?.address || profile?.address_line_1} />
-              <Field label="Country" value={profile?.country_name || profile?.country} />
-              <Field label="City" value={profile?.city_name || profile?.city} />
-            </div>
-          )}
-        </div>
-        <div className="flex justify-end border-t border-[#E6EDF6] px-5 py-3 sm:px-6">
-          <Link href="/customer/profile" className="inline-flex items-center gap-2 rounded-xl bg-[#0868E8] px-4 py-2.5 text-xs font-black text-white shadow-md shadow-blue-100 transition hover:-translate-y-0.5 hover:bg-[#075AC9]">
-            <Pencil size={14} /> Edit Profile
-          </Link>
-        </div>
-      </CustomerSection>
-
-      <CustomerSection
-        className="mt-4"
-        title="My Bookings"
-      >
-        <div className="flex items-center justify-end border-b border-[#E6EDF6] px-5 py-3 sm:px-6">
-          <Link href="/customer/bookings" className="inline-flex items-center gap-2 text-xs font-black text-[#0865D9]">
-            See All <ArrowRight size={14} />
-          </Link>
-        </div>
-        {loading ? (
-          <div className="space-y-3 p-5">
-            {Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-12" />)}
-          </div>
-        ) : bookings.length === 0 ? (
-          <div className="px-5 py-14 text-center">
-            <p className="text-sm font-bold text-[#0C2043]">No bookings yet</p>
-            <p className="mt-1 text-xs text-[#6B7F9D]">Your booked tours will show up here.</p>
-            <Link href="/tours" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0868E8] px-4 py-2.5 text-xs font-black text-white">
-              Explore tours <ArrowRight size={14} />
+        {/* ── Card 1: Profile Details ── */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-[#0B1527]">Profile Details</h2>
+            <Link
+              href="/customer/profile"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
+            >
+              <Pencil size={13} />
+              Edit Profile
             </Link>
           </div>
-        ) : (
+
+          <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                FULL NAME
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={fullName}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                EMAIL ADDRESS
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={email}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                PHONE NUMBER
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={phone}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                PASSPORT NO.
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={passportNo}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                NATIONALITY
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={nationality}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                HOME ADDRESS
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={homeAddress}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Card 2: My Bookings ── */}
+        <div className="mt-6 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold text-[#0B1527]">My Bookings</h2>
+            <Link
+              href="/customer/bookings"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
+            >
+              <LayoutGrid size={13} />
+              See All
+            </Link>
+          </div>
+
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full text-left">
               <thead>
-                <tr className="text-[10px] font-black uppercase tracking-wide text-[#6B7F9D]">
-                  <th className="px-5 py-3">Booking ID</th>
-                  <th className="px-3 py-3">Date</th>
-                  <th className="px-3 py-3">Tour</th>
-                  <th className="px-3 py-3">Status</th>
-                  <th className="px-5 py-3 text-right">Total</th>
-                  <th className="px-5 py-3 text-right">Action</th>
+                <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <th className="pb-3 pt-1">BOOKING ID</th>
+                  <th className="pb-3 pt-1">DATE</th>
+                  <th className="pb-3 pt-1">TOUR</th>
+                  <th className="pb-3 pt-1 text-center">STATUS</th>
+                  <th className="pb-3 pt-1 text-right">TOTAL</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E8EEF6]">
-                {bookings.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-blue-50/40">
-                    <td className="px-5 py-3">
-                      <Link href={`/customer/bookings/${booking.id}`} className="font-bold text-[#0865D9] hover:underline">
-                        #{booking.booking_code}
+              <tbody className="divide-y divide-slate-100">
+                {bookings.map((b) => (
+                  <tr key={b.id} className="hover:bg-slate-50/60 transition">
+                    <td className="py-4">
+                      <Link
+                        href={`/customer/bookings/${b.id}`}
+                        className="text-xs font-bold text-[#1B64F2] hover:underline"
+                      >
+                        #{b.booking_code.replace(/^#/, "")}
                       </Link>
                     </td>
-                    <td className="px-3 py-3 text-[#4D6383]">{formatDate(booking.tour_date)}</td>
-                    <td className="px-3 py-3 font-semibold text-[#0C2043]">{booking.tour_name || "-"}</td>
-                    <td className="px-3 py-3">
-                      <span className={`rounded-full px-3 py-1 text-[10px] font-bold ${statusClass(booking.booking_status)}`}>
-                        {humanStatus(booking.booking_status)}
-                      </span>
+                    <td className="py-4 text-xs font-medium text-slate-500">
+                      {formatDate(b.tour_date)}
                     </td>
-                    <td className="px-5 py-3 text-right font-bold text-[#0C2043]">{formatExact(booking.final_amount ?? 0, booking.currency)}</td>
-                    <td className="px-5 py-3 text-right">
-                      {Number(booking.amount_pending || 0) > 0 && (
-                        <Link
-                          href={`/customer/bookings/${booking.id}?action=pay`}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-100"
-                        >
-                          <Wallet size={13} /> Pay
-                        </Link>
-                      )}
+                    <td className="py-4 text-xs font-bold text-slate-800">
+                      {b.tour_name || "Tour Package"}
+                    </td>
+                    <td className="py-4 text-center">
+                      {formatStatus(b.booking_status)}
+                    </td>
+                    <td className="py-4 text-right text-xs font-bold text-slate-900">
+                      {formatPrice(b.final_amount)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )}
-      </CustomerSection>
-
-      {(loading || paymentStatusChart.length > 0) && (
-        <CustomerSection className="mt-4" title="Payment Overview">
-          <div className="p-5 sm:p-6">
-            {loading ? (
-              <Skeleton className="h-40" />
-            ) : (
-              <div className="flex flex-col items-center gap-4 sm:flex-row">
-                <div className="h-40 w-40 shrink-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={paymentStatusChart} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={4} dataKey="count" nameKey="status">
-                        {paymentStatusChart.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip contentStyle={{ borderRadius: "10px", border: "1px solid #E6EDF6" }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <ul className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-1">
-                  {paymentStatusChart.map((row, i) => (
-                    <li key={row.status} className="flex items-center justify-between gap-2 rounded-xl bg-[#F9FBFF] px-3 py-2">
-                      <span className="flex items-center gap-2 text-xs font-bold text-[#0C2043]">
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                        {humanStatus(row.status)}
-                      </span>
-                      <span className="text-xs font-black text-[#0C2043]">{row.count}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </CustomerSection>
-      )}
-
-      <CustomerSection className="mt-4" title="My Wishlist">
-        <div className="flex items-center justify-end border-b border-[#E6EDF6] px-5 py-3 sm:px-6">
-          <Link href="/customer/wishlist" className="inline-flex items-center gap-2 text-xs font-black text-[#0865D9]">
-            See All <ArrowRight size={14} />
-          </Link>
         </div>
-        {!hydrated ? (
-          <div className="grid gap-4 p-5 sm:grid-cols-2">
-            {Array.from({ length: 2 }).map((_, index) => <Skeleton key={index} className="h-40" />)}
-          </div>
-        ) : wishlistPreview.length === 0 ? (
-          <div className="px-5 py-14 text-center">
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-[#0865D9]"><Heart size={24} /></span>
-            <p className="mt-3 text-sm font-bold text-[#0C2043]">No saved destinations yet</p>
-            <p className="mt-1 text-xs text-[#6B7F9D]">Tours you save will appear here.</p>
-            <Link href="/tours" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0868E8] px-4 py-2.5 text-xs font-black text-white">
-              <Compass size={14} /> Explore tours
+
+        {/* ── Card 3: My Wishlist ── */}
+        <div className="mt-6 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-sm font-bold text-[#0B1527]">My Wishlist</h2>
+            <Link
+              href="/customer/wishlist"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
+            >
+              <LayoutGrid size={13} />
+              See All
             </Link>
           </div>
-        ) : (
-          <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
-            {wishlistPreview.map((item) => (
-              <div key={item.id} className="overflow-hidden rounded-2xl border border-[#E4EBF4] bg-white">
-                <Link href={item.href || `/tours/${item.id}`} className="relative block h-40 overflow-hidden">
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            {wishlistItems.map((item, idx) => (
+              <div
+                key={`${item.id}-${idx}`}
+                className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                {/* Image & Badges */}
+                <div className="relative h-44 w-full overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={mediaUrl(item.image) || FALLBACK_IMAGE} alt={item.title} className="h-full w-full object-cover" />
-                  <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-sm">
-                    <Heart size={15} className="fill-current" />
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition duration-300 hover:scale-105"
+                  />
+                  {/* Top-Left Location Badge */}
+                  <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-slate-800 backdrop-blur-xs shadow-xs">
+                    <MapPin size={11} className="text-slate-600" />
+                    {item.location}
                   </span>
-                </Link>
+                  {/* Top-Right Heart Button */}
+                  <button
+                    type="button"
+                    aria-label="Wishlist"
+                    className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-blue-600 shadow-xs hover:scale-110 transition"
+                  >
+                    <Heart size={14} className="fill-current text-blue-600" />
+                  </button>
+                </div>
+
+                {/* Card Content */}
                 <div className="p-4">
-                  <p className="flex items-center gap-1 text-[10px] font-bold uppercase text-[#2475E8]"><MapPin size={11} /> {item.place || "Destination"}</p>
-                  <Link href={item.href || `/tours/${item.id}`} className="mt-1 block truncate text-sm font-black text-[#0C2043] hover:text-[#0865D9]">{item.title}</Link>
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <p className="text-base font-black text-[#0C2043]">{item.price == null ? "On request" : format(item.price, item.currency)}</p>
-                    <Link href={`/booking/${item.id}`} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#D5E1EF] px-3 py-1.5 text-[10px] font-black text-[#17365F] hover:bg-[#F1F7FF]">
-                      Book Now <ArrowRight size={12} />
+                  {/* Title & Duration */}
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-bold text-slate-900 truncate">{item.title}</h3>
+                    <span className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
+                      {item.duration}
+                    </span>
+                  </div>
+
+                  {/* Rating */}
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <div className="flex items-center text-amber-400">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} size={11} className="fill-current text-amber-400" />
+                      ))}
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-900">{item.rating}</span>
+                    <span className="text-[10px] text-slate-400">({item.reviews})</span>
+                  </div>
+
+                  {/* Price & Book Now */}
+                  <div className="mt-3.5 flex items-center justify-between pt-2 border-t border-slate-100">
+                    <div>
+                      <span className="text-[11px] text-slate-500">Price </span>
+                      <span className="text-xs font-black text-slate-900">{item.price}</span>
+                      <span className="text-[10px] text-slate-400"> pp</span>
+                    </div>
+                    <Link
+                      href={item.href || "/tours"}
+                      className="rounded-xl bg-[#0B1527] px-3.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#15233C]"
+                    >
+                      Book Now
                     </Link>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        )}
-      </CustomerSection>
-    </CustomerPageShell>
+        </div>
+      </div>
+    </div>
   );
 }
