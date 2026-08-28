@@ -264,8 +264,8 @@ export default function TourPricingTab({
         iconTone={isSupplier ? "emerald" : "brand"}
         title={isSupplier ? "Supplier Pricing" : "Supplier Price to Tourvaa"}
         description={isSupplier
-          ? "Your price per pax-range slab. Your agreed commission is applied automatically."
-          : "The supplier's own price and agreed commission, per pax-range slab."}
+          ? "Your 1-pax price and its discounted price (after your agreed commission is applied), per pax-range slab."
+          : "The supplier's 1-pax price, its discounted price after commission, and the agreed commission, per pax-range slab."}
         action={addButton}
       >
         {isSupplier && isLiveTour && (
@@ -295,10 +295,10 @@ export default function TourPricingTab({
         ) : (
           <div className="overflow-hidden rounded-2xl border border-dash-border-soft">
             {/* Table header */}
-            <div className={`grid ${isSupplier ? "grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_1fr_auto]" : "grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_auto]"} gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3`}>
+            <div className="grid grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_1fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
               {(isSupplier
-                ? ["PAX RANGE", "ADULT (TOURVAA)", "YOU RECEIVE", "CHILD (TOURVAA)", "YOU RECEIVE", "COMMISSION", "ACTIONS"]
-                : ["PAX RANGE", "ADULT PRICE", "CHILD PRICE", "COMMISSION", "CURRENCY", "ACTIONS"]
+                ? ["PAX RANGE", "1 PAX PRICE (ADULT)", "DISCOUNTED PRICE (ADULT)", "1 PAX PRICE (CHILD)", "DISCOUNTED PRICE (CHILD)", "COMMISSION", "ACTIONS"]
+                : ["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER DISCOUNTED (ADULT)", "SUPPLIER PRICE (CHILD)", "SUPPLIER DISCOUNTED (CHILD)", "COMMISSION", "ACTIONS"]
               ).map((h) => (
                 <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
               ))}
@@ -307,31 +307,24 @@ export default function TourPricingTab({
             {/* Rows */}
             {slabs.map((r, idx) => (
               <div key={r.id ?? idx}
-                className={`grid ${isSupplier ? "grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_1fr_auto]" : "grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_auto]"} items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30`}
+                className="grid grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_1fr_auto] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30"
               >
                 {/* Pax range badge */}
                 <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
                   {r.passenger_from}–{r.passenger_to} pax
                 </span>
 
-                {/* Adult price */}
+                {/* Adult price (1-pax price to Tourvaa) */}
                 <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
 
-                {isSupplier && (
-                  /* Supplier net (adult) */
-                  <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700 text-sm" />
-                )}
+                {/* Supplier discounted price -- adult_price after commission is deducted */}
+                <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700 text-sm" />
 
-                {/* Child price */}
+                {/* Child price (1-pax price to Tourvaa) */}
                 <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
 
-                {isSupplier ? (
-                  /* Supplier net (child) */
-                  <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700 text-sm" />
-                ) : (
-                  /* Currency for admin view */
-                  <span className="text-sm text-dash-subtle">{r.currency}</span>
-                )}
+                {/* Supplier discounted price -- child_price after commission is deducted */}
+                <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700 text-sm" />
 
                 {/* Commission badge */}
                 <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
@@ -362,8 +355,8 @@ export default function TourPricingTab({
         <SectionCard
           icon={Percent}
           iconTone="brand"
-          title="Publishable Price"
-          description="Admin-only markup added on top of the supplier's price to produce the storefront price. Suppliers never see this section."
+          title="Publishable / Customer Price"
+          description="Admin-only markup added on top of the supplier's price to produce the publishable/customer price. Suppliers never see this section."
         >
           {/* Admin Publishable Price Table */}
           {slabs.length === 0 ? (
@@ -374,8 +367,8 @@ export default function TourPricingTab({
           ) : (
             <div className="overflow-hidden rounded-2xl border border-dash-border-soft">
               {/* Header */}
-              <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
-                {["PAX RANGE", "SUPPLIER (ADULT)", "SUPPLIER (CHILD)", "COMMISSION", "STOREFRONT PRICE", "CURRENCY", "ACTIONS"].map((h) => (
+              <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1.2fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
+                {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "ADMIN MARKUP", "PUBLISHABLE / CUSTOMER PRICE", "FINAL SUPPLIER PAYABLE", "ACTIONS"].map((h) => (
                   <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
                 ))}
               </div>
@@ -383,7 +376,7 @@ export default function TourPricingTab({
               {/* Rows */}
               {slabs.map((r, idx) => (
                 <div key={r.id ?? idx}
-                  className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1fr_auto] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30"
+                  className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1.2fr_auto] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30"
                 >
                   <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
                     {r.passenger_from}–{r.passenger_to} pax
@@ -394,7 +387,8 @@ export default function TourPricingTab({
                     <Percent size={10} />{r.admin_markup_value ?? 0}
                   </span>
                   <PriceCell value={r.storefront_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700 text-sm" />
-                  <span className="text-sm text-dash-subtle">{r.currency}</span>
+                  {/* Per-pax net after commission -- what the supplier is ultimately paid (see services.bookings.compute_supplier_commission_breakdown) */}
+                  <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-dash-body text-sm" />
                   <ActionButtons onEdit={() => setMarkupEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />
                 </div>
               ))}
@@ -450,13 +444,13 @@ export default function TourPricingTab({
 
             <div className="mt-4 grid gap-3 rounded-xl bg-dash-bg p-4 sm:grid-cols-2">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier receives (adult)</p>
+                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Discounted price (adult)</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
                   {fmt(sanitizeNumber(editing.adult_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier receives (child)</p>
+                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Discounted price (child)</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
                   {fmt(sanitizeNumber(editing.child_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
                 </p>
@@ -506,12 +500,12 @@ export default function TourPricingTab({
                 <p className="rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">{fmt(markupEditing.child_price, markupEditing.currency)}</p>
               </div>
               <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tourvaa Commission %</span>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Admin Markup %</span>
                 <input type="number" step="0.01" value={numberInputValue(markupEditing.admin_markup_value)} onChange={(e) => setMarkupEditing((p) => p ? { ...p, admin_markup_value: parseNumberInput(e.target.value) } : p)}
                   className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
               </label>
               <div>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Storefront Price (Adult)</span>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Publishable / Customer Price (Adult)</span>
                 <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-black text-emerald-700">
                   {fmt(sanitizeNumber(markupEditing.adult_price) * (1 + sanitizeNumber(markupEditing.admin_markup_value) / 100), markupEditing.currency)}
                 </p>
@@ -519,7 +513,7 @@ export default function TourPricingTab({
             </div>
             <p className="mt-4 flex items-start gap-2 rounded-xl border border-dash-border bg-dash-bg p-3 text-xs text-dash-subtle">
               <Info size={14} className="mt-0.5 shrink-0" />
-              <span>No minimum or maximum for this Commission %. Only visible in the Admin Portal, added on top of the supplier&apos;s price to produce the storefront price shown to customers.</span>
+              <span>No minimum or maximum for this Admin Markup %. Only visible in the Admin Portal, added on top of the supplier&apos;s price to produce the publishable/customer price shown to customers.</span>
             </p>
             <button type="submit" disabled={saving} className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-dash-brand-hover disabled:cursor-not-allowed disabled:opacity-60">
               <Save size={14} /> {saving ? "Saving..." : "Save Slab"}

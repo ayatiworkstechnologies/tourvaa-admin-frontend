@@ -22,7 +22,7 @@ import {
   LuUsers as Users,
   LuX as X,
 } from "react-icons/lu";
-import { fetchPublicCategories, fetchPublicCountries, fetchPublicTours, PublicTour } from "@/lib/api/publicClient";
+import { fetchPublicCategories, fetchPublicCountries, fetchPublicTours, PublicCategory, PublicTour } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
@@ -377,10 +377,12 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const searchParams = useSearchParams();
   const queryCountry = searchParams.get("country") || "";
   const querySearch = searchParams.get("search") || "";
+  const queryCategory = searchParams.get("category") || "";
   const { format } = useCurrency();
   const { isWishlisted, toggleWishlist } = useTravelStore();
 
   const [countryName, setCountryName] = useState("");
+  const [categories, setCategories] = useState<PublicCategory[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedSubCategory, setSelectedSubCategory] = useState<"all" | "group" | "private" | "city">("all");
   const [loading, setLoading] = useState(false);
@@ -409,7 +411,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     setLoading(true);
 
     Promise.all([fetchPublicCountries(), fetchPublicCategories()])
-      .then(([countries]) => {
+      .then(([countries, categoryList]) => {
         let resolvedCountry = "";
         if (countrySlug) {
           const match = countries.find((item) => slugifyTourSegment(item.country_name) === countrySlug);
@@ -419,11 +421,15 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           resolvedCountry = match?.country_name || queryCountry;
         }
 
-        if (active) setCountryName(resolvedCountry);
+        if (active) {
+          setCountryName(resolvedCountry);
+          setCategories(categoryList);
+        }
 
         const params: Record<string, string | number | boolean> = { limit: 100 };
         if (resolvedCountry) params.country = resolvedCountry;
         if (querySearch) params.search = querySearch;
+        if (queryCategory) params.category = queryCategory;
 
         return fetchPublicTours(params);
       })
@@ -481,7 +487,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     return () => {
       active = false;
     };
-  }, [countrySlug, queryCountry, querySearch, format, isIndia]);
+  }, [countrySlug, queryCountry, querySearch, queryCategory, format, isIndia]);
 
   // Destination and hero headings
   const destinationTitle = countryName || (isIndia ? "India" : hasSpecificCountry ? "Destination" : "World Tours");
@@ -513,6 +519,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     if (selectedInclusion) count++;
     if (selectedDepartureMonth) count++;
     if (selectedSubCategory !== "all") count++;
+    if (queryCategory) count++;
     return count;
   }, [
     budgetActive,
@@ -524,7 +531,21 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     selectedInclusion,
     selectedDepartureMonth,
     selectedSubCategory,
+    queryCategory,
   ]);
+
+  // Selecting a category updates the URL (preserving country/search) rather
+  // than just local state, so the request is re-run against the backend --
+  // country + category are combined server-side (see routers.public.public_tours).
+  const selectCategory = (slugOrName: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (!slugOrName || slugOrName === queryCategory) {
+      params.delete("category");
+    } else {
+      params.set("category", slugOrName);
+    }
+    router.push(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+  };
 
   const clearAllFilters = () => {
     setBudgetActive(false);
@@ -536,6 +557,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     setSelectedInclusion("");
     setSelectedDepartureMonth("");
     setSelectedSubCategory("all");
+    if (queryCategory) selectCategory("");
   };
 
   // Live filtered tours
@@ -842,6 +864,30 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             </select>
             <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
+
+          {/* Category Dropdown Pill -- real TourCategory data, combined
+              server-side with the current country filter (see selectCategory) */}
+          {categories.length > 0 && (
+            <div className="relative shrink-0">
+              <select
+                value={queryCategory}
+                onChange={(e) => selectCategory(e.target.value)}
+                className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                  queryCategory
+                    ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                    : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                }`}
+              >
+                <option value="">Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.slug}>
+                    {cat.category_name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            </div>
+          )}
 
           {/* Destination Dropdown Pill */}
           <div className="relative shrink-0">

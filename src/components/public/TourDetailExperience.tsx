@@ -34,6 +34,7 @@ import {
 } from "react-icons/lu";
 import { PublicTour, PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
+import { DiscountSavingsLine } from "@/components/public/DiscountPrice";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 
@@ -284,7 +285,14 @@ export default function TourDetailExperience({
 
   const baseFare = adults * unitPrice + children * childPrice;
   const addonTotal = (singleRoom ? 450 : 0) + (airportTransfer ? 65 : 0);
-  const discountAmount = Math.round(baseFare * 0.1); // 10% Early bird
+  // Real active discount for this tour (see services.cms._active_discount) --
+  // not a hardcoded promo. Savings per person = original - discounted, both
+  // already at the 1-pax level the backend computes.
+  const activeDiscountPct = tour.discount_percentage && tour.discount_percentage > 0 ? Number(tour.discount_percentage) : 0;
+  const discountAmount = activeDiscountPct > 0 ? Math.round(baseFare * (activeDiscountPct / 100)) : 0;
+  const savingsPerPerson = tour.original_price_per_person != null && tour.discounted_price_per_person != null
+    ? Number(tour.original_price_per_person) - Number(tour.discounted_price_per_person)
+    : 0;
   const taxesAmount = 120;
   const totalAmount = Math.max(0, baseFare + addonTotal - discountAmount + taxesAmount);
 
@@ -770,11 +778,48 @@ export default function TourDetailExperience({
               </div>
 
               {/* Note callout */}
-              <div className="mt-6 rounded-xl bg-amber-50/80 p-3 text-[11px] font-medium text-amber-800 flex items-center gap-2 border border-amber-200/60">
-                <Info size={14} className="shrink-0 text-amber-600" />
-                <span>Flexible cancellation available up to 30 days before departure with 100% deposit refund guarantee.</span>
-              </div>
+              {tour.cancellation_policy.length > 0 && (
+                <div className="mt-6 rounded-xl bg-amber-50/80 p-3 text-[11px] font-medium text-amber-800 flex items-center gap-2 border border-amber-200/60">
+                  <Info size={14} className="shrink-0 text-amber-600" />
+                  <span>
+                    {tour.cancellation_policy[0].description ||
+                      `${tour.cancellation_policy[0].refund_percentage}% refund if cancelled ${tour.cancellation_policy[0].days_before_min}+ days before departure.`}
+                    {" "}See full cancellation &amp; refund policy below.
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* D2. Cancellation & Refund Policy */}
+            {tour.cancellation_policy.length > 0 && (
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
+                <h3 className="flex items-center gap-2 text-base font-black text-[#0B1527]">
+                  <ShieldCheck size={18} className="text-blue-600" />
+                  Cancellation &amp; Refund Policy
+                </h3>
+                <p className="mt-2 text-xs text-slate-500">
+                  You may cancel this booking at any time. The refund you receive depends on how far ahead of departure you cancel, shown below.
+                </p>
+                <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                  <div className="grid grid-cols-[1fr_1fr_auto] gap-2 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    <span>Days before departure</span>
+                    <span>Details</span>
+                    <span className="text-right">Refund</span>
+                  </div>
+                  {tour.cancellation_policy.map((rule, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 border-t border-slate-100 px-4 py-3 text-xs">
+                      <span className="font-bold text-[#0B1527]">
+                        {rule.days_before_max == null ? `${rule.days_before_min}+ days` : `${rule.days_before_min}–${rule.days_before_max} days`}
+                      </span>
+                      <span className="text-slate-500">{rule.description || "—"}</span>
+                      <span className={`text-right font-black ${rule.refund_percentage > 0 ? "text-emerald-700" : "text-red-600"}`}>
+                        {rule.refund_percentage}% refund
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* E. 🗺️ Itinerary (Accordion) */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
@@ -1113,10 +1158,22 @@ export default function TourDetailExperience({
                     {format(baseFare, tour.currency || "USD")}
                   </span>
                 </div>
-                <div className="flex justify-between text-emerald-600">
-                  <span>Early Bird Discount (10%)</span>
-                  <span>-{format(discountAmount, tour.currency || "USD")}</span>
-                </div>
+                {activeDiscountPct > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>Discount ({activeDiscountPct}%)</span>
+                    <span>-{format(discountAmount, tour.currency || "USD")}</span>
+                  </div>
+                )}
+                {savingsPerPerson > 0 && (
+                  <div className="flex justify-end">
+                    <DiscountSavingsLine
+                      original={Number(tour.original_price_per_person)}
+                      discounted={Number(tour.discounted_price_per_person)}
+                      currency={tour.currency || "USD"}
+                      format={format}
+                    />
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Taxes &amp; Service Fees</span>
                   <span className="font-semibold text-slate-900">

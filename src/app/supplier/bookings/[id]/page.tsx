@@ -51,10 +51,22 @@ type Communication = {
   replies?: MessageReply[];
 };
 
+type PaymentAttempt = {
+  id: number;
+  payment_code: string;
+  payment_method: string;
+  gateway: string;
+  total_amount: string;
+  payment_status: string;
+  failure_reason?: string | null;
+  created_at?: string | null;
+};
+
 type Booking = {
   id: number;
   booking_code: string;
   communications?: Communication[];
+  payments?: PaymentAttempt[];
   tour_name?: string;
   tour_title?: string;
   tour_id?: number;
@@ -658,6 +670,20 @@ export default function SupplierBookingDetailPage() {
             value={format(booking.final_amount ?? booking.total_amount ?? 0, booking.currency)}
           />
           <InfoRow label="Payment Status" value={booking.payment_status ?? "-"} />
+          {(booking.payments?.length ?? 0) > 0 && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs font-bold uppercase text-dash-muted">Payment Attempts</p>
+              {booking.payments!.map((p) => (
+                <div key={p.id} className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-xs ${p.payment_status === "failed" ? "bg-red-50" : "bg-dash-bg"}`}>
+                  <span className="font-semibold text-dash-body">
+                    {p.payment_code} · {p.payment_method}
+                    {p.payment_status === "failed" && p.failure_reason ? ` · ${p.failure_reason}` : ""}
+                  </span>
+                  <span className={`font-bold capitalize ${p.payment_status === "failed" ? "text-red-600" : "text-dash-text"}`}>{p.payment_status.replace(/_/g, " ")}</span>
+                </div>
+              ))}
+            </div>
+          )}
           {booking.cancellation_reason && (
             <div className="mt-3 rounded-xl bg-red-50 border border-red-100 p-3">
               <p className="text-xs font-bold text-red-600">Cancellation Reason</p>

@@ -328,6 +328,10 @@ export default function TourFormPage({
       payload.tour_visibility = form.tour_visibility || "public";
       payload.featured = form.featured === "true";
       payload.requires_supplier_confirmation = form.requires_supplier_confirmation !== "false";
+      payload.deposit_type = form.deposit_type || "fixed";
+      payload.booking_deposit = form.booking_deposit ? Number(form.booking_deposit) : 0;
+      payload.deposit_percentage = form.deposit_percentage ? Number(form.deposit_percentage) : null;
+      payload.deposit_cutoff_days = form.deposit_cutoff_days ? Number(form.deposit_cutoff_days) : null;
 
       // Simple number fields - use default if blank
       // price_start_per_person is intentionally omitted -- it's system-
@@ -514,7 +518,7 @@ export default function TourFormPage({
             )}
             {tourId && activeDiscount && hasActiveDiscount(activeDiscount) && (
               <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Storefront price</span>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Publishable / customer price</span>
                 <div className={`${inputClass} flex items-center justify-between bg-gray-50`}>
                   <DiscountPriceLine
                     original={activeDiscount.original_price_per_person as number}
@@ -527,7 +531,7 @@ export default function TourFormPage({
                     {activeDiscount.discount_percentage}% OFF
                   </span>
                 </div>
-                <p className="mt-1 text-[11px] text-dash-subtle">Live from an active discount on the Discounts tab -- this is what customers see on the storefront right now.</p>
+                <p className="mt-1 text-[11px] text-dash-subtle">Live from an active discount on the Discounts tab -- this is the publishable/customer price shown to customers right now.</p>
               </label>
             )}
             {textFields.map(([key, label]) => (
@@ -621,6 +625,37 @@ export default function TourFormPage({
                 Off: a fully paid booking with an assigned supplier confirms immediately, without waiting on supplier acceptance.
               </p>
             )}
+
+            <div className="md:col-span-2 mt-2 border-t border-dash-border-soft pt-4">
+              <p className="text-xs font-black uppercase tracking-wide text-dash-subtle">Deposit options</p>
+              <p className="mt-0.5 text-xs text-dash-subtle">Let customers secure this tour with a deposit instead of paying in full. Once the cutoff below is reached, only full payment is offered.</p>
+            </div>
+
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Deposit type</span>
+              <select value={form.deposit_type ?? "fixed"} onChange={(e) => update("deposit_type", e.target.value)} className={inputClass}>
+                <option value="fixed">Fixed amount</option>
+                <option value="percentage">Percentage of total</option>
+              </select>
+            </label>
+
+            {(form.deposit_type ?? "fixed") === "percentage" ? (
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Minimum deposit (%)</span>
+                <input type="number" min={0} max={100} value={form.deposit_percentage ?? ""} onChange={(e) => update("deposit_percentage", e.target.value)} className={inputClass} />
+              </label>
+            ) : (
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Minimum deposit ({form.currency || "USD"})</span>
+                <input type="number" min={0} value={form.booking_deposit ?? ""} onChange={(e) => update("booking_deposit", e.target.value)} className={inputClass} />
+              </label>
+            )}
+
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Deposit allowed until (days before departure)</span>
+              <input type="number" min={0} value={form.deposit_cutoff_days ?? ""} onChange={(e) => update("deposit_cutoff_days", e.target.value)} className={inputClass} placeholder="No cutoff -- deposit always allowed" />
+              <span className="mt-1 block text-[11px] text-dash-subtle">Leave blank to allow a deposit right up to departure. Once fewer days remain, customers see only &quot;Pay in Full Today&quot;.</span>
+            </label>
           </FormSection>
           )}
 

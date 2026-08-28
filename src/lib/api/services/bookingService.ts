@@ -55,6 +55,21 @@ export type Booking = {
   extensions?: BookingLineItem[];
   status_history?: BookingStatusHistoryItem[];
   communications?: BookingCommunication[];
+  payments?: PaymentAttempt[];
+};
+
+export type PaymentAttempt = {
+  id: number;
+  payment_code: string;
+  payment_method: string;
+  payment_type: string;
+  gateway: string;
+  total_amount: string;
+  captured_amount: string;
+  refunded_amount: string;
+  payment_status: string;
+  failure_reason?: string | null;
+  created_at?: string | null;
 };
 
 export type BookingLineItem = {

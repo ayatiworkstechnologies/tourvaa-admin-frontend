@@ -8,9 +8,7 @@ import {
   LuChevronDown as ChevronDown,
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
-  LuClock3 as Clock,
   LuCompass as Compass,
-  LuGlobe as Globe,
   LuMapPin as MapPin,
   LuMinus as Minus,
   LuPlus as Plus,
@@ -21,6 +19,7 @@ import {
   LuX as X,
 } from "react-icons/lu";
 import FlagIcon from "@/components/ui/FlagIcon";
+import { fetchViatorRedirectUrl } from "@/lib/api/publicClient";
 
 const MONTH_CODES: Record<string, string> = {
   Jan: "01",
@@ -56,8 +55,11 @@ function durationToRange(value: string): { min?: string; max?: string } {
       return { min: "11", max: "14" };
     case "15+ Days":
       return { min: "15" };
-    default:
+    default: {
+      const customMatch = value.match(/^Up to (\d+) Days?$/);
+      if (customMatch) return { max: customMatch[1] };
       return {};
+    }
   }
 }
 
@@ -97,6 +99,7 @@ export default function HeroFilterBar({
   const [duration, setDuration] = useState("");
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
+  const [showViatorRedirect, setShowViatorRedirect] = useState(false);
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
@@ -117,6 +120,13 @@ export default function HeroFilterBar({
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // "Viator" is a dedicated option that hands off to our Viator
+    // partnership -- separate from "Day Tours", which stays a normal filter
+    // over Tourvaa's own inventory.
+    if (duration === "Viator") {
+      setShowViatorRedirect(true);
+      return;
+    }
     const params = new URLSearchParams();
     if (destination) params.set("country", destination);
     const departureMonth = travelDateToMonth(travelDate);
@@ -307,6 +317,57 @@ export default function HeroFilterBar({
           </button>
         </div>
       </form>
+
+      {showViatorRedirect && (
+        <ViatorRedirectModal onClose={() => setShowViatorRedirect(false)} />
+      )}
+    </div>
+  );
+}
+
+function ViatorRedirectModal({ onClose }: { onClose: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleContinue = async () => {
+    setLoading(true);
+    try {
+      const url = await fetchViatorRedirectUrl();
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      window.open("https://www.viator.com", "_blank", "noopener,noreferrer");
+    } finally {
+      setLoading(false);
+      onClose();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/50 px-4" role="dialog" aria-modal="true" aria-label="You are being redirected">
+      <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl sm:p-7">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 text-slate-400 transition hover:text-slate-700"
+        >
+          <X size={18} />
+        </button>
+        <h3 className="text-lg font-black text-[#0B1527]">You are being redirected</h3>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          Click <b>Continue</b> to visit Viator.com in a new tab, our day tours partner.
+        </p>
+        <p className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-400">
+          powered by <span className="text-[#00A698]">viator</span>
+        </p>
+        <button
+          type="button"
+          onClick={handleContinue}
+          disabled={loading}
+          className="mt-5 w-full rounded-xl bg-[#E4572E] px-6 py-3.5 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#cf4b25] disabled:opacity-70"
+        >
+          {loading ? "Redirecting..." : "Continue"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -421,6 +482,7 @@ function monthMeta(monthsAhead: number) {
   return {
     label: new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(first),
     shortMonth: new Intl.DateTimeFormat("en", { month: "short" }).format(first),
+    monthIndex: first.getMonth(),
     year: first.getFullYear(),
     start: first.getDay(),
     days: new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate(),
@@ -474,7 +536,7 @@ function DatePanel({
                 : "text-slate-500 hover:text-slate-900"
             }`}
           >
-            <Sparkles size={13} className="text-[#d95d2c]" />
+            <Sparkles size={13} className="text-[#E4572E]" />
             <span>Calendar View</span>
           </button>
           <button
@@ -486,7 +548,7 @@ function DatePanel({
                 : "text-slate-500 hover:text-slate-900"
             }`}
           >
-            <Calendar size={13} className="text-[#d95d2c]" />
+            <Calendar size={13} className="text-[#E4572E]" />
             <span>Month Picker</span>
           </button>
         </div>
@@ -495,7 +557,7 @@ function DatePanel({
           <button
             type="button"
             onClick={onClear}
-            className="text-xs font-bold text-[#d95d2c] hover:underline"
+            className="text-xs font-bold text-[#E4572E] hover:underline"
           >
             Clear Selection
           </button>
@@ -529,7 +591,7 @@ function DatePanel({
             <button
               type="button"
               onClick={() => onApply("Anytime")}
-              className="font-bold text-[#0f2439] hover:text-[#d95d2c] transition"
+              className="font-bold text-[#0B1527] hover:text-[#E4572E] transition"
             >
               I&apos;m flexible anytime →
             </button>
@@ -548,8 +610,13 @@ function DatePanel({
               <button
                 type="button"
                 aria-label="Previous year"
+                disabled={year <= now.getFullYear()}
                 onClick={() => setYear((v) => Math.max(now.getFullYear(), v - 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-white font-bold text-slate-600 transition"
+                className={`flex h-7 w-7 items-center justify-center rounded-lg transition font-bold ${
+                  year <= now.getFullYear()
+                    ? "opacity-30 cursor-not-allowed text-slate-300"
+                    : "hover:bg-white text-slate-600"
+                }`}
               >
                 <ChevronLeft size={15} />
               </button>
@@ -567,19 +634,24 @@ function DatePanel({
 
           {/* 12 Months Grid */}
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-            {months.map(({ short, season }) => {
+            {months.map(({ short, season }, mIndex) => {
               const isPicked = !anytime && month === short;
+              const isPastMonth = year === now.getFullYear() && mIndex < now.getMonth();
+
               return (
                 <button
                   key={short}
                   type="button"
+                  disabled={isPastMonth}
                   onClick={() => {
                     setMonth(short);
                     setAnytime(false);
                   }}
                   className={`flex flex-col items-center justify-center rounded-xl border p-2.5 text-center transition ${
-                    isPicked
-                      ? "border-[#0f2439] bg-[#0f2439] text-white shadow-md"
+                    isPastMonth
+                      ? "opacity-30 cursor-not-allowed bg-slate-50 border-slate-100 text-slate-300 pointer-events-none line-through"
+                      : isPicked
+                      ? "border-[#0B1527] bg-[#0B1527] text-white shadow-md"
                       : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
                   }`}
                 >
@@ -606,7 +678,7 @@ function DatePanel({
               }}
               className={`rounded-xl border px-4 py-2 text-xs font-bold transition ${
                 anytime
-                  ? "border-[#d95d2c] bg-[#d95d2c]/10 text-[#d95d2c]"
+                  ? "border-[#E4572E] bg-[#E4572E]/10 text-[#E4572E]"
                   : "border-slate-200 hover:bg-slate-50 text-slate-700"
               }`}
             >
@@ -616,7 +688,7 @@ function DatePanel({
             <button
               type="button"
               onClick={() => onApply(anytime ? "Anytime" : `${month} ${year}`)}
-              className="rounded-xl bg-[#0f2439] px-6 py-2 text-xs font-bold text-white shadow-md transition hover:bg-[#18395c]"
+              className="rounded-xl bg-[#0B1527] px-6 py-2 text-xs font-bold text-white shadow-md transition hover:bg-[#15233C]"
             >
               Apply Date
             </button>
@@ -630,6 +702,7 @@ function DatePanel({
 function CalendarMonth({
   label,
   shortMonth,
+  monthIndex,
   year,
   start,
   days,
@@ -642,6 +715,7 @@ function CalendarMonth({
 }: {
   label: string;
   shortMonth: string;
+  monthIndex: number;
   year: number;
   start: number;
   days: number;
@@ -652,6 +726,9 @@ function CalendarMonth({
   canPrev?: boolean;
   showNextOnly?: boolean;
 }) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
     <div className="bg-white">
       {/* Month Header & Controls */}
@@ -701,14 +778,21 @@ function CalendarMonth({
           const formatted = `${String(dayNum).padStart(2, "0")} ${shortMonth} ${year}`;
           const isSelected = selected === formatted;
 
+          const cellDate = new Date(year, monthIndex, dayNum);
+          cellDate.setHours(0, 0, 0, 0);
+          const isPast = cellDate < today;
+
           return (
             <button
               type="button"
               key={formatted}
+              disabled={isPast}
               onClick={() => onSelect(formatted)}
               className={`aspect-square rounded-xl flex items-center justify-center font-bold text-xs transition duration-150 ${
-                isSelected
-                  ? "bg-[#0f2439] text-white shadow-md scale-105"
+                isPast
+                  ? "opacity-25 cursor-not-allowed text-slate-400 hover:bg-transparent pointer-events-none line-through"
+                  : isSelected
+                  ? "bg-[#0B1527] text-white shadow-md scale-105"
                   : "text-slate-800 hover:bg-slate-100 hover:text-slate-950"
               }`}
             >
@@ -725,12 +809,12 @@ function CalendarMonth({
  * 3. UPGRADED DURATION PANEL
  * ------------------------------------------------------------- */
 const DURATION_PRESETS = [
-  { label: "Day Tours", note: "1 Day Excursion", icon: Sun },
-  { label: "2 - 6 Days", note: "Short Escapes", icon: Clock },
-  { label: "7 - 10 Days", note: "Classic Holiday", icon: Compass },
-  { label: "11 - 14 Days", note: "Extended Journey", icon: Calendar },
-  { label: "15+ Days", note: "Grand Exploration", icon: Globe },
-  { label: "Any Duration", note: "All Lengths", icon: Sparkles },
+  { label: "Day Tours", icon: Sun },
+  { label: "2 - 6 Days", icon: Calendar },
+  { label: "7 - 10 Days", icon: Calendar },
+  { label: "11 - 14 Days", icon: Calendar },
+  { label: "15+ Days", icon: Calendar },
+  { label: "Any Duration", icon: Calendar, accent: true },
 ];
 
 function DurationPanel({
@@ -742,15 +826,13 @@ function DurationPanel({
   onSelect: (value: string) => void;
   onClear: () => void;
 }) {
-  const [sliderVal, setSliderVal] = useState(10);
+  const [customOpen, setCustomOpen] = useState(false);
+  const [sliderVal, setSliderVal] = useState(1);
 
   return (
-    <div className={`${basePanelClass} left-0 w-full min-w-[320px] sm:min-w-[360px] max-w-sm`}>
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div>
-          <h4 className="text-xs font-bold text-slate-900">Trip Duration</h4>
-          <p className="text-[11px] text-slate-400">Choose how many days you want to travel</p>
-        </div>
+    <div className={`${basePanelClass} left-0 w-full min-w-[280px] sm:min-w-[300px] max-w-xs`}>
+      <div className="flex items-center justify-between mb-2.5 px-0.5">
+        <h4 className="text-xs font-bold text-slate-900">Duration</h4>
         {selected && (
           <button
             type="button"
@@ -763,61 +845,80 @@ function DurationPanel({
       </div>
 
       {/* Duration Cards */}
-      <div className="grid grid-cols-2 gap-2">
-        {DURATION_PRESETS.map(({ label, note, icon: Icon }) => {
+      <div className="grid grid-cols-2 gap-1.5">
+        {DURATION_PRESETS.map(({ label, icon: Icon, accent }) => {
           const isSelected = selected === label;
           return (
             <button
               key={label}
               type="button"
               onClick={() => onSelect(label)}
-              className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition ${
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition ${
                 isSelected
-                  ? "border-[#0f2439] bg-[#0f2439] text-white shadow-sm"
+                  ? "border-[#E4572E] bg-white text-[#0f2439] shadow-sm"
                   : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
               }`}
             >
-              <div className="flex items-center gap-1.5 mb-1">
-                <Icon
-                  size={14}
-                  className={isSelected ? "text-[#d95d2c]" : "text-slate-500"}
-                />
-                <span className="text-xs font-bold">{label}</span>
-              </div>
-              <span
-                className={`text-[10px] ${
-                  isSelected ? "text-white/80" : "text-slate-400"
-                }`}
-              >
-                {note}
-              </span>
+              <Icon
+                size={13}
+                className={isSelected || accent ? "text-[#d95d2c]" : "text-slate-400"}
+              />
+              <span className="text-[11px] font-bold leading-tight">{label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Custom Slider */}
-      <div className="mt-4 rounded-xl bg-slate-50 p-3 border border-slate-100">
-        <div className="flex items-center justify-between text-xs font-bold text-slate-800 mb-2">
-          <span>Custom Day Length</span>
-          <span className="rounded-md bg-white px-2 py-0.5 shadow-xs text-[#d95d2c]">
-            Up to {sliderVal} Days
+      {/* Viator -- separate from Tourvaa's own tours, hands off via the
+          confirmation popup rather than filtering local inventory. */}
+      <button
+        type="button"
+        onClick={() => onSelect("Viator")}
+        className={`mt-1.5 flex w-full items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition ${
+          selected === "Viator"
+            ? "border-[#00A698] bg-[#00A698]/5 text-[#0f2439] shadow-sm"
+            : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
+        }`}
+      >
+        <Compass size={13} className="text-[#00A698]" />
+        <span className="text-[11px] font-bold leading-tight">Viator Day Trips</span>
+        <span className="ml-auto rounded-full bg-[#00A698] px-1.5 py-[1px] text-[8px] font-black uppercase tracking-wide text-white">
+          Partner
+        </span>
+      </button>
+
+      {/* Custom Range (collapsible) */}
+      <div className="mt-2 border-t border-slate-100 pt-2">
+        <button
+          type="button"
+          onClick={() => setCustomOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-lg px-1 py-1.5 text-left transition hover:bg-slate-50"
+        >
+          <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800">
+            <Calendar size={13} className="text-slate-400" /> Custom Range
           </span>
-        </div>
-        <input
-          aria-label="Custom trip duration"
-          type="range"
-          min="1"
-          max="30"
-          value={sliderVal}
-          onChange={(e) => setSliderVal(Number(e.target.value))}
-          className="w-full accent-[#0f2439] cursor-pointer"
-        />
-        <div className="flex justify-between text-[10px] font-semibold text-slate-400 mt-1">
-          <span>1 Day</span>
-          <span>15 Days</span>
-          <span>30+ Days</span>
-        </div>
+          <ChevronRight size={14} className={`text-slate-400 transition-transform ${customOpen ? "rotate-90" : ""}`} />
+        </button>
+
+        {customOpen && (
+          <div className="mt-1.5 px-1 pb-1">
+            <input
+              aria-label="Custom trip duration"
+              type="range"
+              min="0"
+              max="30"
+              value={sliderVal}
+              onChange={(e) => setSliderVal(Number(e.target.value))}
+              onMouseUp={() => onSelect(`Up to ${sliderVal} Days`)}
+              onTouchEnd={() => onSelect(`Up to ${sliderVal} Days`)}
+              className="w-full accent-[#0f2439] cursor-pointer"
+            />
+            <div className="mt-1 flex justify-between text-[11px] font-bold text-slate-700">
+              <span>0 days</span>
+              <span>{sliderVal} day{sliderVal === 1 ? "" : "s"}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -65,7 +65,7 @@ const TABS: TabConfig[] = [
       { key: "title", header: "Title" },
       { key: "subtitle", header: "Subtitle" },
       { key: "video", header: "Video", render: (item) => (getStringValue(item, "video") ? "Yes" : "-") },
-      { key: "is_active", header: "Active", render: (item) => (item.is_active ? "Yes" : "No") },
+      { key: "is_active", header: "Active" },
     ],
     formFields: [
       { key: "title", label: "Title", type: "text", required: true },
@@ -390,6 +390,25 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
     }
   };
 
+  const toggleActive = async (item: CmsItem) => {
+    const nextState = !item.is_active;
+    setItems((prev) =>
+      prev.map((x) => (x.id === item.id ? { ...x, is_active: nextState } : x))
+    );
+    try {
+      await api.put(`${tab.endpoint}/${item.id}`, {
+        ...item,
+        is_active: nextState,
+      });
+      toast.success(`${getStringValue(item, "title") || tab.label} is now ${nextState ? "Active" : "Inactive"}.`);
+    } catch {
+      setItems((prev) =>
+        prev.map((x) => (x.id === item.id ? { ...x, is_active: item.is_active } : x))
+      );
+      toast.error("Could not update status.");
+    }
+  };
+
   const isTourPickerTab = tab.endpoint === "/cms/popular-tours" || tab.endpoint === "/cms/tours-on-deals";
 
   const columns: DataTableColumn<CmsItem>[] = [
@@ -422,11 +441,45 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
       key: col.key,
       header: col.header,
       className: col.className ? `${col.className} text-dash-body` : "text-dash-body",
-      render: (item: CmsItem) => col.render ? col.render(item) : (
-        <span className="line-clamp-2">
-          {item[col.key] != null ? String(item[col.key]) : "-"}
-        </span>
-      ),
+      render: (item: CmsItem) => {
+        if (col.key === "is_active") {
+          const isActive = Boolean(item.is_active);
+          return (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isActive}
+              onClick={(e) => {
+                e.stopPropagation();
+                void toggleActive(item);
+              }}
+              className={`group inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-bold transition-all ${
+                isActive
+                  ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              <span
+                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                  isActive ? "bg-emerald-500" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    isActive ? "translate-x-3" : "translate-x-0"
+                  }`}
+                />
+              </span>
+              <span>{isActive ? "Active" : "Inactive"}</span>
+            </button>
+          );
+        }
+        return col.render ? col.render(item) : (
+          <span className="line-clamp-2">
+            {item[col.key] != null ? String(item[col.key]) : "-"}
+          </span>
+        );
+      },
     })),
   ];
 

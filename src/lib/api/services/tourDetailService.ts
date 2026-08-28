@@ -444,6 +444,27 @@ export type TourDiscount = {
   status: string;
 };
 
+export type DiscountAmendment = {
+  new_discount_value?: number | null;
+  new_end_date?: string | null;
+  reason?: string | null;
+};
+
+export type DiscountHistoryEntry = {
+  id: number;
+  discount_id: number;
+  version_number: number;
+  change_type: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  start_date?: string | null;
+  end_date?: string | null;
+  reason?: string | null;
+  changed_by?: number | null;
+  changed_by_name?: string | null;
+  created_at: string;
+};
+
 export async function getDiscounts(tourId: number | string): Promise<TourDiscount[]> {
   const r = await api.get<{ data: TourDiscount[] }>(`${base(tourId)}/discounts`);
   return r.data.data;
@@ -452,12 +473,16 @@ export async function createDiscount(tourId: number | string, data: TourDiscount
   const r = await api.post<{ data: TourDiscount }>(`${base(tourId)}/discounts`, data);
   return r.data.data;
 }
-export async function updateDiscount(tourId: number | string, id: number, data: TourDiscount): Promise<TourDiscount> {
-  const r = await api.put<{ data: TourDiscount }>(`${base(tourId)}/discounts/${id}`, data);
+// Edit/Delete are removed -- a discount may only be amended (percentage
+// and/or a later end date), and every amendment is recorded as a new
+// history version rather than overwriting the original record.
+export async function amendDiscount(tourId: number | string, id: number, data: DiscountAmendment): Promise<TourDiscount> {
+  const r = await api.patch<{ data: TourDiscount }>(`${base(tourId)}/discounts/${id}/amend`, data);
   return r.data.data;
 }
-export async function deleteDiscount(tourId: number | string, id: number): Promise<void> {
-  await api.delete(`${base(tourId)}/discounts/${id}`);
+export async function getDiscountHistory(tourId: number | string, id: number): Promise<DiscountHistoryEntry[]> {
+  const r = await api.get<{ data: DiscountHistoryEntry[] }>(`${base(tourId)}/discounts/${id}/history`);
+  return r.data.data;
 }
 
 // ── Group discount tiers ──────────────────────────────────────────────────────

@@ -17,6 +17,9 @@ const toneMap: Record<string, string> = {
   partially_paid: "bg-amber-50 text-amber-700",
   paid: "bg-emerald-50 text-emerald-700",
   refunded: "bg-slate-100 text-slate-700",
+  partially_refunded: "bg-slate-100 text-slate-700",
+  failed: "bg-red-50 text-red-700",
+  voided: "bg-slate-100 text-slate-700",
 };
 
 export default function BookingStatusBadge({ value }: { value: string }) {

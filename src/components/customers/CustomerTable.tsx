@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LuEye as Eye, LuKeyRound as KeyRound, LuLock as Lock, LuLockOpen as Unlock } from "react-icons/lu";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { Customer } from "@/lib/api/services/customerService";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const statusClass: Record<Customer["status"], string> = {
   active: "bg-emerald-50 text-emerald-600",
@@ -42,6 +43,7 @@ export default function CustomerTable({
   onUnblock,
   onReset,
 }: Props) {
+  const { formatExact: money } = useCurrency();
   const columns: DataTableColumn<Customer>[] = [
     {
       key: "no",
@@ -99,13 +101,13 @@ export default function CustomerTable({
       key: "paid",
       header: "Paid",
       className: "font-bold text-emerald-600",
-      render: (customer) => `$${Number(customer.amount_paid || 0).toLocaleString()}`,
+      render: (customer) => money(customer.amount_paid || 0),
     },
     {
       key: "pending",
       header: "Pending",
       className: "font-bold text-amber-700",
-      render: (customer) => `$${Number(customer.amount_pending || 0).toLocaleString()}`,
+      render: (customer) => money(customer.amount_pending || 0),
     },
     {
       key: "created",

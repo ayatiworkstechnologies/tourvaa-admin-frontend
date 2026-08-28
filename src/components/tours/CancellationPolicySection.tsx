@@ -104,6 +104,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
         <div>
           <h2 className="text-xl font-bold text-dash-text">Cancellation Policy</h2>
           <p className="text-sm text-dash-subtle">Refund tiers based on days before departure. Rules with no match here fall back to the global policy.</p>
+          <p className="mt-1 text-xs text-dash-subtle">Each rule is a refund-eligibility window with its own deduction: set <b>Refund % = 0</b> for the non-refundable period closest to departure, and a higher percentage for windows further out. Customers can cancel anytime; the refund they receive depends on which window their cancellation falls into.</p>
         </div>
         <button
           type="button"

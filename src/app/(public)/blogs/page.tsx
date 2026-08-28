@@ -1,144 +1,286 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { LuArrowRight as ArrowRight } from "react-icons/lu";
-import { CmsBlog, fetchPublicBlogs } from "@/lib/api/publicClient";
-import { mediaUrl } from "@/lib/utils/mediaUrl";
-
 /* eslint-disable @next/next/no-img-element */
 
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=900&q=75";
+import type { CSSProperties, FormEvent } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { LuArrowRight as ArrowRight, LuSparkles as Sparkles } from "react-icons/lu";
+import { CmsBlog, fetchPublicBlogs, subscribeNewsletter } from "@/lib/api/publicClient";
+import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import AboutReveal from "@/components/public/AboutReveal";
 
-function readTime(content: string | null) {
-  const words = (content || "").replace(/<[^>]+>/g, " ").trim().split(/\s+/).filter(Boolean).length;
-  return `${Math.max(1, Math.round(words / 200))} min read`;
-}
+const CATEGORIES = [
+  "All",
+  "Destinations",
+  "Travel Tips",
+  "Culture",
+  "Food & Drink",
+  "Adventure",
+  "News",
+];
 
-function formatDate(value: string | null) {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-}
+const CURATED_FEATURED_POST = {
+  slug: "silk-road-guide-2026",
+  title: "The Ultimate Guide to Exploring the Silk Road in 2026",
+  category: "DESTINATIONS",
+  excerpt:
+    "Embark on an ancient journey across high mountain passes, remote desert outposts, and vibrant historical markets. Discover the essential routes, visa requirements, seasonal windows, and pack lists for an unforgettable expedition.",
+  image: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1200&q=80",
+  authorName: "Alex Mercer",
+  date: "Mar 12, 2026",
+  readTime: "12 min read",
+};
 
-function toPost(blog: CmsBlog) {
-  return {
-    slug: blog.slug,
-    title: blog.title,
-    date: formatDate(blog.published_at || blog.created_at),
-    category: blog.tags?.[0] || "Travel",
-    readTime: readTime(blog.content),
-    img: blog.featured_image ? mediaUrl(blog.featured_image) : FALLBACK_IMAGE,
-    excerpt: blog.excerpt || "",
-  };
+const CURATED_LATEST_ARTICLES = [
+  {
+    slug: "best-time-to-visit-machu-picchu",
+    title: "The Best Time to Visit Machu Picchu",
+    category: "CULTURE",
+    excerpt:
+      "A seasonal breakdown of Peru's dry and wet seasons to help you plan the perfect trek to this iconic mountain citadel.",
+    image: "https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    slug: "top-10-hidden-gems-in-morocco",
+    title: "Top 10 Hidden Gems in Morocco You Need to Visit",
+    category: "DESTINATIONS",
+    excerpt:
+      "Venture beyond the medinas to discover Morocco's best-kept secrets, from blue villages to desert oases.",
+    image: "https://images.unsplash.com/photo-1539020140153-e479b8c22e70?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    slug: "first-timers-guide-to-trekking-nepal",
+    title: "A First-Timer's Guide to Trekking in Nepal",
+    category: "ADVENTURE",
+    excerpt:
+      "Everything you need to know about permits, altitude, routes, and what to pack for your first Himalayan trek.",
+    image: "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    slug: "bangkok-night-markets-street-food",
+    title: "Street Food Adventures: Bangkok's Best Night Markets",
+    category: "FOOD & CULTURE",
+    excerpt:
+      "Navigate the vibrant night markets of Bangkok like a local with our insider guide to the best street food.",
+    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    slug: "sustainable-travel-responsible-tourism",
+    title: "Sustainable Travel: How to Explore Responsibly",
+    category: "SUSTAINABILITY",
+    excerpt:
+      "Practical tips for reducing your footprint, supporting local communities, and travelling with purpose.",
+    image: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    slug: "why-egypt-should-be-your-next-winter-escape",
+    title: "Why Egypt Should Be Your Next Winter Escape",
+    category: "DESTINATIONS",
+    excerpt:
+      "Sun-soaked temples, Nile cruises, and Red Sea diving - why Egypt is the perfect cold-weather getaway.",
+    image: "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=800&q=80",
+  },
+];
+
+function delay(milliseconds: number) {
+  return { "--reveal-delay": `${milliseconds}ms` } as CSSProperties;
 }
 
 export default function BlogsPage() {
-  const [posts, setPosts] = useState<ReturnType<typeof toPost>[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    fetchPublicBlogs()
-      .then((blogs) => { if (active) setPosts(blogs.map(toPost)); })
-      .catch(() => { if (active) setError(true); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []);
-
-  const categories = ["All", ...Array.from(new Set(posts.map((post) => post.category)))];
-  const filteredPosts = activeCategory === "All" ? posts : posts.filter((post) => post.category === activeCategory);
-  const [featured, ...rest] = filteredPosts;
+  async function subscribe(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!email.trim()) return;
+    setSubscribing(true);
+    try {
+      await subscribeNewsletter(email.trim());
+      setMessage("Thank you — travel stories are on their way!");
+      setEmail("");
+    } catch (err: unknown) {
+      setMessage(getApiErrorMessage(err));
+    } finally {
+      setSubscribing(false);
+    }
+  }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-20">
-      {/* Header */}
-      <section className="relative overflow-hidden bg-[#063c42] pb-20 pt-36 text-white">
-        <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-teal-600/20 blur-[100px]" />
-        <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-orange-600/20 blur-[100px]" />
-        <div className="relative mx-auto max-w-7xl px-5 md:px-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-teal-400">Blog</p>
-          <h1 className="mt-4 text-5xl font-black drop-shadow-sm md:text-6xl">Travel stories & guides</h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/70">
-            Expert travel advice, destination guides, and stories from the road - written by our team and partner naturalists.
-          </p>
+    <AboutReveal>
+      <main className="overflow-hidden bg-white text-slate-900 pb-20">
+        {/* Top Hero Landscape Banner */}
+        <div className="mx-auto max-w-[1400px] px-5 pt-3">
+          <section className="relative h-[300px] sm:h-[360px] md:h-[400px] w-full overflow-hidden rounded-[20px] bg-slate-900 shadow-md">
+            <img
+              src="https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=1600&q=80"
+              alt="Panoramic alpine mountain vista"
+              className="animate-tourvaa-hero h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-slate-900/15" />
+          </section>
         </div>
-      </section>
 
-      <div className="mx-auto max-w-7xl px-5 py-12 md:px-8">
-        {/* Category pills */}
-        <div className="mb-10 flex flex-wrap gap-2.5">
-          {categories.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setActiveCategory(c)}
-              className={`cursor-pointer rounded-full border px-5 py-2 text-xs font-bold transition-all ${c === activeCategory ? "border-teal-600 bg-teal-50 text-teal-600" : "border-zinc-200 bg-white text-zinc-500 hover:border-teal-600 hover:text-teal-600"}`}
+        <div className="mx-auto max-w-[1400px] px-5 pt-10 sm:pt-14">
+          {/* Main Title */}
+          <div data-reveal>
+            <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+              Tourvaa Blog
+            </h1>
+            <p className="mt-2.5 text-sm sm:text-base leading-relaxed text-slate-500 max-w-3xl font-medium">
+              Everything you need to know before you go - from visa tips to packing lists, we&apos;ve got you covered on your next global adventure.
+            </p>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div data-reveal className="mt-8 flex flex-wrap gap-2.5">
+            {CATEGORIES.map((cat) => {
+              const active = activeCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className={`rounded-full px-5 py-2 text-xs font-bold transition-all duration-200 ${
+                    active
+                      ? "bg-[#E4572E] text-white shadow-xs"
+                      : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Featured Lead Article Card */}
+          <div data-reveal className="mt-10">
+            <Link
+              href={`/blogs/${CURATED_FEATURED_POST.slug}`}
+              className="group block overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
-              {c}
-            </button>
-          ))}
-        </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                <div className="relative h-[260px] sm:h-[320px] md:h-[360px] w-full overflow-hidden rounded-[16px] bg-slate-100">
+                  <img
+                    src={CURATED_FEATURED_POST.image}
+                    alt={CURATED_FEATURED_POST.title}
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                  />
+                </div>
 
-        {loading ? (
-          <div className="rounded-3xl border border-dashed border-zinc-200 bg-white py-20 text-center">
-            <p className="text-lg font-bold text-zinc-500">Loading articles…</p>
-          </div>
-        ) : error ? (
-          <div className="rounded-3xl border border-dashed border-red-200 bg-red-50 py-20 text-center">
-            <p className="text-lg font-bold text-red-600">Couldn&apos;t load articles right now.</p>
-            <p className="mt-2 text-sm text-red-500">Please try refreshing the page.</p>
-          </div>
-        ) : !featured ? (
-          <div className="rounded-3xl border border-dashed border-zinc-200 bg-white py-20 text-center">
-            <p className="text-lg font-bold text-zinc-500">No articles in this category yet.</p>
-          </div>
-        ) : (
-          <>
-            {/* Featured post */}
-            <Link href={`/blogs/${featured.slug}`} className="group mb-12 flex overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
-              <div className="flex-1 p-8 md:p-10">
-                <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest">
-                  <span className="rounded-full bg-teal-50 px-3 py-1 text-teal-600">{featured.category}</span>
-                  <span className="text-zinc-400">{featured.date}</span>
-                  <span className="text-zinc-400">{featured.readTime}</span>
+                <div className="flex flex-col justify-center py-2 px-2 sm:px-4">
+                  <span className="inline-flex w-fit items-center gap-1 rounded-md bg-sky-50 px-2.5 py-1 text-[11px] font-extrabold text-sky-700">
+                    {CURATED_FEATURED_POST.category}
+                  </span>
+
+                  <h2 className="mt-3 text-2xl sm:text-3xl font-black text-slate-950 leading-tight tracking-tight group-hover:text-blue-600 transition-colors">
+                    {CURATED_FEATURED_POST.title}
+                  </h2>
+
+                  <p className="mt-3 text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                    {CURATED_FEATURED_POST.excerpt}
+                  </p>
+
+                  <div className="mt-6 flex items-center gap-3 pt-4 border-t border-slate-100">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 font-bold text-xs text-blue-700">
+                      AM
+                    </div>
+                    <div className="text-xs">
+                      <p className="font-bold text-slate-900">{CURATED_FEATURED_POST.authorName}</p>
+                      <p className="text-slate-400">{CURATED_FEATURED_POST.date} · {CURATED_FEATURED_POST.readTime}</p>
+                    </div>
+                  </div>
                 </div>
-                <h2 className="mt-5 text-3xl font-black text-zinc-950 group-hover:text-teal-600 transition-colors md:text-4xl">{featured.title}</h2>
-                <p className="mt-4 max-w-lg text-base leading-relaxed text-zinc-500">{featured.excerpt}</p>
-                <div className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-teal-600 transition-colors group-hover:text-teal-700">
-                  Read article <ArrowRight size={16} />
-                </div>
-              </div>
-              <div className="hidden w-1/3 shrink-0 overflow-hidden lg:block">
-                <img src={featured.img} alt={featured.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
               </div>
             </Link>
+          </div>
 
-            {/* Grid */}
-            {rest.length > 0 && (
-              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                {rest.map((post) => (
-                  <Link key={post.slug} href={`/blogs/${post.slug}`} className="group overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col">
-                    <div className="aspect-[16/9] overflow-hidden">
-                      <img src={post.img} alt={post.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-                    </div>
-                    <div className="p-6 flex-1 flex flex-col">
-                      <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
-                        <span className="rounded-full bg-teal-50 px-3 py-1 text-teal-600">{post.category}</span>
-                        <span className="text-zinc-400">{post.readTime}</span>
-                      </div>
-                      <h3 className="mt-4 text-xl font-black text-zinc-950 group-hover:text-teal-600 transition-colors leading-snug">{post.title}</h3>
-                      <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-zinc-500 flex-1">{post.excerpt}</p>
-                      <p className="mt-5 text-xs font-bold uppercase tracking-widest text-zinc-400">{post.date}</p>
-                    </div>
-                  </Link>
-                ))}
+          {/* Latest Articles (6 Cards Grid) */}
+          <div className="mt-16 sm:mt-20">
+            <div data-reveal>
+              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">
+                Latest Articles
+              </h2>
+            </div>
+
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {CURATED_LATEST_ARTICLES.map((article, index) => (
+                <Link
+                  key={article.title}
+                  href={`/blogs/${article.slug}`}
+                  data-reveal
+                  style={delay(index * 60)}
+                  className="group flex flex-col overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                >
+                  <div className="relative h-48 w-full overflow-hidden rounded-[14px] bg-slate-100">
+                    <img
+                      src={article.image}
+                      alt={article.title}
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                    />
+                  </div>
+
+                  <div className="mt-3 flex flex-1 flex-col">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-600">
+                      {article.category}
+                    </span>
+                    <h3 className="mt-1.5 text-base font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
+                      {article.title}
+                    </h3>
+                    <p className="mt-2 text-xs text-slate-500 line-clamp-2 leading-relaxed flex-1">
+                      {article.excerpt}
+                    </p>
+                    <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[#E4572E] group-hover:underline">
+                      <span>Read Article</span>
+                      <span aria-hidden="true">→</span>
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Newsletter Subscribe Banner */}
+          <div data-reveal className="mt-16 sm:mt-20">
+            <section className="rounded-[24px] border border-slate-100/90 bg-white p-6 sm:p-10 shadow-sm">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-xl">
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                    Get Travel Tips Straight to Your Inbox
+                  </h3>
+                  <p className="mt-2 text-xs sm:text-sm text-slate-500 font-medium">
+                    Subscribe to receive tactical gear updates, packing checklists, and sudden destination safety bulletins.
+                  </p>
+                </div>
+
+                <form onSubmit={subscribe} className="flex w-full max-w-md items-center gap-3">
+                  <input
+                    type="email"
+                    required
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-12 flex-1 rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0B1527] focus:bg-white focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={subscribing}
+                    className="h-12 rounded-xl bg-[#0B1527] px-6 text-sm font-black text-white shadow-md hover:bg-[#15233C] transition disabled:opacity-60"
+                  >
+                    {subscribing ? "Subscribing..." : "Subscribe"}
+                  </button>
+                </form>
               </div>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+              {message && (
+                <p className="mt-3 text-xs font-bold text-emerald-600">{message}</p>
+              )}
+            </section>
+          </div>
+        </div>
+      </main>
+    </AboutReveal>
   );
 }

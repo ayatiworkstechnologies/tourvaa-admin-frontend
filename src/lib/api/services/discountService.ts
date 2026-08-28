@@ -31,11 +31,36 @@ export async function createGlobalDiscount(payload: GlobalDiscount): Promise<Glo
   return response.data.data;
 }
 
-export async function updateGlobalDiscount(id: number, payload: GlobalDiscount): Promise<GlobalDiscount> {
-  const response = await api.put<{ data: GlobalDiscount }>(`/discounts/${id}`, payload);
+export type GlobalDiscountAmendment = {
+  new_discount_value?: number | null;
+  new_end_date?: string | null;
+  reason?: string | null;
+};
+
+export type GlobalDiscountHistoryEntry = {
+  id: number;
+  discount_id: number;
+  version_number: number;
+  change_type: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  start_date?: string | null;
+  end_date?: string | null;
+  reason?: string | null;
+  changed_by?: number | null;
+  changed_by_name?: string | null;
+  created_at: string;
+};
+
+// Edit/Delete are removed -- only an amendment (percentage/value and/or a
+// later end date) is allowed, and every amendment is recorded as a new
+// history version rather than overwriting the original record.
+export async function amendGlobalDiscount(id: number, payload: GlobalDiscountAmendment): Promise<GlobalDiscount> {
+  const response = await api.patch<{ data: GlobalDiscount }>(`/discounts/${id}/amend`, payload);
   return response.data.data;
 }
 
-export async function deleteGlobalDiscount(id: number): Promise<void> {
-  await api.delete(`/discounts/${id}`);
+export async function getGlobalDiscountHistory(id: number): Promise<GlobalDiscountHistoryEntry[]> {
+  const response = await api.get<{ data: GlobalDiscountHistoryEntry[] }>(`/discounts/${id}/history`);
+  return response.data.data;
 }

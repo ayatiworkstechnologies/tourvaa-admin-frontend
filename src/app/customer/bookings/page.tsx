@@ -11,6 +11,7 @@ import {
 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Booking = {
   id: number | string;
@@ -131,6 +132,7 @@ function statusBadge(status: string) {
 }
 
 export default function CustomerBookingsPage() {
+  const { formatExact: money } = useCurrency();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("");
@@ -162,7 +164,7 @@ export default function CustomerBookingsPage() {
               travel_dates: dateStr,
               guests: guestsStr,
               status: b.booking_status || fallback.status,
-              total_amount: b.final_amount ? `$${Number(b.final_amount).toLocaleString()}` : fallback.total_amount,
+              total_amount: b.final_amount ? money(b.final_amount, b.currency || "USD") : fallback.total_amount,
               image: b.tour_image ? mediaUrl(b.tour_image) : fallback.image,
             };
           });
@@ -294,7 +296,7 @@ export default function CustomerBookingsPage() {
                     TOTAL PAID
                   </p>
                   <p className="text-lg font-black text-[#0B1527] leading-tight">
-                    {typeof b.total_amount === "number" ? `$${b.total_amount}` : b.total_amount}
+                    {typeof b.total_amount === "number" ? money(b.total_amount) : b.total_amount}
                   </p>
                 </div>
                 <Link

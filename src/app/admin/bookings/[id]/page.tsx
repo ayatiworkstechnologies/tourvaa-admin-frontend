@@ -403,6 +403,26 @@ export default function BookingDetailPage() {
             </DetailPanel>
           )}
 
+          {(booking.payments?.length ?? 0) > 0 && (
+            <DetailPanel title="Payment Attempts">
+              <div className="space-y-2">
+                {booking.payments!.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl bg-dash-bg px-3 py-2">
+                    <div>
+                      <p className="text-sm font-bold text-dash-text">{p.payment_code} · {p.payment_method} ({p.gateway})</p>
+                      <p className="text-xs text-dash-subtle">
+                        {format(p.total_amount, booking.currency)}
+                        {p.payment_status === "failed" && p.failure_reason ? ` · ${p.failure_reason}` : ""}
+                        {p.created_at ? ` · ${new Date(p.created_at).toLocaleString()}` : ""}
+                      </p>
+                    </div>
+                    <BookingStatusBadge value={p.payment_status} />
+                  </div>
+                ))}
+              </div>
+            </DetailPanel>
+          )}
+
           {(activityItems.length > 0 || accommodationItems.length > 0 || extensionItems.length > 0) && (
             <DetailPanel title="Add-ons">
               <div className="space-y-4">

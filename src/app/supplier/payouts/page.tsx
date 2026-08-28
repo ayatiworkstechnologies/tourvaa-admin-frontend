@@ -78,6 +78,22 @@ export default function PayoutsPage() {
     void load();
   }, []);
 
+  // Derived from the supplier's own ledger entries, not a fixed list -- a
+  // currency that never appears there (or one that does but isn't in a
+  // hardcoded set) must still be requestable.
+  const availableCurrencies = useMemo(() => {
+    const currencies = new Set(
+      ledgers
+        .filter((entry) => ["pending", "partial"].includes((entry.status || "").toLowerCase()))
+        .map((entry) => entry.currency || "USD")
+    );
+    return currencies.size > 0 ? Array.from(currencies).sort() : ["USD"];
+  }, [ledgers]);
+
+  useEffect(() => {
+    if (!availableCurrencies.includes(currency)) setCurrency(availableCurrencies[0]);
+  }, [availableCurrencies, currency]);
+
   const availableBalance = useMemo(() => ledgers
     .filter((entry) => ["pending", "partial"].includes((entry.status || "").toLowerCase()) && (entry.currency || "USD") === currency)
     .reduce((sum, entry) => sum + Number(entry.amount_pending || 0), 0), [ledgers, currency]);
@@ -184,11 +200,7 @@ export default function PayoutsPage() {
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
               >
-                <option value="AED">AED</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="INR">INR</option>
+                {availableCurrencies.map((code) => <option key={code} value={code}>{code}</option>)}
               </select>
             </div>
             <div>

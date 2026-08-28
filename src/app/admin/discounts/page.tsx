@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuPercent as Percent, LuPencil as Pencil, LuPlus as Plus, LuSave as Save, LuTag as Tag, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
+import { LuPercent as Percent, LuHistory as History, LuPlus as Plus, LuSave as Save, LuTag as Tag, LuX as X } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
@@ -11,11 +11,12 @@ import { listCms } from "@/lib/api/services/cmsService";
 import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
 import {
-  deleteGlobalDiscount,
+  amendGlobalDiscount,
   createGlobalDiscount,
   GlobalDiscount,
+  GlobalDiscountHistoryEntry,
+  getGlobalDiscountHistory,
   listAllDiscounts,
-  updateGlobalDiscount,
 } from "@/lib/api/services/discountService";
 
 type CategoryOption = { id: number; label: string };
@@ -70,6 +71,13 @@ export default function DiscountsPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<GlobalDiscount | null>(null);
   const [saving, setSaving] = useState(false);
+  const [amending, setAmending] = useState<GlobalDiscount | null>(null);
+  const [amendValue, setAmendValue] = useState("");
+  const [amendEndDate, setAmendEndDate] = useState("");
+  const [amendReason, setAmendReason] = useState("");
+  const [historyFor, setHistoryFor] = useState<GlobalDiscount | null>(null);
+  const [history, setHistory] = useState<GlobalDiscountHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -106,17 +114,13 @@ export default function DiscountsPage() {
       toast.error("A percentage discount must be between 0 and 100.");
       return;
     }
+    if (editing.id) return; // editing is disabled -- use Amend instead
     setSaving(true);
     try {
-      if (editing.id) {
-        const updated = await updateGlobalDiscount(editing.id, editing);
-        setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
-      } else {
-        const created = await createGlobalDiscount(editing);
-        setItems((prev) => [created, ...prev]);
-      }
+      const created = await createGlobalDiscount(editing);
+      setItems((prev) => [created, ...prev]);
       setEditing(null);
-      toast.success("Saved.");
+      toast.success("Discount created.");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Failed to save.";
       toast.error(msg);
@@ -125,14 +129,51 @@ export default function DiscountsPage() {
     }
   };
 
-  const remove = async (id: number) => {
-    if (!confirm("Delete this discount?")) return;
+  const openAmend = (item: GlobalDiscount) => {
+    setAmending(item);
+    setAmendValue(String(item.discount_value));
+    setAmendEndDate(item.end_date?.slice(0, 10) ?? "");
+    setAmendReason("");
+  };
+
+  const submitAmend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amending?.id) return;
+    const newValue = Number(amendValue);
+    const valueChanged = amending.discount_value !== newValue;
+    const newEndDate = amendEndDate ? `${amendEndDate}T23:59:59` : null;
+    const endDateChanged = newEndDate && newEndDate !== amending.end_date;
+    if (!valueChanged && !endDateChanged) {
+      toast.error("Change the percentage/value and/or extend the end date first.");
+      return;
+    }
+    setSaving(true);
     try {
-      await deleteGlobalDiscount(id);
-      setItems((prev) => prev.filter((i) => i.id !== id));
-      toast.success("Deleted.");
+      const updated = await amendGlobalDiscount(amending.id, {
+        new_discount_value: valueChanged ? newValue : null,
+        new_end_date: endDateChanged ? newEndDate : null,
+        reason: amendReason.trim() || null,
+      });
+      setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+      setAmending(null);
+      toast.success("Discount amended -- a new history version was recorded.");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Failed to save.";
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openHistory = async (item: GlobalDiscount) => {
+    setHistoryFor(item);
+    setHistoryLoading(true);
+    try {
+      setHistory(await getGlobalDiscountHistory(item.id!));
     } catch {
-      toast.error("Failed to delete.");
+      toast.error("Failed to load discount history.");
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -224,11 +265,11 @@ export default function DiscountsPage() {
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-1.5">
-                    <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border p-1.5 hover:bg-[#F2F4F7]">
-                      <Pencil size={13} />
+                    <button type="button" onClick={() => void openHistory(item)} title="History" className="rounded-lg border border-dash-border p-1.5 hover:bg-[#F2F4F7]">
+                      <History size={13} />
                     </button>
-                    <button type="button" onClick={() => void remove(item.id!)} className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500 hover:bg-[#FFF0F0]">
-                      <Trash2 size={13} />
+                    <button type="button" onClick={() => openAmend(item)} className="inline-flex items-center gap-1 rounded-lg bg-dash-brand px-2.5 py-1.5 text-xs font-bold text-white hover:bg-dash-brand-hover">
+                      Extend / Change %
                     </button>
                   </div>
                 </div>
@@ -244,7 +285,7 @@ export default function DiscountsPage() {
               className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
             >
               <div className="mb-5 flex items-center justify-between">
-                <h3 className="text-xl font-bold text-dash-text">{editing.id ? "Edit Discount" : "New Discount"}</h3>
+                <h3 className="text-xl font-bold text-dash-text">New Discount</h3>
                 <button type="button" onClick={() => setEditing(null)} className="rounded-lg p-2 text-dash-muted hover:bg-dash-bg">
                   <X size={18} />
                 </button>
@@ -404,6 +445,69 @@ export default function DiscountsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {amending && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <form onSubmit={submitAmend} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-dash-text">Extend validity / change percentage</h3>
+                <button type="button" aria-label="Close" onClick={() => setAmending(null)}><X size={18} /></button>
+              </div>
+              <p className="mt-1 text-xs text-dash-subtle">{amending.discount_name} -- editing is disabled; this creates a new history version instead.</p>
+              <div className="mt-4 grid gap-4">
+                <label>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{amending.discount_type === "percentage" ? "New percentage (%)" : "New amount"}</span>
+                  <input type="number" value={amendValue} onChange={(e) => setAmendValue(e.target.value)} className={inputClass} />
+                </label>
+                <DatePicker label="New end date (must be later)" value={amendEndDate} minDate={amending.end_date?.slice(0, 10) || undefined} onChange={setAmendEndDate} />
+                <label>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Reason (optional)</span>
+                  <input value={amendReason} onChange={(e) => setAmendReason(e.target.value)} placeholder="e.g. Peak-season extension" className={inputClass} />
+                </label>
+              </div>
+              <div className="mt-5 flex justify-end gap-3">
+                <button type="button" onClick={() => setAmending(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
+                <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
+                  <Save size={14} /> {saving ? "Saving..." : "Save Amendment"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {historyFor && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-2 font-bold text-dash-text"><History size={16} /> Discount history -- {historyFor.discount_name}</h3>
+                <button type="button" aria-label="Close" onClick={() => setHistoryFor(null)}><X size={18} /></button>
+              </div>
+              <div className="mt-4 max-h-[60vh] overflow-y-auto">
+                {historyLoading ? (
+                  <Loader label="Loading history..." />
+                ) : history.length === 0 ? (
+                  <p className="text-sm text-dash-subtle">No history yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {history.map((v) => (
+                      <div key={v.id} className="rounded-xl border border-dash-border p-4">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center rounded-full bg-dash-bg px-2.5 py-1 text-xs font-black text-dash-body">v{v.version_number} -- {v.change_type.replace(/_/g, " ")}</span>
+                          <span className="text-xs text-dash-subtle">{v.created_at?.slice(0, 10)}{v.changed_by_name ? ` by ${v.changed_by_name}` : ""}</span>
+                        </div>
+                        <p className="mt-2 text-sm text-dash-body">
+                          {v.discount_value}{v.discount_type === "percentage" ? "%" : ""} off
+                          {v.end_date ? ` -- valid until ${v.end_date.slice(0, 10)}` : ""}
+                        </p>
+                        {v.reason && <p className="mt-1 text-xs text-dash-subtle">&quot;{v.reason}&quot;</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

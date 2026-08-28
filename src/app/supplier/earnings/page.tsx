@@ -38,6 +38,7 @@ type CommissionBreakdown = {
 type CommissionCalculatorResult = {
   adults: number;
   children: number;
+  currency: string;
   adult_price: string;
   child_price: string;
   adult_breakdown: CommissionBreakdown;
@@ -305,7 +306,7 @@ export default function EarningsPage() {
       render: (e) => <><p className="font-semibold text-dash-text">{e.booking_code ?? `Booking #${e.booking_id ?? e.id}`}</p>{e.notes && <p className="text-xs text-dash-subtle">{e.notes}</p>}</>,
     },
     { key: "gross", header: "Gross", className: "text-right font-semibold text-dash-text", render: (e) => money(e.gross_amount, e.currency ?? summary.currency) },
-    { key: "commission", header: "Commission", className: "text-right font-semibold text-amber-600", render: (e) => `-${money(e.commission_amount, e.currency ?? summary.currency)}` },
+    { key: "commission", header: "Tourvaa Commission", className: "text-right font-semibold text-amber-600", render: (e) => `-${money(e.commission_amount, e.currency ?? summary.currency)}` },
     { key: "net", header: "Net Payable", className: "text-right font-black text-emerald-700", render: (e) => money(e.net_payable, e.currency ?? summary.currency) },
     { key: "pending", header: "Pending", className: "text-right font-bold text-rose-600", render: (e) => money(e.amount_pending, e.currency ?? summary.currency) },
     { key: "status", header: "Status", render: (e) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(e.status ?? "")}`}>{e.status ?? "-"}</span> },
@@ -428,19 +429,22 @@ export default function EarningsPage() {
               {calcError && <p className="mt-2 text-xs font-semibold text-red-600">{calcError}</p>}
 
               {calcResult && (
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {([["Adults", calcResult.adult_breakdown], ["Children", calcResult.child_breakdown], ["Total", calcResult.total]] as const).map(([label, b]) => (
-                    <div key={label} className="rounded-xl border border-dash-border bg-dash-bg p-4">
-                      <p className="text-xs font-bold uppercase text-dash-muted">{label}</p>
-                      <dl className="mt-2 space-y-1 text-xs text-dash-body">
-                        <div className="flex justify-between"><dt>Gross amount</dt><dd className="font-semibold">{b.gross_amount}</dd></div>
-                        <div className="flex justify-between"><dt>Group discount</dt><dd className="font-semibold text-amber-600">-{b.group_discount_amount}</dd></div>
-                        <div className="flex justify-between"><dt>Discounted amount</dt><dd className="font-semibold">{b.discounted_amount}</dd></div>
-                        <div className="flex justify-between"><dt>Commission ({b.commission_percentage}%)</dt><dd className="font-semibold text-amber-600">-{b.commission_amount}</dd></div>
-                        <div className="flex justify-between border-t border-dash-border pt-1"><dt className="font-bold">Your net earnings</dt><dd className="font-black text-emerald-700">{b.net_earnings}</dd></div>
-                      </dl>
-                    </div>
-                  ))}
+                <div className="mt-4">
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-dash-muted">All amounts in {calcResult.currency}</p>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {([["Adults", calcResult.adult_breakdown], ["Children", calcResult.child_breakdown], ["Total", calcResult.total]] as const).map(([label, b]) => (
+                      <div key={label} className="rounded-xl border border-dash-border bg-dash-bg p-4">
+                        <p className="text-xs font-bold uppercase text-dash-muted">{label}</p>
+                        <dl className="mt-2 space-y-1 text-xs text-dash-body">
+                          <div className="flex justify-between"><dt>Gross amount</dt><dd className="font-semibold">{b.gross_amount} {calcResult.currency}</dd></div>
+                          <div className="flex justify-between"><dt>Group discount</dt><dd className="font-semibold text-amber-600">-{b.group_discount_amount} {calcResult.currency}</dd></div>
+                          <div className="flex justify-between"><dt>Discounted amount</dt><dd className="font-semibold">{b.discounted_amount} {calcResult.currency}</dd></div>
+                          <div className="flex justify-between"><dt>Commission ({b.commission_percentage}%)</dt><dd className="font-semibold text-amber-600">-{b.commission_amount} {calcResult.currency}</dd></div>
+                          <div className="flex justify-between border-t border-dash-border pt-1"><dt className="font-bold">Your net earnings</dt><dd className="font-black text-emerald-700">{b.net_earnings} {calcResult.currency}</dd></div>
+                        </dl>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

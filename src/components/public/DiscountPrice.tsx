@@ -37,6 +37,31 @@ export function DiscountBanner({ percentage }: { percentage: number }) {
   );
 }
 
+/** "Save ₹8,325 pp" -- the per-person amount saved, not just the percentage. */
+export function DiscountSavingsLine({
+  original,
+  discounted,
+  currency,
+  format,
+  suffix = "pp",
+  size = "sm",
+}: {
+  original: number;
+  discounted: number;
+  currency: string;
+  format: (amount: number, currency?: string) => string;
+  suffix?: string;
+  size?: "sm" | "md";
+}) {
+  const savings = original - discounted;
+  if (savings <= 0) return null;
+  return (
+    <span className={`inline-flex w-fit items-center rounded-full bg-emerald-50 px-2.5 py-1 font-black text-emerald-700 ${size === "md" ? "text-sm" : "text-xs"}`}>
+      Save {format(savings, currency)} {suffix}
+    </span>
+  );
+}
+
 /** Struck-through original price next to the discounted price, e.g. "$2,260pp $1,130pp". */
 export function DiscountPriceLine({
   original,
@@ -45,6 +70,7 @@ export function DiscountPriceLine({
   format,
   suffix = "pp",
   size = "md",
+  showSavings = false,
 }: {
   original: number;
   discounted: number;
@@ -52,13 +78,15 @@ export function DiscountPriceLine({
   format: (amount: number, currency?: string) => string;
   suffix?: string;
   size?: "sm" | "md" | "lg";
+  showSavings?: boolean;
 }) {
   const originalClass = size === "lg" ? "text-lg" : size === "sm" ? "text-xs" : "text-sm";
   const discountedClass = size === "lg" ? "text-3xl" : size === "sm" ? "text-base" : "text-xl";
   return (
-    <span className="flex flex-col">
+    <span className="flex flex-col gap-1">
       <s className={`${originalClass} font-semibold text-red-400`}>{format(original, currency)}{suffix}</s>
       <b className={`${discountedClass} font-black text-slate-950`}>{format(discounted, currency)}<span className="text-xs font-semibold text-slate-400">{suffix}</span></b>
+      {showSavings && <DiscountSavingsLine original={original} discounted={discounted} currency={currency} format={format} suffix={suffix} />}
     </span>
   );
 }

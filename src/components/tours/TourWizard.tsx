@@ -34,7 +34,6 @@ import TourPricingTab from "@/components/tours/TourPricingTab";
 import TourCalendarTab from "@/components/tours/TourCalendarTab";
 import TourExtensionsTab from "@/components/tours/TourExtensionsTab";
 import TourDiscountsTab from "@/components/tours/TourDiscountsTab";
-import TourGroupDiscountTab from "@/components/tours/TourGroupDiscountTab";
 import TourSimilarTab from "@/components/tours/TourSimilarTab";
 
 type Tour = {
@@ -450,7 +449,6 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 <div id="tour-discounts-section">
                   <TourDiscountsTab tourId={tourId} />
                 </div>
-                <TourGroupDiscountTab tourId={tourId} />
               </div>
             )}
             {activeKey === "calendar" && <TourCalendarTab tourId={tourId} />}

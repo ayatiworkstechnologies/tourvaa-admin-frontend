@@ -13,6 +13,7 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Profile = {
   full_name?: string;
@@ -149,6 +150,7 @@ function formatPrice(amount?: number | string) {
 export default function CustomerDashboardPage() {
   const { user } = useAuthContext();
   const { wishlist } = useTravelStore();
+  const { format } = useCurrency();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>(DEFAULT_BOOKINGS);
 
@@ -192,7 +194,7 @@ export default function CustomerDashboardPage() {
         duration: "10D | 9N",
         rating: 4.8,
         reviews: "2,466 reviews",
-        price: w.price ? `$${w.price.toLocaleString()}` : "$2,699",
+        price: w.price ? format(w.price, w.currency || "USD") : "$2,699",
         image: mediaUrl(w.image) || DEFAULT_WISHLIST[0].image,
         href: w.href || `/tours/${w.id}`,
       }))

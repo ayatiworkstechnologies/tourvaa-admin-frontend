@@ -52,6 +52,9 @@ export type PublicTourDetail = PublicTour & {
   seo_title?: string | null;
   seo_description?: string | null;
   booking_deposit: number | null;
+  deposit_type: "fixed" | "percentage" | null;
+  deposit_percentage: number | null;
+  deposit_cutoff_days: number | null;
   balance_payment_deadline_days: number | null;
   overview: {
     duration_text: string;
@@ -188,6 +191,11 @@ export async function fetchExternalDayTrips() {
     stale: boolean;
     items: ExternalDayTrip[];
   };
+}
+
+export async function fetchViatorRedirectUrl() {
+  const res = await publicApi.get("/viator/redirect-url");
+  return res.data.url as string;
 }
 
 export async function fetchPublicSubcategories(category?: string) {

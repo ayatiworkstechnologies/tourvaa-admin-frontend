@@ -312,7 +312,7 @@ export default function CustomerWishlistPage() {
                   <div>
                     <span className="text-[11px] text-slate-500">Price </span>
                     <span className="text-xs font-black text-slate-900">
-                      {typeof tour.price === "number" ? `₹${tour.price.toLocaleString()}` : tour.price}
+                      {typeof tour.price === "number" ? format(tour.price, tour.currency || "INR") : tour.price}
                     </span>
                     <span className="text-[10px] text-slate-400"> pp</span>
                   </div>

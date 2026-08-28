@@ -1492,7 +1492,7 @@ export default function Home() {
     <main className="overflow-x-clip bg-white text-slate-950">
       {/* Contained Hero Section */}
       <div className="relative z-30 mx-auto max-w-[1400px] px-5 pt-3 pb-4 sm:pb-6">
-        <section className="relative flex h-[480px] w-full flex-col justify-between items-center rounded-[20px] p-4 sm:p-6 text-center text-white shadow-[0_12px_40px_rgba(15,23,42,0.12)] overflow-hidden">
+        <section className="relative flex h-[480px] w-full flex-col justify-between items-center rounded-[20px] p-4 sm:p-6 text-center text-white shadow-[0_12px_40px_rgba(15,23,42,0.12)]">
           {/* Background image/video & gradient overlay (clipped to rounded corners) */}
           <div className="absolute inset-0 overflow-hidden rounded-[20px] pointer-events-none">
             {heroVideo ? (

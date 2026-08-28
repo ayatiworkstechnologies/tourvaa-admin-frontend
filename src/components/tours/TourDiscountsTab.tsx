@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
-import { TourDiscount, getDiscounts, createDiscount, updateDiscount, deleteDiscount } from "@/lib/api/services/tourDetailService";
+import { LuPlus as Plus, LuHistory as History, LuSave as Save, LuX as X } from "react-icons/lu";
+import { TourDiscount, DiscountHistoryEntry, getDiscounts, createDiscount, amendDiscount, getDiscountHistory } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
@@ -48,6 +48,13 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
   const [saving, setSaving] = useState(false);
   const [basePrice, setBasePrice] = useState(0);
   const [currency, setCurrency] = useState("USD");
+  const [amending, setAmending] = useState<TourDiscount | null>(null);
+  const [amendValue, setAmendValue] = useState("");
+  const [amendEndDate, setAmendEndDate] = useState("");
+  const [amendReason, setAmendReason] = useState("");
+  const [historyFor, setHistoryFor] = useState<TourDiscount | null>(null);
+  const [history, setHistory] = useState<DiscountHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -82,15 +89,10 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
     setSaving(true);
     try {
       const payload = { ...editing, discount_value: sanitizeNumber(editing.discount_value), minimum_booking_amount: sanitizeNumber(editing.minimum_booking_amount) };
-      if (editing.id) {
-        const updated = await updateDiscount(tourId, editing.id, payload);
-        setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
-      } else {
-        const created = await createDiscount(tourId, payload);
-        setItems((prev) => [...prev, created]);
-      }
+      const created = await createDiscount(tourId, payload);
+      setItems((prev) => [...prev, created]);
       setEditing(null);
-      toast.success("Saved.");
+      toast.success("Discount created.");
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err));
     } finally {
@@ -98,14 +100,50 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
     }
   };
 
-  const remove = async (id: number) => {
-    if (!confirm("Delete this discount?")) return;
-    try {
-      await deleteDiscount(tourId, id);
-      setItems((previousItems) => previousItems.filter((item) => item.id !== id));
+  const openAmend = (item: TourDiscount) => {
+    setAmending(item);
+    setAmendValue(String(item.discount_value));
+    setAmendEndDate(item.end_date?.slice(0, 10) ?? "");
+    setAmendReason("");
+  };
+
+  const submitAmend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amending?.id) return;
+    const newValue = Number(amendValue);
+    const valueChanged = amending.discount_value !== newValue;
+    const newEndDate = amendEndDate ? `${amendEndDate}T23:59:59` : null;
+    const endDateChanged = newEndDate && newEndDate !== amending.end_date;
+    if (!valueChanged && !endDateChanged) {
+      toast.error("Change the percentage/value and/or extend the end date first.");
+      return;
     }
-    catch {
-      toast.error("Failed.");
+    setSaving(true);
+    try {
+      const updated = await amendDiscount(tourId, amending.id, {
+        new_discount_value: valueChanged ? newValue : null,
+        new_end_date: endDateChanged ? newEndDate : null,
+        reason: amendReason.trim() || null,
+      });
+      setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
+      setAmending(null);
+      toast.success("Discount amended -- a new history version was recorded.");
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openHistory = async (item: TourDiscount) => {
+    setHistoryFor(item);
+    setHistoryLoading(true);
+    try {
+      setHistory(await getDiscountHistory(tourId, item.id!));
+    } catch {
+      toast.error("Failed to load discount history.");
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -147,8 +185,8 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
                 <p className="mt-1 text-xs text-dash-subtle">Used: {item.used_count ?? 0}{item.usage_limit ? ` / ${item.usage_limit}` : ""}</p>
               </div>
               <div className="flex gap-2">
-                <button type="button" aria-label="Edit discount" title="Edit discount" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border p-2 hover:bg-[#F2F4F7]"><Pencil size={14} /></button>
-                <button type="button" aria-label="Delete discount" title="Delete discount" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] p-2 text-red-500"><Trash2 size={14} /></button>
+                <button type="button" onClick={() => openHistory(item)} className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F2F4F7]"><History size={14} /> History</button>
+                <button type="button" onClick={() => openAmend(item)} className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white hover:bg-dash-brand-hover">Extend / Change %</button>
               </div>
             </div>
           </div>
@@ -158,7 +196,7 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
       {editing && (
         <form onSubmit={save} className="rounded-xl border-2 border-dash-brand bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-bold">{editing.id ? "Edit Discount" : "New Discount"}</h3>
+            <h3 className="font-bold">New Discount</h3>
             <button type="button" aria-label="Close editor" title="Close editor" onClick={() => setEditing(null)}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -215,6 +253,69 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
             </button>
           </div>
         </form>
+      )}
+
+      {amending && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true">
+          <form onSubmit={submitAmend} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-dash-text">Extend validity / change percentage</h3>
+              <button type="button" aria-label="Close" onClick={() => setAmending(null)}><X size={18} /></button>
+            </div>
+            <p className="mt-1 text-xs text-dash-subtle">{amending.discount_name} -- editing is disabled; this creates a new history version instead.</p>
+            <div className="mt-4 grid gap-4">
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{amending.discount_type === "percentage" ? "New percentage (%)" : "New amount"}</span>
+                <input type="number" value={amendValue} onChange={(e) => setAmendValue(e.target.value)} className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+              </label>
+              <DatePicker label="New end date (must be later)" value={amendEndDate} minDate={amending.end_date?.slice(0, 10) || undefined} onChange={setAmendEndDate} />
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Reason (optional)</span>
+                <input value={amendReason} onChange={(e) => setAmendReason(e.target.value)} placeholder="e.g. Peak-season extension" className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+              </label>
+            </div>
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={() => setAmending(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
+              <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
+                <Save size={14} /> {saving ? "Saving..." : "Save Amendment"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {historyFor && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 font-bold text-dash-text"><History size={16} /> Discount history -- {historyFor.discount_name}</h3>
+              <button type="button" aria-label="Close" onClick={() => setHistoryFor(null)}><X size={18} /></button>
+            </div>
+            <div className="mt-4 max-h-[60vh] overflow-y-auto">
+              {historyLoading ? (
+                <Loader label="Loading history..." />
+              ) : history.length === 0 ? (
+                <p className="text-sm text-dash-subtle">No history yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {history.map((v) => (
+                    <div key={v.id} className="rounded-xl border border-dash-border p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center rounded-full bg-dash-bg px-2.5 py-1 text-xs font-black text-dash-body">v{v.version_number} -- {v.change_type.replace(/_/g, " ")}</span>
+                        <span className="text-xs text-dash-subtle">{v.created_at?.slice(0, 10)}{v.changed_by_name ? ` by ${v.changed_by_name}` : ""}</span>
+                      </div>
+                      <p className="mt-2 text-sm text-dash-body">
+                        {v.discount_value}{v.discount_type === "percentage" ? "%" : ""} off
+                        {v.end_date ? ` -- valid until ${v.end_date.slice(0, 10)}` : ""}
+                      </p>
+                      {v.reason && <p className="mt-1 text-xs text-dash-subtle">"{v.reason}"</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

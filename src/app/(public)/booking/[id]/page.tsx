@@ -31,7 +31,7 @@ type FormValues = {
   email: string; phone: string; phoneCountryCode: string; notes: string;
   primaryIsContact: boolean;
   activityIds: number[]; accommodationIds: number[]; extensionIds: number[];
-  paymentType: "partial" | "full"; agreed: boolean;
+  paymentType: "partial" | "full"; agreed: boolean; agreedCancellationPolicy: boolean;
   agentMarkup: number; agentReference: string;
   agentPaymentMethod: "online" | "wallet" | "credit" | "bank_transfer" | "pay_later";
 };
@@ -85,7 +85,7 @@ export default function PublicBookingPage() {
       travelDate: searchParams.get("travel_date") || "", adults: Math.max(1, Number(searchParams.get("adults") || 1)), children: Math.max(0, Number(searchParams.get("children") || 0)),
       infants: Math.max(0, Number(searchParams.get("infants") || 0)), rooms: 1,
       travellers: travellerRows(Math.max(1, Number(searchParams.get("adults") || 1)), Math.max(0, Number(searchParams.get("children") || 0)), selfBookingName),
-      email: selfBookingEmail, phone: "", phoneCountryCode: "+91", notes: "", primaryIsContact: true, activityIds: [], accommodationIds: [], extensionIds: [], paymentType: "partial", agreed: false,
+      email: selfBookingEmail, phone: "", phoneCountryCode: "+91", notes: "", primaryIsContact: true, activityIds: [], accommodationIds: [], extensionIds: [], paymentType: "partial", agreed: false, agreedCancellationPolicy: false,
       agentMarkup: 0, agentReference: "", agentPaymentMethod: "online",
     },
   });
@@ -175,7 +175,23 @@ export default function PublicBookingPage() {
   const agentMarkup = isAgent ? Math.max(0, Number(values.agentMarkup) || 0) : 0;
   const customerTotal = pricing.total + agentMarkup;
   const agentPaymentMethod = values.agentPaymentMethod ?? "online";
-  const depositAmount = tour?.booking_deposit && tour.booking_deposit > 0 ? Number(tour.booking_deposit) : null;
+  // Past the supplier's configured deposit cutoff (days before departure), only
+  // full payment is offered -- the balance-due-date formula itself (below) is
+  // a separate, still-unconfirmed rule and is untouched here.
+  const depositEligible = useMemo(() => {
+    if (!tour?.deposit_cutoff_days || !values.travelDate) return true;
+    const travel = new Date(`${values.travelDate}T00:00:00`);
+    if (Number.isNaN(travel.getTime())) return true;
+    const daysToDeparture = Math.floor((travel.getTime() - Date.now()) / 86_400_000);
+    return daysToDeparture >= tour.deposit_cutoff_days;
+  }, [tour, values.travelDate]);
+  const depositAmount = useMemo(() => {
+    if (!depositEligible || !tour) return null;
+    if (tour.deposit_type === "percentage") {
+      return tour.deposit_percentage ? customerTotal * (tour.deposit_percentage / 100) : null;
+    }
+    return tour.booking_deposit && tour.booking_deposit > 0 ? Number(tour.booking_deposit) : null;
+  }, [tour, depositEligible, customerTotal]);
   const balanceDueDate = useMemo(() => {
     if (!depositAmount || !tour?.balance_payment_deadline_days || !values.travelDate) return null;
     const travel = new Date(`${values.travelDate}T00:00:00`);
@@ -186,8 +202,10 @@ export default function PublicBookingPage() {
   }, [depositAmount, tour, values.travelDate]);
 
   useEffect(() => {
-    if (!depositAmount) setValue("paymentType", "full", { shouldDirty: true });
-  }, [depositAmount, setValue]);
+    // Agents reserve or pay in full -- the deposit concept (with its own
+    // percentage/cutoff config) is a customer-only payment option.
+    if (!depositAmount || isAgent) setValue("paymentType", "full", { shouldDirty: true });
+  }, [depositAmount, isAgent, setValue]);
   const selectedCustomerName = selectedCustomer?.full_name ?? selectedCustomer?.name ?? "";
 
   const changeCount = (type: "adult" | "child", count: number) => {
@@ -388,27 +406,63 @@ export default function PublicBookingPage() {
                 <label className="field-label mt-4">Special requirements<textarea {...register("notes")} rows={3} className="field resize-none" /></label>
               </div>
             )}
-            {step === 4 && <div><Header n="4" title="Review & Confirm" text="Check your trip before creating the booking." /><TourCard tour={tour} hero={hero} />{isAgent && <div className="mt-5"><AgentCommercialFields register={register} paymentMethod={agentPaymentMethod} netPrice={pricing.total} markup={agentMarkup} customerTotal={customerTotal} currency={currency} money={money} /></div>}<div className="mt-5 grid gap-4 sm:grid-cols-2"><ReviewBox title="Trip" rows={[["Booking for", isAgent ? selectedCustomerName || "-" : "Myself"], ["Travel date", values.travelDate || "-"], ["Travellers", `${adults} adult${adults === 1 ? "" : "s"}${children ? `, ${children} child${children === 1 ? "" : "ren"}` : ""}`], ["Contact", values.email || "-"]]} /><ReviewBox title="Price summary" rows={[["Package", money(pricing.base, currency)], ["Upgrades", money(pricing.extras, currency)], ...(isAgent ? [["Agent markup", money(agentMarkup, currency)]] : []), ["Total", money(customerTotal, currency)]]} /></div>                <div className={`mt-5 grid gap-3 ${depositAmount ? "sm:grid-cols-2" : ""}`}>
-                  {depositAmount && (
-                    <label className={`cursor-pointer rounded-2xl border-2 p-4 ${values.paymentType === "partial" ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
-                      <input type="radio" value="partial" {...register("paymentType")} className="sr-only" />
-                      <b className="block">Pay booking deposit</b>
-                      <strong className="mt-2 block text-xl text-teal-800">{money(depositAmount, currency)}</strong>
-                      <span className="text-xs text-slate-500">{balanceDueDate ? `Balance payable before ${balanceDueDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}` : "Pay the balance later"}</span>
+            {step === 4 && <div><Header n="4" title="Review & Confirm" text="Check your trip before creating the booking." /><TourCard tour={tour} hero={hero} />{isAgent && <div className="mt-5"><AgentCommercialFields register={register} paymentMethod={agentPaymentMethod} netPrice={pricing.total} markup={agentMarkup} customerTotal={customerTotal} currency={currency} money={money} /></div>}<div className="mt-5 grid gap-4 sm:grid-cols-2"><ReviewBox title="Trip" rows={[["Booking for", isAgent ? selectedCustomerName || "-" : "Myself"], ["Travel date", values.travelDate || "-"], ["Travellers", `${adults} adult${adults === 1 ? "" : "s"}${children ? `, ${children} child${children === 1 ? "" : "ren"}` : ""}`], ["Contact", values.email || "-"]]} /><ReviewBox title="Price summary" rows={[["Package", money(pricing.base, currency)], ["Upgrades", money(pricing.extras, currency)], ...(isAgent ? [["Agent markup", money(agentMarkup, currency)]] : []), ["Total", money(customerTotal, currency)]]} /></div>                {isAgent ? (
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <label className={`cursor-pointer rounded-2xl border-2 p-4 ${agentPaymentMethod !== "online" ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
+                      <input type="radio" value="pay_later" {...register("agentPaymentMethod")} className="sr-only" />
+                      <b className="block">Reserve Now</b>
+                      <strong className="mt-2 block text-xl text-teal-800">No deposit required</strong>
+                      <span className="text-xs text-slate-500">Balance due: {money(customerTotal, currency)}. An invoice is generated and sent once the reservation is created.</span>
                     </label>
-                  )}
-                  <label className={`cursor-pointer rounded-2xl border-2 p-4 ${values.paymentType === "full" || !depositAmount ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
-                    <input type="radio" value="full" {...register("paymentType")} className="sr-only" />
-                    <b className="block">Pay in full</b>
-                    <strong className="mt-2 block text-xl text-teal-800">{money(customerTotal, currency)}</strong>
-                    <span className="text-xs text-slate-500">Complete in one payment</span>
-                  </label>
-                </div><label className="mt-5 flex items-start gap-3 text-sm text-slate-600"><input type="checkbox" {...register("agreed", { required: true })} className="mt-1" />I agree to the booking terms and cancellation policy.</label></div>}
+                    <label className={`cursor-pointer rounded-2xl border-2 p-4 ${agentPaymentMethod === "online" ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
+                      <input type="radio" value="online" {...register("agentPaymentMethod")} className="sr-only" />
+                      <b className="block">Pay in Full Today</b>
+                      <strong className="mt-2 block text-xl text-teal-800">{money(customerTotal, currency)}</strong>
+                      <span className="text-xs text-slate-500">Complete in one payment</span>
+                    </label>
+                  </div>
+                ) : (
+                  <div className={`mt-5 grid gap-3 ${depositAmount ? "sm:grid-cols-2" : ""}`}>
+                    {depositAmount && (
+                      <label className={`cursor-pointer rounded-2xl border-2 p-4 ${values.paymentType === "partial" ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
+                        <input type="radio" value="partial" {...register("paymentType")} className="sr-only" />
+                        <b className="block">Secure with a Deposit</b>
+                        <strong className="mt-2 block text-xl text-teal-800">{money(depositAmount, currency)}</strong>
+                        <span className="text-xs text-slate-500">{balanceDueDate ? `Balance payable before ${balanceDueDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}` : "Pay the balance later"}</span>
+                      </label>
+                    )}
+                    <label className={`cursor-pointer rounded-2xl border-2 p-4 ${values.paymentType === "full" || !depositAmount ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
+                      <input type="radio" value="full" {...register("paymentType")} className="sr-only" />
+                      <b className="block">Pay in Full Today</b>
+                      <strong className="mt-2 block text-xl text-teal-800">{money(customerTotal, currency)}</strong>
+                      <span className="text-xs text-slate-500">Complete in one payment</span>
+                    </label>
+                  </div>
+                )}
+                {!isAgent && !depositEligible && (tour.booking_deposit || tour.deposit_percentage) && <p className="mt-3 text-xs font-semibold text-amber-700">A deposit is no longer available this close to departure -- full payment is required.</p>}
+                {tour.cancellation_policy.length > 0 && (
+                  <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-black uppercase tracking-wide text-slate-500">Cancellation &amp; refund policy for this tour</p>
+                    <div className="mt-2 space-y-1">
+                      {tour.cancellation_policy.map((rule, idx) => (
+                        <p key={idx} className="text-xs text-slate-600">
+                          <b className="text-slate-900">{rule.days_before_max == null ? `${rule.days_before_min}+ days` : `${rule.days_before_min}–${rule.days_before_max} days`} before departure:</b>{" "}
+                          {rule.refund_percentage}% refund{rule.description ? ` -- ${rule.description}` : ""}
+                        </p>
+                      ))}
+                    </div>
+                    <label className="mt-3 flex items-start gap-3 text-sm font-semibold text-slate-700">
+                      <input type="checkbox" {...register("agreedCancellationPolicy", { required: true })} className="mt-1" />
+                      I have read and agree to this tour&apos;s cancellation &amp; refund policy.
+                    </label>
+                  </div>
+                )}
+                <label className="mt-5 flex items-start gap-3 text-sm text-slate-600"><input type="checkbox" {...register("agreed", { required: true })} className="mt-1" />I agree to the booking terms and cancellation policy.</label></div>}
             {step === 5 && booking && <div><Header n="5" title="Secure Payment" text="Choose a gateway to complete your payment." /><div className="rounded-2xl bg-[#063c42] p-6 text-white"><p className="text-xs font-bold uppercase tracking-widest text-teal-200">Pay securely now</p><p className="mt-2 text-4xl font-black">{formatCurrency(paymentAmount, booking.currency)}</p>{displayCurrency !== booking.currency && <p className="mt-1 text-xs font-semibold text-teal-200">≈ {money(paymentAmount, booking.currency)} in your selected currency</p>}<p className="mt-2 text-sm text-white/70">Booking {booking.booking_code} · {values.paymentType === "partial" ? "Deposit payment" : "Full payment"}</p></div>{displayCurrency !== booking.currency && <p className="mt-3 text-xs text-slate-500">This displayed conversion is indicative. Payment is processed in the booking currency shown at checkout.</p>}<div className="mt-5 space-y-3"><PayButton disabled={!gateways?.stripe || !!busy} onClick={() => pay("stripe")} loading={busy === "stripe"} label="Pay with Stripe" /><PayButton disabled={!gateways?.paypal || !!busy} onClick={() => pay("paypal")} loading={busy === "paypal"} label="Pay with PayPal" />{gateways?.test_mode_available && <PayButton disabled={!!busy} onClick={() => pay("test")} loading={busy === "test"} label="Simulate test payment" test />}</div><div className="mt-5 flex items-start gap-3 rounded-2xl border border-teal-100 bg-teal-50 p-4 text-sm text-teal-800"><ShieldCheck className="shrink-0" size={20} /><span>Your payment is encrypted. Booking confirmation remains subject to supplier acceptance.</span></div></div>}
             {step === 6 && booking && <div className="py-8 text-center"><div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"><CheckCircle size={50} /></div><p className="mt-6 text-xs font-black uppercase tracking-widest text-emerald-700">Payment received</p><h2 className="mt-2 text-3xl font-black">Booking request confirmed</h2><p className="mx-auto mt-3 max-w-lg text-slate-500">Your payment is recorded. We’ll notify you when the supplier accepts the booking.</p><div className="mx-auto mt-7 max-w-md rounded-2xl border border-slate-200 bg-slate-50 p-5"><p className="text-xs font-bold text-slate-400">BOOKING REFERENCE</p><p className="mt-2 text-2xl font-black tracking-wider text-teal-800">{booking.booking_code}</p></div><div className="mt-7 flex flex-wrap justify-center gap-3"><Link href={isAgent ? `/agent/bookings/${booking.id}` : `/customer/bookings/${booking.id}`} className="rounded-xl bg-teal-700 px-6 py-3 font-bold text-white">View booking</Link>{!isAgent && <Link href="/customer/invoices" className="rounded-xl border border-slate-300 px-6 py-3 font-bold">Download invoice</Link>}{!isAgent && <a href={`/api/customer/bookings/${booking.id}/itinerary`} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">Download itinerary</a>}{!isAgent && <Link href="/customer/support" className="rounded-xl border border-slate-300 px-6 py-3 font-bold">Contact support</Link>}<Link href={isAgent ? "/agent/dashboard" : "/customer/dashboard"} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">Go to dashboard</Link><Link href="/tours" className="rounded-xl border border-slate-300 px-6 py-3 font-bold">Explore more tours</Link></div></div>}
 
             {step < 4 && !showOtpGate && <div className="mt-7 flex justify-between border-t border-slate-100 pt-5"><button type="button" onClick={() => step === 1 ? router.back() : setStep(step - 1)} className="nav-secondary"><ArrowLeft size={16} /> Back</button><button type="button" onClick={next} className="nav-primary">Continue <ArrowRight size={16} /></button></div>}
-            {step === 4 && <div className="mt-7 flex justify-between border-t border-slate-100 pt-5"><button type="button" onClick={() => setStep(3)} className="nav-secondary"><ArrowLeft size={16} /> Back</button><button type="submit" disabled={!values.agreed || busy === "booking"} className="nav-primary">{busy === "booking" ? <Loader className="animate-spin" size={16} /> : <Lock size={15} />} {isAgent && agentPaymentMethod !== "online" ? "Create booking" : "Proceed to payment"}</button></div>}
+            {step === 4 && <div className="mt-7 flex justify-between border-t border-slate-100 pt-5"><button type="button" onClick={() => setStep(3)} className="nav-secondary"><ArrowLeft size={16} /> Back</button><button type="submit" disabled={!values.agreed || (tour.cancellation_policy.length > 0 && !values.agreedCancellationPolicy) || busy === "booking"} className="nav-primary">{busy === "booking" ? <Loader className="animate-spin" size={16} /> : <Lock size={15} />} {isAgent && agentPaymentMethod !== "online" ? "Reserve Now" : isAgent ? "Pay in Full Today" : "Proceed to payment"}</button></div>}
           </section>
 
           <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-28"><img src={hero} alt={tour.title} className="aspect-[16/10] w-full rounded-2xl object-cover" /><h2 className="mt-4 font-black">{tour.title}</h2><p className="mt-2 flex items-center gap-1 text-xs text-slate-500"><MapPin size={13} />{[tour.city_name, tour.country_name].filter(Boolean).join(", ")}</p><div className="my-4 h-px bg-slate-100" /><div className="space-y-2 text-sm"><div className="flex justify-between"><span>Travellers</span><b>{totalPax}</b></div><div className="flex justify-between"><span>Package</span><b>{money(pricing.base, currency)}</b></div><div className="flex justify-between"><span>Upgrades</span><b>{money(pricing.extras, currency)}</b></div></div><div className="mt-4 flex justify-between rounded-xl bg-slate-950 px-4 py-3 text-white"><span>Total</span><b>{booking ? money(Number(booking.final_amount), booking.currency) : money(customerTotal, currency)}</b></div><p className="mt-4 flex items-center justify-center gap-2 text-[11px] font-bold text-slate-500"><ShieldCheck size={14} className="text-teal-700" /> Secure booking &amp; payment</p></aside>
