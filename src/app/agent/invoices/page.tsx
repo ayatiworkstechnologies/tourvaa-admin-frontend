@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuDownload as Download, LuReceiptText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { LuCalculator as Calculator, LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuLoaderCircle as Loader2, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
+import { LuCalculator as Calculator, LuCircleAlert as AlertCircle, LuWallet as Banknote, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuLoaderCircle as Loader2, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";

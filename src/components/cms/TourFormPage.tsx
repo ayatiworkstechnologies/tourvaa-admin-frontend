@@ -6,7 +6,7 @@ import {
   LuArrowLeft as ArrowLeft,
   LuFileText as FileText,
   LuImage as ImageIcon,
-  LuMapPinned as MapPinned,
+  LuCompass as MapPinned,
   LuSave as Save,
   LuSearch as Search,
   LuTags as Tags,

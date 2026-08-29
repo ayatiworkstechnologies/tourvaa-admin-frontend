@@ -12,7 +12,7 @@ import {
   LuCircleCheckBig as CheckCircle2,
   LuCoins as Coins,
   LuEye as Eye,
-  LuFileText as FileText,
+  LuFileCheck2 as FileText,
   LuLink as LinkIcon,
   LuPercent as Percent,
   LuPlus as Plus,

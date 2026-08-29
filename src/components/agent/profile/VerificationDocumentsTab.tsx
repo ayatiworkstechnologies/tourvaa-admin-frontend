@@ -7,7 +7,7 @@ import {
   LuCircleCheckBig as CheckCircle2,
   LuClock3 as Clock3,
   LuEye as Eye,
-  LuFileText as FileText,
+  LuFileCheck2 as FileText,
   LuLoaderCircle as Loader2,
   LuRefreshCw as RefreshCw,
   LuUpload as Upload,

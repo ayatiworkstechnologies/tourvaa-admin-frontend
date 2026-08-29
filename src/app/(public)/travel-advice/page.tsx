@@ -10,7 +10,7 @@ import {
   LuCloudSun as CloudSun,
   LuHeartPulse as HeartPulse,
   LuLanguages as Languages,
-  LuMapPinned as MapPinned,
+  LuCompass as MapPinned,
   LuPlaneTakeoff as PlaneTakeoff,
   LuShieldCheck as ShieldCheck,
   LuUserRoundCheck as UserRoundCheck,

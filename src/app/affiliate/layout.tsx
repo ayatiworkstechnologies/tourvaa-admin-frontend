@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuBanknote as Banknote, LuCoins as Coins, LuLayoutDashboard as LayoutDashboard, LuLink2 as Link2, LuMessageSquare as MessageSquare, LuMousePointerClick as MousePointerClick, LuTrendingUp as TrendingUp, LuUser as User, LuUsers as Users, LuWallet as Wallet } from "react-icons/lu";
+import { LuHandCoins as HandCoins, LuCoins as Coins, LuLayoutDashboard as LayoutDashboard, LuLifeBuoy as LifeBuoy, LuLink2 as Link2, LuMousePointerClick as MousePointerClick, LuTrendingUp as TrendingUp, LuUser as User, LuUsers as Users, LuWallet as Wallet } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
@@ -19,8 +19,8 @@ const NAV = [
   { href: "/affiliate/conversions", icon: TrendingUp, label: "Conversions", section: "Promote" },
   { href: "/affiliate/commissions", icon: Coins, label: "Commissions", section: "Earnings" },
   { href: "/affiliate/wallet", icon: Wallet, label: "Wallet", section: "Earnings" },
-  { href: "/affiliate/payouts", icon: Banknote, label: "Payouts", section: "Earnings" },
-  { href: "/affiliate/support", icon: MessageSquare, label: "Support", placement: "bottom" as const },
+  { href: "/affiliate/payouts", icon: HandCoins, label: "Payouts", section: "Earnings" },
+  { href: "/affiliate/support", icon: LifeBuoy, label: "Support", placement: "bottom" as const },
   { href: "/affiliate/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
 

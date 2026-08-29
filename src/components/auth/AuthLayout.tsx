@@ -1,4 +1,4 @@
-import { LuBadgeCheck as BadgeCheck, LuMapPinned as MapPinned, LuShieldCheck as ShieldCheck, LuUsersRound as UsersRound } from "react-icons/lu";
+import { LuBadgeCheck as BadgeCheck, LuCompass as Compass, LuShieldCheck as ShieldCheck, LuUsersRound as UsersRound } from "react-icons/lu";
 
 type AuthLayoutProps = {
   title: string;
@@ -29,7 +29,7 @@ export default function AuthLayout({
 
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-wide shadow-lg backdrop-blur">
-              <MapPinned size={14} />
+              <Compass size={14} />
               Tourvaa Console
             </div>
             <h1 className="mt-8 max-w-lg text-5xl font-bold leading-tight">
@@ -42,6 +42,7 @@ export default function AuthLayout({
           </div>
 
           <div className="relative z-10 space-y-4">
+            <li className="flex items-center gap-4 text-sm font-semibold text-emerald-100/90"><div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 shadow-inner backdrop-blur-md"><Compass size={18} className="text-emerald-300" /></div> Manage inventory across 100+ destinations</li>
             <div className="max-w-sm rounded-2xl border border-white/20 bg-white/15 p-4 shadow-2xl backdrop-blur-md">
               <div className="flex items-center justify-between">
                 <div>

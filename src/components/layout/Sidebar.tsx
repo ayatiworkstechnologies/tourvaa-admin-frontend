@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuLock as Lock, LuLogOut as LogOut, LuMapPinned as MapPinned } from "react-icons/lu";
+import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuLock as Lock, LuLogOut as LogOut, LuCompass as Compass } from "react-icons/lu";
 import type { IconType as LucideIcon } from "react-icons";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -157,7 +157,7 @@ export default function Sidebar({
   navItems,
   title = "Tourvaa",
   subtitle = "Console",
-  logoIcon: LogoIcon = MapPinned,
+  logoIcon: LogoIcon = Compass,
   mobile = false,
   collapsed = false,
   onToggleCollapse,

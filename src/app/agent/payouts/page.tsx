@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LuCircleAlert as AlertCircle, LuBanknote as Banknote, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuCircleDollarSign as Banknote, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
 import { useCurrency } from "@/hooks/useCurrency";

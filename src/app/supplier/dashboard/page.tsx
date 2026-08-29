@@ -15,7 +15,7 @@ import {
   LuLock as Lock,
   LuLogOut as LogOut,
   LuMailCheck as MailCheck,
-  LuMapPinned as MapPinned,
+  LuCompass as MapPinned,
   LuMessageSquare as MessageSquare,
   LuPlus as Plus,
   LuReceiptText as ReceiptText,

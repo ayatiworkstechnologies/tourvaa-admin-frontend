@@ -4,7 +4,7 @@ import Link from "next/link";
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileText as FileText, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileCheck2 as FileText, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
 import api from "@/lib/api/client";
 import ActionModal from "@/components/operations/ActionModal";

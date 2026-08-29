@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuPackageCheck as PackageCheck, LuUsers as Users, LuWarehouse as Warehouse, LuMail as Mail, LuHeadset as Headset, LuFilter as Filter, LuChartColumn as BarChart3, LuCreditCard as CreditCard, LuTrendingUp as TrendingUp, LuUserPlus as UserPlus, LuShield as Shield, LuActivity as Activity, LuTriangleAlert as AlertTriangle, LuClock as Clock, LuChevronRight as ChevronRight, LuHouse as Home, LuRefreshCw as RefreshCw, LuCircleCheckBig as CheckCircle2, LuCircleX as XCircle, LuMapPin as MapPin } from "react-icons/lu";
+import { LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuBuilding2 as Building2, LuUsers as Users, LuWarehouse as Warehouse, LuClock3 as Clock3, LuBriefcase as Briefcase, LuFilter as Filter, LuChartColumn as BarChart3, LuCreditCard as CreditCard, LuTrendingUp as TrendingUp, LuUserPlus as UserPlus, LuShield as Shield, LuActivity as Activity, LuTriangleAlert as AlertTriangle, LuClock as Clock, LuChevronRight as ChevronRight, LuHouse as Home, LuRefreshCw as RefreshCw, LuCircleCheckBig as CheckCircle2, LuCircleX as XCircle, LuMapPin as MapPin, LuHeadset as Headset } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useDashboard } from "@/hooks/useDashboard";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -191,10 +191,10 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   const stats = [
     { label: "Total Bookings",   value: summary.total_bookings  ?? 0,                        icon: CalendarCheck,    sub: "All bookings",       href: "/admin/bookings" },
     { label: "Total Customers",  value: summary.total_customers ?? 0,                        icon: Users,            sub: "Platform",           href: "/admin/customers" },
-    { label: "Pending Payments", value: summary.pending_payments ?? 0,                       icon: Mail,             sub: "Awaiting payment",   href: "/admin/payments" },
+    { label: "Pending Payments", value: summary.pending_payments ?? 0,                       icon: Clock3,             sub: "Awaiting payment",   href: "/admin/payments" },
     { label: "Total Revenue",    value: formatCompact(summary.total_revenue),                icon: CircleDollarSign, sub: "Captured",           href: "/admin/reports" },
-    { label: "Suppliers",        value: summary.total_suppliers ?? 0,                        icon: PackageCheck,     sub: `${summary.pending_suppliers ?? 0} pending`, href: "/admin/suppliers" },
-    { label: "Agents",           value: summary.total_agents    ?? 0,                        icon: Headset,          sub: `${summary.pending_agents ?? 0} pending`,    href: "/admin/agents" },
+    { label: "Suppliers",        value: summary.total_suppliers ?? 0,                        icon: Building2,     sub: `${summary.pending_suppliers ?? 0} pending`, href: "/admin/suppliers" },
+    { label: "Agents",           value: summary.total_agents    ?? 0,                        icon: Briefcase,          sub: `${summary.pending_agents ?? 0} pending`,    href: "/admin/agents" },
   ];
 
   // chart colours

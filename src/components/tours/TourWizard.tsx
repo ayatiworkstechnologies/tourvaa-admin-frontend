@@ -7,7 +7,7 @@ import {
   LuArrowRight as ArrowRight,
   LuCircleAlert as AlertCircle,
   LuEye as Eye,
-  LuMapPinned as MapPinned,
+  LuCompass as MapPinned,
   LuRotateCcw as RotateCcw,
   LuLoaderCircle as Loader2,
 } from "react-icons/lu";

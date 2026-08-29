@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LuFileText as FileText, LuDownload as Download, LuLoaderCircle as Loader2 } from "react-icons/lu";
+import { LuReceiptText as FileText, LuDownload as Download, LuLoaderCircle as Loader2 } from "react-icons/lu";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 import { Invoice, getInvoices, downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import { useCurrency } from "@/hooks/useCurrency";

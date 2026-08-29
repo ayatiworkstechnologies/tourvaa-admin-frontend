@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCreditCard as CreditCard, LuFileText as FileText, LuHistory as History, LuLoaderCircle as Loader2, LuMapPinned as MapPinned, LuReceipt as Receipt, LuStar as Star, LuUsers as Users, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCreditCard as CreditCard, LuReceiptText as FileText, LuHistory as History, LuLoaderCircle as Loader2, LuMapPinned as MapPinned, LuReceipt as Receipt, LuStar as Star, LuUsers as Users, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api/client";
 import { CustomerPageShell } from "@/components/customer/CustomerPage";

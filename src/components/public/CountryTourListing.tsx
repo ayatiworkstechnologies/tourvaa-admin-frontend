@@ -372,6 +372,17 @@ const INDIA_TOURS: TourItem[] = [
   },
 ];
 
+// Fallback/dummy tours use string ids (e.g. "in-1") while TravelItem.id must
+// be a number - hash them to a stable positive int so distinct tours don't
+// collide onto the same wishlist entry.
+function hashStringToId(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) || 1;
+}
+
 export default function CountryTourListing({ countrySlug }: { countrySlug?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1100,6 +1111,8 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               const tourLink = tour.slug
                 ? publicTourUrl({ country_name: tour.country_name || tour.location, title: tour.title, slug: tour.slug })
                 : `/tours/${tour.id}`;
+              const wishlistId = typeof tour.id === "number" ? tour.id : hashStringToId(String(tour.id));
+              const wishlisted = isWishlisted(wishlistId);
 
               return (
                 <div
@@ -1131,7 +1144,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                       type="button"
                       onClick={() =>
                         toggleWishlist({
-                          id: typeof tour.id === "number" ? tour.id : 1,
+                          id: wishlistId,
                           title: tour.title,
                           place: tour.location,
                           duration: tour.duration,
@@ -1141,10 +1154,12 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                           href: tourLink,
                         })
                       }
-                      aria-label="Save tour to wishlist"
-                      className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-red-500 shadow-xs hover:scale-110 transition"
+                      aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Save ${tour.title} to wishlist`}
+                      className={`absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full shadow-xs transition hover:scale-110 ${
+                        wishlisted ? "bg-red-500 text-white" : "bg-white/90 text-slate-500 hover:text-red-500"
+                      }`}
                     >
-                      <Heart size={14} className="fill-current text-red-500" />
+                      <Heart size={14} className={wishlisted ? "fill-current" : ""} />
                     </button>
                   </div>
 
@@ -1211,9 +1226,12 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                             <p className="text-[10px] font-bold text-slate-900 leading-tight">{dep.price}</p>
                           </div>
                         ))}
-                        <div className="flex items-center justify-center rounded-lg py-1 text-[10px] font-bold text-slate-700 hover:bg-white transition cursor-pointer">
+                        <Link
+                          href={tourLink}
+                          className="flex items-center justify-center rounded-lg py-1 text-[10px] font-bold text-slate-700 hover:bg-white transition"
+                        >
                           +More
-                        </div>
+                        </Link>
                       </div>
                     </div>
 

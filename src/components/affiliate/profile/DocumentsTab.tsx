@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuUpload as Upload } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuFileCheck2 as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuUpload as Upload } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
 import { IMAGE_DOCUMENT_ACCEPT } from "@/lib/uploads/imageFormats";

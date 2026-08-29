@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuBanknote as Banknote, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuFileCheck2 as FileCheck, LuLayoutDashboard as LayoutDashboard, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
+import { LuBanknote as Banknote, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCompass as Compass, LuFileCheck2 as FileCheck, LuHandCoins as HandCoins, LuLayoutDashboard as LayoutDashboard, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
@@ -14,11 +14,11 @@ import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
 
 const NAV = [
   { href: "/supplier/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/supplier/tours", icon: MapPinned, label: "My Tours", section: "Tour Workspace" },
+  { href: "/supplier/tours", icon: Compass, label: "My Tours", section: "Tour Workspace" },
   { href: "/supplier/tours/create", icon: Plus, label: "Create", section: "Tour Workspace" },
   { href: "/supplier/bookings", icon: CalendarCheck, label: "Bookings", section: "Operations" },
   { href: "/supplier/earnings", icon: Wallet, label: "Earnings", section: "Operations" },
-  { href: "/supplier/payouts", icon: Banknote, label: "Payouts", section: "Operations" },
+  { href: "/supplier/payouts", icon: HandCoins, label: "Payouts", section: "Operations" },
   { href: "/supplier/reports", icon: ChartColumn, label: "Reports", section: "Operations" },
   { href: "/supplier/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
   { href: "/supplier/notifications", icon: Bell, label: "Notifications", section: "Communication" },

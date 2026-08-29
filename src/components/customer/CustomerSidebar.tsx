@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LuCalendarDays as CalendarDays,
   LuHeart as Heart,
   LuLogOut as LogOut,
+  LuTicket as Ticket,
   LuUserRound as UserRound,
-  LuShoppingBag as ShoppingBag,
 } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
@@ -19,7 +18,7 @@ type CustomerSidebarProps = {
 
 const navigation = [
   { label: "My Profile", href: "/customer/dashboard", icon: UserRound },
-  { label: "My Bookings", href: "/customer/bookings", icon: ShoppingBag },
+  { label: "My Bookings", href: "/customer/bookings", icon: Ticket },
   { label: "Wishlist", href: "/customer/wishlist", icon: Heart },
 ] as const;
 
