@@ -1505,7 +1505,7 @@ export default function Home() {
                 onEnded={banners.length > 1 ? () => setBannerIndex((index) => (index + 1) % banners.length) : undefined}
                 muted
                 playsInline
-                className="h-full w-full object-cover object-center scale-105"
+                className="h-full w-full object-cover object-center"
               />
             ) : (
               <img
