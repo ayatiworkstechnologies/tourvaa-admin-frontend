@@ -30,7 +30,7 @@ export default function CustomerSidebar({ mobile = false, onNavigate }: Customer
   const displayEmail = user?.email || "srinath@tourvaa.com";
 
   return (
-    <aside className={`${mobile ? "relative flex h-full" : "fixed inset-y-0 top-20 sm:top-[92px] left-0 hidden lg:flex"} z-40 w-[240px] flex-col p-4 bg-transparent`}>
+    <aside className={`${mobile ? "relative flex h-full" : "fixed inset-y-0 top-20 sm:top-[84px] left-0 hidden lg:flex"} z-40 w-[240px] flex-col p-4 bg-transparent`}>
       {/* Top User Profile Card */}
       <div className="flex flex-col items-center rounded-2xl border border-slate-200/90 bg-white p-5 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
         <div className="relative mb-3">

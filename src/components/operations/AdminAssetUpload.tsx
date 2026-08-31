@@ -68,7 +68,7 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
       <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
 
       {value ? (
-        <div className="relative overflow-hidden rounded-xl border border-dash-border">
+        <div className="relative max-w-xs overflow-hidden rounded-xl border border-dash-border">
           {showImagePreview ? (
             <div className="relative aspect-video w-full bg-[#F0F3F8]">
               <Image src={value} alt={label} fill unoptimized className="object-cover" />
@@ -100,7 +100,7 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
             setDragging(false);
             void upload(event.dataTransfer.files?.[0] || null);
           }}
-          className={`flex aspect-video w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 text-center transition-colors ${
+          className={`flex aspect-video w-full max-w-xs cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 text-center transition-colors ${
             dragging ? "border-dash-brand bg-[#EDF5FF]" : "border-dash-border bg-dash-bg hover:bg-[#F0F3F8]"
           }`}
         >

@@ -135,9 +135,9 @@ const TABS: TabConfig[] = [
     ],
     formFields: [
       { key: "title", label: "Title (must match country name)", type: "text", required: true },
-      { key: "country_id", label: "Country ID", type: "number" },
+      { key: "country_id", label: "Country", type: "number" },
       { key: "image", label: "Image", type: "asset" },
-      { key: "city_id", label: "City ID", type: "number" },
+      { key: "city_id", label: "City", type: "number" },
       { key: "description", label: "Description", type: "textarea" },
       { key: "sort_order", label: "Sort Order", type: "number" },
     ],
@@ -267,8 +267,13 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [tourOptions, setTourOptions] = useState<FieldOption[]>([]);
   const [tourImages, setTourImages] = useState<Record<string, string>>({});
+  const [countryOptions, setCountryOptions] = useState<{ id: number; name: string }[]>([]);
+  const [cityOptions, setCityOptions] = useState<{ id: number; name: string }[]>([]);
   const [page, setPage] = useState(1);
   const pageSize = 10;
+
+  const isDestinationTab = tab.endpoint === "/cms/popular-destinations";
+  const selectedCountryId = formValues.country_id ?? "";
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -321,6 +326,25 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
 
     return () => { cancelled = true; };
   }, [tab.endpoint]);
+
+  useEffect(() => {
+    if (!isDestinationTab) return;
+    let cancelled = false;
+    api.get("/geo/countries")
+      .then((res) => { if (!cancelled) setCountryOptions(res.data?.data ?? []); })
+      .catch(() => { if (!cancelled) setCountryOptions([]); });
+    return () => { cancelled = true; };
+  }, [isDestinationTab]);
+
+  useEffect(() => {
+    if (!isDestinationTab) return;
+    if (!selectedCountryId) { setCityOptions([]); return; }
+    let cancelled = false;
+    api.get("/geo/cities", { params: { country_id: selectedCountryId } })
+      .then((res) => { if (!cancelled) setCityOptions(res.data?.data ?? []); })
+      .catch(() => { if (!cancelled) setCityOptions([]); });
+    return () => { cancelled = true; };
+  }, [isDestinationTab, selectedCountryId]);
 
   const openCreate = () => {
     setEditingItem(null);
@@ -568,6 +592,29 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
                     value={formValues[f.key] ?? ""}
                     onChange={(value) => setFormValues(v => ({ ...v, [f.key]: value }))}
                   />
+                ) : f.key === "country_id" && isDestinationTab ? (
+                  <select
+                    value={formValues[f.key] ?? ""}
+                    onChange={e => setFormValues(v => ({ ...v, country_id: e.target.value, city_id: "" }))}
+                    className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
+                  >
+                    <option value="">Select a country...</option>
+                    {countryOptions.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                ) : f.key === "city_id" && isDestinationTab ? (
+                  <select
+                    value={formValues[f.key] ?? ""}
+                    disabled={!selectedCountryId}
+                    onChange={e => setFormValues(v => ({ ...v, city_id: e.target.value }))}
+                    className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10 disabled:cursor-not-allowed disabled:bg-dash-bg disabled:text-dash-subtle"
+                  >
+                    <option value="">{selectedCountryId ? "Select a city..." : "Select a country first"}</option>
+                    {cityOptions.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                 ) : f.type === "select" ? (
                   <select
                     value={formValues[f.key] ?? ""}

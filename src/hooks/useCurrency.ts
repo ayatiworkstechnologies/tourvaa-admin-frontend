@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "@/lib/api/client";
 import { currencySymbol, formatCurrency, formatCurrencyCompact } from "@/lib/utils/currency";
 
@@ -129,21 +129,46 @@ export function useCurrency() {
     return () => { listeners.delete(setSnapshot); };
   }, []);
 
-  const convert = (amount: number | string | null | undefined, fromCurrency = "USD") => {
+  // Memoized on the actual rate/code data (not recreated every render) --
+  // several pages pass these into a useEffect's dependency array (e.g. to
+  // reformat fetched prices), and an unmemoized function there is a new
+  // reference every render, which re-triggers that effect every render in
+  // an infinite fetch loop.
+  const convert = useCallback((amount: number | string | null | undefined, fromCurrency = "USD") => {
     const value = Number(amount ?? 0);
     const source = fromCurrency.toUpperCase();
     const sourceRate = snapshot.rates[source];
     const targetRate = snapshot.rates[snapshot.code];
     if (!Number.isFinite(value) || !sourceRate || !targetRate) return value;
     return (value / sourceRate) * targetRate;
-  };
+  }, [snapshot.rates, snapshot.code]);
 
-  const outputCode = (fromCurrency: string) => {
+  const outputCode = useCallback((fromCurrency: string) => {
     const source = fromCurrency.toUpperCase();
     const sourceRate = snapshot.rates[source];
     const targetRate = snapshot.rates[snapshot.code];
     return sourceRate && targetRate ? snapshot.code : source;
-  };
+  }, [snapshot.rates, snapshot.code]);
+
+  const format = useCallback(
+    (amount: number | string | null | undefined, fromCurrency = "USD") => formatCurrency(convert(amount, fromCurrency), outputCode(fromCurrency)),
+    [convert, outputCode],
+  );
+  const formatCompact = useCallback(
+    (amount: number | string | null | undefined, fromCurrency = "USD") => formatCurrencyCompact(convert(amount, fromCurrency), outputCode(fromCurrency)),
+    [convert, outputCode],
+  );
+  /** Formats an amount that was actually settled/recorded in `currency`
+   * (a captured payment, an invoice total, a payout) without running it
+   * through FX conversion - converting a real historical transaction to
+   * the viewer's ambient display currency would show a number that was
+   * never actually charged/paid, and breaks reconciliation against
+   * gateway settlement reports. Use `format` only for values that are
+   * genuinely meant to be browsed/compared across currencies. */
+  const formatExact = useCallback(
+    (amount: number | string | null | undefined, currency = "USD") => formatCurrency(amount, currency.toUpperCase()),
+    [],
+  );
 
   return {
     ...snapshot,
@@ -155,15 +180,8 @@ export function useCurrency() {
     })),
     setCode: setDisplayCurrency,
     convert,
-    format: (amount: number | string | null | undefined, fromCurrency = "USD") => formatCurrency(convert(amount, fromCurrency), outputCode(fromCurrency)),
-    formatCompact: (amount: number | string | null | undefined, fromCurrency = "USD") => formatCurrencyCompact(convert(amount, fromCurrency), outputCode(fromCurrency)),
-    /** Formats an amount that was actually settled/recorded in `currency`
-     * (a captured payment, an invoice total, a payout) without running it
-     * through FX conversion - converting a real historical transaction to
-     * the viewer's ambient display currency would show a number that was
-     * never actually charged/paid, and breaks reconciliation against
-     * gateway settlement reports. Use `format` only for values that are
-     * genuinely meant to be browsed/compared across currencies. */
-    formatExact: (amount: number | string | null | undefined, currency = "USD") => formatCurrency(amount, currency.toUpperCase()),
+    format,
+    formatCompact,
+    formatExact,
   };
 }

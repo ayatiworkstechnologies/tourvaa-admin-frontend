@@ -332,6 +332,7 @@ export default function TourFormPage({
       payload.booking_deposit = form.booking_deposit ? Number(form.booking_deposit) : 0;
       payload.deposit_percentage = form.deposit_percentage ? Number(form.deposit_percentage) : null;
       payload.deposit_cutoff_days = form.deposit_cutoff_days ? Number(form.deposit_cutoff_days) : null;
+      payload.balance_payment_deadline_days = form.balance_payment_deadline_days ? Number(form.balance_payment_deadline_days) : null;
 
       // Simple number fields - use default if blank
       // price_start_per_person is intentionally omitted -- it's system-
@@ -655,6 +656,12 @@ export default function TourFormPage({
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Deposit allowed until (days before departure)</span>
               <input type="number" min={0} value={form.deposit_cutoff_days ?? ""} onChange={(e) => update("deposit_cutoff_days", e.target.value)} className={inputClass} placeholder="No cutoff -- deposit always allowed" />
               <span className="mt-1 block text-[11px] text-dash-subtle">Leave blank to allow a deposit right up to departure. Once fewer days remain, customers see only &quot;Pay in Full Today&quot;.</span>
+            </label>
+
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Final payment due (days before departure)</span>
+              <input type="number" min={0} value={form.balance_payment_deadline_days ?? ""} onChange={(e) => update("balance_payment_deadline_days", e.target.value)} className={inputClass} placeholder="e.g. 30" />
+              <span className="mt-1 block text-[11px] text-dash-subtle">After paying a deposit, the customer must clear the remaining balance by this many days before departure.</span>
             </label>
           </FormSection>
           )}

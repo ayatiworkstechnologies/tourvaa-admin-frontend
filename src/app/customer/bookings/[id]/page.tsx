@@ -44,6 +44,15 @@ type Booking = {
   final_amount?: string | number;
   amount_paid?: string | number;
   amount_pending?: string | number;
+  balance_due_date?: string | null;
+  deposit_config?: {
+    deposit_type: "fixed" | "percentage";
+    deposit_percentage?: number | null;
+    booking_deposit?: string | null;
+    deposit_cutoff_days?: number | null;
+    balance_payment_deadline_days?: number | null;
+    still_available: boolean;
+  } | null;
   currency?: string;
   no_of_adults?: number;
   no_of_children?: number;
@@ -110,6 +119,7 @@ function PayNowModal({
   amountPaid,
   preferredPaymentType,
   currency,
+  depositConfig,
   onClose,
   onSuccess,
 }: {
@@ -119,10 +129,20 @@ function PayNowModal({
   amountPaid: number;
   preferredPaymentType?: "partial" | "full";
   currency: string;
+  depositConfig?: Booking["deposit_config"];
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const depositDue = Math.min(amount, Math.max(0, Math.round((totalAmount * 0.3 - amountPaid) * 100) / 100));
+  // The deposit option only makes sense before any payment has been made -
+  // once a deposit is already on the booking, this modal is collecting the
+  // remaining balance in full, not splitting it further.
+  const depositDue = (() => {
+    if (amountPaid > 0 || !depositConfig?.still_available) return 0;
+    const raw = depositConfig.deposit_type === "percentage"
+      ? depositConfig.deposit_percentage ? totalAmount * (depositConfig.deposit_percentage / 100) : 0
+      : Number(depositConfig.booking_deposit || 0);
+    return Math.min(amount, Math.max(0, Math.round(raw * 100) / 100));
+  })();
   const partialAvailable = depositDue > 0 && depositDue < amount;
   const [loading, setLoading] = useState<"stripe" | "paypal" | "test" | null>(null);
   const [err, setErr] = useState("");
@@ -223,7 +243,14 @@ function PayNowModal({
         {partialAvailable && (
           <div className="mb-5 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Payment amount">
             {([
-              { value: "partial" as const, label: "Pay 30% deposit", amount: depositDue, note: "Balance later" },
+              {
+                value: "partial" as const,
+                label: depositConfig?.deposit_type === "percentage" && depositConfig.deposit_percentage
+                  ? `Pay ${depositConfig.deposit_percentage}% deposit`
+                  : "Pay deposit",
+                amount: depositDue,
+                note: "Balance later",
+              },
               { value: "full" as const, label: "Pay in full", amount, note: "No balance" },
             ]).map((option) => {
               const selected = paymentType === option.value;
@@ -645,6 +672,11 @@ export default function CustomerBookingDetailPage() {
                     {format(booking.amount_pending, booking.currency)}
                   </span>
                 } />
+                {pendingAmount > 0 && booking.balance_due_date && (
+                  <Field label="Balance Due By" value={
+                    <span className="text-amber-600">{new Date(booking.balance_due_date).toLocaleDateString()}</span>
+                  } />
+                )}
                 <Field label="Payment Status" value={booking.payment_status?.replaceAll("_", " ")} />
                 {canPay && (
                   <button type="button" onClick={() => setShowPayModal(true)}
@@ -729,6 +761,7 @@ export default function CustomerBookingDetailPage() {
           amountPaid={Number(booking.amount_paid ?? 0)}
           preferredPaymentType={booking.payment_type}
           currency={booking.currency || "USD"}
+          depositConfig={booking.deposit_config}
           onClose={() => setShowPayModal(false)}
           onSuccess={() => {
             setShowPayModal(false);

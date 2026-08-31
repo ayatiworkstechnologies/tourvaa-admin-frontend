@@ -8,7 +8,7 @@ import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import axios from "axios";
 import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuCalendar as Calendar, LuCheck as Check, LuCircleCheckBig as CheckCircle, LuCreditCard as CreditCard, LuLoaderCircle as Loader, LuLockKeyhole as Lock, LuMapPin as MapPin, LuMinus as Minus, LuPlus as Plus, LuReceipt as Receipt, LuShieldCheck as ShieldCheck, LuSparkles as Sparkles, LuUserRound as User } from "react-icons/lu";
 import api from "@/lib/api/client";
-import { fetchPublicTourDetail, PublicTourDetail } from "@/lib/api/publicClient";
+import { fetchPublicSettings, fetchPublicTourDetail, PublicTourDetail } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { combinePhone } from "@/lib/utils/validators";
 import { getActiveReferralCode } from "@/lib/utils/affiliateReferral";
@@ -62,6 +62,12 @@ export default function PublicBookingPage() {
   const [showOtpGate, setShowOtpGate] = useState(false);
   const { format: money, code: displayCurrency } = useCurrency();
   const [tour, setTour] = useState<PublicTourDetail | null>(null);
+  // Platform-wide fallback deposit terms (Admin > Settings > Booking Defaults),
+  // used only for whichever of these a tour hasn't configured itself -- see
+  // the matching fallback in payments_gateway._minimum_deposit_amount and
+  // services.bookings._deposit_config, which enforce/report the same rule
+  // server-side.
+  const [depositDefaults, setDepositDefaults] = useState({ percentage: 20, cutoffDays: 30, balanceDays: 14 });
   const [pageLoading, setPageLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [booking, setBooking] = useState<BookingResult | null>(null);
@@ -101,6 +107,21 @@ export default function PublicBookingPage() {
   useEffect(() => {
     fetchPublicTourDetail(Number(params.id)).then(setTour).catch(() => setError("Tour could not be loaded.")).finally(() => setPageLoading(false));
   }, [params.id]);
+
+  useEffect(() => {
+    fetchPublicSettings()
+      .then((settings) => {
+        const pct = Number(settings.default_deposit_percentage);
+        const cutoff = Number(settings.default_deposit_cutoff_days);
+        const balance = Number(settings.default_balance_payment_deadline_days);
+        setDepositDefaults({
+          percentage: Number.isFinite(pct) && pct > 0 ? pct : 20,
+          cutoffDays: Number.isFinite(cutoff) && cutoff >= 0 ? cutoff : 30,
+          balanceDays: Number.isFinite(balance) && balance >= 0 ? balance : 14,
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (user?.role?.slug !== "customer") return;
@@ -179,27 +200,34 @@ export default function PublicBookingPage() {
   // full payment is offered -- the balance-due-date formula itself (below) is
   // a separate, still-unconfirmed rule and is untouched here.
   const depositEligible = useMemo(() => {
-    if (!tour?.deposit_cutoff_days || !values.travelDate) return true;
+    const cutoffDays = tour?.deposit_cutoff_days ?? depositDefaults.cutoffDays;
+    if (!cutoffDays || !values.travelDate) return true;
     const travel = new Date(`${values.travelDate}T00:00:00`);
     if (Number.isNaN(travel.getTime())) return true;
     const daysToDeparture = Math.floor((travel.getTime() - Date.now()) / 86_400_000);
-    return daysToDeparture >= tour.deposit_cutoff_days;
-  }, [tour, values.travelDate]);
+    return daysToDeparture >= cutoffDays;
+  }, [tour, values.travelDate, depositDefaults.cutoffDays]);
   const depositAmount = useMemo(() => {
     if (!depositEligible || !tour) return null;
     if (tour.deposit_type === "percentage") {
-      return tour.deposit_percentage ? customerTotal * (tour.deposit_percentage / 100) : null;
+      const pct = tour.deposit_percentage || depositDefaults.percentage;
+      return pct ? customerTotal * (pct / 100) : null;
     }
-    return tour.booking_deposit && tour.booking_deposit > 0 ? Number(tour.booking_deposit) : null;
-  }, [tour, depositEligible, customerTotal]);
+    if (tour.booking_deposit && tour.booking_deposit > 0) return Number(tour.booking_deposit);
+    // Tour has no deposit of its own configured (deposit_type "fixed" is the
+    // column default) -- fall back to the platform default percentage
+    // rather than treating that as "no deposit offered".
+    return depositDefaults.percentage ? customerTotal * (depositDefaults.percentage / 100) : null;
+  }, [tour, depositEligible, customerTotal, depositDefaults.percentage]);
   const balanceDueDate = useMemo(() => {
-    if (!depositAmount || !tour?.balance_payment_deadline_days || !values.travelDate) return null;
+    const balanceDays = tour?.balance_payment_deadline_days ?? depositDefaults.balanceDays;
+    if (!depositAmount || !balanceDays || !values.travelDate) return null;
     const travel = new Date(`${values.travelDate}T00:00:00`);
     if (Number.isNaN(travel.getTime())) return null;
     const due = new Date(travel);
-    due.setDate(due.getDate() - tour.balance_payment_deadline_days);
+    due.setDate(due.getDate() - balanceDays);
     return due;
-  }, [depositAmount, tour, values.travelDate]);
+  }, [depositAmount, tour, values.travelDate, depositDefaults.balanceDays]);
 
   useEffect(() => {
     // Agents reserve or pay in full -- the deposit concept (with its own

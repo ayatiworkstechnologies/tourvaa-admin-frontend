@@ -22,7 +22,7 @@ import {
   LuUsers as Users,
   LuX as X,
 } from "react-icons/lu";
-import { fetchPublicCategories, fetchPublicCountries, fetchPublicTours, PublicCategory, PublicTour } from "@/lib/api/publicClient";
+import { fetchPublicCategories, fetchPublicCountries, fetchPublicSubcategories, fetchPublicTours, PublicCategory, PublicSubcategory, PublicTour } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
@@ -394,19 +394,46 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
 
   const [countryName, setCountryName] = useState("");
   const [categories, setCategories] = useState<PublicCategory[]>([]);
+  const [subcategories, setSubcategories] = useState<PublicSubcategory[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [selectedSubCategory, setSelectedSubCategory] = useState<"all" | "group" | "private" | "city">("all");
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
-  // Active filter states
-  const [budgetActive, setBudgetActive] = useState(false);
+  // Server-driven filters -- each of these is sent to GET /api/public/tours
+  // as a real query param (see routers.public.public_tours), so changing
+  // them re-fetches from the backend rather than re-filtering a locally
+  // cached page of results.
+  const [selectedBudget, setSelectedBudget] = useState("");
   const [selectedDuration, setSelectedDuration] = useState("");
-  const [selectedDestination, setSelectedDestination] = useState("");
-  const [selectedTourType, setSelectedTourType] = useState("");
-  const [selectedTravelStyle, setSelectedTravelStyle] = useState("");
-  const [selectedRating, setSelectedRating] = useState("");
-  const [selectedInclusion, setSelectedInclusion] = useState("");
   const [selectedDepartureMonth, setSelectedDepartureMonth] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"newest" | "price_asc" | "price_desc" | "duration_asc">("newest");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 12;
+
+  // Client-side-only filters -- these narrow the current page's real API
+  // fields (country_name/city_name, rating_average); there's no dedicated
+  // backend param for either, so they stay local rather than round-tripping.
+  const [selectedDestination, setSelectedDestination] = useState("");
+  const [selectedRating, setSelectedRating] = useState("");
+
+  // Next 6 calendar months as real "YYYY-MM" values for the departure_month
+  // param (backend requires that exact shape - see public_tours's Query
+  // pattern), labeled for display.
+  const departureMonthOptions = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+      options.push({ value, label });
+    }
+    return options;
+  }, []);
 
   const hasSpecificCountry = Boolean(countrySlug || queryCountry);
 
@@ -415,81 +442,145 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     queryCountry.toLowerCase().includes("india") ||
     countryName.toLowerCase().includes("india");
 
-  const [tours, setTours] = useState<TourItem[]>(WORLD_TOURS);
+  // Budget ranges, mapped to real min_price/max_price on GET /api/public/tours
+  // (Tour.price_start_per_person is stored in each tour's own currency, so
+  // these bands are only meaningful within one currency family -- India's
+  // tours are priced in INR, everywhere else defaults to USD-scale pricing).
+  // Memoized on isIndia so it's a stable reference across renders -- the
+  // fetch effect below depends on it, and an unmemoized array here would be
+  // a new reference every render, re-triggering that effect every render.
+  const budgetOptions = useMemo(() => (
+    isIndia
+      ? [
+          { value: "0-25000", label: "Under ₹25k", min: undefined, max: 25000 },
+          { value: "25000-50000", label: "₹25k – ₹50k", min: 25000, max: 50000 },
+          { value: "50000-100000", label: "₹50k – ₹1L", min: 50000, max: 100000 },
+          { value: "100000+", label: "Above ₹1L", min: 100000, max: undefined },
+        ]
+      : [
+          { value: "0-500", label: "Under $500", min: undefined, max: 500 },
+          { value: "500-1000", label: "$500 – $1,000", min: 500, max: 1000 },
+          { value: "1000-2000", label: "$1,000 – $2,000", min: 1000, max: 2000 },
+          { value: "2000+", label: "Above $2,000", min: 2000, max: undefined },
+        ]
+  ), [isIndia]);
 
+  const [tours, setTours] = useState<TourItem[]>([]);
+
+  // Any real filter change (not just paging) should restart at page 1 --
+  // otherwise "page 3 of the unfiltered list" could silently become an
+  // out-of-range page for the newly filtered result set.
+  useEffect(() => {
+    setPage(1);
+  }, [countrySlug, queryCountry, querySearch, queryCategory, selectedDuration, selectedBudget, selectedDepartureMonth, selectedSubcategory, availableOnly, sortOrder]);
+
+  // Resolves the country slug/query into a real country name, and loads the
+  // category list -- only depends on the country itself, so switching
+  // Duration/Budget/Departure Month/page never re-hits these two endpoints.
+  useEffect(() => {
+    let active = true;
+    Promise.all([fetchPublicCountries(), fetchPublicCategories()]).then(([countries, categoryList]) => {
+      if (!active) return;
+      let resolvedCountry = "";
+      if (countrySlug) {
+        const match = countries.find((item) => slugifyTourSegment(item.country_name) === countrySlug);
+        resolvedCountry = match?.country_name || countrySlug;
+      } else if (queryCountry) {
+        const match = countries.find((item) => item.country_name.toLowerCase() === queryCountry.toLowerCase());
+        resolvedCountry = match?.country_name || queryCountry;
+      }
+      setCountryName(resolvedCountry);
+      setCategories(categoryList);
+    });
+    return () => { active = false; };
+  }, [countrySlug, queryCountry]);
+
+  // Subcategories are scoped to the selected category (see public_subcategories) --
+  // refetch whenever the category changes, and drop any previously selected
+  // subcategory that no longer belongs to it.
+  useEffect(() => {
+    let active = true;
+    fetchPublicSubcategories(queryCategory || undefined).then((subs) => {
+      if (active) setSubcategories(subs);
+    });
+    setSelectedSubcategory("");
+    return () => { active = false; };
+  }, [queryCategory]);
+
+  // The actual tour list fetch -- re-runs only when a real filter or the
+  // page changes, each one mapped straight to routers.public.public_tours's
+  // real query params (no client-side re-filtering of duration/budget/month).
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setLoadError(false);
 
-    Promise.all([fetchPublicCountries(), fetchPublicCategories()])
-      .then(([countries, categoryList]) => {
-        let resolvedCountry = "";
-        if (countrySlug) {
-          const match = countries.find((item) => slugifyTourSegment(item.country_name) === countrySlug);
-          resolvedCountry = match?.country_name || countrySlug;
-        } else if (queryCountry) {
-          const match = countries.find((item) => item.country_name.toLowerCase() === queryCountry.toLowerCase());
-          resolvedCountry = match?.country_name || queryCountry;
-        }
+    const params: Record<string, string | number | boolean> = { limit: PAGE_SIZE, page, sort: sortOrder };
+    // countryName is resolved by the effect above, keyed off countrySlug/
+    // queryCountry -- only send it as a filter when one of those is set, so
+    // the unfiltered "/tours" (all destinations) page doesn't accidentally
+    // scope to a stale leftover countryName.
+    if (countrySlug || queryCountry) params.country = countryName;
+    if (querySearch) params.search = querySearch;
+    if (queryCategory) params.category = queryCategory;
+    if (selectedSubcategory) params.subcategory = selectedSubcategory;
+    if (selectedDuration === "1-3") { params.min_days = 1; params.max_days = 3; }
+    else if (selectedDuration === "4-7") { params.min_days = 4; params.max_days = 7; }
+    else if (selectedDuration === "8+") { params.min_days = 8; }
+    if (selectedBudget) {
+      const band = budgetOptions.find((b) => b.value === selectedBudget);
+      if (band?.min !== undefined) params.min_price = band.min;
+      if (band?.max !== undefined) params.max_price = band.max;
+    }
+    if (selectedDepartureMonth) params.departure_month = selectedDepartureMonth;
+    if (availableOnly) params.available_only = true;
 
-        if (active) {
-          setCountryName(resolvedCountry);
-          setCategories(categoryList);
-        }
-
-        const params: Record<string, string | number | boolean> = { limit: 100 };
-        if (resolvedCountry) params.country = resolvedCountry;
-        if (querySearch) params.search = querySearch;
-        if (queryCategory) params.category = queryCategory;
-
-        return fetchPublicTours(params);
-      })
+    fetchPublicTours(params)
       .then((result) => {
         if (!active) return;
         const apiItems = result.items || [];
         const baseSet = isIndia ? INDIA_TOURS : WORLD_TOURS;
 
-        if (apiItems.length > 0) {
-          const mapped: TourItem[] = apiItems.map((t, idx) => {
-            const fallback = baseSet[idx % baseSet.length];
-            return {
-              id: t.id,
-              title: t.title || fallback.title,
-              location: t.country_name || fallback.location,
-              duration: t.number_of_days ? `${t.number_of_days}D | ${Math.max(1, t.number_of_days - 1)}N` : fallback.duration,
-              days: t.number_of_days || fallback.days,
-              route: fallback.route,
-              guideType: fallback.guideType,
-              tourType: fallback.tourType,
-              travelStyle: fallback.travelStyle,
-              rating: fallback.rating,
-              inclusions: fallback.inclusions,
-              maxGroup: fallback.maxGroup,
-              minAge: fallback.minAge,
-              maxAge: fallback.maxAge,
-              cities: fallback.cities,
-              departures: fallback.departures,
-              originalPrice: fallback.originalPrice,
-              price: t.price_start_per_person ? format(t.price_start_per_person, t.currency) : fallback.price,
-              rawPrice: t.price_start_per_person || fallback.rawPrice,
-              currency: t.currency || "USD",
-              image: t.banner_image ? mediaUrl(t.banner_image) : fallback.image,
-              slug: t.slug,
-              country_name: t.country_name,
-            };
-          });
+        setTotalPages(result.total_pages || 1);
+        setTotalCount(result.total || apiItems.length);
 
-          if (mapped.length < 9) {
-            setTours([...mapped, ...baseSet.slice(mapped.length)]);
-          } else {
-            setTours(mapped);
-          }
-        } else {
-          setTours(baseSet);
-        }
+        const mapped: TourItem[] = apiItems.map((t, idx) => {
+          // Decorative-only fields (route, guideType, cities grid, mock
+          // departures card, group/age caps) have no backing column on Tour
+          // at all -- these stay cosmetic filler and never drive a filter.
+          const fallback = baseSet[idx % baseSet.length];
+          return {
+            id: t.id,
+            title: t.title || fallback.title,
+            location: t.country_name || fallback.location,
+            duration: t.number_of_days ? `${t.number_of_days}D | ${Math.max(1, t.number_of_days - 1)}N` : fallback.duration,
+            days: t.number_of_days || fallback.days,
+            route: fallback.route,
+            guideType: fallback.guideType,
+            tourType: fallback.tourType,
+            travelStyle: fallback.travelStyle,
+            rating: t.rating_average ?? undefined,
+            inclusions: fallback.inclusions,
+            maxGroup: fallback.maxGroup,
+            minAge: fallback.minAge,
+            maxAge: fallback.maxAge,
+            cities: t.city_name || fallback.cities,
+            departures: fallback.departures,
+            originalPrice: fallback.originalPrice,
+            price: t.price_start_per_person ? format(t.price_start_per_person, t.currency) : fallback.price,
+            rawPrice: t.price_start_per_person || fallback.rawPrice,
+            currency: t.currency || "USD",
+            image: t.banner_image ? mediaUrl(t.banner_image) : fallback.image,
+            slug: t.slug,
+            country_name: t.country_name,
+          };
+        });
+        setTours(mapped);
       })
       .catch(() => {
-        setTours(isIndia ? INDIA_TOURS : WORLD_TOURS);
+        if (!active) return;
+        setTours([]);
+        setLoadError(true);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -498,22 +589,18 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     return () => {
       active = false;
     };
-  }, [countrySlug, queryCountry, querySearch, queryCategory, format, isIndia]);
+  }, [countryName, countrySlug, queryCountry, querySearch, queryCategory, selectedSubcategory, selectedDuration, selectedBudget, budgetOptions, selectedDepartureMonth, availableOnly, sortOrder, page, format, isIndia]);
 
   // Destination and hero headings
   const destinationTitle = countryName || (isIndia ? "India" : hasSpecificCountry ? "Destination" : "World Tours");
 
-  // Dynamic available destinations from tours for the dropdown
+  // Dynamic available destinations from the current page's real
+  // country_name/city_name fields.
   const availableDestinations = useMemo(() => {
     const set = new Set<string>();
     tours.forEach((t) => {
       if (t.location) set.add(t.location);
-      if (t.cities) {
-        t.cities.split(",").forEach((c) => {
-          const clean = c.replace(/\+\d+\s*More/i, "").trim();
-          if (clean) set.add(clean);
-        });
-      }
+      if (t.cities) set.add(t.cities);
     });
     return Array.from(set);
   }, [tours]);
@@ -521,29 +608,16 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   // Active filters count
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (budgetActive) count++;
+    if (selectedBudget) count++;
     if (selectedDuration) count++;
     if (selectedDestination) count++;
-    if (selectedTourType) count++;
-    if (selectedTravelStyle) count++;
     if (selectedRating) count++;
-    if (selectedInclusion) count++;
     if (selectedDepartureMonth) count++;
-    if (selectedSubCategory !== "all") count++;
     if (queryCategory) count++;
+    if (selectedSubcategory) count++;
+    if (availableOnly) count++;
     return count;
-  }, [
-    budgetActive,
-    selectedDuration,
-    selectedDestination,
-    selectedTourType,
-    selectedTravelStyle,
-    selectedRating,
-    selectedInclusion,
-    selectedDepartureMonth,
-    selectedSubCategory,
-    queryCategory,
-  ]);
+  }, [selectedBudget, selectedDuration, selectedDestination, selectedRating, selectedDepartureMonth, queryCategory, selectedSubcategory, availableOnly]);
 
   // Selecting a category updates the URL (preserving country/search) rather
   // than just local state, so the request is re-run against the backend --
@@ -559,103 +633,35 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   };
 
   const clearAllFilters = () => {
-    setBudgetActive(false);
+    setSelectedBudget("");
     setSelectedDuration("");
     setSelectedDestination("");
-    setSelectedTourType("");
-    setSelectedTravelStyle("");
     setSelectedRating("");
-    setSelectedInclusion("");
     setSelectedDepartureMonth("");
-    setSelectedSubCategory("all");
+    setSelectedSubcategory("");
+    setAvailableOnly(false);
     if (queryCategory) selectCategory("");
   };
 
-  // Live filtered tours
+  // Duration/Budget/Departure Month/Category are already applied server-side
+  // (see the fetch effect above) -- what's left here only narrows the
+  // current page's real fields: country/city name and rating_average.
   const filteredTours = useMemo(() => {
     return tours.filter((tour) => {
-      // Sub-category (Group / Private / City)
-      if (selectedSubCategory === "group" && tour.tourType !== "Group" && !tour.guideType.toLowerCase().includes("group")) {
-        return false;
-      }
-      if (selectedSubCategory === "private" && tour.tourType !== "Private" && !tour.guideType.toLowerCase().includes("private")) {
-        return false;
-      }
-
-      // Budget filter
-      if (budgetActive) {
-        const threshold = isIndia ? 45000 : 1200;
-        if (tour.rawPrice > threshold) return false;
-      }
-
-      // Duration filter
-      if (selectedDuration) {
-        if (selectedDuration === "1-3" && (tour.days < 1 || tour.days > 3)) return false;
-        if (selectedDuration === "4-7" && (tour.days < 4 || tour.days > 7)) return false;
-        if (selectedDuration === "8+" && tour.days < 8) return false;
-      }
-
-      // Destination filter
       if (selectedDestination) {
         const query = selectedDestination.toLowerCase();
         const matchesLoc = tour.location.toLowerCase().includes(query);
         const matchesCity = tour.cities.toLowerCase().includes(query);
-        const matchesRoute = tour.route.toLowerCase().includes(query);
-        if (!matchesLoc && !matchesCity && !matchesRoute) return false;
+        if (!matchesLoc && !matchesCity) return false;
       }
 
-      // Tour Type filter
-      if (selectedTourType) {
-        if (selectedTourType === "Group" && tour.tourType !== "Group" && !tour.guideType.toLowerCase().includes("group")) {
-          return false;
-        }
-        if (selectedTourType === "Private" && tour.tourType !== "Private" && !tour.guideType.toLowerCase().includes("private")) {
-          return false;
-        }
-        if (selectedTourType === "Custom" && tour.tourType !== "Custom") {
-          return false;
-        }
-      }
-
-      // Travel Style filter
-      if (selectedTravelStyle && tour.travelStyle) {
-        if (tour.travelStyle.toLowerCase() !== selectedTravelStyle.toLowerCase()) {
-          return false;
-        }
-      }
-
-      // Rating filter
-      if (selectedRating && tour.rating) {
-        if (tour.rating < Number(selectedRating)) return false;
-      }
-
-      // Inclusions filter
-      if (selectedInclusion && tour.inclusions) {
-        if (!tour.inclusions.includes(selectedInclusion)) return false;
-      }
-
-      // Departure Month filter
-      if (selectedDepartureMonth) {
-        const monthQuery = selectedDepartureMonth.toLowerCase();
-        const hasDep = tour.departures.some((d) => d.date.toLowerCase().includes(monthQuery));
-        if (!hasDep) return false;
+      if (selectedRating) {
+        if (!tour.rating || tour.rating < Number(selectedRating)) return false;
       }
 
       return true;
     });
-  }, [
-    tours,
-    selectedSubCategory,
-    budgetActive,
-    selectedDuration,
-    selectedDestination,
-    selectedTourType,
-    selectedTravelStyle,
-    selectedRating,
-    selectedInclusion,
-    selectedDepartureMonth,
-    isIndia,
-  ]);
+  }, [tours, selectedDestination, selectedRating]);
 
   // Dynamic titles and descriptions
   const heroTitle = hasSpecificCountry ? `${destinationTitle} Tours` : "Explore the World's Best Tours";
@@ -779,9 +785,10 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             </h2>
             <p className="mt-1 text-xs sm:text-sm font-semibold text-slate-500">
               <span className="font-black text-slate-900">
-                {filteredTours.length} Tour{filteredTours.length === 1 ? "" : "s"} Found
+                {selectedDestination || selectedRating ? filteredTours.length : totalCount} Tour{(selectedDestination || selectedRating ? filteredTours.length : totalCount) === 1 ? "" : "s"} Found
               </span>{" "}
               {hasSpecificCountry ? `in ${destinationTitle}` : "Across Worldwide Destinations"}
+              {totalPages > 1 && <span className="ml-1 text-slate-400">(page {page} of {totalPages})</span>}
               {activeFiltersCount > 0 && (
                 <span className="ml-2 text-xs text-blue-600 font-bold">
                   ({activeFiltersCount} filter{activeFiltersCount === 1 ? "" : "s"} active)
@@ -844,18 +851,24 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             Filter ({activeFiltersCount})
           </button>
 
-          {/* Budget Pill (Toggle) */}
-          <button
-            type="button"
-            onClick={() => setBudgetActive((b) => !b)}
-            className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition shadow-2xs ${
-              budgetActive
-                ? "bg-[#E4572E] text-white hover:bg-[#d0461f]"
-                : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-            }`}
-          >
-            Budget {budgetActive ? `(≤ ${isIndia ? "₹45k" : "$1.2k"})` : ""}
-          </button>
+          {/* Budget Dropdown Pill -- min_price/max_price on GET /api/public/tours */}
+          <div className="relative shrink-0">
+            <select
+              value={selectedBudget}
+              onChange={(e) => setSelectedBudget(e.target.value)}
+              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                selectedBudget
+                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <option value="">Budget</option>
+              {budgetOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
 
           {/* Duration Dropdown Pill */}
           <div className="relative shrink-0">
@@ -900,6 +913,30 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             </div>
           )}
 
+          {/* Subcategory Dropdown Pill -- real TourSubcategory data scoped
+              to the selected Category (see fetchPublicSubcategories) */}
+          {subcategories.length > 0 && (
+            <div className="relative shrink-0">
+              <select
+                value={selectedSubcategory}
+                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                  selectedSubcategory
+                    ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                    : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                }`}
+              >
+                <option value="">Subcategory</option>
+                {subcategories.map((sub) => (
+                  <option key={sub.id} value={sub.slug}>
+                    {sub.subcategory_name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            </div>
+          )}
+
           {/* Destination Dropdown Pill */}
           <div className="relative shrink-0">
             <select
@@ -917,44 +954,6 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                   {dest}
                 </option>
               ))}
-            </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          </div>
-
-          {/* Tour Type Dropdown Pill */}
-          <div className="relative shrink-0">
-            <select
-              value={selectedTourType}
-              onChange={(e) => setSelectedTourType(e.target.value)}
-              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
-                selectedTourType
-                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-              }`}
-            >
-              <option value="">Tour Type</option>
-              <option value="Group">Group Tour</option>
-              <option value="Private">Private Tour</option>
-              <option value="Custom">Custom Package</option>
-            </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          </div>
-
-          {/* Travel Style Dropdown Pill */}
-          <div className="relative shrink-0">
-            <select
-              value={selectedTravelStyle}
-              onChange={(e) => setSelectedTravelStyle(e.target.value)}
-              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
-                selectedTravelStyle
-                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-              }`}
-            >
-              <option value="">Travel Style</option>
-              <option value="Adventure">Adventure</option>
-              <option value="Relaxation">Relaxation</option>
-              <option value="Cultural">Cultural</option>
             </select>
             <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
@@ -978,27 +977,10 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
 
-          {/* Inclusions Dropdown Pill */}
-          <div className="relative shrink-0">
-            <select
-              value={selectedInclusion}
-              onChange={(e) => setSelectedInclusion(e.target.value)}
-              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
-                selectedInclusion
-                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-              }`}
-            >
-              <option value="">Inclusions</option>
-              <option value="hotel">Hotel Included</option>
-              <option value="meals">Meals Included</option>
-              <option value="flights">Flights Included</option>
-              <option value="guide">Guide Included</option>
-            </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          </div>
-
-          {/* Departure Month Dropdown Pill */}
+          {/* Departure Month Dropdown Pill -- real "YYYY-MM" values sent as
+              departure_month to the backend (routers.public.public_tours),
+              which filters to tours with an available calendar date in
+              that month. */}
           <div className="relative shrink-0">
             <select
               value={selectedDepartureMonth}
@@ -1010,12 +992,42 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               }`}
             >
               <option value="">Departure Month</option>
-              <option value="Sep">Sep 2026</option>
-              <option value="Oct">Oct 2026</option>
-              <option value="Nov">Nov 2026</option>
-              <option value="Dec">Dec 2026</option>
-              <option value="Aug">Aug 2026</option>
-              <option value="Jul">Jul 2026</option>
+              {departureMonthOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+
+          {/* Available Now Pill (Toggle) -- available_only param: only
+              tours with an open, unexpired calendar departure. */}
+          <button
+            type="button"
+            onClick={() => setAvailableOnly((v) => !v)}
+            className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition shadow-2xs ${
+              availableOnly
+                ? "bg-[#E4572E] text-white hover:bg-[#d0461f]"
+                : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+            }`}
+          >
+            Available Now
+          </button>
+
+          {/* Sort Dropdown Pill -- sort param (newest/price_asc/price_desc/duration_asc) */}
+          <div className="relative shrink-0">
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                sortOrder !== "newest"
+                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <option value="newest">Sort: Newest</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="duration_asc">Duration: Shortest First</option>
             </select>
             <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
@@ -1032,43 +1044,6 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-slate-600 font-medium">
                 {showcaseDescription}
               </p>
-
-              {/* 3 Category Filter Buttons */}
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedSubCategory(selectedSubCategory === "group" ? "all" : "group")}
-                  className={`rounded-xl px-5 py-2.5 text-xs font-bold transition ${
-                    selectedSubCategory === "group"
-                      ? "bg-[#0B1527] text-white shadow-xs"
-                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  Group Tour
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedSubCategory(selectedSubCategory === "private" ? "all" : "private")}
-                  className={`rounded-xl px-5 py-2.5 text-xs font-bold transition ${
-                    selectedSubCategory === "private"
-                      ? "bg-[#0B1527] text-white shadow-xs"
-                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  Private Tour
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedSubCategory(selectedSubCategory === "city" ? "all" : "city")}
-                  className={`rounded-xl px-5 py-2.5 text-xs font-bold transition ${
-                    selectedSubCategory === "city"
-                      ? "bg-[#0B1527] text-white shadow-xs"
-                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  City Explore
-                </button>
-              </div>
             </div>
 
             {/* Right side image */}
@@ -1084,7 +1059,20 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         </section>
 
         {/* ── 6. 3-Column Tour Card Grid or Empty State ── */}
-        {filteredTours.length === 0 ? (
+        {loading ? (
+          <div className="mt-12 flex flex-col items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-12 text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-[#0B1527]" />
+            <p className="text-xs font-bold text-slate-500">Loading tours...</p>
+          </div>
+        ) : loadError ? (
+          <div className="mt-12 flex flex-col items-center justify-center rounded-3xl border border-red-200 bg-red-50 p-12 text-center">
+            <MapPin size={36} className="text-red-400" />
+            <h3 className="mt-3 text-lg font-black text-slate-900">Couldn&apos;t load tours</h3>
+            <p className="mt-1 text-xs text-slate-500 max-w-sm">
+              Something went wrong reaching the server. Please try again in a moment.
+            </p>
+          </div>
+        ) : filteredTours.length === 0 ? (
           <div className="mt-12 flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-slate-50 p-12 text-center">
             <MapPin size={36} className="text-slate-400" />
             <h3 className="mt-3 text-lg font-black text-slate-900">No tours match your filters</h3>
@@ -1255,6 +1243,29 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* ── 7. Pagination -- real page/total_pages from the backend ── */}
+        {totalPages > 1 && (
+          <div className="mt-10 flex items-center justify-center gap-2">
+            <button
+              type="button"
+              disabled={page <= 1 || loading}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <span className="px-3 text-xs font-bold text-slate-600">Page {page} of {totalPages}</span>
+            <button
+              type="button"
+              disabled={page >= totalPages || loading}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
           </div>
         )}
       </div>

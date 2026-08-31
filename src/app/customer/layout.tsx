@@ -73,7 +73,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
               type="button"
               onClick={() => setSidebarOpen(true)}
               aria-label="Open navigation"
-              className="fixed left-4 top-[92px] z-30 flex h-11 w-11 items-center justify-center rounded-xl border border-[#DDE7F4] bg-white text-[#15315A] shadow-sm lg:hidden"
+              className="fixed left-4 top-[88px] z-30 flex h-11 w-11 items-center justify-center rounded-xl border border-[#DDE7F4] bg-white text-[#15315A] shadow-sm sm:top-[92px] lg:hidden"
             >
               <Menu size={20} />
             </button>

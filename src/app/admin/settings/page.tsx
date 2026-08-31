@@ -12,6 +12,7 @@ import PaymentSettingsSection from "@/components/settings/PaymentSettingsSection
 import ApiSettingsSection from "@/components/settings/ApiSettingsSection";
 import SmtpSettingsSection from "@/components/settings/SmtpSettingsSection";
 import CurrencyRatesSection from "@/components/settings/CurrencyRatesSection";
+import DefaultCancellationPolicySection from "@/components/settings/DefaultCancellationPolicySection";
 
 const groupLabels: Record<string, string> = {
   general: "System Settings",
@@ -34,6 +35,13 @@ const commissionSettingKeys: { key: string; label: string; description: string }
   { key: "affiliate_commission_max_percentage", label: "Maximum Affiliate Commission", description: "The ceiling on what Tourvaa pays an affiliate per booking, whether set as their base rate or in a commission rule." },
 ];
 const commissionSettingKeySet = new Set(commissionSettingKeys.map((c) => c.key));
+
+const depositSettingKeys: { key: string; label: string; description: string; suffix: string; max?: number }[] = [
+  { key: "default_deposit_percentage", label: "Default Deposit Percentage", description: "Used only when a tour's own deposit settings (in the tour editor) are left blank. A supplier's per-tour deposit configuration always takes priority over this platform default.", suffix: "%", max: 100 },
+  { key: "default_deposit_cutoff_days", label: "Default Deposit Cutoff", description: "How many days before departure a deposit is still offered, when the tour itself doesn't set its own cutoff. Booking within this window requires full payment.", suffix: "days" },
+  { key: "default_balance_payment_deadline_days", label: "Default Final Payment Due", description: "How many days before departure the remaining balance must be paid, when the tour itself doesn't set its own deadline.", suffix: "days" },
+];
+const depositSettingKeySet = new Set(depositSettingKeys.map((c) => c.key));
 // Default (not ceiling/minimum) commission %s are managed on the dedicated
 // Default Commissions page (/admin/settings/default-commissions) instead --
 // excluded here too so they don't also show up editable in a generic tab.
@@ -66,7 +74,7 @@ export default function SettingsPage() {
       // rows are a disconnected, unencrypted copy that the real payment
       // gateway code never reads - PaymentSettingsSection/ApiSettingsSection
       // below talk to the actual encrypted PaymentSetting/ApiSetting tables.
-      .filter((setting) => setting.key !== "default_currency" && setting.group !== "payment" && setting.group !== "api" && !commissionSettingKeySet.has(setting.key) && !defaultCommissionKeySet.has(setting.key))
+      .filter((setting) => setting.key !== "default_currency" && setting.group !== "payment" && setting.group !== "api" && !commissionSettingKeySet.has(setting.key) && !defaultCommissionKeySet.has(setting.key) && !depositSettingKeySet.has(setting.key))
       .reduce<Record<string, Setting[]>>((groups, setting) => {
         groups[setting.group] = groups[setting.group] || [];
         groups[setting.group].push(setting);
@@ -233,8 +241,50 @@ export default function SettingsPage() {
                 </button>
               </div>
             </section>
+
+            <section className="mt-6 rounded-2xl border border-dash-border bg-white p-6">
+              <h3 className="mb-1 text-lg font-bold text-dash-text">Deposit Settings</h3>
+              <p className="mb-5 text-sm text-dash-muted">
+                Platform-wide fallback for tours where the supplier hasn&apos;t set their own deposit terms.
+              </p>
+              <div className="grid gap-4 md:grid-cols-3">
+                {depositSettingKeys.map(({ key, label, description, suffix, max }) => (
+                  <label key={key} className="block rounded-xl border border-dash-border bg-dash-bg p-4">
+                    <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={0}
+                        max={max}
+                        step={suffix === "%" ? "0.01" : "1"}
+                        value={form[key] ?? ""}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            [key]: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-dash-border bg-white px-4 py-2.5 pr-14 text-sm outline-none focus:border-dash-brand"
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-bold text-dash-muted">{suffix}</span>
+                    </div>
+                    <p className="mt-2 text-xs text-dash-subtle">{description}</p>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button
+                  disabled={saving}
+                  className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Save Deposit Settings"}
+                </button>
+              </div>
+            </section>
           </form>
         )}
+
+        {activeGroup === "booking" && <DefaultCancellationPolicySection />}
 
         {activeGenericGroup && (
           <form onSubmit={saveSettings}>
