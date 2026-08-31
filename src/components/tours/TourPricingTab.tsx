@@ -355,10 +355,10 @@ export default function TourPricingTab({
         <SectionCard
           icon={Percent}
           iconTone="brand"
-          title="Publishable / Customer Price"
-          description="Admin-only markup added on top of the supplier's price to produce the publishable/customer price. Suppliers never see this section."
+          title="Admin Markup"
+          description="Admin-only markup added on top of the supplier's price. Suppliers never see this section."
         >
-          {/* Admin Publishable Price Table */}
+          {/* Admin Markup Table */}
           {slabs.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-dash-border bg-dash-bg/30 p-10 text-center">
               <p className="text-sm font-bold text-dash-text">No pricing slabs yet</p>
@@ -367,8 +367,8 @@ export default function TourPricingTab({
           ) : (
             <div className="overflow-hidden rounded-2xl border border-dash-border-soft">
               {/* Header */}
-              <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1.2fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
-                {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "ADMIN MARKUP", "PUBLISHABLE / CUSTOMER PRICE", "FINAL SUPPLIER PAYABLE", "ACTIONS"].map((h) => (
+              <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
+                {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "ADMIN MARKUP", "FINAL SUPPLIER PAYABLE", "ACTIONS"].map((h) => (
                   <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
                 ))}
               </div>
@@ -376,7 +376,7 @@ export default function TourPricingTab({
               {/* Rows */}
               {slabs.map((r, idx) => (
                 <div key={r.id ?? idx}
-                  className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1.2fr_auto] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30"
+                  className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_auto] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30"
                 >
                   <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
                     {r.passenger_from}–{r.passenger_to} pax
@@ -386,7 +386,6 @@ export default function TourPricingTab({
                   <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
                     <Percent size={10} />{r.admin_markup_value ?? 0}
                   </span>
-                  <PriceCell value={r.storefront_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700 text-sm" />
                   {/* Per-pax net after commission -- what the supplier is ultimately paid (see services.bookings.compute_supplier_commission_breakdown) */}
                   <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-dash-body text-sm" />
                   <ActionButtons onEdit={() => setMarkupEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />
@@ -504,16 +503,10 @@ export default function TourPricingTab({
                 <input type="number" step="0.01" value={numberInputValue(markupEditing.admin_markup_value)} onChange={(e) => setMarkupEditing((p) => p ? { ...p, admin_markup_value: parseNumberInput(e.target.value) } : p)}
                   className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
               </label>
-              <div>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Publishable / Customer Price (Adult)</span>
-                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-black text-emerald-700">
-                  {fmt(sanitizeNumber(markupEditing.adult_price) * (1 + sanitizeNumber(markupEditing.admin_markup_value) / 100), markupEditing.currency)}
-                </p>
-              </div>
             </div>
             <p className="mt-4 flex items-start gap-2 rounded-xl border border-dash-border bg-dash-bg p-3 text-xs text-dash-subtle">
               <Info size={14} className="mt-0.5 shrink-0" />
-              <span>No minimum or maximum for this Admin Markup %. Only visible in the Admin Portal, added on top of the supplier&apos;s price to produce the publishable/customer price shown to customers.</span>
+              <span>No minimum or maximum for this Admin Markup %. Only visible in the Admin Portal, added on top of the supplier&apos;s price before publishing to customers.</span>
             </p>
             <button type="submit" disabled={saving} className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-dash-brand-hover disabled:cursor-not-allowed disabled:opacity-60">
               <Save size={14} /> {saving ? "Saving..." : "Save Slab"}

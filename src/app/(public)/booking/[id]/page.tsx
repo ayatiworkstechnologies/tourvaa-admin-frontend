@@ -18,6 +18,7 @@ import PhoneInput from "@/components/ui/PhoneInput";
 import { useCurrency } from "@/hooks/useCurrency";
 import { formatCurrency } from "@/lib/utils/currency";
 import { ADDON_CATEGORIES, addonCategoryLabel } from "@/lib/constants/addonCategories";
+import { DiscountBanner, DiscountPriceLine, hasActiveDiscount } from "@/components/public/DiscountPrice";
 import { todayLocalDateStr } from "@/lib/utils/date";
 
 type Traveller = {
@@ -30,7 +31,7 @@ type FormValues = {
   travelDate: string; adults: number; children: number; infants: number; rooms: number; travellers: Traveller[];
   email: string; phone: string; phoneCountryCode: string; notes: string;
   primaryIsContact: boolean;
-  activityIds: number[]; accommodationIds: number[]; extensionIds: number[];
+  activityIds: number[]; extensionIds: number[];
   paymentType: "partial" | "full"; agreed: boolean; agreedCancellationPolicy: boolean;
   agentMarkup: number; agentReference: string;
   agentPaymentMethod: "online" | "wallet" | "credit" | "bank_transfer" | "pay_later";
@@ -62,6 +63,11 @@ export default function PublicBookingPage() {
   const [showOtpGate, setShowOtpGate] = useState(false);
   const { format: money, code: displayCurrency } = useCurrency();
   const [tour, setTour] = useState<PublicTourDetail | null>(null);
+  // Frozen once per page load rather than called inline during render (an
+  // impure Date.now() call inside a render-time useMemo) -- fine for a
+  // days-to-departure comparison, since this checkout session isn't
+  // expected to stay open across a day boundary.
+  const [now] = useState(() => Date.now());
   // Platform-wide fallback deposit terms (Admin > Settings > Booking Defaults),
   // used only for whichever of these a tour hasn't configured itself -- see
   // the matching fallback in payments_gateway._minimum_deposit_amount and
@@ -91,7 +97,7 @@ export default function PublicBookingPage() {
       travelDate: searchParams.get("travel_date") || "", adults: Math.max(1, Number(searchParams.get("adults") || 1)), children: Math.max(0, Number(searchParams.get("children") || 0)),
       infants: Math.max(0, Number(searchParams.get("infants") || 0)), rooms: 1,
       travellers: travellerRows(Math.max(1, Number(searchParams.get("adults") || 1)), Math.max(0, Number(searchParams.get("children") || 0)), selfBookingName),
-      email: selfBookingEmail, phone: "", phoneCountryCode: "+91", notes: "", primaryIsContact: true, activityIds: [], accommodationIds: [], extensionIds: [], paymentType: "partial", agreed: false, agreedCancellationPolicy: false,
+      email: selfBookingEmail, phone: "", phoneCountryCode: "+91", notes: "", primaryIsContact: true, activityIds: [], extensionIds: [], paymentType: "partial", agreed: false, agreedCancellationPolicy: false,
       agentMarkup: 0, agentReference: "", agentPaymentMethod: "online",
     },
   });
@@ -187,14 +193,22 @@ export default function PublicBookingPage() {
     const slab = tour.pricing.find((row) => totalPax >= row.persons_from && (row.persons_to == null || totalPax <= row.persons_to)) || tour.pricing.at(-1);
     const perPerson = slab?.price_per_person || tour.price_start_per_person || 0;
     const base = perPerson * totalPax;
-    const activityIds = values.activityIds || [], accommodationIds = values.accommodationIds || [], extensionIds = values.extensionIds || [];
+    const activityIds = values.activityIds || [], extensionIds = values.extensionIds || [];
     const extras = tour.optional_activities.filter((x) => activityIds.includes(x.id)).reduce((sum, x) => sum + Number(x.price || 0) * totalPax, 0)
-      + tour.accommodations.filter((x) => accommodationIds.includes(x.id)).reduce((sum, x) => sum + Number(x.price || 0), 0)
       + tour.extensions.filter((x) => extensionIds.includes(x.id)).reduce((sum, x) => sum + Number(x.price || 0), 0);
     return { base, extras, total: base + extras, perPerson };
-  }, [tour, totalPax, values.activityIds, values.accommodationIds, values.extensionIds]);
+  }, [tour, totalPax, values.activityIds, values.extensionIds]);
   const agentMarkup = isAgent ? Math.max(0, Number(values.agentMarkup) || 0) : 0;
   const customerTotal = pricing.total + agentMarkup;
+  // Highlighting only -- the actual charge is whatever the server resolves
+  // at booking creation (services.bookings._resolve_discount), which can
+  // differ (e.g. a category/country-scoped discount not reflected on the
+  // tour object here). This estimate uses the same tour.discount_percentage
+  // already shown consistently on tour cards/detail pages (DiscountPrice.tsx).
+  const tourHasDiscount = tour ? hasActiveDiscount(tour) : false;
+  const discountedCustomerTotal = tourHasDiscount && tour?.discount_percentage
+    ? customerTotal * (1 - tour.discount_percentage / 100)
+    : customerTotal;
   const agentPaymentMethod = values.agentPaymentMethod ?? "online";
   // Past the supplier's configured deposit cutoff (days before departure), only
   // full payment is offered -- the balance-due-date formula itself (below) is
@@ -204,9 +218,9 @@ export default function PublicBookingPage() {
     if (!cutoffDays || !values.travelDate) return true;
     const travel = new Date(`${values.travelDate}T00:00:00`);
     if (Number.isNaN(travel.getTime())) return true;
-    const daysToDeparture = Math.floor((travel.getTime() - Date.now()) / 86_400_000);
+    const daysToDeparture = Math.floor((travel.getTime() - now) / 86_400_000);
     return daysToDeparture >= cutoffDays;
-  }, [tour, values.travelDate, depositDefaults.cutoffDays]);
+  }, [tour, values.travelDate, depositDefaults.cutoffDays, now]);
   const depositAmount = useMemo(() => {
     if (!depositEligible || !tour) return null;
     if (tour.deposit_type === "percentage") {
@@ -302,7 +316,7 @@ export default function PublicBookingPage() {
         } : {}),
         customer_notes: form.notes || undefined,
         ...(isAgent ? {} : { affiliate_ref_code: getActiveReferralCode() || undefined }),
-        optional_activities: form.activityIds.map((id) => ({ id, quantity: totalPax })), accommodations: form.accommodationIds.map((id) => ({ id, quantity: 1 })), extensions: form.extensionIds.map((id) => ({ id, quantity: 1 })),
+        optional_activities: form.activityIds.map((id) => ({ id, quantity: totalPax })), extensions: form.extensionIds.map((id) => ({ id, quantity: 1 })),
         travellers: form.travellers.map((row, index) => ({
           ...row,
           age: Number(row.age),
@@ -392,12 +406,12 @@ export default function PublicBookingPage() {
                     key={group.category}
                     title={addonCategoryLabel(group.category)}
                     items={group.items}
-                    selectedIds={{ accommodation: values.accommodationIds || [], activity: values.activityIds || [], extension: values.extensionIds || [] }}
-                    onToggle={(source, id) => toggleId(source === "accommodation" ? "accommodationIds" : source === "activity" ? "activityIds" : "extensionIds", id, getValues, setValue)}
+                    selectedIds={{ activity: values.activityIds || [], extension: values.extensionIds || [] }}
+                    onToggle={(source, id) => toggleId(source === "activity" ? "activityIds" : "extensionIds", id, getValues, setValue)}
                     currency={currency}
                   />
                 ))}
-                {(tour.accommodations.length > 0 || tour.optional_activities.length > 0 || tour.extensions.length > 0) && <button type="button" onClick={() => setStep(3)} className="text-xs font-bold text-teal-700 hover:text-teal-900">Skip Add-ons →</button>}
+                {(tour.optional_activities.length > 0 || tour.extensions.length > 0) && <button type="button" onClick={() => setStep(3)} className="text-xs font-bold text-teal-700 hover:text-teal-900">Skip Add-ons →</button>}
               </div>
             )}
             {step === 3 && (
@@ -434,7 +448,7 @@ export default function PublicBookingPage() {
                 <label className="field-label mt-4">Special requirements<textarea {...register("notes")} rows={3} className="field resize-none" /></label>
               </div>
             )}
-            {step === 4 && <div><Header n="4" title="Review & Confirm" text="Check your trip before creating the booking." /><TourCard tour={tour} hero={hero} />{isAgent && <div className="mt-5"><AgentCommercialFields register={register} paymentMethod={agentPaymentMethod} netPrice={pricing.total} markup={agentMarkup} customerTotal={customerTotal} currency={currency} money={money} /></div>}<div className="mt-5 grid gap-4 sm:grid-cols-2"><ReviewBox title="Trip" rows={[["Booking for", isAgent ? selectedCustomerName || "-" : "Myself"], ["Travel date", values.travelDate || "-"], ["Travellers", `${adults} adult${adults === 1 ? "" : "s"}${children ? `, ${children} child${children === 1 ? "" : "ren"}` : ""}`], ["Contact", values.email || "-"]]} /><ReviewBox title="Price summary" rows={[["Package", money(pricing.base, currency)], ["Upgrades", money(pricing.extras, currency)], ...(isAgent ? [["Agent markup", money(agentMarkup, currency)]] : []), ["Total", money(customerTotal, currency)]]} /></div>                {isAgent ? (
+            {step === 4 && <div><Header n="4" title="Review & Confirm" text="Check your trip before creating the booking." /><TourCard tour={tour} hero={hero} />{isAgent && <div className="mt-5"><AgentCommercialFields register={register} paymentMethod={agentPaymentMethod} netPrice={pricing.total} markup={agentMarkup} customerTotal={customerTotal} currency={currency} money={money} /></div>}<div className="mt-5 grid gap-4 sm:grid-cols-2"><ReviewBox title="Trip" rows={[["Booking for", isAgent ? selectedCustomerName || "-" : "Myself"], ["Travel date", values.travelDate || "-"], ["Travellers", `${adults} adult${adults === 1 ? "" : "s"}${children ? `, ${children} child${children === 1 ? "" : "ren"}` : ""}`], ["Contact", values.email || "-"]]} /><ReviewBox title="Price summary" rows={[["Package", money(pricing.base, currency)], ["Upgrades", money(pricing.extras, currency)], ...(isAgent ? [["Agent markup", money(agentMarkup, currency)]] : []), ...(!isAgent && tourHasDiscount && tour.discount_percentage ? [[`Discount (${tour.discount_percentage}% off)`, `- ${money(customerTotal - discountedCustomerTotal, currency)}`]] : []), ["Total", money(!isAgent && tourHasDiscount ? discountedCustomerTotal : customerTotal, currency)]]} /></div>                {isAgent ? (
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     <label className={`cursor-pointer rounded-2xl border-2 p-4 ${agentPaymentMethod !== "online" ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
                       <input type="radio" value="pay_later" {...register("agentPaymentMethod")} className="sr-only" />
@@ -493,7 +507,35 @@ export default function PublicBookingPage() {
             {step === 4 && <div className="mt-7 flex justify-between border-t border-slate-100 pt-5"><button type="button" onClick={() => setStep(3)} className="nav-secondary"><ArrowLeft size={16} /> Back</button><button type="submit" disabled={!values.agreed || (tour.cancellation_policy.length > 0 && !values.agreedCancellationPolicy) || busy === "booking"} className="nav-primary">{busy === "booking" ? <Loader className="animate-spin" size={16} /> : <Lock size={15} />} {isAgent && agentPaymentMethod !== "online" ? "Reserve Now" : isAgent ? "Pay in Full Today" : "Proceed to payment"}</button></div>}
           </section>
 
-          <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-28"><img src={hero} alt={tour.title} className="aspect-[16/10] w-full rounded-2xl object-cover" /><h2 className="mt-4 font-black">{tour.title}</h2><p className="mt-2 flex items-center gap-1 text-xs text-slate-500"><MapPin size={13} />{[tour.city_name, tour.country_name].filter(Boolean).join(", ")}</p><div className="my-4 h-px bg-slate-100" /><div className="space-y-2 text-sm"><div className="flex justify-between"><span>Travellers</span><b>{totalPax}</b></div><div className="flex justify-between"><span>Package</span><b>{money(pricing.base, currency)}</b></div><div className="flex justify-between"><span>Upgrades</span><b>{money(pricing.extras, currency)}</b></div></div><div className="mt-4 flex justify-between rounded-xl bg-slate-950 px-4 py-3 text-white"><span>Total</span><b>{booking ? money(Number(booking.final_amount), booking.currency) : money(customerTotal, currency)}</b></div><p className="mt-4 flex items-center justify-center gap-2 text-[11px] font-bold text-slate-500"><ShieldCheck size={14} className="text-teal-700" /> Secure booking &amp; payment</p></aside>
+          <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-28">
+            <div className="relative">
+              <img src={hero} alt={tour.title} className="aspect-[16/10] w-full rounded-2xl object-cover" />
+              {!isAgent && tourHasDiscount && !booking && tour.discount_percentage && (
+                <span className="absolute right-3 top-3 rounded-full bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-md">{tour.discount_percentage}% OFF</span>
+              )}
+            </div>
+            <h2 className="mt-4 font-black">{tour.title}</h2>
+            <p className="mt-2 flex items-center gap-1 text-xs text-slate-500"><MapPin size={13} />{[tour.city_name, tour.country_name].filter(Boolean).join(", ")}</p>
+            <div className="my-4 h-px bg-slate-100" />
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span>Travellers</span><b>{totalPax}</b></div>
+              <div className="flex justify-between"><span>Package</span><b>{money(pricing.base, currency)}</b></div>
+              <div className="flex justify-between"><span>Upgrades</span><b>{money(pricing.extras, currency)}</b></div>
+            </div>
+            {!isAgent && tourHasDiscount && !booking && tour.discount_percentage && (
+              <div className="mt-4 rounded-xl border-2 border-red-100 bg-red-50 p-3">
+                <DiscountBanner percentage={tour.discount_percentage} />
+                <div className="mt-2">
+                  <DiscountPriceLine original={customerTotal} discounted={discountedCustomerTotal} currency={currency} format={money} suffix="" size="md" showSavings />
+                </div>
+              </div>
+            )}
+            <div className="mt-4 flex justify-between rounded-xl bg-slate-950 px-4 py-3 text-white">
+              <span>Total</span>
+              <b>{booking ? money(Number(booking.final_amount), booking.currency) : money(!isAgent && tourHasDiscount ? discountedCustomerTotal : customerTotal, currency)}</b>
+            </div>
+            <p className="mt-4 flex items-center justify-center gap-2 text-[11px] font-bold text-slate-500"><ShieldCheck size={14} className="text-teal-700" /> Secure booking &amp; payment</p>
+          </aside>
         </form>
       </div>
     </main>
@@ -511,12 +553,15 @@ function apiErrorMessage(exception: unknown, fallback: string) {
 }
 function TourCard({ tour, hero }: { tour: PublicTourDetail; hero: string }) { return <div className="flex gap-4 rounded-2xl border border-slate-200 p-3"><img src={hero} alt="" className="h-20 w-28 rounded-xl object-cover" /><div><b>{tour.title}</b><p className="mt-1 text-xs text-slate-500">{tour.number_of_days ? `${tour.number_of_days} days` : "Curated tour"}</p><p className="mt-1 text-xs text-slate-500">{tour.country_name}</p></div></div>; }
 function ReviewBox({ title, rows }: { title: string; rows: (string | number)[][] }) { return <div className="rounded-2xl border border-slate-200 p-4"><b className="text-sm">{title}</b><div className="mt-3 space-y-2">{rows.map(([a, b]) => <div key={String(a)} className="flex justify-between gap-3 text-xs"><span className="text-slate-500">{a}</span><strong className="text-right">{b}</strong></div>)}</div></div>; }
-type AddonSource = "accommodation" | "activity" | "extension";
+// Hotel/room-upgrade add-ons ("accommodation") are deliberately excluded here -
+// hotel booking is not part of the customer tour-booking flow. The supplier's
+// tour wizard can still configure them (TourAccommodationExtraTab.tsx); they
+// just never surface at checkout.
+type AddonSource = "activity" | "extension";
 type AddonItem = { id: number; name: string; description: string; price: number | null; source: AddonSource; perPerson?: boolean };
 
 function groupAddonsByCategory(tour: PublicTourDetail): { category: string; items: AddonItem[] }[] {
   const all: (AddonItem & { category: string })[] = [
-    ...tour.accommodations.map((x) => ({ id: x.id, name: x.name, description: x.description, price: x.price, source: "accommodation" as const, category: x.category })),
     ...tour.optional_activities.map((x) => ({ id: x.id, name: x.name, description: x.description, price: x.price, source: "activity" as const, perPerson: true, category: x.category })),
     ...tour.extensions.map((x) => ({ id: x.id, name: x.title, description: x.description, price: x.price, source: "extension" as const, category: x.category })),
   ];
@@ -551,7 +596,7 @@ function OptionGroup({ title, items, selectedIds, onToggle, currency }: { title:
   );
 }
 function PayButton({ disabled, onClick, loading, label, test }: { disabled: boolean; onClick: () => void; loading: boolean; label: string; test?: boolean }) { return <button type="button" disabled={disabled} onClick={onClick} className={`flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 font-black disabled:cursor-not-allowed disabled:opacity-40 ${test ? "border-2 border-dashed border-amber-400 bg-amber-50 text-amber-800" : "bg-teal-700 text-white hover:bg-teal-800"}`}>{loading ? <Loader className="animate-spin" size={18} /> : <CreditCard size={18} />}{label}</button>; }
-function toggleId(name: "activityIds" | "accommodationIds" | "extensionIds", id: number, getValues: ReturnType<typeof useForm<FormValues>>["getValues"], setValue: ReturnType<typeof useForm<FormValues>>["setValue"]) { const current = getValues(name); setValue(name, current.includes(id) ? current.filter((x) => x !== id) : [...current, id], { shouldDirty: true }); }
+function toggleId(name: "activityIds" | "extensionIds", id: number, getValues: ReturnType<typeof useForm<FormValues>>["getValues"], setValue: ReturnType<typeof useForm<FormValues>>["setValue"]) { const current = getValues(name); setValue(name, current.includes(id) ? current.filter((x) => x !== id) : [...current, id], { shouldDirty: true }); }
 
 function OtpLoginStep({ onVerified, onBack }: { onVerified: () => void; onBack: () => void }) {
   const [email, setEmail] = useState("");
