@@ -432,7 +432,7 @@ function StatusHistory({ history }: { history: StatusHistory[] }) {
 export default function SupplierBookingDetailPage() {
   const params = useParams();
   const bookingId = params.id as string;
-  const { format } = useCurrency();
+  const { formatExact: format } = useCurrency();
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [history, setHistory] = useState<StatusHistory[]>([]);

@@ -390,6 +390,7 @@ export type AvailabilityConfig = {
   availability_start_date: string | null;
   availability_end_date: string | null;
   min_advance_booking_days: number;
+  agent_no_deposit_buffer_weeks: number;
   frequency: "weekly" | "fortnightly" | "monthly" | null;
   frequency_week: number | null;
   frequency_days: number[];
@@ -442,6 +443,7 @@ export type TourDiscount = {
   used_count?: number;
   minimum_booking_amount: number;
   status: string;
+  created_at?: string;
 };
 
 export type DiscountAmendment = {

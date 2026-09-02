@@ -87,7 +87,7 @@ function initials(name: string) {
 
 export default function BookingDetailPage() {
   const params = useParams<{ id: string }>();
-  const { format } = useCurrency();
+  const { formatExact } = useCurrency();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -368,12 +368,25 @@ export default function BookingDetailPage() {
 
             <DetailPanel title="Money">
               <div className="grid gap-4">
-                <DetailField label="Final" value={format(booking.final_amount, booking.currency)} />
-                <DetailField label="Paid" value={format(booking.amount_paid, booking.currency)} />
-                <DetailField label="Pending" value={format(booking.amount_pending, booking.currency)} />
+                <DetailField label="Final" value={formatExact(booking.final_amount, booking.currency)} />
+                <DetailField label="Paid" value={formatExact(booking.amount_paid, booking.currency)} />
+                <DetailField label="Pending" value={formatExact(booking.amount_pending, booking.currency)} />
                 <DetailField label="Payment Type" value={booking.payment_type} />
               </div>
             </DetailPanel>
+
+            {booking.supplier_breakdown && (
+              <DetailPanel title="Supplier">
+                <div className="grid gap-4">
+                  <DetailField label="Supplier Gross Amount" value={formatExact(booking.supplier_breakdown.gross_amount, booking.supplier_breakdown.currency)} />
+                  <DetailField label="Commission %" value={`${booking.supplier_breakdown.commission_percentage}%`} />
+                  <DetailField label="Commission Amount" value={formatExact(booking.supplier_breakdown.commission_amount, booking.supplier_breakdown.currency)} />
+                  <DetailField label="Supplier Net Payable" value={formatExact(booking.supplier_breakdown.net_payable, booking.supplier_breakdown.currency)} />
+                  <DetailField label="Customer / Display Price" value={formatExact(booking.supplier_breakdown.customer_price, booking.supplier_breakdown.customer_price_currency)} />
+                  <DetailField label="Tourvaa Margin" value={formatExact(booking.supplier_breakdown.tourvaa_margin, booking.supplier_breakdown.currency)} />
+                </div>
+              </DetailPanel>
+            )}
 
             <DetailPanel title="Travel">
               <div className="grid gap-4">
@@ -411,7 +424,7 @@ export default function BookingDetailPage() {
                     <div>
                       <p className="text-sm font-bold text-dash-text">{p.payment_code} · {p.payment_method} ({p.gateway})</p>
                       <p className="text-xs text-dash-subtle">
-                        {format(p.total_amount, booking.currency)}
+                        {formatExact(p.total_amount, booking.currency)}
                         {p.payment_status === "failed" && p.failure_reason ? ` · ${p.failure_reason}` : ""}
                         {p.created_at ? ` · ${new Date(p.created_at).toLocaleString()}` : ""}
                       </p>

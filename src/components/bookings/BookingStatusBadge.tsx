@@ -3,6 +3,10 @@ const toneMap: Record<string, string> = {
   pending_payment: "bg-amber-50 text-amber-700",
   payment_authorized: "bg-sky-50 text-sky-700",
   pending_supplier_acceptance: "bg-amber-50 text-amber-700",
+  // Agent "Reserve Now" (no-deposit reservation) states.
+  pending_credit_approval: "bg-teal-50 text-teal-700",
+  credit_approval_pending: "bg-teal-50 text-teal-700",
+  bank_transfer_pending: "bg-teal-50 text-teal-700",
   confirmed: "bg-emerald-50 text-emerald-700",
   accepted: "bg-emerald-50 text-emerald-700",
   completed: "bg-emerald-50 text-emerald-700",

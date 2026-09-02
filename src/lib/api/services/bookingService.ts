@@ -56,6 +56,21 @@ export type Booking = {
   status_history?: BookingStatusHistoryItem[];
   communications?: BookingCommunication[];
   payments?: PaymentAttempt[];
+  // Admin-only -- present only when this booking detail was fetched by an
+  // admin (see services.bookings.get_booking_detail's role gate); absent
+  // for agent/supplier/customer views of the same booking.
+  supplier_breakdown?: SupplierBreakdown | null;
+};
+
+export type SupplierBreakdown = {
+  currency: string;
+  gross_amount: string;
+  commission_percentage: string;
+  commission_amount: string;
+  net_payable: string;
+  customer_price: string;
+  customer_price_currency: string;
+  tourvaa_margin: string;
 };
 
 export type PaymentAttempt = {

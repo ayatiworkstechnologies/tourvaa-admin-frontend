@@ -28,7 +28,7 @@ type Traveller = {
 };
 type AgentCustomer = { id: number; name?: string; full_name?: string; email?: string; phone?: string };
 type FormValues = {
-  travelDate: string; adults: number; children: number; infants: number; rooms: number; travellers: Traveller[];
+  travelDate: string; adults: number; children: number; infants: number; travellers: Traveller[];
   email: string; phone: string; phoneCountryCode: string; notes: string;
   primaryIsContact: boolean;
   activityIds: number[]; extensionIds: number[];
@@ -95,7 +95,7 @@ export default function PublicBookingPage() {
     mode: "onChange",
     defaultValues: {
       travelDate: searchParams.get("travel_date") || "", adults: Math.max(1, Number(searchParams.get("adults") || 1)), children: Math.max(0, Number(searchParams.get("children") || 0)),
-      infants: Math.max(0, Number(searchParams.get("infants") || 0)), rooms: 1,
+      infants: Math.max(0, Number(searchParams.get("infants") || 0)),
       travellers: travellerRows(Math.max(1, Number(searchParams.get("adults") || 1)), Math.max(0, Number(searchParams.get("children") || 0)), selfBookingName),
       email: selfBookingEmail, phone: "", phoneCountryCode: "+91", notes: "", primaryIsContact: true, activityIds: [], extensionIds: [], paymentType: "partial", agreed: false, agreedCancellationPolicy: false,
       agentMarkup: 0, agentReference: "", agentPaymentMethod: "online",
@@ -106,7 +106,6 @@ export default function PublicBookingPage() {
   const adults = values.adults ?? 1;
   const children = values.children ?? 0;
   const infants = values.infants ?? 0;
-  const rooms = values.rooms ?? 1;
   const travellers = (values.travellers || []) as Traveller[];
   const totalPax = adults + children;
 
@@ -248,6 +247,32 @@ export default function PublicBookingPage() {
     // percentage/cutoff config) is a customer-only payment option.
     if (!depositAmount || isAgent) setValue("paymentType", "full", { shouldDirty: true });
   }, [depositAmount, isAgent, setValue]);
+
+  // Agent no-deposit reservation window: eligible only when today is more
+  // than agent_no_deposit_buffer_weeks weeks before the tour's min-advance-
+  // booking cutoff date; the balance is then due that many weeks before
+  // travel. Mirrors services.tour_availability.agent_reserve_eligibility.
+  const agentReserveEligibility = useMemo(() => {
+    if (!values.travelDate) return { eligible: true, dueDate: null as Date | null };
+    const travel = new Date(`${values.travelDate}T00:00:00`);
+    if (Number.isNaN(travel.getTime())) return { eligible: true, dueDate: null as Date | null };
+    const advanceDays = tour?.min_advance_booking_days ?? 0;
+    const bufferWeeks = tour?.agent_no_deposit_buffer_weeks ?? 4;
+    const bufferDays = bufferWeeks * 7;
+    const cutoffDate = new Date(travel);
+    cutoffDate.setDate(cutoffDate.getDate() - advanceDays);
+    const daysToCutoff = Math.floor((cutoffDate.getTime() - now) / 86_400_000);
+    const eligible = daysToCutoff > bufferDays;
+    const dueDate = eligible ? new Date(travel.getTime() - bufferDays * 86_400_000) : null;
+    return { eligible, dueDate };
+  }, [tour, values.travelDate, now]);
+
+  useEffect(() => {
+    // If the no-deposit window has closed, an agent can no longer Reserve Now.
+    if (isAgent && !agentReserveEligibility.eligible && (agentPaymentMethod === "pay_later" || agentPaymentMethod === "credit")) {
+      setValue("agentPaymentMethod", "online", { shouldDirty: true });
+    }
+  }, [isAgent, agentReserveEligibility.eligible, agentPaymentMethod, setValue]);
   const selectedCustomerName = selectedCustomer?.full_name ?? selectedCustomer?.name ?? "";
 
   const changeCount = (type: "adult" | "child", count: number) => {
@@ -308,7 +333,7 @@ export default function PublicBookingPage() {
       const selectedCalendar = tour.calendar.find((row) => row.date === form.travelDate);
       const response = await api.post(isAgent ? "/bookings" : "/customer/bookings", {
         customer_id: customerId, tour_id: tour.id, tour_calendar_id: selectedCalendar?.id, tour_name: tour.title, tour_date: form.travelDate, tour_start_date: form.travelDate,
-        no_of_adults: form.adults, no_of_children: form.children, no_of_infants: form.infants, no_of_rooms: form.rooms || undefined, currency: tour.currency || "USD", booking_source: isAgent ? "agent" : "customer", payment_type: form.paymentType,
+        no_of_adults: form.adults, no_of_children: form.children, no_of_infants: form.infants, currency: tour.currency || "USD", booking_source: isAgent ? "agent" : "customer", payment_type: form.paymentType,
         ...(isAgent ? {
           agent_markup: Math.max(0, Number(form.agentMarkup) || 0),
           agent_payment_method: form.agentPaymentMethod,
@@ -385,16 +410,14 @@ export default function PublicBookingPage() {
             {isAgent && step === 1 && !showOtpGate && <AgentCustomerSelector search={customerSearch} onSearchChange={(value) => { setCustomerSearch(value); setSelectedCustomer(null); setError(""); }} results={customerResults} selected={selectedCustomer} loading={customerLoading} onSelect={selectAgentCustomer} onClear={clearAgentCustomer} />}
             {step === 1 && !showOtpGate && <div><Header n="1" title="Trip Setup" text="Choose your preferred date and group size." /><Controller control={control} name="travelDate" rules={{ required: "Select a travel date" }} render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} minDate={todayLocalDateStr()} availableDates={tour.calendar.filter((x) => x.status === "available" && x.slots > 0).map((x) => x.date)} restrictToAvailableDates label="Travel date *" subtitle="Choose travel date" />} />{errors.travelDate && <ErrorText text={errors.travelDate.message} />}<div className="mt-6 grid gap-3 sm:grid-cols-2">{[["Adults", "adult", adults, 1, "Age 12+"], ["Children", "child", children, 0, "Age 3–11"]].map(([label, type, value, min, sub]) => <div key={String(label)} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4"><div><p className="font-black">{label}</p><p className="text-xs text-slate-400">{sub}</p></div><div className="flex items-center gap-4"><button type="button" onClick={() => changeCount(type as "adult" | "child", Math.max(Number(min), Number(value) - 1))} disabled={Number(value) <= Number(min)} className="counter"><Minus size={14} /></button><b>{value}</b><button type="button" onClick={() => changeCount(type as "adult" | "child", Number(value) + 1)} className="counter"><Plus size={14} /></button></div></div>)}</div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {[["Infants", infants, 0, "Under 2 years"], ["Rooms required", rooms, 1, "Approximate is fine"]].map(([label, value, min, sub]) => (
-                  <div key={String(label)} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
-                    <div><p className="font-black">{label}</p><p className="text-xs text-slate-400">{sub}</p></div>
-                    <div className="flex items-center gap-4">
-                      <button type="button" onClick={() => setValue(label === "Infants" ? "infants" : "rooms", Math.max(Number(min), Number(value) - 1), { shouldDirty: true })} disabled={Number(value) <= Number(min)} className="counter"><Minus size={14} /></button>
-                      <b>{value}</b>
-                      <button type="button" onClick={() => setValue(label === "Infants" ? "infants" : "rooms", Number(value) + 1, { shouldDirty: true })} className="counter"><Plus size={14} /></button>
-                    </div>
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
+                  <div><p className="font-black">Infants</p><p className="text-xs text-slate-400">Under 2 years</p></div>
+                  <div className="flex items-center gap-4">
+                    <button type="button" onClick={() => setValue("infants", Math.max(0, infants - 1), { shouldDirty: true })} disabled={infants <= 0} className="counter"><Minus size={14} /></button>
+                    <b>{infants}</b>
+                    <button type="button" onClick={() => setValue("infants", infants + 1, { shouldDirty: true })} className="counter"><Plus size={14} /></button>
                   </div>
-                ))}
+                </div>
               </div>
             </div>}
             {step === 1 && showOtpGate && <OtpLoginStep onBack={() => setShowOtpGate(false)} onVerified={async () => { await refreshSession(); setShowOtpGate(false); setStep(2); }} />}
@@ -450,18 +473,29 @@ export default function PublicBookingPage() {
             )}
             {step === 4 && <div><Header n="4" title="Review & Confirm" text="Check your trip before creating the booking." /><TourCard tour={tour} hero={hero} />{isAgent && <div className="mt-5"><AgentCommercialFields register={register} paymentMethod={agentPaymentMethod} netPrice={pricing.total} markup={agentMarkup} customerTotal={customerTotal} currency={currency} money={money} /></div>}<div className="mt-5 grid gap-4 sm:grid-cols-2"><ReviewBox title="Trip" rows={[["Booking for", isAgent ? selectedCustomerName || "-" : "Myself"], ["Travel date", values.travelDate || "-"], ["Travellers", `${adults} adult${adults === 1 ? "" : "s"}${children ? `, ${children} child${children === 1 ? "" : "ren"}` : ""}`], ["Contact", values.email || "-"]]} /><ReviewBox title="Price summary" rows={[["Package", money(pricing.base, currency)], ["Upgrades", money(pricing.extras, currency)], ...(isAgent ? [["Agent markup", money(agentMarkup, currency)]] : []), ...(!isAgent && tourHasDiscount && tour.discount_percentage ? [[`Discount (${tour.discount_percentage}% off)`, `- ${money(customerTotal - discountedCustomerTotal, currency)}`]] : []), ["Total", money(!isAgent && tourHasDiscount ? discountedCustomerTotal : customerTotal, currency)]]} /></div>                {isAgent ? (
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <label className={`cursor-pointer rounded-2xl border-2 p-4 ${agentPaymentMethod !== "online" ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
-                      <input type="radio" value="pay_later" {...register("agentPaymentMethod")} className="sr-only" />
-                      <b className="block">Reserve Now</b>
-                      <strong className="mt-2 block text-xl text-teal-800">No deposit required</strong>
-                      <span className="text-xs text-slate-500">Balance due: {money(customerTotal, currency)}. An invoice is generated and sent once the reservation is created.</span>
-                    </label>
-                    <label className={`cursor-pointer rounded-2xl border-2 p-4 ${agentPaymentMethod === "online" ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
+                    {agentReserveEligibility.eligible && (
+                      <label className={`cursor-pointer rounded-2xl border-2 p-4 ${agentPaymentMethod !== "online" ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
+                        <input type="radio" value="pay_later" {...register("agentPaymentMethod")} className="sr-only" />
+                        <b className="block">Reserve Now</b>
+                        <strong className="mt-2 block text-xl text-teal-800">No deposit required</strong>
+                        <span className="text-xs text-slate-500">
+                          Balance due: {money(customerTotal, currency)}
+                          {agentReserveEligibility.dueDate ? ` by ${agentReserveEligibility.dueDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}` : ""}.
+                          An invoice is generated and sent once the reservation is created.
+                        </span>
+                      </label>
+                    )}
+                    <label className={`cursor-pointer rounded-2xl border-2 p-4 ${agentPaymentMethod === "online" || !agentReserveEligibility.eligible ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
                       <input type="radio" value="online" {...register("agentPaymentMethod")} className="sr-only" />
                       <b className="block">Pay in Full Today</b>
                       <strong className="mt-2 block text-xl text-teal-800">{money(customerTotal, currency)}</strong>
                       <span className="text-xs text-slate-500">Complete in one payment</span>
                     </label>
+                    {!agentReserveEligibility.eligible && (
+                      <p className="sm:col-span-2 text-xs font-semibold text-amber-700">
+                        This tour is now too close to departure for a no-deposit reservation -- pay in full to confirm this booking.
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className={`mt-5 grid gap-3 ${depositAmount ? "sm:grid-cols-2" : ""}`}>
@@ -758,8 +792,10 @@ function AgentCommercialFields({ register, paymentMethod, netPrice, markup, cust
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="field-label">Agent markup<input type="number" min={0} step="0.01" {...register("agentMarkup", { valueAsNumber: true, min: 0 })} className="field bg-white" /></label>
         <label className="field-label">Agent reference<input {...register("agentReference")} placeholder="Internal reference" className="field bg-white" /></label>
-        <label className="field-label sm:col-span-2">Payment method<select {...register("agentPaymentMethod")} className="field bg-white"><option value="online">Online payment</option><option value="wallet">Agent wallet</option><option value="credit">Credit limit</option><option value="bank_transfer">Bank transfer</option><option value="pay_later">Pay later - admin approval</option></select></label>
       </div>
+      {/* Payment method itself is chosen via the Reserve Now / Pay in Full Today
+          cards below (agentPaymentMethod: "pay_later" | "online") -- no separate
+          dropdown here, per the client's "retain only the two requested actions". */}
       {paymentMethod !== "online" && <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-blue-800">The booking will be created without opening public online payment and will continue in your agent portal.</p>}
     </div>
   );

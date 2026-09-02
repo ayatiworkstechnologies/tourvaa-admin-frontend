@@ -57,7 +57,6 @@ type Booking = {
   no_of_adults?: number;
   no_of_children?: number;
   no_of_infants?: number;
-  no_of_rooms?: number;
   total_travellers?: number;
   notes?: string;
   customer_notes?: string;
@@ -336,7 +335,7 @@ export default function CustomerBookingDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { format } = useCurrency();
+  const { formatExact: format } = useCurrency();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -658,7 +657,6 @@ export default function CustomerBookingDetailPage() {
                 <Field label="Adults" value={booking.no_of_adults ?? "-"} />
                 <Field label="Children" value={booking.no_of_children ?? 0} />
                 <Field label="Infants" value={booking.no_of_infants ?? 0} />
-                {booking.no_of_rooms != null && <Field label="Rooms" value={booking.no_of_rooms} />}
                 <Field label="Total" value={<span className="flex items-center gap-1"><Users size={14} className="text-dash-brand" />{booking.total_travellers ?? "-"}</span>} />
               </div>
             </Panel>

@@ -56,7 +56,7 @@ function paymentColors(s: string) {
 }
 
 export default function SupplierBookingsPage() {
-  const { format } = useCurrency();
+  const { formatExact: format } = useCurrency();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

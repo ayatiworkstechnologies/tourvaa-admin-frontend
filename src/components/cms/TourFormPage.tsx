@@ -517,7 +517,7 @@ export default function TourFormPage({
                 <p className="mt-1 text-[11px] text-dash-subtle">Set per-passenger prices in the Pricing step -- this updates automatically once approved.</p>
               </label>
             )}
-            {tourId && activeDiscount && hasActiveDiscount(activeDiscount) && (
+            {!isSupplier && tourId && activeDiscount && hasActiveDiscount(activeDiscount) && (
               <label>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Publishable / customer price</span>
                 <div className={`${inputClass} flex items-center justify-between bg-gray-50`}>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuHistory as History, LuSave as Save, LuX as X } from "react-icons/lu";
-import { TourDiscount, DiscountHistoryEntry, getDiscounts, createDiscount, amendDiscount, getDiscountHistory } from "@/lib/api/services/tourDetailService";
+import { TourDiscount, DiscountHistoryEntry, getDiscounts, createDiscount, amendDiscount, getDiscountHistory, getPricing } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
@@ -18,12 +18,17 @@ function fmt(n: number, currency: string) {
  * same struck-through-original/discounted-below treatment used in the
  * pricing table (TourPricingTab.tsx), so a discount rule's actual impact is
  * visible right here instead of just its abstract "10% off" text. */
-function DiscountPricePreview({ item, basePrice, currency }: { item: TourDiscount; basePrice: number; currency: string }) {
+function discountedValue(item: TourDiscount, basePrice: number): number | null {
   if (basePrice <= 0) return null;
   const discounted = item.discount_type === "percentage"
     ? basePrice * (1 - item.discount_value / 100)
     : Math.max(0, basePrice - item.discount_value);
-  if (discounted >= basePrice) return null;
+  return discounted < basePrice ? discounted : null;
+}
+
+function DiscountPricePreview({ item, basePrice, currency }: { item: TourDiscount; basePrice: number; currency: string }) {
+  const discounted = discountedValue(item, basePrice);
+  if (discounted == null) return null;
 
   return (
     <div className="mt-2 flex items-center gap-2 rounded-lg bg-dash-bg px-3 py-2">
@@ -34,19 +39,51 @@ function DiscountPricePreview({ item, basePrice, currency }: { item: TourDiscoun
   );
 }
 
+/** Admin sees the 1-pax supplier price (for reference) alongside the
+ * discount applied to the 1-pax publishable/storefront price -- the
+ * markup-inclusive price customers actually pay after the discount. */
+function AdminDiscountPricePreview({ item, supplierBasePrice, storefrontBasePrice, currency }: { item: TourDiscount; supplierBasePrice: number; storefrontBasePrice: number; currency: string }) {
+  const discounted = discountedValue(item, storefrontBasePrice);
+  if (discounted == null && supplierBasePrice <= 0) return null;
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-4 rounded-lg bg-dash-bg px-3 py-2">
+      {supplierBasePrice > 0 && (
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier price</p>
+          <span className="text-sm font-bold text-dash-text">{fmt(supplierBasePrice, currency)}</span>
+        </div>
+      )}
+      {discounted != null && (
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Discount price</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{fmt(storefrontBasePrice, currency)}</span>
+            <span className="text-sm font-black text-emerald-700">{fmt(discounted, currency)}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const empty = (): TourDiscount => ({
   discount_name: "", discount_code: null, discount_type: "percentage",
   discount_value: 10, discount_scope: "tour", start_date: null, end_date: null,
   usage_limit: null, minimum_booking_amount: 0, status: "active",
 });
 
-export default function TourDiscountsTab({ tourId }: { tourId: string }) {
+export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: string; role?: "admin" | "supplier" }) {
+  const isSupplier = role === "supplier";
   const toast = useToast();
   const [items, setItems] = useState<TourDiscount[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourDiscount | null>(null);
   const [saving, setSaving] = useState(false);
-  const [basePrice, setBasePrice] = useState(0);
+  // 1-pax tier prices the discount preview is computed from: the supplier's
+  // own net price, and the markup-inclusive storefront/publishable price.
+  const [supplierBasePrice, setSupplierBasePrice] = useState(0);
+  const [storefrontBasePrice, setStorefrontBasePrice] = useState(0);
   const [currency, setCurrency] = useState("USD");
   const [amending, setAmending] = useState<TourDiscount | null>(null);
   const [amendValue, setAmendValue] = useState("");
@@ -74,12 +111,29 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
   }, [load]);
 
   useEffect(() => {
+    let fallbackStorefront = 0;
     api.get(`/tours/${tourId}`).then((res) => {
       const tour = res.data?.data;
-      if (tour?.price_start_per_person != null) setBasePrice(Number(tour.price_start_per_person));
+      if (tour?.price_start_per_person != null) fallbackStorefront = Number(tour.price_start_per_person);
       if (tour?.currency) setCurrency(String(tour.currency));
+      setStorefrontBasePrice((prev) => prev || fallbackStorefront);
     }).catch(() => {
       // Non-fatal -- the discount list itself is the primary content of this tab.
+    });
+
+    getPricing(tourId).then((rows) => {
+      // The 1-pax tier -- the slab whose range covers a single traveller --
+      // is the price basis the discount preview should match, same as the
+      // per-pax-range pricing table above this card (TourPricingTab.tsx).
+      const sorted = [...rows].sort((a, b) => a.passenger_from - b.passenger_from);
+      const onePaxSlab = sorted.find((s) => s.passenger_from <= 1 && s.passenger_to >= 1) ?? sorted[0];
+      if (!onePaxSlab) return;
+      setSupplierBasePrice(Number(onePaxSlab.adult_price ?? 0));
+      const storefront = onePaxSlab.storefront_adult_price;
+      if (storefront != null) setStorefrontBasePrice(Number(storefront));
+      if (onePaxSlab.currency) setCurrency(onePaxSlab.currency);
+    }).catch(() => {
+      // Non-fatal -- falls back to the tour's price_start_per_person above.
     });
   }, [tourId]);
 
@@ -176,7 +230,11 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
                   {item.discount_value}{item.discount_type === "percentage" ? "%" : ""} off
                   {item.minimum_booking_amount > 0 ? ` - min. ${item.minimum_booking_amount}` : ""}
                 </p>
-                <DiscountPricePreview item={item} basePrice={basePrice} currency={currency} />
+                {isSupplier ? (
+                  <DiscountPricePreview item={item} basePrice={supplierBasePrice} currency={currency} />
+                ) : (
+                  <AdminDiscountPricePreview item={item} supplierBasePrice={supplierBasePrice} storefrontBasePrice={storefrontBasePrice} currency={currency} />
+                )}
                 {(item.start_date || item.end_date) && (
                   <p className="text-xs text-dash-subtle">
                     {item.start_date?.slice(0, 10)} → {item.end_date?.slice(0, 10)}
@@ -191,6 +249,46 @@ export default function TourDiscountsTab({ tourId }: { tourId: string }) {
             </div>
           </div>
         ))}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-bold text-dash-text">Discount History</h2>
+        <p className="mt-1 text-xs text-dash-subtle">Every discount ever applied to this tour by the supplier -- view only.</p>
+        {items.length === 0 ? (
+          <div className="mt-3 rounded-xl border border-dashed border-dash-border p-8 text-center text-sm text-dash-subtle">No discount history yet.</div>
+        ) : (
+          <div className="mt-3 overflow-x-auto rounded-xl border border-dash-border-soft">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-dash-border-soft bg-dash-bg/60">
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-dash-subtle">Discount name</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-dash-subtle">Amount / percentage</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-dash-subtle">Dates applied</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-dash-subtle">Used</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-dash-subtle">Discount added</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...items]
+                  .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
+                  .map((item) => (
+                    <tr key={item.id} className="border-b border-dash-border-soft/60 last:border-0">
+                      <td className="px-4 py-3 font-semibold text-dash-text">
+                        {item.discount_name}
+                        {item.discount_code && <span className="ml-2 rounded-full bg-[#EEF8FF] px-2 py-0.5 text-[10px] font-bold text-dash-brand">{item.discount_code}</span>}
+                      </td>
+                      <td className="px-4 py-3 text-dash-body">{item.discount_value}{item.discount_type === "percentage" ? "%" : ` ${currency}`}</td>
+                      <td className="px-4 py-3 text-dash-body">
+                        {item.start_date || item.end_date ? `${item.start_date?.slice(0, 10) ?? "—"} → ${item.end_date?.slice(0, 10) ?? "—"}` : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-dash-body">{item.used_count ?? 0}{item.usage_limit ? ` / ${item.usage_limit}` : ""}</td>
+                      <td className="px-4 py-3 text-dash-body">{item.created_at ? item.created_at.slice(0, 10) : "—"}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {editing && (

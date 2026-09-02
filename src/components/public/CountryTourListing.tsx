@@ -474,12 +474,15 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     setPage(1);
   }, [countrySlug, queryCountry, querySearch, queryCategory, selectedDuration, selectedBudget, selectedDepartureMonth, selectedSubcategory, availableOnly, sortOrder]);
 
-  // Resolves the country slug/query into a real country name, and loads the
-  // category list -- only depends on the country itself, so switching
-  // Duration/Budget/Departure Month/page never re-hits these two endpoints.
+  // Resolves the country slug/query into a real country name, then loads
+  // ONLY the categories that have a published tour in that country (see
+  // routers.public.public_categories) -- so an empty category never shows
+  // up as a filter option for a country with nothing in it. Only depends on
+  // the country itself, so switching Duration/Budget/Departure Month/page
+  // never re-hits these two endpoints.
   useEffect(() => {
     let active = true;
-    Promise.all([fetchPublicCountries(), fetchPublicCategories()]).then(([countries, categoryList]) => {
+    fetchPublicCountries().then(async (countries) => {
       if (!active) return;
       let resolvedCountry = "";
       if (countrySlug) {
@@ -490,7 +493,17 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         resolvedCountry = match?.country_name || queryCountry;
       }
       setCountryName(resolvedCountry);
+      const categoryList = await fetchPublicCategories(resolvedCountry || undefined);
+      if (!active) return;
       setCategories(categoryList);
+      // The category currently selected in the URL may no longer be valid
+      // (empty/nonexistent) for this country -- drop it rather than silently
+      // keep filtering by a category that isn't offered here.
+      if (queryCategory && !categoryList.some((cat) => cat.slug === queryCategory)) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete("category");
+        router.replace(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+      }
     });
     return () => { active = false; };
   }, [countrySlug, queryCountry]);

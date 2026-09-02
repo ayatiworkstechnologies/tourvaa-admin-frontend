@@ -65,7 +65,7 @@ function Pill({ status, children }: { status?: string; children: React.ReactNode
 }
 
 export default function AgentBookingsPage() {
-  const { format } = useCurrency();
+  const { formatExact: format } = useCurrency();
   const money = (value: string | number | undefined, currency = "USD") =>
     value || value === 0 ? format(value, currency) : "-";
   const [bookings, setBookings] = useState<Booking[]>([]);

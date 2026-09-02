@@ -23,6 +23,7 @@ const FREQUENCIES = [
 ];
 const emptyAvailability = (): AvailabilityConfig => ({
   availability_start_date: null, availability_end_date: null, min_advance_booking_days: 0,
+  agent_no_deposit_buffer_weeks: 4,
   frequency: null, frequency_week: null, frequency_days: [], seats_per_occurrence: 10,
 });
 
@@ -90,6 +91,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       const saved = await saveAvailabilityConfig(tourId, {
         ...schedule,
         min_advance_booking_days: sanitizeNumber(schedule.min_advance_booking_days),
+        agent_no_deposit_buffer_weeks: sanitizeNumber(schedule.agent_no_deposit_buffer_weeks),
         seats_per_occurrence: sanitizeNumber(schedule.seats_per_occurrence),
       });
       setSchedule(saved);
@@ -226,6 +228,15 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
               {schedule.min_advance_booking_days > 0
                 ? `Guests can book this tour from ${earliestBookableDate(schedule.min_advance_booking_days)} onwards.`
                 : "Guests can book any available date immediately."}
+            </span>
+          </label>
+          <label>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Agent No-Deposit Buffer (Weeks)</span>
+            <input type="number" min={0} value={numberInputValue(schedule.agent_no_deposit_buffer_weeks)}
+              onChange={(e) => setSchedule((p) => ({ ...p, agent_no_deposit_buffer_weeks: parseNumberInput(e.target.value) }))}
+              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+            <span className="mt-1 block text-xs text-dash-subtle">
+              An agent booking more than {schedule.agent_no_deposit_buffer_weeks} week{schedule.agent_no_deposit_buffer_weeks === 1 ? "" : "s"} before the Minimum Advance Booking cutoff can Reserve Now with no deposit; the balance is then due that many weeks before travel. Closer than that, agents only see Pay in Full Today.
             </span>
           </label>
           <label>

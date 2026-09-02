@@ -101,6 +101,7 @@ export type PublicTourDetail = PublicTour & {
   discounts: { label: string; discount_type: string; value: number; valid_from: string | null; valid_to: string | null }[];
   calendar: { id: number; date: string; slots: number; status: string }[];
   min_advance_booking_days?: number;
+  agent_no_deposit_buffer_weeks?: number;
   availability_end_date?: string | null;
   similar_tours: PublicTour[];
   cancellation_policy: { days_before_min: number; days_before_max: number | null; refund_percentage: number; description: string }[];
@@ -165,8 +166,8 @@ export async function fetchPublicTourDetail(idOrSlug: number | string, countrySl
   return res.data.data as PublicTourDetail;
 }
 
-export async function fetchPublicCategories() {
-  const res = await publicApi.get("/categories");
+export async function fetchPublicCategories(country?: string) {
+  const res = await publicApi.get("/categories", { params: country ? { country } : {} });
   return res.data.items as PublicCategory[];
 }
 

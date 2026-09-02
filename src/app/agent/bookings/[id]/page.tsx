@@ -108,7 +108,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { format } = useCurrency();
+  const { formatExact: format } = useCurrency();
   const money = (value: string | number | undefined, currency = "USD") =>
     value || value === 0 ? format(value, currency) : "-";
   const [booking, setBooking] = useState<Booking | null>(null);

@@ -447,7 +447,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
               <div className="space-y-6">
                 <TourPricingTab tourId={tourId} role={role} tourStatus={tour?.status as string | undefined} />
                 <div id="tour-discounts-section">
-                  <TourDiscountsTab tourId={tourId} />
+                  <TourDiscountsTab tourId={tourId} role={role} />
                 </div>
               </div>
             )}

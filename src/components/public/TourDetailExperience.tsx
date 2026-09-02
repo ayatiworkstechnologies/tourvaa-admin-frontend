@@ -34,7 +34,7 @@ import {
 } from "react-icons/lu";
 import { PublicTour, PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
-import { DiscountSavingsLine } from "@/components/public/DiscountPrice";
+import { DiscountSavingsLine, DiscountPriceLine, hasActiveDiscount } from "@/components/public/DiscountPrice";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 
@@ -296,6 +296,26 @@ export default function TourDetailExperience({
   const taxesAmount = 120;
   const totalAmount = Math.max(0, baseFare + addonTotal - discountAmount + taxesAmount);
 
+  // Per-tier Group Pricing -- the same flat active_discount percentage
+  // applied to each pax-range slab's own storefront price, so every tier
+  // shows its own strikethrough/discounted price and "save" amount instead
+  // of one flat number (tour.pricing[] is the undiscounted per-tier price
+  // list already returned by the public API, see routers/public.py _pricing_rows).
+  const groupPricingRows = useMemo(() => {
+    return (tour.pricing || []).map((row) => {
+      const original = Number(row.price_per_person);
+      const discounted = activeDiscountPct > 0 ? original * (1 - activeDiscountPct / 100) : null;
+      return {
+        label: row.persons_to && row.persons_to !== row.persons_from
+          ? `${row.persons_from}-${row.persons_to} travellers`
+          : `${row.persons_from} traveller${row.persons_from > 1 ? "s" : ""}`,
+        original,
+        discounted,
+        currency: row.currency || tour.currency || "USD",
+      };
+    });
+  }, [tour.pricing, tour.currency, activeDiscountPct]);
+
   // Dynamic Photo Gallery
   const galleryImages = useMemo(() => {
     if (images && images.length >= 6) return images.slice(0, 6);
@@ -539,6 +559,26 @@ export default function TourDetailExperience({
             {tour.start_location || tour.city_name || "Auckland"} to {tour.finish_location || "Queenstown"}{" "}
             <span className="mx-1.5 text-slate-300">•</span> Min Age: 14+
           </p>
+
+          {/* Starting-from hero price -- struck-through original vs. discounted
+              when this tour has an active discount, same fields the sticky
+              booking widget already uses (tour.original/discounted_price_per_person). */}
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Starting from</span>
+            {hasActiveDiscount(tour) ? (
+              <DiscountPriceLine
+                original={Number(tour.original_price_per_person)}
+                discounted={Number(tour.discounted_price_per_person)}
+                currency={tour.currency || "USD"}
+                format={format}
+                size="sm"
+              />
+            ) : (
+              <span className="text-base font-black text-[#0B1527]">
+                {format(unitPrice, tour.currency || "USD")}<span className="text-xs font-semibold text-slate-400"> per person</span>
+              </span>
+            )}
+          </div>
         </div>
 
         {/* ── 3. 6-Image Photo Gallery Grid ── */}
@@ -940,6 +980,31 @@ export default function TourDetailExperience({
               </div>
             </div>
 
+            {/* Group Pricing -- per pax-range tier, strikethrough/discounted when an active discount applies */}
+            {groupPricingRows.length > 0 && (
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
+                <h3 className="text-base font-black text-[#0B1527]">Group Pricing</h3>
+                <div className="mt-4 divide-y divide-slate-100">
+                  {groupPricingRows.map((row, idx) => (
+                    <div key={idx} className="flex items-center justify-between gap-4 py-3">
+                      <span className="text-xs font-bold text-slate-700">{row.label}</span>
+                      {row.discounted != null ? (
+                        <div className="flex flex-col items-end gap-1">
+                          <div className="flex items-baseline gap-2">
+                            <s className="text-xs font-semibold text-red-400">{format(row.original, row.currency)} / person</s>
+                            <b className="text-sm font-black text-slate-950">{format(row.discounted, row.currency)} / person</b>
+                          </div>
+                          <DiscountSavingsLine original={row.original} discounted={row.discounted} currency={row.currency} format={format} suffix="pp" />
+                        </div>
+                      ) : (
+                        <span className="text-sm font-black text-slate-900">{format(row.original, row.currency)} / person</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* G. 📅 Availability & Pricing */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
               <h3 className="flex items-center gap-2 text-base font-black text-[#0B1527]">
@@ -996,6 +1061,41 @@ export default function TourDetailExperience({
               <h3 className="text-sm font-bold text-[#0B1527]">
                 Book your {destination} tour
               </h3>
+
+              {hasActiveDiscount(tour) && (
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Starting from</span>
+                  <DiscountPriceLine
+                    original={Number(tour.original_price_per_person)}
+                    discounted={Number(tour.discounted_price_per_person)}
+                    currency={tour.currency || "USD"}
+                    format={format}
+                    size="sm"
+                  />
+                </div>
+              )}
+
+              {/* Group Pricing -- compact per-tier breakdown, mirrors the
+                  main content column's Group Pricing card above. */}
+              {groupPricingRows.length > 0 && (
+                <div className="mt-4 space-y-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Group Pricing</p>
+                  {groupPricingRows.map((row, idx) => (
+                    <div key={idx} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="font-semibold text-slate-600">{row.label}</span>
+                      {row.discounted != null ? (
+                        <div className="flex items-baseline gap-1.5">
+                          <s className="text-[10px] font-semibold text-red-400">{format(row.original, row.currency)}</s>
+                          <b className="font-black text-slate-950">{format(row.discounted, row.currency)}</b>
+                          <span className="text-slate-400">/ person</span>
+                        </div>
+                      ) : (
+                        <span className="font-black text-slate-900">{format(row.original, row.currency)} / person</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Date selection tabs */}
               <div className="mt-4 space-y-2">
