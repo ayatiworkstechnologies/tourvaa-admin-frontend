@@ -1,14 +1,17 @@
 const REFERRAL_KEY = "tourvaa_affiliate_ref";
-const ATTRIBUTION_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30-day last-click attribution
+// Fallback only, matching the backend's own default (AffiliateLink.attribution_window_days
+// defaults to 30 - see services.affiliate_tracking.create_link) -- used until the real
+// per-link window comes back from /affiliates/track/{ref_code}.
+const DEFAULT_ATTRIBUTION_WINDOW_DAYS = 30;
 
 type StoredReferral = {
   code: string;
   expiresAt: number;
 };
 
-export function storeReferralCode(code: string) {
+export function storeReferralCode(code: string, attributionWindowDays: number = DEFAULT_ATTRIBUTION_WINDOW_DAYS) {
   if (typeof window === "undefined") return;
-  const entry: StoredReferral = { code, expiresAt: Date.now() + ATTRIBUTION_WINDOW_MS };
+  const entry: StoredReferral = { code, expiresAt: Date.now() + attributionWindowDays * 24 * 60 * 60 * 1000 };
   window.localStorage.setItem(REFERRAL_KEY, JSON.stringify(entry));
 }
 

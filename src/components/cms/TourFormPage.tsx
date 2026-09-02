@@ -161,6 +161,29 @@ export default function TourFormPage({
           number_of_days: "1",
         }
   );
+
+  // New tours start with the platform's default deposit terms already
+  // filled in (rather than a blank field that reads as "no deposit"),
+  // matching what booking creation already falls back to when a tour
+  // hasn't set its own (see services.settings.get_default_deposit_percentage
+  // and friends) -- editable from here, not locked to the default.
+  useEffect(() => {
+    if (initialData || tourId) return;
+    api.get("/settings/public").then((res) => {
+      const settings = res.data?.data ?? {};
+      setForm((prev) => ({
+        ...prev,
+        deposit_type: prev.deposit_type ?? "percentage",
+        deposit_percentage: prev.deposit_percentage ?? settings.default_deposit_percentage ?? "20",
+        deposit_cutoff_days: prev.deposit_cutoff_days ?? settings.default_deposit_cutoff_days ?? "30",
+        balance_payment_deadline_days: prev.balance_payment_deadline_days ?? settings.default_balance_payment_deadline_days ?? "14",
+      }));
+    }).catch(() => {
+      // Non-fatal -- the fields stay blank and the same defaults still
+      // apply automatically at booking time either way.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // active_discount is an object (or null), not a plain string like every
   // other form field - normalizeTourForm would stringify it to
   // "[object Object]", so it's tracked separately and read straight off the
@@ -333,6 +356,8 @@ export default function TourFormPage({
       payload.deposit_percentage = form.deposit_percentage ? Number(form.deposit_percentage) : null;
       payload.deposit_cutoff_days = form.deposit_cutoff_days ? Number(form.deposit_cutoff_days) : null;
       payload.balance_payment_deadline_days = form.balance_payment_deadline_days ? Number(form.balance_payment_deadline_days) : null;
+      payload.tax_percentage = form.tax_percentage ? Number(form.tax_percentage) : 0;
+      payload.service_fee = form.service_fee ? Number(form.service_fee) : 0;
 
       // Simple number fields - use default if blank
       // price_start_per_person is intentionally omitted -- it's system-
@@ -662,6 +687,23 @@ export default function TourFormPage({
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Final payment due (days before departure)</span>
               <input type="number" min={0} value={form.balance_payment_deadline_days ?? ""} onChange={(e) => update("balance_payment_deadline_days", e.target.value)} className={inputClass} placeholder="e.g. 30" />
               <span className="mt-1 block text-[11px] text-dash-subtle">After paying a deposit, the customer must clear the remaining balance by this many days before departure.</span>
+            </label>
+
+            <div className="md:col-span-2 mt-2 border-t border-dash-border-soft pt-4">
+              <p className="text-xs font-black uppercase tracking-wide text-dash-subtle">Tax &amp; service fee</p>
+              <p className="mt-0.5 text-xs text-dash-subtle">Added on top of the discounted subtotal at checkout -- shown to the customer as a separate line, not folded into the tour price.</p>
+            </div>
+
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tax (%)</span>
+              <input type="number" min={0} max={100} step="0.01" value={form.tax_percentage ?? ""} onChange={(e) => update("tax_percentage", e.target.value)} className={inputClass} placeholder="0" />
+              <span className="mt-1 block text-[11px] text-dash-subtle">Percentage applied to the discounted subtotal.</span>
+            </label>
+
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Service fee ({form.currency || "USD"})</span>
+              <input type="number" min={0} step="0.01" value={form.service_fee ?? ""} onChange={(e) => update("service_fee", e.target.value)} className={inputClass} placeholder="0" />
+              <span className="mt-1 block text-[11px] text-dash-subtle">Flat amount added once per booking, regardless of traveller count.</span>
             </label>
           </FormSection>
           )}

@@ -8,6 +8,7 @@ import Loader from "@/components/ui/Loader";
 import TourPicker from "@/components/tours/TourPicker";
 import DatePicker from "@/components/ui/DatePicker";
 import { listCms } from "@/lib/api/services/cmsService";
+import { todayLocalDateStr } from "@/lib/utils/date";
 import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
 import {
@@ -421,7 +422,7 @@ export default function DiscountsPage() {
                     className={inputClass}
                   />
                 </label>
-                <DatePicker label="Start date" value={editing.start_date?.slice(0, 10) ?? ""} maxDate={editing.end_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, start_date: date || null } : previous)} />
+                <DatePicker label="Start date" value={editing.start_date?.slice(0, 10) ?? ""} minDate={todayLocalDateStr()} maxDate={editing.end_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, start_date: date || null } : previous)} />
                 <DatePicker label="End date" value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, end_date: date || null } : previous)} />
                 <label>
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>

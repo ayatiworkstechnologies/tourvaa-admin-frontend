@@ -279,9 +279,13 @@ export default function TourDetailExperience({
     setOpenItineraryDays({});
   };
 
-  // Pricing calculations
-  const unitPrice = tour.price_start_per_person ? Number(tour.price_start_per_person) : 1182;
-  const childPrice = Math.round(unitPrice * 0.7);
+  // Pricing calculations -- sourced from the same per-tier pricing[] the
+  // Group Pricing table and actual checkout (booking/[id]/page.tsx) use, so
+  // this preview never guesses a number the real booking wouldn't charge.
+  const totalPax = adults + children;
+  const matchedSlab = tour.pricing.find((row) => totalPax >= row.persons_from && (row.persons_to == null || totalPax <= row.persons_to)) ?? tour.pricing[0];
+  const unitPrice = matchedSlab ? Number(matchedSlab.price_per_person) : (tour.price_start_per_person ? Number(tour.price_start_per_person) : 1182);
+  const childPrice = matchedSlab ? Number(matchedSlab.child_price_per_person) : unitPrice;
 
   const baseFare = adults * unitPrice + children * childPrice;
   const addonTotal = (singleRoom ? 450 : 0) + (airportTransfer ? 65 : 0);
@@ -293,7 +297,14 @@ export default function TourDetailExperience({
   const savingsPerPerson = tour.original_price_per_person != null && tour.discounted_price_per_person != null
     ? Number(tour.original_price_per_person) - Number(tour.discounted_price_per_person)
     : 0;
-  const taxesAmount = 120;
+  // Real tour-configured tax %/service fee -- matches what
+  // services.bookings._price_booking actually charges (tax on the
+  // discounted subtotal, service fee as a flat per-booking amount).
+  const taxableAmount = Math.max(0, baseFare + addonTotal - discountAmount);
+  const taxPercentage = Number(tour.tax_percentage ?? 0);
+  const taxAmount = taxPercentage > 0 ? Math.round(taxableAmount * taxPercentage) / 100 : 0;
+  const serviceFee = Number(tour.service_fee ?? 0);
+  const taxesAmount = taxAmount + serviceFee;
   const totalAmount = Math.max(0, baseFare + addonTotal - discountAmount + taxesAmount);
 
   // Per-tier Group Pricing -- the same flat active_discount percentage

@@ -27,11 +27,15 @@ type RefundRule = {
   id: number;
   tour_id?: number | null;
   tour_title?: string;
+  supplier_id?: number | null;
+  supplier_name?: string | null;
   days_before_tour_min?: number;
   days_before_tour_max?: number;
   refund_percentage: number;
   description?: string;
 };
+
+type SupplierOption = { id: number; supplier_name: string };
 
 type ApproveFormState = {
   refund_percentage: string;
@@ -65,6 +69,8 @@ export default function RefundsPage() {
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [ruleForm, setRuleForm] = useState({ tour_id: "", days_before_tour_min: "", days_before_tour_max: "", refund_percentage: "", description: "" });
   const [savingRule, setSavingRule] = useState(false);
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+  const [supplierFilter, setSupplierFilter] = useState("");
 
   const fetchRequests = useCallback(async (page = 1) => {
     setReqLoading(true);
@@ -84,17 +90,25 @@ export default function RefundsPage() {
   const fetchRules = useCallback(async () => {
     setRulesLoading(true);
     try {
-      const res = await api.get("/refund-rules");
+      const res = await api.get("/refund-rules", { params: supplierFilter ? { supplier_id: supplierFilter } : {} });
       setRules(res.data?.data ?? res.data ?? []);
     } catch {
       toast.error("Could not load refund rules.");
     } finally {
       setRulesLoading(false);
     }
-  }, [toast]);
+  }, [toast, supplierFilter]);
 
   useEffect(() => { void fetchRequests(1); }, [fetchRequests]);
   useEffect(() => { void fetchRules(); }, [fetchRules]);
+  useEffect(() => {
+    api.get("/suppliers", { params: { limit: 1000 } }).then((res) => {
+      const items = res.data?.items ?? [];
+      setSuppliers(Array.isArray(items) ? items : []);
+    }).catch(() => {
+      // Non-fatal -- the supplier filter is a convenience, not required for the rules list itself.
+    });
+  }, []);
 
   const approveRequest = async (req: CancellationRequest) => {
     setProcessingId(req.id);
@@ -228,6 +242,12 @@ export default function RefundsPage() {
       header: "Scope",
       className: "font-semibold text-dash-text",
       render: (rule) => rule.tour_id ? `Tour #${rule.tour_id}${rule.tour_title ? ` - ${rule.tour_title}` : ""}` : "Global",
+    },
+    {
+      key: "supplier",
+      header: "Supplier",
+      className: "text-dash-body",
+      render: (rule) => rule.supplier_name || (rule.tour_id ? "-" : "All suppliers"),
     },
     {
       key: "days",
@@ -440,7 +460,20 @@ export default function RefundsPage() {
         {/* Refund Rules Tab */}
         {activeTab === "Refund Rules" && (
           <div className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-dash-muted">
+                Supplier
+                <select
+                  value={supplierFilter}
+                  onChange={(e) => { setSupplierFilter(e.target.value); setRulePage(1); }}
+                  className="rounded-xl border border-dash-border px-3 py-2 text-sm font-semibold text-dash-text outline-none focus:border-[#0284C7]"
+                >
+                  <option value="">All suppliers</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>{s.supplier_name}</option>
+                  ))}
+                </select>
+              </label>
               <button
                 type="button"
                 onClick={() => setShowRuleForm(v => !v)}

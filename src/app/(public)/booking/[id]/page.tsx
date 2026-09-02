@@ -191,12 +191,17 @@ export default function PublicBookingPage() {
     if (!tour) return { base: 0, extras: 0, total: 0, perPerson: 0 };
     const slab = tour.pricing.find((row) => totalPax >= row.persons_from && (row.persons_to == null || totalPax <= row.persons_to)) || tour.pricing.at(-1);
     const perPerson = slab?.price_per_person || tour.price_start_per_person || 0;
-    const base = perPerson * totalPax;
+    // Children are charged at the tour's own child rate, not the adult rate
+    // -- matches what services.bookings._price_booking actually charges
+    // (adult_unit * adults + child_unit * children), so this estimate never
+    // overcharges a child traveller relative to the real checkout.
+    const childPerPerson = slab?.child_price_per_person ?? perPerson;
+    const base = perPerson * adults + childPerPerson * children;
     const activityIds = values.activityIds || [], extensionIds = values.extensionIds || [];
     const extras = tour.optional_activities.filter((x) => activityIds.includes(x.id)).reduce((sum, x) => sum + Number(x.price || 0) * totalPax, 0)
       + tour.extensions.filter((x) => extensionIds.includes(x.id)).reduce((sum, x) => sum + Number(x.price || 0), 0);
     return { base, extras, total: base + extras, perPerson };
-  }, [tour, totalPax, values.activityIds, values.extensionIds]);
+  }, [tour, totalPax, adults, children, values.activityIds, values.extensionIds]);
   const agentMarkup = isAgent ? Math.max(0, Number(values.agentMarkup) || 0) : 0;
   const customerTotal = pricing.total + agentMarkup;
   // Highlighting only -- the actual charge is whatever the server resolves
@@ -208,6 +213,15 @@ export default function PublicBookingPage() {
   const discountedCustomerTotal = tourHasDiscount && tour?.discount_percentage
     ? customerTotal * (1 - tour.discount_percentage / 100)
     : customerTotal;
+  // Real tour-configured tax %/service fee, applied the same way
+  // services.bookings._price_booking actually charges: tax on the
+  // discounted subtotal, service fee as a flat per-booking add-on -- so the
+  // amount shown here is what the booking will actually be created for.
+  const preTaxTotal = !isAgent && tourHasDiscount ? discountedCustomerTotal : customerTotal;
+  const taxPercentage = Number(tour?.tax_percentage ?? 0);
+  const taxAmount = taxPercentage > 0 ? Math.round(preTaxTotal * taxPercentage) / 100 : 0;
+  const serviceFee = Number(tour?.service_fee ?? 0);
+  const finalCustomerTotal = preTaxTotal + taxAmount + serviceFee;
   const agentPaymentMethod = values.agentPaymentMethod ?? "online";
   // Past the supplier's configured deposit cutoff (days before departure), only
   // full payment is offered -- the balance-due-date formula itself (below) is
@@ -224,14 +238,14 @@ export default function PublicBookingPage() {
     if (!depositEligible || !tour) return null;
     if (tour.deposit_type === "percentage") {
       const pct = tour.deposit_percentage || depositDefaults.percentage;
-      return pct ? customerTotal * (pct / 100) : null;
+      return pct ? finalCustomerTotal * (pct / 100) : null;
     }
     if (tour.booking_deposit && tour.booking_deposit > 0) return Number(tour.booking_deposit);
     // Tour has no deposit of its own configured (deposit_type "fixed" is the
     // column default) -- fall back to the platform default percentage
     // rather than treating that as "no deposit offered".
-    return depositDefaults.percentage ? customerTotal * (depositDefaults.percentage / 100) : null;
-  }, [tour, depositEligible, customerTotal, depositDefaults.percentage]);
+    return depositDefaults.percentage ? finalCustomerTotal * (depositDefaults.percentage / 100) : null;
+  }, [tour, depositEligible, finalCustomerTotal, depositDefaults.percentage]);
   const balanceDueDate = useMemo(() => {
     const balanceDays = tour?.balance_payment_deadline_days ?? depositDefaults.balanceDays;
     if (!depositAmount || !balanceDays || !values.travelDate) return null;
@@ -334,6 +348,7 @@ export default function PublicBookingPage() {
       const response = await api.post(isAgent ? "/bookings" : "/customer/bookings", {
         customer_id: customerId, tour_id: tour.id, tour_calendar_id: selectedCalendar?.id, tour_name: tour.title, tour_date: form.travelDate, tour_start_date: form.travelDate,
         no_of_adults: form.adults, no_of_children: form.children, no_of_infants: form.infants, currency: tour.currency || "USD", booking_source: isAgent ? "agent" : "customer", payment_type: form.paymentType,
+        agreed_terms: form.agreed, agreed_cancellation_policy: form.agreedCancellationPolicy,
         ...(isAgent ? {
           agent_markup: Math.max(0, Number(form.agentMarkup) || 0),
           agent_payment_method: form.agentPaymentMethod,
@@ -471,7 +486,7 @@ export default function PublicBookingPage() {
                 <label className="field-label mt-4">Special requirements<textarea {...register("notes")} rows={3} className="field resize-none" /></label>
               </div>
             )}
-            {step === 4 && <div><Header n="4" title="Review & Confirm" text="Check your trip before creating the booking." /><TourCard tour={tour} hero={hero} />{isAgent && <div className="mt-5"><AgentCommercialFields register={register} paymentMethod={agentPaymentMethod} netPrice={pricing.total} markup={agentMarkup} customerTotal={customerTotal} currency={currency} money={money} /></div>}<div className="mt-5 grid gap-4 sm:grid-cols-2"><ReviewBox title="Trip" rows={[["Booking for", isAgent ? selectedCustomerName || "-" : "Myself"], ["Travel date", values.travelDate || "-"], ["Travellers", `${adults} adult${adults === 1 ? "" : "s"}${children ? `, ${children} child${children === 1 ? "" : "ren"}` : ""}`], ["Contact", values.email || "-"]]} /><ReviewBox title="Price summary" rows={[["Package", money(pricing.base, currency)], ["Upgrades", money(pricing.extras, currency)], ...(isAgent ? [["Agent markup", money(agentMarkup, currency)]] : []), ...(!isAgent && tourHasDiscount && tour.discount_percentage ? [[`Discount (${tour.discount_percentage}% off)`, `- ${money(customerTotal - discountedCustomerTotal, currency)}`]] : []), ["Total", money(!isAgent && tourHasDiscount ? discountedCustomerTotal : customerTotal, currency)]]} /></div>                {isAgent ? (
+            {step === 4 && <div><Header n="4" title="Review & Confirm" text="Check your trip before creating the booking." /><TourCard tour={tour} hero={hero} />{isAgent && <div className="mt-5"><AgentCommercialFields register={register} paymentMethod={agentPaymentMethod} netPrice={pricing.total} markup={agentMarkup} customerTotal={customerTotal} currency={currency} money={money} /></div>}<div className="mt-5 grid gap-4 sm:grid-cols-2"><ReviewBox title="Trip" rows={[["Booking for", isAgent ? selectedCustomerName || "-" : "Myself"], ["Travel date", values.travelDate || "-"], ["Travellers", `${adults} adult${adults === 1 ? "" : "s"}${children ? `, ${children} child${children === 1 ? "" : "ren"}` : ""}`], ["Contact", values.email || "-"]]} /><ReviewBox title="Price summary" rows={[["Package", money(pricing.base, currency)], ["Upgrades", money(pricing.extras, currency)], ...(isAgent ? [["Agent markup", money(agentMarkup, currency)]] : []), ...(!isAgent && tourHasDiscount && tour.discount_percentage ? [[`Discount (${tour.discount_percentage}% off)`, `- ${money(customerTotal - discountedCustomerTotal, currency)}`]] : []), ...(taxAmount > 0 ? [["Tax", money(taxAmount, currency)]] : []), ...(serviceFee > 0 ? [["Service fee", money(serviceFee, currency)]] : []), ["Total", money(finalCustomerTotal, currency)]]} /></div>                {isAgent ? (
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     {agentReserveEligibility.eligible && (
                       <label className={`cursor-pointer rounded-2xl border-2 p-4 ${agentPaymentMethod !== "online" ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
@@ -479,7 +494,7 @@ export default function PublicBookingPage() {
                         <b className="block">Reserve Now</b>
                         <strong className="mt-2 block text-xl text-teal-800">No deposit required</strong>
                         <span className="text-xs text-slate-500">
-                          Balance due: {money(customerTotal, currency)}
+                          Balance due: {money(finalCustomerTotal, currency)}
                           {agentReserveEligibility.dueDate ? ` by ${agentReserveEligibility.dueDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}` : ""}.
                           An invoice is generated and sent once the reservation is created.
                         </span>
@@ -488,7 +503,7 @@ export default function PublicBookingPage() {
                     <label className={`cursor-pointer rounded-2xl border-2 p-4 ${agentPaymentMethod === "online" || !agentReserveEligibility.eligible ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
                       <input type="radio" value="online" {...register("agentPaymentMethod")} className="sr-only" />
                       <b className="block">Pay in Full Today</b>
-                      <strong className="mt-2 block text-xl text-teal-800">{money(customerTotal, currency)}</strong>
+                      <strong className="mt-2 block text-xl text-teal-800">{money(finalCustomerTotal, currency)}</strong>
                       <span className="text-xs text-slate-500">Complete in one payment</span>
                     </label>
                     {!agentReserveEligibility.eligible && (
@@ -510,7 +525,7 @@ export default function PublicBookingPage() {
                     <label className={`cursor-pointer rounded-2xl border-2 p-4 ${values.paymentType === "full" || !depositAmount ? "border-teal-700 bg-teal-50" : "border-slate-200"}`}>
                       <input type="radio" value="full" {...register("paymentType")} className="sr-only" />
                       <b className="block">Pay in Full Today</b>
-                      <strong className="mt-2 block text-xl text-teal-800">{money(customerTotal, currency)}</strong>
+                      <strong className="mt-2 block text-xl text-teal-800">{money(finalCustomerTotal, currency)}</strong>
                       <span className="text-xs text-slate-500">Complete in one payment</span>
                     </label>
                   </div>

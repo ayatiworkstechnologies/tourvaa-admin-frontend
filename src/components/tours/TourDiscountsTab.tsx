@@ -9,6 +9,7 @@ import Loader from "@/components/ui/Loader";
 import DatePicker from "@/components/ui/DatePicker";
 import api from "@/lib/api/client";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
+import { todayLocalDateStr } from "@/lib/utils/date";
 
 function fmt(n: number, currency: string) {
   return `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
@@ -333,7 +334,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                 placeholder="Unlimited"
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
             </label>
-            <DatePicker label="Start date" value={editing.start_date?.slice(0, 10) ?? ""} maxDate={editing.end_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, start_date: date || null } : previous)} />
+            <DatePicker label="Start date" value={editing.start_date?.slice(0, 10) ?? ""} minDate={todayLocalDateStr()} maxDate={editing.end_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, start_date: date || null } : previous)} />
             <DatePicker label="End date" value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, end_date: date || null } : previous)} />
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>

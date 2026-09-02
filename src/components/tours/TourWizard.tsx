@@ -424,6 +424,12 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 onGoToPricing={() => selectStep(WIZARD_STEPS.findIndex((s) => s.id === "pricing"))}
               />
             )}
+            {activeKey === "overview" && (
+              <div className="space-y-6">
+                <TourOverviewTab tourId={tourId} />
+                <TourHighlightsTab tourId={tourId} />
+              </div>
+            )}
             {activeKey === "location" && (
               <div className="space-y-6">
                 <TourFormPage tourId={tourId} embedded role={role} sections={["location"]} formId="wizard-form-location" initialData={tour ?? undefined} onSaved={afterFormSaved} />
@@ -434,12 +440,6 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                     <PhysicalRatingField tourId={tourId} />
                   </div>
                 </div>
-              </div>
-            )}
-            {activeKey === "overview" && (
-              <div className="space-y-6">
-                <TourOverviewTab tourId={tourId} />
-                <TourHighlightsTab tourId={tourId} />
               </div>
             )}
             {activeKey === "itinerary" && <TourItineraryTab tourId={tourId} numberOfDays={tour?.number_of_days ? Number(tour.number_of_days) : undefined} />}
@@ -458,17 +458,16 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 <TourOptionalActivityTab tourId={tourId} />
               </div>
             )}
-            {activeKey === "policies" && (
-              <div className="space-y-6">
-                <TourItemsTab tourId={tourId} segment="inclusions" label="Inclusions" />
-                <TourItemsTab tourId={tourId} segment="exclusions" label="Exclusions" />
-                <CancellationPolicySection tourId={tourId} />
-              </div>
-            )}
             {activeKey === "extensions" && (
               <div className="space-y-6">
                 <TourExtensionsTab tourId={tourId} />
                 <TourSimilarTab tourId={tourId} />
+              </div>
+            )}
+            {activeKey === "inclusions" && (
+              <div className="space-y-6">
+                <TourItemsTab tourId={tourId} segment="inclusions" label="Inclusions" />
+                <TourItemsTab tourId={tourId} segment="exclusions" label="Exclusions" />
               </div>
             )}
             {activeKey === "media" && (
@@ -478,7 +477,10 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
               </div>
             )}
             {activeKey === "seo" && (
-              <TourFormPage tourId={tourId} embedded role={role} sections={["seo", "settings"]} formId="wizard-form-seo" initialData={tour ?? undefined} onSaved={afterFormSaved} />
+              <div className="space-y-6">
+                <TourFormPage tourId={tourId} embedded role={role} sections={["seo", "settings"]} formId="wizard-form-seo" initialData={tour ?? undefined} onSaved={afterFormSaved} />
+                <CancellationPolicySection tourId={tourId} />
+              </div>
             )}
             {activeKey === "review" && tour && (
               <WizardReviewSubmit

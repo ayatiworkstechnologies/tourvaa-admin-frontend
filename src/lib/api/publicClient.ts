@@ -56,6 +56,8 @@ export type PublicTourDetail = PublicTour & {
   deposit_percentage: number | null;
   deposit_cutoff_days: number | null;
   balance_payment_deadline_days: number | null;
+  tax_percentage?: number;
+  service_fee?: number;
   overview: {
     duration_text: string;
     start_location: string;
@@ -94,7 +96,7 @@ export type PublicTourDetail = PublicTour & {
   exclusions: { text: string }[];
   gallery: { image_url: string; alt_text: string; is_banner: boolean }[];
   tour_video_url?: string | null;
-  pricing: { persons_from: number; persons_to: number | null; price_per_person: number; currency: string }[];
+  pricing: { persons_from: number; persons_to: number | null; price_per_person: number; child_price_per_person: number; currency: string }[];
   optional_activities: { id: number; name: string; description: string; price: number | null; currency: string; category: string; image?: string | null }[];
   accommodations: { id: number; name: string; description: string; price: number | null; category: string; image?: string | null }[];
   extensions: { id: number; title: string; description: string; duration_days: number | null; price: number | null; category: string; image?: string | null }[];

@@ -25,6 +25,8 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [defaultRules, setDefaultRules] = useState<RefundRule[]>([]);
+  const [copyingDefaults, setCopyingDefaults] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -41,6 +43,39 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
   useEffect(() => {
     void load();
   }, [load]);
+
+  // The platform-wide default policy (RefundRule rows with no tour_id) this
+  // tour currently falls back to -- shown as a starting point when the tour
+  // has none of its own, since an empty state here could otherwise look like
+  // "no policy" when the default is actually already in effect.
+  useEffect(() => {
+    api.get<{ data: RefundRule[] }>("/refund-rules").then((res) => {
+      setDefaultRules((res.data.data ?? []).filter((r) => r.tour_id == null));
+    }).catch(() => {
+      // Non-fatal -- the "copy defaults" convenience just won't offer itself.
+    });
+  }, []);
+
+  const copyDefaults = async () => {
+    setCopyingDefaults(true);
+    try {
+      for (const rule of defaultRules) {
+        await api.post("/refund-rules", {
+          tour_id: Number(tourId),
+          days_before_tour_min: rule.days_before_tour_min,
+          days_before_tour_max: rule.days_before_tour_max ?? null,
+          refund_percentage: rule.refund_percentage,
+          description: rule.description || null,
+        });
+      }
+      toast.success("Platform default policy copied -- customize it as needed.");
+      await load();
+    } catch {
+      toast.error("Could not copy the default policy.");
+    } finally {
+      setCopyingDefaults(false);
+    }
+  };
 
   const startEdit = (rule: RefundRule) => {
     setEditingId(rule.id);
@@ -116,8 +151,27 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
       </div>
 
       {rules.length === 0 && !showForm && (
-        <div className="rounded-xl border border-dashed border-dash-border p-10 text-center text-sm text-dash-subtle">
-          No tour-specific cancellation rules yet — the global policy applies.
+        <div className="rounded-xl border border-dashed border-dash-border p-6 text-center text-sm text-dash-subtle">
+          <p>No tour-specific cancellation rules yet — the platform's default policy applies for now.</p>
+          {defaultRules.length > 0 && (
+            <>
+              <div className="mx-auto mt-4 max-w-md space-y-1 text-left text-xs">
+                {defaultRules.map((rule) => (
+                  <p key={rule.id}>
+                    <b className="text-dash-text">{rule.days_before_tour_min} – {rule.days_before_tour_max ?? "∞"} days</b> before departure: {rule.refund_percentage}% refund
+                  </p>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={copyDefaults}
+                disabled={copyingDefaults}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-dash-brand px-4 py-2 text-sm font-bold text-dash-brand hover:bg-[#F2F6FF] disabled:opacity-60"
+              >
+                {copyingDefaults ? "Copying..." : "Use these as my starting policy"}
+              </button>
+            </>
+          )}
         </div>
       )}
 

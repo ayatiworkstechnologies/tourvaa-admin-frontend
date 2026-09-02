@@ -65,6 +65,12 @@ type Booking = {
     surcharge_amount?: string | number;
     final_amount?: string | number;
   };
+  deposit_config?: {
+    deposit_type: "fixed" | "percentage";
+    deposit_percentage: number | null;
+    booking_deposit: string | null;
+    still_available: boolean;
+  } | null;
 };
 
 type Invoice = {
@@ -451,6 +457,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           totalAmount={Number(booking.final_amount ?? 0)}
           amountPaid={Number(booking.amount_paid ?? 0)}
           preferredPaymentType={booking.payment_type}
+          depositConfig={booking.deposit_config}
           currency={booking.currency || "USD"}
           returnPath={`/agent/bookings/${booking.id}`}
           onClose={() => setShowPayment(false)}

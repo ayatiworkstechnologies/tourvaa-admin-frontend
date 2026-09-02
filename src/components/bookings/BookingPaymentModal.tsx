@@ -7,8 +7,15 @@ import api from "@/lib/api/client";
 
 type GatewayStatus = { stripe: boolean; paypal: boolean; test_mode_available: boolean } | null;
 
+type DepositConfig = {
+  deposit_type: "fixed" | "percentage";
+  deposit_percentage: number | null;
+  booking_deposit: string | null;
+  still_available: boolean;
+} | null | undefined;
+
 export default function BookingPaymentModal({
-  bookingId, outstandingAmount, totalAmount, amountPaid, preferredPaymentType,
+  bookingId, outstandingAmount, totalAmount, amountPaid, preferredPaymentType, depositConfig,
   currency, returnPath, onClose, onSuccess,
 }: {
   bookingId: number;
@@ -16,13 +23,25 @@ export default function BookingPaymentModal({
   totalAmount: number;
   amountPaid: number;
   preferredPaymentType?: "partial" | "full";
+  depositConfig?: DepositConfig;
   currency: string;
   returnPath: string;
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const depositDue = Math.min(outstandingAmount, Math.max(0, Math.round((totalAmount * 0.3 - amountPaid) * 100) / 100));
-  const partialAvailable = depositDue > 0 && depositDue < outstandingAmount;
+  // Deposit amount comes from the tour's own configured terms (percentage or
+  // fixed, resolved server-side by services.bookings._deposit_config, same
+  // fallback-to-platform-default logic the actual payment validation uses)
+  // -- never a hardcoded percentage, which would silently disagree with
+  // whatever the tour/admin actually configured.
+  const depositLabel = depositConfig?.deposit_type === "percentage"
+    ? `${depositConfig.deposit_percentage ?? 0}% deposit`
+    : "Deposit";
+  const depositAmount = depositConfig?.deposit_type === "percentage"
+    ? totalAmount * ((depositConfig.deposit_percentage ?? 0) / 100)
+    : Number(depositConfig?.booking_deposit ?? 0);
+  const depositDue = Math.min(outstandingAmount, Math.max(0, Math.round((depositAmount - amountPaid) * 100) / 100));
+  const partialAvailable = Boolean(depositConfig?.still_available) && depositDue > 0 && depositDue < outstandingAmount;
   const [paymentType, setPaymentType] = useState<"partial" | "full">(
     preferredPaymentType === "partial" && partialAvailable ? "partial" : "full",
   );
@@ -114,7 +133,7 @@ export default function BookingPaymentModal({
         {partialAvailable && (
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {[
-              { value: "partial" as const, label: "30% deposit", amount: depositDue },
+              { value: "partial" as const, label: depositLabel, amount: depositDue },
               { value: "full" as const, label: "Full payment", amount: outstandingAmount },
             ].map((option) => (
               <button key={option.value} type="button" onClick={() => setPaymentType(option.value)} disabled={Boolean(loading)} className={`rounded-2xl border-2 p-3 text-left ${paymentType === option.value ? "border-orange-500 bg-orange-50" : "border-dash-border"}`}>
