@@ -67,6 +67,24 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  // Platform-wide default commission rates -- resolved once here so the
+  // Commission column can show the EXACT percentage that actually applies
+  // (matching services.bookings.resolve_effective_commission_percentage /
+  // get_agent_default_commission / get_affiliate_default_commission) rather
+  // than a vague "platform default" label with no number.
+  const [defaultCommissions, setDefaultCommissions] = useState({ supplier: 0, agent: 0, affiliate: 0 });
+  useEffect(() => {
+    api.get("/settings/public").then((res) => {
+      const settings = res.data?.data ?? {};
+      setDefaultCommissions({
+        supplier: Number(settings.supplier_commission_percentage ?? 0),
+        agent: Number(settings.agent_default_commission_percentage ?? 0),
+        affiliate: Number(settings.affiliate_default_commission_value ?? 0),
+      });
+    }).catch(() => {
+      // Non-fatal -- rows with their own commission set still display correctly.
+    });
+  }, []);
 
   async function handleExport() {
     setExporting(true);
@@ -195,6 +213,15 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     { key: "status", header: "Status", render: (row) => <StatusBadge value={row.status} /> },
     { key: "approval_status", header: "Approval", render: (row) => <StatusBadge value={row.approval_status} /> },
     { key: "activity", header: module === "suppliers" ? "Tours" : "Bookings", render: (row) => module === "suppliers" ? row.number_of_tours ?? 0 : row.total_bookings ?? 0 },
+    {
+      key: "commission",
+      header: "Commission",
+      render: (row) => {
+        const own = row.commission_percentage != null ? Number(row.commission_percentage) : null;
+        const resolved = own && own > 0 ? own : defaultCommissions.affiliate;
+        return <span className="font-bold text-dash-text">{resolved}%</span>;
+      },
+    },
   ];
 
   const supplierColumns: DataTableColumn<ReviewRecord>[] = [
@@ -263,6 +290,14 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         </div>
       ),
     },
+    {
+      key: "commission",
+      header: "Commission",
+      render: (row) => {
+        const resolved = row.commission_percentage != null ? Number(row.commission_percentage) : defaultCommissions.supplier;
+        return <span className="font-bold text-dash-text">{resolved}%</span>;
+      },
+    },
   ];
 
   const agentColumns: DataTableColumn<ReviewRecord>[] = [
@@ -325,6 +360,16 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
       key: "activity",
       header: "Bookings",
       render: (row) => row.total_bookings ?? 0,
+    },
+    {
+      key: "commission",
+      header: "Commission",
+      render: (row) => {
+        const own = row.discount_value != null && row.discount_value > 0 ? row.discount_value : null;
+        const suffix = own != null && row.discount_type !== "percentage" ? "" : "%";
+        const resolved = own ?? defaultCommissions.agent;
+        return <span className="font-bold text-dash-text">{resolved}{suffix}</span>;
+      },
     },
   ];
 
