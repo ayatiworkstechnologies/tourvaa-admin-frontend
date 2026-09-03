@@ -36,19 +36,54 @@ jobs:
       - run: npm ci
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
-      - name: Contract tests (tests/run-tests.mjs)
-        run: |
-          node tests/run-tests.mjs > /tmp/contract-test-output.txt 2>&1
-          status=$?
-          cat /tmp/contract-test-output.txt
-          if [ $status -ne 0 ]; then
-            echo "----- surfacing tail as annotations for diagnosis -----"
-            tail -n 40 /tmp/contract-test-output.txt | while IFS= read -r line; do
-              safe=$(echo "$line" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
-              echo "::error::$safe"
-            done
-            exit $status
-          fi
+      - name: Contract - module-routes
+        if: always()
+        run: node tests/module-routes.test.mjs
+      - name: Contract - module-services
+        if: always()
+        run: node tests/module-services.test.mjs
+      - name: Contract - module-permissions
+        if: always()
+        run: node tests/module-permissions.test.mjs
+      - name: Contract - module-components
+        if: always()
+        run: node tests/module-components.test.mjs
+      - name: Contract - dashboard
+        if: always()
+        run: node tests/dashboard.test.mjs
+      - name: Contract - auth-flow
+        if: always()
+        run: node tests/auth-flow.test.mjs
+      - name: Contract - api-contract
+        if: always()
+        run: node tests/api-contract.test.mjs
+      - name: Contract - currency-flow
+        if: always()
+        run: node tests/currency-flow.test.mjs
+      - name: Contract - calendar-flow
+        if: always()
+        run: node tests/calendar-flow.test.mjs
+      - name: Contract - metadata-flow
+        if: always()
+        run: node tests/metadata-flow.test.mjs
+      - name: Contract - customer-flow
+        if: always()
+        run: node tests/customer-flow.test.mjs
+      - name: Contract - supplier-flow
+        if: always()
+        run: node tests/supplier-flow.test.mjs
+      - name: Contract - agent-flow
+        if: always()
+        run: node tests/agent-flow.test.mjs
+      - name: Contract - admin-flow
+        if: always()
+        run: node tests/admin-flow.test.mjs
+      - name: Contract - overall-flow
+        if: always()
+        run: node tests/overall-flow.test.mjs
+      - name: Contract - responsive-flow
+        if: always()
+        run: node tests/responsive-flow.test.mjs
       - name: Unit tests (vitest)
         run: npx vitest run
       - name: Type-check
