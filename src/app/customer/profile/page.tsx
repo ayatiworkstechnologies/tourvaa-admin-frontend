@@ -4,10 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import {
-  LuCheck as Check,
-  LuLoaderCircle as Loader2,
-} from "react-icons/lu";
+import { LuCheck as Check, LuLoaderCircle as Loader2 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -60,7 +57,9 @@ export default function CustomerProfilePage() {
   const [dob, setDob] = useState("November 14, 1994");
   const [nationality, setNationality] = useState("American");
   const [gender, setGender] = useState("Female");
-  const [address, setAddress] = useState("58 Sunset Blvd, Los Angeles, CA 90028");
+  const [address, setAddress] = useState(
+    "58 Sunset Blvd, Los Angeles, CA 90028",
+  );
 
   // Passport & Travel Documents
   const [passportNumber, setPassportNumber] = useState("US-X4829301");
@@ -72,7 +71,9 @@ export default function CustomerProfilePage() {
   const [emergencyName, setEmergencyName] = useState("David Mitchell");
   const [emergencyRelation, setEmergencyRelation] = useState("Spouse");
   const [emergencyPhone, setEmergencyPhone] = useState("+1 (555) 901-3382");
-  const [emergencyEmail, setEmergencyEmail] = useState("david.mitchell@email.com");
+  const [emergencyEmail, setEmergencyEmail] = useState(
+    "david.mitchell@email.com",
+  );
 
   // Profile Image
   const [profileImage, setProfileImage] = useState<string>("");
@@ -97,8 +98,10 @@ export default function CustomerProfilePage() {
           if (d.email) setEmail(d.email);
           if (d.phone) setPhone(d.phone);
           if (d.profile_image) setProfileImage(d.profile_image);
-          if (d.address || d.address_line_1) setAddress(d.address || d.address_line_1);
-          if (d.country_name || d.country) setNationality(d.country_name || d.country);
+          if (d.address || d.address_line_1)
+            setAddress(d.address || d.address_line_1);
+          if (d.country_name || d.country)
+            setNationality(d.country_name || d.country);
         }
       } catch {
         if (user) {
@@ -170,7 +173,11 @@ export default function CustomerProfilePage() {
       router.push("/customer/dashboard");
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || err.response?.data?.detail || "Could not save profile.");
+        toast.error(
+          err.response?.data?.message ||
+            err.response?.data?.detail ||
+            "Could not save profile.",
+        );
       } else {
         toast.success("Profile updated successfully.");
         router.push("/customer/dashboard");
@@ -193,13 +200,18 @@ export default function CustomerProfilePage() {
           </p>
         </div>
 
-        <form onSubmit={handleSave} className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_310px]">
+        <form
+          onSubmit={handleSave}
+          className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_310px]"
+        >
           {/* ── Left Column: Form Sections ── */}
           <div className="space-y-6">
             {/* 1. Personal Information */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
               <div>
-                <h2 className="text-sm font-bold text-[#0B1527]">Personal Information</h2>
+                <h2 className="text-sm font-bold text-[#0B1527]">
+                  Personal Information
+                </h2>
                 <p className="mt-0.5 text-[11px] text-slate-400">
                   Your core traveler details used for flight and hotel bookings.
                 </p>
@@ -330,7 +342,9 @@ export default function CustomerProfilePage() {
             {/* 2. Passport & Travel Documents */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
               <div>
-                <h2 className="text-sm font-bold text-[#0B1527]">Passport & Travel Documents</h2>
+                <h2 className="text-sm font-bold text-[#0B1527]">
+                  Passport & Travel Documents
+                </h2>
                 <p className="mt-0.5 text-[11px] text-slate-400">
                   Required for international tour reservations.
                 </p>
@@ -400,7 +414,9 @@ export default function CustomerProfilePage() {
             {/* 3. Emergency Contact */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
               <div>
-                <h2 className="text-sm font-bold text-[#0B1527]">Emergency Contact</h2>
+                <h2 className="text-sm font-bold text-[#0B1527]">
+                  Emergency Contact
+                </h2>
                 <p className="mt-0.5 text-[11px] text-slate-400">
                   Who we can reach out to in case of an on-trip emergency.
                 </p>
@@ -486,7 +502,9 @@ export default function CustomerProfilePage() {
           <div className="space-y-6">
             {/* Widget 1: Profile Photo */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
-              <h3 className="text-xs font-bold text-[#0B1527]">Profile Photo</h3>
+              <h3 className="text-xs font-bold text-[#0B1527]">
+                Profile Photo
+              </h3>
 
               <div className="my-5 flex justify-center">
                 {profileImage ? (
@@ -536,7 +554,9 @@ export default function CustomerProfilePage() {
             {/* Widget 2: Profile Strength */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-[#0B1527]">Profile Strength</h3>
+                <h3 className="text-xs font-bold text-[#0B1527]">
+                  Profile Strength
+                </h3>
                 <span className="text-xs font-bold text-emerald-500">90%</span>
               </div>
 
@@ -546,7 +566,8 @@ export default function CustomerProfilePage() {
               </div>
 
               <p className="mt-3 text-[10px] leading-relaxed text-slate-400">
-                Complete your profile to unlock faster bookings and personalized tour recommendations.
+                Complete your profile to unlock faster bookings and personalized
+                tour recommendations.
               </p>
 
               {/* Checklist */}

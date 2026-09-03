@@ -11,6 +11,8 @@ import {
   LuCalendar as Calendar,
   LuCheck as Check,
   LuChevronDown as ChevronDown,
+  LuChevronLeft as ChevronLeft,
+  LuChevronRight as ChevronRight,
   LuChevronUp as ChevronUp,
   LuCircleX as XCircle,
   LuClock as Clock,
@@ -172,6 +174,27 @@ type SimilarItem = {
   slug?: string;
 };
 
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const AVAILABILITY_PAGE_SIZE = 3;
+
+function parseDepartureDate(value: string) {
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  const parsed = iso
+    ? new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]))
+    : new Date(value.replace(/,\s*[A-Za-z]+$/, ""));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function departureMonthKey(value: string) {
+  const date = parseDepartureDate(value);
+  return date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}` : "";
+}
+
+function departureDateLabel(value: string) {
+  const date = parseDepartureDate(value);
+  return date ? `${date.getDate()} ${SHORT_MONTHS[date.getMonth()]}` : value.split(",")[0];
+}
+
 const FALLBACK_SIMILAR: SimilarItem[] = [
   {
     id: 101,
@@ -236,6 +259,7 @@ export default function TourDetailExperience({
         .map((c) => ({
           date: c.date,
           price: Number(tour.price_start_per_person || 1182),
+          slots: c.slots,
           status: c.status === "sold_out" || c.slots <= 0
             ? "Sold Out"
             : c.slots <= 4
@@ -244,13 +268,26 @@ export default function TourDetailExperience({
         }));
     }
     return [
-      { date: "15 Sep 2026, Tuesday", price: 1182, status: "Available" },
-      { date: "22 Sep 2026, Tuesday", price: 1240, status: "Available" },
-      { date: "05 Oct 2026, Monday", price: 1182, status: "Limited" },
-      { date: "19 Oct 2026, Monday", price: 1240, status: "Available" },
-      { date: "02 Nov 2026, Monday", price: 1150, status: "Sold Out" },
+      { date: "15 Sep 2026, Tuesday", price: 1182, slots: 12, status: "Available" },
+      { date: "22 Sep 2026, Tuesday", price: 1240, slots: 8, status: "Available" },
+      { date: "05 Oct 2026, Monday", price: 1182, slots: 3, status: "Limited" },
+      { date: "19 Oct 2026, Monday", price: 1240, slots: 10, status: "Available" },
+      { date: "02 Nov 2026, Monday", price: 1150, slots: 0, status: "Sold Out" },
     ];
   }, [tour.calendar, tour.price_start_per_person]);
+
+  const departureMonths = useMemo(() => {
+    const months = new Map<string, string>();
+    dynamicCalendar.forEach((departure) => {
+      const date = parseDepartureDate(departure.date);
+      if (!date) return;
+      const value = departureMonthKey(departure.date);
+      months.set(value, date.toLocaleDateString("en-US", { month: "long", year: "numeric" }));
+    });
+    return [...months.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([value, label]) => ({ value, label }));
+  }, [dynamicCalendar]);
 
   const [adults, setAdults] = useState(initialAdults || 2);
   const [children, setChildren] = useState(initialChildren || 0);
@@ -262,7 +299,29 @@ export default function TourDetailExperience({
     || dynamicCalendar[0]?.date
     || "15 Sep 2026"
   );
-  const [selectedDateIdx, setSelectedDateIdx] = useState(0);
+  const [selectedDepartureMonth, setSelectedDepartureMonth] = useState(
+    () => departureMonthKey(initialTravelDate || selectedDate) || departureMonths[0]?.value || ""
+  );
+  const [availabilityPage, setAvailabilityPage] = useState(1);
+  const availabilityPageCount = Math.max(1, Math.ceil(dynamicCalendar.length / AVAILABILITY_PAGE_SIZE));
+  const currentAvailabilityPage = Math.min(availabilityPage, availabilityPageCount);
+  const paginatedCalendar = dynamicCalendar.slice(
+    (currentAvailabilityPage - 1) * AVAILABILITY_PAGE_SIZE,
+    currentAvailabilityPage * AVAILABILITY_PAGE_SIZE,
+  );
+  const selectedDepartureMonthIndex = departureMonths.findIndex((month) => month.value === selectedDepartureMonth);
+  const visibleDepartures = useMemo(
+    () => dynamicCalendar
+      .filter((departure) => departureMonthKey(departure.date) === selectedDepartureMonth)
+      .sort((left, right) => (parseDepartureDate(left.date)?.getTime() ?? 0) - (parseDepartureDate(right.date)?.getTime() ?? 0)),
+    [dynamicCalendar, selectedDepartureMonth],
+  );
+
+  useEffect(() => {
+    if (departureMonths.length > 0 && !departureMonths.some((month) => month.value === selectedDepartureMonth)) {
+      setSelectedDepartureMonth(departureMonths[0].value);
+    }
+  }, [departureMonths, selectedDepartureMonth]);
 
   // Itinerary accordion
   const [openItineraryDays, setOpenItineraryDays] = useState<Record<number, boolean>>({ 1: true });
@@ -1016,19 +1075,18 @@ export default function TourDetailExperience({
               </p>
 
               <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {dynamicCalendar.map((dep, dIdx) => {
+                {paginatedCalendar.map((dep) => {
                   const soldOut = dep.status === "Sold Out";
                   const limited = dep.status === "Limited";
                   const selected = !soldOut && selectedDate === dep.date;
                   return (
                     <button
-                      key={dIdx}
+                      key={dep.date}
                       type="button"
                       disabled={soldOut}
                       onClick={() => {
                         if (soldOut) return;
                         setSelectedDate(dep.date);
-                        setSelectedDateIdx(dIdx);
                       }}
                       className={`rounded-2xl border p-3.5 text-left transition ${
                         soldOut
@@ -1065,6 +1123,37 @@ export default function TourDetailExperience({
                   );
                 })}
               </div>
+
+              {availabilityPageCount > 1 && (
+                <nav className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4" aria-label="Availability pagination">
+                  <p className="text-[11px] font-semibold text-slate-400">
+                    Showing {(currentAvailabilityPage - 1) * AVAILABILITY_PAGE_SIZE + 1}–{Math.min(currentAvailabilityPage * AVAILABILITY_PAGE_SIZE, dynamicCalendar.length)} of {dynamicCalendar.length} dates
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label="Previous availability page"
+                      disabled={currentAvailabilityPage === 1}
+                      onClick={() => setAvailabilityPage((page) => Math.max(1, page - 1))}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-35"
+                    >
+                      <ChevronLeft size={15} />
+                    </button>
+                    <span className="min-w-17 text-center text-[11px] font-bold text-slate-600">
+                      Page {currentAvailabilityPage} of {availabilityPageCount}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Next availability page"
+                      disabled={currentAvailabilityPage === availabilityPageCount}
+                      onClick={() => setAvailabilityPage((page) => Math.min(availabilityPageCount, page + 1))}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700 transition hover:border-blue-400 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-35"
+                    >
+                      <ChevronRight size={15} />
+                    </button>
+                  </div>
+                </nav>
+              )}
             </div>
           </div>
 
@@ -1110,47 +1199,84 @@ export default function TourDetailExperience({
                 </div>
               )}
 
-              {/* Date selection tabs */}
-              <div className="mt-4 space-y-2">
+              {/* Month-based departure selector */}
+              <div className="mt-4">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Select Departure
+                  Tour availability
                 </label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[...dynamicCalendar].sort((a, b) => (a.status === "Sold Out" ? 1 : 0) - (b.status === "Sold Out" ? 1 : 0)).slice(0, 3).map((dep, i) => {
-                    const soldOut = dep.status === "Sold Out";
-                    const selected = !soldOut && selectedDate === dep.date;
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        disabled={soldOut}
-                        onClick={() => {
-                          if (soldOut) return;
-                          setSelectedDate(dep.date);
-                          setSelectedDateIdx(i);
-                        }}
-                        className={`rounded-xl border p-2 text-center transition ${
-                          soldOut
-                            ? "cursor-not-allowed border-slate-100 bg-slate-50"
-                            : selected
-                              ? "border-blue-600 bg-blue-50/80 shadow-2xs"
-                              : "border-slate-200 bg-white hover:border-slate-300"
-                        }`}
-                      >
-                        <p className={`text-[9px] font-semibold truncate ${soldOut ? "text-slate-400" : "text-slate-500"}`}>
-                          {dep.date.split(",")[0]}
-                        </p>
-                        {soldOut ? (
-                          <p className="text-[10px] font-bold text-slate-400">Sold Out</p>
-                        ) : (
-                          <p className="text-xs font-black text-slate-900">
-                            {format(dep.price, tour.currency || "USD")}
-                          </p>
-                        )}
-                      </button>
-                    );
-                  })}
+
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label="Previous available month"
+                    disabled={selectedDepartureMonthIndex <= 0}
+                    onClick={() => setSelectedDepartureMonth(departureMonths[selectedDepartureMonthIndex - 1]?.value ?? selectedDepartureMonth)}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+
+                  <div className="relative min-w-0 flex-1">
+                    <select
+                      aria-label="Choose departure month"
+                      value={selectedDepartureMonth}
+                      onChange={(event) => setSelectedDepartureMonth(event.target.value)}
+                      className="h-10 w-full appearance-none rounded-full border-2 border-blue-200 bg-white px-4 pr-10 text-center text-sm font-black text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    >
+                      {departureMonths.map((month) => (
+                        <option key={month.value} value={month.value}>{month.label}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={17} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-800" />
+                  </div>
+
+                  <button
+                    type="button"
+                    aria-label="Next available month"
+                    disabled={selectedDepartureMonthIndex < 0 || selectedDepartureMonthIndex >= departureMonths.length - 1}
+                    onClick={() => setSelectedDepartureMonth(departureMonths[selectedDepartureMonthIndex + 1]?.value ?? selectedDepartureMonth)}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700 transition hover:border-blue-400 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
                 </div>
+
+                {visibleDepartures.length > 0 ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {visibleDepartures.map((dep) => {
+                      const soldOut = dep.status === "Sold Out";
+                      const limited = dep.status === "Limited";
+                      const selected = !soldOut && selectedDate === dep.date;
+                      return (
+                        <button
+                          key={dep.date}
+                          type="button"
+                          disabled={soldOut}
+                          aria-pressed={selected}
+                          onClick={() => setSelectedDate(dep.date)}
+                          className={`min-h-20 rounded-xl border p-3 text-center transition ${
+                            soldOut
+                              ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                              : selected
+                                ? "border-blue-600 bg-blue-50 text-blue-950 shadow-xs ring-1 ring-blue-600"
+                                : "border-slate-200 bg-white text-slate-900 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xs"
+                          }`}
+                        >
+                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${soldOut ? "bg-white/60 text-slate-700" : selected ? "bg-white text-blue-900" : "bg-slate-50 text-slate-900"}`}>
+                            {departureDateLabel(dep.date)}
+                          </span>
+                          <span className={`mt-2 block text-xs font-black ${soldOut ? "text-red-500" : limited ? "text-amber-600" : "text-emerald-600"}`}>
+                            {soldOut ? "Sold Out" : limited ? `${dep.slots} spots left` : "Available"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-xs font-semibold text-slate-500">
+                    No departure dates available for this month.
+                  </div>
+                )}
               </div>
 
               {/* Guest counters */}
