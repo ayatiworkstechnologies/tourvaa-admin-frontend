@@ -34,7 +34,7 @@ export default function CustomerPortalHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-100 bg-white text-slate-900 shadow-xs">
       <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-4 px-6 sm:h-[84px] lg:px-8">
-        <Link href="/customer/dashboard" className="text-2xl font-extrabold tracking-tight text-[#0B1527]">
+        <Link href="/" className="text-2xl font-extrabold tracking-tight text-[#0B1527]">
           Tourvaa
         </Link>
         <nav className="flex items-center gap-5 sm:gap-7">
