@@ -152,7 +152,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
 
       {rules.length === 0 && !showForm && (
         <div className="rounded-xl border border-dashed border-dash-border p-6 text-center text-sm text-dash-subtle">
-          <p>No tour-specific cancellation rules yet — the platform's default policy applies for now.</p>
+          <p>No tour-specific cancellation rules yet — the platform&apos;s default policy applies for now.</p>
           {defaultRules.length > 0 && (
             <>
               <div className="mx-auto mt-4 max-w-md space-y-1 text-left text-xs">

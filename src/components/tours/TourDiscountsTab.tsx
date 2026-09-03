@@ -407,7 +407,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                         {v.discount_value}{v.discount_type === "percentage" ? "%" : ""} off
                         {v.end_date ? ` -- valid until ${v.end_date.slice(0, 10)}` : ""}
                       </p>
-                      {v.reason && <p className="mt-1 text-xs text-dash-subtle">"{v.reason}"</p>}
+                      {v.reason && <p className="mt-1 text-xs text-dash-subtle">&quot;{v.reason}&quot;</p>}
                     </div>
                   ))}
                 </div>

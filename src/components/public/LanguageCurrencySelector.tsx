@@ -45,7 +45,7 @@ function applyLanguage(langCode: string) {
   const apex = host.split(".").slice(-2).join(".");
   document.cookie = `googtrans=${val}; path=/; domain=${host}`;
   document.cookie = `googtrans=${val}; path=/; domain=.${apex}`;
-  const gt = (window as any).google?.translate?.TranslateElement?.getInstance?.();
+  const gt = (window as unknown as { google?: { translate?: { TranslateElement?: { getInstance?: () => { setLanguage?: (code: string) => void } } } } }).google?.translate?.TranslateElement?.getInstance?.();
   if (gt?.setLanguage) {
     gt.setLanguage(langCode);
   } else {

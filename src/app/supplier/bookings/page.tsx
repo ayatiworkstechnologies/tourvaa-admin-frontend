@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuFilter as Filter, LuCircleX as XCircle } from "react-icons/lu";
+import axios from "axios";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import DatePicker from "@/components/ui/DatePicker";
@@ -126,8 +127,9 @@ export default function SupplierBookingsPage() {
       const updated = res.data?.data;
       setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, payment_due_date: updated?.payment_due_date ?? value } : b)));
       toast.success("Due date updated.");
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Could not update due date. Please try again.");
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.detail : undefined;
+      toast.error(message || "Could not update due date. Please try again.");
     } finally {
       setSavingDueDateId(null);
     }

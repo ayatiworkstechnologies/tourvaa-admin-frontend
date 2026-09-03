@@ -383,9 +383,8 @@ export default function TourDetailExperience({
   }, [tour.exclusions]);
 
   // Dynamic Itinerary
-  const dynamicItinerary = useMemo(() => {
-    if (tour.itineraries && tour.itineraries.length > 0) {
-      return tour.itineraries.map((it, idx) => ({
+  const dynamicItinerary = tour.itineraries && tour.itineraries.length > 0
+    ? tour.itineraries.map((it, idx) => ({
         day: it.day || idx + 1,
         title: it.title || `Day ${idx + 1} Exploration`,
         desc: it.description || "Scenic journey with guided excursions and cultural experiences.",
@@ -395,10 +394,8 @@ export default function TourDetailExperience({
           it.location ? `Exploring ${it.location}` : "Guided landmark sightseeing",
         ],
         photos: galleryImages.slice(idx % 3, (idx % 3) + 2),
-      }));
-    }
-    return FALLBACK_ITINERARY;
-  }, [tour.itineraries, galleryImages]);
+      }))
+    : FALLBACK_ITINERARY;
 
   // Dynamic Accommodations / Where You'll Stay
   const dynamicHotels = useMemo(() => {

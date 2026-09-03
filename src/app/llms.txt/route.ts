@@ -5,7 +5,7 @@ export const revalidate = 3600;
 
 const API_BASE = (process.env.API_PROXY_TARGET || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
-async function safeJson(path: string): Promise<any> {
+async function safeJson(path: string): Promise<Record<string, unknown> | null> {
   try {
     // cache: "no-store" - see the comment on fetchTourForSeo in
     // src/lib/seo/tourMetadata.ts for why this isn't { next: { revalidate } }.

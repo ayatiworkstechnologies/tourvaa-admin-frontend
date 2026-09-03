@@ -25,7 +25,7 @@ const staticPages: Array<{
   { path: "/accessibility", changeFrequency: "yearly", priority: 0.3 },
 ];
 
-async function safeJson(path: string): Promise<any> {
+async function safeJson(path: string): Promise<Record<string, unknown> | null> {
   try {
     // cache: "no-store" - see the comment on fetchTourForSeo in
     // src/lib/seo/tourMetadata.ts for why this isn't { next: { revalidate } }.
@@ -43,7 +43,10 @@ async function tourEntries(): Promise<MetadataRoute.Sitemap> {
   let page = 1;
   let totalPages = 1;
   do {
-    const json = await safeJson(`/api/public/tours?page=${page}&limit=${limit}`);
+    const json = await safeJson(`/api/public/tours?page=${page}&limit=${limit}`) as {
+      total_pages?: number;
+      items?: { country_slug?: string; country_name?: string; slug: string }[];
+    } | null;
     if (!json) break;
     totalPages = json.total_pages || 1;
     for (const tour of json.items || []) {
@@ -60,7 +63,7 @@ async function tourEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 async function countryEntries(): Promise<MetadataRoute.Sitemap> {
-  const json = await safeJson("/api/public/countries");
+  const json = await safeJson("/api/public/countries") as { items?: { tour_count?: number; country_name: string }[] } | null;
   if (!json) return [];
   return (json.items || [])
     .filter((c: { tour_count?: number }) => (c.tour_count ?? 0) > 0)
@@ -72,7 +75,10 @@ async function countryEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 async function blogEntries(): Promise<MetadataRoute.Sitemap> {
-  const json = await safeJson("/api/cms/blogs?active_only=true&limit=200");
+  const json = await safeJson("/api/cms/blogs?active_only=true&limit=200") as {
+    items?: { slug: string; updated_at?: string }[];
+    data?: { slug: string; updated_at?: string }[];
+  } | null;
   if (!json) return [];
   return (json.items || json.data || []).map((blog: { slug: string; updated_at?: string }) => ({
     url: `${SITE_URL}/blogs/${blog.slug}`,

@@ -30,6 +30,23 @@ type Booking = {
   currency?: string;
 };
 
+type ApiBooking = {
+  id: number | string;
+  booking_code?: string;
+  tour_name?: string;
+  tour_date?: string;
+  tour_image?: string;
+  created_at?: string;
+  no_of_adults?: number;
+  no_of_children?: number;
+  booking_status?: string;
+  final_amount?: string | number;
+  currency?: string;
+  payment_due_date?: string | null;
+  amount_paid?: string | number;
+  amount_pending?: string | number;
+};
+
 const DEFAULT_BOOKINGS: Booking[] = [
   {
     id: 1,
@@ -159,7 +176,7 @@ export default function CustomerBookingsPage() {
         const res = await api.get("/customer/bookings", { params: { limit: 50, page: 1 } });
         const items = res.data?.items ?? res.data?.data ?? [];
         if (items.length > 0) {
-          const mapped: Booking[] = items.map((b: any, idx: number) => {
+          const mapped: Booking[] = items.map((b: ApiBooking, idx: number) => {
             const fallback = DEFAULT_BOOKINGS[idx % DEFAULT_BOOKINGS.length];
             const dateStr = b.tour_date
               ? new Date(b.tour_date).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })

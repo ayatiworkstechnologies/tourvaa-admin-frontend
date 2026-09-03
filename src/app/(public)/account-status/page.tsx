@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LuClock3 as Clock, LuLogOut as LogOut, LuRefreshCw as Refresh } from "react-icons/lu";
 import api from "@/lib/api/client";
@@ -43,6 +44,6 @@ export default function AccountStatusPage() {
     <p className="mt-3 text-sm leading-6 text-slate-500">{details.text}</p>
     {user && <p className="mt-4 rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-600">{user.email} · {user.user_type}</p>}
     <div className="mt-7 flex justify-center gap-3"><button onClick={() => void refresh()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white"><Refresh size={15} />{loading ? "Checking…" : "Refresh status"}</button><button onClick={() => void signOut()} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700"><LogOut size={15} />Sign out</button></div>
-    {supportEmail ? <a href={`mailto:${supportEmail}`} className="mt-6 inline-block text-sm font-bold text-blue-600">Contact support</a> : <a href="/contact" className="mt-6 inline-block text-sm font-bold text-blue-600">Contact support</a>}
+    {supportEmail ? <a href={`mailto:${supportEmail}`} className="mt-6 inline-block text-sm font-bold text-blue-600">Contact support</a> : <Link href="/contact" className="mt-6 inline-block text-sm font-bold text-blue-600">Contact support</Link>}
   </section></main>;
 }
