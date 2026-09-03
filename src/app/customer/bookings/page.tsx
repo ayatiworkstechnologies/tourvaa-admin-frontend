@@ -12,6 +12,7 @@ import {
 import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
+import DatePicker from "@/components/ui/DatePicker";
 
 type Booking = {
   id: number | string;
@@ -244,15 +245,13 @@ export default function CustomerBookingsPage() {
             </div>
 
             {/* Choose Dates */}
-            <div className="relative">
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 outline-none shadow-2xs focus:border-blue-500 focus:ring-1 focus:ring-blue-100 cursor-pointer"
-                title="Choose dates"
-              />
-            </div>
+            <DatePicker
+              value={dateFilter}
+              onChange={setDateFilter}
+              placeholder="Choose dates"
+              className="w-44"
+              buttonClassName="py-2 text-xs"
+            />
           </div>
         </div>
 

@@ -152,7 +152,7 @@ export default function CustomerWishlistPage() {
       reviews: "2,460 reviews",
       price: w.price ? format(w.price, w.currency) : "₹85,000",
       image: mediaUrl(w.image) || DEFAULT_WISHLIST_TOURS[idx % DEFAULT_WISHLIST_TOURS.length].image,
-      href: w.href || `/tours/${w.id}`,
+      href: w.href || `/booking/${w.id}`,
     }));
 
     // If user has fewer than 9 items, append curated ones to maintain full layout

@@ -126,7 +126,7 @@ export default function CustomerProfilePage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await api.post("/media/upload", formData, {
+      const res = await api.post("/uploads/profile-image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       const uploadedUrl = res.data?.data?.url || res.data?.url || "";

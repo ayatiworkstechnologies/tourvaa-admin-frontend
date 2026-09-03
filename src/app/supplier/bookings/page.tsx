@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuFilter as Filter, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import DatePicker from "@/components/ui/DatePicker";
 import { SupplierMetric, SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/useToast";
@@ -159,12 +160,15 @@ export default function SupplierBookingsPage() {
         const canEdit = b.supplier_acceptance_status === "accepted" && Number(b.amount_pending || 0) > 0;
         if (!canEdit) return <span className="text-xs text-dash-subtle">-</span>;
         return (
-          <input
-            type="date"
-            defaultValue={toDateInputValue(b.payment_due_date)}
+          <DatePicker
+            value={toDateInputValue(b.payment_due_date)}
+            onChange={(value) => void handleDueDateChange(b.id, value)}
             disabled={savingDueDateId === b.id}
-            onChange={(e) => void handleDueDateChange(b.id, e.target.value)}
-            className="rounded-lg border border-[#D5E6DB] bg-white px-2 py-1.5 text-xs font-semibold text-[#365545] outline-none focus:border-[#16833A] focus:ring-2 focus:ring-emerald-50 disabled:opacity-50"
+            clearable={false}
+            placeholder="Set due date"
+            className="w-40"
+            buttonClassName="min-h-9 py-1.5 text-xs"
+            accent="teal"
           />
         );
       },

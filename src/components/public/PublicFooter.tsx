@@ -15,6 +15,7 @@ import { LuChevronDown as ChevronDown } from "react-icons/lu";
 import { useCurrency } from "@/hooks/useCurrency";
 import { PublicCountry, fetchPublicCountries } from "@/lib/api/publicClient";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
+import DestinationsMegaPanel from "@/components/public/DestinationsMegaPanel";
 
 const supportLinks = [
   ["Contact", "/contact"],
@@ -100,6 +101,7 @@ export default function PublicFooter() {
 
   return (
     <footer className="bg-white text-slate-700 pt-4 pb-6 sm:pb-8">
+      {pathname === "/" && <DestinationsMegaPanel />}
       {/* Dark Navy Contained Container Card */}
         <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8">
           <div className="rounded-2xl sm:rounded-3xl bg-pub-primary text-white p-8 sm:p-10 lg:p-12 shadow-xl">
