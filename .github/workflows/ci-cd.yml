@@ -37,7 +37,18 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - name: Contract tests (tests/run-tests.mjs)
-        run: node tests/run-tests.mjs
+        run: |
+          node tests/run-tests.mjs > /tmp/contract-test-output.txt 2>&1
+          status=$?
+          cat /tmp/contract-test-output.txt
+          if [ $status -ne 0 ]; then
+            echo "----- surfacing tail as annotations for diagnosis -----"
+            tail -n 40 /tmp/contract-test-output.txt | while IFS= read -r line; do
+              safe=$(echo "$line" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
+              echo "::error::$safe"
+            done
+            exit $status
+          fi
       - name: Unit tests (vitest)
         run: npx vitest run
       - name: Type-check
