@@ -106,8 +106,6 @@ check("getSimilarTours exported", hasExport(tdSrc, "getSimilarTours"));
 check("getExtensions exported", hasExport(tdSrc, "getExtensions"));
 check("getGallery exported", hasExport(tdSrc, "getGallery"));
 check("getPricing exported", hasExport(tdSrc, "getPricing"));
-check("getOptionalActivities exported", hasExport(tdSrc, "getOptionalActivities"));
-check("getAccommodationExtras exported", hasExport(tdSrc, "getAccommodationExtras"));
 check("getCalendar exported", hasExport(tdSrc, "getCalendar"));
 check("getUnavailableDates exported", hasExport(tdSrc, "getUnavailableDates"));
 check("getDiscounts exported", hasExport(tdSrc, "getDiscounts"));

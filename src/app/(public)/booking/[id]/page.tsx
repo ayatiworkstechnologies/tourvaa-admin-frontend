@@ -31,7 +31,7 @@ type FormValues = {
   travelDate: string; adults: number; children: number; infants: number; travellers: Traveller[];
   email: string; phone: string; phoneCountryCode: string; notes: string;
   primaryIsContact: boolean;
-  activityIds: number[]; extensionIds: number[];
+  extensionIds: number[];
   paymentType: "partial" | "full"; agreed: boolean; agreedCancellationPolicy: boolean;
   agentMarkup: number; agentReference: string;
   agentPaymentMethod: "online" | "wallet" | "credit" | "bank_transfer" | "pay_later";
@@ -97,7 +97,7 @@ export default function PublicBookingPage() {
       travelDate: searchParams.get("travel_date") || "", adults: Math.max(1, Number(searchParams.get("adults") || 1)), children: Math.max(0, Number(searchParams.get("children") || 0)),
       infants: Math.max(0, Number(searchParams.get("infants") || 0)),
       travellers: travellerRows(Math.max(1, Number(searchParams.get("adults") || 1)), Math.max(0, Number(searchParams.get("children") || 0)), selfBookingName),
-      email: selfBookingEmail, phone: "", phoneCountryCode: "+91", notes: "", primaryIsContact: true, activityIds: [], extensionIds: [], paymentType: "partial", agreed: false, agreedCancellationPolicy: false,
+      email: selfBookingEmail, phone: "", phoneCountryCode: "+91", notes: "", primaryIsContact: true, extensionIds: [], paymentType: "partial", agreed: false, agreedCancellationPolicy: false,
       agentMarkup: 0, agentReference: "", agentPaymentMethod: "online",
     },
   });
@@ -197,11 +197,10 @@ export default function PublicBookingPage() {
     // overcharges a child traveller relative to the real checkout.
     const childPerPerson = slab?.child_price_per_person ?? perPerson;
     const base = perPerson * adults + childPerPerson * children;
-    const activityIds = values.activityIds || [], extensionIds = values.extensionIds || [];
-    const extras = tour.optional_activities.filter((x) => activityIds.includes(x.id)).reduce((sum, x) => sum + Number(x.price || 0) * totalPax, 0)
-      + tour.extensions.filter((x) => extensionIds.includes(x.id)).reduce((sum, x) => sum + Number(x.price || 0), 0);
+    const extensionIds = values.extensionIds || [];
+    const extras = tour.extensions.filter((x) => extensionIds.includes(x.id)).reduce((sum, x) => sum + Number(x.price || 0), 0);
     return { base, extras, total: base + extras, perPerson };
-  }, [tour, totalPax, adults, children, values.activityIds, values.extensionIds]);
+  }, [tour, totalPax, adults, children, values.extensionIds]);
   const agentMarkup = isAgent ? Math.max(0, Number(values.agentMarkup) || 0) : 0;
   const customerTotal = pricing.total + agentMarkup;
   // Highlighting only -- the actual charge is whatever the server resolves
@@ -356,7 +355,7 @@ export default function PublicBookingPage() {
         } : {}),
         customer_notes: form.notes || undefined,
         ...(isAgent ? {} : { affiliate_ref_code: getActiveReferralCode() || undefined }),
-        optional_activities: form.activityIds.map((id) => ({ id, quantity: totalPax })), extensions: form.extensionIds.map((id) => ({ id, quantity: 1 })),
+        extensions: form.extensionIds.map((id) => ({ id, quantity: 1 })),
         travellers: form.travellers.map((row, index) => ({
           ...row,
           age: Number(row.age),
@@ -444,12 +443,12 @@ export default function PublicBookingPage() {
                     key={group.category}
                     title={addonCategoryLabel(group.category)}
                     items={group.items}
-                    selectedIds={{ activity: values.activityIds || [], extension: values.extensionIds || [] }}
-                    onToggle={(source, id) => toggleId(source === "activity" ? "activityIds" : "extensionIds", id, getValues, setValue)}
+                    selectedIds={{ extension: values.extensionIds || [] }}
+                    onToggle={(_source, id) => toggleId("extensionIds", id, getValues, setValue)}
                     currency={currency}
                   />
                 ))}
-                {(tour.optional_activities.length > 0 || tour.extensions.length > 0) && <button type="button" onClick={() => setStep(3)} className="text-xs font-bold text-teal-700 hover:text-teal-900">Skip Add-ons →</button>}
+                {tour.extensions.length > 0 && <button type="button" onClick={() => setStep(3)} className="text-xs font-bold text-teal-700 hover:text-teal-900">Skip Add-ons →</button>}
               </div>
             )}
             {step === 3 && (
@@ -602,16 +601,11 @@ function apiErrorMessage(exception: unknown, fallback: string) {
 }
 function TourCard({ tour, hero }: { tour: PublicTourDetail; hero: string }) { return <div className="flex gap-4 rounded-2xl border border-slate-200 p-3"><img src={hero} alt="" className="h-20 w-28 rounded-xl object-cover" /><div><b>{tour.title}</b><p className="mt-1 text-xs text-slate-500">{tour.number_of_days ? `${tour.number_of_days} days` : "Curated tour"}</p><p className="mt-1 text-xs text-slate-500">{tour.country_name}</p></div></div>; }
 function ReviewBox({ title, rows }: { title: string; rows: (string | number)[][] }) { return <div className="rounded-2xl border border-slate-200 p-4"><b className="text-sm">{title}</b><div className="mt-3 space-y-2">{rows.map(([a, b]) => <div key={String(a)} className="flex justify-between gap-3 text-xs"><span className="text-slate-500">{a}</span><strong className="text-right">{b}</strong></div>)}</div></div>; }
-// Hotel/room-upgrade add-ons ("accommodation") are deliberately excluded here -
-// hotel booking is not part of the customer tour-booking flow. The supplier's
-// tour wizard can still configure them (TourAccommodationExtraTab.tsx); they
-// just never surface at checkout.
-type AddonSource = "activity" | "extension";
+type AddonSource = "extension";
 type AddonItem = { id: number; name: string; description: string; price: number | null; source: AddonSource; perPerson?: boolean };
 
 function groupAddonsByCategory(tour: PublicTourDetail): { category: string; items: AddonItem[] }[] {
   const all: (AddonItem & { category: string })[] = [
-    ...tour.optional_activities.map((x) => ({ id: x.id, name: x.name, description: x.description, price: x.price, source: "activity" as const, perPerson: true, category: x.category })),
     ...tour.extensions.map((x) => ({ id: x.id, name: x.title, description: x.description, price: x.price, source: "extension" as const, category: x.category })),
   ];
   const byCategory = new Map<string, AddonItem[]>();
@@ -645,7 +639,7 @@ function OptionGroup({ title, items, selectedIds, onToggle, currency }: { title:
   );
 }
 function PayButton({ disabled, onClick, loading, label, test }: { disabled: boolean; onClick: () => void; loading: boolean; label: string; test?: boolean }) { return <button type="button" disabled={disabled} onClick={onClick} className={`flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 font-black disabled:cursor-not-allowed disabled:opacity-40 ${test ? "border-2 border-dashed border-amber-400 bg-amber-50 text-amber-800" : "bg-teal-700 text-white hover:bg-teal-800"}`}>{loading ? <Loader className="animate-spin" size={18} /> : <CreditCard size={18} />}{label}</button>; }
-function toggleId(name: "activityIds" | "extensionIds", id: number, getValues: ReturnType<typeof useForm<FormValues>>["getValues"], setValue: ReturnType<typeof useForm<FormValues>>["setValue"]) { const current = getValues(name); setValue(name, current.includes(id) ? current.filter((x) => x !== id) : [...current, id], { shouldDirty: true }); }
+function toggleId(name: "extensionIds", id: number, getValues: ReturnType<typeof useForm<FormValues>>["getValues"], setValue: ReturnType<typeof useForm<FormValues>>["setValue"]) { const current = getValues(name); setValue(name, current.includes(id) ? current.filter((x) => x !== id) : [...current, id], { shouldDirty: true }); }
 
 function OtpLoginStep({ onVerified, onBack }: { onVerified: () => void; onBack: () => void }) {
   const [email, setEmail] = useState("");

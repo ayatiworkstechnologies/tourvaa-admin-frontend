@@ -27,7 +27,7 @@ check("conversion uses source and target rates", hook.includes("value / sourceRa
 check("public header exposes the selector", publicHeader.includes("<LanguageCurrencySelector"));
 check("portal header exposes the selector", portalHeader.includes("<CurrencySelector"));
 check("tour listing converts from each tour currency", listing.includes("format(t.price_start_per_person, t.currency)"));
-check("tour details convert price and add-ons", detailExperience.includes('format(baseFare, tour.currency') && detailExperience.includes('format(450, tour.currency'));
+check("tour details convert price breakdown", detailExperience.includes('format(baseFare, tour.currency') && detailExperience.includes('format(taxesAmount, tour.currency'));
 check("booking review converts display amounts", booking.includes("const { format: money") && booking.includes("money(customerTotal, currency)"));
 check("gateway still receives immutable booking currency", booking.includes("currency: booking.currency"));
 check("checkout explains indicative conversion", booking.includes("displayed conversion is indicative"));

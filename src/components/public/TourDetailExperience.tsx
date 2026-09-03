@@ -256,10 +256,6 @@ export default function TourDetailExperience({
   );
   const [selectedDateIdx, setSelectedDateIdx] = useState(0);
 
-  // Add-ons
-  const [singleRoom, setSingleRoom] = useState(false);
-  const [airportTransfer, setAirportTransfer] = useState(false);
-
   // Itinerary accordion
   const [openItineraryDays, setOpenItineraryDays] = useState<Record<number, boolean>>({ 1: true });
 
@@ -288,7 +284,6 @@ export default function TourDetailExperience({
   const childPrice = matchedSlab ? Number(matchedSlab.child_price_per_person) : unitPrice;
 
   const baseFare = adults * unitPrice + children * childPrice;
-  const addonTotal = (singleRoom ? 450 : 0) + (airportTransfer ? 65 : 0);
   // Real active discount for this tour (see services.cms._active_discount) --
   // not a hardcoded promo. Savings per person = original - discounted, both
   // already at the 1-pax level the backend computes.
@@ -300,12 +295,12 @@ export default function TourDetailExperience({
   // Real tour-configured tax %/service fee -- matches what
   // services.bookings._price_booking actually charges (tax on the
   // discounted subtotal, service fee as a flat per-booking amount).
-  const taxableAmount = Math.max(0, baseFare + addonTotal - discountAmount);
+  const taxableAmount = Math.max(0, baseFare - discountAmount);
   const taxPercentage = Number(tour.tax_percentage ?? 0);
   const taxAmount = taxPercentage > 0 ? Math.round(taxableAmount * taxPercentage) / 100 : 0;
   const serviceFee = Number(tour.service_fee ?? 0);
   const taxesAmount = taxAmount + serviceFee;
-  const totalAmount = Math.max(0, baseFare + addonTotal - discountAmount + taxesAmount);
+  const totalAmount = Math.max(0, baseFare - discountAmount + taxesAmount);
 
   // Per-tier Group Pricing -- the same flat active_discount percentage
   // applied to each pax-range slab's own storefront price, so every tier
@@ -397,45 +392,33 @@ export default function TourDetailExperience({
       }))
     : FALLBACK_ITINERARY;
 
-  // Dynamic Accommodations / Where You'll Stay
-  const dynamicHotels = useMemo(() => {
-    if (tour.accommodations && tour.accommodations.length > 0) {
-      return tour.accommodations.map((acc, idx) => ({
-        name: acc.name,
-        stars: acc.category || "4-Star Hotel",
-        city: destination,
-        desc: acc.description || "Comfortable boutique rooms with modern amenities and scenic vistas.",
-        badges: ["Breakfast Included", "Free High-speed WiFi"],
-        img: acc.image ? mediaUrl(acc.image) : galleryImages[idx % galleryImages.length],
-      }));
-    }
-    return [
-      {
-        name: "Hotel Grand Chancellor Auckland",
-        stars: "4-Star Hotel",
-        city: "Auckland",
-        desc: "Centrally located in the heart of downtown with modern rooms, indoor swimming pool, and harbor views.",
-        badges: ["Breakfast Included", "Free High-speed WiFi"],
-        img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80",
-      },
-      {
-        name: "Sudima Hotel Lake Rotorua",
-        stars: "4-Star Hotel",
-        city: "Rotorua",
-        desc: "Situated on the shores of Lake Rotorua, adjacent to Polynesian Spa and Government Gardens.",
-        badges: ["Thermal Spa Access", "Breakfast Included"],
-        img: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=400&q=80",
-      },
-      {
-        name: "Heritage Queenstown Hotel",
-        stars: "4.5-Star Hotel",
-        city: "Queenstown",
-        desc: "Crafted from schist stone and cedar, offering panoramic vistas across Lake Wakatipu and the Remarkables.",
-        badges: ["Lake Wakatipu Views", "Breakfast Included"],
-        img: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=400&q=80",
-      },
-    ];
-  }, [tour.accommodations, destination, galleryImages]);
+  // Accommodations / Where You'll Stay
+  const dynamicHotels = [
+    {
+      name: "Hotel Grand Chancellor Auckland",
+      stars: "4-Star Hotel",
+      city: "Auckland",
+      desc: "Centrally located in the heart of downtown with modern rooms, indoor swimming pool, and harbor views.",
+      badges: ["Breakfast Included", "Free High-speed WiFi"],
+      img: "/images/hero-1.jpg",
+    },
+    {
+      name: "Sudima Hotel Lake Rotorua",
+      stars: "4-Star Hotel",
+      city: "Rotorua",
+      desc: "Situated on the shores of Lake Rotorua, adjacent to Polynesian Spa and Government Gardens.",
+      badges: ["Thermal Spa Access", "Breakfast Included"],
+      img: "/images/hero-2.jpg",
+    },
+    {
+      name: "Heritage Queenstown Hotel",
+      stars: "4.5-Star Hotel",
+      city: "Queenstown",
+      desc: "Crafted from schist stone and cedar, offering panoramic vistas across Lake Wakatipu and the Remarkables.",
+      badges: ["Lake Wakatipu Views", "Breakfast Included"],
+      img: "/images/hero-3.jpg",
+    },
+  ];
 
   // Dynamic Similar Tours
   const dynamicSimilar: SimilarItem[] = useMemo(() => {
@@ -1219,43 +1202,6 @@ export default function TourDetailExperience({
                     </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Add-ons */}
-              <div className="mt-5 space-y-2 border-t border-slate-100 pt-4">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Optional Add-Ons
-                </label>
-
-                <label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-100 p-2.5 text-xs transition hover:bg-slate-50">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={singleRoom}
-                      onChange={(e) => setSingleRoom(e.target.checked)}
-                      className="h-4 w-4 rounded accent-blue-600"
-                    />
-                    <span className="font-semibold text-slate-700">Single Room Supplement</span>
-                  </div>
-                  <span className="font-bold text-slate-900">
-                    +{format(450, tour.currency || "USD")}
-                  </span>
-                </label>
-
-                <label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-100 p-2.5 text-xs transition hover:bg-slate-50">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={airportTransfer}
-                      onChange={(e) => setAirportTransfer(e.target.checked)}
-                      className="h-4 w-4 rounded accent-blue-600"
-                    />
-                    <span className="font-semibold text-slate-700">Airport Express Transfer</span>
-                  </div>
-                  <span className="font-bold text-slate-900">
-                    +{format(65, tour.currency || "USD")}
-                  </span>
-                </label>
               </div>
 
               {/* Price Summary Breakdown */}

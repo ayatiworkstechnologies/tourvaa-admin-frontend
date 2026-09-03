@@ -113,7 +113,7 @@ check("admin booking create contract uses backend traveller counts", bookingServ
 check("booking filters use backend booking_status", bookingService.includes("booking_status?: string"));
 
 const bookingDetail = read("src/app/admin/bookings/[id]/page.tsx");
-check("admin booking detail renders serialized add-on snapshots", bookingDetail.includes("activity_name_snapshot") && bookingDetail.includes("accommodation_name_snapshot") && bookingDetail.includes("extension_name_snapshot"));
+check("admin booking detail renders serialized add-on snapshots", bookingDetail.includes("extension_name_snapshot"));
 check("admin booking detail exposes all note channels", bookingDetail.includes("booking.customer_notes") && bookingDetail.includes("booking.admin_notes"));
 
 const payments = read("src/lib/api/services/paymentService.ts");

@@ -210,8 +210,6 @@ export default function BookingDetailPage() {
     }
   }
 
-  const activityItems = booking?.optional_activities || [];
-  const accommodationItems = booking?.accommodations || [];
   const extensionItems = booking?.extensions || [];
   const travellers = booking?.travellers || [];
   const communications = booking?.communications || [];
@@ -436,30 +434,22 @@ export default function BookingDetailPage() {
             </DetailPanel>
           )}
 
-          {(activityItems.length > 0 || accommodationItems.length > 0 || extensionItems.length > 0) && (
+          {extensionItems.length > 0 && (
             <DetailPanel title="Add-ons">
               <div className="space-y-4">
-                {[
-                  { label: "Optional Activities", items: activityItems },
-                  { label: "Accommodations", items: accommodationItems },
-                  { label: "Extensions", items: extensionItems },
-                ]
-                  .filter((group) => group.items.length > 0)
-                  .map((group) => (
-                    <div key={group.label}>
-                      <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase text-dash-subtle">
-                        <Ticket size={13} /> {group.label}
-                      </p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {group.items.map((item, index) => (
-                          <div key={item.id ?? index} className="flex items-center justify-between rounded-xl bg-dash-bg px-3 py-2 text-sm">
-                            <span className="font-semibold text-dash-body">{item.activity_name_snapshot || item.accommodation_name_snapshot || item.extension_name_snapshot || item.name || item.title || "Item"}</span>
-                            <span className="font-bold text-dash-text">{item.total_price || item.unit_price || item.amount || item.price || "-"}</span>
-                          </div>
-                        ))}
+                <div>
+                  <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase text-dash-subtle">
+                    <Ticket size={13} /> Extensions
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {extensionItems.map((item, index) => (
+                      <div key={item.id ?? index} className="flex items-center justify-between rounded-xl bg-dash-bg px-3 py-2 text-sm">
+                        <span className="font-semibold text-dash-body">{item.extension_name_snapshot || item.name || item.title || "Item"}</span>
+                        <span className="font-bold text-dash-text">{item.total_price || item.unit_price || item.amount || item.price || "-"}</span>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
               </div>
             </DetailPanel>
           )}

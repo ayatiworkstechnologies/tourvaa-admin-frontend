@@ -26,8 +26,6 @@ import PhysicalRatingField from "@/components/tours/PhysicalRatingField";
 import TourHighlightsTab from "@/components/tours/TourHighlightsTab";
 import TourItineraryTab from "@/components/tours/TourItineraryTab";
 import TourItemsTab from "@/components/tours/TourItemsTab";
-import TourAccommodationExtraTab from "@/components/tours/TourAccommodationExtraTab";
-import TourOptionalActivityTab from "@/components/tours/TourOptionalActivityTab";
 import CancellationPolicySection from "@/components/tours/CancellationPolicySection";
 import TourGalleryTab from "@/components/tours/TourGalleryTab";
 import TourPricingTab from "@/components/tours/TourPricingTab";
@@ -452,12 +450,6 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
               </div>
             )}
             {activeKey === "calendar" && <TourCalendarTab tourId={tourId} />}
-            {activeKey === "accommodation" && (
-              <div className="space-y-6">
-                <TourAccommodationExtraTab tourId={tourId} />
-                <TourOptionalActivityTab tourId={tourId} />
-              </div>
-            )}
             {activeKey === "extensions" && (
               <div className="space-y-6">
                 <TourExtensionsTab tourId={tourId} />

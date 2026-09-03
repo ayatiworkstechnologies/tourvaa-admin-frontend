@@ -101,7 +101,6 @@ export default function TourDetailPage() {
           exclusions: data.exclusions ?? [],
           gallery: data.gallery ?? [],
           pricing: data.pricing ?? [],
-          optional_activities: data.optional_activities ?? [],
           extensions: data.extensions ?? [],
           discounts: data.discounts ?? [],
           calendar: data.calendar ?? [],

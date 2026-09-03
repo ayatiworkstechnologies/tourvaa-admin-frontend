@@ -5,7 +5,6 @@ export type WizardStepId =
   | "itinerary"
   | "pricing"
   | "calendar"
-  | "accommodation"
   | "extensions"
   | "inclusions"
   | "media"
@@ -26,12 +25,11 @@ export const WIZARD_STEPS: WizardStepDef[] = [
   { id: "itinerary", number: "04", label: "Itinerary", description: "Build the day-by-day journey." },
   { id: "pricing", number: "05", label: "Pricing & Discounts", description: "Set base pricing, promo codes, and group discounts." },
   { id: "calendar", number: "06", label: "Calendar & Availability", description: "Set the recurring schedule, specific dates, and blocked dates." },
-  { id: "accommodation", number: "07", label: "Accommodation & Activities", description: "Add accommodation options and optional activities." },
-  { id: "extensions", number: "08", label: "Extensions & Similar Tours", description: "Add optional extensions and related tours." },
-  { id: "inclusions", number: "09", label: "Inclusions & Exclusions", description: "List what's included and excluded." },
-  { id: "media", number: "10", label: "Media & Gallery", description: "Upload the cover, banner, and gallery images." },
-  { id: "seo", number: "11", label: "SEO, Deposit & Cancellation Settings", description: "Search visibility, metadata, deposit/payment terms, cancellation & refund policy, and publishing settings." },
-  { id: "review", number: "12", label: "Review & Submit", description: "Check every section, then save or submit." },
+  { id: "extensions", number: "07", label: "Extensions & Similar Tours", description: "Add optional extensions and related tours." },
+  { id: "inclusions", number: "08", label: "Inclusions & Exclusions", description: "List what's included and excluded." },
+  { id: "media", number: "09", label: "Media & Gallery", description: "Upload the cover, banner, and gallery images." },
+  { id: "seo", number: "10", label: "SEO, Deposit & Cancellation Settings", description: "Search visibility, metadata, deposit/payment terms, cancellation & refund policy, and publishing settings." },
+  { id: "review", number: "11", label: "Review & Submit", description: "Check every section, then save or submit." },
 ];
 
 // Steps 1-11 are summarized on the Review & Submit step; "review" itself is not.

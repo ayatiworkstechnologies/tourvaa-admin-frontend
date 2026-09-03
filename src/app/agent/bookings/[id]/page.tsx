@@ -57,8 +57,6 @@ type Booking = {
   status_history?: Array<{ id: number; old_status?: string | null; new_status: string; change_source?: string; reason?: string | null; created_at?: string }>;
   price_breakdown?: {
     base_amount?: string | number;
-    optional_activity_amount?: string | number;
-    accommodation_amount?: string | number;
     extension_amount?: string | number;
     discount_amount?: string | number;
     tax_amount?: string | number;
@@ -396,8 +394,6 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
               <h2 className="text-base font-black text-dash-text">Price Breakdown</h2>
               <div className="mt-4">
                 <InfoRow label="Base tour" value={money(booking.price_breakdown.base_amount, booking.currency)} />
-                <InfoRow label="Activities" value={money(booking.price_breakdown.optional_activity_amount, booking.currency)} />
-                <InfoRow label="Accommodation" value={money(booking.price_breakdown.accommodation_amount, booking.currency)} />
                 <InfoRow label="Extensions" value={money(booking.price_breakdown.extension_amount, booking.currency)} />
                 <InfoRow label="Discount" value={money(booking.price_breakdown.discount_amount, booking.currency)} />
                 <InfoRow label="Agent net price" value={money(booking.agent_net_price, booking.currency)} />

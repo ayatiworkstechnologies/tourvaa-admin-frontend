@@ -295,66 +295,6 @@ export async function deletePricing(tourId: number | string, id: number): Promis
   await api.delete(`${base(tourId)}/pricing/${id}`);
 }
 
-// ── Optional Activities ───────────────────────────────────────────────────────
-
-export type OptionalActivity = {
-  id?: number;
-  tour_id?: number;
-  activity_name: string;
-  description: string;
-  price_per_person: number;
-  image: string;
-  category: string;
-  status: string;
-};
-
-export async function getOptionalActivities(tourId: number | string): Promise<OptionalActivity[]> {
-  const r = await api.get<{ data: OptionalActivity[] }>(`${base(tourId)}/optional-activities`);
-  return r.data.data;
-}
-export async function createOptionalActivity(tourId: number | string, data: OptionalActivity): Promise<OptionalActivity> {
-  const r = await api.post<{ data: OptionalActivity }>(`${base(tourId)}/optional-activities`, data);
-  return r.data.data;
-}
-export async function updateOptionalActivity(tourId: number | string, id: number, data: OptionalActivity): Promise<OptionalActivity> {
-  const r = await api.put<{ data: OptionalActivity }>(`${base(tourId)}/optional-activities/${id}`, data);
-  return r.data.data;
-}
-export async function deleteOptionalActivity(tourId: number | string, id: number): Promise<void> {
-  await api.delete(`${base(tourId)}/optional-activities/${id}`);
-}
-
-// ── Accommodation Extras ──────────────────────────────────────────────────────
-
-export type AccommodationExtra = {
-  id?: number;
-  tour_id?: number;
-  accommodation_name: string;
-  description: string;
-  extra_price: number;
-  price_type: "per_person" | "per_booking";
-  image?: string;
-  category: string;
-  is_default: boolean;
-  status: string;
-};
-
-export async function getAccommodationExtras(tourId: number | string): Promise<AccommodationExtra[]> {
-  const r = await api.get<{ data: AccommodationExtra[] }>(`${base(tourId)}/accommodation-extras`);
-  return r.data.data;
-}
-export async function createAccommodationExtra(tourId: number | string, data: AccommodationExtra): Promise<AccommodationExtra> {
-  const r = await api.post<{ data: AccommodationExtra }>(`${base(tourId)}/accommodation-extras`, data);
-  return r.data.data;
-}
-export async function updateAccommodationExtra(tourId: number | string, id: number, data: AccommodationExtra): Promise<AccommodationExtra> {
-  const r = await api.put<{ data: AccommodationExtra }>(`${base(tourId)}/accommodation-extras/${id}`, data);
-  return r.data.data;
-}
-export async function deleteAccommodationExtra(tourId: number | string, id: number): Promise<void> {
-  await api.delete(`${base(tourId)}/accommodation-extras/${id}`);
-}
-
 // ── Calendar ──────────────────────────────────────────────────────────────────
 
 export type CalendarEntry = {
