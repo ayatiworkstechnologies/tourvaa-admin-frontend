@@ -12,6 +12,7 @@ import {
   LuCheck as Check,
   LuChevronDown as ChevronDown,
   LuChevronUp as ChevronUp,
+  LuCircleX as XCircle,
   LuClock as Clock,
   LuCompass as Compass,
   LuFileText as FileText,
@@ -235,15 +236,19 @@ export default function TourDetailExperience({
         .map((c) => ({
           date: c.date,
           price: Number(tour.price_start_per_person || 1182),
-          status: c.status === "available" || c.slots > 0 ? "Available" : "Limited",
+          status: c.status === "sold_out" || c.slots <= 0
+            ? "Sold Out"
+            : c.slots <= 4
+              ? "Limited"
+              : "Available",
         }));
     }
     return [
       { date: "15 Sep 2026, Tuesday", price: 1182, status: "Available" },
       { date: "22 Sep 2026, Tuesday", price: 1240, status: "Available" },
-      { date: "05 Oct 2026, Monday", price: 1182, status: "Available" },
+      { date: "05 Oct 2026, Monday", price: 1182, status: "Limited" },
       { date: "19 Oct 2026, Monday", price: 1240, status: "Available" },
-      { date: "02 Nov 2026, Monday", price: 1150, status: "Available" },
+      { date: "02 Nov 2026, Monday", price: 1150, status: "Sold Out" },
     ];
   }, [tour.calendar, tour.price_start_per_person]);
 
@@ -252,7 +257,10 @@ export default function TourDetailExperience({
   const [infants, setInfants] = useState(0);
 
   const [selectedDate, setSelectedDate] = useState(
-    initialTravelDate || dynamicCalendar[0]?.date || "15 Sep 2026"
+    initialTravelDate
+    || dynamicCalendar.find((d) => d.status !== "Sold Out")?.date
+    || dynamicCalendar[0]?.date
+    || "15 Sep 2026"
   );
   const [selectedDateIdx, setSelectedDateIdx] = useState(0);
 
@@ -1003,45 +1011,59 @@ export default function TourDetailExperience({
                 Availability &amp; Pricing
               </h3>
 
-              <div className="mt-5 overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      <th className="pb-3">DEPARTURE DATE</th>
-                      <th className="pb-3">PRICE PER PERSON</th>
-                      <th className="pb-3 text-right">ACTION</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {dynamicCalendar.map((dep, dIdx) => (
-                      <tr key={dIdx} className="hover:bg-slate-50/60 transition">
-                        <td className="py-3.5">
-                          <p className="text-xs font-bold text-slate-900">{dep.date}</p>
-                          <p className="text-[10px] text-emerald-600 font-semibold">{dep.status}</p>
-                        </td>
-                        <td className="py-3.5 text-xs font-black text-slate-900">
-                          {format(dep.price, tour.currency || "USD")}
-                        </td>
-                        <td className="py-3.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedDate(dep.date);
-                              setSelectedDateIdx(dIdx);
-                            }}
-                            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
-                              selectedDate === dep.date
-                                ? "bg-[#0B1527] text-white shadow-xs"
-                                : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                            }`}
-                          >
-                            {selectedDate === dep.date ? "Selected" : "Select Date"}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <p className="mt-1 text-xs font-medium text-slate-400">
+                Based on {totalPax} passenger{totalPax === 1 ? "" : "s"}
+              </p>
+
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {dynamicCalendar.map((dep, dIdx) => {
+                  const soldOut = dep.status === "Sold Out";
+                  const limited = dep.status === "Limited";
+                  const selected = !soldOut && selectedDate === dep.date;
+                  return (
+                    <button
+                      key={dIdx}
+                      type="button"
+                      disabled={soldOut}
+                      onClick={() => {
+                        if (soldOut) return;
+                        setSelectedDate(dep.date);
+                        setSelectedDateIdx(dIdx);
+                      }}
+                      className={`rounded-2xl border p-3.5 text-left transition ${
+                        soldOut
+                          ? "cursor-not-allowed border-slate-100 bg-slate-50"
+                          : selected
+                            ? "border-blue-600 bg-blue-50/80 shadow-xs"
+                            : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-xs"
+                      }`}
+                    >
+                      <p className={`text-xs font-bold ${soldOut ? "text-slate-400" : "text-slate-900"}`}>
+                        {dep.date}
+                      </p>
+                      <span
+                        className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          soldOut
+                            ? "bg-slate-200 text-slate-500"
+                            : limited
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-emerald-50 text-emerald-700"
+                        }`}
+                      >
+                        {soldOut && <XCircle size={11} />}
+                        {dep.status}
+                      </span>
+                      <p className={`mt-2 text-sm font-black ${soldOut ? "text-slate-400 line-through" : "text-slate-900"}`}>
+                        {format(dep.price, tour.currency || "USD")}
+                      </p>
+                      {!soldOut && (
+                        <p className="mt-0.5 text-[10px] font-bold text-blue-600">
+                          {selected ? "Selected" : "Select date →"}
+                        </p>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1094,28 +1116,40 @@ export default function TourDetailExperience({
                   Select Departure
                 </label>
                 <div className="grid grid-cols-3 gap-1.5">
-                  {dynamicCalendar.slice(0, 3).map((dep, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => {
-                        setSelectedDate(dep.date);
-                        setSelectedDateIdx(i);
-                      }}
-                      className={`rounded-xl border p-2 text-center transition ${
-                        selectedDate === dep.date
-                          ? "border-blue-600 bg-blue-50/80 shadow-2xs"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                    >
-                      <p className="text-[9px] font-semibold text-slate-500 truncate">
-                        {dep.date.split(",")[0]}
-                      </p>
-                      <p className="text-xs font-black text-slate-900">
-                        {format(dep.price, tour.currency || "USD")}
-                      </p>
-                    </button>
-                  ))}
+                  {[...dynamicCalendar].sort((a, b) => (a.status === "Sold Out" ? 1 : 0) - (b.status === "Sold Out" ? 1 : 0)).slice(0, 3).map((dep, i) => {
+                    const soldOut = dep.status === "Sold Out";
+                    const selected = !soldOut && selectedDate === dep.date;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        disabled={soldOut}
+                        onClick={() => {
+                          if (soldOut) return;
+                          setSelectedDate(dep.date);
+                          setSelectedDateIdx(i);
+                        }}
+                        className={`rounded-xl border p-2 text-center transition ${
+                          soldOut
+                            ? "cursor-not-allowed border-slate-100 bg-slate-50"
+                            : selected
+                              ? "border-blue-600 bg-blue-50/80 shadow-2xs"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <p className={`text-[9px] font-semibold truncate ${soldOut ? "text-slate-400" : "text-slate-500"}`}>
+                          {dep.date.split(",")[0]}
+                        </p>
+                        {soldOut ? (
+                          <p className="text-[10px] font-bold text-slate-400">Sold Out</p>
+                        ) : (
+                          <p className="text-xs font-black text-slate-900">
+                            {format(dep.price, tour.currency || "USD")}
+                          </p>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
