@@ -1,11 +1,20 @@
-/** Cross-repository API contract check. Requires Python and the sibling backend. */
-import { readFileSync, readdirSync } from "fs";
+/** Cross-repository API contract check. Requires Python and the sibling backend
+ * checked out alongside this repo (e.g. local dev with both repos cloned
+ * side by side). CI checks out only one repo at a time, so this check is
+ * structurally unrunnable there and skips instead of failing the build. */
+import { existsSync, readFileSync, readdirSync } from "fs";
 import { dirname, extname, join, relative, resolve } from "path";
 import { spawnSync } from "child_process";
 import { fileURLToPath } from "url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const backendRoot = resolve(root, "../tourvaa-admin-backend");
+
+if (!existsSync(backendRoot)) {
+  console.log("\n=== Frontend / Backend API Contract ===\n");
+  console.log("  skipped: sibling ../tourvaa-admin-backend checkout not found (expected in single-repo CI)");
+  process.exit(0);
+}
 
 const registryScript = [
   "import json",
