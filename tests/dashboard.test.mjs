@@ -2,7 +2,11 @@
  * Frontend Dashboard Test
  *
  * Verifies:
- * - dashboardService.ts exists and exports required functions
+ * - Dashboard data flow: AuthProvider fetches /dashboard/me, the admin
+ *   dashboard page fetches /dashboard/summary and /dashboard/charts
+ *   directly via the shared api client (no dedicated dashboardService.ts
+ *   wrapper exists for this - see AuthProvider.tsx and
+ *   app/admin/dashboard/page.tsx)
  * - Dashboard page exists
  * - Dashboard components exist (if present)
  * - Dashboard uses /api (not /api/v1)
@@ -38,38 +42,24 @@ function readFile(rel) {
   return readFileSync(p, "utf-8");
 }
 
-function hasExport(src, name) {
-  return (
-    src.includes(`export async function ${name}`) ||
-    src.includes(`export function ${name}`) ||
-    src.includes(`export const ${name}`)
-  );
-}
-
 // ---------------------------------------------------------------------------
-// Dashboard Service
+// Dashboard Data Flow
 // ---------------------------------------------------------------------------
-console.log("\n=== Dashboard Service ===\n");
+console.log("\n=== Dashboard Data Flow ===\n");
 
-const svcSrc = readFile("lib/api/services/dashboardService.ts");
-check("dashboardService.ts exists", svcSrc.length > 0);
-check("getDashboardMe exported", hasExport(svcSrc, "getDashboardMe"));
-check("getDashboardSummary exported", hasExport(svcSrc, "getDashboardSummary"));
-check("getDashboardCharts exported", hasExport(svcSrc, "getDashboardCharts"));
-check("getDashboardRecentActivities exported", hasExport(svcSrc, "getDashboardRecentActivities"));
-check("getDashboardAlerts exported", hasExport(svcSrc, "getDashboardAlerts"));
-check("dashboardService uses /dashboard/me", svcSrc.includes("/dashboard/me"));
-check("dashboardService uses /dashboard/summary", svcSrc.includes("/dashboard/summary"));
-check("dashboardService uses /dashboard/charts", svcSrc.includes("/dashboard/charts"));
-check("dashboardService uses /dashboard/alerts", svcSrc.includes("/dashboard/alerts"));
-check("dashboardService has no /api/v1", !svcSrc.includes("/api/v1"));
+const authProviderSrc = readFile("providers/AuthProvider.tsx");
+const pageSrc = readFile("app/admin/dashboard/page.tsx");
+check("AuthProvider fetches /dashboard/me", authProviderSrc.includes("/dashboard/me"));
+check("dashboard page fetches /dashboard/summary", pageSrc.includes("/dashboard/summary"));
+check("dashboard page fetches /dashboard/charts", pageSrc.includes("/dashboard/charts"));
+check("dashboard page fetches /dashboard/recent-activities", pageSrc.includes("/dashboard/recent-activities"));
+check("dashboard data flow has no /api/v1", !authProviderSrc.includes("/api/v1") && !pageSrc.includes("/api/v1"));
 
 // ---------------------------------------------------------------------------
 // Dashboard Page
 // ---------------------------------------------------------------------------
 console.log("\n=== Dashboard Page ===\n");
 
-const pageSrc = readFile("app/admin/dashboard/page.tsx");
 check("app/admin/dashboard/page.tsx exists", pageSrc.length > 0);
 check("dashboard page uses /dashboard/me or useDashboard", pageSrc.includes("/dashboard/me") || pageSrc.includes("useDashboard"));
 check("dashboard page has no /api/v1", !pageSrc.includes("/api/v1"));
@@ -79,7 +69,6 @@ check("dashboard page has no /api/v1", !pageSrc.includes("/api/v1"));
 // ---------------------------------------------------------------------------
 console.log("\n=== Auth Provider Types ===\n");
 
-const authProviderSrc = readFile("providers/AuthProvider.tsx");
 check("AuthProvider.tsx exists", authProviderSrc.length > 0);
 check("AuthProvider includes dashboard_type", authProviderSrc.includes("dashboard_type"));
 check("AuthProvider includes allowed_modules", authProviderSrc.includes("allowed_modules"));
@@ -118,7 +107,7 @@ check("ProtectedRoute checks permission", protectedSrc.includes("requiredPermiss
 // ---------------------------------------------------------------------------
 console.log("\n=== API Path Hygiene ===\n");
 
-const allSrc = [svcSrc, pageSrc, authProviderSrc, authTypesSrc, hookSrc].join("\n");
+const allSrc = [pageSrc, authProviderSrc, authTypesSrc, hookSrc].join("\n");
 check("No /api/v1 in any dashboard file", !allSrc.includes("/api/v1"));
 
 // Also check api client

@@ -154,25 +154,27 @@ check(
     tourWizard.includes("TourWorkspaceHeader") &&
     tourWorkspace.includes("Admin Tour Workspace"),
 );
+const wizardSteps = read("src/components/tours/wizard/steps.ts");
 check(
   "admin tour creation shows guided completion stages",
-  tourWizard.includes('label: "Basic Details"') &&
-    tourWizard.includes('label: "Location & Category"') &&
-    tourWizard.includes('label: "Review & Submit"'),
+  wizardSteps.includes('label: "Basic Information"') &&
+    wizardSteps.includes('label: "Location & Category"') &&
+    wizardSteps.includes('label: "Review & Submit"'),
 );
 check(
   "admin tour editor uses the common tab and content-card workflow",
-  tourWizard.includes("TourWorkspaceTabs") &&
-    tourWizard.includes("TourWorkspaceContent") &&
-    tourWizard.includes("TourWorkspaceStepper") &&
-    ["Itinerary", "Pricing", "Calendar", "Discounts"].every((label) =>
-      tourWizard.includes(`label: "${label}"`)
+  tourWizard.includes("TourWorkspaceContent") &&
+    tourWizard.includes("WizardSidebar") &&
+    tourWizard.includes("WizardMobileProgress") &&
+    ["Itinerary", "Pricing & Discounts", "Calendar & Availability"].every((label) =>
+      wizardSteps.includes(`label: "${label}"`)
     ),
 );
 check(
   "admin tour sections support explicit step completion",
   tourWizard.includes("visitedSteps") &&
-    tourWizard.includes("selectPrimaryStep") &&
+    tourWizard.includes("selectStep") &&
+    tourWizard.includes("useStepCompletion") &&
     tourWizard.includes('basePath = isSupplier ? "/supplier/tours" : "/admin/tours"'),
 );
 check("embedded edit form avoids a duplicate workspace header", tourWizard.includes("tourId={tourId} embedded"));

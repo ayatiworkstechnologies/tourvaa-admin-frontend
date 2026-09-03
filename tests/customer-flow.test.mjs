@@ -22,7 +22,7 @@ console.log("\n=== Customer Booking Flow ===\n");
 
 const search = read("src/components/public/HeroFilterBar.tsx");
 const homepage = read("src/app/(public)/page.tsx");
-check("homepage destination filter uses the active country API list", homepage.includes("setSearchCountries(countryResult.value)") && homepage.includes("countries={searchCountries}") && search.includes("countries.map((country)"));
+check("homepage destination filter uses the active country API list", homepage.includes("setSearchCountries(countryResult.value)") && homepage.includes("countries={searchCountries}") && search.includes("return countries.filter((c) => c.country_name.toLowerCase().includes(q))") && search.includes("filtered.map((country)"));
 check("search preserves travel date", search.includes('params.set("travel_date"'));
 check("search preserves adult count", search.includes('params.set("adults"'));
 check("search preserves child count", search.includes('params.set("children"'));
@@ -59,8 +59,8 @@ check("new booking opens payment UI", customerBooking.includes('searchParams.get
 check("payment copy remains pending supplier acceptance", customerBooking.includes("Final confirmation is pending supplier acceptance"));
 check("pending supplier banner is rendered", customerBooking.includes("Pending supplier acceptance"));
 check("gateway charges the selected payment amount", customerBooking.includes("amount: paymentAmount"));
-check("gateway modal offers deposit and full balance", customerBooking.includes("Pay 30% deposit") && customerBooking.includes("Pay in full"));
-check("partial payment is a 30% deposit", customerBooking.includes("totalAmount * 0.3"));
+check("gateway modal offers deposit and full balance", customerBooking.includes("Pay ${depositConfig.deposit_percentage}% deposit") && customerBooking.includes("Pay in full"));
+check("partial payment uses the backend-configured deposit percentage", customerBooking.includes("totalAmount * (depositConfig.deposit_percentage / 100)"));
 check("dashboard payment actions open checkout directly", customerBooking.includes('searchParams.get("action") === "pay"'));
 
 const customerDashboard = read("src/app/customer/dashboard/page.tsx");
@@ -80,7 +80,7 @@ const legacyWishlist = read("src/app/(public)/wishlist/page.tsx");
 const retiredCart = read("src/app/(public)/cart/page.tsx");
 check("public and customer headers no longer expose cart", !publicHeader.includes('href="/cart"') && !customerHeader.includes('href="/cart"'));
 check("customer footer receives public settings context", customerLayout.includes("<PublicSettingsProvider>") && customerLayout.includes("<PublicFooter />"));
-check("wishlist books tours directly", wishlist.includes('href={`/booking/${item.id}`}') && !wishlist.includes("addToCart"));
+check("wishlist books tours directly", wishlist.includes("href: w.href || `/booking/${w.id}`") && !wishlist.includes("addToCart"));
 // The public nav links to the public /wishlist page (works for guests too);
 // the customer-portal header/sidebar link to /customer/wishlist for signed-in
 // customers browsing inside their portal - both render the same store.

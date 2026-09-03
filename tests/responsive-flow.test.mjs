@@ -31,7 +31,7 @@ check("admin mobile drawer fits narrow screens", adminLayout.includes("86vw"));
 
 const publicHeader = read("src/components/public/PublicHeader.tsx");
 check("public marketing navigation waits for desktop width", publicHeader.includes("lg:flex"));
-check("public header preserves a shrinkable flex row", publicHeader.includes("max-w-[1480px] min-w-0"));
+check("public header preserves a shrinkable flex row", publicHeader.includes("max-w-[1440px] min-w-0"));
 check("desktop header exposes every primary browse link", publicHeader.includes('aria-label="Primary navigation"') && publicHeader.includes("browseLinks.map") && ["Destinations", "Tour Packages", "Deals", "Travel Advice", "About Tourvaa"].every((label) => publicHeader.includes(label)));
 
 const supplierPortal = read("src/app/supplier-portal/page.tsx");
@@ -45,7 +45,7 @@ const portalHeader = read("src/components/layout/Header.tsx");
 check("portal header reserves clearance for the fixed language widget", portalHeader.includes("pr-36") && portalHeader.includes("lg:pr-40"));
 
 const customerHeader = read("src/components/customer/CustomerPortalHeader.tsx");
-check("customer header has compact mobile height", customerHeader.includes("h-20") && customerHeader.includes("sm:h-[92px]"));
+check("customer header has compact mobile height", customerHeader.includes("h-20") && customerHeader.includes("sm:h-[84px]"));
 check("customer profile menu is viewport bounded", customerHeader.includes("calc(100vw-1.5rem)"));
 
 const dataTable = read("src/components/ui/DataTable.tsx");

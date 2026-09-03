@@ -59,7 +59,7 @@ check("public layout loads settings once for all public contact surfaces", publi
 check("public contact surfaces use configured support details", publicContactSources.includes("usePublicSettings") || publicContactSources.includes("ConfiguredSupportEmail"));
 check("public contact surfaces contain no hardcoded Tourvaa contact links", !publicContactSources.includes("mailto:hello@tourvaa.com") && !publicContactSources.includes("mailto:support@tourvaa.com") && !publicContactSources.includes("tel:+919876543210"));
 check("legacy seeded contact placeholders are suppressed", publicSettings.includes("PLACEHOLDER_EMAILS") && publicSettings.includes("PLACEHOLDER_PHONES") && publicSettings.includes("PLACEHOLDER_ADDRESSES"));
-check("all public pages use one canonical footer link set", ["supportLinks", "companyLinks", "loginLinks"].every((links) => publicFooter.includes(`links={${links}}`)) && !publicFooter.includes("aboutSupportLinks") && !publicFooter.includes("aboutCompanyLinks") && !publicFooter.includes("aboutLoginLinks"));
+check("all public pages use one canonical footer link set", ["const supportLinks", "const companyLinks", "const loginLinks"].every((decl) => publicFooter.includes(decl)) && ["supportLinks.map", "companyLinks.map", "loginLinks.map"].every((usage) => publicFooter.includes(usage)) && !publicFooter.includes("aboutSupportLinks") && !publicFooter.includes("aboutCompanyLinks") && !publicFooter.includes("aboutLoginLinks"));
 check("destination panel appears on the homepage only", publicFooter.includes('pathname === "/" && <DestinationsMegaPanel />'));
 check("destination panel never renders empty loading cards", destinationsMegaPanel.includes("if (loading) return null") && destinationsMegaPanel.includes("if (!availableTabs.length) return null") && !destinationsMegaPanel.includes("animate-pulse"));
 check("partner landing pages reuse the canonical public footer", portalPublicFooter.includes("<PublicFooter />") && portalPublicFooter.includes("<PublicSettingsProvider>") && portalPublicFooter.includes("<TravelStoreProvider>"));
@@ -91,11 +91,20 @@ check("affiliate dashboard uses commission summary API", affiliateDashboard.incl
 check("affiliate dashboard uses serialized click totals", affiliateDashboard.includes("link.total_clicks"));
 check("affiliate dashboard uses converted_at timestamp", affiliateDashboard.includes("c.converted_at"));
 
-for (const page of ["dashboard", "referral-links", "clicks", "conversions", "commissions", "profile"]) {
+for (const page of ["dashboard", "referral-links", "clicks", "conversions", "commissions"]) {
   const source = read(`src/app/affiliate/${page}/page.tsx`);
   check(`${page} requires the provisioned affiliate id`, source.includes("dashboard?.user?.affiliate_id ?? null"));
   check(`${page} does not fall back to the unrelated user id`, !source.includes("dashboard?.user?.id"));
 }
+
+// Profile editing moved to a session-scoped self-service endpoint
+// (GET/PATCH /affiliates/me - the backend resolves the caller's own
+// affiliate row from the auth token) rather than the frontend passing a
+// client-held affiliate_id - see CompanyInfoTab.tsx, the same pattern as
+// payouts above.
+const companyInfoTab = read("src/components/affiliate/profile/CompanyInfoTab.tsx");
+check("profile requires the provisioned affiliate id", companyInfoTab.includes('api.get("/affiliates/me")') && companyInfoTab.includes('api.patch("/affiliates/me"'));
+check("profile does not fall back to the unrelated user id", !companyInfoTab.includes("dashboard?.user?.id"));
 
 // Payouts (and payout-methods/wallet) moved to session-scoped self-service
 // endpoints (GET/POST /affiliate/payouts, /affiliate/payout-methods,
@@ -108,19 +117,21 @@ const payoutsSource = read("src/app/affiliate/payouts/page.tsx");
 check("payouts uses session-scoped self-service endpoints", payoutsSource.includes("getAffiliatePayouts") && payoutsSource.includes("getPayoutMethods") && payoutsSource.includes("getWalletSummary"));
 check("payouts does not fall back to the unrelated user id", !payoutsSource.includes("dashboard?.user?.id"));
 
-const profile = read("src/app/affiliate/profile/page.tsx");
-check("affiliate profile update uses backend PUT contract", profile.includes("api.put(`/affiliates/${affiliateId}`"));
-check("affiliate profile sends supported website_url field", profile.includes("website_url"));
-check("affiliate self-edit is disabled when backend permission is unavailable", profile.includes('hasPermission("affiliates.approve")'));
+// Profile self-edit is now a self-service PATCH /affiliates/me (see
+// CompanyInfoTab.tsx above) - there is no separate approval-permission gate
+// because an affiliate editing their own record needs no special grant.
+check("affiliate profile update uses backend PATCH self-service contract", companyInfoTab.includes('api.patch("/affiliates/me"'));
+check("affiliate profile sends supported website_url field", companyInfoTab.includes("website_url"));
+check("affiliate self-edit has no approval-permission gate blocking it", !companyInfoTab.includes('hasPermission("affiliates.approve")'));
 
-const affiliateJoin = read("src/app/join/affiliate/page.tsx");
-// The affiliate application form used to fabricate a mailto: link and claim
-// success without actually delivering anything (a "fake API submission").
-// It now really submits through the same /contact endpoint the public
-// contact page uses, and surfaces a real error state if that call fails -
-// these checks guard against silently regressing back to the mailto stub.
-check("affiliate application submits through the real /contact endpoint, not a mailto stub", affiliateJoin.includes('publicApi.post("/contact"') && !affiliateJoin.includes("mailto:hello@tourvaa.com"));
-check("affiliate application surfaces a real failure state if the API call fails", affiliateJoin.includes("catch") && affiliateJoin.includes("setError"));
+// The affiliate application/registration flow moved from a standalone
+// join/affiliate contact-form page into the portal auth flow's register
+// panel - see PortalAuthPage.tsx, which really submits via POST
+// /auth/register and surfaces a real error state, rather than the old
+// join/affiliate page's mailto stub.
+const portalAuthPage = read("src/components/public/portal/PortalAuthPage.tsx");
+check("affiliate application submits through the real registration endpoint, not a mailto stub", portalAuthPage.includes('"/auth/register"') && !portalAuthPage.includes("mailto:hello@tourvaa.com"));
+check("affiliate application surfaces a real failure state if the API call fails", portalAuthPage.includes("catch") && portalAuthPage.includes("setError"));
 
 const imageFormats = read("src/lib/uploads/imageFormats.ts");
 const adminAssetUpload = read("src/components/operations/AdminAssetUpload.tsx");

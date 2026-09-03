@@ -61,20 +61,21 @@ check("tour list supports search and every publishing state", tours.includes("pe
 check("tour list surfaces submission errors", tours.includes("setActionError") && tours.includes("could not be submitted"));
 check("tour cards display their cover media", tours.includes("banner_image") && tours.includes("mediaUrl(tour.banner_image)"));
 check("supplier create/edit pages use the shared TourWizard", tourCreate.includes("<TourWizard") && tourEdit.includes("<TourWizard"));
-check("tour creation has guided progress and review", tourWizard.includes("TourWorkspaceStepper") && tourWizard.includes("Review & Submit"));
+check("tour creation has guided progress and review", tourWizard.includes("WizardSidebar") && tourWizard.includes("WizardMobileProgress") && read("src/components/tours/wizard/steps.ts").includes("Review & Submit"));
 check("tour edit retains all structured editing tabs", ["Overview", "Highlights", "Itinerary", "Inclusions", "Gallery", "Pricing", "Calendar"].every((tab) => tourWizard.includes(tab)));
 check("tour edit links to private preview", tourWizard.includes("/preview") && tourWizard.includes("Preview"));
 check(
   "admin and supplier tour builders use the same shared design system",
   tourWizard.includes("TourWorkspaceHeader") &&
-    tourWizard.includes("TourWorkspaceTabs") &&
     tourWizard.includes("TourWorkspaceContent") &&
-    tourWizard.includes("TourWorkspaceStepper"),
+    tourWizard.includes("WizardSidebar") &&
+    tourWizard.includes("WizardMobileProgress"),
 );
 check(
   "supplier tour sections support explicit step completion",
   tourWizard.includes("visitedSteps") &&
-    tourWizard.includes("selectPrimaryStep") &&
+    tourWizard.includes("selectStep") &&
+    tourWizard.includes("useStepCompletion") &&
     tourWizard.includes('basePath = isSupplier ? "/supplier/tours"'),
 );
 const sharedTourForm = read("src/components/cms/TourFormPage.tsx");
