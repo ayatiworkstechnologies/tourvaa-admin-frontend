@@ -14,6 +14,7 @@ type PageDefinition = {
 
 export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/": { title: "Curated Tours & Travel Experiences", description: DEFAULT_DESCRIPTION, keywords: ["tours", "travel experiences", "holiday packages", "Tourvaa"] },
+  "/[...catchAll]": { title: "Page Not Found", description: "The page you're looking for doesn't exist. Explore Tourvaa's tours and destinations instead.", index: false },
   "/about": { title: "About Us", description: "Learn how Tourvaa connects travellers with curated tours, trusted suppliers, and dependable booking support." },
   "/accessibility": { title: "Accessibility", description: "Read Tourvaa's accessibility commitment and learn how we make travel discovery and booking easier for everyone." },
   "/blogs": { title: "Travel Guides & Stories", description: "Explore Tourvaa travel guides, destination inspiration, planning advice, and stories for your next journey." },
@@ -93,6 +94,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/admin/settings/cities": { title: "City Settings", description: "Manage cities available for Tourvaa tours, customers, suppliers, and agents.", index: false },
   "/admin/settings/countries": { title: "Country Settings", description: "Manage supported countries, currencies, and localization details.", index: false },
   "/admin/settings/payment": { title: "Payment Settings", description: "Configure Tourvaa payment gateways, currencies, and checkout settings.", index: false },
+  "/admin/settings/default-commissions": { title: "Default Commission Settings", description: "Configure the platform-wide default commission rates applied to supplier bookings.", index: false },
   "/admin/supplier-payouts": { title: "Supplier Payouts", description: "Review supplier balances, payout requests, approvals, and payment status.", index: false },
   "/admin/agent-payouts": { title: "Agent Payouts", description: "Review agent commission balances, payout requests, approvals, and payment status.", index: false },
   "/admin/suppliers": { title: "Supplier Management", description: "Review supplier accounts, verification, vehicles, tours, and commercial settings.", index: false },
@@ -128,6 +130,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/supplier/profile": { title: "Supplier Profile & Verification", description: "Manage company information, vehicles, documents, and supplier verification.", index: false },
   "/supplier/invoices": { title: "Supplier Invoices", description: "Review and download invoices generated for bookings fulfilled by your supplier account.", index: false },
   "/supplier/tours": { title: "Supplier Tours", description: "Create and manage tour inventory submitted by your supplier account.", index: false },
+  "/supplier/onboarding": { title: "Supplier Onboarding", description: "Complete your Tourvaa supplier onboarding to start listing and managing tours.", index: false },
   "/supplier/tours/create": { title: "Create Supplier Tour", description: "Build a tour with overview, itinerary, inclusions, pricing, availability, and media.", index: false },
   "/supplier/tours/[id]/edit": { title: "Edit Supplier Tour", description: "Update a supplier tour and submit changes for administrative approval.", index: false },
   "/supplier/tours/[id]/preview": { title: "Preview Supplier Tour", description: "Privately preview tour content, itinerary, pricing, and media before publication.", index: false },
