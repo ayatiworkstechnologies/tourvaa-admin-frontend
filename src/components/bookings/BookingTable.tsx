@@ -22,6 +22,13 @@ function money(value: string | number | undefined, currency: string) {
   return `${currency || ""} ${amount}`.trim();
 }
 
+function dueDateText(value?: string | null) {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
+}
+
 export default function BookingTable({ onCancel, onConfirm, busyBookingId, ...tableProps }: BookingTableProps) {
   const { page, pageSize } = tableProps;
   const columns: DataTableColumn<Booking>[] = [
@@ -66,6 +73,12 @@ export default function BookingTable({ onCancel, onConfirm, busyBookingId, ...ta
       key: "payment_status",
       header: "Payment",
       render: (booking) => <BookingStatusBadge value={booking.payment_status} />,
+    },
+    {
+      key: "payment_due_date",
+      header: "Due Date",
+      className: "whitespace-nowrap text-dash-muted",
+      render: (booking) => dueDateText(booking.payment_due_date),
     },
     { key: "final_amount", header: "Final", className: "font-semibold text-dash-text", render: (booking) => money(booking.final_amount, booking.currency) },
     { key: "amount_pending", header: "Pending", className: "font-semibold text-amber-700", render: (booking) => money(booking.amount_pending, booking.currency) },

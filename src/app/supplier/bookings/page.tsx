@@ -7,6 +7,7 @@ import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { SupplierMetric, SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useToast } from "@/hooks/useToast";
 
 type Booking = {
   id: number;
@@ -19,10 +20,20 @@ type Booking = {
   total_pax?: number;
   booking_status: string;
   payment_status?: string;
+  supplier_acceptance_status?: string;
+  amount_pending?: string | number;
+  payment_due_date?: string | null;
   final_amount?: string | number;
   total_amount?: string | number;
   currency?: string;
 };
+
+function toDateInputValue(value?: string | null) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Statuses" },
@@ -57,7 +68,9 @@ function paymentColors(s: string) {
 
 export default function SupplierBookingsPage() {
   const { formatExact: format } = useCurrency();
+  const toast = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [savingDueDateId, setSavingDueDateId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -104,6 +117,21 @@ export default function SupplierBookingsPage() {
     setPage(1);
   };
 
+  const handleDueDateChange = async (bookingId: number, value: string) => {
+    if (!value) return;
+    setSavingDueDateId(bookingId);
+    try {
+      const res = await api.patch(`/supplier/bookings/${bookingId}/due-date`, { due_date: value });
+      const updated = res.data?.data;
+      setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, payment_due_date: updated?.payment_due_date ?? value } : b)));
+      toast.success("Due date updated.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Could not update due date. Please try again.");
+    } finally {
+      setSavingDueDateId(null);
+    }
+  };
+
   const stats = [
     { label: "Total Bookings", value: Object.keys(statusCounts).length ? Object.values(statusCounts).reduce((sum, count) => sum + count, 0) : total, icon: CalendarCheck, tone: "bg-emerald-50 text-emerald-700", note: "All supplier bookings" },
     { label: "Confirmed / Ongoing", value: (statusCounts.confirmed ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, tone: "bg-sky-50 text-sky-700", note: "Active operations" },
@@ -124,6 +152,23 @@ export default function SupplierBookingsPage() {
     { key: "travellers", header: "Travellers", className: "text-center text-dash-muted", render: (b) => b.num_travellers ?? b.total_pax ?? "-" },
     { key: "status", header: "Status", render: (b) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(b.booking_status)}`}>{b.booking_status.replaceAll("_", " ")}</span> },
     { key: "payment", header: "Payment", render: (b) => b.payment_status ? <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(b.payment_status)}`}>{b.payment_status}</span> : <span className="text-xs text-dash-subtle">-</span> },
+    {
+      key: "due_date",
+      header: "Due Date",
+      render: (b) => {
+        const canEdit = b.supplier_acceptance_status === "accepted" && Number(b.amount_pending || 0) > 0;
+        if (!canEdit) return <span className="text-xs text-dash-subtle">-</span>;
+        return (
+          <input
+            type="date"
+            defaultValue={toDateInputValue(b.payment_due_date)}
+            disabled={savingDueDateId === b.id}
+            onChange={(e) => void handleDueDateChange(b.id, e.target.value)}
+            className="rounded-lg border border-[#D5E6DB] bg-white px-2 py-1.5 text-xs font-semibold text-[#365545] outline-none focus:border-[#16833A] focus:ring-2 focus:ring-emerald-50 disabled:opacity-50"
+          />
+        );
+      },
+    },
     { key: "amount", header: "Amount", className: "whitespace-nowrap font-semibold text-dash-text", render: (b) => format(b.final_amount ?? b.total_amount ?? 0, b.currency) },
   ];
 

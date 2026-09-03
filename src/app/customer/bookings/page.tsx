@@ -23,6 +23,10 @@ type Booking = {
   status: "Confirmed" | "Completed" | "Upcoming" | "Cancelled" | string;
   total_amount: string | number;
   image: string;
+  payment_due_date?: string | null;
+  amount_paid?: string | number;
+  amount_pending?: string | number;
+  currency?: string;
 };
 
 const DEFAULT_BOOKINGS: Booking[] = [
@@ -166,6 +170,10 @@ export default function CustomerBookingsPage() {
               status: b.booking_status || fallback.status,
               total_amount: b.final_amount ? money(b.final_amount, b.currency || "USD") : fallback.total_amount,
               image: b.tour_image ? mediaUrl(b.tour_image) : fallback.image,
+              payment_due_date: b.payment_due_date ?? null,
+              amount_paid: b.amount_paid,
+              amount_pending: b.amount_pending,
+              currency: b.currency || "USD",
             };
           });
           setBookings(mapped);
@@ -277,6 +285,14 @@ export default function CustomerBookingsPage() {
                     <Calendar size={13} className="text-slate-400" />
                     {b.travel_dates}
                   </p>
+                  {Number(b.amount_pending || 0) > 0 ? (
+                    <p className="mt-1 text-[11px] font-semibold text-amber-600">
+                      Paid {money(b.amount_paid || 0, b.currency)} • Due {money(b.amount_pending || 0, b.currency)}
+                      {b.payment_due_date && ` by ${new Date(b.payment_due_date).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" })}`}
+                    </p>
+                  ) : b.amount_paid !== undefined ? (
+                    <p className="mt-1 text-[11px] font-semibold text-emerald-600">Paid in full</p>
+                  ) : null}
                 </div>
               </div>
 

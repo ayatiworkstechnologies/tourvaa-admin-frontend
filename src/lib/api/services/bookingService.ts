@@ -40,6 +40,7 @@ export type Booking = {
   final_amount: string;
   amount_paid: string;
   amount_pending: string;
+  payment_due_date?: string | null;
   booking_status: string;
   supplier_acceptance_status: string;
   payment_status: string;
