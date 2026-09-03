@@ -36,7 +36,12 @@ jobs:
       - run: npm ci
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
-      - run: npm test
+      - name: Contract tests (tests/run-tests.mjs)
+        run: node tests/run-tests.mjs
+      - name: Unit tests (vitest)
+        run: npx vitest run
+      - name: Type-check
+        run: npx tsc --noEmit
       - run: npm run build
         env:
           API_PROXY_TARGET: ${{ env.API_PROXY_TARGET }}
