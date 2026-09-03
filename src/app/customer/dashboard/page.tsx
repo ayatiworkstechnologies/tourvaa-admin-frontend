@@ -3,15 +3,22 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  LuCompass as Compass,
+  LuCreditCard as CreditCard,
+  LuFileText as FileText,
+  LuHeadset as Headset,
   LuHeart as Heart,
   LuLayoutGrid as LayoutGrid,
   LuMapPin as MapPin,
   LuPencil as Pencil,
+  LuShare2 as Share2,
   LuStar as Star,
+  LuUserPlus as UserPlus,
 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
+import { useToast } from "@/hooks/useToast";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 
@@ -39,6 +46,7 @@ type Booking = {
   tour_date?: string | null;
   booking_status: string;
   final_amount?: string | number;
+  amount_pending?: string | number;
   currency?: string;
 };
 
@@ -151,8 +159,28 @@ export default function CustomerDashboardPage() {
   const { user } = useAuthContext();
   const { wishlist } = useTravelStore();
   const { format } = useCurrency();
+  const toast = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>(DEFAULT_BOOKINGS);
+
+  const handleReferralShare = useCallback(async () => {
+    const link = typeof window !== "undefined" ? `${window.location.origin}/register?ref=${encodeURIComponent(String(user?.id ?? ""))}` : "";
+    const text = "Book your next trip with Tourvaa - join me and explore curated tours worldwide!";
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Tourvaa", text, url: link });
+      } catch {
+        // User cancelled the native share sheet - nothing to do.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Referral link copied to clipboard.");
+    } catch {
+      toast.error("Could not copy the referral link.");
+    }
+  }, [user, toast]);
 
   const load = useCallback(async () => {
     try {
@@ -204,13 +232,47 @@ export default function CustomerDashboardPage() {
     <div className="min-h-screen bg-[#F8FAFC] px-4 py-6 sm:px-8 sm:py-8">
       <div className="mx-auto max-w-[1100px]">
         {/* Page Title & Subtitle */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-[28px] font-black tracking-tight text-[#0B1527]">
-            Account Settings
-          </h1>
-          <p className="mt-1 text-xs text-slate-400 font-medium">
-            Manage your profile details, tour bookings, and saved destinations.
-          </p>
+        <div className="mb-6 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-[28px] font-black tracking-tight text-[#0B1527]">
+              Account Settings
+            </h1>
+            <p className="mt-1 text-xs text-slate-400 font-medium">
+              Manage your profile details, tour bookings, and saved destinations.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleReferralShare}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#0B1527] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
+          >
+            <Share2 size={13} />
+            Refer & Earn
+          </button>
+        </div>
+
+        {/* ── Quick Actions ── */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <Link href="/tours" className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Compass size={16} /></span>
+            <span className="text-[11px] font-bold text-slate-800">Book a Tour</span>
+          </Link>
+          <Link href="/customer/payments" className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><CreditCard size={16} /></span>
+            <span className="text-[11px] font-bold text-slate-800">Make a Payment</span>
+          </Link>
+          <Link href="/customer/travellers" className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><UserPlus size={16} /></span>
+            <span className="text-[11px] font-bold text-slate-800">Add Traveller</span>
+          </Link>
+          <Link href="/customer/invoices" className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><FileText size={16} /></span>
+            <span className="text-[11px] font-bold text-slate-800">View Invoices</span>
+          </Link>
+          <Link href="/customer/support" className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600"><Headset size={16} /></span>
+            <span className="text-[11px] font-bold text-slate-800">Contact Support</span>
+          </Link>
         </div>
 
         {/* ── Card 1: Profile Details ── */}
@@ -346,7 +408,13 @@ export default function CustomerDashboardPage() {
                       {formatStatus(b.booking_status)}
                     </td>
                     <td className="py-4 text-right text-xs font-bold text-slate-900">
-                      {formatPrice(b.final_amount)}
+                      {Number(b.amount_pending || 0) > 0 ? (
+                        <Link href={`/customer/bookings/${b.id}?action=pay`} className="text-amber-600 hover:underline">
+                          {formatPrice(b.amount_pending)} due
+                        </Link>
+                      ) : (
+                        formatPrice(b.final_amount)
+                      )}
                     </td>
                   </tr>
                 ))}

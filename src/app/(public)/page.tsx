@@ -77,261 +77,6 @@ type Tour = {
 
 const PLACEHOLDER_IMAGE = "/images/tour-card-fallback.jpg";
 
-const CURATED_TRENDING_TOURS: Tour[] = [
-  {
-    id: 201,
-    title: "New Zealand Explorer",
-    place: "New Zealand",
-    image: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=800&q=80",
-    days: "9 Days",
-    reviews: "2,466 reviews",
-    rating: 4.8,
-    features: [
-      { icon: Sun, text: "9 Days" },
-      { icon: Compass, text: "Auckland → Queenstown" },
-      { icon: Target, text: "Age Range: 12–70" },
-      { icon: Users, text: "Max Group Size: 24" },
-    ],
-    rawPrice: 1182,
-    originalPrice: 1575,
-    discountBadge: "Save 25%",
-    currency: "USD",
-    slug: "new-zealand-explorer",
-  },
-  {
-    id: 202,
-    title: "Golden Triangle Escape",
-    place: "India",
-    image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80",
-    days: "7 Days / 6 Nights",
-    reviews: "1,888 reviews",
-    rating: 4.7,
-    features: [
-      { icon: Sun, text: "7 Days / 6 Nights" },
-      { icon: Compass, text: "Delhi → Agra → Jaipur" },
-      { icon: Target, text: "Age Range: 10 - 75" },
-      { icon: Users, text: "Max Group Size: 20" },
-    ],
-    rawPrice: 839,
-    originalPrice: 1199,
-    discountBadge: "Save 25%",
-    currency: "USD",
-    slug: "golden-triangle-escape",
-  },
-  {
-    id: 203,
-    title: "Swiss Alpine Adventure",
-    place: "Switzerland",
-    image: "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=800&q=80",
-    days: "6 Days / 5 Nights",
-    reviews: "3,692 reviews",
-    rating: 4.8,
-    features: [
-      { icon: Sun, text: "6 Days / 5 Nights" },
-      { icon: Compass, text: "Zurich → Lucerne" },
-      { icon: Target, text: "Age Range: 15 - 70" },
-      { icon: Users, text: "Max Group Size: 18" },
-    ],
-    rawPrice: 1575,
-    originalPrice: 2099,
-    discountBadge: "Save 25%",
-    currency: "USD",
-    slug: "swiss-alpine-adventure",
-  },
-  {
-    id: 204,
-    title: "Cherry Blossom Odyssey",
-    place: "Japan",
-    image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80",
-    days: "8 Days / 7 Nights",
-    reviews: "1,989 reviews",
-    rating: 4.9,
-    features: [
-      { icon: Sun, text: "8 Days / 7 Nights" },
-      { icon: Compass, text: "Tokyo → Kyoto" },
-      { icon: Target, text: "Age Range: 12 - 70" },
-      { icon: Users, text: "Max Group Size: 16" },
-    ],
-    rawPrice: 1860,
-    originalPrice: 2199,
-    discountBadge: "Save 20%",
-    currency: "USD",
-    slug: "cherry-blossom-odyssey",
-  },
-];
-
-const CURATED_TOP_DEALS: Tour[] = [
-  {
-    id: 101,
-    title: "Marrakech & Sahara",
-    place: "Morocco",
-    image: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=800&q=80",
-    days: "8 Days",
-    durationTag: "8D | 7N",
-    reviews: "1,842 reviews",
-    rating: 4.9,
-    features: [{ icon: Clock, text: "8 Days" }],
-    rawPrice: 999,
-    originalPrice: 1299,
-    currency: "USD",
-    slug: "marrakech-sahara",
-  },
-  {
-    id: 102,
-    title: "Tokyo to Kyoto Trail",
-    place: "Japan",
-    image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80",
-    days: "10 Days",
-    durationTag: "10D | 9N",
-    reviews: "3,215 reviews",
-    rating: 4.9,
-    features: [{ icon: Clock, text: "10 Days" }],
-    rawPrice: 1899,
-    originalPrice: 2499,
-    currency: "USD",
-    slug: "tokyo-kyoto-trail",
-  },
-  {
-    id: 103,
-    title: "Istanbul & Cappadocia",
-    place: "Turkey",
-    image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80",
-    days: "7 Days",
-    durationTag: "7D | 6N",
-    reviews: "2,756 reviews",
-    rating: 4.8,
-    features: [{ icon: Clock, text: "7 Days" }],
-    rawPrice: 899,
-    originalPrice: 1199,
-    currency: "USD",
-    slug: "istanbul-cappadocia",
-  },
-  {
-    id: 104,
-    title: "Ceylon Heritage Trail",
-    place: "Sri Lanka",
-    image: "https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=800&q=80",
-    days: "8 Days",
-    durationTag: "8D | 7N",
-    reviews: "1,523 reviews",
-    rating: 4.7,
-    features: [{ icon: Clock, text: "8 Days" }],
-    rawPrice: 1149,
-    originalPrice: 1450,
-    currency: "USD",
-    slug: "ceylon-heritage-trail",
-  },
-  {
-    id: 105,
-    title: "Queenstown & Alpine Glaciers",
-    place: "New Zealand",
-    image: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=800&q=80",
-    days: "9 Days",
-    durationTag: "9D | 8N",
-    reviews: "2,180 reviews",
-    rating: 4.9,
-    features: [{ icon: Clock, text: "9 Days" }],
-    rawPrice: 1650,
-    originalPrice: 2100,
-    currency: "USD",
-    slug: "queenstown-alpine-glaciers",
-  },
-  {
-    id: 106,
-    title: "Amalfi Coast & Rome Explorer",
-    place: "Italy",
-    image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
-    days: "8 Days",
-    durationTag: "8D | 7N",
-    reviews: "2,940 reviews",
-    rating: 4.9,
-    features: [{ icon: Clock, text: "8 Days" }],
-    rawPrice: 1490,
-    originalPrice: 1890,
-    currency: "USD",
-    slug: "amalfi-coast-rome-explorer",
-  },
-];
-
-const CURATED_HANDPICKED_TOURS: Tour[] = [
-  {
-    id: 301,
-    title: "South Island Explorer",
-    place: "New Zealand",
-    image: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=800&q=80",
-    days: "10 Days",
-    durationTag: "10D | 9N",
-    reviews: "2,466 reviews",
-    rating: 4.8,
-    features: [
-      { icon: Clock, text: "Including Accommodation" },
-      { icon: Clock, text: "Milford Sound Cruise" },
-      { icon: Clock, text: "Airport pickup available" },
-    ],
-    rawPrice: 2699,
-    originalPrice: 3199,
-    currency: "USD",
-    slug: "south-island-explorer",
-  },
-  {
-    id: 302,
-    title: "Golden Triangle Escape",
-    place: "India",
-    image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80",
-    days: "7 Days",
-    durationTag: "7D | 6N",
-    reviews: "2,466 reviews",
-    rating: 4.8,
-    features: [
-      { icon: Clock, text: "Premium accommodation" },
-      { icon: Clock, text: "Guided heritage tour" },
-      { icon: Clock, text: "Daily breakfast included" },
-    ],
-    rawPrice: 799,
-    originalPrice: 999,
-    currency: "USD",
-    slug: "golden-triangle-escape-handpicked",
-  },
-  {
-    id: 303,
-    title: "Swiss Alps Escape",
-    place: "Switzerland",
-    image: "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=800&q=80",
-    days: "6 Days",
-    durationTag: "6D | 5N",
-    reviews: "3,128 reviews",
-    rating: 4.8,
-    features: [
-      { icon: Clock, text: "Mountain-view Accommodation" },
-      { icon: Clock, text: "Scenic Train Experience" },
-      { icon: Clock, text: "Daily Breakfast Included" },
-    ],
-    rawPrice: 780,
-    originalPrice: 960,
-    currency: "USD",
-    slug: "swiss-alps-escape",
-  },
-  {
-    id: 304,
-    title: "Paris & Provence Highlights",
-    place: "France",
-    image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80",
-    days: "8 Days",
-    durationTag: "8D | 7N",
-    reviews: "2,466 reviews",
-    rating: 4.8,
-    features: [
-      { icon: Clock, text: "Central Hotel Accommodation" },
-      { icon: Clock, text: "Guided City Sightseeing" },
-      { icon: Clock, text: "Seine River Cruise Included" },
-    ],
-    rawPrice: 670,
-    originalPrice: 825,
-    currency: "USD",
-    slug: "paris-provence-highlights",
-  },
-];
-
 type CountryWorthExploring = {
   name: string;
   count: string;
@@ -341,51 +86,6 @@ type CountryWorthExploring = {
   price?: number | null;
   currency?: string;
 };
-
-const CURATED_COUNTRIES_WORTH_EXPLORING: CountryWorthExploring[] = [
-  {
-    name: "New Zealand",
-    count: "96 Packages",
-    rating: 4.9,
-    badge: "Popular",
-    image: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    name: "India",
-    count: "73 Packages",
-    rating: 4.9,
-    badge: "Popular",
-    image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    name: "Switzerland",
-    count: "85 Packages",
-    rating: 4.8,
-    badge: "Popular",
-    image: "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    name: "France",
-    count: "62 Packages",
-    rating: 4.8,
-    badge: "Popular",
-    image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    name: "Italy",
-    count: "88 Packages",
-    rating: 4.9,
-    badge: "Popular",
-    image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    name: "Japan",
-    count: "94 Packages",
-    rating: 4.9,
-    badge: "Popular",
-    image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80",
-  },
-];
 
 type CountryDestination = {
   name: string;
@@ -400,56 +100,56 @@ const DEFAULT_FAVOURITE_COUNTRIES: CountryDestination[] = [
   {
     name: "Morocco",
     badge: "Morocco",
-    image: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=800&q=80",
+    image: "/images/destination-desert.jpg",
     snippet: "Trek the Sahara aboard a camel. Browse the vibrant souks of Marrakech. Uncover the imperial cities.",
     href: "/tours?country=Morocco",
   },
   {
     name: "Egypt",
     badge: "Egypt",
-    image: "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=800&q=80",
+    image: "/images/destination-alpine.jpg",
     snippet: "Our best-selling destination! Cruise the Nile, marvel at the Pyramids, explore the tombs of Luxor.",
     href: "/tours?country=Egypt",
   },
   {
     name: "Iceland",
     badge: "Iceland",
-    image: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?auto=format&fit=crop&w=800&q=80",
+    image: "/images/hero-1.jpg",
     snippet: "Iceland in winter is home to the Northern Lights, while in summer the waterfalls are breathtaking.",
     href: "/tours?country=Iceland",
   },
   {
     name: "Sri Lanka",
     badge: "Sri Lanka",
-    image: "https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=800&q=80",
+    image: "/images/hero-2.jpg",
     snippet: "Sri Lanka's Cultural Triangle offers such attractions as the Sigiriya Fortress and Dambulla caves.",
     href: "/tours?country=Sri+Lanka",
   },
   {
     name: "Turkey",
     badge: "Turkey",
-    image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80",
+    image: "/images/hero-3.jpg",
     snippet: "From the city in two continents, Istanbul, to the cave cities of Cappadocia, make Turkey your next trip.",
     href: "/tours?country=Turkey",
   },
   {
     name: "India",
     badge: "India",
-    image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80",
+    image: "/images/destination-desert.jpg",
     snippet: "First timers to India will want to take in the Golden Triangle of Delhi, Jaipur and Agra.",
     href: "/tours?country=India",
   },
   {
     name: "Vietnam",
     badge: "Vietnam",
-    image: "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80",
+    image: "/images/destination-alpine.jpg",
     snippet: "Visitors to Vietnam can cruise Halong Bay. They can ride a rickshaw around Hanoi. And so much more.",
     href: "/tours?country=Vietnam",
   },
   {
     name: "China",
     badge: "China",
-    image: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80",
+    image: "/images/hero-1.jpg",
     snippet: "Walk the Great Wall, stand before the Terracotta Army, and explore the Forbidden City.",
     href: "/tours?country=China",
   },
@@ -486,8 +186,8 @@ function mapPublicTour(tour: PublicTour): Tour {
   ];
 
   const rawPrice = tour.price_start_per_person;
-  const originalPrice = rawPrice ? Math.round(rawPrice * 1.33) : null;
-  const discountBadge = "Save 25%";
+  const originalPrice = tour.discount_percentage && tour.original_price_per_person ? tour.original_price_per_person : null;
+  const discountBadge = tour.discount_percentage ? `Save ${Math.round(tour.discount_percentage)}%` : undefined;
 
   return {
     id: tour.id,
@@ -496,8 +196,8 @@ function mapPublicTour(tour: PublicTour): Tour {
     image: tour.banner_image ? mediaUrl(tour.banner_image) : PLACEHOLDER_IMAGE,
     days: durationLabel,
     durationTag,
-    reviews: tour.rating_count ? `${tour.rating_count.toLocaleString()} reviews` : "2,466 reviews",
-    rating: tour.rating_count ? (tour.rating_average ?? 4.8) : 4.8,
+    reviews: tour.rating_count ? `${tour.rating_count.toLocaleString()} reviews` : "",
+    rating: tour.rating_count ? tour.rating_average ?? undefined : undefined,
     features,
     rawPrice,
     originalPrice,
@@ -893,7 +593,7 @@ function AboutTourvaaBanner() {
     <section className="relative my-8 sm:my-12 overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl">
       {/* High-res Panoramic Mountain Background */}
       <img
-        src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2000&q=85"
+        src="/images/destination-alpine.jpg"
         alt="About Tourvaa - Alpine mountain landscape"
         className="absolute inset-0 h-full w-full object-cover object-center scale-105"
       />
@@ -964,10 +664,12 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
           />
         </button>
 
-        {/* Red Discount Pill (floating bottom-right of image) */}
-        <span className="absolute -bottom-0.5 right-2.5 z-20 rounded-xl bg-[#e51d2e] px-3 py-1.5 text-xs font-black text-white shadow-md">
-          {tour.discountBadge || "Save 25%"}
-        </span>
+        {/* Red Discount Pill (floating bottom-right of image) - only shown for a real discount */}
+        {tour.discountBadge && (
+          <span className="absolute -bottom-0.5 right-2.5 z-20 rounded-xl bg-[#e51d2e] px-3 py-1.5 text-xs font-black text-white shadow-md">
+            {tour.discountBadge}
+          </span>
+        )}
       </div>
 
       {/* Card Body */}
@@ -1031,7 +733,7 @@ function TrendingToursSection({
   const scrollRef = useRef<HTMLDivElement>(null);
   const move = (direction: number) => scrollRef.current?.scrollBy({ left: direction * 330, behavior: "smooth" });
 
-  const displayTours = tours.length > 0 ? tours : CURATED_TRENDING_TOURS;
+  const displayTours = tours;
 
   return (
     <section className="py-8 sm:py-10">
@@ -1071,11 +773,19 @@ function TrendingToursSection({
                 <TourCardSkeleton />
               </div>
             ))
-          : displayTours.map((tour, index) => (
-              <div className="snap-start" key={`${tour.title}-${index}`}>
-                <TrendingTourCard tour={tour} />
-              </div>
-            ))}
+          : displayTours.length > 0
+            ? displayTours.map((tour, index) => (
+                <div className="snap-start" key={`${tour.title}-${index}`}>
+                  <TrendingTourCard tour={tour} />
+                </div>
+              ))
+            : (
+              <EmptyCollection
+                message="No featured tours are available yet."
+                href="/tours"
+                linkLabel="Browse all tours"
+              />
+            )}
       </div>
     </section>
   );
@@ -1188,7 +898,7 @@ function HandpickedToursSection({
   const scrollRef = useRef<HTMLDivElement>(null);
   const move = (direction: number) => scrollRef.current?.scrollBy({ left: direction * 330, behavior: "smooth" });
 
-  const displayTours = tours.length > 0 ? tours : CURATED_HANDPICKED_TOURS;
+  const displayTours = tours;
 
   return (
     <section className="py-8 sm:py-10">
@@ -1228,11 +938,19 @@ function HandpickedToursSection({
                 <TourCardSkeleton />
               </div>
             ))
-          : displayTours.map((tour, index) => (
-              <div className="snap-start" key={`${tour.title}-${index}`}>
-                <HandpickedTourCard tour={tour} />
-              </div>
-            ))}
+          : displayTours.length > 0
+            ? displayTours.map((tour, index) => (
+                <div className="snap-start" key={`${tour.title}-${index}`}>
+                  <HandpickedTourCard tour={tour} />
+                </div>
+              ))
+            : (
+              <EmptyCollection
+                message="No handpicked tours are available yet."
+                href="/tours"
+                linkLabel="Browse all tours"
+              />
+            )}
       </div>
     </section>
   );
@@ -1248,7 +966,7 @@ function CountriesWorthExploringSection({
   const scrollRef = useRef<HTMLDivElement>(null);
   const move = (direction: number) => scrollRef.current?.scrollBy({ left: direction * 300, behavior: "smooth" });
 
-  const displayCountries = countries.length > 0 ? countries : CURATED_COUNTRIES_WORTH_EXPLORING;
+  const displayCountries = countries;
 
   return (
     <section className="py-8 sm:py-10">
@@ -1286,9 +1004,17 @@ function CountriesWorthExploringSection({
           ? Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="h-56 w-[260px] shrink-0 animate-pulse rounded-2xl bg-slate-100" />
             ))
-          : displayCountries.map((country, index) => (
-              <CountryWorthExploringCard key={`${country.name}-${index}`} country={country} />
-            ))}
+          : displayCountries.length > 0
+            ? displayCountries.map((country, index) => (
+                <CountryWorthExploringCard key={`${country.name}-${index}`} country={country} />
+              ))
+            : (
+              <EmptyCollection
+                message="No destinations are available yet."
+                href="/tours"
+                linkLabel="Browse all tours"
+              />
+            )}
       </div>
     </section>
   );
@@ -1320,10 +1046,12 @@ function CountryWorthExploringCard({ country }: { country: CountryWorthExploring
           <h3 className="truncate text-base font-bold text-slate-900 transition-colors group-hover:text-blue-600">
             {country.name}
           </h3>
-          <div className="flex items-center gap-1 text-xs font-bold text-slate-800 shrink-0">
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <span>{(country.rating ?? 4.8).toFixed(1)}</span>
-          </div>
+          {country.rating != null && (
+            <div className="flex items-center gap-1 text-xs font-bold text-slate-800 shrink-0">
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <span>{country.rating.toFixed(1)}</span>
+            </div>
+          )}
         </div>
 
         {/* Packages count with map/book icon */}
@@ -1340,11 +1068,11 @@ export default function Home() {
   const [banners, setBanners] = useState<CmsBanner[]>([]);
   const [bannerIndex, setBannerIndex] = useState(0);
   const [loadingHome, setLoadingHome] = useState(true);
-  const [topDeals, setTopDeals] = useState<Tour[]>(CURATED_TOP_DEALS);
+  const [topDeals, setTopDeals] = useState<Tour[]>([]);
   const [favouriteCountries, setFavouriteCountries] = useState<CountryDestination[]>(DEFAULT_FAVOURITE_COUNTRIES);
-  const [trendingTours, setTrendingTours] = useState<Tour[]>(CURATED_TRENDING_TOURS);
-  const [handpickedTours, setHandpickedTours] = useState<Tour[]>(CURATED_HANDPICKED_TOURS);
-  const [countriesWorthExploring, setCountriesWorthExploring] = useState<CountryWorthExploring[]>(CURATED_COUNTRIES_WORTH_EXPLORING);
+  const [trendingTours, setTrendingTours] = useState<Tour[]>([]);
+  const [handpickedTours, setHandpickedTours] = useState<Tour[]>([]);
+  const [countriesWorthExploring, setCountriesWorthExploring] = useState<CountryWorthExploring[]>([]);
   const [dynamicReviews, setDynamicReviews] = useState<{ quote: string; name: string; city: string; tourName: string; initials: string; rating: number; image?: string | null }[]>(CURATED_REVIEWS);
   const [dynamicFaqs, setDynamicFaqs] = useState<{ question: string; answer: string }[]>(FAQS);
   const [directoryCountries, setDirectoryCountries] = useState<string[]>(DIRECTORY_COUNTRIES);
@@ -1448,7 +1176,7 @@ export default function Home() {
 
       // "Top Deals" - admin-picked via CMS "Deals" (admin/cms > Deals), same
       // resolve-by-id pattern, plus the admin's deal_label overrides the
-      // generic "Save 25%" badge when set.
+      // tour's own real discount badge (from discount_percentage) when set.
       if (dealTourResult.status === "fulfilled" && dealTourResult.value.length) {
         const refs = dealTourResult.value.filter((r) => r.is_active !== false);
         Promise.allSettled(refs.map((ref) => fetchPublicTourDetail(ref.tour_id))).then((results) => {
@@ -1470,9 +1198,7 @@ export default function Home() {
   }, []);
 
   const banner = banners[bannerIndex];
-  const heroImage = banner?.image
-    ? mediaUrl(banner.image)
-    : "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=2000&q=85";
+  const heroImage = banner?.image ? mediaUrl(banner.image) : "/images/hero-1.jpg";
   const heroVideo = banner?.video ? mediaUrl(banner.video) : null;
 
   // A video banner advances on its own "ended" event (below) so it always
@@ -1510,7 +1236,7 @@ export default function Home() {
             ) : (
               <img
                 key={heroImage}
-                src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=2000&q=85"
+                src={heroImage}
                 alt={banner?.title || "Scenic mountain lake landscape"}
                 className="h-full w-full object-cover object-center scale-105 transition-transform duration-1000"
               />
@@ -1606,7 +1332,7 @@ export default function Home() {
             {/* Left Image: 602px x 394px on desktop, rounded-[16px] with 16px outer padding */}
             <div className="relative h-[280px] sm:h-[340px] lg:h-[394px] w-full overflow-hidden rounded-[16px] bg-slate-100">
               <img
-                src="https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=1200&q=80"
+                src="/images/hero-2.jpg"
                 alt="Travellers with backpacks hiking on a trail"
                 className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
               />
@@ -1718,7 +1444,7 @@ function AirportTransfersBanner() {
         {/* Right Image */}
         <div className="relative overflow-hidden rounded-xl sm:rounded-2xl">
           <img
-            src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1200&q=80"
+            src="/images/hero-3.jpg"
             alt="Luxury airport chauffeur transfer in front of international arrivals terminal"
             className="h-64 sm:h-76 md:h-84 lg:h-92 w-full object-cover shadow-sm transition-transform duration-700 hover:scale-103"
           />

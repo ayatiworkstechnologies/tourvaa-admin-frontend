@@ -144,6 +144,15 @@ export default function CustomerBookingsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [bookings, setBookings] = useState<Booking[]>(DEFAULT_BOOKINGS);
 
+  // Dashboard "My Bookings" quick-view links can deep-link into a specific
+  // tab, e.g. /customer/bookings?tab=Upcoming - applied once on mount.
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (tab && ["All", "Confirmed", "Completed", "Upcoming", "Cancelled"].includes(tab)) {
+      setStatusFilter(tab);
+    }
+  }, []);
+
   useEffect(() => {
     async function load() {
       try {
