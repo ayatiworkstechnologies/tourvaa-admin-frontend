@@ -415,22 +415,44 @@ function TopDealsSection({
   const [activeTab, setActiveTab] = useState("Top deals");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const tabs = ["Top deals", "New Zealand deals", "Turkey deals", "Italy deals"];
+  const tabs = useMemo(() => {
+    const placesMap = new Map<string, string>();
+    for (const t of tours) {
+      if (!t.place) continue;
+      const parts = t.place.split(",").map((s) => s.trim()).filter(Boolean);
+      const dest = parts[parts.length - 1] || t.place.trim();
+      if (dest && !/worldwide/i.test(dest) && !placesMap.has(dest.toLowerCase())) {
+        placesMap.set(dest.toLowerCase(), dest);
+      }
+    }
+
+    const uniquePlaces = Array.from(placesMap.values());
+    if (uniquePlaces.length > 0) {
+      return ["Top deals", ...uniquePlaces.slice(0, 6).map((place) => `${place} deals`)];
+    }
+
+    return ["Top deals", "New Zealand deals", "Turkey deals", "Italy deals"];
+  }, [tours]);
+
+  useEffect(() => {
+    if (!tabs.includes(activeTab)) {
+      setActiveTab("Top deals");
+    }
+  }, [tabs, activeTab]);
 
   const filteredTours = useMemo(() => {
-    if (activeTab === "New Zealand deals") {
-      return tours.filter((t) => /new zealand/i.test(t.place) || /new zealand/i.test(t.title));
+    if (activeTab === "Top deals") {
+      return tours;
     }
-    if (activeTab === "Turkey deals") {
-      return tours.filter((t) => /turkey|türkiye|istanbul|cappadocia/i.test(t.place) || /turkey|türkiye|istanbul|cappadocia/i.test(t.title));
-    }
-    if (activeTab === "Italy deals") {
-      return tours.filter((t) => /italy|rome|amalfi|florence|venice/i.test(t.place) || /italy|rome|amalfi/i.test(t.title));
-    }
-    return tours;
+    const keyword = activeTab.replace(/\s+deals$/i, "").toLowerCase().trim();
+    return tours.filter((t) => {
+      const place = (t.place || "").toLowerCase();
+      const title = (t.title || "").toLowerCase();
+      return place.includes(keyword) || title.includes(keyword);
+    });
   }, [activeTab, tours]);
 
-  const displayTours = filteredTours.length > 0 ? filteredTours : tours;
+  const displayTours = filteredTours;
 
   const move = (direction: number) => {
     scrollRef.current?.scrollBy({ left: direction * 320, behavior: "smooth" });
@@ -461,7 +483,13 @@ function TopDealsSection({
         </div>
 
         <Link
-          href="/tours?sort=price_asc"
+          href={
+            activeTab === "Top deals"
+              ? "/tours?sort=price_asc"
+              : `/tours?sort=price_asc&search=${encodeURIComponent(
+                  activeTab.replace(/\s+deals$/i, "").trim()
+                )}`
+          }
           className="text-xs sm:text-sm font-semibold text-[#E4572E] hover:underline"
         >
           View all deals
