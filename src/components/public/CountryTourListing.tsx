@@ -16,6 +16,7 @@ import {
   LuMap as MapIcon,
   LuMapPin as MapPin,
   LuRotateCcw as RotateCcw,
+  LuSearch as Search,
   LuSlidersHorizontal as Sliders,
   LuStar as Star,
   LuUser as User,
@@ -392,6 +393,23 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const { format } = useCurrency();
   const { isWishlisted, toggleWishlist } = useTravelStore();
 
+  const [searchTerm, setSearchTerm] = useState(querySearch);
+  useEffect(() => {
+    setSearchTerm(querySearch);
+  }, [querySearch]);
+
+  const handleSearchSubmit = (text: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const trimmed = text.trim();
+    if (trimmed) {
+      params.set("search", trimmed);
+    } else {
+      params.delete("search");
+    }
+    params.set("page", "1");
+    router.push(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+  };
+
   const [countryName, setCountryName] = useState("");
   const [categories, setCategories] = useState<PublicCategory[]>([]);
   const [subcategories, setSubcategories] = useState<PublicSubcategory[]>([]);
@@ -621,6 +639,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   // Active filters count
   const activeFiltersCount = useMemo(() => {
     let count = 0;
+    if (querySearch) count++;
     if (selectedBudget) count++;
     if (selectedDuration) count++;
     if (selectedDestination) count++;
@@ -630,7 +649,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     if (selectedSubcategory) count++;
     if (availableOnly) count++;
     return count;
-  }, [selectedBudget, selectedDuration, selectedDestination, selectedRating, selectedDepartureMonth, queryCategory, selectedSubcategory, availableOnly]);
+  }, [querySearch, selectedBudget, selectedDuration, selectedDestination, selectedRating, selectedDepartureMonth, queryCategory, selectedSubcategory, availableOnly]);
 
   // Selecting a category updates the URL (preserving country/search) rather
   // than just local state, so the request is re-run against the backend --
@@ -653,7 +672,12 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     setSelectedDepartureMonth("");
     setSelectedSubcategory("");
     setAvailableOnly(false);
-    if (queryCategory) selectCategory("");
+    setSearchTerm("");
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("category");
+    params.delete("search");
+    params.set("page", "1");
+    router.push(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
   };
 
   // Duration/Budget/Departure Month/Category are already applied server-side
@@ -863,6 +887,37 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <Sliders size={13} />
             Filter ({activeFiltersCount})
           </button>
+
+          {/* Quick Search Input */}
+          <div className="relative shrink-0 min-w-[200px] sm:min-w-[240px]">
+            <input
+              type="text"
+              placeholder="Search by tour name, country..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSearchSubmit(searchTerm);
+                }
+              }}
+              className="w-full rounded-full border border-slate-200 bg-white py-2 pl-8 pr-7 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs"
+            />
+            <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  handleSearchSubmit("");
+                }}
+                aria-label="Clear search"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
 
           {/* Budget Dropdown Pill -- min_price/max_price on GET /api/public/tours */}
           <div className="relative shrink-0">

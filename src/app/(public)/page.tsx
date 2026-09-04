@@ -251,9 +251,33 @@ function Reveal({ children, className = "" }: { children: React.ReactNode; class
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    const observer = new IntersectionObserver(([entry]) => entry.isIntersecting && node.classList.add("is-visible"), { threshold: 0.08 });
+
+    if (typeof IntersectionObserver === "undefined") {
+      node.classList.add("is-visible");
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            node.classList.add("is-visible");
+            observer.unobserve(node);
+          }
+        });
+      },
+      { threshold: 0.01, rootMargin: "250px" }
+    );
     observer.observe(node);
-    return () => observer.disconnect();
+
+    const timer = setTimeout(() => {
+      node.classList.add("is-visible");
+    }, 800);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(timer);
+    };
   }, []);
   return <div ref={ref} className={`reveal-block ${className}`}>{children}</div>;
 }
@@ -1422,7 +1446,7 @@ const TRANSFER_FEATURES = [
 
 function AirportTransfersBanner() {
   const { settings } = usePublicSettings();
-  const brightlaneLink = settings.brightlane_external_link?.trim() || "/contact";
+  const brightlaneLink = settings.brightlane_external_link?.trim() || "https://www.brightlane.co.nz/";
 
   return (
     <section className="py-6 sm:py-8">
@@ -1463,19 +1487,25 @@ function AirportTransfersBanner() {
             rel={brightlaneLink.startsWith("http") ? "noopener noreferrer" : undefined}
             className="mt-6 sm:mt-7 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0f2439] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all hover:bg-[#18395c] hover:shadow-lg hover:-translate-y-0.5"
           >
-            <span>Book Now</span>
+            <span>Book Airport Pickup</span>
             <span className="text-[#d95d2c] font-black text-base" aria-hidden="true">→</span>
           </a>
         </div>
 
         {/* Right Image */}
-        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl">
+        <a
+          href={brightlaneLink}
+          target={brightlaneLink.startsWith("http") ? "_blank" : undefined}
+          rel={brightlaneLink.startsWith("http") ? "noopener noreferrer" : undefined}
+          aria-label="Visit Brightlane Airport Transfers"
+          className="relative block overflow-hidden rounded-xl sm:rounded-2xl group"
+        >
           <img
-            src="/images/hero-3.jpg"
+            src="/images/airport-transfers.jpg"
             alt="Luxury airport chauffeur transfer in front of international arrivals terminal"
-            className="h-64 sm:h-76 md:h-84 lg:h-92 w-full object-cover shadow-sm transition-transform duration-700 hover:scale-103"
+            className="h-64 sm:h-76 md:h-84 lg:h-92 w-full object-cover shadow-sm transition-transform duration-700 group-hover:scale-103"
           />
-        </div>
+        </a>
       </div>
     </section>
   );
@@ -1789,7 +1819,7 @@ function ExploreDirectorySection({
           <button
             type="button"
             onClick={() => setActiveTab("countries")}
-            className={`pb-3 font-bold transition-colors whitespace-nowrap -mb-[1px] ${
+            className={`shrink-0 pb-3 font-bold transition-colors whitespace-nowrap -mb-[1px] ${
               activeTab === "countries"
                 ? "border-b-2 border-slate-950 text-slate-950"
                 : "border-b-2 border-transparent text-slate-500 hover:text-slate-900"
@@ -1800,7 +1830,7 @@ function ExploreDirectorySection({
           <button
             type="button"
             onClick={() => setActiveTab("cities")}
-            className={`pb-3 font-bold transition-colors whitespace-nowrap -mb-[1px] ${
+            className={`shrink-0 pb-3 font-bold transition-colors whitespace-nowrap -mb-[1px] ${
               activeTab === "cities"
                 ? "border-b-2 border-slate-950 text-slate-950"
                 : "border-b-2 border-transparent text-slate-500 hover:text-slate-900"
@@ -1811,7 +1841,7 @@ function ExploreDirectorySection({
           <button
             type="button"
             onClick={() => setActiveTab("categories")}
-            className={`pb-3 font-bold transition-colors whitespace-nowrap -mb-[1px] ${
+            className={`shrink-0 pb-3 font-bold transition-colors whitespace-nowrap -mb-[1px] ${
               activeTab === "categories"
                 ? "border-b-2 border-slate-950 text-slate-950"
                 : "border-b-2 border-transparent text-slate-500 hover:text-slate-900"

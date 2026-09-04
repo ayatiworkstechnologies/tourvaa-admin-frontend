@@ -474,10 +474,10 @@ function PortalAuthContent({ config, heroIcon }: { config: PortalAuthConfig; her
                 <ShieldCheck size={12} /> Secure access
               </span>
               <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
-                {tab === "login" ? "Welcome Back" : "Create Account"}
+                {tab === "login" ? `${config.heroBadge} Login` : `Register for ${config.heroBadge}`}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                {tab === "login" ? "Sign in to your account to continue." : "Fill in your details to get started."}
+                {tab === "login" ? "Sign in to access your dashboard and bookings." : "Fill in your details to get started."}
               </p>
             </div>
 

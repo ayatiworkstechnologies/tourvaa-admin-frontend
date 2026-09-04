@@ -506,7 +506,7 @@ export default function TourDetailExperience({
   }, [tour.similar_tours, destination, format]);
 
   return (
-    <main className="min-h-screen bg-white pb-24 pt-4 text-slate-950">
+    <main className="min-h-screen bg-white pb-28 lg:pb-24 pt-4 text-slate-950">
       {modal}
 
       <div className="mx-auto max-w-[1400px] px-5">
@@ -1158,7 +1158,7 @@ export default function TourDetailExperience({
           </div>
 
           {/* ── Right Column: Sticky Booking Widget ── */}
-          <div className="lg:sticky lg:top-20">
+          <div id="booking-widget" className="lg:sticky lg:top-20">
             <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
               <h3 className="text-sm font-bold text-[#0B1527]">
                 Book your {destination} tour
@@ -1501,6 +1501,34 @@ export default function TourDetailExperience({
             })}
           </div>
         </section>
+      </div>
+
+      {/* Mobile Sticky Booking Bar */}
+      <div className="fixed bottom-0 inset-x-0 z-40 border-t border-slate-200/90 bg-white/95 p-3.5 backdrop-blur-md shadow-2xl lg:hidden">
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Price</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-lg font-black text-[#0B1527]">{format(totalAmount, tour.currency || "USD")}</span>
+              <span className="text-[10px] font-medium text-slate-500">({totalPax} pax)</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById("booking-widget");
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth" });
+              } else {
+                onBook({ travelDate: selectedDate, adults, children });
+              }
+            }}
+            className="flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-6 py-3 text-xs font-bold text-white shadow-md active:scale-95 transition hover:bg-[#15233C]"
+          >
+            <span>Book Now</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
       </div>
     </main>
   );
