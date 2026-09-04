@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import {
   LuBriefcaseBusiness as Briefcase,
   LuCalendarCheck as CalendarCheck,
@@ -21,18 +20,7 @@ import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelector";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 
-const browseLinks = [
-  ["Destinations", "/destinations"],
-  ["Tour Packages", "/tours"],
-  ["External Day Trips", "/external-day-trips"],
-  ["Deals", "/tours?sort=price_asc"],
-  ["Travel Advice", "/travel-advice"],
-  ["About Tourvaa", "/about"],
-] as const;
-
 export default function PublicHeader() {
-  const pathname = usePathname();
-  const isHome = pathname === "/";
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -77,9 +65,7 @@ export default function PublicHeader() {
     };
   }, []);
   return (
-    <header
-      className="sticky top-0 z-50 border-b border-slate-100/80 bg-white/95 text-slate-900 shadow-[0_1px_3px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all duration-300"
-    >
+    <header className="sticky top-0 z-50 border-b border-slate-100/80 bg-white/95 text-slate-900 shadow-[0_1px_3px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all duration-300">
       <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:px-8 lg:px-12">
         <Link
           href="/"
@@ -87,23 +73,10 @@ export default function PublicHeader() {
         >
           Tourvaa
         </Link>
-        <nav aria-label="Primary navigation" className="hidden min-w-0 flex-1 items-center justify-center gap-4 lg:flex xl:gap-6">
-          {browseLinks.map(([label, href]) => {
-            const route = href.split("?")[0];
-            const active = !href.includes("?") && (pathname === route || (route !== "/" && pathname.startsWith(`${route}/`)));
-            return (
-              <Link
-                key={label}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={`whitespace-nowrap text-xs font-bold transition hover:text-pub-secondary ${active ? "text-pub-secondary" : "text-slate-700"}`}
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <nav aria-label="Account and trip tools" className="hidden shrink-0 items-center gap-5 lg:flex lg:gap-7">
+        <nav
+          aria-label="Account and trip tools"
+          className="hidden shrink-0 items-center gap-5 lg:flex lg:gap-7"
+        >
           <Link
             href="/wishlist"
             className="group relative flex flex-col items-center gap-1 text-[10px] font-medium text-slate-700 transition hover:text-pub-secondary"
@@ -181,22 +154,10 @@ export default function PublicHeader() {
       </div>
       {open && (
         <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg lg:hidden">
-          <div className="grid grid-cols-2 gap-2">
-            {browseLinks.map(([label, href]) => (
-              <Link
-                key={label}
-                href={href}
-                onClick={() => setOpen(false)}
-                className="rounded-lg bg-slate-50 px-4 py-3 text-sm font-semibold"
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
           <Link
             href="/wishlist"
             onClick={() => setOpen(false)}
-            className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"
+            className="flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"
           >
             <Heart size={15} />
             Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
@@ -254,27 +215,29 @@ export default function PublicHeader() {
                 </button>
               </>
             ) : (
-              profileOptions.map(({ label, href, registerHref, icon: Icon }) => (
-                <div key={label} className="flex items-stretch gap-2">
-                  <Link
-                    href={href}
-                    onClick={() => setOpen(false)}
-                    className="flex flex-1 items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 text-sm font-bold text-slate-700"
-                  >
-                    <Icon size={17} className="text-pub-secondary" />
-                    {label}
-                  </Link>
-                  {registerHref && (
+              profileOptions.map(
+                ({ label, href, registerHref, icon: Icon }) => (
+                  <div key={label} className="flex items-stretch gap-2">
                     <Link
-                      href={registerHref}
+                      href={href}
                       onClick={() => setOpen(false)}
-                      className="flex shrink-0 items-center rounded-xl border border-pub-secondary/20 px-3 text-xs font-black text-pub-secondary"
+                      className="flex flex-1 items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 text-sm font-bold text-slate-700"
                     >
-                      Register
+                      <Icon size={17} className="text-pub-secondary" />
+                      {label}
                     </Link>
-                  )}
-                </div>
-              ))
+                    {registerHref && (
+                      <Link
+                        href={registerHref}
+                        onClick={() => setOpen(false)}
+                        className="flex shrink-0 items-center rounded-xl border border-pub-secondary/20 px-3 text-xs font-black text-pub-secondary"
+                      >
+                        Register
+                      </Link>
+                    )}
+                  </div>
+                ),
+              )
             )}
           </div>
         </div>
@@ -371,9 +334,7 @@ function AuthenticatedProfileMenu({
     >
       <div className="border-b border-slate-100 px-3 pb-3 pt-2">
         <p className="truncate text-sm font-black">{name || "My Tourvaa"}</p>
-        <p className="mt-0.5 text-[10px] text-slate-400">
-          Manage your account
-        </p>
+        <p className="mt-0.5 text-[10px] text-slate-400">Manage your account</p>
       </div>
       <div className="pt-2">
         <AccountMenuLink

@@ -590,22 +590,22 @@ function FavouriteCountriesSection({
 
 function AboutTourvaaBanner() {
   return (
-    <section className="relative my-8 sm:my-12 overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl">
+    <section className="relative w-full overflow-hidden my-6 sm:my-10 py-14 sm:py-20 lg:py-24 shadow-sm">
       {/* High-res Panoramic Mountain Background */}
       <img
-        src="/images/destination-alpine.jpg"
+        src="/images/about-mountain.jpg"
         alt="About Tourvaa - Alpine mountain landscape"
         className="absolute inset-0 h-full w-full object-cover object-center scale-105"
       />
       {/* Dark gradient overlay for readability */}
-      <div className="absolute inset-0 bg-black/60 backdrop-brightness-90" />
+      <div className="absolute inset-0 bg-black/55 backdrop-brightness-90" />
 
       {/* Text Content */}
-      <div className="relative z-10 px-6 py-12 sm:px-10 sm:py-16 text-center text-white">
+      <div className="relative z-10 mx-auto max-w-5xl px-6 sm:px-10 text-center text-white">
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
           About Tourvaa
         </h2>
-        <p className="mx-auto mt-4 max-w-4xl text-xs sm:text-sm md:text-base leading-relaxed text-white/95 drop-shadow">
+        <p className="mx-auto mt-4 max-w-4xl text-xs sm:text-sm md:text-[15px] leading-relaxed text-white/95 drop-shadow">
           Tourvaa is a premier travel platform dedicated to crafting extraordinary group travel experiences across the globe. We connect passionate travellers with expertly curated tours, handpicked destinations, and seamless end-to-end booking — from visa assistance to on-ground coordination. Whether it&apos;s the serene backwaters of Kerala, the alpine trails of Switzerland, or the vibrant streets of Tokyo, Tourvaa makes every journey effortless, memorable, and truly unforgettable.
         </p>
       </div>
@@ -1320,12 +1320,14 @@ export default function Home() {
         <Reveal><TopDealsSection tours={topDeals} loading={loadingHome && !topDeals.length} /></Reveal>
 
         <Reveal><FavouriteCountriesSection destinations={favouriteCountries} /></Reveal>
+      </div>
 
-        <Reveal><AboutTourvaaBanner /></Reveal>
+      <Reveal>
+        <AboutTourvaaBanner />
+      </Reveal>
 
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5 sm:px-8 lg:px-12">
         <Reveal><TrendingToursSection tours={trendingTours} loading={loadingHome && !trendingTours.length} /></Reveal>
-
-        <Reveal><HandpickedToursSection tours={handpickedTours} loading={loadingHome && !handpickedTours.length} /></Reveal>
 
         <Reveal className="py-6 sm:py-8">
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
@@ -1360,11 +1362,9 @@ export default function Home() {
           </section>
         </Reveal>
 
+        <Reveal><HandpickedToursSection tours={handpickedTours} loading={loadingHome && !handpickedTours.length} /></Reveal>
+
         <Reveal><CountriesWorthExploringSection countries={countriesWorthExploring} loading={loadingHome && !countriesWorthExploring.length} /></Reveal>
-
-        <Reveal><AirportTransfersBanner /></Reveal>
-
-        <Reveal><FaqSection faqs={dynamicFaqs} /></Reveal>
 
         <Reveal><TestimonialsSection reviews={dynamicReviews} loading={loadingHome && !dynamicReviews.length} /></Reveal>
 
@@ -1375,27 +1375,26 @@ export default function Home() {
             categories={directoryCategories}
           />
         </Reveal>
+
+        <Reveal><AirportTransfersBanner /></Reveal>
+
+        <Reveal><FaqSection faqs={dynamicFaqs} /></Reveal>
       </div>
     </main>
   );
 }
 
-const TRANSFER_COUNTRIES = [
-  "New Zealand",
-  "Australia",
-  "United Kingdom",
-  "UAE",
-  "Singapore",
+const TRANSFER_FEATURES = [
+  "RELIABLE",
+  "CLEAN",
+  "AFFORDABLE",
+  "24/7",
+  "SECURE",
 ];
 
 function AirportTransfersBanner() {
-  // "/transfers" never existed as a route on this site - the CTA links out
-  // to the Brightlane transfer partner instead, configured in Admin ->
-  // Settings -> API Settings. No link configured means no transfer
-  // partner is live, so the whole banner hides rather than show a dead CTA.
   const { settings } = usePublicSettings();
-  const brightlaneLink = settings.brightlane_external_link?.trim();
-  if (!brightlaneLink) return null;
+  const brightlaneLink = settings.brightlane_external_link?.trim() || "/contact";
 
   return (
     <section className="py-6 sm:py-8">
@@ -1414,17 +1413,17 @@ function AirportTransfersBanner() {
 
           {/* Subtitle */}
           <p className="mt-2 text-xs sm:text-sm md:text-base leading-relaxed text-slate-500">
-            Seamless airport pickup & drop-off services powered by Brightlane
+            Effortless, reliable transfers from the world&apos;s leading airports to your hotel
           </p>
 
-          {/* Destination Pills */}
+          {/* Feature Pills */}
           <div className="mt-4 sm:mt-5 flex flex-wrap gap-2">
-            {TRANSFER_COUNTRIES.map((country) => (
+            {TRANSFER_FEATURES.map((feature) => (
               <span
-                key={country}
+                key={feature}
                 className="rounded-full bg-[#d95d2c] px-3 py-1 text-[11px] font-bold text-white shadow-sm"
               >
-                {country}
+                {feature}
               </span>
             ))}
           </div>
@@ -1432,8 +1431,8 @@ function AirportTransfersBanner() {
           {/* CTA Button */}
           <a
             href={brightlaneLink}
-            target="_blank"
-            rel="noopener noreferrer"
+            target={brightlaneLink.startsWith("http") ? "_blank" : undefined}
+            rel={brightlaneLink.startsWith("http") ? "noopener noreferrer" : undefined}
             className="mt-6 sm:mt-7 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0f2439] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all hover:bg-[#18395c] hover:shadow-lg hover:-translate-y-0.5"
           >
             <span>Book Now</span>

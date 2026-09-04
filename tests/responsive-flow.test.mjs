@@ -32,7 +32,7 @@ check("admin mobile drawer fits narrow screens", adminLayout.includes("86vw"));
 const publicHeader = read("src/components/public/PublicHeader.tsx");
 check("public marketing navigation waits for desktop width", publicHeader.includes("lg:flex"));
 check("public header preserves a shrinkable flex row", publicHeader.includes("max-w-[1440px] min-w-0"));
-check("desktop header exposes every primary browse link", publicHeader.includes('aria-label="Primary navigation"') && publicHeader.includes("browseLinks.map") && ["Destinations", "Tour Packages", "Deals", "Travel Advice", "About Tourvaa"].every((label) => publicHeader.includes(label)));
+check("desktop header exposes account and trip tools navigation", publicHeader.includes('aria-label="Account and trip tools"'));
 
 const supplierPortal = read("src/app/supplier-portal/page.tsx");
 const agentPortal = read("src/app/agent-portal/page.tsx");
