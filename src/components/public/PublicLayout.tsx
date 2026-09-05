@@ -31,7 +31,7 @@ export default function PublicLayout({
           className="public-site min-h-screen bg-white font-[family-name:var(--font-body)] text-slate-950"
         >
           <div className="print:hidden"><AnnouncementBar /></div>
-          <div className="print:hidden"><PublicHeader /></div>
+          <PublicHeader />
           <div className="public-page-enter">{children}</div>
           <div className="print:hidden"><PublicFooter /></div>
           <div className="print:hidden"><ChatWidget /></div>

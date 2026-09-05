@@ -137,14 +137,14 @@ export default function LanguageCurrencySelector({
         aria-expanded={open}
         aria-haspopup="dialog"
         title="Language & Currency"
-        className={`group flex flex-col items-center gap-1 text-[10px] font-medium transition-colors focus:outline-none ${
-          inverse ? "text-white hover:text-white/80" : "text-slate-700 hover:text-blue-600"
+        className={`group flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors focus:outline-none ${
+          inverse ? "text-white hover:text-white/80" : "text-[#0f2439] hover:text-[#E4572E]"
         }`}
       >
         <Globe
           size={18}
-          className={`stroke-[1.8] transition group-hover:-translate-y-0.5 ${
-            inverse ? "" : "group-hover:text-blue-600"
+          className={`stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 ${
+            inverse ? "" : "text-[#0f2439] group-hover:text-[#E4572E]"
           }`}
         />
         <span className="flex items-center gap-0.5">
@@ -155,7 +155,13 @@ export default function LanguageCurrencySelector({
           </span>
           <ChevronDown
             size={10}
-            className={`transition-transform duration-200 ${open ? "rotate-180 text-blue-600" : ""}`}
+            className={`transition-transform duration-200 ${
+              open
+                ? "rotate-180 text-[#E4572E]"
+                : inverse
+                  ? ""
+                  : "text-[#0f2439] group-hover:text-[#E4572E]"
+            }`}
           />
         </span>
       </button>
@@ -170,8 +176,8 @@ export default function LanguageCurrencySelector({
               onClick={() => setTab("language")}
               className={`flex-1 py-3 text-xs font-bold transition-colors ${
                 tab === "language"
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-slate-500 hover:text-slate-800"
+                  ? "border-b-2 border-[#E4572E] text-[#E4572E]"
+                  : "text-slate-500 hover:text-[#0f2439]"
               }`}
             >
               🌐 Language
@@ -181,8 +187,8 @@ export default function LanguageCurrencySelector({
               onClick={() => setTab("currency")}
               className={`flex-1 py-3 text-xs font-bold transition-colors ${
                 tab === "currency"
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-slate-500 hover:text-slate-800"
+                  ? "border-b-2 border-[#E4572E] text-[#E4572E]"
+                  : "text-slate-500 hover:text-[#0f2439]"
               }`}
             >
               💱 Currency
@@ -247,7 +253,7 @@ export default function LanguageCurrencySelector({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search currency..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#E4572E] focus:bg-white focus:ring-2 focus:ring-orange-100"
                   />
                   {search && (
                     <button

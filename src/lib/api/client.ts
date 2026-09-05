@@ -70,6 +70,20 @@ function isPublicPagePath(pathname: string) {
   return !PROTECTED_PAGE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
+// Double-submit CSRF: the backend sets this as a non-httponly cookie
+// alongside the auth cookies (see _set_auth_cookies in routers/auth.py), we
+// read it back and echo it as a header so CsrfMiddleware can confirm the
+// request came from this app rather than a cross-site form/fetch.
+const CSRF_COOKIE_NAME = "tourvaa_csrf";
+const CSRF_HEADER_NAME = "X-CSRF-Token";
+const UNSAFE_METHODS = new Set(["post", "put", "patch", "delete"]);
+
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 const api = axios.create({
   baseURL: API_PATH_PREFIX,
   withCredentials: true,
@@ -115,6 +129,14 @@ api.interceptors.request.use((config) => {
     config.baseURL = API_PATH_PREFIX;
     config.url = normalizeApiUrl(config.url);
 
+    const method = (config.method || "get").toLowerCase();
+    if (UNSAFE_METHODS.has(method)) {
+      const csrfToken = getCookie(CSRF_COOKIE_NAME);
+      if (csrfToken) {
+        config.headers = config.headers ?? {};
+        config.headers[CSRF_HEADER_NAME] = csrfToken;
+      }
+    }
   }
 
   return config;

@@ -235,15 +235,15 @@ export default function TravelAdvicePage() {
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-600">
                       {article.category}
                     </span>
-                    <h3 className="mt-1.5 text-sm sm:text-[15px] font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    <h3 className="mt-1.5 text-sm sm:text-[15px] font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-[#E4572E] transition-colors">
                       {article.title}
                     </h3>
                     <p className="mt-2 text-xs text-slate-500 line-clamp-3 leading-relaxed flex-1">
                       {article.text}
                     </p>
-                    <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[#E4572E] group-hover:underline">
+                    <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#E4572E] group-hover:underline">
                       <span>Read Article</span>
-                      <span aria-hidden="true">→</span>
+                      <ArrowRight size={13} aria-hidden="true" />
                     </span>
                   </div>
                 </Link>

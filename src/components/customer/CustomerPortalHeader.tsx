@@ -38,20 +38,20 @@ export default function CustomerPortalHeader() {
           Tourvaa
         </Link>
         <nav className="flex items-center gap-5 sm:gap-7">
-          <Link href="/customer/wishlist" className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-700 hover:text-blue-600 transition">
-            <Heart size={18} className="stroke-[1.8] transition group-hover:-translate-y-0.5" />
+          <Link href="/customer/wishlist" className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E4572E] transition-colors">
+            <Heart size={18} className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E4572E]" />
             <span>Wishlist</span>
             {wishlistCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E4572E] px-1 text-[8px] font-black text-white shadow-xs">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}
           </Link>
-          <Link href="/compare" className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-700 hover:text-blue-600 transition">
-            <Scale size={18} className="stroke-[1.8] transition group-hover:-translate-y-0.5" />
+          <Link href="/compare" className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E4572E] transition-colors">
+            <Scale size={18} className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E4572E]" />
             <span>Compare</span>
             {compareCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[8px] font-black text-white">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E4572E] px-1 text-[8px] font-black text-white shadow-xs">
                 {compareCount}
               </span>
             )}
@@ -65,9 +65,9 @@ export default function CustomerPortalHeader() {
               onClick={() => setProfileOpen((value) => !value)}
               aria-expanded={profileOpen}
               aria-haspopup="menu"
-              className="group flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-700 hover:text-blue-600 transition"
+              className="group flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E4572E] transition-colors"
             >
-              <User size={18} className="stroke-[1.8] transition group-hover:-translate-y-0.5" />
+              <User size={18} className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E4572E]" />
               <span>Profile</span>
             </button>
             {profileOpen && (
@@ -84,9 +84,9 @@ export default function CustomerPortalHeader() {
                     role="menuitem"
                     href="/customer/profile"
                     onClick={() => setProfileOpen(false)}
-                    className="group flex items-center gap-3 rounded-xl px-3 py-3 text-xs font-bold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+                    className="group flex items-center gap-3 rounded-xl px-3 py-3 text-xs font-bold text-slate-700 transition hover:bg-orange-50 hover:text-[#E4572E]"
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-[#E4572E] transition group-hover:bg-[#E4572E] group-hover:text-white">
                       <User size={16} />
                     </span>
                     Profile Settings

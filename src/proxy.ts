@@ -27,8 +27,11 @@ export function proxy(request: NextRequest) {
   // so page routes need it reinstated here (the matcher below already
   // excludes /api and /storage, so this never touches those rewrite pairs).
   if (pathname !== "/" && pathname.endsWith("/")) {
-    const url = request.nextUrl.clone();
-    url.pathname = pathname.slice(0, -1);
+    // Built from a plain URL (not a mutated NextURL clone) - mutating
+    // `.pathname` on `request.nextUrl.clone()` doesn't reliably propagate
+    // to the Location header this redirect sends in Next 16.3.1, which
+    // otherwise makes every trailing-slash request redirect to itself.
+    const url = new URL(pathname.slice(0, -1) + request.nextUrl.search, request.url);
     return NextResponse.redirect(url, 308);
   }
 

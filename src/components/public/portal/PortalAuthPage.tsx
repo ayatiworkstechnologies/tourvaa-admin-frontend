@@ -551,7 +551,9 @@ function PortalAuthContent({ config, heroIcon }: { config: PortalAuthConfig; her
                 )}
 
                 <Link href={config.portalPath} className="inline-flex items-center gap-1.5 text-xs font-bold text-white/70 transition hover:text-white hover:underline">
-                  {heroIcon} Learn more →
+                  {heroIcon}
+                  <span>Learn more</span>
+                  <ArrowRight size={12} aria-hidden="true" />
                 </Link>
               </div>
             </div>

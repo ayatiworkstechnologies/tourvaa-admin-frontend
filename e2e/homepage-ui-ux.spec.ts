@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Homepage UI and UX Comprehensive Audit", () => {
   test("audit homepage layout, interactions, console errors, and mobile responsiveness", async ({ page }) => {
+    test.setTimeout(60000);
     const consoleErrors: string[] = [];
     const pageErrors: string[] = [];
 
@@ -36,17 +37,41 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
     await expect(page.locator("header").getByRole("link", { name: /wishlist/i })).toBeVisible();
     await expect(page.locator("header").getByRole("link", { name: /compare/i })).toBeVisible();
 
-    // Profile dropdown interaction
+    // Profile dropdown interaction (Before Login)
     const profileBtn = page.locator("header button:has-text('Profile')");
     if (await profileBtn.isVisible()) {
       await profileBtn.click();
       await page.waitForTimeout(400);
       const dropdown = page.locator(".profile-dropdown-panel");
-      if (await dropdown.isVisible()) {
-        await page.keyboard.press("Escape");
-        await page.waitForTimeout(300);
-      }
+      await expect(dropdown).toBeVisible();
+      await expect(dropdown.getByText("Welcome to Tourvaa")).toBeVisible();
+      await expect(dropdown.getByText("Traveller Account")).toBeVisible();
+      await expect(dropdown.locator("a:has-text('Sign In')")).toBeVisible();
+      await expect(dropdown.locator("a:has-text('Travel Agent Portal')")).toBeVisible();
+      await expect(dropdown.locator("a:has-text('Affiliate Partner')")).toBeVisible();
+      await expect(dropdown.locator("a:has-text('Tour Operator / Supplier')")).toBeVisible();
+      await dropdown.screenshot({ path: "test-results/profile-dropdown-before-login.png" });
+
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+      await expect(dropdown).not.toBeVisible();
     }
+
+    // Smart auto-hide sticky header verification
+    // 1. Scroll down 400px -> header slides up (-translate-y-full)
+    await page.evaluate(() => window.scrollTo({ top: 400, behavior: "instant" }));
+    await page.waitForTimeout(400);
+    await expect(header).toHaveClass(/-translate-y-full/);
+
+    // 2. Scroll up 150px -> header slides down into view (translate-y-0)
+    await page.evaluate(() => window.scrollTo({ top: 250, behavior: "instant" }));
+    await page.waitForTimeout(400);
+    await expect(header).toHaveClass(/translate-y-0/);
+
+    // 3. Scroll back to top -> header is visible
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await page.waitForTimeout(400);
+    await expect(header).toHaveClass(/translate-y-0/);
 
     // 3. Top Deals Section & Dynamic Tabs
     const topDealsHeading = page.getByRole("heading", { name: "Top Deals" });
@@ -179,4 +204,74 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
     });
     expect(hasHorizontalOverflow, "Page should not have accidental horizontal overflow on mobile").toBe(false);
   });
+
+  test("audit after-login profile dropdown functionality and appearance", async ({ page }) => {
+    // Enable authenticated mock session
+    await page.addInitScript(() => {
+      window.localStorage.setItem("tourvaa_docs_dashboard", "1");
+    });
+
+    await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("header");
+    await page.waitForTimeout(800);
+
+    // Profile button should display user first name or avatar
+    const profileBtn = page.locator("header nav button").filter({ hasText: /Super|Profile/ });
+    await expect(profileBtn).toBeVisible();
+
+    // Click to open after-login dropdown
+    await profileBtn.click();
+    await page.waitForTimeout(400);
+
+    const dropdown = page.locator(".profile-dropdown-panel");
+    await expect(dropdown).toBeVisible();
+    await expect(dropdown.locator("p:has-text('Super Admin')")).toBeVisible();
+    await expect(dropdown.locator("span:has-text('Super Admin')")).toBeVisible();
+    await expect(dropdown.getByText("admin@tourvaa.com")).toBeVisible();
+    await expect(dropdown.locator("a:has-text('My Dashboard')")).toBeVisible();
+    await expect(dropdown.locator("a:has-text('Account Settings')")).toBeVisible();
+    await expect(dropdown.locator("a:has-text('Help Centre')")).toBeVisible();
+    await expect(dropdown.locator("button:has-text('Sign Out')")).toBeVisible();
+
+    // Take screenshot of after-login dropdown
+    await dropdown.screenshot({ path: "test-results/profile-dropdown-after-login.png" });
+
+    // Clean up
+    await page.evaluate(() => window.localStorage.removeItem("tourvaa_docs_dashboard"));
+  });
+
+  test("audit header icons and carousel chevron navigation buttons", async ({ page }) => {
+    await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("header");
+
+    const header = page.locator("header");
+    await expect(header).toBeVisible();
+
+    // Verify Wishlist, Compare, and Globe icons
+    const wishlistLink = header.getByRole("link", { name: /wishlist/i });
+    const compareLink = header.getByRole("link", { name: /compare/i });
+    await expect(wishlistLink).toBeVisible();
+    await expect(compareLink).toBeVisible();
+
+    // Take screenshot of the public header
+    await header.screenshot({ path: "test-results/header-icons.png" });
+
+    // Dismiss cookie banner if visible
+    const cookieAccept = page.getByRole("button", { name: /accept all/i });
+    if (await cookieAccept.isVisible()) {
+      await cookieAccept.click();
+      await page.waitForTimeout(300);
+    }
+
+    // Hover over Egypt tours card and capture screenshot of orange hover state
+    const egyptCard = page.locator("a:has-text('Egypt tours')").first();
+    if (await egyptCard.isVisible()) {
+      await egyptCard.scrollIntoViewIfNeeded();
+      await egyptCard.hover();
+      await page.waitForTimeout(400);
+      await egyptCard.screenshot({ path: "test-results/favourite-countries-hover-orange.png" });
+    }
+  });
 });
+
+

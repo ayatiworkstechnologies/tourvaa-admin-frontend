@@ -176,7 +176,7 @@ export default function BlogsPage() {
                     {CURATED_FEATURED_POST.category}
                   </span>
 
-                  <h2 className="mt-3 text-2xl sm:text-3xl font-black text-slate-950 leading-tight tracking-tight group-hover:text-blue-600 transition-colors">
+                  <h2 className="mt-3 text-2xl sm:text-3xl font-black text-slate-950 leading-tight tracking-tight group-hover:text-[#E4572E] transition-colors">
                     {CURATED_FEATURED_POST.title}
                   </h2>
 
@@ -227,15 +227,15 @@ export default function BlogsPage() {
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-600">
                       {article.category}
                     </span>
-                    <h3 className="mt-1.5 text-base font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    <h3 className="mt-1.5 text-base font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-[#E4572E] transition-colors">
                       {article.title}
                     </h3>
                     <p className="mt-2 text-xs text-slate-500 line-clamp-2 leading-relaxed flex-1">
                       {article.excerpt}
                     </p>
-                    <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[#E4572E] group-hover:underline">
+                    <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#E4572E] group-hover:underline">
                       <span>Read Article</span>
-                      <span aria-hidden="true">→</span>
+                      <ArrowRight size={13} aria-hidden="true" />
                     </span>
                   </div>
                 </Link>

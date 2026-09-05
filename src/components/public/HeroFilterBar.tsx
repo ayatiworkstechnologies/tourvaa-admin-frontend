@@ -17,6 +17,7 @@ import {
   LuSun as Sun,
   LuUsers as Users,
   LuX as X,
+  LuArrowRight as ArrowRight,
 } from "react-icons/lu";
 import FlagIcon from "@/components/ui/FlagIcon";
 import { fetchViatorRedirectUrl } from "@/lib/api/publicClient";
@@ -591,9 +592,10 @@ function DatePanel({
             <button
               type="button"
               onClick={() => onApply("Anytime")}
-              className="font-bold text-[#0B1527] hover:text-[#E4572E] transition"
+              className="inline-flex items-center gap-1 font-bold text-[#0B1527] hover:text-[#E4572E] transition"
             >
-              I&apos;m flexible anytime →
+              <span>I&apos;m flexible anytime</span>
+              <ArrowRight size={13} aria-hidden="true" />
             </button>
             <span className="text-[11px] text-slate-400">Select any departure date</span>
           </div>

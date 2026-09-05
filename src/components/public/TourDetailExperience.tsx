@@ -564,29 +564,29 @@ export default function TourDetailExperience({
         <nav className="mt-6 flex items-center gap-2 text-xs font-bold text-slate-500">
           <Link
             href="/"
-            className="flex items-center gap-1 text-slate-600 hover:text-blue-600 transition"
+            className="flex items-center gap-1 text-slate-600 hover:text-[#E4572E] transition"
           >
-            <Home size={13} className="text-blue-600" />
+            <Home size={13} className="text-[#E4572E]" />
             Home
           </Link>
           <span className="text-slate-300">›</span>
           <Link
             href="/tours"
-            className="flex items-center gap-1 text-slate-600 hover:text-blue-600 transition"
+            className="flex items-center gap-1 text-slate-600 hover:text-[#E4572E] transition"
           >
-            <MapIcon size={13} className="text-blue-600" />
+            <MapIcon size={13} className="text-[#E4572E]" />
             Tour
           </Link>
           <span className="text-slate-300">›</span>
           <Link
             href={`/tours?country=${encodeURIComponent(destination)}`}
-            className="flex items-center gap-1 text-slate-600 hover:text-blue-600 transition"
+            className="flex items-center gap-1 text-slate-600 hover:text-[#E4572E] transition"
           >
-            <MapPin size={13} className="text-blue-600" />
+            <MapPin size={13} className="text-[#E4572E]" />
             {destination}
           </Link>
           <span className="text-slate-300">›</span>
-          <span className="text-blue-600 truncate max-w-[200px] sm:max-w-none">
+          <span className="text-[#E4572E] truncate max-w-[200px] sm:max-w-none">
             {title}
           </span>
         </nav>
@@ -947,7 +947,7 @@ export default function TourDetailExperience({
                       <button
                         type="button"
                         onClick={() => toggleDay(day.day)}
-                        className="flex w-full items-center justify-between text-left text-xs font-bold text-[#0B1527] transition hover:text-blue-600"
+                        className="flex w-full items-center justify-between text-left text-xs font-bold text-[#0B1527] transition hover:text-[#E4572E]"
                       >
                         <span className="flex items-center gap-2.5">
                           <span className="flex h-6 w-14 shrink-0 items-center justify-center rounded-md bg-[#0B1527] text-[10px] font-black text-white">
@@ -1115,8 +1115,9 @@ export default function TourDetailExperience({
                         {format(dep.price, tour.currency || "USD")}
                       </p>
                       {!soldOut && (
-                        <p className="mt-0.5 text-[10px] font-bold text-blue-600">
-                          {selected ? "Selected" : "Select date →"}
+                        <p className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] font-bold text-blue-600">
+                          <span>{selected ? "Selected" : "Select date"}</span>
+                          {!selected && <ArrowRight size={10} aria-hidden="true" />}
                         </p>
                       )}
                     </button>
@@ -1464,7 +1465,7 @@ export default function TourDetailExperience({
                       <div className="flex items-center justify-between gap-2">
                         <Link
                           href={simLink}
-                          className="text-xs font-bold text-slate-900 truncate hover:text-blue-600 transition"
+                          className="text-xs font-bold text-slate-900 truncate hover:text-[#E4572E] transition"
                         >
                           {sim.title}
                         </Link>

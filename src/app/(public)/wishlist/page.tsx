@@ -25,10 +25,10 @@ export default function PublicWishlistPage() {
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="flex items-center gap-2 text-3xl font-black"><Heart size={26} className="text-blue-600" /> My Wishlist</h1>
+            <h1 className="flex items-center gap-2 text-3xl font-black"><Heart size={26} className="text-[#E4572E]" /> My Wishlist</h1>
             <p className="mt-2 text-sm text-slate-500">Tours you have saved to come back to. Sign in to keep this list synced across your devices.</p>
           </div>
-          <Link href="/tours" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-600">
+          <Link href="/tours" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:border-[#E4572E]/40 hover:text-[#E4572E]">
             <Compass size={14} /> Explore tours
           </Link>
         </div>
@@ -55,11 +55,11 @@ export default function PublicWishlistPage() {
                   </Link>
 
                   <div className="p-5">
-                    <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-blue-600">
+                    <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-[#E4572E]">
                       <MapPin size={12} />
                       {item.place || "Destination"}
                     </p>
-                    <Link href={tourHref} className="mt-2 block text-lg font-black leading-snug text-slate-950 transition hover:text-blue-600">
+                    <Link href={tourHref} className="mt-2 block text-lg font-black leading-snug text-slate-950 transition hover:text-[#E4572E]">
                       {item.title}
                     </Link>
                     <div className="mt-4 flex items-end justify-between border-t border-slate-100 pt-4">

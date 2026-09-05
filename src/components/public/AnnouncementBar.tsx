@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LuX as X } from "react-icons/lu";
+import { LuX as X, LuArrowRight as ArrowRight } from "react-icons/lu";
 import { CmsPromoPopup, fetchPromotionalPopups } from "@/lib/api/publicClient";
 
 const DISMISS_KEY = "tourvaa_announcement_dismissed_id";
@@ -60,7 +60,12 @@ export default function AnnouncementBar() {
       {popup.cta_url ? (
         <Link href={popup.cta_url} className="flex flex-wrap items-center justify-center gap-1.5 hover:underline">
           {content}
-          {popup.cta_text && <span className="font-bold text-pub-accent">{popup.cta_text} →</span>}
+          {popup.cta_text && (
+            <span className="inline-flex items-center gap-1 font-bold text-pub-accent">
+              <span>{popup.cta_text}</span>
+              <ArrowRight size={13} aria-hidden="true" />
+            </span>
+          )}
         </Link>
       ) : (
         <span className="flex flex-wrap items-center justify-center gap-1.5">{content}</span>

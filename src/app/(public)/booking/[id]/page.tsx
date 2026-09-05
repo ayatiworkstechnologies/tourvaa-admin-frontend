@@ -448,7 +448,16 @@ export default function PublicBookingPage() {
                     currency={currency}
                   />
                 ))}
-                {tour.extensions.length > 0 && <button type="button" onClick={() => setStep(3)} className="text-xs font-bold text-teal-700 hover:text-teal-900">Skip Add-ons →</button>}
+                {tour.extensions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setStep(3)}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-teal-700 hover:text-teal-900"
+                  >
+                    <span>Skip Add-ons</span>
+                    <ArrowRight size={12} aria-hidden="true" />
+                  </button>
+                )}
               </div>
             )}
             {step === 3 && (

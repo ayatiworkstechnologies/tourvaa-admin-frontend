@@ -158,18 +158,18 @@ export default function TourCard({ tour, format, variant = "search", href, view 
       )}
       <div className="flex flex-1 flex-col p-4">
         <Link href={resolvedHref}>
-          <h2 className="truncate text-base font-black transition-colors group-hover:text-blue-700">{tour.title}</h2>
+          <h2 className="truncate text-base font-black transition-colors group-hover:text-[#E4572E]">{tour.title}</h2>
           <div className="mt-2.5 flex flex-col gap-1.5 text-xs font-semibold text-slate-500">
-            <span className="flex items-center gap-2"><MapPin size={12} className="shrink-0 text-blue-500" /><span className="truncate">{tour.city_name ? `${tour.city_name}, ${tour.country_name}` : tour.country_name}</span></span>
-            <span className="flex items-center gap-2"><Calendar size={12} className="shrink-0 text-blue-500" />{days} Days / {Math.max(1, days - 1)} Nights</span>
-            <span className="flex items-center gap-2"><Users size={12} className="shrink-0 text-blue-500" />{groupSizeLabel}</span>
+            <span className="flex items-center gap-2"><MapPin size={12} className="shrink-0 text-sky-500" /><span className="truncate">{tour.city_name ? `${tour.city_name}, ${tour.country_name}` : tour.country_name}</span></span>
+            <span className="flex items-center gap-2"><Calendar size={12} className="shrink-0 text-sky-500" />{days} Days / {Math.max(1, days - 1)} Nights</span>
+            <span className="flex items-center gap-2"><Users size={12} className="shrink-0 text-sky-500" />{groupSizeLabel}</span>
           </div>
           {tour.subtitle && <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-600"><Check size={13} className="shrink-0" />{tour.subtitle}</p>}
         </Link>
 
         <div className="mt-auto flex items-end justify-between border-t border-slate-100 pt-4">
           <span className="text-sm font-bold">{discounted ? <>From {priceBlock}</> : <>From <b className="text-xl">{tour.price_start_per_person ? format(tour.price_start_per_person, tour.currency || "USD") : "On request"}</b><small>pp</small></>}</span>
-          <Link href={resolvedHref} className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200">View tour <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" /></Link>
+          <Link href={resolvedHref} className="flex items-center gap-2 rounded-md bg-[#E4572E] px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-orange-200 transition-all hover:bg-[#d95d2c] hover:shadow-md hover:shadow-orange-200">View tour <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" /></Link>
         </div>
       </div>
     </article>
