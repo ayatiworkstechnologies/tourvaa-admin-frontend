@@ -608,7 +608,7 @@ function TopDealsSection({
 
       {/* Header Row: Title & Arrow Buttons */}
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-black text-slate-950 tracking-tight">
           Top Deals
         </h2>
 
@@ -676,7 +676,7 @@ function FavouriteCountriesSection({
     <section className="py-10 sm:py-14">
       {/* Header */}
       <div className="mx-auto max-w-3xl text-center">
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900">
+        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-black text-slate-950 tracking-tight">
           {title}
         </h2>
         <p className="mt-2.5 text-xs sm:text-sm text-slate-500 leading-relaxed max-w-2xl mx-auto">
@@ -1746,7 +1746,7 @@ function AirportTransfersBanner() {
 
   return (
     <section className="py-6 sm:py-8">
-      <div className="grid gap-6 lg:gap-10 overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-100/90 bg-white p-6 sm:p-4 lg:p-10 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:grid-cols-2 md:items-center">
+      <div className="grid gap-6 lg:gap-10 overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-100/90 bg-white p-6 sm:p-4 lg:p-10 md:grid-cols-2 md:items-center">
         <div className="flex flex-col items-start justify-center py-2 text-left">
           {/* Tag / Badge */}
           <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#d95d2c]">
