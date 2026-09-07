@@ -19,11 +19,11 @@ export function hasActiveDiscount(tour: DiscountInfo): boolean {
   return Boolean(tour.discount_percentage && tour.discount_percentage > 0 && tour.original_price_per_person != null && tour.discounted_price_per_person != null);
 }
 
-/** Small red corner badge for a tour card image, e.g. "30% OFF". */
+/** Small red corner badge for a tour card image, e.g. "Save 30%". */
 export function DiscountCardBadge({ percentage }: { percentage: number }) {
   return (
-    <span className="absolute right-3 top-3 rounded-full bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-md">
-      {percentage}% OFF
+    <span className="absolute -bottom-0.5 right-2.5 z-20 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-md">
+      Save {percentage}%
     </span>
   );
 }

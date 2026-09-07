@@ -141,7 +141,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
           {isBestSeller && <span className="rounded-full bg-orange-500 px-3 py-1 text-[9px] font-black uppercase tracking-wide text-white shadow-md shadow-orange-500/30">Best Seller</span>}
           <span className="rounded-full bg-sky-500/90 px-3 py-1 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur-sm">Private Tour</span>
         </div>
-        {discounted && <span className="absolute right-14 top-3 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-black text-white shadow-md">{tour.discount_percentage}% OFF</span>}
+        {discounted && <span className="absolute right-14 top-3 rounded-xl bg-red-600 px-2.5 py-1 text-[10px] font-black text-white shadow-md">Save {tour.discount_percentage}%</span>}
         {tour.rating_average != null && (
           <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-900 shadow-md"><Star size={11} className="fill-amber-400 text-amber-400" />{tour.rating_average.toFixed(1)}</span>
         )}
