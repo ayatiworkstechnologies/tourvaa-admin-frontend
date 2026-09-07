@@ -22,7 +22,7 @@ export function hasActiveDiscount(tour: DiscountInfo): boolean {
 /** Small red corner badge for a tour card image, e.g. "Save 30%". */
 export function DiscountCardBadge({ percentage }: { percentage: number }) {
   return (
-    <span className="absolute -bottom-0.5 right-2.5 z-20 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-md">
+    <span className="absolute bottom-3 right-2.5 z-20 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-md">
       Save {percentage}%
     </span>
   );

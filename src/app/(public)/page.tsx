@@ -828,7 +828,7 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
 
         {/* Red Discount Pill (floating bottom-right of image) - only shown for a real discount */}
         {tour.discountBadge && (
-          <span className="absolute -bottom-0.5 right-2.5 z-20 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-md">
+          <span className="absolute bottom-3 right-2.5 z-20 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-md">
             {tour.discountBadge}
           </span>
         )}
