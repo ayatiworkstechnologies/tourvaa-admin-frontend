@@ -226,35 +226,53 @@ function mapPublicTour(tour: PublicTour): Tour {
   };
 }
 
-// "Places Worth Exploring" is driven off the real per-country tour counts
-// (not the admin-curated CMS destination list) so a newly-added country with
-// published tours shows up here automatically, with an accurate package
-// count, instead of requiring someone to remember to add a matching CMS
-// "popular destination" card. The CMS list is only consulted for a nicer
-// destination image when one happens to match by name.
+// "Countries Worth Exploring" shows every country the admin has curated in
+// the CMS "Countries" list (matched to its real tour count by country_id,
+// falling back to a name match), even one with 0 published tours yet - the
+// admin picked it deliberately, so it stays visible with an honest count
+// rather than silently disappearing until a tour is published. When the
+// admin hasn't curated anything, it falls back to the top countries by real
+// published tour count so the section isn't empty.
 function topDestinationsFromCountries(
   countries: PublicCountry[],
   cmsDestinations: CmsDestination[],
   limit: number,
 ) {
-  const cmsByName = new Map(
-    cmsDestinations.map((item) => [item.title.trim().toLowerCase(), item]),
+  const countryById = new Map(countries.map((c) => [c.id, c]));
+  const countryByName = new Map(
+    countries.map((c) => [c.country_name.trim().toLowerCase(), c]),
   );
+
+  if (cmsDestinations.length) {
+    return [...cmsDestinations]
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      .slice(0, limit)
+      .map((item) => {
+        const match =
+          (item.country_id != null ? countryById.get(item.country_id) : undefined) ??
+          countryByName.get(item.title.trim().toLowerCase());
+        const tourCount = match?.tour_count || 0;
+        return {
+          name: match?.country_name || item.title,
+          count: `${tourCount} package${tourCount === 1 ? "" : "s"}`,
+          image: item.image ? mediaUrl(item.image) : PLACEHOLDER_IMAGE,
+          price: null as number | null,
+          currency: "USD",
+        };
+      });
+  }
+
   return [...countries]
     .filter((country) => (country.tour_count || 0) > 0)
     .sort((a, b) => (b.tour_count || 0) - (a.tour_count || 0))
     .slice(0, limit)
-    .map((country) => {
-      const cmsMatch = cmsByName.get(country.country_name.trim().toLowerCase());
-      const count = `${country.tour_count} package${country.tour_count === 1 ? "" : "s"}`;
-      return {
-        name: country.country_name,
-        count,
-        image: cmsMatch?.image ? mediaUrl(cmsMatch.image) : PLACEHOLDER_IMAGE,
-        price: null as number | null,
-        currency: "USD",
-      };
-    });
+    .map((country) => ({
+      name: country.country_name,
+      count: `${country.tour_count} package${country.tour_count === 1 ? "" : "s"}`,
+      image: PLACEHOLDER_IMAGE,
+      price: null as number | null,
+      currency: "USD",
+    }));
 }
 
 function mapReview(item: CmsReview) {
