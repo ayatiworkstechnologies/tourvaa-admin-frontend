@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   LuArrowRight as ArrowRight,
-  LuCalendar as Calendar,
   LuChevronDown as ChevronDown,
   LuClock as Clock,
   LuCompass as Compass,
@@ -23,7 +22,7 @@ import {
   LuUsers as Users,
   LuX as X,
 } from "react-icons/lu";
-import { fetchPublicCategories, fetchPublicCountries, fetchPublicSubcategories, fetchPublicTours, PublicCategory, PublicSubcategory, PublicTour } from "@/lib/api/publicClient";
+import { fetchPublicCategories, fetchPublicCountries, fetchPublicSubcategories, fetchPublicTours, PublicCategory, PublicSubcategory } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
@@ -36,19 +35,20 @@ type TourItem = {
   duration: string;
   days: number;
   route: string;
-  guideType: string;
+  guideType?: string;
   tourType?: string;
   travelStyle?: string;
   rating?: number;
   inclusions?: string[];
-  maxGroup: number;
-  minAge: number;
-  maxAge: number;
+  maxGroup: number | null;
+  minAge?: number;
+  maxAge?: number;
   cities: string;
   departures: { date: string; price: string }[];
-  originalPrice: string;
+  originalPrice?: string;
   price: string;
-  rawPrice: number;
+  rawPrice: number | null;
+  discountPercentage?: number | null;
   currency?: string;
   image: string;
   slug?: string;
@@ -431,6 +431,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   // Server-driven filters -- each of these is sent to GET /api/public/tours
   // as a real query param (see routers.public.public_tours), so changing
@@ -442,7 +443,8 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [availableOnly, setAvailableOnly] = useState(false);
   const [sortOrder, setSortOrder] = useState<"newest" | "price_asc" | "price_desc" | "duration_asc">("newest");
-  const [page, setPage] = useState(1);
+  const queryPage = Math.max(1, Number(searchParams.get("page")) || 1);
+  const [page, setPage] = useState(queryPage);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const PAGE_SIZE = 12;
@@ -507,6 +509,10 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     setPage(1);
   }, [countrySlug, queryCountry, querySearch, queryCategory, selectedDuration, selectedBudget, selectedDepartureMonth, selectedSubcategory, availableOnly, sortOrder]);
 
+  useEffect(() => {
+    setPage(queryPage);
+  }, [queryPage]);
+
   // Resolves the country slug/query into a real country name, then loads
   // ONLY the categories that have a published tour in that country (see
   // routers.public.public_categories) -- so an empty category never shows
@@ -515,40 +521,47 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   // never re-hits these two endpoints.
   useEffect(() => {
     let active = true;
-    fetchPublicCountries().then(async (countries) => {
-      if (!active) return;
-      let resolvedCountry = "";
-      if (countrySlug) {
-        const match = countries.find((item) => slugifyTourSegment(item.country_name) === countrySlug);
-        resolvedCountry = match?.country_name || countrySlug;
-      } else if (queryCountry) {
-        const match = countries.find((item) => item.country_name.toLowerCase() === queryCountry.toLowerCase());
-        resolvedCountry = match?.country_name || queryCountry;
-      }
-      setCountryName(resolvedCountry);
-      const categoryList = await fetchPublicCategories(resolvedCountry || undefined);
-      if (!active) return;
-      setCategories(categoryList);
-      // The category currently selected in the URL may no longer be valid
-      // (empty/nonexistent) for this country -- drop it rather than silently
-      // keep filtering by a category that isn't offered here.
-      if (queryCategory && !categoryList.some((cat) => cat.slug === queryCategory)) {
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete("category");
-        router.replace(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
-      }
-    });
+    fetchPublicCountries()
+      .then(async (countries) => {
+        if (!active) return;
+        let resolvedCountry = "";
+        if (countrySlug) {
+          const match = countries.find((item) => slugifyTourSegment(item.country_name) === countrySlug);
+          resolvedCountry = match?.country_name || countrySlug;
+        } else if (queryCountry) {
+          const match = countries.find((item) => item.country_name.toLowerCase() === queryCountry.toLowerCase());
+          resolvedCountry = match?.country_name || queryCountry;
+        }
+        setCountryName(resolvedCountry);
+        const categoryList = await fetchPublicCategories(resolvedCountry || undefined);
+        if (!active) return;
+        setCategories(categoryList);
+        if (queryCategory && !categoryList.some((cat) => cat.slug === queryCategory)) {
+          const params = new URLSearchParams(searchParams.toString());
+          params.delete("category");
+          router.replace(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        setCountryName(countrySlug || queryCountry);
+        setCategories([]);
+      });
     return () => { active = false; };
-  }, [countrySlug, queryCountry]);
+  }, [countrySlug, queryCountry, queryCategory, router, searchParams]);
 
   // Subcategories are scoped to the selected category (see public_subcategories) --
   // refetch whenever the category changes, and drop any previously selected
   // subcategory that no longer belongs to it.
   useEffect(() => {
     let active = true;
-    fetchPublicSubcategories(queryCategory || undefined).then((subs) => {
-      if (active) setSubcategories(subs);
-    });
+    fetchPublicSubcategories(queryCategory || undefined)
+      .then((subs) => {
+        if (active) setSubcategories(subs);
+      })
+      .catch(() => {
+        if (active) setSubcategories([]);
+      });
     setSelectedSubcategory("");
     return () => { active = false; };
   }, [queryCategory]);
@@ -557,6 +570,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   // page changes, each one mapped straight to routers.public.public_tours's
   // real query params (no client-side re-filtering of duration/budget/month).
   useEffect(() => {
+    if ((countrySlug || queryCountry) && !countryName) return;
     let active = true;
     setLoading(true);
     setLoadError(false);
@@ -607,29 +621,42 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             .slice(0, 3)
             .map((d) => ({
               date: formatDepartureDate(d.date),
-              price: t.price_start_per_person ? format(t.price_start_per_person, t.currency) : fallback.price,
+              price: t.discounted_price_per_person != null
+                ? format(t.discounted_price_per_person, t.currency)
+                : t.price_start_per_person != null
+                  ? format(t.price_start_per_person, t.currency)
+                  : "Price on request",
             }));
           const realMaxGroup = parseMaxGroup(t.group_size);
           return {
             id: t.id,
-            title: t.title || fallback.title,
-            location: t.country_name || fallback.location,
-            duration: t.number_of_days ? `${t.number_of_days}D | ${Math.max(1, t.number_of_days - 1)}N` : fallback.duration,
-            days: t.number_of_days || fallback.days,
-            route: realRoute || fallback.route,
-            guideType: fallback.guideType,
-            tourType: fallback.tourType,
-            travelStyle: fallback.travelStyle,
+            title: t.title || "Untitled tour",
+            location: t.country_name || "Worldwide",
+            duration: t.number_of_days
+              ? `${t.number_of_days}D | ${Math.max(0, t.number_of_days - 1)}N`
+              : t.number_of_hours
+                ? `${t.number_of_hours} hours`
+                : "Flexible",
+            days: t.number_of_days || 0,
+            route: realRoute || "Route details on request",
+            guideType: undefined,
+            tourType: undefined,
+            travelStyle: undefined,
             rating: t.rating_average ?? undefined,
-            inclusions: fallback.inclusions,
-            maxGroup: realMaxGroup ?? fallback.maxGroup,
-            minAge: fallback.minAge,
-            maxAge: fallback.maxAge,
-            cities: t.city_name || fallback.cities,
-            departures: realDepartures && realDepartures.length > 0 ? realDepartures : fallback.departures,
-            originalPrice: fallback.originalPrice,
-            price: t.price_start_per_person ? format(t.price_start_per_person, t.currency) : fallback.price,
-            rawPrice: t.price_start_per_person || fallback.rawPrice,
+            inclusions: [],
+            maxGroup: realMaxGroup,
+            minAge: undefined,
+            maxAge: undefined,
+            cities: t.city_name || t.country_name || "Location to be confirmed",
+            departures: realDepartures || [],
+            originalPrice: t.original_price_per_person != null ? format(t.original_price_per_person, t.currency) : undefined,
+            price: t.discounted_price_per_person != null
+              ? format(t.discounted_price_per_person, t.currency)
+              : t.price_start_per_person != null
+                ? format(t.price_start_per_person, t.currency)
+                : "Price on request",
+            rawPrice: t.discounted_price_per_person ?? t.price_start_per_person ?? null,
+            discountPercentage: t.discount_percentage,
             currency: t.currency || "USD",
             image: t.banner_image ? mediaUrl(t.banner_image) : fallback.image,
             slug: t.slug,
@@ -650,7 +677,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     return () => {
       active = false;
     };
-  }, [countryName, countrySlug, queryCountry, querySearch, queryCategory, selectedSubcategory, selectedDuration, selectedBudget, budgetOptions, selectedDepartureMonth, availableOnly, sortOrder, page, format, isIndia]);
+  }, [countryName, countrySlug, queryCountry, querySearch, queryCategory, selectedSubcategory, selectedDuration, selectedBudget, budgetOptions, selectedDepartureMonth, availableOnly, sortOrder, page, format, isIndia, retryKey]);
 
   // Destination and hero headings
   const destinationTitle = countryName || (isIndia ? "India" : hasSpecificCountry ? "Destination" : "World Tours");
@@ -708,6 +735,15 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     params.delete("search");
     params.set("page", "1");
     router.push(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+  };
+
+  const changePage = (nextPage: number) => {
+    const safePage = Math.min(totalPages, Math.max(1, nextPage));
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(safePage));
+    setPage(safePage);
+    router.push(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`, { scroll: false });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Duration/Budget/Departure Month/Category are already applied server-side
@@ -1169,6 +1205,13 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <p className="mt-1 text-xs text-slate-500 max-w-sm">
               Something went wrong reaching the server. Please try again in a moment.
             </p>
+            <button
+              type="button"
+              onClick={() => setRetryKey((value) => value + 1)}
+              className="mt-5 rounded-xl bg-[#0B1527] px-5 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
+            >
+              Retry
+            </button>
           </div>
         ) : filteredTours.length === 0 ? (
           <div className="mt-12 flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-slate-50 p-12 text-center">
@@ -1271,7 +1314,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                         <div className="space-y-1.5">
                           <p className="flex items-center gap-1.5 truncate">
                             <Clock size={11} className="text-blue-500 shrink-0" />
-                            <span>{tour.days} Days</span>
+                            <span>{tour.days > 0 ? `${tour.days} Days` : tour.duration}</span>
                           </p>
                           <p className="flex items-center gap-1.5 truncate">
                             <MapPin size={11} className="text-blue-500 shrink-0" />
@@ -1279,11 +1322,11 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                           </p>
                           <p className="flex items-center gap-1.5 truncate">
                             <Compass size={11} className="text-blue-500 shrink-0" />
-                            <span>{tour.guideType}</span>
+                            <span>{tour.guideType || "Tour details available"}</span>
                           </p>
                           <p className="flex items-center gap-1.5 truncate">
                             <Users size={11} className="text-blue-500 shrink-0" />
-                            <span>Max Group Size: {tour.maxGroup}</span>
+                            <span>{tour.maxGroup ? `Max group size: ${tour.maxGroup}` : "Group size on request"}</span>
                           </p>
                         </div>
 
@@ -1291,11 +1334,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                         <div className="space-y-1.5">
                           <p className="flex items-center gap-1.5 truncate">
                             <User size={11} className="text-blue-500 shrink-0" />
-                            <span>Minimum age: {tour.minAge}</span>
-                          </p>
-                          <p className="flex items-center gap-1.5 truncate">
-                            <User size={11} className="text-blue-500 shrink-0" />
-                            <span>Maximum age: {tour.maxAge}</span>
+                            <span>Traveller details on request</span>
                           </p>
                           <p className="flex items-center gap-1.5 truncate">
                             <MapPin size={11} className="text-blue-500 shrink-0" />
@@ -1307,16 +1346,16 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                       {/* Upcoming Departure Dates Strip */}
                       <div className="mt-4 grid grid-cols-4 gap-1 rounded-xl border border-slate-100 bg-[#F9FBFE] p-1.5 text-center">
                         {tour.departures.map((dep, dIdx) => (
-                          <div key={dIdx} className="rounded-lg bg-white py-1 px-0.5 border border-slate-100 shadow-2xs">
+                          <div key={`${dep.date}-${dIdx}`} className="rounded-lg bg-white py-1 px-0.5 border border-slate-100 shadow-2xs">
                             <p className="text-[8px] font-semibold text-slate-400 truncate">{dep.date}</p>
                             <p className="text-[10px] font-bold text-slate-900 leading-tight">{dep.price}</p>
                           </div>
                         ))}
                         <Link
                           href={tourLink}
-                          className="flex items-center justify-center rounded-lg py-1 text-[10px] font-bold text-slate-700 hover:bg-white transition"
+                          className={`flex items-center justify-center rounded-lg py-1 text-[10px] font-bold text-slate-700 hover:bg-white transition ${tour.departures.length === 0 ? "col-span-4" : ""}`}
                         >
-                          +More
+                          {tour.departures.length > 0 ? "+More" : "Check available dates"}
                         </Link>
                       </div>
                     </div>
@@ -1325,9 +1364,9 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                     <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
                       <div>
                         <span className="text-[10px] text-slate-400">From </span>
-                        <span className="text-[10px] line-through text-slate-400 mr-1">{tour.originalPrice} pp</span>
+                        {tour.originalPrice && tour.discountPercentage ? <span className="text-[10px] line-through text-slate-400 mr-1">{tour.originalPrice} pp</span> : null}
                         <span className="text-sm font-black text-slate-900">{tour.price}</span>
-                        <span className="text-[10px] text-slate-400"> pp</span>
+                        {tour.rawPrice != null && <span className="text-[10px] text-slate-400"> pp</span>}
                       </div>
                       <Link
                         href={tourLink}
@@ -1350,7 +1389,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <button
               type="button"
               disabled={page <= 1 || loading}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => changePage(page - 1)}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Previous
@@ -1359,7 +1398,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <button
               type="button"
               disabled={page >= totalPages || loading}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => changePage(page + 1)}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Next

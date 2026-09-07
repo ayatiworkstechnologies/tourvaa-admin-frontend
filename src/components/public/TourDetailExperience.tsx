@@ -7,7 +7,6 @@ import Link from "next/link";
 import {
   LuActivity as Activity,
   LuArrowRight as ArrowRight,
-  LuBedDouble as Bed,
   LuCalendar as Calendar,
   LuCheck as Check,
   LuChevronDown as ChevronDown,
@@ -15,9 +14,7 @@ import {
   LuChevronRight as ChevronRight,
   LuChevronUp as ChevronUp,
   LuCircleX as XCircle,
-  LuClock as Clock,
   LuCompass as Compass,
-  LuFileText as FileText,
   LuHeart as Heart,
   LuHotel as Hotel,
   LuHouse as Home,
@@ -31,11 +28,9 @@ import {
   LuUser as User,
   LuUsers as Users,
   LuUtensils as Utensils,
-  LuWifi as Wifi,
   LuX as X,
-  LuZap as Zap,
 } from "react-icons/lu";
-import { PublicTour, PublicTourDetail } from "@/lib/api/publicClient";
+import { PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { DiscountSavingsLine, DiscountPriceLine, hasActiveDiscount } from "@/components/public/DiscountPrice";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
@@ -52,15 +47,6 @@ type Props = {
   wishlisted: boolean;
   modal?: React.ReactNode;
 };
-
-const FALLBACK_GALLERY = [
-  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80",
-];
 
 const FALLBACK_HIGHLIGHTS = [
   {
@@ -195,49 +181,6 @@ function departureDateLabel(value: string) {
   return date ? `${date.getDate()} ${SHORT_MONTHS[date.getMonth()]}` : value.split(",")[0];
 }
 
-const FALLBACK_SIMILAR: SimilarItem[] = [
-  {
-    id: 101,
-    title: "Pacific Coast Highway Explorer",
-    country: "New Zealand",
-    duration: "5D | 4N",
-    price: "$1,120",
-    rating: 4.9,
-    reviews: "1,840 reviews",
-    image: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: 102,
-    title: "Greek Islands Sunset Odyssey",
-    country: "Greece",
-    duration: "7D | 6N",
-    price: "$1,232",
-    rating: 4.8,
-    reviews: "2,210 reviews",
-    image: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: 103,
-    title: "Swiss Alps Scenic Rail & Lake",
-    country: "Switzerland",
-    duration: "8D | 7N",
-    price: "$1,950",
-    rating: 4.9,
-    reviews: "3,120 reviews",
-    image: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: 104,
-    title: "Bali Tropical Beaches & Temples",
-    country: "Indonesia",
-    duration: "6D | 5N",
-    price: "$980",
-    rating: 4.7,
-    reviews: "1,560 reviews",
-    image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80",
-  },
-];
-
 export default function TourDetailExperience({
   tour,
   images,
@@ -267,13 +210,7 @@ export default function TourDetailExperience({
               : "Available",
         }));
     }
-    return [
-      { date: "15 Sep 2026, Tuesday", price: 1182, slots: 12, status: "Available" },
-      { date: "22 Sep 2026, Tuesday", price: 1240, slots: 8, status: "Available" },
-      { date: "05 Oct 2026, Monday", price: 1182, slots: 3, status: "Limited" },
-      { date: "19 Oct 2026, Monday", price: 1240, slots: 10, status: "Available" },
-      { date: "02 Nov 2026, Monday", price: 1150, slots: 0, status: "Sold Out" },
-    ];
+    return [];
   }, [tour.calendar, tour.price_start_per_person]);
 
   const departureMonths = useMemo(() => {
@@ -297,7 +234,7 @@ export default function TourDetailExperience({
     initialTravelDate
     || dynamicCalendar.find((d) => d.status !== "Sold Out")?.date
     || dynamicCalendar[0]?.date
-    || "15 Sep 2026"
+    || ""
   );
   const [selectedDepartureMonth, setSelectedDepartureMonth] = useState(
     () => departureMonthKey(initialTravelDate || selectedDate) || departureMonths[0]?.value || ""
@@ -347,7 +284,7 @@ export default function TourDetailExperience({
   // this preview never guesses a number the real booking wouldn't charge.
   const totalPax = adults + children;
   const matchedSlab = tour.pricing.find((row) => totalPax >= row.persons_from && (row.persons_to == null || totalPax <= row.persons_to)) ?? tour.pricing[0];
-  const unitPrice = matchedSlab ? Number(matchedSlab.price_per_person) : (tour.price_start_per_person ? Number(tour.price_start_per_person) : 1182);
+  const unitPrice = matchedSlab ? Number(matchedSlab.price_per_person) : Number(tour.price_start_per_person ?? 0);
   const childPrice = matchedSlab ? Number(matchedSlab.child_price_per_person) : unitPrice;
 
   const baseFare = adults * unitPrice + children * childPrice;
@@ -391,19 +328,16 @@ export default function TourDetailExperience({
 
   // Dynamic Photo Gallery
   const galleryImages = useMemo(() => {
-    if (images && images.length >= 6) return images.slice(0, 6);
-    if (tour.gallery && tour.gallery.length > 0) {
-      const fromTour = tour.gallery.map((g) => mediaUrl(g.image_url));
-      if (fromTour.length >= 6) return fromTour.slice(0, 6);
-      return [...fromTour, ...FALLBACK_GALLERY.slice(fromTour.length)];
-    }
-    return FALLBACK_GALLERY;
+    const supplied = (images || []).filter(Boolean);
+    const fromTour = (tour.gallery || []).map((g) => mediaUrl(g.image_url)).filter(Boolean);
+    const unique = Array.from(new Set([...supplied, ...fromTour]));
+    return unique.length > 0 ? unique.slice(0, 6) : ["/images/tour-card-fallback.jpg"];
   }, [images, tour.gallery]);
 
-  const destination = tour.country_name || "New Zealand";
-  const title = tour.title || "New Zealand Explorer";
-  const dayCount = tour.number_of_days || 6;
-  const nightCount = Math.max(1, dayCount - 1);
+  const destination = tour.country_name || "Worldwide";
+  const title = tour.title || "Tour";
+  const dayCount = tour.number_of_days || 0;
+  const nightCount = Math.max(0, dayCount - 1);
 
   // Dynamic Highlights
   const dynamicHighlights = useMemo(() => {
@@ -459,50 +393,41 @@ export default function TourDetailExperience({
       }))
     : FALLBACK_ITINERARY;
 
-  // Accommodations / Where You'll Stay
-  const dynamicHotels = [
-    {
-      name: "Hotel Grand Chancellor Auckland",
-      stars: "4-Star Hotel",
-      city: "Auckland",
-      desc: "Centrally located in the heart of downtown with modern rooms, indoor swimming pool, and harbor views.",
-      badges: ["Breakfast Included", "Free High-speed WiFi"],
-      img: "/images/hero-1.jpg",
-    },
-    {
-      name: "Sudima Hotel Lake Rotorua",
-      stars: "4-Star Hotel",
-      city: "Rotorua",
-      desc: "Situated on the shores of Lake Rotorua, adjacent to Polynesian Spa and Government Gardens.",
-      badges: ["Thermal Spa Access", "Breakfast Included"],
-      img: "/images/hero-2.jpg",
-    },
-    {
-      name: "Heritage Queenstown Hotel",
-      stars: "4.5-Star Hotel",
-      city: "Queenstown",
-      desc: "Crafted from schist stone and cedar, offering panoramic vistas across Lake Wakatipu and the Remarkables.",
-      badges: ["Lake Wakatipu Views", "Breakfast Included"],
-      img: "/images/hero-3.jpg",
-    },
-  ];
+  // Accommodations / Where You'll Stay -- built from each itinerary day's
+  // real accommodation/location fields (deduplicated by hotel name), since
+  // this used to be a hardcoded New Zealand hotel list shown on every tour
+  // regardless of destination.
+  const dynamicHotels = useMemo(() => {
+    const seen = new Set<string>();
+    const fromItineraries = (tour.itineraries || [])
+      .filter((it) => it.accommodation && !seen.has(it.accommodation) && seen.add(it.accommodation))
+      .map((it, i) => ({
+        name: it.accommodation as string,
+        stars: "Hotel",
+        city: it.location || destination,
+        desc: it.description || `Overnight stay in ${it.location || destination} as part of your itinerary.`,
+        badges: it.meals ? [it.meals] : [],
+        img: it.image ? mediaUrl(it.image) : galleryImages[i % galleryImages.length],
+      }));
+    return fromItineraries;
+  }, [tour.itineraries, destination, galleryImages]);
 
   // Dynamic Similar Tours
   const dynamicSimilar: SimilarItem[] = useMemo(() => {
     if (tour.similar_tours && tour.similar_tours.length > 0) {
-      return tour.similar_tours.map((sim, i) => ({
+      return tour.similar_tours.map((sim) => ({
         id: sim.id,
         title: sim.title || "Tour",
         country: sim.country_name || destination,
-        duration: sim.number_of_days ? `${sim.number_of_days}D | ${Math.max(1, sim.number_of_days - 1)}N` : "6D | 5N",
-        price: sim.price_start_per_person ? format(sim.price_start_per_person, sim.currency) : "$1,182",
-        rating: sim.rating_average || 4.8,
-        reviews: `${sim.rating_count || 120} reviews`,
-        image: sim.banner_image ? mediaUrl(sim.banner_image) : FALLBACK_SIMILAR[i % FALLBACK_SIMILAR.length].image,
+        duration: sim.number_of_days ? `${sim.number_of_days}D | ${Math.max(0, sim.number_of_days - 1)}N` : "Flexible",
+        price: sim.price_start_per_person != null ? format(sim.price_start_per_person, sim.currency) : "On request",
+        rating: sim.rating_average ?? 0,
+        reviews: `${sim.rating_count || 0} reviews`,
+        image: sim.banner_image ? mediaUrl(sim.banner_image) : "/images/tour-card-fallback.jpg",
         slug: sim.slug,
       }));
     }
-    return FALLBACK_SIMILAR;
+    return [];
   }, [tour.similar_tours, destination, format]);
 
   return (
@@ -597,16 +522,25 @@ export default function TourDetailExperience({
             <span className="rounded-full bg-[#E4572E] px-3.5 py-1 text-xs font-bold text-white shadow-2xs">
               {tour.category_name || "Group Tour"}
             </span>
-            <span className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-800 shadow-2xs">
-              <Star size={13} className="fill-amber-400 text-amber-400" />
-              {tour.rating_average ? tour.rating_average.toFixed(1) : "4.9"}{" "}
-              <span className="font-normal text-slate-500">
-                ({tour.rating_count ? `${tour.rating_count} reviews` : "2,466 reviews"})
+            {tour.rating_average != null && (
+              <span className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-800 shadow-2xs">
+                <Star size={13} className="fill-amber-400 text-amber-400" />
+                {tour.rating_average.toFixed(1)}{" "}
+                <span className="font-normal text-slate-500">({tour.rating_count || 0} reviews)</span>
               </span>
-            </span>
+            )}
             <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-2xs">
-              Tour Code: {tour.tour_code || "NZ-EXP-01"}
+              Tour Code: {tour.tour_code}
             </span>
+            <button
+              type="button"
+              onClick={onWishlist}
+              aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold shadow-2xs transition ${wishlisted ? "border-red-200 bg-red-50 text-red-600" : "border-slate-200 bg-white text-slate-600 hover:border-red-200 hover:text-red-600"}`}
+            >
+              <Heart size={13} className={wishlisted ? "fill-current" : ""} />
+              {wishlisted ? "Saved" : "Save"}
+            </button>
           </div>
 
           <h1 className="mt-3 text-2xl sm:text-4xl font-black tracking-tight text-[#0B1527]">
@@ -633,7 +567,7 @@ export default function TourDetailExperience({
               />
             ) : (
               <span className="text-base font-black text-[#0B1527]">
-                {format(unitPrice, tour.currency || "USD")}<span className="text-xs font-semibold text-slate-400"> per person</span>
+                {unitPrice > 0 ? format(unitPrice, tour.currency || "USD") : "Price on request"}{unitPrice > 0 && <span className="text-xs font-semibold text-slate-400"> per person</span>}
               </span>
             )}
           </div>
@@ -993,6 +927,7 @@ export default function TourDetailExperience({
             </div>
 
             {/* F. 🏨 Where You'll Stay */}
+            {dynamicHotels.length > 0 && (
             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
               <h3 className="flex items-center gap-2 text-base font-black text-[#0B1527]">
                 <Hotel size={18} className="text-blue-600" />
@@ -1037,6 +972,7 @@ export default function TourDetailExperience({
                 ))}
               </div>
             </div>
+            )}
 
             {/* Group Pricing -- per pax-range tier, strikethrough/discounted when an active discount applies */}
             {groupPricingRows.length > 0 && (
@@ -1075,13 +1011,13 @@ export default function TourDetailExperience({
               </p>
 
               <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {paginatedCalendar.map((dep) => {
+                {paginatedCalendar.map((dep, departureIndex) => {
                   const soldOut = dep.status === "Sold Out";
                   const limited = dep.status === "Limited";
                   const selected = !soldOut && selectedDate === dep.date;
                   return (
                     <button
-                      key={dep.date}
+                      key={`${dep.date}-${departureIndex}`}
                       type="button"
                       disabled={soldOut}
                       onClick={() => {
@@ -1244,13 +1180,13 @@ export default function TourDetailExperience({
 
                 {visibleDepartures.length > 0 ? (
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    {visibleDepartures.map((dep) => {
+                    {visibleDepartures.map((dep, departureIndex) => {
                       const soldOut = dep.status === "Sold Out";
                       const limited = dep.status === "Limited";
                       const selected = !soldOut && selectedDate === dep.date;
                       return (
                         <button
-                          key={dep.date}
+                          key={`${dep.date}-${departureIndex}`}
                           type="button"
                           disabled={soldOut}
                           aria-pressed={selected}
@@ -1407,6 +1343,7 @@ export default function TourDetailExperience({
               {/* Book CTA */}
               <button
                 type="button"
+                disabled={!selectedDate || unitPrice <= 0}
                 onClick={() =>
                   onBook({
                     travelDate: selectedDate,
@@ -1414,9 +1351,9 @@ export default function TourDetailExperience({
                     children,
                   })
                 }
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B1527] py-3.5 text-xs font-bold text-white shadow-md transition hover:bg-[#15233C]"
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B1527] py-3.5 text-xs font-bold text-white shadow-md transition hover:bg-[#15233C] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
               >
-                Proceed to Book
+                {!selectedDate ? "No dates available" : unitPrice <= 0 ? "Price unavailable" : "Proceed to Book"}
                 <ArrowRight size={13} />
               </button>
 
@@ -1430,20 +1367,20 @@ export default function TourDetailExperience({
         </div>
 
         {/* ── 5. Dynamic Similar Tours Rail ── */}
-        <section className="mt-16">
+        {dynamicSimilar.length > 0 && <section className="mt-16">
           <h3 className="text-xl font-black text-[#0B1527]">
             Similar Tours
           </h3>
 
           <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {dynamicSimilar.map((sim) => {
+            {dynamicSimilar.map((sim, similarIndex) => {
               const simLink = sim.slug
                 ? publicTourUrl({ country_name: sim.country, title: sim.title, slug: sim.slug })
                 : `/tours/${sim.id}`;
 
               return (
                 <div
-                  key={sim.id}
+                  key={`${sim.id}-${similarIndex}`}
                   className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs transition hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between"
                 >
                   <div className="relative h-44 w-full overflow-hidden bg-slate-100">
@@ -1501,7 +1438,7 @@ export default function TourDetailExperience({
               );
             })}
           </div>
-        </section>
+        </section>}
       </div>
 
       {/* Mobile Sticky Booking Bar */}
@@ -1516,6 +1453,7 @@ export default function TourDetailExperience({
           </div>
           <button
             type="button"
+            disabled={!selectedDate || unitPrice <= 0}
             onClick={() => {
               const el = document.getElementById("booking-widget");
               if (el) {
@@ -1524,7 +1462,7 @@ export default function TourDetailExperience({
                 onBook({ travelDate: selectedDate, adults, children });
               }
             }}
-            className="flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-6 py-3 text-xs font-bold text-white shadow-md active:scale-95 transition hover:bg-[#15233C]"
+            className="flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-6 py-3 text-xs font-bold text-white shadow-md active:scale-95 transition hover:bg-[#15233C] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
           >
             <span>Book Now</span>
             <ArrowRight size={14} />

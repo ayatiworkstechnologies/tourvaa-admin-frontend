@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
+import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { LuLogIn as LogIn, LuMapPin as MapPin, LuX as X } from "react-icons/lu";
@@ -76,6 +77,8 @@ export default function TourDetailPage() {
   const [tour, setTour] = useState<PublicTourDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [pendingBookingPath, setPendingBookingPath] = useState("");
   const countryOnlySlug = params?.id && !params.slug && !/^\d+$/.test(params.id) ? params.id : null;
@@ -89,6 +92,8 @@ export default function TourDetailPage() {
     const tourKey = routeSlug || routeId;
     if (!tourKey) { setNotFound(true); setLoading(false); return; }
     setLoading(true);
+    setNotFound(false);
+    setLoadError(false);
     fetchPublicTourDetail(tourKey, routeSlug ? routeId : undefined)
       .then((data) => {
         if (!active) return;
@@ -107,8 +112,10 @@ export default function TourDetailPage() {
           similar_tours: data.similar_tours ?? [],
         });
       })
-      .catch(() => {
-        if (active) setNotFound(true);
+      .catch((error: unknown) => {
+        if (!active) return;
+        if (axios.isAxiosError(error) && error.response?.status === 404) setNotFound(true);
+        else setLoadError(true);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -116,7 +123,7 @@ export default function TourDetailPage() {
     return () => {
       active = false;
     };
-  }, [params?.id, params?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [params?.id, params?.slug, retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (countryOnlySlug) {
     return <CountryTourListing countrySlug={countryOnlySlug} />;
@@ -129,6 +136,23 @@ export default function TourDetailPage() {
           <div className="h-12 w-12 animate-spin rounded-full border-[3px] border-zinc-200 border-t-blue-600" />
           <p className="text-sm font-bold text-zinc-500 uppercase tracking-widest">Loading tour…</p>
         </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-slate-50 px-5 text-center">
+        <div className="flex h-24 w-24 items-center justify-center rounded-3xl border border-red-100 bg-white shadow-sm">
+          <MapPin size={40} className="text-red-300" />
+        </div>
+        <div>
+          <p className="text-2xl font-black text-zinc-950">Tour could not be loaded</p>
+          <p className="mt-1 text-sm text-slate-500">Please check your connection and try again.</p>
+        </div>
+        <button type="button" onClick={() => setRetryKey((value) => value + 1)} className="rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700">
+          Retry
+        </button>
       </div>
     );
   }
