@@ -14,7 +14,6 @@ import {
   LuLayoutDashboard as LayoutDashboard,
   LuLogOut as LogOut,
   LuMenu as Menu,
-  LuPlane as Plane,
   LuScale as Scale,
   LuShieldCheck as ShieldCheck,
   LuSparkles as Sparkles,
@@ -25,6 +24,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelector";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
+import type { AuthUser } from "@/types/auth";
 
 export default function PublicHeader() {
   const [open, setOpen] = useState(false);
@@ -553,7 +553,7 @@ function AuthenticatedProfileMenu({
   onClose,
   onLogout,
 }: {
-  user: any;
+  user: AuthUser | null;
   profilePath: string;
   bookingsPath: string | null;
   dashboardPath: string;
