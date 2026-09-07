@@ -589,8 +589,8 @@ function TopDealsSection({
   return (
     <section className="py-8 sm:py-10">
       {/* Top Filter Pills + View all deals link */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+      <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto sm:flex-wrap sm:gap-2.5 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
           {tabs.map((tab) => {
             const active = activeTab === tab;
             return (
@@ -598,7 +598,7 @@ function TopDealsSection({
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
-                className={`rounded-full px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                className={`shrink-0 rounded-full px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   active
                     ? "bg-[#E4572E] text-white shadow-xs"
                     : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
@@ -1650,7 +1650,7 @@ export default function Home() {
         </section>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-[1380px] ">
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         <Reveal>
           <TopDealsSection
             tours={topDeals}
@@ -1667,7 +1667,7 @@ export default function Home() {
         <AboutTourvaaBanner />
       </Reveal>
 
-      <div className="relative z-10 mx-auto max-w-[1380px]">
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         <Reveal>
           <TrendingToursSection
             tours={trendingTours}
