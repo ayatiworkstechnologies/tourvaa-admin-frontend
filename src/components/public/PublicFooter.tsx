@@ -341,8 +341,12 @@ export default function PublicFooter() {
           </div>
         </div>
 
-        {/* Bottom Copyright Text */}
-        <div className="mx-auto max-w-[1400px] px-4 pt-6 text-center text-xs text-slate-500">
+        {/* Bottom Copyright Text -- extra bottom padding keeps this clear of
+            the fixed chat-widget launcher button, which otherwise sits
+            directly over this text once the page is scrolled all the way
+            down (the launcher has nothing left to hide behind at that
+            point). */}
+        <div className="mx-auto max-w-[1400px] px-4 pt-6 pb-20 sm:pb-24 text-center text-xs text-slate-500">
           <p>
             Copyright © {new Date().getFullYear()} by Tourvaa Private Limited - All Right Reserved | Design & Developed by Ayatiworks
           </p>

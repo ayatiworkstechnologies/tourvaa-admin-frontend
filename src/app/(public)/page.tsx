@@ -1521,7 +1521,7 @@ export default function Home() {
     <main className="overflow-x-clip bg-white text-slate-950">
       {/* Contained Hero Section */}
       <div className="relative z-30 mx-auto max-w-[1400px] px-5 pt-3 pb-4 sm:pb-6">
-        <section className="relative flex h-[480px] w-full flex-col justify-between items-center rounded-[20px] p-4 sm:p-6 text-center text-white shadow-[0_12px_40px_rgba(15,23,42,0.12)]">
+        <section className="relative flex min-h-[480px] w-full flex-col justify-between items-center rounded-[20px] p-4 sm:p-6 text-center text-white shadow-[0_12px_40px_rgba(15,23,42,0.12)]">
           {/* Background image/video & gradient overlay (clipped to rounded corners) */}
           <div className="absolute inset-0 overflow-hidden rounded-[20px] pointer-events-none">
             {heroVideo ? (
@@ -2107,7 +2107,19 @@ function TestimonialsSection({
     // jump over-scrolls mobile cards, leaving the next one clipped on the
     // left. Move by the rendered card width plus the real flex gap instead.
     const gap = Number.parseFloat(window.getComputedStyle(carousel).columnGap) || 0;
-    carousel.scrollBy({ left: direction * (card.offsetWidth + gap), behavior: "smooth" });
+    const step = card.offsetWidth + gap;
+    if (step <= 0) return;
+
+    // Clicking the arrow again before the previous smooth-scroll settles
+    // used to scrollBy() from whatever mid-animation position the browser
+    // was at, so repeated clicks drifted off the card boundaries and landed
+    // between two cards - showing empty gutter instead of a full card.
+    // Rounding to the nearest card index first re-snaps before moving, so
+    // every click always lands exactly one full card away.
+    const currentIndex = Math.round(carousel.scrollLeft / step);
+    const maxScrollLeft = carousel.scrollWidth - carousel.clientWidth;
+    const target = Math.max(0, Math.min(maxScrollLeft, (currentIndex + direction) * step));
+    carousel.scrollTo({ left: target, behavior: "smooth" });
   };
 
   const displayReviews = items.length > 0 ? items : CURATED_REVIEWS;

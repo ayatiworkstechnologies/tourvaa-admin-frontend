@@ -797,18 +797,22 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     <main className="min-h-screen bg-white pb-24 pt-3 text-slate-950">
       <div className="mx-auto max-w-[1400px] px-5">
         {/* ── 1. Hero Landscape Banner ── */}
-        <section className="relative h-[360px] sm:h-[420px] w-full overflow-hidden rounded-[20px] bg-slate-950 shadow-md">
-          {/* Background Image */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={heroBannerImage}
-            alt={heroTitle}
-            className="h-full w-full object-cover opacity-80"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/40 to-transparent" />
+        <section className="relative min-h-[360px] sm:min-h-[420px] w-full rounded-[20px] bg-slate-950 shadow-md">
+          {/* Background Image -- its own clipped layer so the content below
+              can grow taller than min-h (e.g. the stats row wrapping to a
+              second line on narrow screens) without being cut off. */}
+          <div className="absolute inset-0 overflow-hidden rounded-[20px]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={heroBannerImage}
+              alt={heroTitle}
+              className="h-full w-full object-cover opacity-80"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/40 to-transparent" />
+          </div>
 
           {/* Hero Content Card */}
-          <div className="absolute inset-0 flex flex-col justify-between p-6 sm:p-10">
+          <div className="relative z-10 flex h-full min-h-[360px] sm:min-h-[420px] flex-col justify-between p-6 sm:p-10">
             <div className="max-w-2xl rounded-2xl bg-black/40 p-5 sm:p-7 backdrop-blur-md border border-white/10 text-white shadow-xl">
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                 {heroTitle}
