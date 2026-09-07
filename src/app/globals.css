@@ -410,6 +410,16 @@ button {
   transform: translateY(0);
 }
 
+/* Mobile gets a lighter, faster reveal: less vertical travel and a shorter
+   transition, since the desktop timing/offset reads as sluggish on phones -
+   desktop (sm and up) keeps the original values above untouched. */
+@media (max-width: 639px) {
+  .reveal-block {
+    transform: translateY(10px);
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
 /* Reveal transition-delay utilities */
 .tr-delay-70  { transition-delay:  70ms; }
 .tr-delay-100 { transition-delay: 100ms; }
