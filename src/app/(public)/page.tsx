@@ -679,7 +679,7 @@ function FavouriteCountriesSection({
         <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
           {title}
         </h2>
-        <p className="mt-2.5 text-xs sm:text-sm text-slate-500 leading-relaxed max-w-2xl mx-auto">
+        <p className="mt-2.5 text-xs sm:text-sm text-slate-500 leading-relaxed max-w-3xl mx-auto">
           {subtitle}
         </p>
       </div>
@@ -828,7 +828,7 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
 
         {/* Red Discount Pill (floating bottom-right of image) - only shown for a real discount */}
         {tour.discountBadge && (
-          <span className="absolute -bottom-0.5 right-2.5 z-20 rounded-xl bg-[#e51d2e] px-3 py-1.5 text-xs font-black text-white shadow-md">
+          <span className="absolute -bottom-0.5 right-2.5 z-20 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-md">
             {tour.discountBadge}
           </span>
         )}
