@@ -2096,8 +2096,19 @@ function TestimonialsSection({
   loading?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const move = (direction: number) =>
-    ref.current?.scrollBy({ left: direction * 360, behavior: "smooth" });
+  const move = (direction: number) => {
+    const carousel = ref.current;
+    if (!carousel) return;
+
+    const card = carousel.querySelector<HTMLElement>("[data-review-card]");
+    if (!card) return;
+
+    // Card width is responsive (and is narrower on iPhone). A fixed 360px
+    // jump over-scrolls mobile cards, leaving the next one clipped on the
+    // left. Move by the rendered card width plus the real flex gap instead.
+    const gap = Number.parseFloat(window.getComputedStyle(carousel).columnGap) || 0;
+    carousel.scrollBy({ left: direction * (card.offsetWidth + gap), behavior: "smooth" });
+  };
 
   const displayReviews = items.length > 0 ? items : CURATED_REVIEWS;
 
@@ -2136,13 +2147,14 @@ function TestimonialsSection({
 
         <div
           ref={ref}
-          className="no-scrollbar flex snap-x gap-5 overflow-x-auto px-2 py-2"
+          className="no-scrollbar flex snap-x snap-mandatory scroll-px-2 scroll-smooth touch-pan-x gap-5 overflow-x-auto overscroll-x-contain px-2 py-2"
         >
           {loading
             ? Array.from({ length: 3 }).map((_, index) => (
                 <div
                   key={index}
-                  className="w-[300px] sm:w-[360px] shrink-0 animate-pulse rounded-3xl border border-slate-100 bg-white p-7 shadow-sm"
+                  data-review-card
+                  className="w-[calc(100%-1rem)] max-w-[300px] sm:w-[360px] sm:max-w-none shrink-0 snap-start animate-pulse rounded-3xl border border-slate-100 bg-white p-7 shadow-sm"
                 >
                   <div className="h-6 w-8 rounded bg-slate-100 mb-4" />
                   <div className="h-4 w-full rounded-full bg-slate-100" />
@@ -2162,7 +2174,8 @@ function TestimonialsSection({
             : displayReviews.map((review, index) => (
                 <article
                   key={`${review.name}-${index}`}
-                  className="w-[290px] sm:w-[350px] lg:w-[370px] shrink-0 snap-start flex flex-col justify-between rounded-3xl border border-slate-100/90 bg-white p-6 sm:p-7 text-left shadow-[0_4px_20px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  data-review-card
+                  className="w-[calc(100%-1rem)] max-w-[290px] sm:w-[350px] sm:max-w-none lg:w-[370px] shrink-0 snap-start flex flex-col justify-between rounded-3xl border border-slate-100/90 bg-white p-6 sm:p-7 text-left shadow-[0_4px_20px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
                   <div>
                     <span className="block text-slate-300 text-3xl sm:text-4xl font-serif leading-none select-none mb-3">
