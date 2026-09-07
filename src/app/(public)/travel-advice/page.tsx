@@ -235,7 +235,7 @@ export default function TravelAdvicePage() {
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-600">
                       {article.category}
                     </span>
-                    <h3 className="mt-1.5 text-sm sm:text-[15px] font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-[#E4572E] transition-colors">
+                    <h3 className="mt-1.5 text-sm sm:text-[15px] font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-pub-secondary transition-colors">
                       {article.title}
                     </h3>
                     <p className="mt-2 text-xs text-slate-500 line-clamp-3 leading-relaxed flex-1">

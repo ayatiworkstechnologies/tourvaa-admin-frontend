@@ -564,7 +564,7 @@ export default function TourDetailExperience({
         <nav className="mt-6 flex items-center gap-2 text-xs font-bold text-slate-500">
           <Link
             href="/"
-            className="flex items-center gap-1 text-slate-600 hover:text-[#E4572E] transition"
+            className="flex items-center gap-1 text-slate-600 hover:text-pub-secondary transition"
           >
             <Home size={13} className="text-[#E4572E]" />
             Home
@@ -572,7 +572,7 @@ export default function TourDetailExperience({
           <span className="text-slate-300">›</span>
           <Link
             href="/tours"
-            className="flex items-center gap-1 text-slate-600 hover:text-[#E4572E] transition"
+            className="flex items-center gap-1 text-slate-600 hover:text-pub-secondary transition"
           >
             <MapIcon size={13} className="text-[#E4572E]" />
             Tour
@@ -580,7 +580,7 @@ export default function TourDetailExperience({
           <span className="text-slate-300">›</span>
           <Link
             href={`/tours?country=${encodeURIComponent(destination)}`}
-            className="flex items-center gap-1 text-slate-600 hover:text-[#E4572E] transition"
+            className="flex items-center gap-1 text-slate-600 hover:text-pub-secondary transition"
           >
             <MapPin size={13} className="text-[#E4572E]" />
             {destination}
@@ -947,7 +947,7 @@ export default function TourDetailExperience({
                       <button
                         type="button"
                         onClick={() => toggleDay(day.day)}
-                        className="flex w-full items-center justify-between text-left text-xs font-bold text-[#0B1527] transition hover:text-[#E4572E]"
+                        className="flex w-full items-center justify-between text-left text-xs font-bold text-[#0B1527] transition hover:text-pub-secondary"
                       >
                         <span className="flex items-center gap-2.5">
                           <span className="flex h-6 w-14 shrink-0 items-center justify-center rounded-md bg-[#0B1527] text-[10px] font-black text-white">
@@ -1465,7 +1465,7 @@ export default function TourDetailExperience({
                       <div className="flex items-center justify-between gap-2">
                         <Link
                           href={simLink}
-                          className="text-xs font-bold text-slate-900 truncate hover:text-[#E4572E] transition"
+                          className="text-xs font-bold text-slate-900 truncate hover:text-pub-secondary transition"
                         >
                           {sim.title}
                         </Link>

@@ -22,10 +22,10 @@
 @theme {
   /* Public marketing site brand palette (midnight navy + burnt orange +
    * vivid blue), distinct from the --color-dash-* dashboard tokens above. */
-  --color-pub-primary: #081827;
-  --color-pub-primary-dark: #050f18;
-  --color-pub-secondary: #2563EB;
-  --color-pub-accent: #D9601C;
+  --color-pub-primary: #0B1F3A;
+  --color-pub-primary-dark: #0B1F3A;
+  --color-pub-secondary: #146EF5;
+  --color-pub-accent: #E16B2D;
   --color-pub-bg: #FBF7F5;
   --color-pub-fg: #0F172A;
   --color-pub-muted: #64748B;
@@ -240,12 +240,10 @@ button {
 }
 
 .hero-filter-enter { animation: heroFilterEnter .75s cubic-bezier(.22,1,.36,1) .15s both; }
-.hero-filter-bar { transition: box-shadow .35s ease, transform .35s ease; }
-.hero-filter-bar:focus-within { box-shadow: 0 20px 55px rgb(15 23 42 / .34); }
+.hero-filter-bar { transition: transform .35s ease; }
 .hero-filter-field svg { transition: transform .3s cubic-bezier(.22,1,.36,1), color .3s ease; }
 .hero-filter-field:hover svg,
 .hero-filter-field.is-active svg { transform: translateY(-2px) scale(1.08); }
-.hero-filter-field.is-active { box-shadow: inset 0 -2px 0 #2563eb; }
 .hero-filter-panel { transform-origin: top center; animation: filterPanelDrop .28s cubic-bezier(.22,1,.36,1) both; }
 .profile-dropdown-panel { transform-origin: top right; animation: dropdownPanelIn .16s ease both; }
 .date-panel-content { animation: datePanelIn .3s cubic-bezier(.22,1,.36,1) both; }
@@ -504,6 +502,14 @@ button {
 .public-site :where(button, a):focus-visible {
   outline: 3px solid rgb(20 120 242 / .3);
   outline-offset: 2px;
+}
+.hero-filter-field,
+.hero-filter-field:focus,
+.hero-filter-field:focus-visible,
+.hero-filter-field:active {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Respect the user's OS-level motion preference: shorten/disable animations

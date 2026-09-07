@@ -29,7 +29,6 @@ import { useTravelStore } from "@/providers/TravelStoreProvider";
 export default function PublicHeader() {
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -53,7 +52,6 @@ export default function PublicHeader() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      setScrolled(currentScrollY > 24);
 
       // Always show at or near top
       if (currentScrollY <= 80) {
@@ -117,11 +115,7 @@ export default function PublicHeader() {
 
   return (
     <header
-      className={`print:hidden sticky top-0 z-50 border-b border-slate-100/80 bg-white/95 text-slate-900 backdrop-blur-md transition-all duration-300 ease-in-out ${
-        scrolled
-          ? "shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
-          : "shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
-      } ${
+      className={`print:hidden sticky top-0 z-50 bg-white/95 text-pub-primary backdrop-blur-md transition-all duration-300 ease-in-out ${
         visible
           ? "translate-y-0 opacity-100"
           : "-translate-y-full opacity-0 pointer-events-none"
@@ -130,7 +124,7 @@ export default function PublicHeader() {
       <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:px-8 lg:px-12">
         <Link
           href="/"
-          className="text-2xl font-black tracking-tight text-slate-900 transition hover:opacity-90 sm:text-3xl"
+          className="text-2xl font-black tracking-tight text-pub-primary transition hover:opacity-90 sm:text-3xl"
         >
           Tourvaa
         </Link>
@@ -140,11 +134,11 @@ export default function PublicHeader() {
         >
           <Link
             href="/wishlist"
-            className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] transition-colors hover:text-[#E4572E]"
+            className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-pub-primary transition-colors hover:text-pub-secondary"
           >
             <Heart
               size={18}
-              className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E4572E]"
+              className="text-pub-primary stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-pub-secondary"
             />
             <span>Wishlist</span>
             {wishlistCount > 0 && (
@@ -155,11 +149,11 @@ export default function PublicHeader() {
           </Link>
           <Link
             href="/compare"
-            className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] transition-colors hover:text-[#E4572E]"
+            className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-pub-primary transition-colors hover:text-pub-secondary"
           >
             <Scale
               size={18}
-              className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E4572E]"
+              className="text-pub-primary stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-pub-secondary"
             />
             <span>Compare</span>
             {compareCount > 0 && (
@@ -168,14 +162,14 @@ export default function PublicHeader() {
               </span>
             )}
           </Link>
-          <LanguageCurrencySelector plain />
+          <LanguageCurrencySelector />
           <div ref={profileRef} className="relative">
             <button
               type="button"
               onClick={() => setProfileOpen((value) => !value)}
               aria-expanded={profileOpen}
               aria-haspopup="menu"
-              className="group flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] transition-colors hover:text-[#E4572E]"
+              className="group flex flex-col items-center gap-1 text-[10px] font-semibold text-pub-primary transition-colors hover:text-pub-secondary"
             >
               {isLoggedIn ? (
                 <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-gradient-to-br from-[#E4572E] to-amber-500 text-[10px] font-black text-white shadow-xs">
@@ -184,7 +178,7 @@ export default function PublicHeader() {
               ) : (
                 <User
                   size={18}
-                  className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E4572E]"
+                  className="text-pub-primary stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-pub-secondary"
                 />
               )}
               <span className="flex items-center gap-0.5">
@@ -196,7 +190,7 @@ export default function PublicHeader() {
                   className={`transition-transform duration-200 ${
                     profileOpen
                       ? "rotate-180 text-[#E4572E]"
-                      : "text-[#0f2439] group-hover:text-[#E4572E]"
+                      : "text-pub-primary group-hover:text-pub-secondary"
                   }`}
                 />
               </span>
@@ -219,16 +213,16 @@ export default function PublicHeader() {
           </div>
         </nav>
         <div className="flex items-center gap-3 lg:hidden">
-          <LanguageCurrencySelector plain />
+          <LanguageCurrencySelector />
           <button
             onClick={() => setOpen(!open)}
             aria-label="Toggle navigation"
-            className="group p-1.5 rounded-lg text-[#0f2439] transition-colors hover:text-[#E4572E] hover:bg-orange-50"
+            className="group p-1.5 rounded-lg text-pub-primary transition-colors hover:text-pub-secondary hover:bg-blue-50"
           >
             {open ? (
-              <X size={22} className="text-[#0f2439] group-hover:text-[#E4572E]" />
+              <X size={22} className="text-pub-primary group-hover:text-pub-secondary" />
             ) : (
-              <Menu size={22} className="text-[#0f2439] group-hover:text-[#E4572E]" />
+              <Menu size={22} className="text-pub-primary group-hover:text-pub-secondary" />
             )}
           </button>
         </div>
@@ -507,7 +501,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
                     <Icon size={16} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <b className="block text-xs font-bold text-slate-900 group-hover:text-[#E4572E] transition-colors">
+                    <b className="block text-xs font-bold text-slate-900 group-hover:text-pub-secondary transition-colors">
                       {partner.label}
                     </b>
                     <span className="block truncate text-[10px] text-slate-400 font-normal">
@@ -520,7 +514,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
                   role="menuitem"
                   href={partner.registerHref}
                   onClick={onClose}
-                  className="shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 transition hover:border-[#E4572E] hover:text-[#E4572E]"
+                  className="shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 transition hover:border-pub-secondary hover:text-pub-secondary"
                 >
                   {partner.registerLabel}
                 </Link>
@@ -535,7 +529,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
         <Link
           href="/help-centre"
           onClick={onClose}
-          className="inline-flex items-center gap-1 font-semibold text-slate-600 hover:text-[#E4572E] transition"
+          className="inline-flex items-center gap-1 font-semibold text-slate-600 hover:text-pub-secondary transition"
         >
           <Headset size={13} />
           <span>Need Help?</span>

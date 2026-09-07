@@ -145,9 +145,11 @@ export default function HeroFilterBar({
   };
 
   const fieldClass = (name: typeof open) =>
-    `hero-filter-field group flex min-h-[58px] w-full items-center justify-between gap-2.5 px-4 sm:px-5 py-2.5 text-left transition rounded-xl md:rounded-none hover:bg-slate-50/80 ${
+    `hero-filter-field group flex min-h-[58px] w-full items-center justify-start px-4 sm:px-6 py-2.5 text-left transition rounded-xl outline-none focus:outline-none focus-visible:outline-none hover:bg-slate-50/80 ${
       open === name ? "is-active bg-slate-50/95" : "bg-white"
     }`;
+
+  const fieldWrapClass = "relative rounded-xl border border-slate-200 m-0.5 md:m-1";
 
   const displayDestination = destination || "Select country";
   const displayDate = travelDate === "Anytime" ? "Flexible / Anytime" : travelDate || "Select date";
@@ -162,13 +164,13 @@ export default function HeroFilterBar({
   const countryList = countries.length ? countries : FALLBACK_COUNTRIES;
 
   return (
-    <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[980px] text-slate-900">
+    <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[980px] md:w-fit text-slate-900">
       <form
         onSubmit={submit}
-        className="hero-filter-bar grid grid-cols-1 md:grid-cols-[1.15fr_1fr_1.1fr_1.15fr_auto] items-center overflow-visible rounded-2xl border-[2px] border-white/95 bg-white p-1.5 shadow-[0_16px_45px_rgba(15,23,42,.22)] ring-1 ring-slate-900/5"
+        className="hero-filter-bar flex flex-col md:flex-row md:items-center overflow-visible rounded-2xl border-[2px] border-white/95 bg-white p-1.5"
       >
         {/* 1. Where to? */}
-        <div className="relative border-b border-slate-150 md:border-b-0 md:border-r">
+        <div className={fieldWrapClass}>
           <button
             type="button"
             onClick={() => setOpen(open === "destination" ? null : "destination")}
@@ -176,19 +178,21 @@ export default function HeroFilterBar({
             aria-expanded={open === "destination"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#E4572E]">
+              <span className="block text-xs sm:text-sm font-semibold text-[#E4572E]">
                 Where to?
               </span>
-              <span className={`block truncate text-xs sm:text-[13px] font-bold ${destination ? "text-slate-950" : "text-slate-700"}`}>
-                {displayDestination}
+              <span className="inline-flex items-center gap-1">
+                <span className={`truncate text-sm sm:text-[15px] font-medium ${destination ? "text-slate-900" : "text-slate-600"}`}>
+                  {displayDestination}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
+                    open === "destination" ? "rotate-180 text-[#E4572E]" : ""
+                  }`}
+                />
               </span>
             </div>
-            <ChevronDown
-              size={14}
-              className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                open === "destination" ? "rotate-180 text-[#E4572E]" : ""
-              }`}
-            />
           </button>
           {open === "destination" && (
             <DestinationPanel
@@ -204,7 +208,7 @@ export default function HeroFilterBar({
         </div>
 
         {/* 2. When? */}
-        <div className="relative border-b border-slate-150 md:border-b-0 md:border-r">
+        <div className={fieldWrapClass}>
           <button
             type="button"
             onClick={() => setOpen(open === "date" ? null : "date")}
@@ -212,19 +216,21 @@ export default function HeroFilterBar({
             aria-expanded={open === "date"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#E4572E]">
+              <span className="block text-xs sm:text-sm font-semibold text-[#E4572E]">
                 When?
               </span>
-              <span className={`block truncate text-xs sm:text-[13px] font-bold ${travelDate ? "text-slate-950" : "text-slate-700"}`}>
-                {displayDate}
+              <span className="inline-flex items-center gap-1">
+                <span className={`truncate text-sm sm:text-[15px] font-medium ${travelDate ? "text-slate-900" : "text-slate-600"}`}>
+                  {displayDate}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
+                    open === "date" ? "rotate-180 text-[#E4572E]" : ""
+                  }`}
+                />
               </span>
             </div>
-            <ChevronDown
-              size={14}
-              className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                open === "date" ? "rotate-180 text-[#E4572E]" : ""
-              }`}
-            />
           </button>
           {open === "date" && (
             <DatePanel
@@ -239,7 +245,7 @@ export default function HeroFilterBar({
         </div>
 
         {/* 3. How Many Days? */}
-        <div className="relative border-b border-slate-150 md:border-b-0 md:border-r">
+        <div className={fieldWrapClass}>
           <button
             type="button"
             onClick={() => setOpen(open === "duration" ? null : "duration")}
@@ -247,19 +253,21 @@ export default function HeroFilterBar({
             aria-expanded={open === "duration"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#E4572E]">
+              <span className="block text-xs sm:text-sm font-semibold text-[#E4572E]">
                 How Many Days?
               </span>
-              <span className={`block truncate text-xs sm:text-[13px] font-bold ${duration ? "text-slate-950" : "text-slate-700"}`}>
-                {displayDuration}
+              <span className="inline-flex items-center gap-1">
+                <span className={`truncate text-sm sm:text-[15px] font-medium ${duration ? "text-slate-900" : "text-slate-600"}`}>
+                  {displayDuration}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
+                    open === "duration" ? "rotate-180 text-[#E4572E]" : ""
+                  }`}
+                />
               </span>
             </div>
-            <ChevronDown
-              size={14}
-              className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                open === "duration" ? "rotate-180 text-[#E4572E]" : ""
-              }`}
-            />
           </button>
           {open === "duration" && (
             <DurationPanel
@@ -274,7 +282,7 @@ export default function HeroFilterBar({
         </div>
 
         {/* 4. Who's going? */}
-        <div className="relative border-b border-slate-150 md:border-b-0">
+        <div className={fieldWrapClass}>
           <button
             type="button"
             onClick={() => setOpen(open === "passengers" ? null : "passengers")}
@@ -282,19 +290,21 @@ export default function HeroFilterBar({
             aria-expanded={open === "passengers"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#E4572E]">
+              <span className="block text-xs sm:text-sm font-semibold text-[#E4572E]">
                 Who&apos;s going?
               </span>
-              <span className="block truncate text-xs sm:text-[13px] font-bold text-slate-950">
-                {displayPassengers}
+              <span className="inline-flex items-center gap-1">
+                <span className={`truncate text-sm sm:text-[15px] font-medium ${adults !== 2 || children !== 0 ? "text-slate-900" : "text-slate-600"}`}>
+                  {displayPassengers}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
+                    open === "passengers" ? "rotate-180 text-[#E4572E]" : ""
+                  }`}
+                />
               </span>
             </div>
-            <ChevronDown
-              size={14}
-              className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                open === "passengers" ? "rotate-180 text-[#E4572E]" : ""
-              }`}
-            />
           </button>
           {open === "passengers" && (
             <PassengerPanel
@@ -311,7 +321,7 @@ export default function HeroFilterBar({
         <div className="p-1">
           <button
             type="submit"
-            className="hero-search-button flex h-12 w-full md:w-auto min-w-[130px] items-center justify-center gap-2 rounded-xl bg-[#0B1527] px-7 text-sm font-bold text-white shadow-md transition duration-200 hover:bg-[#15233C] hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+            className="hero-search-button relative overflow-hidden flex h-12 w-full md:w-auto min-w-[130px] items-center justify-center gap-2 rounded-xl bg-[#0B1527] px-7 text-sm font-bold text-white shadow-md transition duration-200 hover:bg-[#15233C] hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
           >
             <Search size={16} className="stroke-[2.5]" />
             <span>Search</span>
@@ -592,7 +602,7 @@ function DatePanel({
             <button
               type="button"
               onClick={() => onApply("Anytime")}
-              className="inline-flex items-center gap-1 font-bold text-[#0B1527] hover:text-[#E4572E] transition"
+              className="inline-flex items-center gap-1 font-bold text-[#0B1527] hover:text-pub-secondary transition"
             >
               <span>I&apos;m flexible anytime</span>
               <ArrowRight size={13} aria-hidden="true" />

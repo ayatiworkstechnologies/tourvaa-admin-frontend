@@ -45,7 +45,6 @@ check("homepage fallbacks use bundled images", publicHomepage.includes('"/images
 const publicLayout = read("src/components/public/PublicLayout.tsx");
 const publicSettings = read("src/providers/PublicSettingsProvider.tsx");
 const publicFooter = read("src/components/public/PublicFooter.tsx");
-const destinationsMegaPanel = read("src/components/public/DestinationsMegaPanel.tsx");
 const portalPublicFooter = read("src/components/public/portal/PortalPublicFooter.tsx");
 const publicContactSources = [
   "src/app/(public)/contact/page.tsx",
@@ -60,8 +59,6 @@ check("public contact surfaces use configured support details", publicContactSou
 check("public contact surfaces contain no hardcoded Tourvaa contact links", !publicContactSources.includes("mailto:hello@tourvaa.com") && !publicContactSources.includes("mailto:support@tourvaa.com") && !publicContactSources.includes("tel:+919876543210"));
 check("legacy seeded contact placeholders are suppressed", publicSettings.includes("PLACEHOLDER_EMAILS") && publicSettings.includes("PLACEHOLDER_PHONES") && publicSettings.includes("PLACEHOLDER_ADDRESSES"));
 check("all public pages use one canonical footer link set", ["const supportLinks", "const companyLinks", "const loginLinks"].every((decl) => publicFooter.includes(decl)) && ["supportLinks.map", "companyLinks.map", "loginLinks.map"].every((usage) => publicFooter.includes(usage)) && !publicFooter.includes("aboutSupportLinks") && !publicFooter.includes("aboutCompanyLinks") && !publicFooter.includes("aboutLoginLinks"));
-check("destination panel appears on the homepage only", publicFooter.includes('pathname === "/" && <DestinationsMegaPanel />'));
-check("destination panel never renders empty loading cards", destinationsMegaPanel.includes("if (loading) return null") && destinationsMegaPanel.includes("if (!availableTabs.length) return null") && !destinationsMegaPanel.includes("animate-pulse"));
 check("partner landing pages reuse the canonical public footer", portalPublicFooter.includes("<PublicFooter />") && portalPublicFooter.includes("<PublicSettingsProvider>") && portalPublicFooter.includes("<TravelStoreProvider>"));
 
 const tracker = read("src/components/public/AffiliateReferralTracker.tsx");

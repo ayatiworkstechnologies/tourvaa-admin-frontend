@@ -118,7 +118,7 @@ export default function CookieConsentBanner() {
           and{" "}
           <Link
             href="/privacy-policy"
-            className="font-bold text-[#0B1527] underline underline-offset-2 hover:text-[#E4572E] transition"
+            className="font-bold text-[#0B1527] underline underline-offset-2 hover:text-pub-secondary transition"
           >
             Privacy Policy
           </Link>

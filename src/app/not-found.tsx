@@ -181,7 +181,7 @@ export default function NotFound() {
               </Link>
               <Link
                 href="/tours"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-800 shadow-sm transition hover:border-[#d95d2c] hover:bg-orange-50/50 hover:text-[#d95d2c] hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-800 shadow-sm transition hover:border-pub-secondary hover:bg-blue-50/50 hover:text-pub-secondary hover:-translate-y-0.5"
               >
                 <Compass className="h-4 w-4" />
                 <span>Explore All Tours</span>
@@ -222,10 +222,10 @@ export default function NotFound() {
                     </span>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-sm font-black text-slate-900 group-hover:text-[#d95d2c] transition-colors">
+                    <span className="text-sm font-black text-slate-900 group-hover:text-pub-secondary transition-colors">
                       {dest.name}
                     </span>
-                    <MapPin className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#d95d2c] transition-colors" />
+                    <MapPin className="h-3.5 w-3.5 text-slate-400 group-hover:text-pub-secondary transition-colors" />
                   </div>
                 </Link>
               ))}
@@ -246,7 +246,7 @@ export default function NotFound() {
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#d95d2c] transition-colors">
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-pub-secondary transition-colors">
                       {link.title}
                     </h3>
                     <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">

@@ -138,13 +138,13 @@ export default function LanguageCurrencySelector({
         aria-haspopup="dialog"
         title="Language & Currency"
         className={`group flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors focus:outline-none ${
-          inverse ? "text-white hover:text-white/80" : "text-[#0f2439] hover:text-[#E4572E]"
+          inverse ? "text-white hover:text-white/80" : "text-pub-primary hover:text-pub-secondary"
         }`}
       >
         <Globe
           size={18}
           className={`stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 ${
-            inverse ? "" : "text-[#0f2439] group-hover:text-[#E4572E]"
+            inverse ? "" : "text-pub-primary group-hover:text-pub-secondary"
           }`}
         />
         <span className="flex items-center gap-0.5">
@@ -160,7 +160,7 @@ export default function LanguageCurrencySelector({
                 ? "rotate-180 text-[#E4572E]"
                 : inverse
                   ? ""
-                  : "text-[#0f2439] group-hover:text-[#E4572E]"
+                  : "text-pub-primary group-hover:text-pub-secondary"
             }`}
           />
         </span>

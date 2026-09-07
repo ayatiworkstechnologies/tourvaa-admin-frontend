@@ -386,7 +386,7 @@ function EmptyCollection({
       <p className="text-sm font-semibold text-slate-600">{message}</p>
       <Link
         href={href}
-        className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#E4572E] transition hover:text-[#d95d2c]"
+        className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#E4572E] transition hover:text-pub-secondary"
       >
         <span>{linkLabel}</span>
         <ArrowRight size={13} aria-hidden="true" />
@@ -460,7 +460,7 @@ function TopDealCard({ tour }: { tour: Tour }) {
         {/* Title and duration badge */}
         <div className="flex items-start justify-between gap-2">
           <Link href={href} className="block flex-1 min-w-0">
-            <h3 className="truncate text-base sm:text-[17px] font-extrabold text-slate-900 transition-colors group-hover:text-[#E4572E]">
+            <h3 className="truncate text-base sm:text-[17px] font-semibold text-slate-900 transition-colors group-hover:text-pub-secondary">
               {tour.title}
             </h3>
           </Link>
@@ -608,7 +608,7 @@ function TopDealsSection({
 
       {/* Header Row: Title & Arrow Buttons */}
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-black text-slate-950 tracking-tight">
+        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
           Top Deals
         </h2>
 
@@ -618,7 +618,7 @@ function TopDealsSection({
               type="button"
               aria-label="Previous deals"
               onClick={() => move(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#E4572E] hover:text-[#E4572E] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
             >
               <ChevronLeft size={16} className="stroke-[2.2]" />
             </button>
@@ -626,7 +626,7 @@ function TopDealsSection({
               type="button"
               aria-label="Next deals"
               onClick={() => move(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#E4572E] hover:text-[#E4572E] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
             >
               <ChevronRight size={16} className="stroke-[2.2]" />
             </button>
@@ -676,7 +676,7 @@ function FavouriteCountriesSection({
     <section className="py-10 sm:py-14">
       {/* Header */}
       <div className="mx-auto max-w-3xl text-center">
-        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-black text-slate-950 tracking-tight">
+        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
           {title}
         </h2>
         <p className="mt-2.5 text-xs sm:text-sm text-slate-500 leading-relaxed max-w-2xl mx-auto">
@@ -714,13 +714,13 @@ function FavouriteCountriesSection({
 
               {/* Bottom Content Overlay */}
               <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5 text-left">
-                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm transition-colors group-hover:text-[#ff7a45]">
+                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-tight drop-shadow-sm transition-colors group-hover:text-pub-secondary">
                   {`${country.name} tours`}
                 </h3>
                 <div className="mt-2.5 flex items-start gap-2 text-xs text-white/90 leading-relaxed font-medium">
                   <SquareCheckBig
                     size={14}
-                    className="mt-0.5 shrink-0 text-orange-400 stroke-[2.2] transition-colors group-hover:text-[#ff7a45]"
+                    className="mt-0.5 shrink-0 text-orange-400 stroke-[2.2] transition-colors group-hover:text-pub-secondary"
                   />
                   <p className="line-clamp-3 text-white/90 drop-shadow">
                     {country.snippet}
@@ -740,16 +740,16 @@ function AboutTourvaaBanner() {
     <section className="relative w-full overflow-hidden my-6 sm:my-10 py-14 sm:py-20 lg:py-24 shadow-sm">
       {/* High-res Panoramic Mountain Background */}
       <img
-        src="/images/about-mountain.jpg"
+        src="/images/about-mountain.png"
         alt="About Tourvaa - Alpine mountain landscape"
-        className="absolute inset-0 h-full w-full object-cover object-center scale-105"
+        className="absolute inset-0 h-full w-full object-full object-center "
       />
       {/* Dark gradient overlay for readability */}
-      <div className="absolute inset-0 bg-black/55 backdrop-brightness-90" />
+      <div className="absolute inset-0 bg-black/10 backdrop-brightness-90" />
 
       {/* Text Content */}
       <div className="relative z-10 mx-auto max-w-5xl px-6 sm:px-10 text-center text-white">
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
+        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold tracking-tight text-white drop-shadow-md">
           About Tourvaa
         </h2>
         <p className="mx-auto mt-4 max-w-4xl text-xs sm:text-sm md:text-[15px] leading-relaxed text-white/95 drop-shadow">
@@ -838,7 +838,7 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
       <div className="pt-4">
         {/* Title */}
         <Link href={href} className="block min-w-0">
-          <h3 className="truncate text-base sm:text-[17px] font-extrabold text-slate-900 transition-colors group-hover:text-[#E4572E]">
+          <h3 className="truncate text-base sm:text-[17px] font-semibold text-slate-900 transition-colors group-hover:text-pub-secondary">
             {tour.title}
           </h3>
         </Link>
@@ -904,7 +904,7 @@ function TrendingToursSection({
     <section className="py-8 sm:py-10">
       {/* Section Header with Arrows on right */}
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
           Trending Tour Packages
         </h2>
 
@@ -914,7 +914,7 @@ function TrendingToursSection({
               type="button"
               aria-label="Previous tours"
               onClick={() => move(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#E4572E] hover:text-[#E4572E] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
             >
               <ChevronLeft size={16} className="stroke-[2.2]" />
             </button>
@@ -922,7 +922,7 @@ function TrendingToursSection({
               type="button"
               aria-label="Next tours"
               onClick={() => move(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#E4572E] hover:text-[#E4572E] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
             >
               <ChevronRight size={16} className="stroke-[2.2]" />
             </button>
@@ -1024,7 +1024,7 @@ function HandpickedTourCard({ tour }: { tour: Tour }) {
         {/* Title and duration tag */}
         <div className="flex items-start justify-between gap-2">
           <Link href={href} className="block flex-1 min-w-0">
-            <h3 className="truncate text-base sm:text-[17px] font-extrabold text-slate-900 transition-colors group-hover:text-[#E4572E]">
+            <h3 className="truncate text-base sm:text-[17px] font-semibold text-slate-900 transition-colors group-hover:text-pub-secondary">
               {tour.title}
             </h3>
           </Link>
@@ -1083,7 +1083,7 @@ function HandpickedToursSection({
     <section className="py-8 sm:py-10">
       {/* Section Header with Arrows on right */}
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
           Handpicked Tours for You
         </h2>
 
@@ -1093,7 +1093,7 @@ function HandpickedToursSection({
               type="button"
               aria-label="Previous tours"
               onClick={() => move(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#d95d2c] hover:text-[#d95d2c] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
             >
               <ChevronLeft size={16} className="stroke-[2.2]" />
             </button>
@@ -1101,7 +1101,7 @@ function HandpickedToursSection({
               type="button"
               aria-label="Next tours"
               onClick={() => move(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#d95d2c] hover:text-[#d95d2c] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
             >
               <ChevronRight size={16} className="stroke-[2.2]" />
             </button>
@@ -1155,7 +1155,7 @@ function CountriesWorthExploringSection({
     <section className="py-8 sm:py-10">
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
           Countries Worth Exploring
         </h2>
 
@@ -1165,7 +1165,7 @@ function CountriesWorthExploringSection({
               type="button"
               aria-label="Previous countries"
               onClick={() => move(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#d95d2c] hover:text-[#d95d2c] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
             >
               <ChevronLeft size={16} className="stroke-[2.2]" />
             </button>
@@ -1173,7 +1173,7 @@ function CountriesWorthExploringSection({
               type="button"
               aria-label="Next countries"
               onClick={() => move(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#d95d2c] hover:text-[#d95d2c] hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
             >
               <ChevronRight size={16} className="stroke-[2.2]" />
             </button>
@@ -1239,7 +1239,7 @@ function CountryWorthExploringCard({
       <div className="pt-3 px-0.5">
         {/* Name and Rating */}
         <div className="flex items-center justify-between gap-2">
-          <h3 className="truncate text-base font-bold text-slate-900 transition-colors group-hover:text-[#E4572E]">
+          <h3 className="truncate text-base font-semibold text-slate-900 transition-colors group-hover:text-pub-secondary">
             {country.name}
           </h3>
           {country.rating != null && (
@@ -1538,7 +1538,7 @@ export default function Home() {
           <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-center pt-2 sm:pt-4 pb-2">
             <h1
               key={heroTitle}
-              className="animate-fade-up max-w-4xl text-2xl sm:text-4xl md:text-[40px] font-black tracking-tight text-white leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
+              className="animate-fade-up max-w-4xl text-2xl sm:text-4xl md:text-[40px] font-semibold tracking-tight text-white leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
             >
               {heroTitle}
             </h1>
@@ -1575,7 +1575,7 @@ export default function Home() {
               <span className="font-normal text-white/95">
                 Tourvaa travellers rate us
               </span>
-              <span className="font-bold text-white">Excellent</span>
+              <span className="font-semibold text-white">Excellent</span>
               <span className="inline-flex items-center gap-0.5 mx-1">
                 <Star
                   size={14}
@@ -1662,7 +1662,7 @@ export default function Home() {
             {/* Left Image: 602px x 394px on desktop, rounded-[16px] with 16px outer padding */}
             <div className="relative h-[280px] sm:h-[340px] lg:h-[394px] w-full overflow-hidden rounded-[16px] bg-slate-100">
               <img
-                src="/images/hero-2.jpg"
+                src="/images/img-1.png"
                 alt="Travellers with backpacks hiking on a trail"
                 className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
               />
@@ -1673,7 +1673,7 @@ export default function Home() {
               <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E4572E]">
                 BLOG
               </span>
-              <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-black leading-tight text-slate-950 tracking-tight">
+              <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-semibold leading-tight text-slate-950 tracking-tight">
                 Travel stories, guides and inspiration for every journey
               </h2>
               <p className="mt-4 max-w-md text-xs sm:text-sm md:text-base leading-relaxed text-slate-500 font-medium">
@@ -1755,7 +1755,7 @@ function AirportTransfersBanner() {
           </div>
 
           {/* Heading */}
-          <h2 className="mt-2.5 text-2xl font-black leading-tight text-slate-950 sm:text-3xl lg:text-[36px] tracking-tight">
+          <h2 className="mt-2.5 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl lg:text-[36px] tracking-tight">
             Book Your Airport Transfers
           </h2>
 
@@ -1770,7 +1770,7 @@ function AirportTransfersBanner() {
             {TRANSFER_FEATURES.map((feature) => (
               <span
                 key={feature}
-                className="rounded-full bg-[#d95d2c] px-3 py-1 text-[11px] font-bold text-white shadow-sm"
+                className="rounded-full bg-[#d95d2c] px-3 py-1 text-[11px] font-semibold text-white"
               >
                 {feature}
               </span>
@@ -1810,7 +1810,7 @@ function AirportTransfersBanner() {
           className="relative block h-[280px] sm:h-[340px] lg:h-[394px] w-full overflow-hidden rounded-[16px] bg-slate-100"
         >
           <img
-            src="/images/airport-transfers.jpg"
+            src="/images/img-2.png"
             alt="Luxury airport chauffeur transfer in front of international arrivals terminal"
             className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
           />
@@ -1867,7 +1867,7 @@ function FaqSection({
   return (
     <section className="py-12 sm:py-16">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-black text-slate-950 text-center tracking-tight mb-8 sm:mb-12">
+        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 text-center tracking-tight mb-8 sm:mb-12">
           Frequently Asked Questions
         </h2>
 
@@ -1902,7 +1902,7 @@ function FaqSection({
                     className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
                       isOpen
                         ? "bg-[#d95d2c] text-white shadow-sm rotate-180"
-                        : "text-[#d95d2c] bg-slate-100/80 group-hover:bg-[#d95d2c]/10"
+                        : "text-[#d95d2c] bg-slate-100/80 group-hover:bg-pub-secondary/10"
                     }`}
                   >
                     <ChevronDown size={16} />
@@ -2087,7 +2087,7 @@ function TestimonialsSection({
     <section className="py-12 sm:py-16">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
-        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-black text-slate-950 tracking-tight">
+        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
           What Tourvaa travellers are saying
         </h2>
         <p className="mt-2 text-xs sm:text-sm md:text-base text-slate-500">
@@ -2102,7 +2102,7 @@ function TestimonialsSection({
           type="button"
           aria-label="Previous reviews"
           onClick={() => move(-1)}
-          className="absolute -left-2 sm:-left-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-[#d95d2c] hover:text-[#d95d2c] hover:scale-105"
+          className="absolute -left-2 sm:-left-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-pub-secondary hover:text-pub-secondary hover:scale-105"
         >
           <ChevronLeft size={18} className="stroke-[2.2]" />
         </button>
@@ -2111,7 +2111,7 @@ function TestimonialsSection({
           type="button"
           aria-label="Next reviews"
           onClick={() => move(1)}
-          className="absolute -right-2 sm:-right-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-[#d95d2c] hover:text-[#d95d2c] hover:scale-105"
+          className="absolute -right-2 sm:-right-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-pub-secondary hover:text-pub-secondary hover:scale-105"
         >
           <ChevronRight size={18} className="stroke-[2.2]" />
         </button>
@@ -2169,7 +2169,7 @@ function TestimonialsSection({
                         </span>
                       )}
                       <div className="min-w-0">
-                        <h3 className="truncate text-xs sm:text-sm font-bold text-slate-900">
+                        <h3 className="truncate text-xs sm:text-sm font-semibold text-slate-900">
                           {review.name}
                         </h3>
                         <p className="truncate text-[11px] text-slate-400">
@@ -2278,9 +2278,9 @@ function ExploreDirectorySection({
             <Link
               key={item}
               href={getHref(item)}
-              className="group flex items-start gap-1.5 transition-colors hover:text-[#d95d2c]"
+              className="group flex items-start gap-1.5 transition-colors hover:text-pub-secondary"
             >
-              <span className="font-semibold text-slate-900 group-hover:text-[#d95d2c]">
+              <span className="font-semibold text-slate-900 group-hover:text-pub-secondary">
                 {index + 1}.
               </span>
               <span className="truncate group-hover:underline">{item}</span>

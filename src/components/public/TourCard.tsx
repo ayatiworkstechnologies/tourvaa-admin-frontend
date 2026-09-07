@@ -158,7 +158,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
       )}
       <div className="flex flex-1 flex-col p-4">
         <Link href={resolvedHref}>
-          <h2 className="truncate text-base font-black transition-colors group-hover:text-[#E4572E]">{tour.title}</h2>
+          <h2 className="truncate text-base font-black transition-colors group-hover:text-pub-secondary">{tour.title}</h2>
           <div className="mt-2.5 flex flex-col gap-1.5 text-xs font-semibold text-slate-500">
             <span className="flex items-center gap-2"><MapPin size={12} className="shrink-0 text-sky-500" /><span className="truncate">{tour.city_name ? `${tour.city_name}, ${tour.country_name}` : tour.country_name}</span></span>
             <span className="flex items-center gap-2"><Calendar size={12} className="shrink-0 text-sky-500" />{days} Days / {Math.max(1, days - 1)} Nights</span>

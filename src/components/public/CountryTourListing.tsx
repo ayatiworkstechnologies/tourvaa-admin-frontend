@@ -785,7 +785,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         <nav className="mt-6 flex items-center gap-2 text-xs font-bold text-slate-500">
           <Link
             href="/"
-            className="flex items-center gap-1 text-slate-600 hover:text-[#E4572E] transition"
+            className="flex items-center gap-1 text-slate-600 hover:text-pub-secondary transition"
           >
             <Home size={13} className="text-[#E4572E]" />
             Home
@@ -794,7 +794,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           <Link
             href="/tours"
             className={`flex items-center gap-1 transition ${
-              hasSpecificCountry ? "text-slate-600 hover:text-[#E4572E]" : "text-[#E4572E] font-bold"
+              hasSpecificCountry ? "text-slate-600 hover:text-pub-secondary" : "text-[#E4572E] font-bold"
             }`}
           >
             <MapIcon size={13} className="text-[#E4572E]" />
@@ -1226,7 +1226,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                       <div className="flex items-start justify-between gap-2">
                         <Link
                           href={tourLink}
-                          className="text-sm font-bold text-[#0B1527] transition hover:text-[#E4572E] line-clamp-1"
+                          className="text-sm font-bold text-[#0B1527] transition hover:text-pub-secondary line-clamp-1"
                         >
                           {tour.title}
                         </Link>
