@@ -384,6 +384,21 @@ function hashStringToId(value: string): number {
   return Math.abs(hash) || 1;
 }
 
+const DEPARTURE_DATE_FORMAT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "2-digit" });
+
+function formatDepartureDate(isoDate: string): string {
+  const parsed = new Date(`${isoDate}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? isoDate : DEPARTURE_DATE_FORMAT.format(parsed);
+}
+
+// "2-20" -> 20 (the group cap); a bare number stays as-is.
+function parseMaxGroup(groupSize: string | null | undefined): number | null {
+  if (!groupSize) return null;
+  const numbers = groupSize.match(/\d+/g);
+  if (!numbers || numbers.length === 0) return null;
+  return Math.max(...numbers.map(Number));
+}
+
 export default function CountryTourListing({ countrySlug }: { countrySlug?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -576,27 +591,42 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         setTotalCount(result.total || apiItems.length);
 
         const mapped: TourItem[] = apiItems.map((t, idx) => {
-          // Decorative-only fields (route, guideType, cities grid, mock
-          // departures card, group/age caps) have no backing column on Tour
-          // at all -- these stay cosmetic filler and never drive a filter.
+          // guideType/tourType/travelStyle/age caps have no backing column on
+          // Tour at all -- those stay cosmetic filler and never drive a
+          // filter. route, departures and maxGroup DO have real data
+          // (start_location/end_location, departures[], group_size) - use it
+          // when present so cards don't show another tour's mock route/dates.
           const fallback = baseSet[idx % baseSet.length];
+          const realRoute = t.start_location && t.end_location
+            ? `${t.start_location} > ${t.end_location}`
+            : t.city_name && t.country_name
+              ? `${t.city_name}, ${t.country_name}`
+              : null;
+          const realDepartures = t.departures
+            ?.filter((d) => d.status === "available")
+            .slice(0, 3)
+            .map((d) => ({
+              date: formatDepartureDate(d.date),
+              price: t.price_start_per_person ? format(t.price_start_per_person, t.currency) : fallback.price,
+            }));
+          const realMaxGroup = parseMaxGroup(t.group_size);
           return {
             id: t.id,
             title: t.title || fallback.title,
             location: t.country_name || fallback.location,
             duration: t.number_of_days ? `${t.number_of_days}D | ${Math.max(1, t.number_of_days - 1)}N` : fallback.duration,
             days: t.number_of_days || fallback.days,
-            route: fallback.route,
+            route: realRoute || fallback.route,
             guideType: fallback.guideType,
             tourType: fallback.tourType,
             travelStyle: fallback.travelStyle,
             rating: t.rating_average ?? undefined,
             inclusions: fallback.inclusions,
-            maxGroup: fallback.maxGroup,
+            maxGroup: realMaxGroup ?? fallback.maxGroup,
             minAge: fallback.minAge,
             maxAge: fallback.maxAge,
             cities: t.city_name || fallback.cities,
-            departures: fallback.departures,
+            departures: realDepartures && realDepartures.length > 0 ? realDepartures : fallback.departures,
             originalPrice: fallback.originalPrice,
             price: t.price_start_per_person ? format(t.price_start_per_person, t.currency) : fallback.price,
             rawPrice: t.price_start_per_person || fallback.rawPrice,
