@@ -197,11 +197,11 @@ function mapPublicTour(tour: PublicTour): Tour {
     { icon: Users, text: `Max Group Size: ${tour.group_size || 20}` },
   ];
 
-  const rawPrice = tour.price_start_per_person;
-  const originalPrice =
-    tour.discount_percentage && tour.original_price_per_person
-      ? tour.original_price_per_person
-      : null;
+  const hasDiscount = Boolean(
+    tour.discount_percentage && tour.original_price_per_person != null && tour.discounted_price_per_person != null
+  );
+  const rawPrice = hasDiscount ? tour.discounted_price_per_person : tour.price_start_per_person;
+  const originalPrice = hasDiscount ? tour.original_price_per_person : null;
   const discountBadge = tour.discount_percentage
     ? `Save ${Math.round(tour.discount_percentage)}%`
     : undefined;
