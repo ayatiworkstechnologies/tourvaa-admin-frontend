@@ -108,19 +108,20 @@ test.describe("Deep Interactive UI & UX Workflows Audit", () => {
 
     // 1. Visit tours catalog and click first tour or visit /tours/1
     await page.goto("http://localhost:3000/tours/1", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
 
-    // Verify booking widget is present
+    // Verify booking widget is present (generous timeout: dev-server first
+    // compile + tour data fetch can exceed the default 5s)
     const bookingWidget = page.locator("#booking-widget");
-    await expect(bookingWidget).toBeVisible();
+    await expect(bookingWidget).toBeVisible({ timeout: 20000 });
 
     // 2. Test mobile viewport (375x667)
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.waitForTimeout(400);
 
-    // Verify mobile sticky booking bar is visible
-    const mobileBookingBtn = page.locator("div.fixed.bottom-0 button:has-text('Book Now')");
-    await expect(mobileBookingBtn).toBeVisible();
+    // Verify mobile booking CTA is visible (the old fixed-bottom bar was
+    // removed when booking moved to the dedicated /booking/[id] page; the CTA
+    // now lives inside the #booking-widget "Proceed to Payment" button)
+    const mobileBookingBtn = page.locator("#booking-widget button:has-text('Proceed to Payment')");
+    await expect(mobileBookingBtn).toBeVisible({ timeout: 10000 });
 
     expect(pageErrors).toEqual([]);
   });

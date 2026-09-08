@@ -864,7 +864,7 @@ export default function TourDetailExperience({
           </div>
 
           {/* ── RIGHT COLUMN: STICKY BOOKING WIDGET ── */}
-          <aside className="sticky top-20 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-sm">
+          <aside id="booking-widget" className="sticky top-20 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-sm">
             <h3 className="text-base font-bold text-slate-950">
               Book Your {destination} Adventure
             </h3>

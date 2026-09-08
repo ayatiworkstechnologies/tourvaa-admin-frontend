@@ -40,10 +40,13 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
     // Profile dropdown interaction (Before Login)
     const profileBtn = page.locator("header button:has-text('Profile')");
     if (await profileBtn.isVisible()) {
-      await profileBtn.click();
-      await page.waitForTimeout(400);
+      // Hydration-safe: on a dev server the SSR button can be clicked before
+      // React attaches onClick, so retry until the dropdown actually opens.
       const dropdown = page.locator(".profile-dropdown-panel");
-      await expect(dropdown).toBeVisible();
+      await expect(async () => {
+        if (!(await dropdown.isVisible())) await profileBtn.click();
+        await expect(dropdown).toBeVisible();
+      }).toPass({ timeout: 15000 });
       await expect(dropdown.getByText("Welcome to Tourvaa")).toBeVisible();
       await expect(dropdown.getByText("Traveller Account")).toBeVisible();
       await expect(dropdown.locator("a:has-text('Sign In')")).toBeVisible();
@@ -219,12 +222,12 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
     const profileBtn = page.locator("header nav button").filter({ hasText: /Super|Profile/ });
     await expect(profileBtn).toBeVisible();
 
-    // Click to open after-login dropdown
-    await profileBtn.click();
-    await page.waitForTimeout(400);
-
+    // Click to open after-login dropdown (hydration-safe retry)
     const dropdown = page.locator(".profile-dropdown-panel");
-    await expect(dropdown).toBeVisible();
+    await expect(async () => {
+      if (!(await dropdown.isVisible())) await profileBtn.click();
+      await expect(dropdown).toBeVisible();
+    }).toPass({ timeout: 30000 });
     await expect(dropdown.locator("p:has-text('Super Admin')")).toBeVisible();
     await expect(dropdown.locator("span:has-text('Super Admin')")).toBeVisible();
     await expect(dropdown.getByText("admin@tourvaa.com")).toBeVisible();
