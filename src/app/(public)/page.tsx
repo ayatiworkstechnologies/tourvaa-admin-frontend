@@ -32,11 +32,17 @@ import { useToast } from "@/hooks/useToast";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
 import {
+  AboutSectionBlock,
+  AirportTransferBlock,
+  BlogTeaserBlock,
   CmsBanner,
   CmsDestination,
   CmsReview,
+  fetchContentBlock,
   fetchCustomerReviews,
+  fetchFavouriteCountries,
   fetchFeaturedTours,
+  fetchHandpickedTours,
   fetchHelpCentre,
   fetchHomepageBanners,
   fetchPopularDestinations,
@@ -47,6 +53,7 @@ import {
   fetchPublicTourDetail,
   fetchPublicTours,
   fetchToursOnDeals,
+  HeroExtrasBlock,
   PublicCountry,
   PublicTour,
 } from "@/lib/api/publicClient";
@@ -511,7 +518,7 @@ function TopDealCard({ tour }: { tour: Tour }) {
           <strong className="text-xl font-black text-slate-950">
             {tour.rawPrice != null
               ? format(tour.rawPrice, tour.currency || "USD")
-              : "$999"}
+              : format(999, "USD")}
           </strong>
           <span className="text-xs font-bold text-slate-900">pp</span>
         </div>
@@ -753,12 +760,24 @@ function FavouriteCountriesSection({
   );
 }
 
-function AboutTourvaaBanner() {
+const DEFAULT_ABOUT_HEADING = "About Tourvaa";
+const DEFAULT_ABOUT_BODY =
+  "Tourvaa is a premier travel platform dedicated to crafting extraordinary group travel experiences across the globe. We connect passionate travellers with expertly curated tours, handpicked destinations, and seamless end-to-end booking — from visa assistance to on-ground coordination. Whether it's the serene backwaters of Kerala, the alpine trails of Switzerland, or the vibrant streets of Tokyo, Tourvaa makes every journey effortless, memorable, and truly unforgettable.";
+
+function AboutTourvaaBanner({
+  heading = DEFAULT_ABOUT_HEADING,
+  body = DEFAULT_ABOUT_BODY,
+  image = "/images/about-mountain.png",
+}: {
+  heading?: string;
+  body?: string;
+  image?: string;
+}) {
   return (
     <section className="relative w-full overflow-hidden my-6 sm:my-10 py-14 sm:py-20 lg:py-24 shadow-sm">
       {/* High-res Panoramic Mountain Background */}
       <img
-        src="/images/about-mountain.png"
+        src={image}
         alt="About Tourvaa - Alpine mountain landscape"
         className="absolute inset-0 h-full w-full object-full object-center "
       />
@@ -768,17 +787,10 @@ function AboutTourvaaBanner() {
       {/* Text Content */}
       <div className="relative z-10 mx-auto max-w-5xl px-6 sm:px-10 text-center text-white">
         <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold tracking-tight text-white drop-shadow-md">
-          About Tourvaa
+          {heading}
         </h2>
         <p className="mx-auto mt-4 max-w-4xl text-xs sm:text-sm md:text-[15px] leading-relaxed text-white/95 drop-shadow">
-          Tourvaa is a premier travel platform dedicated to crafting
-          extraordinary group travel experiences across the globe. We connect
-          passionate travellers with expertly curated tours, handpicked
-          destinations, and seamless end-to-end booking — from visa assistance
-          to on-ground coordination. Whether it&apos;s the serene backwaters of
-          Kerala, the alpine trails of Switzerland, or the vibrant streets of
-          Tokyo, Tourvaa makes every journey effortless, memorable, and truly
-          unforgettable.
+          {body}
         </p>
       </div>
     </section>
@@ -896,7 +908,7 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
           <strong className="text-xl font-black text-slate-950">
             {tour.rawPrice != null
               ? format(tour.rawPrice, tour.currency || "USD")
-              : "$1,575"}
+              : format(1575, "USD")}
           </strong>
           <span className="text-[11px] font-bold text-slate-900">pp</span>
         </div>
@@ -1075,7 +1087,7 @@ function HandpickedTourCard({ tour }: { tour: Tour }) {
           <strong className="text-xl font-black text-slate-950">
             {tour.rawPrice != null
               ? format(tour.rawPrice, tour.currency || "USD")
-              : "$999"}
+              : format(999, "USD")}
           </strong>
           <span className="text-xs font-bold text-slate-900">pp</span>
         </div>
@@ -1283,6 +1295,10 @@ export default function Home() {
   const [bannerIndex, setBannerIndex] = useState(0);
   const [loadingHome, setLoadingHome] = useState(true);
   const [topDeals, setTopDeals] = useState<Tour[]>([]);
+  const [heroExtras, setHeroExtras] = useState<Partial<HeroExtrasBlock>>({});
+  const [aboutSection, setAboutSection] = useState<Partial<AboutSectionBlock>>({});
+  const [blogTeaser, setBlogTeaser] = useState<Partial<BlogTeaserBlock>>({});
+  const [airportTransfer, setAirportTransfer] = useState<Partial<AirportTransferBlock>>({});
   const [favouriteCountries, setFavouriteCountries] = useState<
     CountryDestination[]
   >(DEFAULT_FAVOURITE_COUNTRIES);
@@ -1326,6 +1342,12 @@ export default function Home() {
       fetchPopularTours(),
       fetchToursOnDeals(),
       fetchHelpCentre(),
+      fetchHandpickedTours(),
+      fetchFavouriteCountries(),
+      fetchContentBlock<HeroExtrasBlock>("hero_extras"),
+      fetchContentBlock<AboutSectionBlock>("about_section"),
+      fetchContentBlock<BlogTeaserBlock>("blog_teaser"),
+      fetchContentBlock<AirportTransferBlock>("airport_transfer"),
     ]).then(
       ([
         bannerResult,
@@ -1338,8 +1360,18 @@ export default function Home() {
         popularTourResult,
         dealTourResult,
         helpResult,
+        handpickedTourResult,
+        favouriteCountryResult,
+        heroExtrasResult,
+        aboutSectionResult,
+        blogTeaserResult,
+        airportTransferResult,
       ]) => {
         if (!active) return;
+        if (heroExtrasResult.status === "fulfilled") setHeroExtras(heroExtrasResult.value.data);
+        if (aboutSectionResult.status === "fulfilled") setAboutSection(aboutSectionResult.value.data);
+        if (blogTeaserResult.status === "fulfilled") setBlogTeaser(blogTeaserResult.value.data);
+        if (airportTransferResult.status === "fulfilled") setAirportTransfer(airportTransferResult.value.data);
         if (bannerResult.status === "fulfilled" && bannerResult.value.length)
           setBanners(bannerResult.value);
         if (tourResult.status === "fulfilled" && tourResult.value.length) {
@@ -1369,16 +1401,36 @@ export default function Home() {
             cmsDestinations.map((d) => [d.title.trim().toLowerCase(), d]),
           );
 
-          // Enrich favourite countries with matched CMS images
-          setFavouriteCountries((prev) =>
-            prev.map((item) => {
-              const match = cmsMap.get(item.name.toLowerCase());
-              if (match?.image) {
-                return { ...item, image: mediaUrl(match.image) };
-              }
-              return item;
-            }),
-          );
+          // Favourite Countries falls back to the hardcoded list (enriched
+          // with matched CMS "Countries" images) only when the admin hasn't
+          // curated a dedicated Favourite Countries list of their own.
+          const curatedFavourites =
+            favouriteCountryResult.status === "fulfilled"
+              ? favouriteCountryResult.value.filter((r) => r.is_active !== false)
+              : [];
+          if (curatedFavourites.length) {
+            setFavouriteCountries(
+              [...curatedFavourites]
+                .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                .map((item) => ({
+                  name: item.title,
+                  badge: item.title,
+                  image: item.image ? mediaUrl(item.image) : PLACEHOLDER_IMAGE,
+                  snippet: item.snippet || "",
+                  href: item.href || undefined,
+                })),
+            );
+          } else {
+            setFavouriteCountries((prev) =>
+              prev.map((item) => {
+                const match = cmsMap.get(item.name.toLowerCase());
+                if (match?.image) {
+                  return { ...item, image: mediaUrl(match.image) };
+                }
+                return item;
+              }),
+            );
+          }
 
           // "Countries Worth Exploring" - the top countries by real published
           // tour count, not a hardcoded name list; images come from the CMS
@@ -1419,11 +1471,9 @@ export default function Home() {
           if (cmsFaqs.length > 0) setDynamicFaqs(cmsFaqs);
         }
 
-        // "Trending Tour Packages" AND "Handpicked Tours for You" - both
-        // admin-picked via the same CMS "Popular Tours"/"Handpicked" tabs
-        // (admin/cms), since there's no separate backend list for Handpicked
-        // yet. Each entry only carries the tour id, so the full tour record is
-        // resolved separately before rendering.
+        // "Trending Tour Packages" - admin-picked via CMS "Popular Tours"
+        // (admin/cms). Each entry only carries the tour id, so the full tour
+        // record is resolved separately before rendering.
         if (
           popularTourResult.status === "fulfilled" &&
           popularTourResult.value.length
@@ -1444,10 +1494,35 @@ export default function Home() {
                 > => r.status === "fulfilled",
               )
               .map((r) => mapPublicTour(r.value));
-            if (tours.length) {
-              setTrendingTours(tours);
-              setHandpickedTours(tours);
-            }
+            if (tours.length) setTrendingTours(tours);
+          });
+        }
+
+        // "Handpicked Tours for You" - admin-picked via its own CMS
+        // "Handpicked" list, separate from Trending. Falls back to mirroring
+        // whatever's pinned to Trending when no dedicated Handpicked list has
+        // been curated yet, so existing sites don't suddenly go empty.
+        const handpickedRefs =
+          handpickedTourResult.status === "fulfilled" && handpickedTourResult.value.length
+            ? handpickedTourResult.value.filter((r) => r.is_active !== false)
+            : popularTourResult.status === "fulfilled"
+              ? popularTourResult.value.filter((r) => r.is_active !== false)
+              : [];
+        if (handpickedRefs.length) {
+          Promise.allSettled(
+            handpickedRefs.map((ref) => fetchPublicTourDetail(ref.tour_id)),
+          ).then((results) => {
+            if (!active) return;
+            const tours = results
+              .filter(
+                (
+                  r,
+                ): r is PromiseFulfilledResult<
+                  Awaited<ReturnType<typeof fetchPublicTourDetail>>
+                > => r.status === "fulfilled",
+              )
+              .map((r) => mapPublicTour(r.value));
+            if (tours.length) setHandpickedTours(tours);
           });
         }
 
@@ -1516,6 +1591,18 @@ export default function Home() {
 
   const [showOfferBanner, setShowOfferBanner] = useState(true);
   const heroTitle = banner?.title || "Endless destinations. One easy search.";
+
+  // Hero trust badge + offer strip: a customized field (even one left blank
+  // on purpose, e.g. to hide the offer strip) always wins over the default.
+  const heroRating = heroExtras.rating !== undefined ? Number(heroExtras.rating) : 4.5;
+  const heroReviewCount = heroExtras.review_count !== undefined ? Number(heroExtras.review_count) : 522;
+  const heroReviewSource = heroExtras.review_source !== undefined ? heroExtras.review_source : "Ayatiworks";
+  const heroOfferText =
+    heroExtras.offer_text !== undefined
+      ? heroExtras.offer_text
+      : "Global Getaways 2026: Up To 50% Off – Limited Availability, Book Today!";
+  const heroOfferCtaUrl = heroExtras.offer_cta_url?.trim() || "";
+  const heroOfferCtaText = heroExtras.offer_cta_text?.trim() || "";
 
   return (
     <main className="overflow-x-clip bg-white text-slate-950">
@@ -1613,15 +1700,15 @@ export default function Home() {
                 />
                 <Star size={14} className="fill-white/40 text-white/60" />
               </span>
-              <span className="font-bold text-white">4.5</span>
+              <span className="font-bold text-white">{heroRating.toFixed(1)}</span>
               <span className="text-white/90">
-                out of 5 based on 522 reviews on Ayatiworks
+                {`out of 5 based on ${heroReviewCount.toLocaleString()} reviews on ${heroReviewSource}`}
               </span>
             </div>
           </div>
 
           {/* Bottom Offer Capsule */}
-          {showOfferBanner && (
+          {showOfferBanner && heroOfferText && (
             <div
               className={`relative z-10 w-full max-w-[1020px] mx-auto mt-2 transition-all duration-200 ${searchPanelOpen ? "opacity-0 pointer-events-none invisible" : "opacity-100"}`}
             >
@@ -1632,10 +1719,21 @@ export default function Home() {
                     OFFER
                   </span>
                 </div>
-                <p className="min-w-0 flex-1 text-center font-semibold text-white truncate sm:text-clip text-xs sm:text-[13px]">
-                  Global Getaways 2026: Up To 50% Off – Limited Availability,
-                  Book Today!
-                </p>
+                {heroOfferCtaUrl ? (
+                  <Link
+                    href={heroOfferCtaUrl}
+                    className="min-w-0 flex-1 text-center font-semibold text-white truncate sm:text-clip text-xs sm:text-[13px] hover:underline"
+                  >
+                    {heroOfferText}
+                    {heroOfferCtaText && (
+                      <span className="ml-1.5 font-black text-pub-secondary">{heroOfferCtaText} →</span>
+                    )}
+                  </Link>
+                ) : (
+                  <p className="min-w-0 flex-1 text-center font-semibold text-white truncate sm:text-clip text-xs sm:text-[13px]">
+                    {heroOfferText}
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowOfferBanner(false)}
@@ -1664,7 +1762,11 @@ export default function Home() {
       </div>
 
       <Reveal>
-        <AboutTourvaaBanner />
+        <AboutTourvaaBanner
+          heading={aboutSection.heading}
+          body={aboutSection.body}
+          image={aboutSection.image ? mediaUrl(aboutSection.image) : undefined}
+        />
       </Reveal>
 
       <div className="relative z-10 mx-auto max-w-[1380px] px-5">
@@ -1680,7 +1782,7 @@ export default function Home() {
             {/* Left Image: 602px x 394px on desktop, rounded-[16px] with 16px outer padding */}
             <div className="relative h-[280px] sm:h-[340px] lg:h-[394px] w-full overflow-hidden rounded-[16px] bg-slate-100">
               <img
-                src="/images/img-1.png"
+                src={blogTeaser.image ? mediaUrl(blogTeaser.image) : "/images/img-1.png"}
                 alt="Travellers with backpacks hiking on a trail"
                 className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
               />
@@ -1689,20 +1791,20 @@ export default function Home() {
             {/* Right Content */}
             <div className="flex flex-col items-start justify-center py-2 px-2 sm:px-4 lg:px-6 text-left">
               <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E4572E]">
-                BLOG
+                {blogTeaser.eyebrow ?? "BLOG"}
               </span>
               <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-semibold leading-tight text-slate-950 tracking-tight">
-                Travel stories, guides and inspiration for every journey
+                {blogTeaser.heading ?? "Travel stories, guides and inspiration for every journey"}
               </h2>
               <p className="mt-4 max-w-md text-xs sm:text-sm md:text-base leading-relaxed text-slate-500 font-medium">
-                Explore travel guides, insider tips and inspiring stories from
-                destinations around the world.
+                {blogTeaser.subtitle ??
+                  "Explore travel guides, insider tips and inspiring stories from destinations around the world."}
               </p>
               <Link
-                href="/blogs"
+                href={blogTeaser.cta_url || "/blogs"}
                 className="mt-7 inline-flex h-[60px] items-center justify-center gap-3 rounded-2xl bg-[#0B1527] px-8 text-base font-black text-white shadow-md transition-all duration-200 hover:bg-[#15233C] hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
               >
-                <span>Read Stories</span>
+                <span>{blogTeaser.cta_text ?? "Read Stories"}</span>
                 <ArrowRight
                   size={18}
                   className="text-[#E4572E] stroke-[2.5]"
@@ -1743,7 +1845,15 @@ export default function Home() {
         </Reveal>
 
         <Reveal>
-          <AirportTransfersBanner />
+          <AirportTransfersBanner
+            eyebrow={airportTransfer.eyebrow}
+            heading={airportTransfer.heading}
+            subtitle={airportTransfer.subtitle}
+            features={airportTransfer.features?.length ? airportTransfer.features : undefined}
+            ctaText={airportTransfer.cta_text}
+            ctaUrl={airportTransfer.cta_url}
+            image={airportTransfer.image ? mediaUrl(airportTransfer.image) : undefined}
+          />
         </Reveal>
 
         <Reveal>
@@ -1754,11 +1864,30 @@ export default function Home() {
   );
 }
 
-const TRANSFER_FEATURES = ["RELIABLE", "CLEAN", "AFFORDABLE", "24/7", "SECURE"];
+const DEFAULT_TRANSFER_FEATURES = ["RELIABLE", "CLEAN", "AFFORDABLE", "24/7", "SECURE"];
 
-function AirportTransfersBanner() {
+function AirportTransfersBanner({
+  eyebrow = "PREMIUM TRANSFER PARTNER",
+  heading = "Book Your Airport Transfers",
+  subtitle = "Effortless, reliable transfers from the world's leading airports to your hotel",
+  features = DEFAULT_TRANSFER_FEATURES,
+  ctaText = "Book Airport Pickup",
+  ctaUrl,
+  image = "/images/img-2.png",
+}: {
+  eyebrow?: string;
+  heading?: string;
+  subtitle?: string;
+  features?: string[];
+  ctaText?: string;
+  ctaUrl?: string;
+  image?: string;
+}) {
   const { settings } = usePublicSettings();
+  // CMS-configured CTA URL wins when set; otherwise fall back to the
+  // Brightlane link configured in Settings, then a hardcoded default.
   const brightlaneLink =
+    ctaUrl?.trim() ||
     settings.brightlane_external_link?.trim() ||
     "https://www.brightlane.co.nz/";
 
@@ -1769,23 +1898,22 @@ function AirportTransfersBanner() {
           {/* Tag / Badge */}
           <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#d95d2c]">
             <Plane size={14} className="rotate-45" />
-            <span>PREMIUM TRANSFER PARTNER</span>
+            <span>{eyebrow}</span>
           </div>
 
           {/* Heading */}
           <h2 className="mt-2.5 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl lg:text-[36px] tracking-tight">
-            Book Your Airport Transfers
+            {heading}
           </h2>
 
           {/* Subtitle */}
           <p className="mt-2 text-xs sm:text-sm md:text-base leading-relaxed text-slate-500">
-            Effortless, reliable transfers from the world&apos;s leading
-            airports to your hotel
+            {subtitle}
           </p>
 
           {/* Feature Pills */}
           <div className="mt-4 sm:mt-5 flex flex-wrap gap-2">
-            {TRANSFER_FEATURES.map((feature) => (
+            {features.map((feature) => (
               <span
                 key={feature}
                 className="rounded-full bg-[#d95d2c] px-3 py-1 text-[11px] font-semibold text-white"
@@ -1806,7 +1934,7 @@ function AirportTransfersBanner() {
             }
             className="mt-6 sm:mt-7 inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#0f2439] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all hover:bg-[#18395c] hover:shadow-lg hover:-translate-y-0.5"
           >
-            <span>Book Airport Pickup</span>
+            <span>{ctaText}</span>
             <ArrowRight
               size={18}
               className="text-[#d95d2c] stroke-[2.5]"
@@ -1828,7 +1956,7 @@ function AirportTransfersBanner() {
           className="relative block h-[280px] sm:h-[340px] lg:h-[394px] w-full overflow-hidden rounded-[16px] bg-slate-100"
         >
           <img
-            src="/images/img-2.png"
+            src={image}
             alt="Luxury airport chauffeur transfer in front of international arrivals terminal"
             className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
           />

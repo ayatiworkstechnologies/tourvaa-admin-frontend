@@ -23,6 +23,8 @@ const booking = read("src/app/(public)/booking/[id]/page.tsx");
 check("USD is the conversion base", hook.includes('baseCode: "USD"') && hook.includes('/currency/rates'));
 check("visitor country is used for automatic currency", hook.includes('/currency/context') && hook.includes("navigator.language"));
 check("currency preference persists", hook.includes("localStorage.setItem") && hook.includes("tourvaa_display_currency"));
+check("selection made while rates load is not discarded", hook.includes("savedAtStart") && hook.includes("latestSaved") && hook.includes("!state.rates[normalized] && !state.loading"));
+check("currency changes synchronize across browser tabs", hook.includes('addEventListener("storage"') && hook.includes('removeEventListener("storage"'));
 check("conversion uses source and target rates", hook.includes("value / sourceRate") && hook.includes("* targetRate"));
 check("public header exposes the selector", publicHeader.includes("<LanguageCurrencySelector"));
 check("portal header exposes the selector", portalHeader.includes("<CurrencySelector"));

@@ -39,7 +39,7 @@ function localeCountry(): string {
 async function loadCurrency() {
   if (loadPromise) return loadPromise;
   loadPromise = (async () => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+    const savedAtStart = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
     // Leave `country` unset on the first call: the backend then geolocates
     // by request IP (cf-ipcountry / x-vercel-ip-country), which is what
     // should decide the default currency, not the browser's language
@@ -91,7 +91,11 @@ async function loadCurrency() {
     }
 
     const detected = String(contextData?.currency || "USD").toUpperCase();
-    const preferred = String(saved || detected || "USD").toUpperCase();
+    // Re-read storage after the requests finish. The selector is usable while
+    // rates load, so the visitor may have chosen a currency after this load
+    // began; using only the value captured above would overwrite that choice.
+    const latestSaved = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+    const preferred = String(latestSaved || savedAtStart || detected || "USD").toUpperCase();
     emit({
       baseCode: "USD",
       rates,
@@ -115,9 +119,12 @@ export function invalidateCurrencyCache() {
 export function setDisplayCurrency(code: string) {
   if (state.forced) return;
   const normalized = code.toUpperCase();
-  if (!state.rates[normalized]) return;
+  // Before the rates request resolves, the selector displays its supported
+  // fallback currencies. Preserve a click made during that window; the
+  // completed load will validate it against the returned rates and emit it.
+  if (!state.rates[normalized] && !state.loading) return;
   if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, normalized);
-  emit({ code: normalized });
+  if (state.rates[normalized]) emit({ code: normalized });
 }
 
 export function useCurrency() {
@@ -126,7 +133,16 @@ export function useCurrency() {
   useEffect(() => {
     listeners.add(setSnapshot);
     void loadCurrency();
-    return () => { listeners.delete(setSnapshot); };
+    const syncStoredCurrency = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY || !event.newValue || state.forced) return;
+      const normalized = event.newValue.toUpperCase();
+      if (state.rates[normalized]) emit({ code: normalized });
+    };
+    window.addEventListener("storage", syncStoredCurrency);
+    return () => {
+      listeners.delete(setSnapshot);
+      window.removeEventListener("storage", syncStoredCurrency);
+    };
   }, []);
 
   // Memoized on the actual rate/code data (not recreated every render) --

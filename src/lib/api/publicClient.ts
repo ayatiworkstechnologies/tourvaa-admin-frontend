@@ -117,6 +117,13 @@ export type CmsDestination = { id: number; title: string; image: string | null; 
 export type CmsReview = { id: number; reviewer_name: string; reviewer_image: string | null; rating: number; review_text: string; tour_name: string | null; country: string | null; sort_order: number; is_active: boolean };
 export type CmsExternalLink = { id: number; label: string; url: string; open_in_new_tab: boolean; location: string; sort_order: number; is_active: boolean };
 export type CmsPopularTour = { id: number; tour_id: number; tour_title: string; tour_code: string; sort_order: number; is_active: boolean };
+export type CmsHandpickedTour = { id: number; tour_id: number; tour_title: string; tour_code: string; sort_order: number; is_active: boolean };
+export type CmsFavouriteCountry = { id: number; country_id: number | null; title: string; snippet: string | null; image: string | null; href: string | null; sort_order: number; is_active: boolean };
+export type CmsContentBlock<T extends Record<string, unknown> = Record<string, unknown>> = { key: string; data: Partial<T>; updated_at: string | null };
+export type HeroExtrasBlock = { rating: number; review_count: number; review_source: string; offer_text: string; offer_cta_text: string; offer_cta_url: string };
+export type AboutSectionBlock = { heading: string; body: string; image: string };
+export type BlogTeaserBlock = { eyebrow: string; heading: string; subtitle: string; cta_text: string; cta_url: string; image: string };
+export type AirportTransferBlock = { eyebrow: string; heading: string; subtitle: string; features: string[]; cta_text: string; cta_url: string; image: string };
 export type CmsDealTour = { id: number; tour_id: number; tour_title: string; tour_code: string; deal_label: string | null; discount_percentage: number | null; sort_order: number; is_active: boolean };
 export type CmsHelpArticle = { id: number; question: string; answer: string; category: string; sort_order: number; is_active: boolean };
 export type CmsPromoPopup = {
@@ -235,6 +242,23 @@ export async function fetchPopularTours() {
   // 404. See services/website_cms.py list_popular_tours.
   const res = await cmsApi.get("/popular-tours", { params: { active_only: true, published_only: true, limit: 20 } });
   return (res.data.items || res.data.data || []) as CmsPopularTour[];
+}
+
+export async function fetchHandpickedTours() {
+  // published_only: true - see the comment on fetchPopularTours above; same
+  // stale-pin problem applies here.
+  const res = await cmsApi.get("/handpicked-tours", { params: { active_only: true, published_only: true, limit: 20 } });
+  return (res.data.items || res.data.data || []) as CmsHandpickedTour[];
+}
+
+export async function fetchFavouriteCountries() {
+  const res = await cmsApi.get("/favourite-countries", { params: { active_only: true, limit: 20 } });
+  return (res.data.items || res.data.data || []) as CmsFavouriteCountry[];
+}
+
+export async function fetchContentBlock<T extends Record<string, unknown> = Record<string, unknown>>(key: string) {
+  const res = await cmsApi.get(`/content-blocks/${key}`);
+  return (res.data.data ?? { key, data: {}, updated_at: null }) as CmsContentBlock<T>;
 }
 
 export async function fetchToursOnDeals() {

@@ -1,5 +1,6 @@
 import AnnouncementBar from "@/components/public/AnnouncementBar";
 import CookieConsentBanner from "@/components/public/CookieConsentBanner";
+import DynamicFavicon from "@/components/public/DynamicFavicon";
 import PublicFooter from "@/components/public/PublicFooter";
 import PublicHeader from "@/components/public/PublicHeader";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
@@ -30,6 +31,7 @@ export default function PublicLayout({
           style={fontVars}
           className="public-site min-h-screen bg-white font-[family-name:var(--font-body)] text-slate-950"
         >
+          <DynamicFavicon />
           <div className="print:hidden"><AnnouncementBar /></div>
           <PublicHeader />
           <div className="public-page-enter">{children}</div>

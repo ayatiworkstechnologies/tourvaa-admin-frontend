@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil, LuX as X, LuCheck as Check, LuGlobe as Globe, LuRefreshCw as RefreshCw, LuChevronDown as ChevronDown } from "react-icons/lu";
+import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil, LuCheck as Check, LuGlobe as Globe, LuRefreshCw as RefreshCw, LuChevronDown as ChevronDown } from "react-icons/lu";
 import api from "@/lib/api/client";
+import ActionModal from "@/components/operations/ActionModal";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
@@ -45,20 +46,36 @@ type TabConfig = {
   canDelete?: boolean;
 };
 
+// A "block" tab edits a single key/JSON record (GET/PUT /cms/content-blocks/{blockKey})
+// instead of a list of rows - used for one-off homepage sections that don't
+// need their own table (hero extras, About Tourvaa, blog teaser, transfers banner).
+type BlockFieldType = "text" | "textarea" | "url" | "number" | "asset";
+type ContentBlockTabConfig = {
+  key: string;
+  label: string;
+  blockKey: string;
+  fields: { key: string; label: string; type: BlockFieldType; hint?: string }[];
+};
+
 
 const TAB_DESCRIPTIONS: Record<string, string> = {
-  banners: "Hero banners and homepage calls to action.",
+  banners: "The homepage hero: background banners/video, the trust-rating badge, and the promotional offer strip.",
   "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order.",
-  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Only tours with an active discount can be picked. Shares its list with Handpicked Tours.",
-  "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section. Shares the same pinned-tours list as Trending Tour Packages (no separate backend list exists yet) - only tours with an active discount can be picked.",
+  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Only tours with an active discount can be picked.",
+  "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section - a separate curated list from Trending Tour Packages.",
   "popular-destinations": "Country images shown in Countries Worth Exploring (the country list itself is calculated automatically from real tour counts).",
+  "favourite-countries": "The editorial country list and snippet copy shown in the homepage Favourite Countries section.",
   "customer-reviews": "Customer testimonials shown in the homepage Testimonials section.",
   "help-centre": "Questions and answers shown in the homepage FAQ section.",
+  "hero-extras": "The trust-rating badge and the promotional offer strip shown over the homepage hero banner.",
+  "about-section": "The About Tourvaa banner shown on the homepage.",
+  "blog-teaser": "The blog teaser banner shown on the homepage, linking through to the Blog.",
+  "airport-transfer": "The Book Your Airport Transfers banner shown on the homepage.",
 };
 const TABS: TabConfig[] = [
   {
     key: "banners",
-    label: "Banners",
+    label: "Hero",
     endpoint: "/cms/homepage-banners",
     columns: [
       { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Banner image"), className: "w-32" },
@@ -95,7 +112,7 @@ const TABS: TabConfig[] = [
   {
     key: "handpicked-tours",
     label: "Handpicked",
-    endpoint: "/cms/popular-tours",
+    endpoint: "/cms/handpicked-tours",
     canEdit: false,
     columns: [
       { key: "tour_title", header: "Tour" },
@@ -143,6 +160,25 @@ const TABS: TabConfig[] = [
     ],
   },
   {
+    key: "favourite-countries",
+    label: "Favourite Countries",
+    endpoint: "/cms/favourite-countries",
+    columns: [
+      { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Country image"), className: "w-32" },
+      { key: "title", header: "Title" },
+      { key: "snippet", header: "Snippet" },
+      { key: "sort_order", header: "Sort" },
+    ],
+    formFields: [
+      { key: "title", label: "Title (e.g. a country name)", type: "text", required: true },
+      { key: "snippet", label: "Snippet", type: "textarea" },
+      { key: "image", label: "Image", type: "asset" },
+      { key: "href", label: "Link (e.g. /tours?country=Morocco)", type: "url" },
+      { key: "country_id", label: "Country ID (optional)", type: "number" },
+      { key: "sort_order", label: "Sort Order", type: "number" },
+    ],
+  },
+  {
     key: "customer-reviews",
     label: "Testimonials",
     endpoint: "/cms/customer-reviews",
@@ -176,6 +212,172 @@ const TABS: TabConfig[] = [
     ],
   },
 ];
+
+// Rendered together with the Banners list under the single "Hero" tab -
+// the banner carousel, the trust-rating badge, and the offer strip are all
+// part of the same homepage hero section, so admins manage them in one place
+// instead of hunting across separate tabs.
+const HERO_EXTRAS_BLOCK: ContentBlockTabConfig = {
+  key: "hero-extras",
+  label: "Rating Badge & Offer Strip",
+  blockKey: "hero_extras",
+  fields: [
+    { key: "rating", label: "Rating (e.g. 4.5)", type: "number" },
+    { key: "review_count", label: "Review Count", type: "number" },
+    { key: "review_source", label: "Review Source (e.g. Ayatiworks)", type: "text" },
+    { key: "offer_text", label: "Offer Banner Text", type: "text", hint: "Leave blank to hide the offer strip." },
+    { key: "offer_cta_text", label: "Offer CTA Text", type: "text" },
+    { key: "offer_cta_url", label: "Offer CTA URL", type: "url" },
+  ],
+};
+
+const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
+  {
+    key: "about-section",
+    label: "About Tourvaa",
+    blockKey: "about_section",
+    fields: [
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "body", label: "Body", type: "textarea" },
+      { key: "image", label: "Background Image", type: "asset" },
+    ],
+  },
+  {
+    key: "blog-teaser",
+    label: "Blog Teaser",
+    blockKey: "blog_teaser",
+    fields: [
+      { key: "eyebrow", label: "Eyebrow (e.g. BLOG)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      { key: "cta_text", label: "CTA Text", type: "text" },
+      { key: "cta_url", label: "CTA URL", type: "url" },
+      { key: "image", label: "Image", type: "asset" },
+    ],
+  },
+  {
+    key: "airport-transfer",
+    label: "Airport Transfers",
+    blockKey: "airport_transfer",
+    fields: [
+      { key: "eyebrow", label: "Eyebrow (e.g. PREMIUM TRANSFER PARTNER)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      { key: "features", label: "Feature pills (comma-separated)", type: "text" },
+      { key: "cta_text", label: "CTA Text", type: "text" },
+      { key: "cta_url", label: "CTA URL", type: "url", hint: "Leave blank to use the Brightlane link set in Settings." },
+      { key: "image", label: "Image", type: "asset" },
+    ],
+  },
+];
+
+// ---- ContentBlockPanel ----------------------------------------------------
+// Editor for a single key/JSON homepage content block (About Tourvaa, the
+// blog teaser banner, etc) - unlike CmsTabPanel this isn't a list of rows,
+// just one form that GETs/PUTs /cms/content-blocks/{blockKey}.
+function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
+  const toast = useToast();
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const fetchBlock = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/cms/content-blocks/${tab.blockKey}`);
+      const data = (res.data?.data?.data ?? {}) as Record<string, unknown>;
+      setValues(Object.fromEntries(tab.fields.map((f) => [f.key, data[f.key] != null ? String(data[f.key]) : ""])));
+    } catch {
+      toast.error(`Could not load ${tab.label}.`);
+    } finally {
+      setLoading(false);
+    }
+  }, [tab, toast]);
+
+  useEffect(() => { void fetchBlock(); }, [fetchBlock]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      // Every field is sent, blank or not - the PUT replaces the whole
+      // block, and a field left blank on purpose (e.g. clearing the hero
+      // offer strip so it stops showing) needs to persist as "" rather than
+      // being silently dropped and falling back to the homepage default.
+      const data: Record<string, unknown> = {};
+      for (const f of tab.fields) {
+        const raw = values[f.key] ?? "";
+        data[f.key] = f.key === "features" ? raw.split(",").map((v) => v.trim()).filter(Boolean) : f.type === "number" ? (raw === "" ? "" : Number(raw)) : raw;
+      }
+      await api.put(`/cms/content-blocks/${tab.blockKey}`, { data });
+      toast.success(`${tab.label} updated.`);
+    } catch {
+      toast.error(`Could not save ${tab.label}.`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded-xl border border-dash-border bg-white p-5">
+        <h3 className="text-lg font-bold text-dash-text">{tab.label}</h3>
+        <p className="mt-1 text-sm text-dash-muted">{TAB_DESCRIPTIONS[tab.key]}</p>
+      </section>
+
+      <section className="rounded-xl border border-dash-border bg-white p-5">
+        {loading ? (
+          <p className="text-sm text-dash-muted">Loading...</p>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {tab.fields.map((f) => (
+                <div key={f.key} className={f.type === "textarea" || f.type === "asset" ? "sm:col-span-2" : ""}>
+                  {f.type !== "asset" && (
+                    <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">{f.label}</label>
+                  )}
+                  {f.hint && <p className="mb-1 text-xs text-dash-subtle">{f.hint}</p>}
+                  {f.type === "asset" ? (
+                    <AdminAssetUpload
+                      label={f.label}
+                      kind="asset"
+                      value={values[f.key] ?? ""}
+                      onChange={(value) => setValues((v) => ({ ...v, [f.key]: value }))}
+                    />
+                  ) : f.type === "textarea" ? (
+                    <textarea
+                      rows={4}
+                      value={values[f.key] ?? ""}
+                      onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                      className="w-full resize-none rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
+                    />
+                  ) : (
+                    <input
+                      type={f.type === "url" ? "url" : f.type === "number" ? "number" : "text"}
+                      value={values[f.key] ?? ""}
+                      onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                      className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2 border-t border-dash-border pt-4">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={save}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#0284C7] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0369A1] disabled:opacity-60"
+              >
+                <Check size={14} /> {saving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+    </div>
+  );
+}
 
 // ---- TourPickerSelect ------------------------------------------------------
 // A native <select> can't render an image per <option>, so the "Tour" field
@@ -291,7 +493,7 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
 
   useEffect(() => { void fetchItems(); }, [fetchItems]);
   useEffect(() => {
-    if (tab.endpoint !== "/cms/popular-tours" && tab.endpoint !== "/cms/tours-on-deals") return;
+    if (tab.endpoint !== "/cms/popular-tours" && tab.endpoint !== "/cms/handpicked-tours" && tab.endpoint !== "/cms/tours-on-deals") return;
 
     let cancelled = false;
     api.get("/tours", { params: { page: 1, limit: 200 } })
@@ -299,9 +501,9 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
         if (cancelled) return;
         const data = res.data?.data ?? res.data?.items ?? res.data ?? [];
         const rows: CmsItem[] = Array.isArray(data) ? data : data.items ?? [];
-        // "Trending Tour Packages" and "Handpicked" both share /cms/popular-tours
-        // and are only ever filled with discounted tours.
-        const filteredRows = tab.endpoint === "/cms/popular-tours"
+        // "Trending Tour Packages" and "Handpicked" are both only ever filled
+        // with discounted tours (each has its own separate pinned list).
+        const filteredRows = tab.endpoint === "/cms/popular-tours" || tab.endpoint === "/cms/handpicked-tours"
           ? rows.filter((tour) => typeof tour.discount_percentage === "number" && tour.discount_percentage > 0)
           : rows;
         setTourOptions(filteredRows.map((tour: CmsItem) => {
@@ -433,7 +635,7 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
     }
   };
 
-  const isTourPickerTab = tab.endpoint === "/cms/popular-tours" || tab.endpoint === "/cms/tours-on-deals";
+  const isTourPickerTab = tab.endpoint === "/cms/popular-tours" || tab.endpoint === "/cms/handpicked-tours" || tab.endpoint === "/cms/tours-on-deals";
 
   const columns: DataTableColumn<CmsItem>[] = [
     {
@@ -547,24 +749,20 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
         </div>
       </section>
 
-      {showForm && (
-        <section className="rounded-xl border border-dash-border bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
-          <div className="mb-5 flex flex-col gap-3 border-b border-dash-border pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-base font-bold text-dash-text">{editingItem ? `Edit ${tab.label}` : `New ${tab.label}`}</h3>
-              <p className="mt-1 text-sm text-dash-muted">{visibleFieldCount} fields in this section. Required fields are marked.</p>
-            </div>
-            <button
-              type="button"
-              onClick={closeForm}
-              className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-3 py-2 text-sm font-semibold text-dash-muted hover:bg-dash-bg"
-            >
-              <X size={14} /> Close
-            </button>
-          </div>
+      <ActionModal
+        open={showForm}
+        title={editingItem ? `Edit ${tab.label}` : `New ${tab.label}`}
+        saving={saving}
+        submitLabel={editingItem ? "Update" : "Create"}
+        onClose={closeForm}
+        onSubmit={() => void save()}
+      >
+        <div className="-mt-1 mb-4">
+          <p className="text-sm text-dash-muted">{visibleFieldCount} fields in this section. Required fields are marked.</p>
+        </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {tab.formFields.map(f => (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {tab.formFields.map(f => (
               <div key={f.key} className={f.type === "textarea" || f.type === "asset" || f.type === "video" ? "sm:col-span-2" : ""}>
                 {f.type !== "asset" && f.type !== "video" && (
                   <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
@@ -638,27 +836,8 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
                 )}
               </div>
             ))}
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2 border-t border-dash-border pt-4">
-            <button
-              type="button"
-              disabled={saving}
-              onClick={save}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#0284C7] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0369A1] disabled:opacity-60"
-            >
-              <Check size={14} /> {saving ? "Saving..." : editingItem ? "Update" : "Create"}
-            </button>
-            <button
-              type="button"
-              onClick={closeForm}
-              className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-semibold text-dash-muted hover:bg-dash-bg"
-            >
-              <X size={14} /> Cancel
-            </button>
-          </div>
-        </section>
-      )}
+        </div>
+      </ActionModal>
 
       <section className="rounded-xl border border-dash-border bg-white p-4">
         <DataTable
@@ -707,9 +886,16 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
 }
 
 // ---- Main Page -----------------------------------------------------------
+const ALL_TABS: { key: string; label: string }[] = [
+  ...TABS.map((t) => ({ key: t.key, label: t.label })),
+  ...CONTENT_BLOCK_TABS.map((t) => ({ key: t.key, label: t.label })),
+];
+
 export default function CmsPage() {
-  const [activeTab, setActiveTab] = useState(TABS[0].key);
-  const currentTab = TABS.find(t => t.key === activeTab) ?? TABS[0];
+  const [activeTab, setActiveTab] = useState(ALL_TABS[0].key);
+  const currentListTab = TABS.find(t => t.key === activeTab);
+  const currentBlockTab = CONTENT_BLOCK_TABS.find(t => t.key === activeTab);
+  const currentLabel = currentListTab?.label ?? currentBlockTab?.label ?? ALL_TABS[0].label;
 
   return (
     <ModuleWrapper title="CMS Management" requiredPermission="website_cms.view">
@@ -730,11 +916,11 @@ export default function CmsPage() {
             <div className="grid grid-cols-2 gap-2 sm:flex">
               <div className="rounded-xl border border-dash-border px-4 py-3">
                 <span className="block text-xs font-bold uppercase text-dash-muted">Sections</span>
-                <span className="mt-1 block text-lg font-bold text-dash-text">{TABS.length}</span>
+                <span className="mt-1 block text-lg font-bold text-dash-text">{ALL_TABS.length}</span>
               </div>
               <div className="rounded-xl border border-dash-border px-4 py-3">
                 <span className="block text-xs font-bold uppercase text-dash-muted">Active</span>
-                <span className="mt-1 block text-lg font-bold text-[#0284C7]">{currentTab.label}</span>
+                <span className="mt-1 block text-lg font-bold text-[#0284C7]">{currentLabel}</span>
               </div>
             </div>
           </div>
@@ -742,7 +928,7 @@ export default function CmsPage() {
 
         <section className="rounded-xl border border-dash-border bg-white p-3">
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {TABS.map(tab => {
+            {ALL_TABS.map(tab => {
               const active = activeTab === tab.key;
               return (
                 <button
@@ -763,7 +949,16 @@ export default function CmsPage() {
           </div>
         </section>
 
-        <CmsTabPanel key={currentTab.key} tab={currentTab} />
+        {currentListTab ? (
+          <div className="space-y-5">
+            <CmsTabPanel key={currentListTab.key} tab={currentListTab} />
+            {currentListTab.key === "banners" && (
+              <ContentBlockPanel key={HERO_EXTRAS_BLOCK.key} tab={HERO_EXTRAS_BLOCK} />
+            )}
+          </div>
+        ) : currentBlockTab ? (
+          <ContentBlockPanel key={currentBlockTab.key} tab={currentBlockTab} />
+        ) : null}
       </div>
     </ModuleWrapper>
   );

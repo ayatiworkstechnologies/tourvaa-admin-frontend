@@ -208,6 +208,16 @@ const REFERENCE_SIMILAR_TOURS = [
   },
 ];
 
+// Group-size discount tiers, expressed as a rate off the tour's own
+// per-person price rather than a flat dollar amount - a flat number (e.g.
+// "$200 off") only makes sense in one specific currency/price range and
+// falls apart for a tour priced in a different currency or magnitude.
+const GROUP_TIERS: { key: "1-4" | "5-10" | "10-16"; label: string; discountRate: number }[] = [
+  { key: "1-4", label: "1–4 travellers", discountRate: 0 },
+  { key: "5-10", label: "5–10 travellers", discountRate: 0.07 },
+  { key: "10-16", label: "10–16 travellers", discountRate: 0.09 },
+];
+
 export default function TourDetailExperience({
   tour,
   images,
@@ -271,10 +281,12 @@ export default function TourDetailExperience({
     setOpenDays((prev) => ({ ...prev, [day]: !prev[day] }));
   };
 
-  // Pricing calculations
+  // Pricing calculations - all in tour.currency, converted for display via format()
+  const tourCurrency = tour.currency || "USD";
   const unitPrice = Number(tour.price_start_per_person || 1182);
+  const selectedTier = GROUP_TIERS.find((t) => t.key === selectedGroupTier) ?? GROUP_TIERS[0];
   const tourPrice = adults * unitPrice + children * Math.round(unitPrice * 0.8);
-  const groupDiscount = selectedGroupTier === "1-4" ? 200 : selectedGroupTier === "5-10" ? 240 : 280;
+  const groupDiscount = Math.round(tourPrice * selectedTier.discountRate);
   const totalAmount = Math.max(0, tourPrice - groupDiscount);
   const perPersonPrice = Math.round(tourPrice / Math.max(1, adults));
 
@@ -315,7 +327,7 @@ export default function TourDetailExperience({
         title: st.title || "Scenic Tour",
         country: st.country_name || destination,
         duration: st.number_of_days ? `${st.number_of_days} Days` : "7 Days",
-        price: st.price_start_per_person ? `USD $${Number(st.price_start_per_person).toLocaleString()}` : "USD $1,985",
+        price: st.price_start_per_person != null ? format(st.price_start_per_person, st.currency || "USD") : format(1985, "USD"),
         rating: st.rating_average || 4.8,
         reviews: `${st.rating_count || 120} reviews`,
         image: st.banner_image ? mediaUrl(st.banner_image) : "/images/compare-hero.jpg",
@@ -323,7 +335,7 @@ export default function TourDetailExperience({
       }));
     }
     return REFERENCE_SIMILAR_TOURS;
-  }, [tour.similar_tours, destination]);
+  }, [tour.similar_tours, destination, format]);
 
   const handleBookNow = () => {
     const chosenDate = defaultDepartureDates.find((d) => d.id === selectedDateId)?.date || initialTravelDate || "12 Aug 2026 - 20 Aug 2026";
@@ -919,56 +931,26 @@ export default function TourDetailExperience({
                 GROUP PRICING
               </h4>
               <div className="mt-2.5 space-y-2">
-                {/* Tier 1 */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedGroupTier("1-4")}
-                  className={`flex w-full items-center justify-between rounded-xl border p-3 transition ${
-                    selectedGroupTier === "1-4"
-                      ? "border-blue-400 bg-[#EEF5FF]"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <span className="text-xs font-bold text-slate-900">1–4 travellers</span>
-                  <div className="text-right">
-                    <span className="text-xs sm:text-sm font-bold text-blue-600">$200</span>
-                    <span className="block text-[9px] text-slate-400">Per person</span>
-                  </div>
-                </button>
-
-                {/* Tier 2 */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedGroupTier("5-10")}
-                  className={`flex w-full items-center justify-between rounded-xl border p-3 transition ${
-                    selectedGroupTier === "5-10"
-                      ? "border-blue-400 bg-[#EEF5FF]"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <span className="text-xs font-bold text-slate-800">5–10 travellers</span>
-                  <div className="text-right">
-                    <span className="text-xs sm:text-sm font-bold text-blue-600">$180</span>
-                    <span className="block text-[9px] text-slate-400">Per person</span>
-                  </div>
-                </button>
-
-                {/* Tier 3 */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedGroupTier("10-16")}
-                  className={`flex w-full items-center justify-between rounded-xl border p-3 transition ${
-                    selectedGroupTier === "10-16"
-                      ? "border-blue-400 bg-[#EEF5FF]"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <span className="text-xs font-bold text-slate-800">10–16 travellers</span>
-                  <div className="text-right">
-                    <span className="text-xs sm:text-sm font-bold text-blue-600">$150</span>
-                    <span className="block text-[9px] text-slate-400">Per person</span>
-                  </div>
-                </button>
+                {GROUP_TIERS.map((tier) => (
+                  <button
+                    key={tier.key}
+                    type="button"
+                    onClick={() => setSelectedGroupTier(tier.key)}
+                    className={`flex w-full items-center justify-between rounded-xl border p-3 transition ${
+                      selectedGroupTier === tier.key
+                        ? "border-blue-400 bg-[#EEF5FF]"
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <span className="text-xs font-bold text-slate-900">{tier.label}</span>
+                    <div className="text-right">
+                      <span className="text-xs sm:text-sm font-bold text-blue-600">
+                        {format(Math.round(unitPrice * (1 - tier.discountRate)), tourCurrency)}
+                      </span>
+                      <span className="block text-[9px] text-slate-400">Per person</span>
+                    </div>
+                  </button>
+                ))}
               </div>
 
               {/* Help link */}
@@ -1064,15 +1046,15 @@ export default function TourDetailExperience({
               <div className="mt-3 space-y-2 text-xs">
                 <div className="flex justify-between text-slate-700">
                   <span>Tour Price ({adults} Adult{adults > 1 ? "s" : ""})</span>
-                  <span className="font-bold text-slate-900">USD ${tourPrice.toLocaleString()}</span>
+                  <span className="font-bold text-slate-900">{format(tourPrice, tourCurrency)}</span>
                 </div>
                 <div className="flex justify-between text-slate-700">
                   <span>Discount</span>
-                  <span className="font-bold text-slate-900">- USD ${groupDiscount}</span>
+                  <span className="font-bold text-slate-900">- {format(groupDiscount, tourCurrency)}</span>
                 </div>
                 <div className="flex justify-between text-blue-600 font-semibold">
                   <span>You Save</span>
-                  <span>USD ${groupDiscount}</span>
+                  <span>{format(groupDiscount, tourCurrency)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-700">Taxes &amp; Service Fees</span>
@@ -1088,10 +1070,10 @@ export default function TourDetailExperience({
                 <div className="flex items-center justify-between pt-1">
                   <div>
                     <p className="text-xs font-bold text-slate-900">Total Amount</p>
-                    <p className="text-[10px] text-slate-400">USD ${perPersonPrice.toLocaleString()} per person</p>
+                    <p className="text-[10px] text-slate-400">{format(perPersonPrice, tourCurrency)} per person</p>
                   </div>
                   <strong className="text-lg font-black text-slate-950">
-                    USD ${totalAmount.toLocaleString()}
+                    {format(totalAmount, tourCurrency)}
                   </strong>
                 </div>
               </div>

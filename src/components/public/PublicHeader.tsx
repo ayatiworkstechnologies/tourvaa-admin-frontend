@@ -21,6 +21,7 @@ import {
   LuX as X,
 } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
+import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelector";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
@@ -33,6 +34,8 @@ export default function PublicHeader() {
   const lastScrollY = useRef(0);
   const profileRef = useRef<HTMLDivElement>(null);
   const { isLoggedIn, dashboard, user, logout } = useAuthContext();
+  const { settings } = usePublicSettings();
+  const logoUrl = settings.logo?.trim() || "";
   const { wishlistCount, compareCount } = useTravelStore();
   const dashboardPath = getDashboardPath(dashboard?.user?.role?.slug ?? "");
   const roleSlug = dashboard?.user?.role?.slug ?? "";
@@ -124,9 +127,14 @@ export default function PublicHeader() {
       <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:px-8 lg:px-12">
         <Link
           href="/"
-          className="text-2xl font-black tracking-tight text-pub-primary transition hover:opacity-90 sm:text-3xl"
+          className="flex shrink-0 items-center text-2xl font-black tracking-tight text-pub-primary transition hover:opacity-90 sm:text-3xl"
         >
-          Tourvaa
+          {logoUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element -- logo comes from an admin-uploaded external URL, not a local/optimizable asset */
+            <img src={logoUrl} alt="Tourvaa" className="h-9 w-auto object-contain sm:h-10" />
+          ) : (
+            "Tourvaa"
+          )}
         </Link>
         <nav
           aria-label="Account and trip tools"

@@ -13,6 +13,7 @@ import ApiSettingsSection from "@/components/settings/ApiSettingsSection";
 import SmtpSettingsSection from "@/components/settings/SmtpSettingsSection";
 import CurrencyRatesSection from "@/components/settings/CurrencyRatesSection";
 import DefaultCancellationPolicySection from "@/components/settings/DefaultCancellationPolicySection";
+import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 
 const groupLabels: Record<string, string> = {
   general: "System Settings",
@@ -28,6 +29,8 @@ const booleanSettingKeys = new Set([
   "maintenance_mode",
   "force_site_currency",
 ]);
+
+const imageSettingKeys = new Set(["logo", "favicon"]);
 
 const commissionSettingKeys: { key: string; label: string; description: string }[] = [
   { key: "supplier_commission_percentage", label: "Tourvaa Tour Commission (Minimum)", description: "Tourvaa's own platform commission on every tour booking, deducted from the supplier's price. This is the floor - suppliers may agree to a higher rate, but it can never go lower." },
@@ -297,11 +300,24 @@ export default function SettingsPage() {
               </p>
               <div className="grid gap-4 md:grid-cols-2">
                 {activeGenericGroup.map((setting) => (
-                  <label key={setting.key} className="block">
-                    <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">
-                      {setting.label}
-                    </span>
-                    {booleanSettingKeys.has(setting.key) ? (
+                  <div key={setting.key} className="block">
+                    {!imageSettingKeys.has(setting.key) && (
+                      <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+                        {setting.label}
+                      </span>
+                    )}
+                    {imageSettingKeys.has(setting.key) ? (
+                      <AdminAssetUpload
+                        label={setting.label}
+                        value={form[setting.key] || ""}
+                        onChange={(value) =>
+                          setForm((current) => ({
+                            ...current,
+                            [setting.key]: value,
+                          }))
+                        }
+                      />
+                    ) : booleanSettingKeys.has(setting.key) ? (
                       <select
                         value={form[setting.key] || "false"}
                         onChange={(event) =>
@@ -337,7 +353,7 @@ export default function SettingsPage() {
                         className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
                       />
                     )}
-                  </label>
+                  </div>
                 ))}
               </div>
             </section>
