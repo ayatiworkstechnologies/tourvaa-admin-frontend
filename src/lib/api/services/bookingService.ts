@@ -51,6 +51,8 @@ export type Booking = {
   created_at?: string | null;
   updated_at?: string | null;
   travellers?: BookingTraveller[];
+  optional_activities?: BookingLineItem[];
+  accommodations?: BookingLineItem[];
   extensions?: BookingLineItem[];
   status_history?: BookingStatusHistoryItem[];
   communications?: BookingCommunication[];
@@ -92,6 +94,8 @@ export type BookingLineItem = {
   title?: string;
   amount?: string;
   price?: string;
+  activity_name_snapshot?: string;
+  accommodation_name_snapshot?: string;
   extension_name_snapshot?: string;
   total_price?: string;
   unit_price?: string;
@@ -138,6 +142,8 @@ export type BookingCreate = {
   payment_type?: string;
   notes?: string;
   travellers?: BookingTraveller[];
+  optional_activity_ids?: number[];
+  accommodation_ids?: number[];
   extension_ids?: number[];
   promo_code?: string;
   affiliate_ref_code?: string;
