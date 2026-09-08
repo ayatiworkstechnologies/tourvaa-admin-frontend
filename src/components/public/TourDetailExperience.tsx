@@ -326,7 +326,7 @@ export default function TourDetailExperience({
   }, [tour.similar_tours, destination]);
 
   const handleBookNow = () => {
-    const chosenDate = defaultDepartureDates.find((d) => d.id === selectedDateId)?.range || initialTravelDate || "12 Aug 2026 - 20 Aug 2026";
+    const chosenDate = defaultDepartureDates.find((d) => d.id === selectedDateId)?.date || initialTravelDate || "12 Aug 2026 - 20 Aug 2026";
     onBook({
       travelDate: chosenDate,
       adults,
