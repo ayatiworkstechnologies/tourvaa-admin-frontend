@@ -22,14 +22,19 @@ import {
   LuUsers as Users,
 } from "react-icons/lu";
 import api from "@/lib/api/client";
+import DatePicker from "@/components/ui/DatePicker";
 import { fetchPublicTourDetail, PublicTourDetail } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import { combinePhone } from "@/lib/utils/validators";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
 
 const FALLBACK_HERO_BG = "/images/compare-hero.jpg";
 const FALLBACK_THUMB = "/images/compare-nz.jpg";
+// "agent-reseller" is the real seeded role slug; "agent" is kept for
+// backward compatibility with any older-seeded accounts still using it.
+const AGENT_ROLE_SLUGS = ["agent", "agent-reseller"];
 
 type PassengerType = "adult" | "child";
 
@@ -50,6 +55,8 @@ type PriceEstimate = {
   currency: string;
   base_amount: string;
   extension_amount: string;
+  optional_activity_amount: string;
+  accommodation_amount: string;
   discount_amount: string;
   tax_amount: string;
   surcharge_amount: string;
@@ -101,6 +108,208 @@ function calcAge(day: string, month: string, year: string): number | null {
   return age;
 }
 
+type AgentPaymentMethod = "card" | "bank_transfer" | "credit" | "pay_later";
+
+type NewCustomerForm = {
+  fullName: string;
+  email: string;
+  phoneCountry: string;
+  phone: string;
+};
+
+/** Agent-only: link an existing customer by email, or create a new one, so
+ * the booking is placed against a real customer_id -- never the agent's own. */
+function AgentCustomerSelector({
+  selectedCustomerId,
+  selectedCustomerName,
+  selectedCustomerEmail,
+  onClear,
+  linkEmail,
+  onLinkEmailChange,
+  onLink,
+  linkLoading,
+  linkError,
+  showNewCustomerForm,
+  onToggleNewCustomerForm,
+  newCustomer,
+  onNewCustomerChange,
+  onCreateCustomer,
+  newCustomerLoading,
+  newCustomerError,
+}: {
+  selectedCustomerId: number | null;
+  selectedCustomerName: string;
+  selectedCustomerEmail: string;
+  onClear: () => void;
+  linkEmail: string;
+  onLinkEmailChange: (value: string) => void;
+  onLink: () => void;
+  linkLoading: boolean;
+  linkError: string | null;
+  showNewCustomerForm: boolean;
+  onToggleNewCustomerForm: () => void;
+  newCustomer: NewCustomerForm;
+  onNewCustomerChange: (field: keyof NewCustomerForm, value: string) => void;
+  onCreateCustomer: () => void;
+  newCustomerLoading: boolean;
+  newCustomerError: string | null;
+}) {
+  if (selectedCustomerId) {
+    return (
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            <User size={16} />
+          </span>
+          <div>
+            <p className="text-xs font-bold text-emerald-900">{selectedCustomerName || "Customer selected"}</p>
+            {selectedCustomerEmail && <p className="text-[11px] text-emerald-700">{selectedCustomerEmail}</p>}
+          </div>
+        </div>
+        <button type="button" onClick={onClear} className="text-xs font-bold text-emerald-700 hover:underline">
+          Change
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+      <p className="text-xs font-bold text-slate-800">Who is this booking for?</p>
+      <p className="mt-0.5 text-[11px] text-slate-500">Link an existing customer by email, or create a new one.</p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          type="email"
+          value={linkEmail}
+          onChange={(e) => onLinkEmailChange(e.target.value)}
+          placeholder="customer@example.com"
+          className="min-w-[220px] flex-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+        />
+        <button
+          type="button"
+          onClick={onLink}
+          disabled={linkLoading || !linkEmail.trim()}
+          className="rounded-lg bg-[#0B1F3A] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#132d50] disabled:opacity-50"
+        >
+          {linkLoading ? "Linking..." : "Link Customer"}
+        </button>
+        <button
+          type="button"
+          onClick={onToggleNewCustomerForm}
+          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+        >
+          {showNewCustomerForm ? "Cancel" : "New Customer"}
+        </button>
+      </div>
+      {linkError && <p className="mt-1.5 text-xs font-semibold text-rose-600">{linkError}</p>}
+
+      {showNewCustomerForm && (
+        <div className="mt-4 space-y-3 border-t border-slate-200 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input
+              type="text"
+              value={newCustomer.fullName}
+              onChange={(e) => onNewCustomerChange("fullName", e.target.value)}
+              placeholder="Full name"
+              className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+            />
+            <input
+              type="email"
+              value={newCustomer.email}
+              onChange={(e) => onNewCustomerChange("email", e.target.value)}
+              placeholder="Email address"
+              className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+            />
+            <input
+              type="text"
+              value={newCustomer.phoneCountry}
+              onChange={(e) => onNewCustomerChange("phoneCountry", e.target.value)}
+              placeholder="+91"
+              className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+            />
+            <input
+              type="tel"
+              value={newCustomer.phone}
+              onChange={(e) => onNewCustomerChange("phone", e.target.value)}
+              placeholder="Phone number"
+              className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+            />
+          </div>
+          {newCustomerError && <p className="text-xs font-semibold text-rose-600">{newCustomerError}</p>}
+          <button
+            type="button"
+            onClick={onCreateCustomer}
+            disabled={newCustomerLoading}
+            className="rounded-lg bg-[#E4572E] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#cf4b24] disabled:opacity-50"
+          >
+            {newCustomerLoading ? "Creating..." : "Create Customer"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Agent-only: commercial controls (markup, reference, settlement method) --
+ * never shown to, or submittable by, a customer booking for themselves. */
+function AgentCommercialFields({
+  agentMarkup,
+  onAgentMarkupChange,
+  agentReference,
+  onAgentReferenceChange,
+  agentPaymentMethod,
+  onAgentPaymentMethodChange,
+}: {
+  agentMarkup: string;
+  onAgentMarkupChange: (value: string) => void;
+  agentReference: string;
+  onAgentReferenceChange: (value: string) => void;
+  agentPaymentMethod: AgentPaymentMethod;
+  onAgentPaymentMethodChange: (value: AgentPaymentMethod) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 p-4 sm:p-5 space-y-4">
+      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Agent Commercial Details</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Your markup</label>
+          <input
+            type="number"
+            min={0}
+            value={agentMarkup}
+            onChange={(e) => onAgentMarkupChange(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 outline-none transition focus:border-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Your reference (optional)</label>
+          <input
+            type="text"
+            value={agentReference}
+            onChange={(e) => onAgentReferenceChange(e.target.value)}
+            placeholder="e.g. internal booking ref"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-slate-700 mb-1">Settlement method</label>
+        <select
+          value={agentPaymentMethod}
+          onChange={(e) => onAgentPaymentMethodChange(e.target.value as AgentPaymentMethod)}
+          className="w-full appearance-none rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500"
+        >
+          <option value="card">Card (charge now)</option>
+          <option value="bank_transfer">Bank transfer</option>
+          <option value="credit">Agent credit line</option>
+          <option value="pay_later">Pay later</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
 export default function DynamicTourBookingPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -123,13 +332,32 @@ export default function DynamicTourBookingPage() {
 
   const [adultCount, setAdultCount] = useState(initialAdults);
   const [childCount] = useState(initialChildren);
+  const [travelDate, setTravelDate] = useState(initialTravelDate);
   const [selectedRoomUpgradeId, setSelectedRoomUpgradeId] = useState<number | null>(null);
   const [nightAddonQty, setNightAddonQty] = useState<Record<number, number>>({});
+  const [selectedActivityIds, setSelectedActivityIds] = useState<number[]>([]);
+  const [selectedAccommodationExtraIds, setSelectedAccommodationExtraIds] = useState<number[]>([]);
 
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
+
+  // Agent-only: the customer this booking is placed for -- an agent never
+  // books as themselves, so the lead traveller always comes from here.
+  const [agentCustomerId, setAgentCustomerId] = useState<number | null>(null);
+  const [agentCustomerName, setAgentCustomerName] = useState("");
+  const [agentCustomerEmail, setAgentCustomerEmail] = useState("");
+  const [linkEmail, setLinkEmail] = useState("");
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
+  const [newCustomer, setNewCustomer] = useState<NewCustomerForm>({ fullName: "", email: "", phoneCountry: "+91", phone: "" });
+  const [newCustomerLoading, setNewCustomerLoading] = useState(false);
+  const [newCustomerError, setNewCustomerError] = useState<string | null>(null);
+  const [agentMarkup, setAgentMarkup] = useState("0");
+  const [agentReference, setAgentReference] = useState("");
+  const [agentPaymentMethod, setAgentPaymentMethod] = useState<AgentPaymentMethod>("card");
 
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
@@ -148,10 +376,12 @@ export default function DynamicTourBookingPage() {
   const [priceLoading, setPriceLoading] = useState(false);
 
   const roleSlug = user?.role?.slug || "";
-  const canBook = isLoggedIn && roleSlug === "customer";
+  const isAgent = AGENT_ROLE_SLUGS.includes(roleSlug);
+  const canBook = isLoggedIn && (roleSlug === "customer" || isAgent);
 
-  // Auth guard: this checkout requires a logged-in customer. Send anyone
-  // else back to login (preserving the return path) or away entirely.
+  // Auth guard: this checkout requires a logged-in customer, or an agent
+  // booking on a customer's behalf. Send anyone else back to login
+  // (preserving the return path) or away entirely.
   useEffect(() => {
     if (authLoading) return;
     const query = searchParams.toString();
@@ -160,7 +390,7 @@ export default function DynamicTourBookingPage() {
       router.replace(`/login?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
-    if (roleSlug && roleSlug !== "customer") {
+    if (roleSlug && roleSlug !== "customer" && !AGENT_ROLE_SLUGS.includes(roleSlug)) {
       router.replace("/tours");
     }
   }, [authLoading, isLoggedIn, roleSlug, router, params?.id, searchParams]);
@@ -194,12 +424,17 @@ export default function DynamicTourBookingPage() {
   );
   const selectedCalendar = useMemo(() => {
     if (availableCalendar.length === 0) return null;
-    if (initialTravelDate) {
-      const match = availableCalendar.find((c) => c.date === initialTravelDate);
+    if (travelDate) {
+      const match = availableCalendar.find((c) => c.date === travelDate);
       if (match) return match;
     }
     return availableCalendar[0];
-  }, [availableCalendar, initialTravelDate]);
+  }, [availableCalendar, travelDate]);
+
+  // Default the date picker to the resolved departure once availability loads.
+  useEffect(() => {
+    if (!travelDate && selectedCalendar) setTravelDate(selectedCalendar.date);
+  }, [travelDate, selectedCalendar]);
 
   const roomUpgradeExtensions = useMemo(
     () => (tour?.extensions || []).filter((e) => e.category === "room_upgrade" && (e.price ?? 0) > 0),
@@ -219,9 +454,37 @@ export default function DynamicTourBookingPage() {
     return list;
   }, [selectedRoomUpgradeId, nightAddonQty, adultCount]);
 
-  // Start (or resume) a real checkout session once the tour has resolved
+  const availableActivities = useMemo(() => tour?.optional_activities || [], [tour]);
+
+  const toggleActivity = (id: number) => {
+    setSelectedActivityIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const optionalActivitiesPayload = useMemo(
+    () => selectedActivityIds.map((id) => ({ id, quantity: adultCount })),
+    [selectedActivityIds, adultCount]
+  );
+
+  // The restored accommodation-extras catalog (tour.accommodations) is a
+  // separate addon bucket from the tour.extensions room_upgrade/
+  // additional_night pair above -- both are real, independently priced and
+  // independently submitted (accommodations vs extensions) per the backend.
+  const availableAccommodationExtras = useMemo(() => tour?.accommodations || [], [tour]);
+
+  const toggleAccommodationExtra = (id: number) => {
+    setSelectedAccommodationExtraIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const accommodationsPayload = useMemo(
+    () => selectedAccommodationExtraIds.map((id) => ({ id, quantity: adultCount })),
+    [selectedAccommodationExtraIds, adultCount]
+  );
+
+  // Start (or resume) a real checkout session once the tour has resolved.
+  // Agent bookings skip this entirely -- they submit directly to /bookings
+  // for a customer the agent selects, not the session's own customer_id.
   useEffect(() => {
-    if (!tour || !canBook || sessionKey) return;
+    if (!tour || !canBook || sessionKey || isAgent) return;
     let active = true;
     const storageKey = `tourvaa_checkout_session_${tour.id}`;
     const existing = typeof window !== "undefined" ? window.sessionStorage.getItem(storageKey) : null;
@@ -245,20 +508,42 @@ export default function DynamicTourBookingPage() {
     return () => {
       active = false;
     };
-  }, [tour, canBook, selectedCalendar, sessionKey]);
+  }, [tour, canBook, selectedCalendar, sessionKey, isAgent]);
 
-  // Keep the passenger form list in sync with adult/child counts
+  const isCustomer = roleSlug === "customer";
+  // A customer booking for themselves can prefill their own name; an agent
+  // must never prefill their own name as the traveller -- only the
+  // customer they've explicitly linked or created below.
+  const selfBookingName = isCustomer ? user?.name || "" : "";
+
+  // Keep the passenger form list in sync with adult/child counts, and
+  // prefill the lead traveller from the booking's real owner (the logged-in
+  // customer, or the agent's selected customer) -- never from the agent.
   useEffect(() => {
     setPassengers((prev) => {
       const total = adultCount + childCount;
       const next: PassengerData[] = [];
       for (let i = 0; i < total; i++) {
         const type: PassengerType = i < adultCount ? "adult" : "child";
-        next.push(prev[i] ? { ...prev[i], type } : emptyPassenger(type));
+        if (prev[i]) {
+          next.push({ ...prev[i], type });
+          continue;
+        }
+        const passenger = emptyPassenger(type);
+        if (i === 0) {
+          const leadName = isAgent ? agentCustomerName : selfBookingName;
+          if (leadName) {
+            const [first, ...rest] = leadName.trim().split(/\s+/);
+            passenger.firstName = first || "";
+            passenger.lastName = rest.join(" ");
+          }
+          if (isAgent && agentCustomerEmail) passenger.email = agentCustomerEmail;
+        }
+        next.push(passenger);
       }
       return next;
     });
-  }, [adultCount, childCount]);
+  }, [adultCount, childCount, isAgent, agentCustomerName, agentCustomerEmail, selfBookingName]);
 
   // Tour metadata
   const tourTitle = tour?.title || "";
@@ -287,16 +572,18 @@ export default function DynamicTourBookingPage() {
     const timer = setTimeout(() => {
       api
         .post("/bookings/calculate-price", {
-          customer_id: user?.customer_id || 0,
+          customer_id: (isAgent ? agentCustomerId : user?.customer_id) || 0,
           tour_id: tour.id,
           tour_calendar_id: selectedCalendar?.id ?? null,
-          booking_source: "customer",
+          booking_source: isAgent ? "agent" : "customer",
           no_of_adults: adultCount,
           no_of_children: childCount,
           adults_count: adultCount,
           children_count: childCount,
           currency: tour.currency || "USD",
           extensions: extensionsPayload,
+          optional_activities: optionalActivitiesPayload,
+          accommodations: accommodationsPayload,
           promo_code: promoApplied ? promoCode.trim() : undefined,
         })
         .then((res) => {
@@ -320,7 +607,7 @@ export default function DynamicTourBookingPage() {
       active = false;
       clearTimeout(timer);
     };
-  }, [tour, canBook, selectedCalendar, adultCount, childCount, extensionsPayload, promoApplied, promoCode, user]);
+  }, [tour, canBook, selectedCalendar, adultCount, childCount, extensionsPayload, optionalActivitiesPayload, accommodationsPayload, promoApplied, promoCode, user, isAgent, agentCustomerId]);
 
   const handlePassengerChange = (index: number, field: keyof PassengerData, value: string) => {
     setPassengers((prev) => {
@@ -334,6 +621,60 @@ export default function DynamicTourBookingPage() {
     if (!promoCode.trim()) return;
     setPromoError(null);
     setPromoApplied(true);
+  };
+
+  const handleLinkCustomer = async () => {
+    if (!linkEmail.trim()) return;
+    setLinkLoading(true);
+    setLinkError(null);
+    try {
+      const res = await api.post("/customers/link", { email: linkEmail.trim() });
+      const c = res.data?.data;
+      setAgentCustomerId(c?.id ?? null);
+      setAgentCustomerName(c?.full_name || "");
+      setAgentCustomerEmail(c?.email || linkEmail.trim());
+    } catch (err) {
+      setLinkError(getApiErrorMessage(err));
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
+  const handleNewCustomerChange = (field: keyof NewCustomerForm, value: string) => {
+    setNewCustomer((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreateCustomer = async () => {
+    if (!newCustomer.fullName.trim() || !newCustomer.email.trim()) {
+      setNewCustomerError("Enter the customer's name and email.");
+      return;
+    }
+    setNewCustomerLoading(true);
+    setNewCustomerError(null);
+    try {
+      const res = await api.post("/customers/", {
+        full_name: newCustomer.fullName.trim(),
+        email: newCustomer.email.trim(),
+        phone: newCustomer.phone ? combinePhone(newCustomer.phoneCountry || "+91", newCustomer.phone) : "",
+      });
+      const c = res.data?.data;
+      setAgentCustomerId(c?.id ?? null);
+      setAgentCustomerName(c?.full_name || newCustomer.fullName.trim());
+      setAgentCustomerEmail(c?.email || newCustomer.email.trim());
+      setShowNewCustomerForm(false);
+    } catch (err) {
+      setNewCustomerError(getApiErrorMessage(err));
+    } finally {
+      setNewCustomerLoading(false);
+    }
+  };
+
+  const handleClearAgentCustomer = () => {
+    setAgentCustomerId(null);
+    setAgentCustomerName("");
+    setAgentCustomerEmail("");
+    setLinkEmail("");
+    setLinkError(null);
   };
 
   const handleCardNumberChange = (val: string) => {
@@ -361,11 +702,21 @@ export default function DynamicTourBookingPage() {
       setStepError(`Only ${selectedCalendar.slots} seat(s) left for this date. Please reduce travellers.`);
       return;
     }
+    if (isAgent && !agentCustomerId) {
+      setStepError("Select or create a customer to book this tour for.");
+      return;
+    }
     if (sessionKey) {
       try {
         await api.patch(`/checkout/session/${sessionKey}`, {
           step: "accommodation",
-          data: { adults: adultCount, children: childCount, extensions: extensionsPayload },
+          data: {
+            adults: adultCount,
+            children: childCount,
+            extensions: extensionsPayload,
+            optional_activities: optionalActivitiesPayload,
+            accommodations: accommodationsPayload,
+          },
         });
       } catch (err) {
         setStepError(getApiErrorMessage(err));
@@ -392,14 +743,8 @@ export default function DynamicTourBookingPage() {
     return null;
   };
 
-  const handleContinueStep2 = async () => {
-    const err = validatePassengers();
-    if (err) {
-      setStepError(err);
-      return;
-    }
-    setStepError(null);
-    const travellers = passengers.map((p, idx) => ({
+  const buildTravellersPayload = () =>
+    passengers.map((p, idx) => ({
       traveller_type: p.type,
       first_name: p.firstName.trim(),
       last_name: p.lastName.trim(),
@@ -410,11 +755,19 @@ export default function DynamicTourBookingPage() {
       phone: idx === 0 ? `${p.phoneCountry}${p.phone}`.trim() : undefined,
       is_primary_contact: idx === 0,
     }));
-    if (sessionKey) {
+
+  const handleContinueStep2 = async () => {
+    const err = validatePassengers();
+    if (err) {
+      setStepError(err);
+      return;
+    }
+    setStepError(null);
+    if (sessionKey && !isAgent) {
       try {
         await api.patch(`/checkout/session/${sessionKey}`, {
           step: "payment",
-          data: { travellers, promo_code: promoApplied ? promoCode.trim() : null },
+          data: { travellers: buildTravellersPayload(), promo_code: promoApplied ? promoCode.trim() : null },
         });
       } catch (submitErr) {
         setStepError(getApiErrorMessage(submitErr));
@@ -438,6 +791,59 @@ export default function DynamicTourBookingPage() {
   const handleConfirmAndPay = async () => {
     setPaymentError(null);
     if (!acceptTerms) return;
+
+    // Agent bookings are placed for a selected customer, never the agent's
+    // own session -- they submit straight to /bookings instead of the
+    // customer-scoped checkout session.
+    if (isAgent) {
+      if (!agentCustomerId) {
+        setPaymentError("Select or create a customer first.");
+        return;
+      }
+      if (agentPaymentMethod === "card" && !isCardValid()) {
+        setPaymentError("Please enter valid card details.");
+        return;
+      }
+      setPaymentSubmitting(true);
+      try {
+        const res = await api.post("/bookings", {
+          customer_id: agentCustomerId,
+          tour_id: tour!.id,
+          tour_calendar_id: selectedCalendar?.id ?? null,
+          booking_source: "agent",
+          no_of_adults: adultCount,
+          no_of_children: childCount,
+          adults_count: adultCount,
+          children_count: childCount,
+          currency: tourCurrency,
+          travellers: buildTravellersPayload(),
+          optional_activities: optionalActivitiesPayload,
+          accommodations: accommodationsPayload,
+          extensions: extensionsPayload,
+          promo_code: promoApplied ? promoCode.trim() : undefined,
+          ...(isAgent ? {
+            agent_markup: Number(agentMarkup) || 0,
+            agent_reference: agentReference.trim() || undefined,
+            agent_payment_method: agentPaymentMethod,
+          } : {}),
+          agreed_terms: acceptTerms,
+          agreed_cancellation_policy: acceptTerms,
+        });
+        const booking = res.data?.data;
+        setBookingResult({
+          code: booking?.booking_code || "",
+          amount: String(booking?.final_amount ?? booking?.total_cost ?? "0"),
+          currency: booking?.currency || tourCurrency,
+        });
+        setStep(4);
+      } catch (err) {
+        setPaymentError(getApiErrorMessage(err));
+      } finally {
+        setPaymentSubmitting(false);
+      }
+      return;
+    }
+
     if (!sessionKey) {
       setPaymentError("Checkout session is not ready. Please refresh and try again.");
       return;
@@ -615,38 +1021,79 @@ export default function DynamicTourBookingPage() {
                     <h2 className="text-base sm:text-lg font-bold text-slate-900">Passengers &amp; Accommodation</h2>
                   </div>
 
+                  {isAgent && (
+                    <div className="pt-6">
+                      <AgentCustomerSelector
+                        selectedCustomerId={agentCustomerId}
+                        selectedCustomerName={agentCustomerName}
+                        selectedCustomerEmail={agentCustomerEmail}
+                        onClear={handleClearAgentCustomer}
+                        linkEmail={linkEmail}
+                        onLinkEmailChange={setLinkEmail}
+                        onLink={handleLinkCustomer}
+                        linkLoading={linkLoading}
+                        linkError={linkError}
+                        showNewCustomerForm={showNewCustomerForm}
+                        onToggleNewCustomerForm={() => setShowNewCustomerForm((v) => !v)}
+                        newCustomer={newCustomer}
+                        onNewCustomerChange={handleNewCustomerChange}
+                        onCreateCustomer={handleCreateCustomer}
+                        newCustomerLoading={newCustomerLoading}
+                        newCustomerError={newCustomerError}
+                      />
+                    </div>
+                  )}
+
                   {/* Passengers */}
                   <div className="pt-6">
                     <h3 className="text-sm font-bold text-slate-900">Passengers</h3>
-                    <p className="mt-0.5 text-xs text-slate-500">Select the number of adults travelling with you.</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {isAgent
+                        ? "Select the departure date and number of adults for this booking."
+                        : "Select the number of adults travelling with you."}
+                    </p>
 
-                    <div className="mt-4 max-w-xs">
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">Number of Adults (18+)</label>
-                      <div className="relative">
-                        <select
-                          value={adultCount}
-                          onChange={(e) => setAdultCount(Number(e.target.value))}
-                          className="w-full appearance-none rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500"
-                        >
-                          {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
-                            <option key={num} value={num}>
-                              {num}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown
-                          size={14}
-                          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                        />
+                    <div className="mt-4 flex flex-wrap gap-4">
+                      {isAgent && availableCalendar.length > 0 && (
+                        <div className="w-56">
+                          <DatePicker
+                            label="Departure date"
+                            value={travelDate}
+                            onChange={setTravelDate}
+                            availableDates={availableCalendar.map((c) => c.date)}
+                            restrictToAvailableDates
+                            required
+                          />
+                        </div>
+                      )}
+                      <div className="max-w-xs">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Number of Adults (18+)</label>
+                        <div className="relative">
+                          <select
+                            value={adultCount}
+                            onChange={(e) => setAdultCount(Number(e.target.value))}
+                            className="w-full appearance-none rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500"
+                          >
+                            {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
+                              <option key={num} value={num}>
+                                {num}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown
+                            size={14}
+                            className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                          />
+                        </div>
+                        {selectedCalendar && (
+                          <p className="mt-1.5 text-[11px] text-slate-400">{selectedCalendar.slots} seats left on this date</p>
+                        )}
+                        {childCount > 0 && (
+                          <p className="mt-1.5 text-[11px] text-slate-500">
+                            + {childCount} {childCount === 1 ? "child" : "children"} (selected on the tour page)
+                          </p>
+                        )}
                       </div>
-                      {selectedCalendar && (
-                        <p className="mt-1.5 text-[11px] text-slate-400">{selectedCalendar.slots} seats left on this date</p>
-                      )}
-                      {childCount > 0 && (
-                        <p className="mt-1.5 text-[11px] text-slate-500">
-                          + {childCount} {childCount === 1 ? "child" : "children"} (selected on the tour page)
-                        </p>
-                      )}
                     </div>
                   </div>
 
@@ -770,6 +1217,104 @@ export default function DynamicTourBookingPage() {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Optional Activities -- only rendered when the tour actually has real activities configured */}
+                  {availableActivities.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-slate-100">
+                      <h3 className="text-sm font-bold text-slate-900">Optional Activities</h3>
+                      <p className="mt-0.5 text-xs text-slate-500 leading-relaxed max-w-2xl">
+                        Add extra experiences to your tour. Priced per adult traveller.
+                      </p>
+
+                      <div className="mt-4 space-y-3">
+                        {availableActivities.map((activity) => {
+                          const checked = selectedActivityIds.includes(activity.id);
+                          return (
+                            <div
+                              key={activity.id}
+                              onClick={() => toggleActivity(activity.id)}
+                              className={`flex items-center justify-between gap-3.5 rounded-xl border p-4 cursor-pointer transition ${
+                                checked ? "border-blue-500 bg-blue-50/10 shadow-2xs" : "border-slate-200 hover:border-slate-300"
+                              }`}
+                            >
+                              <div className="flex items-start gap-3.5">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleActivity(activity.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="mt-1 rounded text-blue-600 focus:ring-blue-500"
+                                />
+                                <div>
+                                  <p className="text-xs sm:text-sm font-bold text-slate-900">{activity.name}</p>
+                                  {activity.description && (
+                                    <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-md leading-relaxed">
+                                      {activity.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-xs sm:text-sm font-black text-slate-900">
+                                  {format(activity.price ?? 0, activity.currency || tourCurrency)}
+                                </p>
+                                <p className="text-[10px] text-slate-400">Per adult</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Accommodation Add-ons -- the tour's own accommodation-extras catalog, separate from the Shared/Upgrade room choice above */}
+                  {availableAccommodationExtras.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-slate-100">
+                      <h3 className="text-sm font-bold text-slate-900">Accommodation Add-ons</h3>
+                      <p className="mt-0.5 text-xs text-slate-500 leading-relaxed max-w-2xl">
+                        Optional accommodation extras for this tour. Priced per adult traveller.
+                      </p>
+
+                      <div className="mt-4 space-y-3">
+                        {availableAccommodationExtras.map((extra) => {
+                          const checked = selectedAccommodationExtraIds.includes(extra.id);
+                          return (
+                            <div
+                              key={extra.id}
+                              onClick={() => toggleAccommodationExtra(extra.id)}
+                              className={`flex items-center justify-between gap-3.5 rounded-xl border p-4 cursor-pointer transition ${
+                                checked ? "border-blue-500 bg-blue-50/10 shadow-2xs" : "border-slate-200 hover:border-slate-300"
+                              }`}
+                            >
+                              <div className="flex items-start gap-3.5">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleAccommodationExtra(extra.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="mt-1 rounded text-blue-600 focus:ring-blue-500"
+                                />
+                                <div>
+                                  <p className="text-xs sm:text-sm font-bold text-slate-900">{extra.name}</p>
+                                  {extra.description && (
+                                    <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-md leading-relaxed">
+                                      {extra.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-xs sm:text-sm font-black text-slate-900">
+                                  {format(extra.price ?? 0, tourCurrency)}
+                                </p>
+                                <p className="text-[10px] text-slate-400">Per adult</p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1078,6 +1623,18 @@ export default function DynamicTourBookingPage() {
                     </div>
                   </div>
 
+                  {isAgent && (
+                    <AgentCommercialFields
+                      agentMarkup={agentMarkup}
+                      onAgentMarkupChange={setAgentMarkup}
+                      agentReference={agentReference}
+                      onAgentReferenceChange={setAgentReference}
+                      agentPaymentMethod={agentPaymentMethod}
+                      onAgentPaymentMethodChange={setAgentPaymentMethod}
+                    />
+                  )}
+
+                  {(!isAgent || agentPaymentMethod === "card") && (
                   <div className="rounded-xl border border-slate-200 p-4 sm:p-5 space-y-4">
                     <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                       <button
@@ -1174,6 +1731,7 @@ export default function DynamicTourBookingPage() {
                       in accordance with their terms.
                     </p>
                   </div>
+                  )}
 
                   <div className="space-y-2 pt-2">
                     <label className="flex items-start gap-2.5 rounded-lg border border-slate-200 p-3 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 transition">
@@ -1316,6 +1874,24 @@ export default function DynamicTourBookingPage() {
                           <span className="text-slate-600">Add-ons</span>
                           <span className="font-bold text-slate-900">
                             {format(Number(priceEstimate.extension_amount), priceEstimate.currency)}
+                          </span>
+                        </div>
+                      )}
+
+                      {Number(priceEstimate.optional_activity_amount) > 0 && (
+                        <div className="flex items-center justify-between text-slate-700 pt-1">
+                          <span className="text-slate-600">Optional activities</span>
+                          <span className="font-bold text-slate-900">
+                            {format(Number(priceEstimate.optional_activity_amount), priceEstimate.currency)}
+                          </span>
+                        </div>
+                      )}
+
+                      {Number(priceEstimate.accommodation_amount) > 0 && (
+                        <div className="flex items-center justify-between text-slate-700 pt-1">
+                          <span className="text-slate-600">Accommodation add-ons</span>
+                          <span className="font-bold text-slate-900">
+                            {format(Number(priceEstimate.accommodation_amount), priceEstimate.currency)}
                           </span>
                         </div>
                       )}

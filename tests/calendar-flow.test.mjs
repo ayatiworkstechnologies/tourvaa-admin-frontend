@@ -36,7 +36,7 @@ check("calendar exposes disabled and availability states", datePicker.includes("
 check("calendar closes with Escape and outside click", datePicker.includes('event.key === "Escape"') && datePicker.includes("closeOutside"));
 check("tour availability editor uses shared calendars", tourCalendar.includes("<DatePicker") && !tourCalendar.includes('type="date"'));
 check("discount date ranges constrain start and end", discounts.includes("maxDate={editing.end_date") && discounts.includes("minDate={editing.start_date"));
-check("agent booking restricts selection to live departures", agentBooking.includes("restrictToAvailableDates") && agentBooking.includes('x.status === "available" && x.slots > 0'));
+check("agent booking restricts selection to live departures", agentBooking.includes("<DatePicker") && agentBooking.includes("restrictToAvailableDates") && agentBooking.includes('c.status === "available" && c.slots > 0'));
 
 console.log(`\nCalendar flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

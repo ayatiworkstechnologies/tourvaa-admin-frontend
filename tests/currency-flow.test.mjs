@@ -29,10 +29,10 @@ check("conversion uses source and target rates", hook.includes("value / sourceRa
 check("public header exposes the selector", publicHeader.includes("<LanguageCurrencySelector"));
 check("portal header exposes the selector", portalHeader.includes("<CurrencySelector"));
 check("tour listing converts from each tour currency", listing.includes("format(t.price_start_per_person, t.currency)"));
-check("tour details convert price and add-ons", detailExperience.includes('format(baseFare, tour.currency') && detailExperience.includes('format(450, tour.currency'));
-check("booking review converts display amounts", booking.includes("const { format: money") && booking.includes("money(customerTotal, currency)"));
-check("gateway still receives immutable booking currency", booking.includes("currency: booking.currency"));
-check("checkout explains indicative conversion", booking.includes("displayed conversion is indicative"));
+check("tour details convert price and add-ons", detailExperience.includes('format(tourPrice, tourCurrency)') && detailExperience.includes('format(perPersonPrice, tourCurrency)'));
+check("booking review converts display amounts", booking.includes("const { code: displayCurrency, format, formatExact }") && booking.includes("format(Number(priceEstimate.final_amount), priceEstimate.currency)"));
+check("confirmed booking amount is shown in its own settled currency, not the display currency", booking.includes("formatExact(Number(bookingResult.amount), bookingResult.currency)"));
+check("checkout explains the price breakdown is a display conversion", booking.includes("`Shown in ${displayCurrency}`"));
 
 console.log(`\nCurrency flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

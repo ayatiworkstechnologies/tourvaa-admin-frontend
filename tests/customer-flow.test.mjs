@@ -32,27 +32,26 @@ check("tour links preserve booking query", detail.includes("bookingQuery"));
 check("login return path preserves booking context", detail.includes("encodeURIComponent(returnPath)"));
 check("tour CTA opens dedicated public booking flow", detail.includes('`/booking/${tour.id}'));
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
-check("tour detail uses Book Now without cart actions", detailExperience.includes("Book Now") && !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
+check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
 
 // The booking form was moved off the tour detail page into a dedicated
-// wizard at /booking/[id] (see HeroFilterBar/customer-flow architecture
-// notes) - these checks target that page, not the tour detail page.
+// checkout-session flow at /booking/[id] (see HeroFilterBar/customer-flow
+// architecture notes) - these checks target that page, not the tour detail
+// page. The flow is a plain-state 4-step wizard (Passengers & Accommodation
+// -> Passenger Details -> Payment -> Confirmation) backed by a real
+// server-side CheckoutSession, not a client-only react-hook-form wizard.
 const publicBooking = read("src/app/(public)/booking/[id]/page.tsx");
-check("public booking has six visible stages", publicBooking.includes("Confirmation") && publicBooking.includes("Secure checkout"));
-check("public booking uses React Hook Form", publicBooking.includes("useForm<FormValues>") && publicBooking.includes("useFieldArray"));
-check("public booking retains the customer-scoped booking endpoint", publicBooking.includes('isAgent ? "/bookings" : "/customer/bookings"'));
-check("public booking allows customer and agent login", publicBooking.includes("Customer login") && publicBooking.includes("Agent login"));
-check("public booking connects Stripe and PayPal", publicBooking.includes('"/payments/stripe/create-session"') && publicBooking.includes('"/payments/paypal/create-order"'));
-check("public booking handles gateway returns", publicBooking.includes('"/payments/stripe/confirm-return"') && publicBooking.includes('"/payments/paypal/capture"'));
-check("booking continues to the in-wizard payment step", publicBooking.includes("setStep(5)"));
-check("success copy explains supplier acceptance", publicBooking.includes("subject to supplier acceptance"));
-check("booking offers partial and full payment", publicBooking.includes('value="partial"') && publicBooking.includes('value="full"'));
-check("booking sends selected payment type", publicBooking.includes("payment_type: form.paymentType"));
-check("traveller fields follow selected counts", publicBooking.includes("length: adults") && publicBooking.includes("length: children"));
-check("every traveller submits normalized age", publicBooking.includes("age: Number(row.age)"));
-check("adult and child ages are validated", publicBooking.includes("age >= 12 && age <= 120") && publicBooking.includes("age >= 3 && age <= 11"));
-check("dynamic travellers use a field array", publicBooking.includes("useFieldArray") && publicBooking.includes('name: "travellers"'));
-check("custom booking inputs use controllers", publicBooking.includes("<Controller") && publicBooking.includes('name="travelDate"') && publicBooking.includes('name="phone"'));
+check("public booking has four visible stages", publicBooking.includes("Passengers &amp; Accommodation") && publicBooking.includes("Passenger Details") && publicBooking.includes(">Payment<") && publicBooking.includes("Booking Received"));
+check("public booking is backed by a real checkout session", publicBooking.includes('.post("/checkout/start"') && publicBooking.includes("sessionKey"));
+check("public booking confirms through the checkout-session endpoint", publicBooking.includes("/checkout/session/${sessionKey}/confirm"));
+check("public booking requires a logged-in customer", publicBooking.includes('roleSlug === "customer"') && publicBooking.includes("router.replace(`/login?redirect="));
+check("public booking uses live server-calculated pricing", publicBooking.includes('"/bookings/calculate-price"') && publicBooking.includes("priceEstimate"));
+check("booking continues to the payment step", publicBooking.includes("setStep(3)"));
+check("success copy explains pending payment confirmation", publicBooking.includes("pending payment confirmation"));
+check("traveller fields follow selected adult and child counts", publicBooking.includes("adultCount + childCount") && publicBooking.includes('i < adultCount ? "adult" : "child"'));
+check("every traveller submits a normalized age", publicBooking.includes("age: calcAge(p.birthDay, p.birthMonth, p.birthYear)"));
+check("adult and child ages are validated", publicBooking.includes("age < 12 || age > 120") && publicBooking.includes("age < 3 || age > 11"));
+check("optional activities selection feeds price and checkout data", publicBooking.includes("optionalActivitiesPayload") && publicBooking.includes("optional_activities: optionalActivitiesPayload"));
 
 const customerBooking = read("src/app/customer/bookings/[id]/page.tsx");
 check("new booking opens payment UI", customerBooking.includes('searchParams.get("pay") === "1"'));

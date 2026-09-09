@@ -81,10 +81,17 @@ for (const file of allFiles) {
     if (perm.split("-").length >= 2 && !ALLOWED_LEGACY_HYPHEN.has(perm) &&
         !perm.startsWith("http") && !perm.includes("/") &&
         perm.match(/^[a-z]+(-[a-z]+)+$/)) {
-      // Only flag ones that appear near "permission" keyword
+      // Only flag ones that both mention "permission" nearby AND are used as
+      // a call argument / prop value (not prose that happens to contain a
+      // word like "permitted" near an unrelated hyphenated string, e.g. a
+      // page's table-of-contents anchor id).
       const idx = match.index;
-      const context = src.substring(Math.max(0, idx - 80), idx + 60);
-      if (context.toLowerCase().includes("permission") || context.toLowerCase().includes("perm")) {
+      const before = src.substring(Math.max(0, idx - 40), idx);
+      const after = src.substring(idx + match[0].length, idx + match[0].length + 20);
+      const nearKeyword = /\bpermission/i.test(before) || /\bpermission/i.test(after);
+      const usedAsArgument = /[(=]\s*$/.test(before.trimEnd());
+      if (nearKeyword && usedAsArgument) {
+        const context = src.substring(Math.max(0, idx - 80), idx + 60);
         hyphenFound.push({ file: file.replace(FRONTEND_DIR, ""), perm, context: context.replace(/\s+/g, " ").trim() });
       }
     }
