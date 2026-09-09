@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { LuCircleAlert as AlertCircle, LuCreditCard as CreditCard, LuLoaderCircle as Loader2, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { StripeWordmark, PayPalLogo } from "@/components/common/PaymentLogos";
 
 type GatewayStatus = { stripe: boolean; paypal: boolean; test_mode_available: boolean } | null;
 
@@ -151,11 +152,17 @@ export default function BookingPaymentModal({
 
         {gatewayLoading ? <div className="flex justify-center py-8"><Loader2 className="animate-spin text-orange-600" /></div> : (
           <div className="mt-4 space-y-3">
-            <button type="button" onClick={payWithStripe} disabled={Boolean(loading) || !gateways?.stripe} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#635BFF] px-4 py-3 text-sm font-black text-white disabled:opacity-40">
-              {loading === "stripe" ? <Loader2 size={17} className="animate-spin" /> : <CreditCard size={17} />} Pay with Stripe
+            <button type="button" onClick={payWithStripe} disabled={Boolean(loading) || !gateways?.stripe} className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#635BFF] hover:bg-[#5249ea] px-4 py-3 text-sm font-black text-white shadow-sm transition-all disabled:opacity-40">
+              {loading === "stripe" ? <Loader2 size={17} className="animate-spin" /> : <CreditCard size={17} />}
+              <span>Pay with</span>
+              <StripeWordmark className="h-4 w-auto text-white" />
             </button>
-            <button type="button" onClick={payWithPayPal} disabled={Boolean(loading) || !gateways?.paypal} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0070BA] px-4 py-3 text-sm font-black text-white disabled:opacity-40">
-              {loading === "paypal" ? <Loader2 size={17} className="animate-spin" /> : null} Pay with PayPal
+            <button type="button" onClick={payWithPayPal} disabled={Boolean(loading) || !gateways?.paypal} className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] px-4 py-3 text-sm font-black text-white shadow-sm transition-all disabled:opacity-40">
+              {loading === "paypal" ? <Loader2 size={17} className="animate-spin" /> : null}
+              <span>Pay with</span>
+              <span className="inline-flex items-center rounded-md bg-white px-2 py-0.5 shadow-2xs">
+                <PayPalLogo className="h-3.5 w-auto" />
+              </span>
             </button>
             {false && gateways?.test_mode_available && (
               <button type="button" onClick={payWithTestGateway} disabled={Boolean(loading)} className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 py-3 text-sm font-black text-amber-800 disabled:opacity-50">

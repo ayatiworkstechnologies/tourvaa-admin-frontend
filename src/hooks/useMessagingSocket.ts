@@ -26,7 +26,10 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
 
   useEffect(() => {
     const base = (process.env.NEXT_PUBLIC_WS_URL || "").replace(/\/$/, "");
-    if (!base) return;
+    if (!base) {
+      console.warn("Messaging is unavailable: configure NEXT_PUBLIC_WS_URL with the public backend WebSocket origin.");
+      return;
+    }
 
     let socket: WebSocket | null = null;
     let cancelled = false;

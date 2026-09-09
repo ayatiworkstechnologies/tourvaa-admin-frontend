@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import MarketingImage from "@/components/public/MarketingImage";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -802,8 +803,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               can grow taller than min-h (e.g. the stats row wrapping to a
               second line on narrow screens) without being cut off. */}
           <div className="absolute inset-0 overflow-hidden rounded-[20px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <MarketingImage fill sizes="100vw" preload
               src={heroBannerImage}
               alt={heroTitle}
               className="h-full w-full object-cover opacity-80"
@@ -1260,8 +1260,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                       viewMode === "list" ? "h-56 sm:h-auto sm:w-80 shrink-0" : "h-52"
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <MarketingImage fill sizes="(max-width: 640px) 100vw, 360px"
                       src={tour.image}
                       alt={tour.title}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"

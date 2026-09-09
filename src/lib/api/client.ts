@@ -87,6 +87,7 @@ function getCookie(name: string): string | null {
 const api = axios.create({
   baseURL: API_PATH_PREFIX,
   withCredentials: true,
+  timeout: 30_000,
 });
 
 // Separate instance used only for token refresh - no interceptors, so it
@@ -94,6 +95,7 @@ const api = axios.create({
 const authAxios = axios.create({
   baseURL: API_PATH_PREFIX,
   withCredentials: true,
+  timeout: 30_000,
 });
 
 let isRefreshing = false;

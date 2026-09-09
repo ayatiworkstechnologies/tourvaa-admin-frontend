@@ -49,6 +49,12 @@ export function getFieldErrors(error: unknown): Record<string, string> {
 export function getApiErrorMessage(error: unknown) {
   if (!axios.isAxiosError(error)) return "Something went wrong. Please try again.";
 
+  if (!error.response && (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT")) {
+    return "The request timed out. Check whether your changes were saved before trying again.";
+  }
+  if (!error.response && error.code === "ERR_NETWORK") {
+    return "Unable to connect. Check your internet connection and try again.";
+  }
   const responseData = error.response?.data;
   const detail = responseData?.detail;
   const serverMessage =
@@ -70,6 +76,9 @@ export function getApiErrorMessage(error: unknown) {
   }
   if (error.response?.status === 403) {
     return serverMessage || "Access denied. You do not have permission for this action.";
+  }
+  if (error.response?.status === 409) {
+    return serverMessage || "This record has changed or the action is no longer available. Refresh and check its current status.";
   }
   if (error.response?.status === 422) {
     const validationErrors = getValidationErrors(error);

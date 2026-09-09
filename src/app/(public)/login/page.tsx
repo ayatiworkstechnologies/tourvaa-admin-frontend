@@ -7,20 +7,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import axios from "axios";
-import {
-  LuArrowRight as ArrowRight,
-  LuCheck as Check,
-  LuEye as Eye,
-  LuEyeOff as EyeOff,
-  LuLock as Lock,
-  LuMail as Mail,
-  LuShieldCheck as ShieldCheck,
-  LuSparkles as Sparkles,
-  LuMapPin as MapPin,
-  LuHeart as Heart,
-  LuStar as Star,
-  LuCalendarCheck as CalendarCheck,
-} from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuEye as Eye, LuEyeOff as EyeOff, LuLock as Lock, LuMail as Mail, LuShieldCheck as ShieldCheck, LuSparkles as Sparkles, LuMapPin as MapPin, LuHeart as Heart, LuStar as Star, LuCalendarCheck as CalendarCheck } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";

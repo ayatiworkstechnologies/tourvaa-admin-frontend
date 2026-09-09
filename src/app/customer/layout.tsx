@@ -77,7 +77,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
             >
               <Menu size={20} />
             </button>
-            <main className="min-w-0 flex-1">{children}</main>
+            <main id="main-content" tabIndex={-1} className="min-w-0 flex-1">{children}</main>
             <PublicFooter />
           </div>
         </div>

@@ -17,7 +17,7 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
     });
 
     // 1. Navigate to home
-    await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForSelector("header");
     await page.waitForTimeout(1000);
 
@@ -91,7 +91,6 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
     if (tabCount > 1) {
       // Click second tab to test dynamic filtering
       const secondTab = dealTabs.nth(1);
-      const tabLabel = await secondTab.textContent();
       await secondTab.click();
       // Check active styling (bg-[#E4572E])
       await expect(secondTab).toHaveClass(/bg-\[#E4572E\]/);
@@ -209,12 +208,12 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
   });
 
   test("audit after-login profile dropdown functionality and appearance", async ({ page }) => {
-    // Enable authenticated mock session
-    await page.addInitScript(() => {
-      window.localStorage.setItem("tourvaa_docs_dashboard", "1");
-    });
-
-    await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+    // Mock the session endpoint so this UI check also runs in production builds.
+    await page.route("**/api/dashboard/me", route => route.fulfill({ json: { data: {
+      user: { id: 1, name: "Super Admin", full_name: "Super Admin", email: "admin@tourvaa.com", role: { slug: "super-admin", name: "Super Admin" } },
+      dashboard_type: "admin", permissions: [], menus: [], sidebar_menu: [], allowed_modules: [], stats: {},
+    } } }));
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForSelector("header");
     await page.waitForTimeout(800);
 
@@ -244,7 +243,7 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
   });
 
   test("audit header icons and carousel chevron navigation buttons", async ({ page }) => {
-    await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForSelector("header");
 
     const header = page.locator("header");

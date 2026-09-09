@@ -5,7 +5,7 @@ test.describe("Deep Interactive UI & UX Workflows Audit", () => {
     const pageErrors: string[] = [];
     page.on("pageerror", (err) => pageErrors.push(err.message));
 
-    await page.goto("http://localhost:3000/tours", { waitUntil: "domcontentloaded" });
+    await page.goto("/tours", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
 
     // Check search input presence
@@ -46,7 +46,7 @@ test.describe("Deep Interactive UI & UX Workflows Audit", () => {
     const pageErrors: string[] = [];
     page.on("pageerror", (err) => pageErrors.push(err.message));
 
-    await page.goto("http://localhost:3000/wishlist", { waitUntil: "domcontentloaded" });
+    await page.goto("/wishlist", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(600);
 
     // Check page header
@@ -59,7 +59,7 @@ test.describe("Deep Interactive UI & UX Workflows Audit", () => {
     const pageErrors: string[] = [];
     page.on("pageerror", (err) => pageErrors.push(err.message));
 
-    await page.goto("http://localhost:3000/compare", { waitUntil: "domcontentloaded" });
+    await page.goto("/compare", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(600);
 
     // Check page title
@@ -72,7 +72,7 @@ test.describe("Deep Interactive UI & UX Workflows Audit", () => {
     const pageErrors: string[] = [];
     page.on("pageerror", (err) => pageErrors.push(err.message));
 
-    await page.goto("http://localhost:3000/contact", { waitUntil: "domcontentloaded" });
+    await page.goto("/contact", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(600);
 
     // Submit empty form to verify validation errors
@@ -90,12 +90,12 @@ test.describe("Deep Interactive UI & UX Workflows Audit", () => {
     page.on("pageerror", (err) => pageErrors.push(err.message));
 
     // Agent portal login
-    await page.goto("http://localhost:3000/agent-portal/login", { waitUntil: "domcontentloaded" });
+    await page.goto("/agent-portal/login", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(500);
     await expect(page.getByRole("heading", { name: /agent/i })).toBeVisible();
 
     // Supplier portal login
-    await page.goto("http://localhost:3000/supplier-portal/login", { waitUntil: "domcontentloaded" });
+    await page.goto("/supplier-portal/login", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(500);
     await expect(page.getByRole("heading", { name: /supplier/i })).toBeVisible();
 
@@ -107,7 +107,7 @@ test.describe("Deep Interactive UI & UX Workflows Audit", () => {
     page.on("pageerror", (err) => pageErrors.push(err.message));
 
     // 1. Visit tours catalog and click first tour or visit /tours/1
-    await page.goto("http://localhost:3000/tours/1", { waitUntil: "domcontentloaded" });
+    await page.goto("/tours/1", { waitUntil: "domcontentloaded" });
 
     // Verify booking widget is present (generous timeout: dev-server first
     // compile + tour data fetch can exceed the default 5s)

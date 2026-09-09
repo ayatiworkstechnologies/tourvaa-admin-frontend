@@ -4,20 +4,7 @@
 
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import {
-  LuAward as Award,
-  LuBadgeCheck as BadgeCheck,
-  LuCalendarDays as CalendarDays,
-  LuHeadphones as Headphones,
-  LuLeaf as Leaf,
-  LuMapPin as MapPin,
-  LuShieldCheck as ShieldCheck,
-  LuSparkles as Sparkles,
-  LuStar as Star,
-  LuTrophy as Trophy,
-  LuUsers as Users,
-  LuCompass as Compass,
-} from "react-icons/lu";
+import { LuAward as Award, LuBadgeCheck as BadgeCheck, LuCalendarDays as CalendarDays, LuHeadphones as Headphones, LuLeaf as Leaf, LuShieldCheck as ShieldCheck, LuSparkles as Sparkles, LuStar as Star, LuTrophy as Trophy, LuUsers as Users } from "react-icons/lu";
 
 import AboutReveal from "@/components/public/AboutReveal";
 

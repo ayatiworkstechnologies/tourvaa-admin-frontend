@@ -11,7 +11,6 @@ import {
   LuChevronDown as ChevronDown,
   LuCircleAlert as CircleAlert,
   LuCircleCheckBig as CheckCircle,
-  LuCreditCard as CreditCard,
   LuGlobe as Globe,
   LuLoaderCircle as LoaderCircle,
   LuLockKeyhole as Lock,
@@ -22,6 +21,7 @@ import {
   LuUsers as Users,
 } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { StripeBadge, PayPalLogo, VisaBadge, MastercardBadge, AmexBadge } from "@/components/common/PaymentLogos";
 import DatePicker from "@/components/ui/DatePicker";
 import { fetchPublicTourDetail, PublicTourDetail } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
@@ -359,10 +359,15 @@ export default function DynamicTourBookingPage() {
   const [agentReference, setAgentReference] = useState("");
   const [agentPaymentMethod, setAgentPaymentMethod] = useState<AgentPaymentMethod>("card");
 
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
-  const [cardCountry, setCardCountry] = useState("India");
+  const [gateway, setGateway] = useState<"stripe" | "paypal">("stripe");
+  const [gateways, setGateways] = useState<{ stripe_test: boolean; paypal_test: boolean } | null>(null);
+  const [pendingBooking, setPendingBooking] = useState<{ id: number; amount_pending: string; currency: string } | null>(null);
+  useEffect(() => {
+    api.get("/payments/gateways/status").then(({ data }) => {
+      setGateways(data.data);
+      if (!data.data.stripe_test && data.data.paypal_test) setGateway("paypal");
+    }).catch(() => setGateways({ stripe_test: false, paypal_test: false }));
+  }, []);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [subscribeNewsletter, setSubscribeNewsletter] = useState(false);
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
@@ -677,21 +682,6 @@ export default function DynamicTourBookingPage() {
     setLinkError(null);
   };
 
-  const handleCardNumberChange = (val: string) => {
-    const raw = val.replace(/\D/g, "").slice(0, 16);
-    const parts = raw.match(/.{1,4}/g);
-    setCardNumber(parts ? parts.join(" ") : raw);
-  };
-
-  const handleExpiryChange = (val: string) => {
-    const raw = val.replace(/\D/g, "").slice(0, 4);
-    if (raw.length >= 3) {
-      setCardExpiry(`${raw.slice(0, 2)} / ${raw.slice(2)}`);
-    } else {
-      setCardExpiry(raw);
-    }
-  };
-
   const handleContinueStep1 = async () => {
     setStepError(null);
     if (availableCalendar.length > 0 && !selectedCalendar) {
@@ -777,20 +767,42 @@ export default function DynamicTourBookingPage() {
     setStep(3);
   };
 
-  const isCardValid = () => {
-    const digits = cardNumber.replace(/\s/g, "");
-    if (digits.length < 13 || digits.length > 16) return false;
-    const expiryMatch = cardExpiry.match(/^(\d{2}) \/ (\d{2})$/);
-    if (!expiryMatch) return false;
-    const mm = Number(expiryMatch[1]);
-    if (mm < 1 || mm > 12) return false;
-    if (cardCvc.length < 3) return false;
-    return true;
+  const startPayment = async (booking: { id: number; amount_pending: string; currency: string }) => {
+    setPendingBooking(booking);
+    const base = `${window.location.origin}/${isAgent ? "agent" : "customer"}/bookings/${booking.id}`;
+    const common = { booking_id: booking.id, amount: booking.amount_pending, currency: booking.currency, test_only: true };
+    if (gateway === "stripe") {
+      const { data } = await api.post("/payments/stripe/create-session", {
+        ...common, success_url: `${base}?payment=${isAgent ? "stripe_success" : "success"}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${base}?payment=cancelled`,
+      });
+      if (!data.data?.checkout_url) throw new Error("Stripe checkout URL is missing.");
+      window.location.assign(data.data.checkout_url);
+    } else {
+      const { data } = await api.post("/payments/paypal/create-order", {
+        ...common, return_url: `${base}?payment=paypal_approved`, cancel_url: `${base}?payment=cancelled`,
+      });
+      if (!data.data?.approve_url) throw new Error("PayPal approval URL is missing.");
+      sessionStorage.setItem(`paypal_pid_${booking.id}`, String(data.data.payment_id));
+      window.location.assign(data.data.approve_url);
+    }
   };
 
   const handleConfirmAndPay = async () => {
     setPaymentError(null);
-    if (!acceptTerms) return;
+    if (!acceptTerms || paymentSubmitting) return;
+    const onlinePayment = !isAgent || agentPaymentMethod === "card";
+    if (onlinePayment && !gateways?.[`${gateway}_test`]) {
+      setPaymentError("Enable this provider with test credentials in Payment Settings first.");
+      return;
+    }
+    if (pendingBooking) {
+      setPaymentSubmitting(true);
+      try { await startPayment(pendingBooking); }
+      catch (err) { setPaymentError(getApiErrorMessage(err)); }
+      finally { setPaymentSubmitting(false); }
+      return;
+    }
 
     // Agent bookings are placed for a selected customer, never the agent's
     // own session -- they submit straight to /bookings instead of the
@@ -798,10 +810,6 @@ export default function DynamicTourBookingPage() {
     if (isAgent) {
       if (!agentCustomerId) {
         setPaymentError("Select or create a customer first.");
-        return;
-      }
-      if (agentPaymentMethod === "card" && !isCardValid()) {
-        setPaymentError("Please enter valid card details.");
         return;
       }
       setPaymentSubmitting(true);
@@ -830,6 +838,7 @@ export default function DynamicTourBookingPage() {
           agreed_cancellation_policy: acceptTerms,
         });
         const booking = res.data?.data;
+        if (onlinePayment) { await startPayment(booking); return; }
         setBookingResult({
           code: booking?.booking_code || "",
           amount: String(booking?.final_amount ?? booking?.total_cost ?? "0"),
@@ -848,10 +857,6 @@ export default function DynamicTourBookingPage() {
       setPaymentError("Checkout session is not ready. Please refresh and try again.");
       return;
     }
-    if (!isCardValid()) {
-      setPaymentError("Please enter valid card details.");
-      return;
-    }
     setPaymentSubmitting(true);
     try {
       const res = await api.post(`/checkout/session/${sessionKey}/confirm`, {
@@ -863,12 +868,7 @@ export default function DynamicTourBookingPage() {
       if (typeof window !== "undefined" && tour) {
         window.sessionStorage.removeItem(`tourvaa_checkout_session_${tour.id}`);
       }
-      setBookingResult({
-        code: booking?.booking_code || "",
-        amount: String(booking?.final_amount ?? booking?.total_cost ?? "0"),
-        currency: booking?.currency || tourCurrency,
-      });
-      setStep(4);
+      await startPayment(booking);
     } catch (err) {
       setPaymentError(getApiErrorMessage(err));
     } finally {
@@ -1635,147 +1635,211 @@ export default function DynamicTourBookingPage() {
                   )}
 
                   {(!isAgent || agentPaymentMethod === "card") && (
-                  <div className="rounded-xl border border-slate-200 p-4 sm:p-5 space-y-4">
-                    <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-blue-600 bg-blue-50/60 px-3 py-1.5 text-xs font-bold text-blue-700"
-                      >
-                        <CreditCard size={14} />
-                        <span>Card</span>
-                      </button>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">Card number</label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={cardNumber}
-                          onChange={(e) => handleCardNumberChange(e.target.value)}
-                          placeholder="1234 4567 8910 1112"
-                          maxLength={19}
-                          className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
-                        />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-80">
-                          <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] font-black text-blue-900 border border-slate-200">
-                            VISA
-                          </span>
-                          <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] font-black text-rose-700 border border-slate-200">
-                            MC
-                          </span>
-                          <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] font-black text-cyan-800 border border-slate-200">
-                            AMEX
-                          </span>
+                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/40 p-4 sm:p-5 space-y-3.5">
+                      <div className="flex items-center justify-between gap-2 pb-1">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Payment method</p>
+                          <p className="text-sm font-black text-slate-900">Choose how you want to pay</p>
                         </div>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 border border-amber-200/80 shadow-2xs">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          Test mode
+                        </span>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Expiry date</label>
-                        <input
-                          type="text"
-                          value={cardExpiry}
-                          onChange={(e) => handleExpiryChange(e.target.value)}
-                          placeholder="MM / YY"
-                          maxLength={7}
-                          className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Security code</label>
-                        <div className="relative">
-                          <input
-                            type="password"
-                            value={cardCvc}
-                            onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                            placeholder="CVC"
-                            maxLength={4}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
-                          />
-                          <CreditCard
-                            size={14}
-                            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">Country/Territory</label>
-                      <div className="relative">
-                        <select
-                          value={cardCountry}
-                          onChange={(e) => setCardCountry(e.target.value)}
-                          className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs sm:text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500"
+                      <div className="space-y-3">
+                        {/* Option 1: Stripe (Credit/Debit Card) */}
+                        <div
+                          onClick={() => {
+                            if (!paymentSubmitting && gateways?.stripe_test) {
+                              setGateway("stripe");
+                            }
+                          }}
+                          className={`group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 ${
+                            gateway === "stripe"
+                              ? "border-[#635BFF] bg-white shadow-sm ring-4 ring-[#635BFF]/10"
+                              : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-2xs"
+                          } ${!gateways?.stripe_test || paymentSubmitting ? "opacity-60 cursor-not-allowed" : ""}`}
                         >
-                          <option>India</option>
-                          <option>United States</option>
-                          <option>United Kingdom</option>
-                          <option>Australia</option>
-                          <option>New Zealand</option>
-                          <option>Canada</option>
-                          <option>Singapore</option>
-                          <option>Germany</option>
-                        </select>
-                        <ChevronDown
-                          size={14}
-                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                        />
+                          <div className="flex items-start sm:items-center gap-3.5">
+                            {/* Custom Radio */}
+                            <div
+                              className={`mt-0.5 sm:mt-0 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                                gateway === "stripe"
+                                  ? "border-[#635BFF] bg-white"
+                                  : "border-slate-300 bg-white group-hover:border-slate-400"
+                              }`}
+                            >
+                              {gateway === "stripe" && (
+                                <span className="h-2.5 w-2.5 rounded-full bg-[#635BFF]" />
+                              )}
+                            </div>
+
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm font-bold text-slate-900">
+                                  Credit / Debit Card
+                                </span>
+                                <StripeBadge />
+                              </div>
+                              <p className="mt-0.5 text-xs text-slate-500">
+                                Safe checkout powered by Stripe
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Right side: Card badges + Sandbox status */}
+                          <div className="flex items-center gap-2.5 self-end sm:self-center">
+                            <div className="flex items-center gap-1">
+                              <VisaBadge className="h-5 w-auto drop-shadow-2xs" />
+                              <MastercardBadge className="h-5 w-auto drop-shadow-2xs" />
+                              <AmexBadge className="h-5 w-auto drop-shadow-2xs" />
+                            </div>
+                            <div className="pl-1 border-l border-slate-200">
+                              {gateways === null ? (
+                                <span className="text-[11px] text-slate-400">Loading...</span>
+                              ) : gateways.stripe_test ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  Sandbox
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
+                                  Setup required
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Option 2: PayPal */}
+                        <div
+                          onClick={() => {
+                            if (!paymentSubmitting && gateways?.paypal_test) {
+                              setGateway("paypal");
+                            }
+                          }}
+                          className={`group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 ${
+                            gateway === "paypal"
+                              ? "border-[#0070BA] bg-white shadow-sm ring-4 ring-[#0070BA]/10"
+                              : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-2xs"
+                          } ${!gateways?.paypal_test || paymentSubmitting ? "opacity-60 cursor-not-allowed" : ""}`}
+                        >
+                          <div className="flex items-start sm:items-center gap-3.5">
+                            {/* Custom Radio */}
+                            <div
+                              className={`mt-0.5 sm:mt-0 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                                gateway === "paypal"
+                                  ? "border-[#0070BA] bg-white"
+                                  : "border-slate-300 bg-white group-hover:border-slate-400"
+                              }`}
+                            >
+                              {gateway === "paypal" && (
+                                <span className="h-2.5 w-2.5 rounded-full bg-[#0070BA]" />
+                              )}
+                            </div>
+
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <PayPalLogo />
+                              </div>
+                              <p className="mt-0.5 text-xs text-slate-500">
+                                Pay via PayPal balance, bank account, or cards
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Right side: Sandbox status */}
+                          <div className="flex items-center gap-2.5 self-end sm:self-center">
+                            <div className="text-right">
+                              {gateways === null ? (
+                                <span className="text-[11px] text-slate-400">Loading...</span>
+                              ) : gateways.paypal_test ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  Sandbox
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
+                                  Setup required
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Helper notice */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-xs text-slate-500">
+                        <p className="flex items-center gap-1.5">
+                          <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+                          Continue to secure test checkout. No real money will be charged.
+                        </p>
+                        {pendingBooking && (
+                          <Link
+                            href={`/${isAgent ? "agent" : "customer"}/bookings/${pendingBooking.id}`}
+                            className="font-semibold text-blue-600 hover:underline shrink-0"
+                          >
+                            View pending booking &rarr;
+                          </Link>
+                        )}
                       </div>
                     </div>
-
-                    <p className="text-[10px] sm:text-[11px] text-slate-400 leading-relaxed pt-1">
-                      By providing your card information, you allow Tourvaa to charge your card for future payments
-                      in accordance with their terms.
-                    </p>
-                  </div>
                   )}
 
-                  <div className="space-y-2 pt-2">
-                    <label className="flex items-start gap-2.5 rounded-lg border border-slate-200 p-3 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 transition">
+                  <div className="space-y-2.5 pt-2">
+                    <label className={`flex items-start gap-3 rounded-xl border p-3.5 text-xs text-slate-700 cursor-pointer transition ${acceptTerms ? "border-slate-300 bg-slate-50/70" : "border-slate-200 bg-white hover:bg-slate-50"}`}>
                       <input
                         type="checkbox"
                         checked={acceptTerms}
                         onChange={(e) => setAcceptTerms(e.target.checked)}
-                        className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E4572E] focus:ring-[#E4572E] accent-[#E4572E]"
                       />
-                      <span>
+                      <span className="leading-relaxed">
                         I accept Tourvaa{" "}
-                        <Link href="/terms" className="text-blue-600 underline font-semibold">
+                        <Link href="/terms" className="text-blue-600 underline font-semibold hover:text-blue-700">
                           Terms &amp; Conditions
                         </Link>{" "}
                         and cancellation policy
                       </span>
                     </label>
 
-                    <label className="flex items-start gap-2.5 rounded-lg border border-slate-200 p-3 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 transition">
+                    <label className={`flex items-start gap-3 rounded-xl border p-3.5 text-xs text-slate-700 cursor-pointer transition ${subscribeNewsletter ? "border-slate-300 bg-slate-50/70" : "border-slate-200 bg-white hover:bg-slate-50"}`}>
                       <input
                         type="checkbox"
                         checked={subscribeNewsletter}
                         onChange={(e) => setSubscribeNewsletter(e.target.checked)}
-                        className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E4572E] focus:ring-[#E4572E] accent-[#E4572E]"
                       />
-                      <span>Subscribe to our newsletter for the latest offers &amp; new trips</span>
+                      <span className="leading-relaxed">Subscribe to our newsletter for the latest offers &amp; new trips</span>
                     </label>
                   </div>
 
                   {paymentError && (
-                    <p className="flex items-center gap-1.5 text-xs font-semibold text-rose-600">
-                      <CircleAlert size={13} />
-                      {paymentError}
-                    </p>
+                    <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-3.5 flex items-center gap-2 text-xs font-semibold text-rose-700">
+                      <CircleAlert size={15} className="shrink-0 text-rose-600" />
+                      <span>{paymentError}</span>
+                    </div>
                   )}
 
-                  <div className="pt-3">
+                  <div className="pt-2">
                     <button
                       type="button"
                       onClick={handleConfirmAndPay}
                       disabled={!acceptTerms || paymentSubmitting}
-                      className="w-full rounded-lg bg-[#E4572E] hover:bg-[#cf4b24] py-3.5 px-6 text-sm font-bold text-white shadow-sm transition active:scale-[0.99] disabled:opacity-50"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E4572E] hover:bg-[#cf4b24] py-4 px-6 text-sm font-black text-white shadow-md shadow-orange-600/15 transition-all duration-150 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {paymentSubmitting ? "Processing..." : "Confirm and pay"}
+                      {paymentSubmitting ? (
+                        <>
+                          <LoaderCircle size={17} className="animate-spin" />
+                          <span>Processing secure checkout...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock size={16} />
+                          <span>Confirm and pay</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LuPlus as Plus } from "react-icons/lu";
 import { useToast } from "@/hooks/useToast";
@@ -28,6 +28,7 @@ function statusCls(s: string) {
 export default function AffiliatePayoutsPage() {
   const toast = useToast();
   const { formatExact: money } = useCurrency();
+  const submitLock = useRef(false);
   const [payouts, setPayouts] = useState<AffiliatePayout[]>([]);
   const [methods, setMethods] = useState<AffiliatePayoutMethod[]>([]);
   const [summary, setSummary] = useState<AffiliateWalletSummary | null>(null);
@@ -66,7 +67,9 @@ export default function AffiliatePayoutsPage() {
 
   async function submitRequest(e: React.FormEvent) {
     e.preventDefault();
+    if (submitLock.current) return;
     if (!methodId) { toast.error("Select a payout method."); return; }
+    submitLock.current = true;
     setSaving(true);
     try {
       await requestPayout({ amount, payout_method_id: methodId as number });
@@ -77,6 +80,7 @@ export default function AffiliatePayoutsPage() {
     } catch (e) {
       toast.error(getApiErrorMessage(e) || "Could not request payout.");
     } finally {
+      submitLock.current = false;
       setSaving(false);
     }
   }

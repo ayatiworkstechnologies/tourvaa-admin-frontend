@@ -10,6 +10,7 @@ import { CustomerPageShell } from "@/components/customer/CustomerPage";
 import BookingMessageThread from "@/components/messaging/BookingMessageThread";
 import { useCurrency } from "@/hooks/useCurrency";
 import { formatCurrency } from "@/lib/utils/currency";
+import { StripeWordmark, PayPalLogo } from "@/components/common/PaymentLogos";
 
 type Traveller = {
   id: number;
@@ -279,20 +280,22 @@ function PayNowModal({
           {/* Stripe */}
           <button type="button" onClick={payWithStripe} disabled={!!loading || !gw?.stripe}
             title={!gw?.stripe ? "Stripe is not configured" : undefined}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-[#635BFF] bg-[#635BFF] px-5 py-3.5 text-sm font-bold text-white hover:bg-[#4f49cc] disabled:cursor-not-allowed disabled:opacity-40 transition-colors">
+            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border-2 border-[#635BFF] bg-[#635BFF] px-5 py-3.5 text-sm font-bold text-white hover:bg-[#4f49cc] disabled:cursor-not-allowed disabled:opacity-40 transition-colors shadow-sm">
             {loading === "stripe" ? <Loader2 size={18} className="animate-spin" /> : <CreditCard size={18} />}
-            Pay {formatCurrency(paymentAmount, currency)} with Stripe
+            <span>Pay {formatCurrency(paymentAmount, currency)} with</span>
+            <StripeWordmark className="h-4 w-auto text-white" />
             {!gw?.stripe && <span className="ml-auto text-[10px] font-bold opacity-70">Not configured</span>}
           </button>
 
           {/* PayPal */}
           <button type="button" onClick={payWithPayPal} disabled={!!loading || !gw?.paypal}
             title={!gw?.paypal ? "PayPal is not configured" : undefined}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#003087] bg-[#0070BA] px-5 py-3.5 text-sm font-bold text-white hover:bg-[#003087] disabled:cursor-not-allowed disabled:opacity-40 transition-colors">
-            {loading === "paypal" ? <Loader2 size={18} className="animate-spin" /> : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.59 3.025-2.566 6.082-8.558 6.082H9.825l-1.073 6.815h3.267c.524 0 .968-.382 1.05-.9l.983-6.228c.082-.518.526-.9 1.05-.9h1.876c4.298 0 7.664-1.747 8.647-6.797.237-1.218.17-2.227-.403-2.985z"/></svg>
-            )}
-            Pay {formatCurrency(paymentAmount, currency)} with PayPal
+            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border-2 border-[#003087] bg-[#0070BA] px-5 py-3.5 text-sm font-bold text-white hover:bg-[#003087] disabled:cursor-not-allowed disabled:opacity-40 transition-colors shadow-sm">
+            {loading === "paypal" ? <Loader2 size={18} className="animate-spin" /> : null}
+            <span>Pay {formatCurrency(paymentAmount, currency)} with</span>
+            <span className="inline-flex items-center rounded-md bg-white px-2 py-0.5 shadow-2xs">
+              <PayPalLogo className="h-3.5 w-auto" />
+            </span>
             {!gw?.paypal && <span className="ml-auto text-[10px] font-bold opacity-70">Not configured</span>}
           </button>
 

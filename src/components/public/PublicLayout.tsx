@@ -34,7 +34,7 @@ export default function PublicLayout({
           <DynamicFavicon />
           <div className="print:hidden"><AnnouncementBar /></div>
           <PublicHeader />
-          <div className="public-page-enter">{children}</div>
+          <div id="main-content" tabIndex={-1} className="public-page-enter">{children}</div>
           <div className="print:hidden"><PublicFooter /></div>
           <div className="print:hidden"><ChatWidget /></div>
           <div className="print:hidden"><CookieConsentBanner /></div>

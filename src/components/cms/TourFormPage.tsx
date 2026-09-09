@@ -184,6 +184,25 @@ export default function TourFormPage({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // New tours created by a supplier start pre-filled with that supplier's
+  // own country/currency (set on their profile - see CompanyInfoTab) rather
+  // than always defaulting to blank country / USD. The supplier can still
+  // change either field manually afterward.
+  useEffect(() => {
+    if (initialData || tourId || !isSupplier) return;
+    api.get("/suppliers/me").then((res) => {
+      const supplier = res.data?.data ?? {};
+      setForm((prev) => ({
+        ...prev,
+        country_id: prev.country_id || (supplier.country_id ? String(supplier.country_id) : prev.country_id),
+        currency: prev.currency === "USD" && supplier.currency ? supplier.currency : prev.currency,
+      }));
+    }).catch(() => {
+      // Non-fatal -- the form just keeps its blank/USD defaults.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // active_discount is an object (or null), not a plain string like every
   // other form field - normalizeTourForm would stringify it to
   // "[object Object]", so it's tracked separately and read straight off the

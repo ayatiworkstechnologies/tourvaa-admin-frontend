@@ -748,3 +748,6 @@ body {
   animation: shimmerWave 1.8s infinite;
 }
 
+
+.skip-link { position: fixed; top: 8px; left: 8px; z-index: 9999; transform: translateY(-200%); padding: 12px 18px; background: white; color: #0b1527; border: 2px solid #1478f2; border-radius: 8px; }
+.skip-link:focus { transform: translateY(0); }

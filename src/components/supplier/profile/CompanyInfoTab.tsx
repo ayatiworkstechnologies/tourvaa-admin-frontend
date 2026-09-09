@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/useToast";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
 import PhoneInput from "@/components/ui/PhoneInput";
+import CurrencySelect from "@/components/ui/CurrencySelect";
 import { combinePhone, splitPhone, validateMobile, mobileHelp, validatePassword, passwordHelp } from "@/lib/utils/validators";
 import { phoneCountryCodeValues } from "@/lib/constants/locationOptions";
 
@@ -34,6 +35,7 @@ type CompanyForm = {
   destinations_sold: string;
   country_id: string;
   city_id: string;
+  currency: string;
 };
 
 const BUSINESS_TYPES = ["dmc", "tour_operator", "transport_provider", "hotel", "activity_provider", "other"];
@@ -57,6 +59,7 @@ export default function CompanyInfoTab() {
     destinations_sold: "",
     country_id: "",
     city_id: "",
+    currency: "",
   });
   const [phoneCountryCode, setPhoneCountryCode] = useState("+91");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -103,6 +106,7 @@ export default function CompanyInfoTab() {
           destinations_sold: s.business_info?.destinations_sold || "",
           country_id: String(s.country_id || ""),
           city_id: String(s.city_id || ""),
+          currency: s.currency || "",
         });
       })
       .catch(() => setLoadError("Company details could not be loaded. Please retry before editing."));
@@ -132,6 +136,7 @@ export default function CompanyInfoTab() {
           years_in_operation: parseInt(form.years_in_operation) || 0,
           country_id: parseInt(form.country_id) || null,
           city_id: parseInt(form.city_id) || null,
+          currency: form.currency || null,
           business_info: {
             business_registration_number: form.business_registration_number,
             gst_tax_number: form.gst_tax_number,
@@ -286,11 +291,30 @@ export default function CompanyInfoTab() {
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country</span>
               <select value={form.country_id}
-                onChange={e => { setSelectedStateId(""); setForm(f => ({ ...f, country_id: e.target.value, city_id: "" })); }}
+                onChange={e => {
+                  const nextCountryId = e.target.value;
+                  setSelectedStateId("");
+                  setForm(f => {
+                    // Auto-fill currency from the newly selected country unless
+                    // the supplier already set one manually.
+                    const match = countries.find(c => String(c.id) === nextCountryId);
+                    return { ...f, country_id: nextCountryId, city_id: "", currency: f.currency || match?.currency_code || "" };
+                  });
+                }}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500">
                 <option value="">Select country</option>
                 {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+            </label>
+
+            {/* Currency */}
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Operating Currency</span>
+              <CurrencySelect
+                value={form.currency}
+                onChange={code => set("currency", code)}
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500"
+              />
             </label>
 
             {/* State */}

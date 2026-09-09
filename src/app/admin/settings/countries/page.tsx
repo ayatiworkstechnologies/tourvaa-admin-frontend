@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { LuSquarePen as Edit, LuGlobe as Globe, LuMapPin as MapPin, LuPlus as Plus } from "react-icons/lu";
+import { LuCoins as Coins, LuSquarePen as Edit, LuGlobe as Globe, LuMapPin as MapPin, LuPlus as Plus } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import StatusBadge from "@/components/operations/StatusBadge";
 import ActionModal from "@/components/operations/ActionModal";
@@ -10,6 +10,7 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { invalidateGeoStates, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
+import { invalidateCurrencyList } from "@/lib/utils/currency";
 import api from "@/lib/api/client";
 
 function singular(word: string): string {
@@ -98,6 +99,7 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
         toast.success(`${singular(title)} added`);
       }
       if (endpoint === "/states") invalidateGeoStates(Number(form.country_id) || undefined);
+      if (endpoint === "/currencies") invalidateCurrencyList();
       setOpen(false);
       await load();
     } catch {
@@ -111,6 +113,7 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
     const next = row.status === "active" ? "inactive" : "active";
     try {
       await api.patch(`${endpoint}/${row.id}/status`, { status: next });
+      if (endpoint === "/currencies") invalidateCurrencyList();
       toast.success("Status updated");
       await load();
     } catch {
@@ -247,6 +250,28 @@ function CountriesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boo
   );
 }
 
+// currencies tab
+function CurrenciesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolean }) {
+  return (
+    <CrudTab
+      title="Currencies"
+      endpoint="/currencies"
+      canCreate={canCreate}
+      canEdit={canEdit}
+      fields={[
+        { name: "name", label: "Currency name" },
+        { name: "code", label: "Currency code" },
+        { name: "symbol", label: "Symbol" },
+      ]}
+      columns={[
+        { key: "name", header: "Currency" },
+        { key: "code", header: "Code" },
+        { key: "symbol", header: "Symbol" },
+      ]}
+    />
+  );
+}
+
 // states tab
 function StatesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolean }) {
   const { countries } = useGeoCountries();
@@ -364,12 +389,13 @@ function CitiesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolea
 }
 
 // main page
-type Tab = "countries" | "states" | "cities";
+type Tab = "countries" | "states" | "cities" | "currencies";
 
 const TABS: { key: Tab; label: string; icon: typeof Globe }[] = [
   { key: "countries", label: "Countries", icon: Globe },
   { key: "states", label: "States", icon: MapPin },
   { key: "cities", label: "Cities", icon: MapPin },
+  { key: "currencies", label: "Currencies", icon: Coins },
 ];
 
 function CountriesPageContent() {
@@ -384,13 +410,18 @@ function CountriesPageContent() {
   const canEditCountries = hasPermission("countries.edit");
   const canCreateCities = hasPermission("cities.create");
   const canEditCities = hasPermission("cities.edit");
+  const canViewCurrencies = hasPermission("currencies.view");
+  const canCreateCurrencies = hasPermission("currencies.create");
+  const canEditCurrencies = hasPermission("currencies.edit");
+
+  const visibleTabs = TABS.filter((t) => t.key !== "currencies" || canViewCurrencies);
 
   return (
-    <ModuleWrapper title="Countries, States & Cities" requiredPermission="countries.view">
+    <ModuleWrapper title="Countries, States, Cities & Currencies" requiredPermission="countries.view">
       <div className="space-y-6">
         {/* Tab bar */}
         <div className="flex gap-1 rounded-xl border border-dash-border bg-dash-bg-muted p-1">
-          {TABS.map(({ key, label, icon: Icon }) => (
+          {visibleTabs.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               type="button"
@@ -411,6 +442,7 @@ function CountriesPageContent() {
         {activeTab === "countries" && <CountriesTab canCreate={canCreateCountries} canEdit={canEditCountries} />}
         {activeTab === "states" && <StatesTab canCreate={canCreateCountries} canEdit={canEditCountries} />}
         {activeTab === "cities" && <CitiesTab canCreate={canCreateCities} canEdit={canEditCities} />}
+        {activeTab === "currencies" && canViewCurrencies && <CurrenciesTab canCreate={canCreateCurrencies} canEdit={canEditCurrencies} />}
       </div>
     </ModuleWrapper>
   );
@@ -418,7 +450,7 @@ function CountriesPageContent() {
 
 export default function CountriesPage() {
   return (
-    <Suspense fallback={<ModuleWrapper title="Countries, States & Cities" requiredPermission="countries.view"><div /></ModuleWrapper>}>
+    <Suspense fallback={<ModuleWrapper title="Countries, States, Cities & Currencies" requiredPermission="countries.view"><div /></ModuleWrapper>}>
       <CountriesPageContent />
     </Suspense>
   );

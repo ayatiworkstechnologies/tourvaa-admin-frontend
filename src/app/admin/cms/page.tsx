@@ -71,6 +71,7 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
   "about-section": "The About Tourvaa banner shown on the homepage.",
   "blog-teaser": "The blog teaser banner shown on the homepage, linking through to the Blog.",
   "airport-transfer": "The Book Your Airport Transfers banner shown on the homepage.",
+  footer: "The public site footer's link sections (Support, Our Company, Login) - sections and links, each independently enable/disable-able and orderable.",
 };
 const TABS: TabConfig[] = [
   {
@@ -375,6 +376,318 @@ function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
           </>
         )}
       </section>
+    </div>
+  );
+}
+
+// ---- FooterPanel -----------------------------------------------------------
+// Manages the public site footer's link sections (Support / Our Company /
+// Login by default). Two-level shape (sections -> links) doesn't fit the
+// flat CmsTabPanel/TabConfig above, so this is a bespoke panel - it reuses
+// the same DataTable/ActionModal/status-toggle-pill conventions for
+// consistency. Public rendering lives in PublicFooter.tsx via GET /cms/footer.
+type FooterSectionRow = CmsItem & { title: string; sort_order: number; is_active: boolean };
+type FooterLinkRow = CmsItem & { section_id: number; label: string; url: string; open_in_new_tab: boolean; sort_order: number; is_active: boolean };
+
+function StatusTogglePill({ active, onToggle }: { active: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={active}
+      onClick={(e) => { e.stopPropagation(); onToggle(); }}
+      className={`group inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-bold transition-all ${
+        active ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+      }`}
+    >
+      <span className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${active ? "bg-emerald-500" : "bg-slate-300"}`}>
+        <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${active ? "translate-x-3" : "translate-x-0"}`} />
+      </span>
+      <span>{active ? "Active" : "Inactive"}</span>
+    </button>
+  );
+}
+
+function FooterLinksTable({ sectionId }: { sectionId: number }) {
+  const toast = useToast();
+  const [links, setLinks] = useState<FooterLinkRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<FooterLinkRow | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const fetchLinks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/cms/footer-links", { params: { section_id: sectionId, limit: 100 } });
+      setLinks(res.data?.items ?? []);
+    } catch {
+      toast.error("Could not load links.");
+    } finally {
+      setLoading(false);
+    }
+  }, [sectionId, toast]);
+
+  useEffect(() => { void fetchLinks(); }, [fetchLinks]);
+
+  const toggleActive = async (link: FooterLinkRow) => {
+    const nextState = !link.is_active;
+    setLinks((prev) => prev.map((l) => (l.id === link.id ? { ...l, is_active: nextState } : l)));
+    try {
+      await api.put(`/cms/footer-links/${link.id}`, { ...link, is_active: nextState });
+    } catch {
+      setLinks((prev) => prev.map((l) => (l.id === link.id ? { ...l, is_active: link.is_active } : l)));
+      toast.error("Could not update status.");
+    }
+  };
+
+  const deleteLink = async (id: number) => {
+    if (!window.confirm("Delete this link?")) return;
+    try {
+      await api.delete(`/cms/footer-links/${id}`);
+      toast.success("Link deleted.");
+      setLinks((prev) => prev.filter((l) => l.id !== id));
+    } catch {
+      toast.error("Could not delete link.");
+    }
+  };
+
+  const save = async (payload: Record<string, string | number>) => {
+    setSaving(true);
+    try {
+      const body = {
+        section_id: sectionId,
+        label: String(payload.label ?? ""),
+        url: String(payload.url ?? ""),
+        open_in_new_tab: String(payload.open_in_new_tab) === "yes",
+        sort_order: Number(payload.sort_order || 0),
+      };
+      if (editing) {
+        await api.put(`/cms/footer-links/${editing.id}`, body);
+        toast.success("Link updated.");
+      } else {
+        await api.post("/cms/footer-links", body);
+        toast.success("Link added.");
+      }
+      setShowForm(false);
+      setEditing(null);
+      void fetchLinks();
+    } catch {
+      toast.error("Could not save link.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3 rounded-xl border border-dash-border bg-dash-bg p-4">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-bold text-dash-text">Links</h4>
+        <button
+          type="button"
+          onClick={() => { setEditing(null); setShowForm(true); }}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[#0284C7] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0369A1]"
+        >
+          <Plus size={13} /> Add Link
+        </button>
+      </div>
+
+      {loading ? (
+        <p className="text-xs text-dash-muted">Loading...</p>
+      ) : links.length === 0 ? (
+        <p className="text-xs text-dash-muted">No links in this section yet.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-dash-border bg-white">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-dash-bg-muted text-dash-muted">
+              <tr>
+                <th className="px-3 py-2 font-bold">Label</th>
+                <th className="px-3 py-2 font-bold">URL</th>
+                <th className="px-3 py-2 font-bold">New Tab</th>
+                <th className="px-3 py-2 font-bold">Sort</th>
+                <th className="px-3 py-2 font-bold">Status</th>
+                <th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {links.map((link) => (
+                <tr key={link.id} className="border-t border-dash-bg-muted">
+                  <td className="px-3 py-2 text-dash-body">{link.label}</td>
+                  <td className="px-3 py-2 text-dash-body">{link.url}</td>
+                  <td className="px-3 py-2 text-dash-body">{link.open_in_new_tab ? "Yes" : "No"}</td>
+                  <td className="px-3 py-2 text-dash-body">{link.sort_order}</td>
+                  <td className="px-3 py-2"><StatusTogglePill active={link.is_active} onToggle={() => void toggleActive(link)} /></td>
+                  <td className="px-3 py-2 text-right">
+                    <button type="button" title="Edit" onClick={() => { setEditing(link); setShowForm(true); }} className="rounded-lg p-1.5 text-dash-brand hover:bg-[#F3F8FC]">
+                      <Pencil size={13} />
+                    </button>
+                    <button type="button" title="Delete" onClick={() => void deleteLink(link.id)} className="rounded-lg p-1.5 text-red-600 hover:bg-red-50">
+                      <Trash2 size={13} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <ActionModal
+        open={showForm}
+        title={editing ? "Edit Link" : "Add Link"}
+        saving={saving}
+        onClose={() => { setShowForm(false); setEditing(null); }}
+        onSubmit={save}
+        initialValues={editing ? { label: editing.label, url: editing.url, open_in_new_tab: editing.open_in_new_tab ? "yes" : "no", sort_order: editing.sort_order } : { open_in_new_tab: "no", sort_order: 0 }}
+        fields={[
+          { name: "label", label: "Label", required: true },
+          { name: "url", label: "URL", required: true },
+          { name: "open_in_new_tab", label: "Open in new tab?", type: "select", options: [{ label: "No", value: "no" }, { label: "Yes", value: "yes" }] },
+          { name: "sort_order", label: "Sort Order", type: "number" },
+        ]}
+      />
+    </div>
+  );
+}
+
+function FooterPanel() {
+  const toast = useToast();
+  const [sections, setSections] = useState<FooterSectionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<FooterSectionRow | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const fetchSections = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/cms/footer-sections", { params: { limit: 100 } });
+      setSections(res.data?.items ?? []);
+    } catch {
+      toast.error("Could not load footer sections.");
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => { void fetchSections(); }, [fetchSections]);
+
+  const toggleActive = async (section: FooterSectionRow) => {
+    const nextState = !section.is_active;
+    setSections((prev) => prev.map((s) => (s.id === section.id ? { ...s, is_active: nextState } : s)));
+    try {
+      await api.put(`/cms/footer-sections/${section.id}`, { ...section, is_active: nextState });
+    } catch {
+      setSections((prev) => prev.map((s) => (s.id === section.id ? { ...s, is_active: section.is_active } : s)));
+      toast.error("Could not update status.");
+    }
+  };
+
+  const deleteSection = async (id: number) => {
+    if (!window.confirm("Delete this section? All of its links will be deleted too.")) return;
+    try {
+      await api.delete(`/cms/footer-sections/${id}`);
+      toast.success("Footer section deleted.");
+      setSections((prev) => prev.filter((s) => s.id !== id));
+    } catch {
+      toast.error("Could not delete section.");
+    }
+  };
+
+  const save = async (payload: Record<string, string | number>) => {
+    setSaving(true);
+    try {
+      const body = { title: String(payload.title ?? ""), sort_order: Number(payload.sort_order || 0) };
+      if (editing) {
+        await api.put(`/cms/footer-sections/${editing.id}`, { ...body, is_active: editing.is_active });
+        toast.success("Section updated.");
+      } else {
+        await api.post("/cms/footer-sections", body);
+        toast.success("Section added.");
+      }
+      setShowForm(false);
+      setEditing(null);
+      void fetchSections();
+    } catch {
+      toast.error("Could not save section.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const columns: DataTableColumn<FooterSectionRow>[] = [
+    { key: "title", header: "Section Title" },
+    { key: "sort_order", header: "Sort Order" },
+    { key: "is_active", header: "Status", render: (s) => <StatusTogglePill active={s.is_active} onToggle={() => void toggleActive(s)} /> },
+    {
+      key: "_actions",
+      header: "",
+      render: (s) => (
+        <div className="flex items-center justify-end gap-1">
+          <button type="button" title="Manage links" onClick={() => setExpandedId(expandedId === s.id ? null : s.id)} className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#0284C7] hover:bg-[#EDF5FF]">
+            {expandedId === s.id ? "Hide links" : "Manage links"}
+          </button>
+          <button type="button" title="Edit" onClick={() => { setEditing(s); setShowForm(true); }} className="rounded-lg p-1.5 text-dash-brand hover:bg-[#F3F8FC]">
+            <Pencil size={15} />
+          </button>
+          <button type="button" title="Delete" onClick={() => void deleteSection(s.id)} className="rounded-lg p-1.5 text-red-600 hover:bg-red-50">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded-xl border border-dash-border bg-white p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-dash-text">Footer</h3>
+            <p className="mt-1 text-sm text-dash-muted">Manage the public site footer&apos;s link sections (e.g. Support, Our Company, Login) - add sections, edit titles, add/edit links, enable or disable either, and control display order. Changes reflect on the live site immediately.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setEditing(null); setShowForm(true); }}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#0284C7] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0369A1]"
+          >
+            <Plus size={15} /> Add Section
+          </button>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-dash-border bg-white p-3">
+        <DataTable
+          ariaLabel="Footer Sections"
+          columns={columns}
+          rows={sections}
+          loading={loading}
+          emptyTitle="No footer sections yet."
+          renderExpandedRow={(section) =>
+            expandedId === section.id ? (
+              <tr>
+                <td colSpan={columns.length} className="bg-dash-bg-muted px-5 py-4">
+                  <FooterLinksTable sectionId={section.id} />
+                </td>
+              </tr>
+            ) : null
+          }
+        />
+      </section>
+
+      <ActionModal
+        open={showForm}
+        title={editing ? "Edit Section" : "Add Section"}
+        saving={saving}
+        onClose={() => { setShowForm(false); setEditing(null); }}
+        onSubmit={save}
+        initialValues={editing ? { title: editing.title, sort_order: editing.sort_order } : { sort_order: 0 }}
+        fields={[
+          { name: "title", label: "Section Title", required: true },
+          { name: "sort_order", label: "Sort Order", type: "number" },
+        ]}
+      />
     </div>
   );
 }
@@ -886,16 +1199,20 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
 }
 
 // ---- Main Page -----------------------------------------------------------
+const FOOTER_TAB = { key: "footer", label: "Footer" };
+
 const ALL_TABS: { key: string; label: string }[] = [
   ...TABS.map((t) => ({ key: t.key, label: t.label })),
   ...CONTENT_BLOCK_TABS.map((t) => ({ key: t.key, label: t.label })),
+  FOOTER_TAB,
 ];
 
 export default function CmsPage() {
   const [activeTab, setActiveTab] = useState(ALL_TABS[0].key);
   const currentListTab = TABS.find(t => t.key === activeTab);
   const currentBlockTab = CONTENT_BLOCK_TABS.find(t => t.key === activeTab);
-  const currentLabel = currentListTab?.label ?? currentBlockTab?.label ?? ALL_TABS[0].label;
+  const isFooterTab = activeTab === FOOTER_TAB.key;
+  const currentLabel = currentListTab?.label ?? currentBlockTab?.label ?? (isFooterTab ? FOOTER_TAB.label : ALL_TABS[0].label);
 
   return (
     <ModuleWrapper title="CMS Management" requiredPermission="website_cms.view">
@@ -958,6 +1275,8 @@ export default function CmsPage() {
           </div>
         ) : currentBlockTab ? (
           <ContentBlockPanel key={currentBlockTab.key} tab={currentBlockTab} />
+        ) : isFooterTab ? (
+          <FooterPanel />
         ) : null}
       </div>
     </ModuleWrapper>

@@ -3,11 +3,11 @@
 /* eslint-disable @next/next/no-img-element */
 
 import type { CSSProperties, FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { LuArrowRight as ArrowRight, LuSparkles as Sparkles } from "react-icons/lu";
-import { CmsBlog, fetchPublicBlogs, subscribeNewsletter } from "@/lib/api/publicClient";
-import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { LuArrowRight as ArrowRight } from "react-icons/lu";
+import { subscribeNewsletter } from "@/lib/api/publicClient";
+
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import AboutReveal from "@/components/public/AboutReveal";
 

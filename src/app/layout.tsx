@@ -3,6 +3,7 @@ import "@fontsource-variable/onest";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import "./globals.css";
+import SkipToContent from "@/components/ui/SkipToContent";
 import { DEFAULT_DESCRIPTION, DEFAULT_SOCIAL_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo/pageMetadata";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" data-scroll-behavior="smooth">
       <body suppressHydrationWarning>
+        <SkipToContent />
         <ToastProvider>
           <AuthProvider>{children}</AuthProvider>
         </ToastProvider>

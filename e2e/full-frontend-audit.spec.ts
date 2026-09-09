@@ -40,14 +40,14 @@ test.describe("Full Frontend Discovery and Error Sniffing", () => {
       page.on("response", (res) => {
         const url = res.url();
         // Ignore external trackers, fonts, or third-party ads if any
-        if (url.includes("localhost:3000") && res.status() >= 400) {
+        if (new URL(url).origin === new URL(page.url()).origin && res.status() >= 400) {
           failedResponses.push(`${res.status()} on ${url}`);
         }
       });
 
       // Navigate to route on desktop
       await page.setViewportSize({ width: 1280, height: 800 });
-      await page.goto(`http://localhost:3000${route.path}`, { waitUntil: "domcontentloaded" });
+      await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(600);
 
       // Verify no unhandled runtime crashes

@@ -2,23 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  LuCalendarDays as Calendar,
-  LuCheck as Check,
-  LuChevronDown as ChevronDown,
-  LuChevronLeft as ChevronLeft,
-  LuChevronRight as ChevronRight,
-  LuCompass as Compass,
-  LuMapPin as MapPin,
-  LuMinus as Minus,
-  LuPlus as Plus,
-  LuSearch as Search,
-  LuSparkles as Sparkles,
-  LuSun as Sun,
-  LuUsers as Users,
-  LuX as X,
-  LuArrowRight as ArrowRight,
-} from "react-icons/lu";
+import { LuCalendarDays as Calendar, LuCheck as Check, LuChevronDown as ChevronDown, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuCompass as Compass, LuMinus as Minus, LuPlus as Plus, LuSearch as Search, LuSparkles as Sparkles, LuSun as Sun, LuX as X, LuArrowRight as ArrowRight } from "react-icons/lu";
 import FlagIcon from "@/components/ui/FlagIcon";
 import { fetchViatorRedirectUrl } from "@/lib/api/publicClient";
 

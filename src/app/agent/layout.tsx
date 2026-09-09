@@ -145,7 +145,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
           onMenuClick={() => setSidebarOpen(true)}
           theme="navy"
         />
-        <main className="min-w-0 flex-1">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1">{children}</main>
       </div>
     </div>
   );

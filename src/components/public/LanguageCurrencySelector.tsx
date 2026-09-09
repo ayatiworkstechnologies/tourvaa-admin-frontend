@@ -59,7 +59,6 @@ type Tab = "language" | "currency";
 
 export default function LanguageCurrencySelector({
   inverse = false,
-  plain = false,
 }: {
   inverse?: boolean;
   plain?: boolean;

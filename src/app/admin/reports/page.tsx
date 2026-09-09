@@ -306,7 +306,7 @@ async function fetchReportRows(reportType: ReportType, periodParams: { period: R
     case "cancellation-refund-report": return (await getCancellationRefundReport(periodParams)) as unknown as ReportRow[];
     case "sales-revenue-report": {
       const report = await getSalesRevenueReport(periodParams);
-      const { time_series: _timeSeries, ...totals } = report;
+      const totals = Object.fromEntries(Object.entries(report).filter(([key]) => key !== "time_series"));
       return [totals as unknown as ReportRow];
     }
     case "summary":

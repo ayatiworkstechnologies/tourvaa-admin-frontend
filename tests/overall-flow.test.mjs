@@ -58,7 +58,13 @@ check("public layout loads settings once for all public contact surfaces", publi
 check("public contact surfaces use configured support details", publicContactSources.includes("usePublicSettings") || publicContactSources.includes("ConfiguredSupportEmail"));
 check("public contact surfaces contain no hardcoded Tourvaa contact links", !publicContactSources.includes("mailto:hello@tourvaa.com") && !publicContactSources.includes("mailto:support@tourvaa.com") && !publicContactSources.includes("tel:+919876543210"));
 check("legacy seeded contact placeholders are suppressed", publicSettings.includes("PLACEHOLDER_EMAILS") && publicSettings.includes("PLACEHOLDER_PHONES") && publicSettings.includes("PLACEHOLDER_ADDRESSES"));
-check("all public pages use one canonical footer link set", ["const supportLinks", "const companyLinks", "const loginLinks"].every((decl) => publicFooter.includes(decl)) && ["supportLinks.map", "companyLinks.map", "loginLinks.map"].every((usage) => publicFooter.includes(usage)) && !publicFooter.includes("aboutSupportLinks") && !publicFooter.includes("aboutCompanyLinks") && !publicFooter.includes("aboutLoginLinks"));
+// Footer link sections (Support/Our Company/Login) moved from hardcoded
+// per-component arrays to admin-CMS-managed data (see Admin > CMS > Footer,
+// GET /cms/footer) so admins can add/edit/reorder/enable-disable sections
+// and links without a code change - PublicFooter fetches and renders them
+// dynamically, with the old hardcoded content kept only as an offline
+// fallback if that fetch fails.
+check("public footer fetches its link sections from the CMS", publicFooter.includes("fetchFooterSections") && publicFooter.includes("footerSections.map") && !publicFooter.includes("aboutSupportLinks") && !publicFooter.includes("aboutCompanyLinks") && !publicFooter.includes("aboutLoginLinks"));
 check("partner landing pages reuse the canonical public footer", portalPublicFooter.includes("<PublicFooter />") && portalPublicFooter.includes("<PublicSettingsProvider>") && portalPublicFooter.includes("<TravelStoreProvider>"));
 
 const tracker = read("src/components/public/AffiliateReferralTracker.tsx");

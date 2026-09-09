@@ -253,7 +253,8 @@ function readPending(key: string): PendingRegistration | null {
 }
 function writePending(key: string, v: PendingRegistration | null) {
   if (typeof window === "undefined") return;
-  v ? window.sessionStorage.setItem(key, JSON.stringify(v)) : window.sessionStorage.removeItem(key);
+  if (v) window.sessionStorage.setItem(key, JSON.stringify(v));
+  else window.sessionStorage.removeItem(key);
 }
 function secondsUntil(ts: number) { return Math.max(0, Math.ceil((ts - Date.now()) / 1000)); }
 

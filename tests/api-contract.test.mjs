@@ -22,7 +22,10 @@ const registryScript = [
   "schema = app.openapi()",
   "print(json.dumps([{'path': path, 'methods': [method.upper() for method in operations.keys()]} for path, operations in schema['paths'].items()]))",
 ].join("; ");
-const registryResult = spawnSync("python", ["-c", registryScript], { cwd: backendRoot, encoding: "utf8" });
+const python = process.env.TOURVAA_TEST_PYTHON || [
+  "venv/Scripts/python.exe", ".venv/Scripts/python.exe", "venv/bin/python", ".venv/bin/python",
+].map((path) => resolve(backendRoot, path)).find(existsSync) || "python";
+const registryResult = spawnSync(python, ["-c", registryScript], { cwd: backendRoot, encoding: "utf8" });
 if (registryResult.status !== 0) {
   console.error(registryResult.stderr || "Could not load the FastAPI route registry");
   process.exit(1);

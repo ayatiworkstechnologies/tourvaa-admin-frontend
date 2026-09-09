@@ -13,31 +13,45 @@ import {
 } from "react-icons/fa6";
 import { LuChevronDown as ChevronDown } from "react-icons/lu";
 import { useCurrency } from "@/hooks/useCurrency";
-import { PublicCountry, fetchPublicCountries } from "@/lib/api/publicClient";
+import { CmsFooterSection, PublicCountry, fetchFooterSections, fetchPublicCountries } from "@/lib/api/publicClient";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 
-const supportLinks = [
-  ["Contact", "/contact"],
-  ["Legal Notice", "/terms"],
-  ["Privacy Policy.", "/privacy-policy"],
-  ["General Terms and Conditions", "/terms"],
-  ["Plan Your Trip", "/contact"],
-] as const;
-
-const companyLinks = [
-  ["About us", "/about"],
-  ["Blog", "/blogs"],
-  ["Explore Tourvaa", "/destinations"],
-  ["Tours", "/tours"],
-  ["Traveller's Choice", "/tours?sort=rating_desc"],
-] as const;
-
-const loginLinks = [
-  ["Travellers Login", "/login"],
-  ["Agents login", "/agent-portal/login"],
-  ["Affiliate login", "/affiliate-portal/login"],
-  ["Supplier login", "/supplier-portal/login"],
-] as const;
+// Used only if the CMS-managed /cms/footer fetch fails or returns nothing,
+// so a backend hiccup never blanks the footer - see the useEffect below.
+const FALLBACK_FOOTER_SECTIONS: CmsFooterSection[] = [
+  {
+    id: -1,
+    title: "Support",
+    links: [
+      { id: -1, label: "Contact", url: "/contact", open_in_new_tab: false },
+      { id: -2, label: "Legal Notice", url: "/terms", open_in_new_tab: false },
+      { id: -3, label: "Privacy Policy.", url: "/privacy-policy", open_in_new_tab: false },
+      { id: -4, label: "General Terms and Conditions", url: "/terms", open_in_new_tab: false },
+      { id: -5, label: "Plan Your Trip", url: "/contact", open_in_new_tab: false },
+    ],
+  },
+  {
+    id: -2,
+    title: "Our Company",
+    links: [
+      { id: -6, label: "About us", url: "/about", open_in_new_tab: false },
+      { id: -7, label: "Blog", url: "/blogs", open_in_new_tab: false },
+      { id: -8, label: "Explore Tourvaa", url: "/destinations", open_in_new_tab: false },
+      { id: -9, label: "Tours", url: "/tours", open_in_new_tab: false },
+      { id: -10, label: "Traveller's Choice", url: "/tours?sort=rating_desc", open_in_new_tab: false },
+    ],
+  },
+  {
+    id: -3,
+    title: "Login",
+    links: [
+      { id: -11, label: "Travellers Login", url: "/login", open_in_new_tab: false },
+      { id: -12, label: "Agents login", url: "/agent-portal/login", open_in_new_tab: false },
+      { id: -13, label: "Affiliate login", url: "/affiliate-portal/login", open_in_new_tab: false },
+      { id: -14, label: "Supplier login", url: "/supplier-portal/login", open_in_new_tab: false },
+    ],
+  },
+];
 
 export default function PublicFooter() {
   const router = useRouter();
@@ -48,6 +62,7 @@ export default function PublicFooter() {
   const [country, setCountry] = useState("INDIA");
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
+  const [footerSections, setFooterSections] = useState<CmsFooterSection[]>(FALLBACK_FOOTER_SECTIONS);
 
   const currencyRef = useRef<HTMLDivElement>(null);
   const countryRef = useRef<HTMLDivElement>(null);
@@ -57,6 +72,20 @@ export default function PublicFooter() {
     fetchPublicCountries()
       .then((items) => {
         if (active) setCountries(items);
+      })
+      .catch(() => {
+        /* Fixed fallback list remains available. */
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetchFooterSections()
+      .then((sections) => {
+        if (active && sections.length > 0) setFooterSections(sections);
       })
       .catch(() => {
         /* Fixed fallback list remains available. */
@@ -103,65 +132,29 @@ export default function PublicFooter() {
         <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8">
           <div className="rounded-2xl sm:rounded-3xl bg-pub-primary text-white p-8 sm:p-10 lg:p-12 shadow-xl">
             <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-[1.1fr_1.1fr_1fr_1.5fr]">
-              {/* Column 1: Support */}
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-5 tracking-tight">
-                  Support
-                </h3>
-                <ul className="space-y-3">
-                  {supportLinks.map(([label, href]) => (
-                    <li key={label}>
-                      <Link
-                        href={href}
-                        className="group flex items-center gap-2 text-xs sm:text-sm text-slate-300 transition-colors hover:text-white"
-                      >
-                        <span className="text-slate-400 group-hover:text-white transition-colors">•</span>
-                        <span>{label}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Column 2: Our Company */}
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-5 tracking-tight">
-                  Our Company
-                </h3>
-                <ul className="space-y-3">
-                  {companyLinks.map(([label, href]) => (
-                    <li key={label}>
-                      <Link
-                        href={href}
-                        className="group flex items-center gap-2 text-xs sm:text-sm text-slate-300 transition-colors hover:text-white"
-                      >
-                        <span className="text-slate-400 group-hover:text-white transition-colors">•</span>
-                        <span>{label}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Column 3: Login */}
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-5 tracking-tight">
-                  Login
-                </h3>
-                <ul className="space-y-3">
-                  {loginLinks.map(([label, href]) => (
-                    <li key={label}>
-                      <Link
-                        href={href}
-                        className="group flex items-center gap-2 text-xs sm:text-sm text-slate-300 transition-colors hover:text-white"
-                      >
-                        <span className="text-slate-400 group-hover:text-white transition-colors">•</span>
-                        <span>{label}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {/* Columns 1-3: CMS-managed footer sections (Support / Our Company / Login by default - see Admin > CMS > Footer) */}
+              {footerSections.map((section) => (
+                <div key={section.id}>
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-5 tracking-tight">
+                    {section.title}
+                  </h3>
+                  <ul className="space-y-3">
+                    {section.links.map((link) => (
+                      <li key={link.id}>
+                        <Link
+                          href={link.url}
+                          target={link.open_in_new_tab ? "_blank" : undefined}
+                          rel={link.open_in_new_tab ? "noreferrer" : undefined}
+                          className="group flex items-center gap-2 text-xs sm:text-sm text-slate-300 transition-colors hover:text-white"
+                        >
+                          <span className="text-slate-400 group-hover:text-white transition-colors">•</span>
+                          <span>{link.label}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
 
               {/* Column 4: Brand & Utilities */}
               <div className="flex flex-col justify-between">

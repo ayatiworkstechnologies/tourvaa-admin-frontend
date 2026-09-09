@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import { LuX as X } from "react-icons/lu";
 import { LuPlus as Plus } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
@@ -14,6 +15,7 @@ const PAGE_SIZE = 10;
 export default function InvoicesPage() {
   const toast = useToast();
   const { formatExact: format } = useCurrency();
+  const submitLock = useRef(false);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalInvoices, setTotalInvoices] = useState(0);
@@ -48,11 +50,13 @@ export default function InvoicesPage() {
 
   async function handleGenerate(event: React.FormEvent) {
     event.preventDefault();
+    if (submitLock.current) return;
     const bookingId = Number(genBookingId);
     if (!Number.isInteger(bookingId) || bookingId <= 0) {
       setGenerateError("Enter a valid booking ID.");
       return;
     }
+    submitLock.current = true;
     setGenerating(true);
     setGenerateError("");
     try {
@@ -72,6 +76,7 @@ export default function InvoicesPage() {
     } catch (error) {
       setGenerateError(invoiceActionError(error, "Invoice generation failed. Check the booking ID and try again."));
     } finally {
+      submitLock.current = false;
       setGenerating(false);
     }
   }
@@ -216,6 +221,19 @@ export default function InvoicesPage() {
           </button>
         </div>
 
+        {generateOpen && (
+          <form onSubmit={handleGenerate} aria-label="Generate invoice" className="space-y-4 rounded-xl border border-dash-border bg-white p-5">
+            <div className="flex justify-between"><h2 className="font-bold">Generate invoice</h2><button type="button" aria-label="Close invoice form" disabled={generating} onClick={() => setGenerateOpen(false)}><X size={18} /></button></div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label>Booking ID<input className="block w-full rounded border p-2" type="number" min="1" required value={genBookingId} onChange={e => setGenBookingId(e.target.value)} /></label>
+              <label>Payment ID (optional)<input className="block w-full rounded border p-2" type="number" min="1" value={genPaymentId} onChange={e => setGenPaymentId(e.target.value)} /></label>
+              <label>Type<select className="block w-full rounded border p-2" value={genInvoiceType} onChange={e => setGenInvoiceType(e.target.value)}><option value="auto">Automatic</option><option value="full_payment">Full</option><option value="partial_payment">Partial</option></select></label>
+              <label>GST rate (decimal)<input className="block w-full rounded border p-2" type="number" min="0" max="1" step="0.01" required value={genGstRate} onChange={e => setGenGstRate(e.target.value)} /></label>
+            </div>
+            {generateError && <p role="alert" className="text-red-600">{generateError}</p>}
+            <button disabled={generating} className="rounded-lg bg-dash-brand px-4 py-2 text-white disabled:opacity-50">{generating ? "Generating..." : "Generate"}</button>
+          </form>
+        )}
         <DataTable
           ariaLabel="Invoices"
           columns={invoiceColumns}

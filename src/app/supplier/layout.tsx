@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuBanknote as Banknote, LuBell as Bell, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCompass as Compass, LuFileCheck2 as FileCheck, LuHandCoins as HandCoins, LuLayoutDashboard as LayoutDashboard, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
+import { LuBell as Bell, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCompass as Compass, LuFileCheck2 as FileCheck, LuHandCoins as HandCoins, LuLayoutDashboard as LayoutDashboard, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
@@ -187,7 +187,7 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
           onMenuClick={() => setSidebarOpen(true)}
           theme="emerald"
         />
-        <main className="min-w-0 flex-1">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1">{children}</main>
       </div>
       {approvalNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true" aria-labelledby="supplier-approval-title">

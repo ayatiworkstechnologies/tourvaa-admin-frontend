@@ -14,10 +14,10 @@ export default defineConfig({
     video: "off",
   },
   projects: [
-    { name: "Desktop Edge", use: { ...devices["Desktop Chrome"], channel: "msedge" } },
+    { name: "Desktop Edge", use: { ...devices["Desktop Chrome"], ...(process.env.CI ? {} : { channel: "msedge" }) } },
   ],
   webServer: {
-    command: "npm run dev",
+    command: process.env.CI || process.env.PLAYWRIGHT_PRODUCTION === "1" ? "npm run start" : "npm run dev",
     url: process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

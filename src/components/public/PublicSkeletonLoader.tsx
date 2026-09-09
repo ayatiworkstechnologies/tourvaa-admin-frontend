@@ -1,11 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import {
-  LuCompass as Compass,
-  LuSearch as Search,
-  LuRefreshCw as RefreshCw,
-  LuFolderOpen as FolderOpen,
-} from "react-icons/lu";
+import { LuCompass as Compass, LuRefreshCw as RefreshCw, LuFolderOpen as FolderOpen } from "react-icons/lu";
 
 // Single Tour Card Shimmer Skeleton
 export function PublicTourCardSkeleton() {

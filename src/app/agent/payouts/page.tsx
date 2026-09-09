@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { LuCircleAlert as AlertCircle, LuCircleDollarSign as Banknote, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
@@ -42,6 +42,7 @@ const labelCls = "block text-xs font-bold text-dash-body mb-1.5";
 
 export default function AgentPayoutsPage() {
   const { format: money } = useCurrency();
+  const submitLock = useRef(false);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +83,7 @@ export default function AgentPayoutsPage() {
     .reduce((sum, entry) => sum + Number(entry.amount_pending || 0), 0), [ledgers, currency]);
 
   const handleRequestPayout = async () => {
+    if (submitLock.current) return;
     if (!amount || Number(amount) <= 0) {
       setFormError("Please enter a valid amount.");
       return;
@@ -90,6 +92,7 @@ export default function AgentPayoutsPage() {
       setFormError(`Requested amount cannot exceed the available balance of ${money(availableBalance, currency)}.`);
       return;
     }
+    submitLock.current = true;
     setSubmitting(true);
     setFormError("");
     setFormSuccess(false);
@@ -114,6 +117,7 @@ export default function AgentPayoutsPage() {
         "Failed to request payout.";
       setFormError(typeof msg === "string" ? msg : "Failed to request payout.");
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   };

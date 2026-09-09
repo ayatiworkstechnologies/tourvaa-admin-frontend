@@ -47,75 +47,6 @@ type ApiBooking = {
   amount_pending?: string | number;
 };
 
-const DEFAULT_BOOKINGS: Booking[] = [
-  {
-    id: 1,
-    booking_code: "TRV-2847",
-    tour_name: "Bali Island Retreat – 5D/4N",
-    booking_date: "Nov 12, 2025",
-    travel_dates: "Jan 15 – Jan 19, 2026",
-    guests: "2 Adults",
-    status: "Confirmed",
-    total_amount: "$1,240",
-    image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: 2,
-    booking_code: "TRV-1982",
-    tour_name: "Parisian Romance & Art Experience",
-    booking_date: "Oct 05, 2025",
-    travel_dates: "Dec 20 – Dec 24, 2025",
-    guests: "2 Adults",
-    status: "Completed",
-    total_amount: "$1,850",
-    image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: 3,
-    booking_code: "TRV-3041",
-    tour_name: "Tokyo Neon Lights & Mt. Fuji – 7D/6N",
-    booking_date: "Dec 01, 2025",
-    travel_dates: "Mar 10 – Mar 16, 2026",
-    guests: "1 Adult",
-    status: "Upcoming",
-    total_amount: "$2,100",
-    image: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: 4,
-    booking_code: "TRV-2735",
-    tour_name: "Santorini Sunset Wonders & Cruise",
-    booking_date: "Sep 18, 2025",
-    travel_dates: "Jun 05 – Jun 10, 2026",
-    guests: "4 Adults",
-    status: "Confirmed",
-    total_amount: "$3,400",
-    image: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: 5,
-    booking_code: "TRV-1124",
-    tour_name: "Swiss Alps Winter Adventure – 6D/5N",
-    booking_date: "Jul 30, 2025",
-    travel_dates: "Jan 05 – Jan 10, 2026",
-    guests: "2 Adults, 1 Child",
-    status: "Cancelled",
-    total_amount: "$2,890",
-    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: 6,
-    booking_code: "TRV-4412",
-    tour_name: "Maldives Private Island Escape",
-    booking_date: "Dec 15, 2025",
-    travel_dates: "Jul 12 – Jul 18, 2026",
-    guests: "2 Adults",
-    status: "Upcoming",
-    total_amount: "$4,200",
-    image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=600&q=80",
-  },
-];
-
 function statusBadge(status: string) {
   const s = status.toLowerCase();
   if (s.includes("confirm")) {
@@ -159,7 +90,10 @@ export default function CustomerBookingsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [bookings, setBookings] = useState<Booking[]>(DEFAULT_BOOKINGS);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+
+  const [loadError, setLoadError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   // Dashboard "My Bookings" quick-view links can deep-link into a specific
   // tab, e.g. /customer/bookings?tab=Upcoming - applied once on mount.
@@ -175,28 +109,27 @@ export default function CustomerBookingsPage() {
       try {
         const res = await api.get("/customer/bookings", { params: { limit: 50, page: 1 } });
         const items = res.data?.items ?? res.data?.data ?? [];
-        if (items.length > 0) {
-          const mapped: Booking[] = items.map((b: ApiBooking, idx: number) => {
-            const fallback = DEFAULT_BOOKINGS[idx % DEFAULT_BOOKINGS.length];
+        {
+          const mapped: Booking[] = items.map((b: ApiBooking) => {
             const dateStr = b.tour_date
               ? new Date(b.tour_date).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
-              : fallback.travel_dates;
-            const adults = b.no_of_adults || 2;
+              : "Not scheduled";
+            const adults = b.no_of_adults ?? 0;
             const children = b.no_of_children || 0;
             const guestsStr = `${adults} Adult${adults > 1 ? "s" : ""}${children > 0 ? `, ${children} Child${children > 1 ? "ren" : ""}` : ""}`;
 
             return {
               id: b.id,
-              booking_code: b.booking_code ? b.booking_code.replace(/^#/, "") : fallback.booking_code,
-              tour_name: b.tour_name || fallback.tour_name,
+              booking_code: b.booking_code ? b.booking_code.replace(/^#/, "") : String(b.id),
+              tour_name: b.tour_name || "Tour details unavailable",
               booking_date: b.created_at
                 ? new Date(b.created_at).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
-                : fallback.booking_date,
+                : "Unavailable",
               travel_dates: dateStr,
               guests: guestsStr,
-              status: b.booking_status || fallback.status,
-              total_amount: b.final_amount ? money(b.final_amount, b.currency || "USD") : fallback.total_amount,
-              image: b.tour_image ? mediaUrl(b.tour_image) : fallback.image,
+              status: b.booking_status || "pending",
+              total_amount: b.final_amount ?? 0,
+              image: b.tour_image ? mediaUrl(b.tour_image) : "/images/compare-nz.jpg",
               payment_due_date: b.payment_due_date ?? null,
               amount_paid: b.amount_paid,
               amount_pending: b.amount_pending,
@@ -206,7 +139,9 @@ export default function CustomerBookingsPage() {
           setBookings(mapped);
         }
       } catch {
-        // Fallback to rich mock data
+        setLoadError("Could not load your bookings. Please refresh to try again.");
+      } finally {
+        setLoading(false);
       }
     }
     void load();
@@ -229,6 +164,8 @@ export default function CustomerBookingsPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] px-4 py-6 sm:px-8 sm:py-8">
       <div className="mx-auto max-w-[1100px]">
+        {loading && <p role="status">Loading your bookings...</p>}
+        {loadError && <p role="alert" className="text-red-600">{loadError}</p>}
         {/* Page Title & Subtitle */}
         <div>
           <h1 className="text-2xl sm:text-[28px] font-black tracking-tight text-[#0B1527]">
@@ -337,7 +274,7 @@ export default function CustomerBookingsPage() {
                     TOTAL PAID
                   </p>
                   <p className="text-lg font-black text-[#0B1527] leading-tight">
-                    {typeof b.total_amount === "number" ? money(b.total_amount) : b.total_amount}
+                    {money(b.total_amount, b.currency || "USD")}
                   </p>
                 </div>
                 <Link

@@ -20,7 +20,6 @@ import { useCurrency } from "@/hooks/useCurrency";
 
 export default function CurrencySelector({
   inverse = false,
-  plain = false,
 }: {
   inverse?: boolean;
   plain?: boolean;

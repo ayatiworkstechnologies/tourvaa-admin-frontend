@@ -168,7 +168,7 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
           onMenuClick={() => setSidebarOpen(true)}
           theme="violet"
         />
-        <main className="min-w-0 flex-1">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1">{children}</main>
       </div>
       {approvalNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true" aria-labelledby="affiliate-approval-title">

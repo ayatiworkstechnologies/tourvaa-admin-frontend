@@ -3,64 +3,14 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
+import MarketingImage from "@/components/public/MarketingImage";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  LuArrowRight as ArrowRight,
-  LuBadgeCheck as BadgeCheck,
-  LuBookOpen as BookOpen,
-  LuChevronDown as ChevronDown,
-  LuChevronLeft as ChevronLeft,
-  LuChevronRight as ChevronRight,
-  LuChevronUp as ChevronUp,
-  LuClock as Clock,
-  LuGlobe as Globe,
-  LuHeadset as Headset,
-  LuHeart as Heart,
-  LuMapPin as MapPin,
-  LuPlane as Plane,
-  LuQuote as Quote,
-  LuScale as Scale,
-  LuShieldCheck as ShieldCheck,
-  LuSparkles as Sparkles,
-  LuStar as Star,
-  LuUser as User,
-  LuUsers as Users,
-  LuX as X,
-  LuSquareCheckBig as SquareCheckBig,
-} from "react-icons/lu";
-import { useToast } from "@/hooks/useToast";
+import { LuArrowRight as ArrowRight, LuBookOpen as BookOpen, LuChevronDown as ChevronDown, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuClock as Clock, LuGlobe as Globe, LuHeart as Heart, LuMapPin as MapPin, LuPlane as Plane, LuSparkles as Sparkles, LuStar as Star, LuUser as User, LuUsers as Users, LuX as X, LuSquareCheckBig as SquareCheckBig } from "react-icons/lu";
+
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
-import {
-  AboutSectionBlock,
-  AirportTransferBlock,
-  BlogTeaserBlock,
-  CmsBanner,
-  CmsDestination,
-  CmsReview,
-  fetchContentBlock,
-  fetchCustomerReviews,
-  fetchFavouriteCountries,
-  fetchFeaturedTours,
-  fetchHandpickedTours,
-  fetchHelpCentre,
-  fetchHomepageBanners,
-  fetchPopularDestinations,
-  fetchPopularTours,
-  fetchPublicCategories,
-  fetchPublicCities,
-  fetchPublicCountries,
-  fetchPublicTourDetail,
-  fetchPublicTours,
-  fetchToursOnDeals,
-  HeroExtrasBlock,
-  PublicCountry,
-  PublicTour,
-} from "@/lib/api/publicClient";
-import {
-  MAX_COMPARE_ITEMS,
-  useTravelStore,
-} from "@/providers/TravelStoreProvider";
+import { AboutSectionBlock, AirportTransferBlock, BlogTeaserBlock, CmsBanner, CmsDestination, CmsReview, fetchContentBlock, fetchCustomerReviews, fetchFavouriteCountries, fetchFeaturedTours, fetchHandpickedTours, fetchHelpCentre, fetchHomepageBanners, fetchPopularDestinations, fetchPopularTours, fetchPublicCategories, fetchPublicCities, fetchPublicCountries, fetchPublicTourDetail, fetchToursOnDeals, HeroExtrasBlock, PublicCountry, PublicTour } from "@/lib/api/publicClient";
+import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -349,41 +299,6 @@ function Reveal({
   );
 }
 
-function TrustBadge({
-  icon: Icon,
-  title,
-  note,
-}: {
-  icon: React.ElementType;
-  title: string;
-  note: string;
-}) {
-  return (
-    <span className="flex items-center gap-2">
-      <Icon size={16} className="shrink-0 text-blue-300" />
-      <span className="text-left leading-tight">
-        <b className="block">{title}</b>
-        <span className="block text-white/70">{note}</span>
-      </span>
-    </span>
-  );
-}
-
-function TourRating({ tour }: { tour: Tour }) {
-  if (tour.rating == null || !tour.reviews) {
-    return (
-      <p className="mt-1 text-[11px] font-semibold text-slate-400">New tour</p>
-    );
-  }
-  return (
-    <div className="mt-1 flex items-center gap-1.5 text-[11px]">
-      <Star size={11} className="fill-amber-400 text-amber-400" />
-      <b className="font-bold text-slate-900">{tour.rating.toFixed(1)}</b>
-      <span className="text-slate-400">({tour.reviews})</span>
-    </div>
-  );
-}
-
 function TourCardSkeleton() {
   return (
     <div className="w-[285px] sm:w-[305px] lg:w-[315px] shrink-0 animate-pulse overflow-hidden rounded-2xl border border-slate-100 bg-white p-3.5">
@@ -447,7 +362,7 @@ function TopDealCard({ tour }: { tour: Tour }) {
       {/* Image with Location badge & Wishlist button */}
       <div className="relative h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
         <Link href={href} className="block h-full w-full">
-          <img
+          <MarketingImage fill sizes="(max-width: 640px) 100vw, 360px"
             src={tour.image}
             alt={tour.title}
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -824,7 +739,7 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
       {/* Top Image Container */}
       <div className="relative h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
         <Link href={href} className="block h-full w-full">
-          <img
+          <MarketingImage fill sizes="(max-width: 640px) 100vw, 360px"
             src={tour.image}
             alt={tour.title}
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -1016,7 +931,7 @@ function HandpickedTourCard({ tour }: { tour: Tour }) {
       {/* Image with Location badge & Wishlist */}
       <div className="relative h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
         <Link href={href} className="block h-full w-full">
-          <img
+          <MarketingImage fill sizes="(max-width: 640px) 100vw, 360px"
             src={tour.image}
             alt={tour.title}
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -1629,7 +1544,7 @@ export default function Home() {
                 className="h-full w-full object-cover object-center"
               />
             ) : (
-              <img
+              <MarketingImage fill sizes="100vw" preload
                 key={heroImage}
                 src={heroImage}
                 alt={banner?.title || "Scenic mountain lake landscape"}

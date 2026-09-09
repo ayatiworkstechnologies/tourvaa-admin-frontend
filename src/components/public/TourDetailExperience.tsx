@@ -2,39 +2,13 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  LuArrowRight as ArrowRight,
-  LuCalendar as Calendar,
-  LuCheck as Check,
-  LuChevronDown as ChevronDown,
-  LuChevronLeft as ChevronLeft,
-  LuChevronRight as ChevronRight,
-  LuChevronUp as ChevronUp,
-  LuCompass as Compass,
-  LuHeart as Heart,
-  LuHotel as Hotel,
-  LuHouse as Home,
-  LuInfo as Info,
-  LuMap as MapIcon,
-  LuMapPin as MapPin,
-  LuMinus as Minus,
-  LuPlus as Plus,
-  LuShieldCheck as ShieldCheck,
-  LuStar as Star,
-  LuUser as User,
-  LuUsers as Users,
-  LuUtensils as Utensils,
-  LuX as X,
-  LuBus as Bus,
-  LuGlobe as Globe,
-  LuFlag as Flag,
-} from "react-icons/lu";
+import { LuCalendar as Calendar, LuCheck as Check, LuChevronDown as ChevronDown, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuChevronUp as ChevronUp, LuCompass as Compass, LuHeart as Heart, LuHotel as Hotel, LuInfo as Info, LuMapPin as MapPin, LuMinus as Minus, LuPlus as Plus, LuShieldCheck as ShieldCheck, LuStar as Star, LuUser as User, LuUsers as Users, LuUtensils as Utensils, LuX as X, LuBus as Bus, LuGlobe as Globe, LuFlag as Flag } from "react-icons/lu";
 import { PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
-import { publicTourUrl } from "@/lib/utils/tourUrl";
+
 
 type Props = {
   tour: PublicTourDetail;
@@ -92,16 +66,34 @@ const REFERENCE_HIGHLIGHTS = [
   },
 ];
 
+// Splits a free-form, comma/newline-separated backend Text field (meals,
+// activities, optional_activities) into short trimmed items for bullet/chip
+// rendering, instead of printing it as one run-on line.
+function splitList(value?: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 // Rich Day-by-Day Itinerary matching the reference screenshot
 const REFERENCE_ITINERARY = [
   {
     day: 1,
     title: "WELCOME TO AUCKLAND",
-    desc: "Arrive at Auckland Airport. Meet and greet with your tour director, followed by a panoramic orientation drive and hotel check-in. Evening welcome dinner.",
+    summary: "Arrive in Auckland and settle in for the journey ahead.",
+    detail: "Arrive at Auckland Airport. Meet and greet with your tour director, followed by a panoramic orientation drive and hotel check-in. Evening welcome dinner.",
     startPoint: "Auckland Airport / Hotel (Complimentary airport transfer)",
-    meals: "Welcome Dinner with local wine pairings",
+    transport: "Private coach",
+    travelTime: "",
+    startTime: "",
+    endTime: "",
+    meals: ["Welcome Dinner with local wine pairings"],
     accommodation: "Grand Millennium Auckland (or similar 4-star)",
-    optionalActivities: "Sky Tower SkyWalk, Waitematā Harbour Sunset Cruise",
+    activities: [],
+    optionalActivities: ["Sky Tower SkyWalk", "Waitematā Harbour Sunset Cruise"],
+    importantNotes: "",
     photos: [
       "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=400&q=80",
       "/images/compare-nz.jpg",
@@ -111,51 +103,86 @@ const REFERENCE_ITINERARY = [
   {
     day: 2,
     title: "Auckland to Rotorua via Waitomo",
-    desc: "Journey south through the lush rolling hills of the Waikato region. Stop at Waitomo Caves for a boat ride under glowing insects, then arrive in geothermal Rotorua.",
-    startPoint: "Grand Millennium Auckland Hotel Lobby (08:00 AM)",
-    meals: "Breakfast, Traditional Māori Hāngī Dinner",
+    summary: "Cross the Waikato region and discover glowworm caves en route to Rotorua.",
+    detail: "Journey south through the lush rolling hills of the Waikato region. Stop at Waitomo Caves for a boat ride under glowing insects, then arrive in geothermal Rotorua.",
+    startPoint: "Grand Millennium Auckland Hotel Lobby",
+    transport: "Private coach",
+    travelTime: "3h 30m · 234 km",
+    startTime: "08:00 AM",
+    endTime: "",
+    meals: ["Breakfast", "Traditional Māori Hāngī Dinner"],
     accommodation: "Millennium Hotel Rotorua (or similar)",
-    optionalActivities: "Polynesian Spa Lake Pools, Redwoods Treewalk",
+    activities: ["Waitomo Glowworm Caves boat ride"],
+    optionalActivities: ["Polynesian Spa Lake Pools", "Redwoods Treewalk"],
+    importantNotes: "",
     photos: ["https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=400&q=80"],
   },
   {
     day: 3,
     title: "Rotorua – Geothermal & Māori Culture",
-    desc: "Spend the morning exploring Te Puia geothermal valley, home to Pōhutu Geyser and Māori arts. Afternoon at leisure before an evening cultural performance.",
+    summary: "Explore geothermal wonders and immerse in Māori culture.",
+    detail: "Spend the morning exploring Te Puia geothermal valley, home to Pōhutu Geyser and Māori arts. Afternoon at leisure before an evening cultural performance.",
     startPoint: "Rotorua Hotel Lobby",
-    meals: "Cooked Breakfast, Local Lunch",
+    transport: "",
+    travelTime: "",
+    startTime: "",
+    endTime: "",
+    meals: ["Cooked Breakfast", "Local Lunch"],
     accommodation: "Millennium Hotel Rotorua",
-    optionalActivities: "Kaituna River Rafting, Agrodome Farm Show",
+    activities: ["Te Puia geothermal valley tour", "Evening Māori cultural performance"],
+    optionalActivities: ["Kaituna River Rafting", "Agrodome Farm Show"],
+    importantNotes: "",
     photos: ["https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=400&q=80"],
   },
   {
     day: 4,
     title: "Taupo & Tongariro National Park",
-    desc: "Travel past serene Lake Taupo and Huka Falls towards the dramatic volcanic scenery of Tongariro National Park, a dual UNESCO World Heritage site.",
-    startPoint: "Rotorua to Tongariro",
-    meals: "Breakfast, Picnic Lunch",
+    summary: "Journey through volcanic landscapes to a UNESCO World Heritage site.",
+    detail: "Travel past serene Lake Taupo and Huka Falls towards the dramatic volcanic scenery of Tongariro National Park, a dual UNESCO World Heritage site.",
+    startPoint: "Rotorua Hotel Lobby",
+    transport: "Private coach",
+    travelTime: "2h 45m",
+    startTime: "",
+    endTime: "",
+    meals: ["Breakfast", "Picnic Lunch"],
     accommodation: "Chateau Tongariro Hotel (or similar)",
-    optionalActivities: "Tongariro Guided Alpine Day Walk, Scenic Helicopter Flight",
+    activities: ["Huka Falls viewpoint stop"],
+    optionalActivities: ["Tongariro Guided Alpine Day Walk", "Scenic Helicopter Flight"],
+    importantNotes: "The Alpine Crossing is weather-dependent and may be rescheduled by the tour director.",
     photos: ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80"],
   },
   {
     day: 5,
     title: "Napier to Wellington",
-    desc: "Cross the scenic mountain ranges towards Hawke's Bay's Art Deco capital of Napier, then continue south to the vibrant capital city of Wellington.",
+    summary: "Pass through the Art Deco capital on the way to Wellington.",
+    detail: "Cross the scenic mountain ranges towards Hawke's Bay's Art Deco capital of Napier, then continue south to the vibrant capital city of Wellington.",
     startPoint: "Tongariro Lodge",
-    meals: "Breakfast, Vineyard Wine Tasting Lunch",
+    transport: "Private coach",
+    travelTime: "4h 15m",
+    startTime: "",
+    endTime: "",
+    meals: ["Breakfast", "Vineyard Wine Tasting Lunch"],
     accommodation: "James Cook Hotel Grand Chancellor Wellington",
-    optionalActivities: "Te Papa National Museum Tour, Cable Car Lookout",
+    activities: ["Napier Art Deco walking stop"],
+    optionalActivities: ["Te Papa National Museum Tour", "Cable Car Lookout"],
+    importantNotes: "",
     photos: ["/images/compare-hero.jpg"],
   },
   {
     day: 6,
     title: "Wellington – Departure",
-    desc: "Enjoy your final morning at leisure in vibrant Wellington. Take in the waterfront promenades before your scheduled airport transfer for onward journeys.",
+    summary: "A relaxed final morning before your onward journey.",
+    detail: "Enjoy your final morning at leisure in vibrant Wellington. Take in the waterfront promenades before your scheduled airport transfer for onward journeys.",
     startPoint: "Wellington Hotel",
-    meals: "Breakfast",
-    accommodation: "Departure Day (Late checkout available)",
-    optionalActivities: "Wētā Workshop Film Tour, Oriental Bay Walk",
+    transport: "Airport transfer",
+    travelTime: "",
+    startTime: "",
+    endTime: "",
+    meals: ["Breakfast"],
+    accommodation: "",
+    activities: [],
+    optionalActivities: ["Wētā Workshop Film Tour", "Oriental Bay Walk"],
+    importantNotes: "Late checkout available on request, subject to hotel availability.",
     photos: ["/images/compare-nz.jpg"],
   },
 ];
@@ -290,18 +317,28 @@ export default function TourDetailExperience({
   const totalAmount = Math.max(0, tourPrice - groupDiscount);
   const perPersonPrice = Math.round(tourPrice / Math.max(1, adults));
 
-  // Itinerary List
+  // Itinerary List - each day's free-form text fields (meals/activities/
+  // optional_activities are plain Text columns on the backend, not arrays)
+  // are split into short bullet/chip items instead of printed as one
+  // run-on line - see splitList() below.
   const itineraryList = useMemo(() => {
     if (tour.itineraries && tour.itineraries.length > 0) {
       return tour.itineraries.map((it, idx) => ({
         day: it.day || idx + 1,
         title: it.title || `Day ${idx + 1} Scenic Adventure`,
-        desc: it.description || "Scenic journey with guided excursions, historic landmark visits, and local cultural experiences.",
-        startPoint: it.location ? `${it.location} Meeting Point` : "Hotel Lobby",
-        meals: it.meals || "Daily Breakfast Included",
-        accommodation: it.accommodation || "4-Star Premium Hotel",
-        optionalActivities: it.activities || "Scenic Gondola, Historic Heritage Walk",
-        photos: galleryPhotos.slice(idx % 3, (idx % 3) + 3),
+        summary: it.short_description || "",
+        detail: it.long_description || (!it.short_description ? it.description : "") || "",
+        startPoint: it.location ? `${it.location} Meeting Point` : "",
+        transport: it.transport || "",
+        travelTime: [it.travel_duration, it.travel_distance].filter(Boolean).join(" · "),
+        startTime: it.start_time || "",
+        endTime: it.end_time || "",
+        meals: splitList(it.meals),
+        accommodation: it.accommodation || "",
+        activities: splitList(it.activities),
+        optionalActivities: splitList(it.optional_activities),
+        importantNotes: it.important_notes || "",
+        photos: it.images && it.images.length > 0 ? it.images.map(mediaUrl) : galleryPhotos.slice(idx % 3, (idx % 3) + 3),
       }));
     }
     return REFERENCE_ITINERARY;
@@ -812,37 +849,115 @@ export default function TourDetailExperience({
 
                       {isOpen && (
                         <div className="border-t border-slate-100 bg-[#FAFBFD] px-5 py-4 space-y-4">
-                          <p className="text-xs leading-relaxed text-slate-600 font-medium">
-                            {day.desc}
-                          </p>
+                          {/* Summary line + supporting detail, instead of one run-on paragraph */}
+                          {(day.summary || day.detail) && (
+                            <div className="space-y-1">
+                              {day.summary && (
+                                <p className="text-xs font-bold text-slate-900">{day.summary}</p>
+                              )}
+                              {day.detail && (
+                                <p className="text-xs leading-relaxed text-slate-600 font-medium">{day.detail}</p>
+                              )}
+                            </div>
+                          )}
 
-                          {/* Key Timeline Metadata */}
-                          <div className="space-y-2 text-xs">
-                            <div className="flex items-start gap-2">
-                              <span className="font-bold text-slate-900 w-36 shrink-0 uppercase text-[10px] tracking-wider text-slate-500">
-                                START POINT
-                              </span>
-                              <span className="text-slate-700 font-medium">{day.startPoint}</span>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <span className="font-bold text-slate-900 w-36 shrink-0 uppercase text-[10px] tracking-wider text-slate-500">
-                                MEALS
-                              </span>
-                              <span className="text-slate-700 font-medium">{day.meals}</span>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <span className="font-bold text-slate-900 w-36 shrink-0 uppercase text-[10px] tracking-wider text-slate-500">
-                                ACCOMMODATION
-                              </span>
-                              <span className="text-slate-700 font-medium">{day.accommodation}</span>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <span className="font-bold text-slate-900 w-36 shrink-0 uppercase text-[10px] tracking-wider text-slate-500">
-                                OPTIONAL ACTIVITIES
-                              </span>
-                              <span className="text-slate-700 font-medium">{day.optionalActivities}</span>
-                            </div>
+                          {/* Day facts as icon rows, matching the Travel Essentials pattern */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                            {day.startPoint && (
+                              <div className="flex items-start gap-2">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                                  <MapPin size={13} />
+                                </span>
+                                <div>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Start Point</p>
+                                  <p className="text-slate-700 font-medium">{day.startPoint}</p>
+                                </div>
+                              </div>
+                            )}
+                            {(day.startTime || day.endTime) && (
+                              <div className="flex items-start gap-2">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                                  <Calendar size={13} />
+                                </span>
+                                <div>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Timing</p>
+                                  <p className="text-slate-700 font-medium">{[day.startTime, day.endTime].filter(Boolean).join(" – ") || "—"}</p>
+                                </div>
+                              </div>
+                            )}
+                            {(day.transport || day.travelTime) && (
+                              <div className="flex items-start gap-2">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                                  <Bus size={13} />
+                                </span>
+                                <div>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Transport</p>
+                                  <p className="text-slate-700 font-medium">{[day.transport, day.travelTime].filter(Boolean).join(" · ")}</p>
+                                </div>
+                              </div>
+                            )}
+                            {day.accommodation && (
+                              <div className="flex items-start gap-2">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                                  <Hotel size={13} />
+                                </span>
+                                <div>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accommodation</p>
+                                  <p className="text-slate-700 font-medium">{day.accommodation}</p>
+                                </div>
+                              </div>
+                            )}
                           </div>
+
+                          {day.meals.length > 0 && (
+                            <div className="flex items-start gap-2">
+                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                                <Utensils size={13} />
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {day.meals.map((meal, mIdx) => (
+                                  <span key={mIdx} className="rounded-full bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-700">
+                                    {meal}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {day.activities.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Included Activities</p>
+                              <ul className="space-y-1.5 text-xs">
+                                {day.activities.map((activity, aIdx) => (
+                                  <li key={aIdx} className="flex items-start gap-2">
+                                    <Check size={13} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
+                                    <span className="text-slate-700 font-medium">{activity}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {day.optionalActivities.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Optional Activities</p>
+                              <ul className="space-y-1.5 text-xs">
+                                {day.optionalActivities.map((activity, oIdx) => (
+                                  <li key={oIdx} className="flex items-start gap-2">
+                                    <Plus size={13} className="mt-0.5 shrink-0 text-blue-600 stroke-[3]" />
+                                    <span className="text-slate-700 font-medium">{activity}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {day.importantNotes && (
+                            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+                              <Info size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                              <p className="text-xs font-medium text-amber-800">{day.importantNotes}</p>
+                            </div>
+                          )}
 
                           {/* 3 Photos inside Day 1/Active day */}
                           {day.photos && day.photos.length > 0 && (

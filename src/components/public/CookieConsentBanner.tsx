@@ -2,17 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  LuCheck as Check,
-  LuChevronDown as ChevronDown,
-  LuCookie as CookieIcon,
-  LuInfo as Info,
-  LuLock as Lock,
-  LuShieldCheck as ShieldCheck,
-  LuSlidersHorizontal as Sliders,
-  LuSparkles as Sparkles,
-  LuX as X,
-} from "react-icons/lu";
+import { LuCheck as Check, LuChevronDown as ChevronDown, LuCookie as CookieIcon, LuLock as Lock, LuShieldCheck as ShieldCheck, LuSlidersHorizontal as Sliders, LuSparkles as Sparkles, LuX as X } from "react-icons/lu";
 
 const CONSENT_KEY = "tourvaa_cookie_consent";
 

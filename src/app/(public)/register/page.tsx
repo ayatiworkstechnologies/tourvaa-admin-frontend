@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import axios from "axios";
 import {
   LuCircleCheckBig as Check,
@@ -310,7 +311,7 @@ export default function RegisterPage() {
 
           {/* ── Hero panel (RIGHT) ── */}
           <section className="relative hidden flex-col overflow-hidden bg-slate-950 text-white lg:flex">
-            <img
+            <Image unoptimized fill sizes="50vw"
               src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=80"
               alt=""
               className="absolute inset-0 h-full w-full object-cover opacity-50"

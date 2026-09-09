@@ -5,18 +5,7 @@
 import type { CSSProperties, FormEvent } from "react";
 import { useState } from "react";
 import Link from "next/link";
-import {
-  LuArrowRight as ArrowRight,
-  LuCloudSun as CloudSun,
-  LuHeartPulse as HeartPulse,
-  LuLanguages as Languages,
-  LuCompass as MapPinned,
-  LuPlaneTakeoff as PlaneTakeoff,
-  LuShieldCheck as ShieldCheck,
-  LuUserRoundCheck as UserRoundCheck,
-  LuSparkles as Sparkles,
-  LuCircleArrowRight as CircleArrowRight,
-} from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuCloudSun as CloudSun, LuLanguages as Languages, LuShieldCheck as ShieldCheck, LuUserRoundCheck as UserRoundCheck } from "react-icons/lu";
 
 import AboutReveal from "@/components/public/AboutReveal";
 import { subscribeNewsletter } from "@/lib/api/publicClient";

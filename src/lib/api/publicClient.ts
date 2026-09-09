@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const publicApi = axios.create({ baseURL: "/api/public" });
-const cmsApi = axios.create({ baseURL: "/api/cms" });
+const publicApi = axios.create({ baseURL: "/api/public", timeout: 30_000 });
+const cmsApi = axios.create({ baseURL: "/api/cms", timeout: 30_000 });
 
 export default publicApi;
 
@@ -77,6 +77,8 @@ export type PublicTourDetail = PublicTour & {
     day: number;
     title: string;
     description: string;
+    short_description?: string;
+    long_description?: string;
     location: string;
     accommodation: string;
     meals: string;
@@ -118,6 +120,8 @@ export type CmsBanner = { id: number; title: string; subtitle: string | null; im
 export type CmsDestination = { id: number; title: string; image: string | null; description: string | null; sort_order: number; is_active: boolean; country_id?: number | null; city_id?: number | null };
 export type CmsReview = { id: number; reviewer_name: string; reviewer_image: string | null; rating: number; review_text: string; tour_name: string | null; country: string | null; sort_order: number; is_active: boolean };
 export type CmsExternalLink = { id: number; label: string; url: string; open_in_new_tab: boolean; location: string; sort_order: number; is_active: boolean };
+export type CmsFooterLink = { id: number; label: string; url: string; open_in_new_tab: boolean };
+export type CmsFooterSection = { id: number; title: string; links: CmsFooterLink[] };
 export type CmsPopularTour = { id: number; tour_id: number; tour_title: string; tour_code: string; sort_order: number; is_active: boolean };
 export type CmsHandpickedTour = { id: number; tour_id: number; tour_title: string; tour_code: string; sort_order: number; is_active: boolean };
 export type CmsFavouriteCountry = { id: number; country_id: number | null; title: string; snippet: string | null; image: string | null; href: string | null; sort_order: number; is_active: boolean };
@@ -281,6 +285,14 @@ export async function fetchPromotionalPopups() {
 export async function fetchFooterLinks() {
   const res = await cmsApi.get("/external-links", { params: { location: "footer", limit: 100 } });
   return ((res.data.items || res.data.data || []) as CmsExternalLink[]).filter((item) => item.is_active);
+}
+
+/** Admin-managed footer sections (Support / Our Company / Login, etc.) with
+ * their links, already filtered to active-only and ordered - see
+ * PublicFooter.tsx, which renders these instead of hardcoded columns. */
+export async function fetchFooterSections() {
+  const res = await cmsApi.get("/footer");
+  return (res.data.data || []) as CmsFooterSection[];
 }
 
 export async function fetchPublicBlogs() {

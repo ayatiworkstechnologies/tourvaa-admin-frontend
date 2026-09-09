@@ -4,6 +4,13 @@ if (process.env.NODE_ENV === "production" && !process.env.API_PROXY_TARGET) {
   throw new Error("API_PROXY_TARGET is required in production because /api/:path* proxies to the backend.");
 }
 
+if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_WS_URL) {
+  throw new Error("NEXT_PUBLIC_WS_URL is required in production for realtime messaging.");
+}
+if (process.env.NEXT_PUBLIC_WS_URL && !/^wss?:\/\//.test(process.env.NEXT_PUBLIC_WS_URL)) {
+  throw new Error("NEXT_PUBLIC_WS_URL must use ws:// or wss://.");
+}
+
 const apiProxyTarget = (
   process.env.API_PROXY_TARGET || "http://127.0.0.1:8000"
 ).replace(/\/$/, "");
@@ -42,6 +49,7 @@ const connectSrc =
     : `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${googleTranslateHosts} ${devHmrHosts};`;
 
 const nextConfig: NextConfig = {
+  images: { remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }] },
   // Produces the minimal server bundle consumed by the production Docker image.
   // Static assets and public files are copied beside this bundle in Dockerfile.
   // Only set for the Docker build - Vercel has its own deployment output and
