@@ -1,5 +1,14 @@
 import type { NextConfig } from "next";
 
+const apiProxyTarget = (
+  process.env.API_PROXY_TARGET || "http://127.0.0.1:8000"
+).replace(/\/$/, "");
+const apiProxyOrigin = new URL(apiProxyTarget).origin;
+
+if (!process.env.NEXT_PUBLIC_WS_URL && apiProxyOrigin) {
+  process.env.NEXT_PUBLIC_WS_URL = apiProxyOrigin.replace(/^http/, "ws");
+}
+
 if (process.env.NODE_ENV === "production" && !process.env.API_PROXY_TARGET) {
   throw new Error("API_PROXY_TARGET is required in production because /api/:path* proxies to the backend.");
 }
@@ -10,11 +19,6 @@ if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_WS_URL) {
 if (process.env.NEXT_PUBLIC_WS_URL && !/^wss?:\/\//.test(process.env.NEXT_PUBLIC_WS_URL)) {
   throw new Error("NEXT_PUBLIC_WS_URL must use ws:// or wss://.");
 }
-
-const apiProxyTarget = (
-  process.env.API_PROXY_TARGET || "http://127.0.0.1:8000"
-).replace(/\/$/, "");
-const apiProxyOrigin = new URL(apiProxyTarget).origin;
 
 // Google Translate loads its widget from translate.google.com and
 // serves translated assets from translate.googleapis.com / *.gstatic.com.
