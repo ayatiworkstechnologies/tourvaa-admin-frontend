@@ -9,7 +9,7 @@ import { LuArrowRight as ArrowRight, LuBookOpen as BookOpen, LuChevronDown as Ch
 
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
-import { AboutSectionBlock, AirportTransferBlock, BlogTeaserBlock, CmsBanner, CmsDestination, CmsReview, fetchContentBlock, fetchCustomerReviews, fetchFavouriteCountries, fetchFeaturedTours, fetchHandpickedTours, fetchHelpCentre, fetchHomepageBanners, fetchPopularDestinations, fetchPopularTours, fetchPublicCategories, fetchPublicCities, fetchPublicCountries, fetchPublicTourDetail, fetchToursOnDeals, HeroExtrasBlock, PublicCountry, PublicTour } from "@/lib/api/publicClient";
+import { AboutSectionBlock, AirportTransferBlock, BlogTeaserBlock, CmsBanner, CmsDestination, CmsReview, fetchContentBlock, fetchCustomerReviews, fetchFavouriteCountries, fetchFeaturedTours, fetchHandpickedTours, fetchHelpCentre, fetchHomepageBanners, fetchPopularDestinations, fetchPopularTours, fetchPublicCategories, fetchPublicCities, fetchPublicCountries, fetchPublicTourDetail, fetchToursOnDeals, HeroExtrasBlock, PublicCountry, PublicTour, subscribeNewsletter } from "@/lib/api/publicClient";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
@@ -357,23 +357,49 @@ function TopDealCard({ tour }: { tour: Tour }) {
   const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.9";
   const reviewCountStr = tour.reviews || "1,842 reviews";
 
+  // Dynamic discount badge calculation
+  const calculatedPct =
+    tour.originalPrice && tour.rawPrice && tour.originalPrice > tour.rawPrice
+      ? Math.round(
+          ((tour.originalPrice - tour.rawPrice) / tour.originalPrice) * 100,
+        )
+      : null;
+  const dealBadge =
+    tour.discountBadge ||
+    (calculatedPct ? `Save ${calculatedPct}%` : "Special Deal");
+
   return (
-    <article className="group relative w-[310px] sm:w-[350px] lg:w-[380px] shrink-0 overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-[0_4px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
-      {/* Image with Location badge & Wishlist button */}
-      <div className="relative h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
+    <article
+      data-deal-card
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 h-full"
+    >
+      {/* Image with Deal badge, Location badge & Wishlist button */}
+      <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
         <Link href={href} className="block h-full w-full">
-          <MarketingImage fill sizes="(max-width: 640px) 100vw, 360px"
+          <MarketingImage
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
             src={tour.image}
             alt={tour.title}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
           />
         </Link>
 
-        {/* Location pill badge (top-left) */}
-        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white">
-          <MapPin size={11} className="shrink-0" />
-          <span className="truncate max-w-[120px]">{tour.place}</span>
-        </span>
+        {/* Subtle vignette for badge contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20 pointer-events-none" />
+
+        {/* Top-Left Badges */}
+        <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-md shadow-orange-600/30">
+            <Sparkles size={11} className="fill-white animate-sparkle-glow" />
+            <span>{dealBadge}</span>
+          </span>
+
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-950/70 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-white shadow-xs">
+            <MapPin size={11} className="text-orange-400 shrink-0" />
+            <span className="truncate max-w-[110px]">{tour.place}</span>
+          </span>
+        </div>
 
         {/* Wishlist button (top-right) */}
         <button
@@ -384,58 +410,72 @@ function TopDealCard({ tour }: { tour: Tour }) {
               ? `Remove ${tour.title} from wishlist`
               : `Add ${tour.title} to wishlist`
           }
-          className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-200 hover:scale-115 focus:outline-none"
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-md text-slate-700 shadow-md transition-all duration-200 hover:scale-115 active:scale-90 hover:bg-white focus:outline-none cursor-pointer"
         >
           <Heart
-            size={18}
+            size={16}
             className={
-              wishlisted ? "fill-red-500 text-red-500" : "fill-white text-white"
+              wishlisted ? "fill-red-500 text-red-500" : "fill-slate-400/40 text-slate-700"
             }
           />
         </button>
       </div>
 
       {/* Tour details */}
-      <div className="pt-4">
-        {/* Title and duration badge */}
-        <div className="flex items-start justify-between gap-2">
-          <Link href={href} className="block flex-1 min-w-0">
-            <h3 className="truncate text-base sm:text-[17px] font-semibold text-slate-900 transition-colors group-hover:text-pub-secondary">
-              {tour.title}
-            </h3>
-          </Link>
-          <span className="shrink-0 rounded-md border border-[#E4572E]/40 bg-orange-50/40 px-2.5 py-0.5 text-[10px] font-extrabold text-[#E4572E] tracking-wide">
-            {tour.durationTag || "8D | 7N"}
-          </span>
-        </div>
-
-        {/* 5 Yellow Stars + Rating + Review count */}
-        <div className="mt-2 flex items-center gap-1.5 text-xs">
-          <div className="flex items-center gap-0.5 text-amber-400">
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-          </div>
-          <b className="font-bold text-slate-900">{ratingVal}</b>
-          <span className="text-slate-400 font-normal">{reviewCountStr}</span>
-        </div>
-
-        {/* Price Row: From $old $new pp */}
-        <div className="mt-5 flex items-baseline gap-1.5 text-xs border-t border-slate-100 pt-3">
-          <span className="font-extrabold text-slate-900 text-sm">From</span>
-          {tour.originalPrice != null && (
-            <span className="text-xs font-normal text-slate-400 line-through">
-              {format(tour.originalPrice, tour.currency || "USD")}
+      <div className="pt-4 flex flex-1 flex-col justify-between">
+        <div>
+          {/* Title and duration badge - fixed min-h so 1-line and 2-line titles match in height */}
+          <div className="flex items-start justify-between gap-2.5 min-h-[46px] sm:min-h-[48px]">
+            <Link href={href} className="block flex-1 min-w-0">
+              <h3 className="line-clamp-2 text-base sm:text-[17px] font-bold text-slate-900 transition-colors group-hover:text-pub-secondary leading-snug">
+                {tour.title}
+              </h3>
+            </Link>
+            <span className="shrink-0 rounded-lg border border-orange-200/80 bg-orange-50/70 px-2 py-0.5 text-[10px] font-extrabold text-[#E4572E] tracking-wide">
+              {tour.durationTag || "8D | 7N"}
             </span>
-          )}
-          <strong className="text-xl font-black text-slate-950">
-            {tour.rawPrice != null
-              ? format(tour.rawPrice, tour.currency || "USD")
-              : format(999, "USD")}
-          </strong>
-          <span className="text-xs font-bold text-slate-900">pp</span>
+          </div>
+
+          {/* 5 Yellow Stars + Rating + Review count */}
+          <div className="mt-2.5 flex items-center gap-1.5 text-xs">
+            <div className="flex items-center gap-0.5 text-amber-400">
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+            </div>
+            <b className="font-extrabold text-slate-900">{ratingVal}</b>
+            <span className="text-slate-400 font-medium">({reviewCountStr})</span>
+          </div>
+        </div>
+
+        {/* Price Row: From $old $new pp + View Deal button */}
+        <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3.5">
+          <div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xs font-semibold text-slate-400">From</span>
+              {tour.originalPrice != null && (
+                <span className="text-xs font-normal text-slate-400 line-through">
+                  {format(tour.originalPrice, tour.currency || "USD")}
+                </span>
+              )}
+              <strong className="text-xl sm:text-2xl font-black text-slate-950">
+                {tour.rawPrice != null
+                  ? format(tour.rawPrice, tour.currency || "USD")
+                  : format(999, "USD")}
+              </strong>
+              <span className="text-xs font-bold text-slate-500">pp</span>
+            </div>
+          </div>
+
+          <Link
+            href={href}
+            aria-label={`View deal: ${tour.title}`}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0B1527] text-white shadow-xs transition-all duration-300 group-hover:bg-[#E4572E] group-hover:scale-108 group-hover:shadow-md active:scale-95"
+          >
+            <ArrowRight size={15} className="stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
         </div>
       </div>
     </article>
@@ -452,8 +492,9 @@ function TopDealsSection({
   const [activeTab, setActiveTab] = useState("Top deals");
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // 100% Dynamic tabs based on real tour destinations in the current deals
   const tabs = useMemo(() => {
-    const placesMap = new Map<string, string>();
+    const placesMap = new Map<string, number>();
     for (const t of tours) {
       if (!t.place) continue;
       const parts = t.place
@@ -461,34 +502,34 @@ function TopDealsSection({
         .map((s) => s.trim())
         .filter(Boolean);
       const dest = parts[parts.length - 1] || t.place.trim();
-      if (
-        dest &&
-        !/worldwide/i.test(dest) &&
-        !placesMap.has(dest.toLowerCase())
-      ) {
-        placesMap.set(dest.toLowerCase(), dest);
+      if (dest && !/worldwide/i.test(dest)) {
+        const canonical = dest.charAt(0).toUpperCase() + dest.slice(1);
+        placesMap.set(canonical, (placesMap.get(canonical) || 0) + 1);
       }
     }
 
-    const uniquePlaces = Array.from(placesMap.values());
+    const uniquePlaces = Array.from(placesMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([place]) => place);
+
     if (uniquePlaces.length > 0) {
       return [
         "Top deals",
-        ...uniquePlaces.slice(0, 6).map((place) => `${place} deals`),
+        ...uniquePlaces.map((place) => `${place} deals`),
       ];
     }
 
-    return ["Top deals", "New Zealand deals", "Turkey deals", "Italy deals"];
+    return ["Top deals"];
   }, [tours]);
 
   useEffect(() => {
     if (!tabs.includes(activeTab)) {
-      setActiveTab("Top deals");
+      setActiveTab(tabs[0] || "Top deals");
     }
   }, [tabs, activeTab]);
 
   const filteredTours = useMemo(() => {
-    if (activeTab === "Top deals") {
+    if (activeTab === "Top deals" || activeTab === "All deals") {
       return tours;
     }
     const keyword = activeTab
@@ -505,99 +546,121 @@ function TopDealsSection({
   const displayTours = filteredTours;
 
   const move = (direction: number) => {
-    scrollRef.current?.scrollBy({ left: direction * 320, behavior: "smooth" });
+    const el = scrollRef.current;
+    if (!el) return;
+    const firstCard = el.querySelector<HTMLElement>("[data-deal-card]");
+    const gap = 20; // 1.25rem gap-5
+    const step = firstCard ? firstCard.offsetWidth + gap : 320;
+    el.scrollBy({ left: direction * step, behavior: "smooth" });
   };
 
   return (
-    <section className="py-8 sm:py-10">
-      {/* Top Filter Pills + View all deals link */}
-      <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto sm:flex-wrap sm:gap-2.5 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
-          {tabs.map((tab) => {
-            const active = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                  active
-                    ? "bg-[#E4572E] text-white shadow-xs"
-                    : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
-                }`}
-              >
-                {tab}
-              </button>
-            );
-          })}
+    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-16 bg-gradient-to-b from-white via-[#FAF7F2] to-[#F5F0E8] border-y border-slate-200/60 shadow-2xs">
+      {/* Ambient decorative gradient orbs */}
+      <div className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-br from-orange-200/20 via-amber-100/15 to-transparent blur-3xl animate-float-orb" />
+      <div className="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-tl from-amber-200/15 via-orange-100/10 to-transparent blur-3xl animate-float-orb-alt" />
+
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+        {/* Top Filter Pills + View all deals link */}
+        <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto sm:flex-wrap sm:gap-2.5 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
+            {tabs.map((tab) => {
+              const active = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`shrink-0 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 active:scale-95 ${
+                    active
+                      ? "bg-[#E4572E] text-white shadow-md shadow-orange-500/25 scale-[1.02]"
+                      : "border border-slate-200/80 bg-white/90 text-slate-700 hover:bg-white hover:border-orange-300 hover:text-slate-900 hover:scale-[1.02] shadow-2xs"
+                  }`}
+                >
+                  {tab}
+                </button>
+              );
+            })}
+          </div>
+
+          <Link
+            href={
+              activeTab === "All deals" || activeTab === "Top deals"
+                ? "/tours?sort=price_asc"
+                : `/tours?sort=price_asc&search=${encodeURIComponent(
+                    activeTab.replace(/\s+deals$/i, "").trim(),
+                  )}`
+            }
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#E4572E] hover:text-[#c4411b] transition-colors group"
+          >
+            <span>View all deals</span>
+            <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-1" />
+          </Link>
         </div>
 
-        <Link
-          href={
-            activeTab === "Top deals"
-              ? "/tours?sort=price_asc"
-              : `/tours?sort=price_asc&search=${encodeURIComponent(
-                  activeTab.replace(/\s+deals$/i, "").trim(),
-                )}`
-          }
-          className="text-xs sm:text-sm font-semibold text-[#E4572E] hover:underline"
-        >
-          View all deals
-        </Link>
-      </div>
-
-      {/* Header Row: Title & Arrow Buttons */}
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
-          Top Deals
-        </h2>
-
-        {!loading && displayTours.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Previous deals"
-              onClick={() => move(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
-            >
-              <ChevronLeft size={16} className="stroke-[2.2]" />
-            </button>
-            <button
-              type="button"
-              aria-label="Next deals"
-              onClick={() => move(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
-            >
-              <ChevronRight size={16} className="stroke-[2.2]" />
-            </button>
+        {/* Header Row: Title & Arrow Buttons */}
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#E4572E] mb-2">
+              <Sparkles size={12} className="fill-current animate-sparkle-glow" />
+              <span>Limited Time Offers</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-950 tracking-tight">
+              Top Deals
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-600 font-medium">
+              Handpicked guided tours with verified discounts. Book early to lock in the lowest rates.
+            </p>
           </div>
-        )}
-      </div>
 
-      {/* Carousel list */}
-      <div
-        ref={scrollRef}
-        className="no-scrollbar flex snap-x gap-5 overflow-x-auto pb-4 pt-1"
-      >
-        {loading ? (
-          Array.from({ length: 4 }).map((_, index) => (
-            <div className="snap-start" key={index}>
-              <TourCardSkeleton />
+          {!loading && displayTours.length > 0 && (
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                aria-label="Previous deals"
+                onClick={() => move(-1)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E4572E] hover:text-[#E4572E] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+              >
+                <ChevronLeft size={18} className="stroke-[2.5]" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next deals"
+                onClick={() => move(1)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E4572E] hover:text-[#E4572E] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+              >
+                <ChevronRight size={18} className="stroke-[2.5]" />
+              </button>
             </div>
-          ))
-        ) : displayTours.length > 0 ? (
-          displayTours.map((tour, index) => (
-            <div className="snap-start" key={`${tour.title}-${index}`}>
-              <TopDealCard tour={tour} />
-            </div>
-          ))
-        ) : (
-          <EmptyCollection
-            message="No deals found for this destination."
-            href="/tours?sort=price_asc"
-            linkLabel="Browse all deals"
-          />
-        )}
+          )}
+        </div>
+
+        {/* Carousel list: No left/right cut off, full show on all viewports */}
+        <div
+          ref={scrollRef}
+          className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
+        >
+          {loading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start"
+              >
+                <TourCardSkeleton />
+              </div>
+            ))
+          ) : displayTours.length > 0 ? (
+            displayTours.map((tour, index) => (
+              <TopDealCard key={`${tour.title}-${index}`} tour={tour} />
+            ))
+          ) : (
+            <EmptyCollection
+              message="No deals found for this destination."
+              href="/tours?sort=price_asc"
+              linkLabel="Browse all deals"
+            />
+          )}
+        </div>
       </div>
     </section>
   );
@@ -633,34 +696,34 @@ function FavouriteCountriesSection({
               country.href ||
               `/tours?country=${encodeURIComponent(country.name)}`
             }
-            className="group relative h-[420px] w-full overflow-hidden rounded-[20px] bg-white p-4 border border-slate-100/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl focus:outline-none flex flex-col"
+            className="group relative h-[420px] w-full overflow-hidden rounded-[20px] bg-white p-4 border border-slate-200/80 shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 focus:outline-none flex flex-col"
           >
             {/* Inner Image Container with 16px radius */}
             <div className="relative h-full w-full overflow-hidden rounded-[16px] bg-slate-900">
               <img
                 src={country.image}
                 alt={country.name}
-                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-108"
+                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
               />
 
               {/* Gradient overlays for crisp contrast */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-black/15" />
 
               {/* Top-Left Location Badge */}
-              <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white">
+              <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
                 <MapPin size={11} className="shrink-0 text-white" />
                 <span>{country.badge || country.name}</span>
               </span>
 
               {/* Bottom Content Overlay */}
               <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5 text-left">
-                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-tight drop-shadow-sm transition-colors group-hover:text-pub-secondary">
+                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-tight drop-shadow-sm transition-colors duration-200 group-hover:text-pub-secondary">
                   {`${country.name} tours`}
                 </h3>
                 <div className="mt-2.5 flex items-start gap-2 text-xs text-white/90 leading-relaxed font-medium">
                   <SquareCheckBig
                     size={14}
-                    className="mt-0.5 shrink-0 text-orange-400 stroke-[2.2] transition-colors group-hover:text-pub-secondary"
+                    className="mt-0.5 shrink-0 text-orange-400 stroke-[2.2] transition-transform duration-300 group-hover:scale-110 group-hover:text-pub-secondary"
                   />
                   <p className="line-clamp-3 text-white/90 drop-shadow">
                     {country.snippet}
@@ -734,23 +797,44 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
   const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.8";
   const reviewCountStr = tour.reviews || "3,692 reviews";
 
+  // Dynamic discount badge calculation
+  const calculatedPct =
+    tour.originalPrice && tour.rawPrice && tour.originalPrice > tour.rawPrice
+      ? Math.round(
+          ((tour.originalPrice - tour.rawPrice) / tour.originalPrice) * 100,
+        )
+      : null;
+  const discountLabel =
+    tour.discountBadge ||
+    (calculatedPct ? `Save ${calculatedPct}%` : undefined);
+
   return (
-    <article className="group relative w-[310px] sm:w-[350px] lg:w-[380px] shrink-0 overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-[0_4px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
+    <article
+      data-trending-card
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 h-full"
+    >
       {/* Top Image Container */}
-      <div className="relative h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
+      <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
         <Link href={href} className="block h-full w-full">
-          <MarketingImage fill sizes="(max-width: 640px) 100vw, 360px"
+          <MarketingImage
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
             src={tour.image}
             alt={tour.title}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
           />
         </Link>
 
+        {/* Subtle vignette overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20 pointer-events-none" />
+
         {/* Location pill badge (top-left) */}
-        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white">
-          <MapPin size={11} className="shrink-0" />
-          <span className="truncate max-w-[120px]">{tour.place}</span>
-        </span>
+        <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-950/70 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-white shadow-xs">
+            <MapPin size={11} className="text-orange-400 shrink-0" />
+            <span className="truncate max-w-[120px]">{tour.place}</span>
+          </span>
+        </div>
 
         {/* Wishlist button (top-right) */}
         <button
@@ -761,71 +845,92 @@ function TrendingTourCard({ tour }: { tour: Tour }) {
               ? `Remove ${tour.title} from wishlist`
               : `Add ${tour.title} to wishlist`
           }
-          className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-200 hover:scale-115 focus:outline-none"
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-md text-slate-700 shadow-md transition-all duration-200 hover:scale-115 active:scale-90 hover:bg-white focus:outline-none cursor-pointer"
         >
           <Heart
-            size={18}
+            size={16}
             className={
-              wishlisted ? "fill-red-500 text-red-500" : "fill-white text-white"
+              wishlisted ? "fill-red-500 text-red-500" : "fill-slate-400/40 text-slate-700"
             }
           />
         </button>
 
-        {/* Red Discount Pill (floating bottom-right of image) - only shown for a real discount */}
-        {tour.discountBadge && (
-          <span className="absolute bottom-3 right-2.5 z-20 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-md">
-            {tour.discountBadge}
+        {/* Discount Pill (floating bottom-right of image) */}
+        {discountLabel && (
+          <span className="absolute bottom-3 right-2.5 z-20 inline-flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-white shadow-md shadow-red-600/30 animate-gentle-pulse">
+            <Sparkles size={11} className="fill-white animate-sparkle-glow" />
+            <span>{discountLabel}</span>
           </span>
         )}
       </div>
 
-      {/* Card Body */}
-      <div className="pt-4">
-        {/* Title */}
-        <Link href={href} className="block min-w-0">
-          <h3 className="truncate text-base sm:text-[17px] font-semibold text-slate-900 transition-colors group-hover:text-pub-secondary">
-            {tour.title}
-          </h3>
-        </Link>
-
-        {/* 5 Yellow Stars + Rating + Review count */}
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs">
-          <div className="flex items-center gap-0.5 text-amber-400">
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-          </div>
-          <b className="font-bold text-slate-900">{ratingVal}</b>
-          <span className="text-slate-400 font-normal">{reviewCountStr}</span>
-        </div>
-
-        {/* 4 Features Row (Clock, MapPin, User, Users) */}
-        <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-[11px] text-slate-600 font-medium">
-          {tour.features.map((feature, index) => (
-            <p key={index} className="flex items-center gap-2">
-              <feature.icon size={13} className="shrink-0 text-sky-500" />
-              <span className="truncate">{feature.text}</span>
-            </p>
-          ))}
-        </div>
-
-        {/* Pricing Row: From $oldpp $newpp */}
-        <div className="mt-3.5 flex items-baseline gap-1.5 border-t border-slate-100 pt-3 text-xs">
-          <span className="font-extrabold text-slate-900 text-sm">From</span>
-          {tour.originalPrice != null && (
-            <span className="text-xs font-normal text-slate-400 line-through">
-              {format(tour.originalPrice, tour.currency || "USD")}
-              <span className="text-[10px]">pp</span>
+      {/* Tour details */}
+      <div className="pt-4 flex flex-1 flex-col justify-between">
+        <div>
+          {/* Title and Duration - fixed min-h matches 1-line and 2-line cards */}
+          <div className="flex items-start justify-between gap-2.5 min-h-[46px] sm:min-h-[48px]">
+            <Link href={href} className="block flex-1 min-w-0">
+              <h3 className="line-clamp-2 text-base sm:text-[17px] font-bold text-slate-900 transition-colors group-hover:text-pub-secondary leading-snug">
+                {tour.title}
+              </h3>
+            </Link>
+            <span className="shrink-0 rounded-lg border border-sky-200/80 bg-sky-50/70 px-2 py-0.5 text-[10px] font-extrabold text-sky-700 tracking-wide">
+              {tour.durationTag || "7D | 6N"}
             </span>
+          </div>
+
+          {/* 5 Yellow Stars + Rating + Reviews */}
+          <div className="mt-2.5 flex items-center gap-1.5 text-xs">
+            <div className="flex items-center gap-0.5 text-amber-400">
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+            </div>
+            <b className="font-extrabold text-slate-900">{ratingVal}</b>
+            <span className="text-slate-400 font-medium">({reviewCountStr})</span>
+          </div>
+
+          {/* 4 Feature bullets grid */}
+          {tour.features && tour.features.length > 0 && (
+            <div className="mt-3.5 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[11px] text-slate-600 font-medium">
+              {tour.features.map((feature, index) => (
+                <p key={index} className="flex items-center gap-2">
+                  <feature.icon size={13} className="shrink-0 text-sky-500 stroke-[2]" />
+                  <span className="truncate">{feature.text}</span>
+                </p>
+              ))}
+            </div>
           )}
-          <strong className="text-xl font-black text-slate-950">
-            {tour.rawPrice != null
-              ? format(tour.rawPrice, tour.currency || "USD")
-              : format(1575, "USD")}
-          </strong>
-          <span className="text-[11px] font-bold text-slate-900">pp</span>
+        </div>
+
+        {/* Pricing Row: From $old $new pp + Action button */}
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3.5">
+          <div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xs font-semibold text-slate-400">From</span>
+              {tour.originalPrice != null && (
+                <span className="text-xs font-normal text-slate-400 line-through">
+                  {format(tour.originalPrice, tour.currency || "USD")}
+                </span>
+              )}
+              <strong className="text-xl sm:text-2xl font-black text-slate-950">
+                {tour.rawPrice != null
+                  ? format(tour.rawPrice, tour.currency || "USD")
+                  : format(1575, "USD")}
+              </strong>
+              <span className="text-xs font-bold text-slate-500">pp</span>
+            </div>
+          </div>
+
+          <Link
+            href={href}
+            aria-label={`View tour: ${tour.title}`}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0B1527] text-white shadow-xs transition-all duration-300 group-hover:bg-[#E4572E] group-hover:scale-108 group-hover:shadow-md active:scale-95"
+          >
+            <ArrowRight size={15} className="stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
         </div>
       </div>
     </article>
@@ -840,65 +945,87 @@ function TrendingToursSection({
   loading?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const move = (direction: number) =>
-    scrollRef.current?.scrollBy({ left: direction * 330, behavior: "smooth" });
+  const move = (direction: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const firstCard = el.querySelector<HTMLElement>("[data-trending-card]");
+    const gap = 20;
+    const step = firstCard ? firstCard.offsetWidth + gap : 320;
+    el.scrollBy({ left: direction * step, behavior: "smooth" });
+  };
 
   const displayTours = tours;
 
   return (
-    <section className="py-8 sm:py-10">
-      {/* Section Header with Arrows on right */}
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
-          Trending Tour Packages
-        </h2>
+    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-16 bg-gradient-to-b from-white via-[#F8FAFC] to-[#F1F5F9] border-y border-slate-200/70 shadow-2xs">
+      {/* Ambient decorative glowing blobs */}
+      <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-bl from-sky-200/20 via-blue-100/15 to-transparent blur-3xl animate-float-orb" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-sky-200/15 via-slate-100/20 to-transparent blur-3xl animate-float-orb-alt" />
 
-        {!loading && displayTours.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Previous tours"
-              onClick={() => move(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
-            >
-              <ChevronLeft size={16} className="stroke-[2.2]" />
-            </button>
-            <button
-              type="button"
-              aria-label="Next tours"
-              onClick={() => move(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
-            >
-              <ChevronRight size={16} className="stroke-[2.2]" />
-            </button>
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+        {/* Section Header with Arrows on right */}
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-sky-100/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-sky-800 mb-2">
+              <Sparkles size={12} className="fill-current text-sky-600 animate-sparkle-glow" />
+              <span>Trending Worldwide</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-950 tracking-tight">
+              Trending Tour Packages
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-600 font-medium max-w-xl">
+              Most-booked itineraries loved by our global travel community this season.
+            </p>
           </div>
-        )}
-      </div>
 
-      {/* Carousel list */}
-      <div
-        ref={scrollRef}
-        className="no-scrollbar flex snap-x gap-5 overflow-x-auto pb-4 pt-1"
-      >
-        {loading ? (
-          Array.from({ length: 4 }).map((_, index) => (
-            <div className="snap-start" key={index}>
-              <TourCardSkeleton />
+          {!loading && displayTours.length > 0 && (
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                aria-label="Previous tours"
+                onClick={() => move(-1)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-sky-500 hover:text-sky-600 hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+              >
+                <ChevronLeft size={18} className="stroke-[2.5]" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next tours"
+                onClick={() => move(1)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-sky-500 hover:text-sky-600 hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+              >
+                <ChevronRight size={18} className="stroke-[2.5]" />
+              </button>
             </div>
-          ))
-        ) : displayTours.length > 0 ? (
-          displayTours.map((tour, index) => (
-            <div className="snap-start" key={`${tour.title}-${index}`}>
-              <TrendingTourCard tour={tour} />
-            </div>
-          ))
-        ) : (
-          <EmptyCollection
-            message="No featured tours are available yet."
-            href="/tours"
-            linkLabel="Browse all tours"
-          />
-        )}
+          )}
+        </div>
+
+        {/* Carousel list: No left/right cut off, full show on all viewports */}
+        <div
+          ref={scrollRef}
+          className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
+        >
+          {loading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start"
+              >
+                <TourCardSkeleton />
+              </div>
+            ))
+          ) : displayTours.length > 0 ? (
+            displayTours.map((tour, index) => (
+              <TrendingTourCard key={`${tour.title}-${index}`} tour={tour} />
+            ))
+          ) : (
+            <EmptyCollection
+              message="No featured tours are available yet."
+              href="/tours"
+              linkLabel="Browse all tours"
+            />
+          )}
+        </div>
       </div>
     </section>
   );
@@ -927,19 +1054,27 @@ function HandpickedTourCard({ tour }: { tour: Tour }) {
   const reviewCountStr = tour.reviews || "1,842 reviews";
 
   return (
-    <article className="group relative w-[310px] sm:w-[350px] lg:w-[380px] shrink-0 overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-[0_4px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
+    <article
+      data-handpicked-card
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 h-full"
+    >
       {/* Image with Location badge & Wishlist */}
-      <div className="relative h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
+      <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
         <Link href={href} className="block h-full w-full">
-          <MarketingImage fill sizes="(max-width: 640px) 100vw, 360px"
+          <MarketingImage
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
             src={tour.image}
             alt={tour.title}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
           />
         </Link>
 
+        {/* Subtle vignette overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-black/15 pointer-events-none" />
+
         {/* Location pill badge (top-left) */}
-        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white">
+        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white shadow-xs transition-transform duration-300 group-hover:scale-105">
           <MapPin size={11} className="shrink-0" />
           <span className="truncate max-w-[120px]">{tour.place}</span>
         </span>
@@ -953,42 +1088,44 @@ function HandpickedTourCard({ tour }: { tour: Tour }) {
               ? `Remove ${tour.title} from wishlist`
               : `Add ${tour.title} to wishlist`
           }
-          className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-200 hover:scale-115 focus:outline-none"
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-md text-slate-700 shadow-md transition-all duration-200 hover:scale-115 active:scale-90 hover:bg-white focus:outline-none cursor-pointer"
         >
           <Heart
-            size={18}
+            size={16}
             className={
-              wishlisted ? "fill-red-500 text-red-500" : "fill-white text-white"
+              wishlisted ? "fill-red-500 text-red-500" : "fill-slate-400/40 text-slate-700"
             }
           />
         </button>
       </div>
 
       {/* Tour details */}
-      <div className="pt-4">
-        {/* Title and duration tag */}
-        <div className="flex items-start justify-between gap-2">
-          <Link href={href} className="block flex-1 min-w-0">
-            <h3 className="truncate text-base sm:text-[17px] font-semibold text-slate-900 transition-colors group-hover:text-pub-secondary">
-              {tour.title}
-            </h3>
-          </Link>
-          <span className="shrink-0 rounded-md border border-[#E4572E]/40 bg-orange-50/40 px-2.5 py-0.5 text-[10px] font-extrabold text-[#E4572E] tracking-wide">
-            {tour.durationTag || "8D | 7N"}
-          </span>
-        </div>
-
-        {/* 5 Yellow Stars + Rating + Review count */}
-        <div className="mt-2 flex items-center gap-1.5 text-xs">
-          <div className="flex items-center gap-0.5 text-amber-400">
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <Star size={12} className="fill-amber-400 text-amber-400" />
+      <div className="pt-4 flex flex-1 flex-col justify-between">
+        <div>
+          {/* Title and duration tag - fixed min-h ensures 1-line and 2-line cards match in height */}
+          <div className="flex items-start justify-between gap-2 min-h-[46px] sm:min-h-[48px]">
+            <Link href={href} className="block flex-1 min-w-0">
+              <h3 className="line-clamp-2 text-base sm:text-[17px] font-semibold text-slate-900 transition-colors duration-200 group-hover:text-pub-secondary leading-snug">
+                {tour.title}
+              </h3>
+            </Link>
+            <span className="shrink-0 rounded-md border border-[#E4572E]/40 bg-orange-50/40 px-2.5 py-0.5 text-[10px] font-extrabold text-[#E4572E] tracking-wide transition-colors duration-200 group-hover:bg-orange-100/50">
+              {tour.durationTag || "8D | 7N"}
+            </span>
           </div>
-          <b className="font-bold text-slate-900">{ratingVal}</b>
-          <span className="text-slate-400 font-normal">{reviewCountStr}</span>
+
+          {/* 5 Yellow Stars + Rating + Review count */}
+          <div className="mt-2 flex items-center gap-1.5 text-xs">
+            <div className="flex items-center gap-0.5 text-amber-400">
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+            </div>
+            <b className="font-bold text-slate-900">{ratingVal}</b>
+            <span className="text-slate-400 font-normal">({reviewCountStr})</span>
+          </div>
         </div>
 
         {/* Price Row: From $old $new pp */}
@@ -1019,8 +1156,14 @@ function HandpickedToursSection({
   loading?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const move = (direction: number) =>
-    scrollRef.current?.scrollBy({ left: direction * 330, behavior: "smooth" });
+  const move = (direction: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const firstCard = el.querySelector<HTMLElement>("[data-handpicked-card]");
+    const gap = 20;
+    const step = firstCard ? firstCard.offsetWidth + gap : 320;
+    el.scrollBy({ left: direction * step, behavior: "smooth" });
+  };
 
   const displayTours = tours;
 
@@ -1038,7 +1181,7 @@ function HandpickedToursSection({
               type="button"
               aria-label="Previous tours"
               onClick={() => move(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:scale-110 active:scale-90 hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50 cursor-pointer"
             >
               <ChevronLeft size={16} className="stroke-[2.2]" />
             </button>
@@ -1046,7 +1189,7 @@ function HandpickedToursSection({
               type="button"
               aria-label="Next tours"
               onClick={() => move(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:scale-110 active:scale-90 hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50 cursor-pointer"
             >
               <ChevronRight size={16} className="stroke-[2.2]" />
             </button>
@@ -1054,26 +1197,27 @@ function HandpickedToursSection({
         )}
       </div>
 
-      {/* Carousel list */}
+      {/* Carousel list: No left/right cut off, full show on all viewports */}
       <div
         ref={scrollRef}
-        className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-4 pt-1"
+        className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
       >
         {loading ? (
           Array.from({ length: 4 }).map((_, index) => (
-            <div className="snap-start" key={index}>
+            <div
+              key={index}
+              className="w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start"
+            >
               <TourCardSkeleton />
             </div>
           ))
         ) : displayTours.length > 0 ? (
           displayTours.map((tour, index) => (
-            <div className="snap-start" key={`${tour.title}-${index}`}>
-              <HandpickedTourCard tour={tour} />
-            </div>
+            <HandpickedTourCard key={`${tour.title}-${index}`} tour={tour} />
           ))
         ) : (
           <EmptyCollection
-            message="No handpicked tours are available yet."
+            message="No tours found in this selection."
             href="/tours"
             linkLabel="Browse all tours"
           />
@@ -1091,67 +1235,88 @@ function CountriesWorthExploringSection({
   loading?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const move = (direction: number) =>
-    scrollRef.current?.scrollBy({ left: direction * 300, behavior: "smooth" });
+  const move = (direction: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const firstCard = el.querySelector<HTMLElement>("[data-country-card]");
+    const gap = 20;
+    const step = firstCard ? firstCard.offsetWidth + gap : 320;
+    el.scrollBy({ left: direction * step, behavior: "smooth" });
+  };
 
   const displayCountries = countries;
 
   return (
-    <section className="py-8 sm:py-10">
-      {/* Header */}
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
-          Countries Worth Exploring
-        </h2>
+    <section className="relative w-full overflow-hidden my-8 sm:my-14 py-12 sm:py-20 bg-gradient-to-b from-white via-[#FAF7F2] to-[#F4EFE7] border-y border-slate-200/60 shadow-2xs">
+      {/* Ambient decorative glowing blobs */}
+      <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-bl from-amber-200/20 via-orange-100/15 to-transparent blur-3xl animate-float-orb" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-emerald-100/20 via-slate-100/20 to-transparent blur-3xl animate-float-orb-alt" />
 
-        {!loading && displayCountries.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Previous countries"
-              onClick={() => move(-1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
-            >
-              <ChevronLeft size={16} className="stroke-[2.2]" />
-            </button>
-            <button
-              type="button"
-              aria-label="Next countries"
-              onClick={() => move(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50"
-            >
-              <ChevronRight size={16} className="stroke-[2.2]" />
-            </button>
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+        {/* Header */}
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-100/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-amber-800 mb-2">
+              <Sparkles size={12} className="fill-current text-amber-600 animate-sparkle-glow" />
+              <span>Global Destinations</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-950 tracking-tight">
+              Countries Worth Exploring
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-600 font-medium max-w-xl">
+              Iconic landscapes, rich cultures, and unforgettable adventures across the world&apos;s most sought-after countries.
+            </p>
           </div>
-        )}
-      </div>
 
-      {/* Carousel */}
-      <div
-        ref={scrollRef}
-        className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-4 pt-1"
-      >
-        {loading ? (
-          Array.from({ length: 4 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-56 w-[260px] shrink-0 animate-pulse rounded-2xl bg-slate-100"
+          {!loading && displayCountries.length > 0 && (
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                aria-label="Previous countries"
+                onClick={() => move(-1)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E4572E] hover:text-[#E4572E] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+              >
+                <ChevronLeft size={18} className="stroke-[2.5]" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next countries"
+                onClick={() => move(1)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E4572E] hover:text-[#E4572E] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+              >
+                <ChevronRight size={18} className="stroke-[2.5]" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Carousel: No left/right cut off, full show on all viewports */}
+        <div
+          ref={scrollRef}
+          className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
+        >
+          {loading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start h-72 animate-pulse rounded-[22px] bg-white/60 border border-slate-200/60"
+              />
+            ))
+          ) : displayCountries.length > 0 ? (
+            displayCountries.map((country, index) => (
+              <CountryWorthExploringCard
+                key={`${country.name}-${index}`}
+                country={country}
+              />
+            ))
+          ) : (
+            <EmptyCollection
+              message="No destinations are available yet."
+              href="/tours"
+              linkLabel="Browse all tours"
             />
-          ))
-        ) : displayCountries.length > 0 ? (
-          displayCountries.map((country, index) => (
-            <CountryWorthExploringCard
-              key={`${country.name}-${index}`}
-              country={country}
-            />
-          ))
-        ) : (
-          <EmptyCollection
-            message="No destinations are available yet."
-            href="/tours"
-            linkLabel="Browse all tours"
-          />
-        )}
+          )}
+        </div>
       </div>
     </section>
   );
@@ -1162,46 +1327,110 @@ function CountryWorthExploringCard({
 }: {
   country: CountryWorthExploring;
 }) {
+  const { isWishlisted, toggleWishlist } = useTravelStore();
+  const itemId = stableHash(`country-${country.name}`);
+  const wishlisted = isWishlisted(itemId);
+  const href = `/tours?country=${encodeURIComponent(country.name)}`;
+
+  const travelItem = {
+    id: itemId,
+    title: `${country.name} Tours`,
+    place: country.name,
+    image: country.image,
+    price: null,
+    currency: "USD",
+    duration: country.count,
+    href,
+  };
+
+  const ratingVal = (country.rating ?? 4.9).toFixed(1);
+
   return (
-    <Link
-      href={`/tours?country=${encodeURIComponent(country.name)}`}
-      className="group block w-[310px] sm:w-[350px] lg:w-[380px] shrink-0 snap-start overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-3.5 shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl focus:outline-none"
+    <div
+      data-country-card
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 flex flex-col justify-between h-full"
     >
-      <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100">
-        <img
-          src={country.image}
-          alt={country.name}
-          className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-        />
+      {/* Top Image Container */}
+      <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
+        <Link href={href} className="block h-full w-full">
+          <img
+            src={country.image}
+            alt={country.name}
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
+          />
+        </Link>
+
+        {/* Subtle vignette for badge readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20 pointer-events-none" />
 
         {/* Popular orange badge (top-left) */}
-        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs">
-          <Sparkles size={10} className="shrink-0" />
+        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-md shadow-orange-600/30">
+          <Sparkles size={11} className="fill-white animate-sparkle-glow" />
           <span>{country.badge || "Popular"}</span>
         </span>
+
+        {/* Wishlist button (top-right) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(travelItem);
+          }}
+          aria-label={
+            wishlisted
+              ? `Remove ${country.name} from wishlist`
+              : `Add ${country.name} to wishlist`
+          }
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-md text-slate-700 shadow-md transition-all duration-200 hover:scale-115 active:scale-90 hover:bg-white focus:outline-none cursor-pointer"
+        >
+          <Heart
+            size={16}
+            className={
+              wishlisted ? "fill-red-500 text-red-500" : "fill-slate-400/40 text-slate-700"
+            }
+          />
+        </button>
       </div>
 
-      <div className="pt-3 px-0.5">
-        {/* Name and Rating */}
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="truncate text-base font-semibold text-slate-900 transition-colors group-hover:text-pub-secondary">
-            {country.name}
-          </h3>
-          {country.rating != null && (
-            <div className="flex items-center gap-1 text-xs font-bold text-slate-800 shrink-0">
+      {/* Card Body */}
+      <div className="pt-4 flex flex-col justify-between flex-1">
+        <div>
+          {/* Name and Rating */}
+          <div className="flex items-center justify-between gap-2 min-h-[32px]">
+            <Link href={href} className="block min-w-0 flex-1">
+              <h3 className="truncate text-lg font-bold text-slate-900 transition-colors group-hover:text-pub-secondary">
+                {country.name}
+              </h3>
+            </Link>
+            <div className="flex items-center gap-1 text-xs font-extrabold text-slate-800 shrink-0 bg-amber-50/80 px-2 py-0.5 rounded-md border border-amber-200/60">
               <Star size={12} className="fill-amber-400 text-amber-400" />
-              <span>{country.rating.toFixed(1)}</span>
+              <span>{ratingVal}</span>
             </div>
-          )}
+          </div>
+
+          {/* Packages count with map/book icon */}
+          <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+            <BookOpen size={13} className="text-sky-500 shrink-0 stroke-[2]" />
+            <span>{country.count}</span>
+          </p>
         </div>
 
-        {/* Packages count with map/book icon */}
-        <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-          <BookOpen size={13} className="text-sky-500 shrink-0" />
-          <span>{country.count}</span>
-        </p>
+        {/* Bottom Explore action */}
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+          <span className="text-xs font-semibold text-slate-500">
+            Explore packages
+          </span>
+          <Link
+            href={href}
+            aria-label={`Explore ${country.name} tours`}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0B1527] text-white shadow-xs transition-all duration-300 group-hover:bg-[#E4572E] group-hover:scale-110 active:scale-95"
+          >
+            <ArrowRight size={14} className="stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
+        </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -1749,14 +1978,14 @@ export default function Home() {
         </Reveal>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
-        <Reveal>
-          <TopDealsSection
-            tours={topDeals}
-            loading={loadingHome && !topDeals.length}
-          />
-        </Reveal>
+      <Reveal>
+        <TopDealsSection
+          tours={topDeals}
+          loading={loadingHome && !topDeals.length}
+        />
+      </Reveal>
 
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         <Reveal>
           <FavouriteCountriesSection destinations={favouriteCountries} />
         </Reveal>
@@ -1770,65 +1999,79 @@ export default function Home() {
         />
       </Reveal>
 
-      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
-        <Reveal>
-          <TrendingToursSection
-            tours={trendingTours}
-            loading={loadingHome && !trendingTours.length}
-          />
-        </Reveal>
+      <Reveal>
+        <TrendingToursSection
+          tours={trendingTours}
+          loading={loadingHome && !trendingTours.length}
+        />
+      </Reveal>
 
-        <Reveal className="py-6 sm:py-8">
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
-            {/* Left Image: 602px x 394px on desktop, rounded-[16px] with 16px outer padding */}
-            <div className="relative h-[280px] sm:h-[340px] lg:h-[394px] w-full overflow-hidden rounded-[16px] bg-slate-100">
-              <img
-                src={blogTeaser.image ? mediaUrl(blogTeaser.image) : "/images/img-1.png"}
-                alt="Travellers with backpacks hiking on a trail"
-                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-              />
-            </div>
+      {/* Blog Teaser with Amber & Sky Ambient Gradient Backdrop */}
+      <Reveal>
+        <section className="relative w-full overflow-hidden my-8 sm:my-14 py-12 sm:py-20 bg-gradient-to-br from-[#FFF9EE] via-[#FDFAFB] to-[#F0F7FF] border-y border-slate-100 shadow-xs">
+          {/* Top-left golden glow */}
+          <div className="pointer-events-none absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-amber-400/35 via-orange-300/20 to-transparent blur-3xl animate-float-orb" />
+          {/* Bottom-right sky-blue glow */}
+          <div className="pointer-events-none absolute -bottom-24 -right-24 h-[420px] w-[420px] rounded-full bg-gradient-to-tl from-sky-400/25 via-blue-300/15 to-transparent blur-3xl animate-float-orb-alt" />
 
-            {/* Right Content */}
-            <div className="flex flex-col items-start justify-center py-2 px-2 sm:px-4 lg:px-6 text-left">
-              <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E4572E]">
-                {blogTeaser.eyebrow ?? "BLOG"}
-              </span>
-              <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-semibold leading-tight text-slate-950 tracking-tight">
-                {blogTeaser.heading ?? "Travel stories, guides and inspiration for every journey"}
-              </h2>
-              <p className="mt-4 max-w-md text-xs sm:text-sm md:text-base leading-relaxed text-slate-500 font-medium">
-                {blogTeaser.subtitle ??
-                  "Explore travel guides, insider tips and inspiring stories from destinations around the world."}
-              </p>
-              <Link
-                href={blogTeaser.cta_url || "/blogs"}
-                className="mt-7 inline-flex h-[60px] items-center justify-center gap-3 rounded-2xl bg-[#0B1527] px-8 text-base font-black text-white shadow-md transition-all duration-200 hover:bg-[#15233C] hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
-              >
-                <span>{blogTeaser.cta_text ?? "Read Stories"}</span>
-                <ArrowRight
-                  size={18}
-                  className="text-[#E4572E] stroke-[2.5]"
-                  aria-hidden="true"
+          <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+            <div className="group grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-5 sm:p-6 lg:p-7 shadow-xs hover:border-slate-300 hover:shadow-lg transition-all duration-300 ease-out">
+              {/* Left Image: rounded-[18px] with smooth hover zoom */}
+              <div className="relative h-[280px] sm:h-[340px] lg:h-[400px] w-full overflow-hidden rounded-[18px] bg-slate-100 shadow-sm">
+                <img
+                  src={blogTeaser.image ? mediaUrl(blogTeaser.image) : "/images/img-1.png"}
+                  alt="Travellers with backpacks hiking on a trail"
+                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
                 />
-              </Link>
-            </div>
-          </section>
-        </Reveal>
+              </div>
 
+              {/* Right Content */}
+              <div className="flex flex-col items-start justify-center py-2 px-2 sm:px-4 lg:px-6 text-left">
+                <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E4572E]">
+                  <Sparkles size={14} className="text-[#E4572E] animate-sparkle-glow" />
+                  <span>{blogTeaser.eyebrow ?? "BLOG"}</span>
+                </span>
+                <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-extrabold leading-tight text-slate-950 tracking-tight">
+                  {blogTeaser.heading ?? "Travel stories, guides and inspiration for every journey"}
+                </h2>
+                <p className="mt-4 max-w-md text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 font-medium">
+                  {blogTeaser.subtitle ??
+                    "Explore travel guides, insider tips and inspiring stories from destinations around the world."}
+                </p>
+                <Link
+                  href={blogTeaser.cta_url || "/blogs"}
+                  className="group/btn mt-7 inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#0B1527] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-200 hover:bg-[#15233C] hover:shadow-xl hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                >
+                  <span>{blogTeaser.cta_text ?? "Read Stories"}</span>
+                  <ArrowRight
+                    size={16}
+                    className="text-[#E4572E] stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1"
+                    aria-hidden="true"
+                  />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </Reveal>
+
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         <Reveal>
           <HandpickedToursSection
             tours={handpickedTours}
             loading={loadingHome && !handpickedTours.length}
           />
         </Reveal>
+      </div>
 
-        <Reveal>
-          <CountriesWorthExploringSection
-            countries={countriesWorthExploring}
-            loading={loadingHome && !countriesWorthExploring.length}
-          />
-        </Reveal>
+      <Reveal>
+        <CountriesWorthExploringSection
+          countries={countriesWorthExploring}
+          loading={loadingHome && !countriesWorthExploring.length}
+        />
+      </Reveal>
+
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
 
         <Reveal>
           <TestimonialsSection
@@ -1845,6 +2088,7 @@ export default function Home() {
           />
         </Reveal>
 
+        {/* Airport Transfers Banner */}
         <Reveal>
           <AirportTransfersBanner
             eyebrow={airportTransfer.eyebrow}
@@ -1861,6 +2105,16 @@ export default function Home() {
           <FaqSection faqs={dynamicFaqs} />
         </Reveal>
       </div>
+
+      {/* 24/7 Travel Support Banner */}
+      <Reveal>
+        <TravelSupportBanner image="/images/offer.png" />
+      </Reveal>
+
+      {/* Panoramic Travel Newsletter / Registration Banner */}
+      <Reveal>
+        <HomeNewsletterBanner image="/images/register.png" />
+      </Reveal>
     </main>
   );
 }
@@ -1885,39 +2139,39 @@ function AirportTransfersBanner({
   image?: string;
 }) {
   const { settings } = usePublicSettings();
-  // CMS-configured CTA URL wins when set; otherwise fall back to the
-  // Brightlane link configured in Settings, then a hardcoded default.
   const brightlaneLink =
     ctaUrl?.trim() ||
     settings.brightlane_external_link?.trim() ||
     "https://www.brightlane.co.nz/";
 
+  const isExternal = brightlaneLink.startsWith("http");
+
   return (
-    <section className="py-6 sm:py-8">
-      <div className="grid gap-6 lg:gap-10 overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-100/90 bg-white p-6 sm:p-4 lg:p-10 md:grid-cols-2 md:items-center">
+    <section className="py-6 sm:py-10">
+      <div className="group grid gap-6 lg:gap-10 overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-6 sm:p-8 lg:p-10 md:grid-cols-2 md:items-center shadow-xs hover:border-slate-300 hover:shadow-lg transition-all duration-300 ease-out">
         <div className="flex flex-col items-start justify-center py-2 text-left">
           {/* Tag / Badge */}
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#d95d2c]">
+          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E4572E]">
             <Plane size={14} className="rotate-45" />
             <span>{eyebrow}</span>
           </div>
 
           {/* Heading */}
-          <h2 className="mt-2.5 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl lg:text-[36px] tracking-tight">
+          <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-extrabold leading-tight text-slate-950 tracking-tight">
             {heading}
           </h2>
 
           {/* Subtitle */}
-          <p className="mt-2 text-xs sm:text-sm md:text-base leading-relaxed text-slate-500">
+          <p className="mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 font-medium">
             {subtitle}
           </p>
 
           {/* Feature Pills */}
-          <div className="mt-4 sm:mt-5 flex flex-wrap gap-2">
-            {features.map((feature) => (
+          <div className="mt-5 flex flex-wrap gap-2">
+            {(features && features.length > 0 ? features : DEFAULT_TRANSFER_FEATURES).map((feature) => (
               <span
                 key={feature}
-                className="rounded-full bg-[#d95d2c] px-3 py-1 text-[11px] font-semibold text-white"
+                className="rounded-full bg-[#E4572E] px-3.5 py-1 text-[11px] font-bold text-white shadow-xs transition-transform duration-200 hover:scale-105 select-none"
               >
                 {feature}
               </span>
@@ -1927,18 +2181,14 @@ function AirportTransfersBanner({
           {/* CTA Button */}
           <a
             href={brightlaneLink}
-            target={brightlaneLink.startsWith("http") ? "_blank" : undefined}
-            rel={
-              brightlaneLink.startsWith("http")
-                ? "noopener noreferrer"
-                : undefined
-            }
-            className="mt-6 sm:mt-7 inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#0f2439] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all hover:bg-[#18395c] hover:shadow-lg hover:-translate-y-0.5"
+            target={isExternal ? "_blank" : undefined}
+            rel={isExternal ? "noopener noreferrer" : undefined}
+            className="group/btn mt-7 inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#0B1527] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-200 hover:bg-[#15233C] hover:shadow-xl hover:-translate-y-0.5 active:scale-95 cursor-pointer"
           >
             <span>{ctaText}</span>
             <ArrowRight
-              size={18}
-              className="text-[#d95d2c] stroke-[2.5]"
+              size={16}
+              className="text-[#E4572E] stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1"
               aria-hidden="true"
             />
           </a>
@@ -1947,21 +2197,197 @@ function AirportTransfersBanner({
         {/* Right Image */}
         <a
           href={brightlaneLink}
-          target={brightlaneLink.startsWith("http") ? "_blank" : undefined}
-          rel={
-            brightlaneLink.startsWith("http")
-              ? "noopener noreferrer"
-              : undefined
-          }
+          target={isExternal ? "_blank" : undefined}
+          rel={isExternal ? "noopener noreferrer" : undefined}
           aria-label="Visit Brightlane Airport Transfers"
-          className="relative block h-[280px] sm:h-[340px] lg:h-[394px] w-full overflow-hidden rounded-[16px] bg-slate-100"
+          className="relative block h-[280px] sm:h-[340px] lg:h-[380px] w-full overflow-hidden rounded-[18px] bg-slate-100 shadow-sm"
         >
           <img
             src={image}
             alt="Luxury airport chauffeur transfer in front of international arrivals terminal"
-            className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
           />
         </a>
+      </div>
+    </section>
+  );
+}
+
+function TravelSupportBanner({
+  eyebrow = "Offer Ends Soon",
+  heading = "24/7 Travel Support",
+  subtitle = "From booking questions to on-trip assistance, our travel support team is here to make your Tourvaa journey smooth, simple and stress-free.",
+  ctaText = "Explore Deals",
+  ctaUrl = "/tours?sort=price_asc",
+  image = "/images/offer.png",
+}: {
+  eyebrow?: string;
+  heading?: string;
+  subtitle?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  image?: string;
+}) {
+  return (
+    <section className="group relative w-full overflow-hidden my-6 sm:my-10 py-14 sm:py-16 md:py-20 lg:py-24 bg-white border-y border-slate-200/60 shadow-2xs">
+      {/* Full panoramic background image */}
+      <img
+        src={image}
+        alt={heading}
+        className="absolute inset-0 h-full w-full object-cover object-left md:object-[12%_center] transition-transform duration-700 ease-out group-hover:scale-102"
+      />
+
+      {/* Subtle responsive wash ensuring razor-sharp readability on any display */}
+      <div className="absolute inset-0 bg-white/75 sm:bg-transparent sm:bg-gradient-to-r sm:from-transparent sm:via-white/30 sm:via-45% sm:to-white/85 pointer-events-none" />
+
+      {/* Foreground Content Aligned to the Right Half */}
+      <div className="relative z-10 mx-auto max-w-[1380px] px-6 sm:px-10 lg:px-12">
+        <div className="flex flex-col items-start justify-center ml-auto max-w-lg lg:max-w-xl text-left">
+          {/* Eyebrow / Offer Ends Soon Badge */}
+          <span className="inline-flex items-center rounded-full bg-[#E4572E] px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-xs">
+            {eyebrow}
+          </span>
+
+          {/* Heading */}
+          <h2 className="mt-3.5 text-2xl sm:text-3xl lg:text-[34px] font-bold tracking-tight text-slate-950 leading-tight">
+            {heading}
+          </h2>
+
+          {/* Subtitle */}
+          <p className="mt-3 text-xs sm:text-sm md:text-[15px] leading-relaxed text-slate-600 font-normal">
+            {subtitle}
+          </p>
+
+          {/* Action Button */}
+          <Link
+            href={ctaUrl}
+            className="group/btn mt-6 sm:mt-7 inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#0B1527] px-7 sm:px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-200 hover:bg-[#15233C] hover:shadow-xl hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+          >
+            <span>{ctaText}</span>
+            <ArrowRight
+              size={16}
+              className="text-[#E4572E] stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1"
+              aria-hidden="true"
+            />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HomeNewsletterBanner({
+  badge = "Special Offers",
+  heading = "Get Exclusive Deals & Travel Updates",
+  subtitle = "Subscribe to Tourvaa's newsletter for secret sales, handpicked itineraries, and member-only discounts delivered straight to your inbox.",
+  image = "/images/register.png",
+}: {
+  badge?: string;
+  heading?: string;
+  subtitle?: string;
+  image?: string;
+}) {
+  const [email, setEmail] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || subscribing) return;
+
+    try {
+      setSubscribing(true);
+      setMessage(null);
+      await subscribeNewsletter(email.trim());
+      setMessage({
+        type: "success",
+        text: "Thank you for registering! Special offers and updates are on their way.",
+      });
+      setEmail("");
+    } catch (err: unknown) {
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Registration failed. Please try again.",
+      });
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
+  return (
+    <section className="relative w-full overflow-hidden my-6 sm:my-10 py-10 sm:py-16 bg-gradient-to-b from-[#F8FAFC] via-[#F1F6FB] to-[#E9F2FA] border-y border-slate-100 shadow-xs">
+      {/* Top-left sky blue ambient glow */}
+      <div className="pointer-events-none absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-blue-400/20 via-indigo-300/10 to-transparent blur-3xl animate-float-orb" />
+      {/* Bottom-right soft warm glow */}
+      <div className="pointer-events-none absolute -bottom-24 -right-24 h-[420px] w-[420px] rounded-full bg-gradient-to-tl from-amber-400/20 via-orange-300/10 to-transparent blur-3xl animate-float-orb-alt" />
+
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+        <div className="group relative w-full overflow-hidden rounded-[24px] border border-white/20 shadow-sm transition-all duration-300 ease-out hover:shadow-xl">
+          {/* Background image & gradient overlay */}
+          <div className="absolute inset-0 overflow-hidden">
+            <img
+              src={image}
+              alt={heading}
+              className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-106"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/75 to-slate-950/45" />
+          </div>
+
+          {/* Foreground content */}
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 p-6 sm:p-8 lg:p-12 min-h-[180px]">
+            {/* Left Content */}
+            <div className="max-w-xl text-left">
+              {badge && (
+                <span className="inline-flex items-center rounded-full bg-[#E4572E] px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-xs">
+                  {badge}
+                </span>
+              )}
+              <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[34px] font-extrabold text-white tracking-tight leading-tight">
+                {heading}
+              </h2>
+              <p className="mt-2 text-xs sm:text-sm md:text-[15px] text-white/90 font-medium leading-relaxed max-w-lg">
+                {subtitle}
+              </p>
+            </div>
+
+            {/* Right Registration / Newsletter Form */}
+            <div className="w-full lg:max-w-md">
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
+              >
+                <div className="relative flex-1">
+                  <input
+                    type="email"
+                    required
+                    placeholder="Enter Your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-12 w-full rounded-xl border border-white/30 bg-black/25 backdrop-blur-md px-4 text-sm text-white placeholder:text-white/70 focus:border-[#E4572E] focus:ring-2 focus:ring-[#E4572E]/40 focus:bg-black/50 focus:outline-none transition-all duration-200 shadow-inner"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={subscribing}
+                  className="group/btn h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1527] px-7 text-sm sm:text-base font-bold text-white shadow-lg transition-all duration-200 hover:bg-[#15233C] hover:shadow-xl hover:-translate-y-0.5 active:scale-95 whitespace-nowrap disabled:opacity-60 cursor-pointer"
+                >
+                  <span>{subscribing ? "Registering..." : "Register"}</span>
+                  <ArrowRight size={16} className="text-[#E4572E] stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1" />
+                </button>
+              </form>
+
+              {message && (
+                <p
+                  className={`mt-2.5 text-xs font-bold ${
+                    message.type === "success" ? "text-emerald-400" : "text-rose-400"
+                  }`}
+                >
+                  {message.text}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -2024,10 +2450,10 @@ function FaqSection({
             return (
               <div
                 key={faq.question}
-                className={`transition-all duration-300 ${
+                className={`transition-all duration-300 ease-out ${
                   isOpen
                     ? "rounded-2xl border border-blue-200 bg-blue-50/30 p-5 sm:p-6 shadow-sm ring-1 ring-blue-100"
-                    : "rounded-2xl border-b border-slate-200/80 bg-white px-5 sm:px-6 py-4 sm:py-5 hover:bg-slate-50/60"
+                    : "rounded-2xl border border-slate-200/80 bg-white px-5 sm:px-6 py-4 sm:py-5 hover:border-slate-300 hover:bg-slate-50/60 hover:shadow-xs"
                 }`}
               >
                 <button
@@ -2037,19 +2463,19 @@ function FaqSection({
                   aria-expanded={isOpen}
                 >
                   <span
-                    className={
+                    className={`transition-colors duration-200 ${
                       isOpen
                         ? "text-slate-950 font-bold"
-                        : "text-slate-900 font-semibold group-hover:text-slate-950"
-                    }
+                        : "text-slate-900 font-semibold group-hover:text-pub-secondary"
+                    }`}
                   >
                     {faq.question}
                   </span>
                   <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-300 ease-out ${
                       isOpen
-                        ? "bg-[#d95d2c] text-white shadow-sm rotate-180"
-                        : "text-[#d95d2c] bg-slate-100/80 group-hover:bg-pub-secondary/10"
+                        ? "bg-[#d95d2c] text-white shadow-sm rotate-180 scale-105"
+                        : "text-[#d95d2c] bg-slate-100/80 group-hover:bg-pub-secondary/10 group-hover:scale-110"
                     }`}
                   >
                     <ChevronDown size={16} />
@@ -2057,7 +2483,7 @@ function FaqSection({
                 </button>
 
                 {isOpen && (
-                  <div className="mt-3.5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed font-normal animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="mt-3.5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed font-normal animate-in fade-in-50 slide-in-from-top-1.5 duration-300 ease-out">
                     <p>{faq.answer}</p>
                   </div>
                 )}
@@ -2272,7 +2698,7 @@ function TestimonialsSection({
           type="button"
           aria-label="Previous reviews"
           onClick={() => move(-1)}
-          className="absolute -left-2 sm:-left-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-pub-secondary hover:text-pub-secondary hover:scale-105"
+          className="absolute -left-2 sm:-left-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition-all duration-200 hover:border-pub-secondary hover:text-pub-secondary hover:scale-110 active:scale-90 cursor-pointer"
         >
           <ChevronLeft size={18} className="stroke-[2.2]" />
         </button>
@@ -2281,7 +2707,7 @@ function TestimonialsSection({
           type="button"
           aria-label="Next reviews"
           onClick={() => move(1)}
-          className="absolute -right-2 sm:-right-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-pub-secondary hover:text-pub-secondary hover:scale-105"
+          className="absolute -right-2 sm:-right-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition-all duration-200 hover:border-pub-secondary hover:text-pub-secondary hover:scale-110 active:scale-90 cursor-pointer"
         >
           <ChevronRight size={18} className="stroke-[2.2]" />
         </button>
@@ -2316,10 +2742,10 @@ function TestimonialsSection({
                 <article
                   key={`${review.name}-${index}`}
                   data-review-card
-                  className="w-[calc(100%-1rem)] max-w-[290px] sm:w-[350px] sm:max-w-none lg:w-[370px] shrink-0 snap-start flex flex-col justify-between rounded-3xl border border-slate-100/90 bg-white p-6 sm:p-7 text-left shadow-[0_4px_20px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  className="group w-[calc(100%-1rem)] max-w-[290px] sm:w-[350px] sm:max-w-none lg:w-[370px] shrink-0 snap-start flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-7 text-left shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1"
                 >
                   <div>
-                    <span className="block text-slate-300 text-3xl sm:text-4xl font-serif leading-none select-none mb-3">
+                    <span className="block text-slate-300 text-3xl sm:text-4xl font-serif leading-none select-none mb-3 transition-colors duration-200 group-hover:text-amber-400">
                       “
                     </span>
                     <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-normal min-h-[72px]">
@@ -2333,15 +2759,15 @@ function TestimonialsSection({
                         <img
                           src={review.image}
                           alt={review.name}
-                          className="h-10 w-10 shrink-0 rounded-full object-cover shadow-sm border border-slate-100"
+                          className="h-10 w-10 shrink-0 rounded-full object-cover shadow-sm border border-slate-100 transition-transform duration-200 group-hover:scale-105"
                         />
                       ) : (
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1478f2] text-xs font-bold text-white shadow-sm">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1478f2] text-xs font-bold text-white shadow-sm transition-transform duration-200 group-hover:scale-105">
                           {review.initials}
                         </span>
                       )}
                       <div className="min-w-0">
-                        <h3 className="truncate text-xs sm:text-sm font-semibold text-slate-900">
+                        <h3 className="truncate text-xs sm:text-sm font-semibold text-slate-900 transition-colors duration-200 group-hover:text-pub-secondary">
                           {review.name}
                         </h3>
                         <p className="truncate text-[11px] text-slate-400">
@@ -2406,13 +2832,13 @@ function ExploreDirectorySection({
 
   return (
     <section className="py-8 sm:py-12">
-      <div className="rounded-2xl sm:rounded-3xl border border-slate-100/90 bg-white p-6 sm:p-8 lg:p-10 shadow-[0_4px_20px_rgba(15,23,42,0.04)]">
+      <div className="rounded-2xl sm:rounded-3xl border border-slate-200/70 bg-white p-6 sm:p-8 lg:p-10 shadow-xs">
         {/* Tabs Bar */}
         <div className="flex items-center gap-6 sm:gap-8 border-b border-slate-200/80 text-xs sm:text-sm md:text-base overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setActiveTab("countries")}
-            className={`shrink-0 pb-3 font-bold transition-colors whitespace-nowrap -mb-[1px] ${
+            className={`shrink-0 pb-3 font-bold transition-all duration-200 whitespace-nowrap -mb-[1px] active:scale-95 ${
               activeTab === "countries"
                 ? "border-b-2 border-slate-950 text-slate-950"
                 : "border-b-2 border-transparent text-slate-500 hover:text-slate-900"
@@ -2423,7 +2849,7 @@ function ExploreDirectorySection({
           <button
             type="button"
             onClick={() => setActiveTab("cities")}
-            className={`shrink-0 pb-3 font-bold transition-colors whitespace-nowrap -mb-[1px] ${
+            className={`shrink-0 pb-3 font-bold transition-all duration-200 whitespace-nowrap -mb-[1px] active:scale-95 ${
               activeTab === "cities"
                 ? "border-b-2 border-slate-950 text-slate-950"
                 : "border-b-2 border-transparent text-slate-500 hover:text-slate-900"
@@ -2434,7 +2860,7 @@ function ExploreDirectorySection({
           <button
             type="button"
             onClick={() => setActiveTab("categories")}
-            className={`shrink-0 pb-3 font-bold transition-colors whitespace-nowrap -mb-[1px] ${
+            className={`shrink-0 pb-3 font-bold transition-all duration-200 whitespace-nowrap -mb-[1px] active:scale-95 ${
               activeTab === "categories"
                 ? "border-b-2 border-slate-950 text-slate-950"
                 : "border-b-2 border-transparent text-slate-500 hover:text-slate-900"
@@ -2450,9 +2876,9 @@ function ExploreDirectorySection({
             <Link
               key={item}
               href={getHref(item)}
-              className="group flex items-start gap-1.5 transition-colors hover:text-pub-secondary"
+              className="group flex items-start gap-1.5 transition-all duration-200 hover:translate-x-1 hover:text-pub-secondary"
             >
-              <span className="font-semibold text-slate-900 group-hover:text-pub-secondary">
+              <span className="font-semibold text-slate-900 group-hover:text-pub-secondary transition-colors duration-200">
                 {index + 1}.
               </span>
               <span className="truncate group-hover:underline">{item}</span>

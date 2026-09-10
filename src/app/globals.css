@@ -326,6 +326,74 @@ button {
 .delay-800 { animation-delay: 0.8s; }
 .delay-900 { animation-delay: 0.9s; }
 
+/* Organic ambient float & micro-interaction animations */
+@keyframes floatOrb {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(14px, -18px, 0) scale(1.05);
+  }
+}
+
+@keyframes floatOrbAlt {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-16px, 14px, 0) scale(1.04);
+  }
+}
+
+@keyframes sparkleGlow {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: rotate(15deg) scale(1.18);
+    opacity: 0.85;
+  }
+}
+
+@keyframes gentlePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.025);
+  }
+}
+
+.animate-float-orb {
+  animation: floatOrb 14s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-orb-alt {
+  animation: floatOrbAlt 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-sparkle-glow {
+  animation: sparkleGlow 3.5s ease-in-out infinite;
+  display: inline-block;
+  will-change: transform;
+}
+
+.animate-gentle-pulse {
+  animation: gentlePulse 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-orb,
+  .animate-float-orb-alt,
+  .animate-sparkle-glow,
+  .animate-gentle-pulse {
+    animation: none !important;
+  }
+}
+
 /* Aurora CTA gradient - sky blue to adventure orange */
 .cta-gradient {
   background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 45%, #EA580C 100%);
