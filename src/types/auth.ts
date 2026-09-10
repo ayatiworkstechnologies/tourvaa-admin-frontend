@@ -16,6 +16,7 @@ export type AuthUser = {
   id: number;
   name: string;
   email: string;
+  phone?: string;
   user_type?: string;
   profile_image?: string;
   profile_status?: string | null;

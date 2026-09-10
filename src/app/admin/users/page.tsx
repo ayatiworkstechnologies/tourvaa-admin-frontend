@@ -11,17 +11,17 @@ import { useRoles } from "@/hooks/useRoles";
 import { User, UserFormData } from "@/types/user";
 import Loader from "@/components/ui/Loader";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
-import PhoneInput from "@/components/ui/PhoneInput";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import { usePagination } from "@/hooks/usePagination";
 import { useToast } from "@/hooks/useToast";
 import {
   combinePhone,
   digitsOnly,
   mobileHelp,
-  splitPhone,
   validateMobile,
 } from "@/lib/utils/validators";
-import { phoneCountryCodeValues } from "@/lib/constants/locationOptions";
+import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import type { CountryCode } from "libphonenumber-js/min";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { getFieldErrors } from "@/lib/utils/errorHandler";
@@ -80,7 +80,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form, setForm] = useState<UserFormData>(emptyForm);
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [phoneCountryCode, setPhoneCountryCode] = useState("+91");
+  const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>("IN");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [message, setMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -105,7 +105,7 @@ export default function UsersPage() {
     setEditingUser(null);
     setForm(emptyForm);
     setConfirmPassword("");
-    setPhoneCountryCode("+91");
+    setPhoneCountryIso("IN");
     setPhoneNumber("");
     setMessage("");
     setFieldErrors({});
@@ -113,7 +113,10 @@ export default function UsersPage() {
   };
 
   const openEdit = (user: User) => {
-    const phoneParts = splitPhone(user.phone || "", phoneCountryCodeValues);
+    const userPhone = user.phone || "";
+    const phoneIso = userPhone ? isoForDialCode(userPhone) : "IN";
+    const phoneDial = dialCodeForIso(phoneIso);
+    const phoneDigits = userPhone && userPhone.startsWith(phoneDial) ? userPhone.slice(phoneDial.length) : userPhone.replace(/^\+/, "");
     setEditingUser(user);
     setForm({
       name: user.name,
@@ -129,8 +132,8 @@ export default function UsersPage() {
       is_active: user.is_active,
       approval_status: user.approval_status,
     });
-    setPhoneCountryCode(phoneParts.countryCode);
-    setPhoneNumber(phoneParts.number);
+    setPhoneCountryIso(phoneIso);
+    setPhoneNumber(phoneDigits);
     setMessage("");
     setFieldErrors({});
     setOpen(true);
@@ -141,7 +144,7 @@ export default function UsersPage() {
     setEditingUser(null);
     setForm(emptyForm);
     setConfirmPassword("");
-    setPhoneCountryCode("+91");
+    setPhoneCountryIso("IN");
     setPhoneNumber("");
   };
 
@@ -161,7 +164,7 @@ export default function UsersPage() {
     setFieldErrors({});
 
     let result: { success: boolean; error?: unknown };
-    const phone = phoneNumber ? combinePhone(phoneCountryCode, phoneNumber) : "";
+    const phone = phoneNumber ? combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber) : "";
 
     if (!validateMobile(phone)) {
       setFieldErrors({ phone: mobileHelp });
@@ -573,10 +576,10 @@ export default function UsersPage() {
                       <p id="user-email-error-edit" className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
                     )}
                   </label>
-                  <PhoneInput
-                    countryCode={phoneCountryCode}
+                  <CountryPhoneInput
+                    countryIso={phoneCountryIso}
                     number={phoneNumber}
-                    onCountryCodeChange={setPhoneCountryCode}
+                    onCountryChange={setPhoneCountryIso}
                     onNumberChange={setPhoneNumber}
                     helpText={mobileHelp}
                     errorMessage={fieldErrors.phone}

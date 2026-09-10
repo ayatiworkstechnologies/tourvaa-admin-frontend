@@ -309,7 +309,9 @@ export default function PublicHeader() {
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 text-sm font-bold text-slate-700"
                 >
-                  <Headset size={17} className="text-purple-600" />
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                    <Headset size={15} />
+                  </span>
                   Help Centre & FAQs
                 </Link>
                 <button

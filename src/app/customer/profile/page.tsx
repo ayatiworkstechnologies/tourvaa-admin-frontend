@@ -49,34 +49,34 @@ export default function CustomerProfilePage() {
   const { user, refreshSession } = useAuthContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form states
-  const [firstName, setFirstName] = useState("Sarah");
-  const [lastName, setLastName] = useState("Mitchell");
-  const [email, setEmail] = useState("sarah.mitchell@tourvaaa.com");
-  const [phone, setPhone] = useState("+1 (555) 743-2190");
-  const [dob, setDob] = useState("November 14, 1994");
-  const [nationality, setNationality] = useState("American");
-  const [gender, setGender] = useState("Female");
-  const [address, setAddress] = useState(
-    "58 Sunset Blvd, Los Angeles, CA 90028",
-  );
+  const userParts = (user?.name || "").trim().split(" ");
+  const initialFirst = userParts[0] || "";
+  const initialLast = userParts.slice(1).join(" ") || "";
+
+  // Form states initialized cleanly from auth session
+  const [firstName, setFirstName] = useState(initialFirst);
+  const [lastName, setLastName] = useState(initialLast);
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [dob, setDob] = useState("");
+  const [nationality, setNationality] = useState("");
+  const [gender, setGender] = useState("");
+  const [address, setAddress] = useState("");
 
   // Passport & Travel Documents
-  const [passportNumber, setPassportNumber] = useState("US-X4829301");
-  const [passportExpiry, setPassportExpiry] = useState("March 2029");
-  const [frequentFlyer, setFrequentFlyer] = useState("AA-8827341");
-  const [preferredAirline, setPreferredAirline] = useState("American Airlines");
+  const [passportNumber, setPassportNumber] = useState("");
+  const [passportExpiry, setPassportExpiry] = useState("");
+  const [frequentFlyer, setFrequentFlyer] = useState("");
+  const [preferredAirline, setPreferredAirline] = useState("");
 
   // Emergency Contact
-  const [emergencyName, setEmergencyName] = useState("David Mitchell");
-  const [emergencyRelation, setEmergencyRelation] = useState("Spouse");
-  const [emergencyPhone, setEmergencyPhone] = useState("+1 (555) 901-3382");
-  const [emergencyEmail, setEmergencyEmail] = useState(
-    "david.mitchell@email.com",
-  );
+  const [emergencyName, setEmergencyName] = useState("");
+  const [emergencyRelation, setEmergencyRelation] = useState("");
+  const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [emergencyEmail, setEmergencyEmail] = useState("");
 
   // Profile Image
-  const [profileImage, setProfileImage] = useState<string>("");
+  const [profileImage, setProfileImage] = useState<string>(user?.profile_image || "");
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -102,6 +102,16 @@ export default function CustomerProfilePage() {
             setAddress(d.address || d.address_line_1);
           if (d.country_name || d.country)
             setNationality(d.country_name || d.country);
+          if (d.date_of_birth || d.dob) setDob(d.date_of_birth || d.dob);
+          if (d.gender) setGender(d.gender);
+          if (d.passport_number) setPassportNumber(d.passport_number);
+          if (d.passport_expiry) setPassportExpiry(d.passport_expiry);
+          if (d.frequent_flyer) setFrequentFlyer(d.frequent_flyer);
+          if (d.preferred_airline) setPreferredAirline(d.preferred_airline);
+          if (d.emergency_name || d.emergency_contact_name) setEmergencyName(d.emergency_name || d.emergency_contact_name);
+          if (d.emergency_relation || d.emergency_contact_relationship) setEmergencyRelation(d.emergency_relation || d.emergency_contact_relationship);
+          if (d.emergency_phone || d.emergency_contact_phone) setEmergencyPhone(d.emergency_phone || d.emergency_contact_phone);
+          if (d.emergency_email || d.emergency_contact_email) setEmergencyEmail(d.emergency_email || d.emergency_contact_email);
         }
       } catch {
         if (user) {

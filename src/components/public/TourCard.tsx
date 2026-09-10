@@ -77,7 +77,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
       size="sm"
     />
   ) : tour.price_start_per_person != null ? (
-    <p className={variant === "featured" ? "text-lg font-black text-zinc-950" : "text-sm font-black text-slate-900"}>
+    <p className={variant === "featured" ? "text-lg font-black text-slate-900" : "text-sm font-black text-slate-900"}>
       {format(tour.price_start_per_person, tour.currency || "USD")} <span className="text-xs font-semibold text-slate-400">{variant === "featured" ? "/person" : "pp"}</span>
     </p>
   ) : (
@@ -93,12 +93,12 @@ export default function TourCard({ tour, format, variant = "search", href, view 
           {discounted && <DiscountCardBadge percentage={tour.discount_percentage!} />}
         </div>
         <div className="p-4">
-          <h3 className="font-heading line-clamp-2 text-base font-black text-zinc-950 transition-colors group-hover:text-teal-700">{tour.title}</h3>
-          <p className="mt-1 text-xs font-semibold text-zinc-500">{[tour.city_name, tour.country_name].filter(Boolean).join(", ")} · {tour.number_of_days} Days</p>
-          {tour.rating_average != null && <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-zinc-600"><Star size={11} className="fill-amber-400 text-amber-400" />{tour.rating_average.toFixed(1)} <span className="font-normal text-zinc-400">({tour.rating_count})</span></p>}
+          <h3 className="font-heading line-clamp-2 text-base font-black text-slate-900 transition-colors group-hover:text-pub-secondary">{tour.title}</h3>
+          <p className="mt-1 text-xs font-semibold text-slate-500">{[tour.city_name, tour.country_name].filter(Boolean).join(", ")} · {tour.number_of_days} Days</p>
+          {tour.rating_average != null && <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-slate-600"><Star size={11} className="fill-amber-400 text-amber-400" />{tour.rating_average.toFixed(1)} <span className="font-normal text-slate-400">({tour.rating_count})</span></p>}
           <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
             {priceBlock}
-            <span aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-50 text-teal-700 transition-colors group-hover:bg-teal-700 group-hover:text-white">
+            <span aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-full bg-pub-secondary/10 text-pub-secondary transition-colors group-hover:bg-pub-secondary group-hover:text-white">
               <ArrowRight size={14} />
             </span>
           </div>
@@ -118,7 +118,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
           </div>
           <div className="p-5">
             <p className="text-[10px] font-bold text-blue-600">{tour.city_name || tour.country_name}</p>
-            <h4 className="mt-2 line-clamp-2 text-base font-black">{tour.title}</h4>
+            <h4 className="font-heading mt-2 line-clamp-2 text-base font-black">{tour.title}</h4>
             {tour.rating_average != null && <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500"><Star size={12} className="fill-amber-400 text-amber-400" />{tour.rating_average.toFixed(1)} {tour.rating_count ? `(${tour.rating_count})` : ""}</p>}
             <div className="mt-3">{priceBlock}</div>
           </div>
@@ -158,7 +158,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
       )}
       <div className="flex flex-1 flex-col p-4">
         <Link href={resolvedHref}>
-          <h2 className="truncate text-base font-black transition-colors group-hover:text-pub-secondary">{tour.title}</h2>
+          <h2 className="font-heading truncate text-base font-black transition-colors group-hover:text-pub-secondary">{tour.title}</h2>
           <div className="mt-2.5 flex flex-col gap-1.5 text-xs font-semibold text-slate-500">
             <span className="flex items-center gap-2"><MapPin size={12} className="shrink-0 text-sky-500" /><span className="truncate">{tour.city_name ? `${tour.city_name}, ${tour.country_name}` : tour.country_name}</span></span>
             <span className="flex items-center gap-2"><Calendar size={12} className="shrink-0 text-sky-500" />{days} Days / {Math.max(1, days - 1)} Nights</span>

@@ -27,43 +27,62 @@ function discountedValue(item: TourDiscount, basePrice: number): number | null {
   return discounted < basePrice ? discounted : null;
 }
 
-function DiscountPricePreview({ item, basePrice, currency }: { item: TourDiscount; basePrice: number; currency: string }) {
-  const discounted = discountedValue(item, basePrice);
-  if (discounted == null) return null;
-
+function PricePreviewRow({ label, base, discounted, currency }: { label: string; base: number; discounted: number | null; currency: string }) {
+  if (base <= 0) return null;
   return (
-    <div className="mt-2 flex items-center gap-2 rounded-lg bg-dash-bg px-3 py-2">
-      <span className="text-xs font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{fmt(basePrice, currency)}</span>
-      <span className="text-sm font-black text-emerald-700">{fmt(discounted, currency)}</span>
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">after discount</span>
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">{label}</p>
+      {discounted != null ? (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{fmt(base, currency)}</span>
+          <span className="text-sm font-black text-emerald-700">{fmt(discounted, currency)}</span>
+        </div>
+      ) : (
+        <span className="text-sm font-bold text-dash-text">{fmt(base, currency)}</span>
+      )}
     </div>
   );
 }
 
-/** Admin sees the 1-pax supplier price (for reference) alongside the
- * discount applied to the 1-pax publishable/storefront price -- the
- * markup-inclusive price customers actually pay after the discount. */
-function AdminDiscountPricePreview({ item, supplierBasePrice, storefrontBasePrice, currency }: { item: TourDiscount; supplierBasePrice: number; storefrontBasePrice: number; currency: string }) {
-  const discounted = discountedValue(item, storefrontBasePrice);
-  if (discounted == null && supplierBasePrice <= 0) return null;
+/** Preview of this discount's real effect on the 1-pax slab's actual adult
+ * and child prices -- both shown separately (not just adult), and computed
+ * for cart/checkout display only -- this never writes back to the slab's
+ * stored price, same rule as everywhere else discounts are previewed. */
+function DiscountPricePreview({ item, adultPrice, childPrice, currency }: { item: TourDiscount; adultPrice: number; childPrice: number; currency: string }) {
+  const discountedAdult = discountedValue(item, adultPrice);
+  const discountedChild = discountedValue(item, childPrice);
+  if (adultPrice <= 0 && childPrice <= 0) return null;
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-4 rounded-lg bg-dash-bg px-3 py-2">
-      {supplierBasePrice > 0 && (
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier price</p>
-          <span className="text-sm font-bold text-dash-text">{fmt(supplierBasePrice, currency)}</span>
-        </div>
-      )}
-      {discounted != null && (
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Discount price</p>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{fmt(storefrontBasePrice, currency)}</span>
-            <span className="text-sm font-black text-emerald-700">{fmt(discounted, currency)}</span>
-          </div>
-        </div>
-      )}
+      <PricePreviewRow label="Adult price" base={adultPrice} discounted={discountedAdult} currency={currency} />
+      <PricePreviewRow label="Child price" base={childPrice} discounted={discountedChild} currency={currency} />
+    </div>
+  );
+}
+
+/** Admin sees the 1-pax slab's actual supplier price (for reference)
+ * alongside the discount applied to the same slab's publishable/storefront
+ * price -- the markup-inclusive price customers actually pay after the
+ * discount -- for both adult and child, not just adult. Both bases come
+ * straight from that one slab (see the pricing-fetch effect below), never
+ * from tour.price_start_per_person, which can reflect a *different*
+ * (cheaper, higher-pax) slab and mismatch what's shown right next to it. */
+function AdminDiscountPricePreview({
+  item, supplierAdultPrice, supplierChildPrice, storefrontAdultPrice, storefrontChildPrice, currency,
+}: {
+  item: TourDiscount; supplierAdultPrice: number; supplierChildPrice: number; storefrontAdultPrice: number; storefrontChildPrice: number; currency: string;
+}) {
+  const discountedAdult = discountedValue(item, storefrontAdultPrice);
+  const discountedChild = discountedValue(item, storefrontChildPrice);
+  if (supplierAdultPrice <= 0 && supplierChildPrice <= 0) return null;
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-4 rounded-lg bg-dash-bg px-3 py-2">
+      <PricePreviewRow label="Supplier price (adult)" base={supplierAdultPrice} discounted={null} currency={currency} />
+      <PricePreviewRow label="Supplier price (child)" base={supplierChildPrice} discounted={null} currency={currency} />
+      <PricePreviewRow label="Discount price (adult)" base={storefrontAdultPrice} discounted={discountedAdult} currency={currency} />
+      <PricePreviewRow label="Discount price (child)" base={storefrontChildPrice} discounted={discountedChild} currency={currency} />
     </div>
   );
 }
@@ -82,9 +101,13 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
   const [editing, setEditing] = useState<TourDiscount | null>(null);
   const [saving, setSaving] = useState(false);
   // 1-pax tier prices the discount preview is computed from: the supplier's
-  // own net price, and the markup-inclusive storefront/publishable price.
-  const [supplierBasePrice, setSupplierBasePrice] = useState(0);
-  const [storefrontBasePrice, setStorefrontBasePrice] = useState(0);
+  // own net adult/child price, and the markup-inclusive storefront/publishable
+  // adult/child price -- both always read from that single slab (see the
+  // pricing-fetch effect below), never mixed with a different slab's price.
+  const [supplierAdultPrice, setSupplierAdultPrice] = useState(0);
+  const [supplierChildPrice, setSupplierChildPrice] = useState(0);
+  const [storefrontAdultPrice, setStorefrontAdultPrice] = useState(0);
+  const [storefrontChildPrice, setStorefrontChildPrice] = useState(0);
   const [currency, setCurrency] = useState("USD");
   const [amending, setAmending] = useState<TourDiscount | null>(null);
   const [amendValue, setAmendValue] = useState("");
@@ -112,12 +135,15 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
   }, [load]);
 
   useEffect(() => {
-    let fallbackStorefront = 0;
+    // Currency-only fallback -- the tour's own currency field, in case the
+    // pricing-slab fetch below fails. Never used as a *price* fallback:
+    // tour.price_start_per_person is the lowest price across ALL slabs
+    // (possibly a different, higher-pax slab), so using it here previously
+    // showed a "Discount price" struck-through base that didn't match the
+    // "Supplier price" shown right next to it.
     api.get(`/tours/${tourId}`).then((res) => {
       const tour = res.data?.data;
-      if (tour?.price_start_per_person != null) fallbackStorefront = Number(tour.price_start_per_person);
-      if (tour?.currency) setCurrency(String(tour.currency));
-      setStorefrontBasePrice((prev) => prev || fallbackStorefront);
+      if (tour?.currency) setCurrency((prev) => prev || String(tour.currency));
     }).catch(() => {
       // Non-fatal -- the discount list itself is the primary content of this tab.
     });
@@ -126,15 +152,20 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
       // The 1-pax tier -- the slab whose range covers a single traveller --
       // is the price basis the discount preview should match, same as the
       // per-pax-range pricing table above this card (TourPricingTab.tsx).
+      // Adult and storefront/child prices all come from this one slab so
+      // they can never mismatch each other.
       const sorted = [...rows].sort((a, b) => a.passenger_from - b.passenger_from);
       const onePaxSlab = sorted.find((s) => s.passenger_from <= 1 && s.passenger_to >= 1) ?? sorted[0];
       if (!onePaxSlab) return;
-      setSupplierBasePrice(Number(onePaxSlab.adult_price ?? 0));
-      const storefront = onePaxSlab.storefront_adult_price;
-      if (storefront != null) setStorefrontBasePrice(Number(storefront));
+      const adult = Number(onePaxSlab.adult_price ?? 0);
+      const child = Number(onePaxSlab.child_price ?? 0);
+      setSupplierAdultPrice(adult);
+      setSupplierChildPrice(child);
+      setStorefrontAdultPrice(onePaxSlab.storefront_adult_price != null ? Number(onePaxSlab.storefront_adult_price) : adult);
+      setStorefrontChildPrice(onePaxSlab.storefront_child_price != null ? Number(onePaxSlab.storefront_child_price) : child);
       if (onePaxSlab.currency) setCurrency(onePaxSlab.currency);
     }).catch(() => {
-      // Non-fatal -- falls back to the tour's price_start_per_person above.
+      // Non-fatal -- the discount list itself is the primary content of this tab.
     });
   }, [tourId]);
 
@@ -232,9 +263,16 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                   {item.minimum_booking_amount > 0 ? ` - min. ${item.minimum_booking_amount}` : ""}
                 </p>
                 {isSupplier ? (
-                  <DiscountPricePreview item={item} basePrice={supplierBasePrice} currency={currency} />
+                  <DiscountPricePreview item={item} adultPrice={supplierAdultPrice} childPrice={supplierChildPrice} currency={currency} />
                 ) : (
-                  <AdminDiscountPricePreview item={item} supplierBasePrice={supplierBasePrice} storefrontBasePrice={storefrontBasePrice} currency={currency} />
+                  <AdminDiscountPricePreview
+                    item={item}
+                    supplierAdultPrice={supplierAdultPrice}
+                    supplierChildPrice={supplierChildPrice}
+                    storefrontAdultPrice={storefrontAdultPrice}
+                    storefrontChildPrice={storefrontChildPrice}
+                    currency={currency}
+                  />
                 )}
                 {(item.start_date || item.end_date) && (
                   <p className="text-xs text-dash-subtle">

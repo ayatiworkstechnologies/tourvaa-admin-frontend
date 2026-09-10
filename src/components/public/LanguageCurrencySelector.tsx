@@ -10,6 +10,8 @@ import {
   LuSparkles as Sparkles,
 } from "react-icons/lu";
 import { useCurrency } from "@/hooks/useCurrency";
+import { fetchPublicCountries, PublicCountry } from "@/lib/api/publicClient";
+import FlagIcon from "@/components/ui/FlagIcon";
 
 // ─── Languages ───────────────────────────────────────────────────────────────
 
@@ -55,7 +57,7 @@ function applyLanguage(langCode: string) {
 
 // ─── Unified Component ────────────────────────────────────────────────────────
 
-type Tab = "language" | "currency";
+type Tab = "language" | "currency" | "country";
 
 export default function LanguageCurrencySelector({
   inverse = false,
@@ -63,16 +65,23 @@ export default function LanguageCurrencySelector({
   inverse?: boolean;
   plain?: boolean;
 }) {
-  const { code: currCode, symbol, currencies, setCode, isStale } = useCurrency();
+  const { code: currCode, symbol, currencies, setCode, isStale, countryCode, setCountry } = useCurrency();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("language");
   const [langCode, setLangCode] = useState("en");
   const [search, setSearch] = useState("");
+  const [countries, setCountries] = useState<PublicCountry[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
   // Read language from cookie on mount
   useEffect(() => {
     setLangCode(getActiveLanguageCode());
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetchPublicCountries().then((items) => { if (active) setCountries(items); }).catch(() => {});
+    return () => { active = false; };
   }, []);
 
   // Close on outside click / Escape
@@ -127,6 +136,16 @@ export default function LanguageCurrencySelector({
     );
   }, [currencies, search]);
 
+  // Country list - real countries once loaded, IP-detected by default (see
+  // useCurrency.ts), manually changeable here.
+  const countryList = useMemo(() => {
+    if (!search.trim()) return countries;
+    const q = search.toLowerCase();
+    return countries.filter((c) => c.country_name.toLowerCase().includes(q) || c.country_code.toLowerCase().includes(q));
+  }, [countries, search]);
+
+  const activeCountry = countries.find((c) => c.country_code === countryCode);
+
   return (
     <div ref={ref} className="relative">
       {/* Trigger Button */}
@@ -147,9 +166,14 @@ export default function LanguageCurrencySelector({
           }`}
         />
         <span className="flex items-center gap-0.5">
-          <span className="font-semibold">
+          <span className="flex items-center font-semibold">
             {activeLang.short}
             <span className={`mx-0.5 ${inverse ? "text-white/40" : "text-slate-300"}`}>|</span>
+            {countryCode && (
+              <span className="mr-1 h-2.5 w-4 overflow-hidden rounded-[2px]">
+                <FlagIcon countryCode={countryCode} />
+              </span>
+            )}
             {currCode}&thinsp;{symbol || ""}
           </span>
           <ChevronDown
@@ -191,6 +215,17 @@ export default function LanguageCurrencySelector({
               }`}
             >
               💱 Currency
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("country")}
+              className={`flex-1 py-3 text-xs font-bold transition-colors ${
+                tab === "country"
+                  ? "border-b-2 border-[#E4572E] text-[#E4572E]"
+                  : "text-slate-500 hover:text-[#0f2439]"
+              }`}
+            >
+              🌍 Country
             </button>
           </div>
 
@@ -312,6 +347,66 @@ export default function LanguageCurrencySelector({
                     <span>Cached exchange rates</span>
                   </div>
                 )}
+              </>
+            )}
+
+            {/* ── Country Tab ── */}
+            {tab === "country" && (
+              <>
+                <div className="relative mb-2">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search country..."
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#E4572E] focus:bg-white focus:ring-2 focus:ring-orange-100"
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => setSearch("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:text-slate-700"
+                    >
+                      <X size={11} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-h-56 overflow-y-auto space-y-0.5 pr-0.5 no-scrollbar">
+                  {countryList.length ? (
+                    countryList.map((item) => {
+                      const selected = item.country_code === countryCode;
+                      return (
+                        <button
+                          key={item.country_code}
+                          type="button"
+                          onClick={() => {
+                            void setCountry(item.country_code);
+                            setOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition ${
+                            selected ? "bg-[#0f2439] text-white shadow-sm" : "text-slate-800 hover:bg-slate-100"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="h-3 w-5 shrink-0 overflow-hidden rounded-[2px]">
+                              <FlagIcon countryCode={item.country_code} />
+                            </span>
+                            <span className="truncate">{item.country_name}</span>
+                          </div>
+                          {selected && <Check size={13} className="shrink-0 text-[#d95d2c]" />}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="py-6 text-center text-xs text-slate-400">Loading countries...</p>
+                  )}
+                </div>
+
+                <div className="mt-2 border-t border-slate-100 px-1 pt-1.5 text-[9px] font-semibold text-slate-400">
+                  {activeCountry ? `Detected/selected: ${activeCountry.country_name}` : "Choosing a country updates the suggested currency too."}
+                </div>
               </>
             )}
           </div>

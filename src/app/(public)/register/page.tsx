@@ -7,7 +7,6 @@ import axios from "axios";
 import {
   LuCircleCheckBig as Check,
   LuMail as Mail,
-  LuPhone as Phone,
   LuRefreshCw as Refresh,
   LuUser as User,
   LuShieldCheck as ShieldCheck,
@@ -17,6 +16,9 @@ import {
 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import { dialCodeForIso } from "@/lib/utils/phoneCountries";
+import type { CountryCode } from "libphonenumber-js/min";
 
 // Traveller (customer) accounts only - agents and suppliers register through
 // their own dedicated portals (/agent-portal/login, /supplier-portal/login).
@@ -78,6 +80,7 @@ const PERKS = [
 
 export default function RegisterPage() {
   const [form, setForm] = useState(initialForm);
+  const [phoneIso, setPhoneIso] = useState<CountryCode>("IN");
   const [sentEmail, setSentEmail] = useState(() => readPendingRegistration()?.email ?? "");
   const [changeToken, setChangeToken] = useState(() => readPendingRegistration()?.changeToken ?? "");
   const [redirect, setRedirect] = useState<string | null>(null);
@@ -251,26 +254,17 @@ export default function RegisterPage() {
 
               {/* Mobile */}
               <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600">Mobile number</label>
-                <div className="grid grid-cols-[96px_1fr] gap-2">
-                  <div className="relative">
-                    <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      required autoComplete="tel-country-code"
-                      value={form.country_code}
-                      onChange={(e) => setForm({ ...form, country_code: e.target.value })}
-                      placeholder="+91"
-                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-8 pr-2 text-sm placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                    />
-                  </div>
-                  <input
-                    required autoComplete="tel-national" inputMode="numeric"
-                    value={form.mobile_number}
-                    onChange={(e) => setForm({ ...form, mobile_number: e.target.value.replace(/\D/g, "") })}
-                    placeholder="9876543210"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                  />
-                </div>
+                <CountryPhoneInput
+                  label="Mobile number"
+                  required
+                  countryIso={phoneIso}
+                  number={form.mobile_number}
+                  onCountryChange={(iso) => {
+                    setPhoneIso(iso);
+                    setForm((f) => ({ ...f, country_code: dialCodeForIso(iso) }));
+                  }}
+                  onNumberChange={(digits) => setForm((f) => ({ ...f, mobile_number: digits }))}
+                />
               </div>
 
               {/* Terms */}

@@ -45,7 +45,7 @@ type TourItem = {
   minAge?: number;
   maxAge?: number;
   cities: string;
-  departures: { date: string; price: string }[];
+  departures: { date: string; price: string; slots?: number }[];
   originalPrice?: string;
   price: string;
   rawPrice: number | null;
@@ -56,334 +56,7 @@ type TourItem = {
   country_name?: string;
 };
 
-const WORLD_TOURS: TourItem[] = [
-  {
-    id: 1,
-    title: "New Zealand Explorer",
-    location: "New Zealand",
-    duration: "6D | 5N",
-    days: 6,
-    route: "Auckland > Queenstown",
-    guideType: "Full Guided",
-    tourType: "Group",
-    travelStyle: "Adventure",
-    rating: 4.9,
-    inclusions: ["hotel", "meals", "guide"],
-    maxGroup: 24,
-    minAge: 14,
-    maxAge: 49,
-    cities: "Auckland, Queenstown +4 More",
-    departures: [
-      { date: "2 Sep 26", price: "$1,120" },
-      { date: "3 Sep 26", price: "$1,140" },
-      { date: "4 Sep 26", price: "$1,122" },
-    ],
-    originalPrice: "$1,350",
-    price: "$1,182",
-    rawPrice: 1182,
-    image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 2,
-    title: "Southern Alps & Fjordlands Adventure",
-    location: "New Zealand",
-    duration: "6D | 5N",
-    days: 6,
-    route: "Christchurch > Queenstown",
-    guideType: "Full Guided",
-    tourType: "Group",
-    travelStyle: "Adventure",
-    rating: 4.8,
-    inclusions: ["hotel", "meals"],
-    maxGroup: 20,
-    minAge: 14,
-    maxAge: 55,
-    cities: "Christchurch, Mt Cook, Queenstown",
-    departures: [
-      { date: "5 Sep 26", price: "$1,150" },
-      { date: "12 Sep 26", price: "$1,180" },
-      { date: "19 Sep 26", price: "$1,160" },
-    ],
-    originalPrice: "$1,390",
-    price: "$1,182",
-    rawPrice: 1182,
-    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 3,
-    title: "Bali Island Hopper",
-    location: "Indonesia",
-    duration: "8D | 7N",
-    days: 8,
-    route: "Denpasar > Ubud",
-    guideType: "Semi Guided",
-    tourType: "Private",
-    travelStyle: "Relaxation",
-    rating: 4.7,
-    inclusions: ["hotel", "meals", "flights"],
-    maxGroup: 18,
-    minAge: 21,
-    maxAge: 59,
-    cities: "Ubud, Seminyak +3 More",
-    departures: [
-      { date: "10 Oct 26", price: "$980" },
-      { date: "15 Oct 26", price: "$1,020" },
-      { date: "22 Oct 26", price: "$995" },
-    ],
-    originalPrice: "$1,299",
-    price: "$1,182",
-    rawPrice: 1182,
-    image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 4,
-    title: "Japan Heritage Trail",
-    location: "Japan",
-    duration: "10D | 9N",
-    days: 10,
-    route: "Tokyo > Kyoto",
-    guideType: "Full Guided",
-    tourType: "Group",
-    travelStyle: "Cultural",
-    rating: 4.9,
-    inclusions: ["hotel", "meals", "guide"],
-    maxGroup: 16,
-    minAge: 10,
-    maxAge: 60,
-    cities: "Tokyo, Osaka, Kyoto +2 More",
-    departures: [
-      { date: "4 Nov 26", price: "$2,450" },
-      { date: "12 Nov 26", price: "$2,380" },
-      { date: "19 Nov 26", price: "$2,510" },
-    ],
-    originalPrice: "$1,450",
-    price: "$1,123",
-    rawPrice: 1123,
-    image: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 5,
-    title: "Iceland Northern Lights",
-    location: "Iceland",
-    duration: "5D | 4N",
-    days: 5,
-    route: "Reykjavik > Vik",
-    guideType: "Full Guided",
-    tourType: "Group",
-    travelStyle: "Adventure",
-    rating: 4.9,
-    inclusions: ["hotel", "meals", "guide"],
-    maxGroup: 12,
-    minAge: 18,
-    maxAge: 55,
-    cities: "Reykjavik, Vik +2 More",
-    departures: [
-      { date: "1 Dec 26", price: "$1,850" },
-      { date: "8 Dec 26", price: "$1,920" },
-      { date: "14 Dec 26", price: "$1,850" },
-    ],
-    originalPrice: "$1,370",
-    price: "$1,182",
-    rawPrice: 1182,
-    image: "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 6,
-    title: "Machu Picchu Trek",
-    location: "Peru",
-    duration: "7D | 6N",
-    days: 7,
-    route: "Lima > Cusco",
-    guideType: "Full Guided",
-    tourType: "Group",
-    travelStyle: "Adventure",
-    rating: 4.8,
-    inclusions: ["hotel", "meals", "guide"],
-    maxGroup: 20,
-    minAge: 19,
-    maxAge: 55,
-    cities: "Lima, Cusco +2 More",
-    departures: [
-      { date: "18 Aug 26", price: "$1,650" },
-      { date: "24 Aug 26", price: "$1,720" },
-      { date: "1 Sep 26", price: "$1,680" },
-    ],
-    originalPrice: "$1,850",
-    price: "$1,581",
-    rawPrice: 1581,
-    image: "https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 7,
-    title: "Sahara Desert Expedition",
-    location: "Morocco",
-    duration: "9D | 8N",
-    days: 9,
-    route: "Marrakech > Fes",
-    guideType: "Semi Guided",
-    tourType: "Private",
-    travelStyle: "Adventure",
-    rating: 4.7,
-    inclusions: ["hotel", "meals"],
-    maxGroup: 16,
-    minAge: 14,
-    maxAge: 50,
-    cities: "Marrakech, Fes +4 More",
-    departures: [
-      { date: "6 Oct 26", price: "$1,340" },
-      { date: "13 Oct 26", price: "$1,380" },
-      { date: "20 Oct 26", price: "$1,310" },
-    ],
-    originalPrice: "$1,680",
-    price: "$1,432",
-    rawPrice: 1432,
-    image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 8,
-    title: "Greek Islands Cruise",
-    location: "Greece",
-    duration: "7D | 6N",
-    days: 7,
-    route: "Athens > Santorini",
-    guideType: "Self Guided",
-    tourType: "Custom",
-    travelStyle: "Relaxation",
-    rating: 4.8,
-    inclusions: ["hotel", "meals", "flights"],
-    maxGroup: 30,
-    minAge: 21,
-    maxAge: 65,
-    cities: "Athens, Santorini +3 More",
-    departures: [
-      { date: "14 Jul 26", price: "$1,780" },
-      { date: "21 Jul 26", price: "$1,820" },
-      { date: "28 Jul 26", price: "$1,750" },
-    ],
-    originalPrice: "$1,450",
-    price: "$1,232",
-    rawPrice: 1232,
-    image: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 9,
-    title: "Kilimanjaro Summit",
-    location: "Tanzania",
-    duration: "8D | 7N",
-    days: 8,
-    route: "Arusha > Moshi",
-    guideType: "Full Guided",
-    tourType: "Group",
-    travelStyle: "Adventure",
-    rating: 4.9,
-    inclusions: ["hotel", "meals", "guide"],
-    maxGroup: 10,
-    minAge: 18,
-    maxAge: 40,
-    cities: "Arusha, Moshi +2 More",
-    departures: [
-      { date: "3 Sep 26", price: "$2,950" },
-      { date: "10 Sep 26", price: "$3,020" },
-      { date: "17 Sep 26", price: "$2,890" },
-    ],
-    originalPrice: "$1,250",
-    price: "$1,022",
-    rawPrice: 1022,
-    image: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80",
-  },
-];
-
-const INDIA_TOURS: TourItem[] = [
-  {
-    id: "in-1",
-    title: "Golden Triangle Classic",
-    location: "India",
-    duration: "6D | 5N",
-    days: 6,
-    route: "Delhi > Agra > Jaipur",
-    guideType: "Full Guided",
-    tourType: "Group",
-    travelStyle: "Cultural",
-    rating: 4.9,
-    inclusions: ["hotel", "meals", "guide"],
-    maxGroup: 20,
-    minAge: 12,
-    maxAge: 70,
-    cities: "Delhi, Agra, Jaipur",
-    departures: [
-      { date: "5 Sep 26", price: "₹38,500" },
-      { date: "12 Sep 26", price: "₹42,000" },
-      { date: "19 Sep 26", price: "₹39,900" },
-    ],
-    originalPrice: "₹48,000",
-    price: "₹38,500",
-    rawPrice: 38500,
-    image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: "in-2",
-    title: "Kerala Backwaters & Hills",
-    location: "India",
-    duration: "7D | 6N",
-    days: 7,
-    route: "Cochin > Munnar > Alleppey",
-    guideType: "Private Tour",
-    tourType: "Private",
-    travelStyle: "Relaxation",
-    rating: 4.8,
-    inclusions: ["hotel", "meals"],
-    maxGroup: 12,
-    minAge: 8,
-    maxAge: 75,
-    cities: "Cochin, Munnar, Thekkady, Alleppey",
-    departures: [
-      { date: "10 Oct 26", price: "₹42,000" },
-      { date: "18 Oct 26", price: "₹45,500" },
-      { date: "25 Oct 26", price: "₹43,000" },
-    ],
-    originalPrice: "₹52,000",
-    price: "₹42,000",
-    rawPrice: 42000,
-    image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: "in-3",
-    title: "Royal Rajasthan Heritage",
-    location: "India",
-    duration: "9D | 8N",
-    days: 9,
-    route: "Jaipur > Jodhpur > Udaipur",
-    guideType: "Full Guided",
-    tourType: "Group",
-    travelStyle: "Cultural",
-    rating: 4.9,
-    inclusions: ["hotel", "meals", "guide"],
-    maxGroup: 18,
-    minAge: 14,
-    maxAge: 65,
-    cities: "Jaipur, Jodhpur, Udaipur, Pushkar",
-    departures: [
-      { date: "2 Nov 26", price: "₹58,000" },
-      { date: "10 Nov 26", price: "₹62,000" },
-      { date: "18 Nov 26", price: "₹59,500" },
-    ],
-    originalPrice: "₹72,000",
-    price: "₹58,000",
-    rawPrice: 58000,
-    image: "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80",
-  },
-];
-
-// Fallback/dummy tours use string ids (e.g. "in-1") while TravelItem.id must
-// be a number - hash them to a stable positive int so distinct tours don't
-// collide onto the same wishlist entry.
-function hashStringToId(value: string): number {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 31 + value.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash) || 1;
-}
+const DEFAULT_TOUR_FALLBACK_IMAGE = "/images/tour-card-fallback.jpg";
 
 const DEPARTURE_DATE_FORMAT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "2-digit" });
 
@@ -400,12 +73,58 @@ function parseMaxGroup(groupSize: string | null | undefined): number | null {
   return Math.max(...numbers.map(Number));
 }
 
+function parseDurationFromParams(sp: { get: (key: string) => string | null }): string {
+  const duration = sp.get("duration");
+  if (duration) return duration;
+  const min = sp.get("min_days");
+  const max = sp.get("max_days");
+  if (max === "1" && (!min || min === "1")) return "1";
+  if (min === "2" && max === "6") return "2-6";
+  if (min === "7" && max === "10") return "7-10";
+  if (min === "11" && max === "14") return "11-14";
+  if (min === "15" && !max) return "15+";
+  if (min === "1" && max === "3") return "1-3";
+  if (min === "4" && max === "7") return "4-7";
+  if (min === "8" && !max) return "8+";
+  return "";
+}
+
+function durationRange(val: string, sp?: { get: (key: string) => string | null }): { min_days?: number; max_days?: number } {
+  if (val === "1") return { min_days: 1, max_days: 1 };
+  if (val === "2-6") return { min_days: 2, max_days: 6 };
+  if (val === "7-10") return { min_days: 7, max_days: 10 };
+  if (val === "11-14") return { min_days: 11, max_days: 14 };
+  if (val === "15+") return { min_days: 15 };
+  if (val === "1-3") return { min_days: 1, max_days: 3 };
+  if (val === "4-7") return { min_days: 4, max_days: 7 };
+  if (val === "8+") return { min_days: 8 };
+  if (sp) {
+    const min = sp.get("min_days");
+    const max = sp.get("max_days");
+    if (min || max) {
+      return {
+        min_days: min ? Number(min) : undefined,
+        max_days: max ? Number(max) : undefined,
+      };
+    }
+  }
+  return {};
+}
+
 export default function CountryTourListing({ countrySlug }: { countrySlug?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryCountry = searchParams.get("country") || "";
   const querySearch = searchParams.get("search") || "";
   const queryCategory = searchParams.get("category") || "";
+  const queryDepartureMonth = searchParams.get("departure_month") || searchParams.get("travel_date") || "";
+  const queryBudget = searchParams.get("budget") || "";
+  const queryDuration = parseDurationFromParams(searchParams);
+  const querySubcategory = searchParams.get("subcategory") || "";
+  const queryDestination = searchParams.get("destination") || "";
+  const queryRating = searchParams.get("rating") || "";
+  const queryAvailableOnly = searchParams.get("available_only") === "true";
+  const querySort = (searchParams.get("sort") as "newest" | "price_asc" | "price_desc" | "duration_asc") || "newest";
   const { format } = useCurrency();
   const { isWishlisted, toggleWishlist } = useTravelStore();
 
@@ -414,16 +133,24 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     setSearchTerm(querySearch);
   }, [querySearch]);
 
-  const handleSearchSubmit = (text: string) => {
+  const updateQueryParam = (updates: Record<string, string | null | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
-    const trimmed = text.trim();
-    if (trimmed) {
-      params.set("search", trimmed);
-    } else {
-      params.delete("search");
+    Object.entries(updates).forEach(([key, val]) => {
+      if (!val) {
+        params.delete(key);
+      } else {
+        params.set(key, val);
+      }
+    });
+    if (!("page" in updates)) {
+      params.set("page", "1");
     }
-    params.set("page", "1");
-    router.push(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+    router.replace(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`, { scroll: false });
+  };
+
+  const handleSearchSubmit = (text: string) => {
+    const trimmed = text.trim();
+    updateQueryParam({ search: trimmed || null });
   };
 
   const [countryName, setCountryName] = useState("");
@@ -434,42 +161,57 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
-  // Server-driven filters -- each of these is sent to GET /api/public/tours
-  // as a real query param (see routers.public.public_tours), so changing
-  // them re-fetches from the backend rather than re-filtering a locally
-  // cached page of results.
-  const [selectedBudget, setSelectedBudget] = useState("");
-  const [selectedDuration, setSelectedDuration] = useState("");
-  const [selectedDepartureMonth, setSelectedDepartureMonth] = useState("");
-  const [selectedSubcategory, setSelectedSubcategory] = useState("");
-  const [availableOnly, setAvailableOnly] = useState(false);
-  const [sortOrder, setSortOrder] = useState<"newest" | "price_asc" | "price_desc" | "duration_asc">("newest");
+  // Server-driven filters initialized from URL searchParams
+  const [selectedBudget, setSelectedBudget] = useState(queryBudget);
+  const [selectedDuration, setSelectedDuration] = useState(queryDuration);
+  const [selectedDepartureMonth, setSelectedDepartureMonth] = useState(queryDepartureMonth);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(querySubcategory);
+  const [availableOnly, setAvailableOnly] = useState(queryAvailableOnly);
+  const [sortOrder, setSortOrder] = useState<"newest" | "price_asc" | "price_desc" | "duration_asc">(querySort);
   const queryPage = Math.max(1, Number(searchParams.get("page")) || 1);
   const [page, setPage] = useState(queryPage);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const PAGE_SIZE = 12;
 
-  // Client-side-only filters -- these narrow the current page's real API
-  // fields (country_name/city_name, rating_average); there's no dedicated
-  // backend param for either, so they stay local rather than round-tripping.
-  const [selectedDestination, setSelectedDestination] = useState("");
-  const [selectedRating, setSelectedRating] = useState("");
+  // Client-side-only filters
+  const [selectedDestination, setSelectedDestination] = useState(queryDestination);
+  const [selectedRating, setSelectedRating] = useState(queryRating);
 
-  // Next 6 calendar months as real "YYYY-MM" values for the departure_month
-  // param (backend requires that exact shape - see public_tours's Query
-  // pattern), labeled for display.
+  // Sync state when URL searchParams change
+  useEffect(() => {
+    setSelectedBudget(searchParams.get("budget") || "");
+    setSelectedDuration(parseDurationFromParams(searchParams));
+    setSelectedDepartureMonth(searchParams.get("departure_month") || searchParams.get("travel_date") || "");
+    setSelectedSubcategory(searchParams.get("subcategory") || "");
+    setAvailableOnly(searchParams.get("available_only") === "true");
+    const sortParam = searchParams.get("sort") as "newest" | "price_asc" | "price_desc" | "duration_asc";
+    if (sortParam) setSortOrder(sortParam);
+    setSelectedDestination(searchParams.get("destination") || "");
+    setSelectedRating(searchParams.get("rating") || "");
+  }, [searchParams]);
+
+  // Next 12 calendar months as real "YYYY-MM" values for departure_month,
+  // dynamically including any active query departure month.
   const departureMonthOptions = useMemo(() => {
     const options: { value: string; label: string }[] = [];
     const now = new Date();
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 12; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
       const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const label = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
       options.push({ value, label });
     }
+    if (selectedDepartureMonth && !options.some((o) => o.value === selectedDepartureMonth)) {
+      const [y, m] = selectedDepartureMonth.split("-").map(Number);
+      if (y && m) {
+        const d = new Date(y, m - 1, 1);
+        const label = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+        options.push({ value: selectedDepartureMonth, label });
+      }
+    }
     return options;
-  }, []);
+  }, [selectedDepartureMonth]);
 
   const hasSpecificCountry = Boolean(countrySlug || queryCountry);
 
@@ -585,13 +327,18 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     if (querySearch) params.search = querySearch;
     if (queryCategory) params.category = queryCategory;
     if (selectedSubcategory) params.subcategory = selectedSubcategory;
-    if (selectedDuration === "1-3") { params.min_days = 1; params.max_days = 3; }
-    else if (selectedDuration === "4-7") { params.min_days = 4; params.max_days = 7; }
-    else if (selectedDuration === "8+") { params.min_days = 8; }
+    const range = durationRange(selectedDuration, searchParams);
+    if (range.min_days !== undefined) params.min_days = range.min_days;
+    if (range.max_days !== undefined) params.max_days = range.max_days;
     if (selectedBudget) {
       const band = budgetOptions.find((b) => b.value === selectedBudget);
       if (band?.min !== undefined) params.min_price = band.min;
       if (band?.max !== undefined) params.max_price = band.max;
+    } else {
+      const minP = searchParams.get("min_price");
+      const maxP = searchParams.get("max_price");
+      if (minP) params.min_price = Number(minP);
+      if (maxP) params.max_price = Number(maxP);
     }
     if (selectedDepartureMonth) params.departure_month = selectedDepartureMonth;
     if (availableOnly) params.available_only = true;
@@ -600,28 +347,22 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
       .then((result) => {
         if (!active) return;
         const apiItems = result.items || [];
-        const baseSet = isIndia ? INDIA_TOURS : WORLD_TOURS;
 
         setTotalPages(result.total_pages || 1);
         setTotalCount(result.total || apiItems.length);
 
-        const mapped: TourItem[] = apiItems.map((t, idx) => {
-          // guideType/tourType/travelStyle/age caps have no backing column on
-          // Tour at all -- those stay cosmetic filler and never drive a
-          // filter. route, departures and maxGroup DO have real data
-          // (start_location/end_location, departures[], group_size) - use it
-          // when present so cards don't show another tour's mock route/dates.
-          const fallback = baseSet[idx % baseSet.length];
+        const mapped: TourItem[] = apiItems.map((t) => {
           const realRoute = t.start_location && t.end_location
             ? `${t.start_location} > ${t.end_location}`
             : t.city_name && t.country_name
               ? `${t.city_name}, ${t.country_name}`
-              : null;
+              : (t.country_name || null);
           const realDepartures = t.departures
             ?.filter((d) => d.status === "available")
             .slice(0, 3)
             .map((d) => ({
               date: formatDepartureDate(d.date),
+              slots: d.slots,
               price: t.discounted_price_per_person != null
                 ? format(t.discounted_price_per_person, t.currency)
                 : t.price_start_per_person != null
@@ -659,7 +400,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             rawPrice: t.discounted_price_per_person ?? t.price_start_per_person ?? null,
             discountPercentage: t.discount_percentage,
             currency: t.currency || "USD",
-            image: t.banner_image ? mediaUrl(t.banner_image) : fallback.image,
+            image: t.banner_image ? mediaUrl(t.banner_image) : DEFAULT_TOUR_FALLBACK_IMAGE,
             slug: t.slug,
             country_name: t.country_name,
           };
@@ -678,7 +419,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     return () => {
       active = false;
     };
-  }, [countryName, countrySlug, queryCountry, querySearch, queryCategory, selectedSubcategory, selectedDuration, selectedBudget, budgetOptions, selectedDepartureMonth, availableOnly, sortOrder, page, format, isIndia, retryKey]);
+  }, [countryName, countrySlug, queryCountry, querySearch, queryCategory, selectedSubcategory, selectedDuration, selectedBudget, budgetOptions, selectedDepartureMonth, availableOnly, sortOrder, page, format, isIndia, retryKey, searchParams]);
 
   // Destination and hero headings
   const destinationTitle = countryName || (isIndia ? "India" : hasSpecificCountry ? "Destination" : "World Tours");
@@ -698,8 +439,8 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (querySearch) count++;
-    if (selectedBudget) count++;
-    if (selectedDuration) count++;
+    if (selectedBudget || searchParams.get("min_price") || searchParams.get("max_price")) count++;
+    if (selectedDuration || searchParams.get("min_days") || searchParams.get("max_days")) count++;
     if (selectedDestination) count++;
     if (selectedRating) count++;
     if (selectedDepartureMonth) count++;
@@ -707,19 +448,68 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     if (selectedSubcategory) count++;
     if (availableOnly) count++;
     return count;
-  }, [querySearch, selectedBudget, selectedDuration, selectedDestination, selectedRating, selectedDepartureMonth, queryCategory, selectedSubcategory, availableOnly]);
+  }, [querySearch, selectedBudget, selectedDuration, selectedDestination, selectedRating, selectedDepartureMonth, queryCategory, selectedSubcategory, availableOnly, searchParams]);
 
   // Selecting a category updates the URL (preserving country/search) rather
   // than just local state, so the request is re-run against the backend --
   // country + category are combined server-side (see routers.public.public_tours).
   const selectCategory = (slugOrName: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (!slugOrName || slugOrName === queryCategory) {
-      params.delete("category");
-    } else {
-      params.set("category", slugOrName);
-    }
-    router.push(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+    const nextCategory = (!slugOrName || slugOrName === queryCategory) ? null : slugOrName;
+    updateQueryParam({ category: nextCategory, subcategory: null });
+  };
+
+  const handleBudgetChange = (value: string) => {
+    setSelectedBudget(value);
+    const band = budgetOptions.find((b) => b.value === value);
+    updateQueryParam({
+      budget: value || null,
+      min_price: band?.min !== undefined ? String(band.min) : null,
+      max_price: band?.max !== undefined ? String(band.max) : null,
+    });
+  };
+
+  const handleDurationChange = (value: string) => {
+    setSelectedDuration(value);
+    const range = durationRange(value);
+    updateQueryParam({
+      duration: value || null,
+      min_days: range.min_days ? String(range.min_days) : null,
+      max_days: range.max_days ? String(range.max_days) : null,
+    });
+  };
+
+  const handleDepartureMonthChange = (value: string) => {
+    setSelectedDepartureMonth(value);
+    updateQueryParam({
+      departure_month: value || null,
+      travel_date: null,
+    });
+  };
+
+  const handleSubcategoryChange = (value: string) => {
+    setSelectedSubcategory(value);
+    updateQueryParam({ subcategory: value || null });
+  };
+
+  const handleDestinationChange = (value: string) => {
+    setSelectedDestination(value);
+    updateQueryParam({ destination: value || null });
+  };
+
+  const handleRatingChange = (value: string) => {
+    setSelectedRating(value);
+    updateQueryParam({ rating: value || null });
+  };
+
+  const handleAvailableOnlyToggle = () => {
+    const next = !availableOnly;
+    setAvailableOnly(next);
+    updateQueryParam({ available_only: next ? "true" : null });
+  };
+
+  const handleSortChange = (value: typeof sortOrder) => {
+    setSortOrder(value);
+    updateQueryParam({ sort: value !== "newest" ? value : null });
   };
 
   const clearAllFilters = () => {
@@ -731,19 +521,14 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     setSelectedSubcategory("");
     setAvailableOnly(false);
     setSearchTerm("");
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("category");
-    params.delete("search");
-    params.set("page", "1");
-    router.push(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+    setSortOrder("newest");
+    router.replace(countrySlug ? `/tours/${countrySlug}` : "/tours", { scroll: false });
   };
 
   const changePage = (nextPage: number) => {
     const safePage = Math.min(totalPages, Math.max(1, nextPage));
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", String(safePage));
+    updateQueryParam({ page: String(safePage) });
     setPage(safePage);
-    router.push(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`, { scroll: false });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -993,7 +778,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           <div className="relative shrink-0">
             <select
               value={selectedBudget}
-              onChange={(e) => setSelectedBudget(e.target.value)}
+              onChange={(e) => handleBudgetChange(e.target.value)}
               className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
                 selectedBudget
                   ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
@@ -1012,7 +797,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           <div className="relative shrink-0">
             <select
               value={selectedDuration}
-              onChange={(e) => setSelectedDuration(e.target.value)}
+              onChange={(e) => handleDurationChange(e.target.value)}
               className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
                 selectedDuration
                   ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
@@ -1020,6 +805,11 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               }`}
             >
               <option value="">Duration</option>
+              <option value="1">1 Day</option>
+              <option value="2-6">2–6 Days</option>
+              <option value="7-10">7–10 Days</option>
+              <option value="11-14">11–14 Days</option>
+              <option value="15+">15+ Days</option>
               <option value="1-3">1–3 Days</option>
               <option value="4-7">4–7 Days</option>
               <option value="8+">8+ Days</option>
@@ -1057,7 +847,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <div className="relative shrink-0">
               <select
                 value={selectedSubcategory}
-                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                onChange={(e) => handleSubcategoryChange(e.target.value)}
                 className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
                   selectedSubcategory
                     ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
@@ -1079,7 +869,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           <div className="relative shrink-0">
             <select
               value={selectedDestination}
-              onChange={(e) => setSelectedDestination(e.target.value)}
+              onChange={(e) => handleDestinationChange(e.target.value)}
               className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
                 selectedDestination
                   ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
@@ -1100,7 +890,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           <div className="relative shrink-0">
             <select
               value={selectedRating}
-              onChange={(e) => setSelectedRating(e.target.value)}
+              onChange={(e) => handleRatingChange(e.target.value)}
               className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
                 selectedRating
                   ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
@@ -1122,7 +912,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           <div className="relative shrink-0">
             <select
               value={selectedDepartureMonth}
-              onChange={(e) => setSelectedDepartureMonth(e.target.value)}
+              onChange={(e) => handleDepartureMonthChange(e.target.value)}
               className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
                 selectedDepartureMonth
                   ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
@@ -1141,7 +931,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               tours with an open, unexpired calendar departure. */}
           <button
             type="button"
-            onClick={() => setAvailableOnly((v) => !v)}
+            onClick={handleAvailableOnlyToggle}
             className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition shadow-2xs ${
               availableOnly
                 ? "bg-[#E4572E] text-white hover:bg-[#d0461f]"
@@ -1155,7 +945,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           <div className="relative shrink-0">
             <select
               value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+              onChange={(e) => handleSortChange(e.target.value as typeof sortOrder)}
               className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
                 sortOrder !== "newest"
                   ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
@@ -1244,7 +1034,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               const tourLink = tour.slug
                 ? publicTourUrl({ country_name: tour.country_name || tour.location, title: tour.title, slug: tour.slug })
                 : `/tours/${tour.id}`;
-              const wishlistId = typeof tour.id === "number" ? tour.id : hashStringToId(String(tour.id));
+              const wishlistId = typeof tour.id === "number" ? tour.id : Number(tour.id) || 1;
               const wishlisted = isWishlisted(wishlistId);
 
               return (
@@ -1346,20 +1136,43 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                         </div>
                       </div>
 
-                      {/* Upcoming Departure Dates Strip */}
-                      <div className="mt-4 grid grid-cols-4 gap-1 rounded-xl border border-slate-100 bg-[#F9FBFE] p-1.5 text-center">
-                        {tour.departures.map((dep, dIdx) => (
-                          <div key={`${dep.date}-${dIdx}`} className="rounded-lg bg-white py-1 px-0.5 border border-slate-100 shadow-2xs">
-                            <p className="text-[8px] font-semibold text-slate-400 truncate">{dep.date}</p>
-                            <p className="text-[10px] font-bold text-slate-900 leading-tight">{dep.price}</p>
+                      {/* Upcoming Available Departures & Stock (Clean single strip, no nested cards) */}
+                      <div className="mt-3.5 rounded-xl border border-slate-100 bg-slate-50/80 py-1.5 px-2">
+                        {tour.departures.length > 0 ? (
+                          <div className="grid grid-cols-4 divide-x divide-slate-200/70 text-center">
+                            {tour.departures.map((dep, dIdx) => (
+                              <div key={`${dep.date}-${dIdx}`} className="px-1 flex flex-col justify-center">
+                                <p className="text-[9px] font-semibold text-slate-500 truncate">{dep.date}</p>
+                                <p className="text-[10px] font-bold text-slate-900 leading-tight">{dep.price}</p>
+                                {dep.slots != null && dep.slots > 0 ? (
+                                  <p className={`text-[8px] font-bold leading-tight ${dep.slots <= 5 ? "text-amber-600" : "text-emerald-600"}`}>
+                                    {dep.slots <= 5 ? `${dep.slots} left` : `${dep.slots} seats`}
+                                  </p>
+                                ) : (
+                                  <p className="text-[8px] font-semibold text-emerald-600 leading-tight">In stock</p>
+                                )}
+                              </div>
+                            ))}
+                            <Link
+                              href={tourLink}
+                              className="flex flex-col items-center justify-center px-1 text-[10px] font-bold text-pub-secondary hover:text-pub-secondary/80 transition"
+                            >
+                              <span>+More</span>
+                              <span className="text-[8px] font-medium text-slate-400">dates</span>
+                            </Link>
                           </div>
-                        ))}
-                        <Link
-                          href={tourLink}
-                          className={`flex items-center justify-center rounded-lg py-1 text-[10px] font-bold text-slate-700 hover:bg-white transition ${tour.departures.length === 0 ? "col-span-4" : ""}`}
-                        >
-                          {tour.departures.length > 0 ? "+More" : "Check available dates"}
-                        </Link>
+                        ) : (
+                          <Link
+                            href={tourLink}
+                            className="flex items-center justify-between px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:text-pub-secondary transition"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              Available departure dates
+                            </span>
+                            <span className="font-bold text-pub-secondary">Check dates &rarr;</span>
+                          </Link>
+                        )}
                       </div>
                     </div>
 

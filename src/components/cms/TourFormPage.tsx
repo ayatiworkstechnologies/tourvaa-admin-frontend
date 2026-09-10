@@ -10,6 +10,9 @@ import {
   LuSave as Save,
   LuSearch as Search,
   LuTags as Tags,
+  LuPlus as Plus,
+  LuSparkles as Sparkles,
+  LuInfo as Info,
 } from "react-icons/lu";
 
 import Loader from "@/components/ui/Loader";
@@ -20,8 +23,6 @@ import { createCms, getCms, listCms, updateCms } from "@/lib/api/services/cmsSer
 import { useToast } from "@/hooks/useToast";
 import api from "@/lib/api/client";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
-import { useCurrency } from "@/hooks/useCurrency";
-import { DiscountInfo, DiscountPriceLine, hasActiveDiscount } from "@/components/public/DiscountPrice";
 
 type Section = "basic-core" | "settings" | "location" | "media" | "seo";
 
@@ -137,7 +138,6 @@ export default function TourFormPage({
   formId,
 }: Props) {
   const toast = useToast();
-  const { format: formatCurrency } = useCurrency();
   const showBasic = sections.includes("basic-core");
   const showSettings = sections.includes("settings");
   const showLocation = sections.includes("location");
@@ -150,8 +150,8 @@ export default function TourFormPage({
       : "focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
   }`;
   const saveButtonClass = isSupplier
-    ? "bg-[#16833A] text-white shadow-[0_4px_12px_rgba(22,131,58,.2)] hover:bg-[#117331]"
-    : "bg-dash-brand text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] hover:bg-dash-brand-hover";
+    ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-800 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all"
+    : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all";
   const [form, setForm] = useState<Record<string, string>>(() =>
     initialData
       ? normalizeTourForm(initialData)
@@ -203,13 +203,6 @@ export default function TourFormPage({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // active_discount is an object (or null), not a plain string like every
-  // other form field - normalizeTourForm would stringify it to
-  // "[object Object]", so it's tracked separately and read straight off the
-  // raw API response instead of going through `form`.
-  const [activeDiscount, setActiveDiscount] = useState<DiscountInfo | null>(
-    (initialData?.active_discount as DiscountInfo | undefined) ?? null
-  );
   const [loading, setLoading] = useState(Boolean(tourId && !initialData));
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState<{ message: string; current_updated_by?: number } | null>(null);
@@ -291,7 +284,6 @@ export default function TourFormPage({
     try {
       const data = await getCms("/tours", tourId);
       setForm(normalizeTourForm(data));
-      setActiveDiscount((data.active_discount as DiscountInfo | undefined) ?? null);
     } catch {
       toast.error("Could not load tour.");
     } finally {
@@ -306,7 +298,6 @@ export default function TourFormPage({
   useEffect(() => {
     if (initialData) {
       setForm(normalizeTourForm(initialData));
-      setActiveDiscount((initialData.active_discount as DiscountInfo | undefined) ?? null);
     }
   }, [initialData]);
 
@@ -450,7 +441,6 @@ export default function TourFormPage({
     try {
       const data = await getCms("/tours", tourId);
       setForm(normalizeTourForm(data));
-      setActiveDiscount((data.active_discount as DiscountInfo | undefined) ?? null);
       setConflict(null);
     } catch {
       toast.error("Could not reload the tour.");
@@ -561,24 +551,6 @@ export default function TourFormPage({
                 <p className="mt-1 text-[11px] text-dash-subtle">Set per-passenger prices in the Pricing step -- this updates automatically once approved.</p>
               </label>
             )}
-            {!isSupplier && tourId && activeDiscount && hasActiveDiscount(activeDiscount) && (
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Publishable / customer price</span>
-                <div className={`${inputClass} flex items-center justify-between bg-gray-50`}>
-                  <DiscountPriceLine
-                    original={activeDiscount.original_price_per_person as number}
-                    discounted={activeDiscount.discounted_price_per_person as number}
-                    currency={form.currency ?? "USD"}
-                    format={formatCurrency}
-                    size="sm"
-                  />
-                  <span className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-black text-red-600">
-                    {activeDiscount.discount_percentage}% OFF
-                  </span>
-                </div>
-                <p className="mt-1 text-[11px] text-dash-subtle">Live from an active discount on the Discounts tab -- this is the publishable/customer price shown to customers right now.</p>
-              </label>
-            )}
             {textFields.map(([key, label]) => (
               <label key={key}>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
@@ -632,16 +604,130 @@ export default function TourFormPage({
 
           {showBasic && (
           <FormSection role={role} icon={AlignLeft} title="Descriptions" description="Shown on the public tour page.">
-            {descriptionFields.map(([key, label]) => (
-              <label key={key} className="md:col-span-2">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
-                <textarea
-                  value={form[key] ?? ""}
-                  onChange={(e) => update(key, e.target.value)}
-                  className={`min-h-28 ${inputClass}`}
-                />
-              </label>
-            ))}
+            {descriptionFields.map(([key, label]) => {
+                            if (key === "long_description") {
+                const words = (form.long_description || "").trim().split(/\s+/).filter(Boolean).length;
+
+                const handleAppendSection = (title: string, desc: string) => {
+                  const add = `\n\n${title}: ${desc}`;
+                  update("long_description", (form.long_description ? form.long_description.trimEnd() : "") + add);
+                };
+
+                const handleTemplate = () => {
+                  const sample = `Tour Overview & Atmosphere: Embark on an unforgettable voyage curated for travellers seeking scenic wonder, effortless comfort, and genuine cultural immersion.\n\nKey Highlights: Marvel at world-renowned landscapes, wander charming historic districts, and capture panoramic views from iconic viewpoints along the journey.\n\nTravel Comfort & Inclusions: Travel in modern, climate-controlled comfort with expert local guidance, boutique accommodation stays, and authentic culinary stops curated at every turn.`;
+                  if (!form.long_description || confirm("Insert standard tour overview narrative template?")) {
+                    update("long_description", sample);
+                  }
+                };
+
+                const handleFormatSpacing = () => {
+                  if (!form.long_description) return;
+                  const formatted = form.long_description
+                    .replace(/(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][A-Za-z0-9\s&'/–—\-]+:)/g, "\n\n$1")
+                    .trim();
+                  update("long_description", formatted);
+                };
+
+                return (
+                  <div key={key} className="md:col-span-2 space-y-3 rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/70 to-slate-50/30 p-4 transition-all focus-within:border-blue-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 shadow-xs">
+                    {/* Header Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-800">
+                          <Sparkles size={14} className="text-blue-600" />
+                          {label} (Narrative Overview)
+                        </span>
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 border border-blue-100">
+                          Shown on public tour page
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-medium text-slate-500">
+                        <span>{words} words</span>
+                        <span className="mx-1.5">•</span>
+                        <span>{(form.long_description || "").length} characters</span>
+                      </div>
+                    </div>
+
+                    {/* Textarea */}
+                    <textarea
+                      value={form.long_description ?? ""}
+                      onChange={(e) => update("long_description", e.target.value)}
+                      rows={8}
+                      placeholder="Comprehensive tour narrative and overview. Introduce the journey, destination atmosphere, key highlights, travel comfort, and unforgettable memories awaiting guests..."
+                      className="w-full min-h-48 resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-blue-500 text-slate-900 placeholder:text-slate-400 font-normal shadow-2xs"
+                    />
+
+                    {/* In-Editor Toolbar Docked Inside Detailer */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white/90 px-3 py-2 shadow-2xs">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleAppendSection("Tour Highlights & Key Experiences", "Describe the top scenic points, guided adventures, and must-see attractions...")}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-indigo-700 hover:shadow active:scale-95"
+                          title="Append a highlighted section"
+                        >
+                          <Plus size={13} /> Add Highlight Section
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleAppendSection("Scenic Route & Landscape", "Describe the route beauty, coastlines, and photographic vistas...")}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          + Scenic Route
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleAppendSection("Included Travel Comfort", "Highlight comfortable vehicle transfers, curated accommodation, and attentive service...")}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          + Included Comfort
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleTemplate}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+                        >
+                          <Sparkles size={11} className="text-amber-500" /> Template
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleFormatSpacing}
+                          disabled={!form.long_description}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-40"
+                        >
+                          Clean Spacing
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Pro Tip */}
+                    <div className="flex items-center gap-1.5 pt-0.5 text-[11px] text-slate-500">
+                      <Info size={13} className="text-blue-500 shrink-0" />
+                      <span>
+                        Use structured section titles (e.g. <strong className="text-slate-700">Tour Highlights:</strong> or <strong className="text-slate-700">Included Comfort:</strong>) to make long tour overviews easy to scan and read for prospective guests.
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <label key={key} className="md:col-span-2">
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
+                  <textarea
+                    value={form[key] ?? ""}
+                    onChange={(e) => update(key, e.target.value)}
+                    rows={3}
+                    placeholder="Brief 1-2 sentence overview for cards and meta snippets..."
+                    className={`min-h-24 resize-y ${inputClass}`}
+                  />
+                </label>
+              );
+            })}
           </FormSection>
           )}
 

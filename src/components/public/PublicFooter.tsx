@@ -25,7 +25,7 @@ const FALLBACK_FOOTER_SECTIONS: CmsFooterSection[] = [
     links: [
       { id: -1, label: "Contact", url: "/contact", open_in_new_tab: false },
       { id: -2, label: "Legal Notice", url: "/terms", open_in_new_tab: false },
-      { id: -3, label: "Privacy Policy.", url: "/privacy-policy", open_in_new_tab: false },
+      { id: -3, label: "Privacy Policy", url: "/privacy-policy", open_in_new_tab: false },
       { id: -4, label: "General Terms and Conditions", url: "/terms", open_in_new_tab: false },
       { id: -5, label: "Plan Your Trip", url: "/contact", open_in_new_tab: false },
     ],
@@ -56,10 +56,9 @@ const FALLBACK_FOOTER_SECTIONS: CmsFooterSection[] = [
 export default function PublicFooter() {
   const router = useRouter();
   const { settings } = usePublicSettings();
-  const { code, symbol, currencies, setCode, forced } = useCurrency();
+  const { code, symbol, currencies, setCode, forced, countryCode, setCountry } = useCurrency();
 
   const [countries, setCountries] = useState<PublicCountry[]>([]);
-  const [country, setCountry] = useState("INDIA");
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
   const [footerSections, setFooterSections] = useState<CmsFooterSection[]>(FALLBACK_FOOTER_SECTIONS);
@@ -95,10 +94,6 @@ export default function PublicFooter() {
     };
   }, []);
 
-  useEffect(() => {
-    setCountry((settings.country || settings.site_country || "INDIA").toUpperCase());
-  }, [settings]);
-
   // Click outside to close dropdowns
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -114,11 +109,20 @@ export default function PublicFooter() {
   }, []);
 
   const countryOptions = useMemo(() => {
-    const names = countries.length
-      ? countries.map((item) => item.country_name.toUpperCase())
-      : ["INDIA", "UNITED KINGDOM", "UNITED STATES", "UAE", "AUSTRALIA", "SINGAPORE", "NEW ZEALAND"];
-    return [country, ...names].filter((item, index, array) => array.indexOf(item) === index);
-  }, [countries, country]);
+    if (countries.length) {
+      return countries.map((item) => ({ code: item.country_code, name: item.country_name.toUpperCase() }));
+    }
+    return [
+      { code: "IN", name: "INDIA" },
+      { code: "GB", name: "UNITED KINGDOM" },
+      { code: "US", name: "UNITED STATES" },
+      { code: "AE", name: "UAE" },
+      { code: "AU", name: "AUSTRALIA" },
+      { code: "SG", name: "SINGAPORE" },
+      { code: "NZ", name: "NEW ZEALAND" },
+    ];
+  }, [countries]);
+  const countryName = countryOptions.find((item) => item.code === countryCode)?.name || countryCode || "INDIA";
 
   const siteName = settings.site_name || settings.app_name || "Tourvaa";
   const tagline =
@@ -232,7 +236,7 @@ export default function PublicFooter() {
                         onClick={() => setCountryOpen((prev) => !prev)}
                         className="w-full rounded-xl bg-white px-3.5 sm:px-4 py-2.5 text-slate-900 flex items-center justify-between text-xs sm:text-sm font-bold shadow-sm focus:outline-none hover:bg-slate-50 transition"
                       >
-                        <span className="truncate">{country}</span>
+                        <span className="truncate">{countryName}</span>
                         <ChevronDown
                           size={15}
                           className={`text-pub-accent font-black shrink-0 transition-transform ${
@@ -249,20 +253,20 @@ export default function PublicFooter() {
                           <div className="mt-1 max-h-48 overflow-y-auto space-y-0.5 no-scrollbar">
                             {countryOptions.map((item) => (
                               <button
-                                key={item}
+                                key={item.code}
                                 type="button"
                                 onClick={() => {
-                                  setCountry(item);
+                                  void setCountry(item.code);
                                   setCountryOpen(false);
-                                  router.push(`/tours?country=${encodeURIComponent(item)}`);
+                                  router.push(`/tours?country=${encodeURIComponent(item.name)}`);
                                 }}
                                 className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                                  item === country
+                                  item.code === countryCode
                                     ? "bg-pub-accent/10 text-pub-accent font-bold"
                                     : "text-slate-700 hover:bg-slate-50"
                                 }`}
                               >
-                                <span>{item}</span>
+                                <span>{item.name}</span>
                               </button>
                             ))}
                           </div>
@@ -281,7 +285,7 @@ export default function PublicFooter() {
                     aria-label="Facebook"
                     className="transition-transform duration-200 hover:scale-125 hover:text-white"
                   >
-                    <FaFacebookF size={15} />
+                    <FaFacebookF size={16} />
                   </a>
                   <a
                     href="https://instagram.com"
@@ -317,7 +321,7 @@ export default function PublicFooter() {
                     aria-label="X Twitter"
                     className="transition-transform duration-200 hover:scale-125 hover:text-white"
                   >
-                    <FaXTwitter size={15} />
+                    <FaXTwitter size={16} />
                   </a>
                   <a
                     href="https://linkedin.com"
@@ -326,7 +330,7 @@ export default function PublicFooter() {
                     aria-label="LinkedIn"
                     className="transition-transform duration-200 hover:scale-125 hover:text-white"
                   >
-                    <FaLinkedinIn size={15} />
+                    <FaLinkedinIn size={16} />
                   </a>
                 </div>
               </div>

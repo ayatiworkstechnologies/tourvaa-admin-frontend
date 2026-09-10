@@ -72,6 +72,7 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
   "blog-teaser": "The blog teaser banner shown on the homepage, linking through to the Blog.",
   "airport-transfer": "The Book Your Airport Transfers banner shown on the homepage.",
   footer: "The public site footer's link sections (Support, Our Company, Login) - sections and links, each independently enable/disable-able and orderable.",
+  "cms-pages": "Create standalone pages with their own URL, content, and SEO details. Published pages become live at /{slug} and automatically appear as a footer link if assigned to a section - draft pages are never shown publicly.",
 };
 const TABS: TabConfig[] = [
   {
@@ -210,6 +211,32 @@ const TABS: TabConfig[] = [
       { key: "answer", label: "Answer", type: "textarea", required: true },
       { key: "category", label: "Category", type: "text", required: true },
       { key: "sort_order", label: "Sort Order", type: "number" },
+    ],
+  },
+  {
+    key: "cms-pages",
+    label: "Pages",
+    endpoint: "/cms/pages",
+    columns: [
+      { key: "title", header: "Title" },
+      { key: "slug", header: "URL", render: (item) => `/${getStringValue(item, "slug")}` },
+      { key: "status", header: "Status", render: (item) => (
+        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getStringValue(item, "status") === "published" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+          {getStringValue(item, "status") === "published" ? "Published" : "Draft"}
+        </span>
+      ) },
+      { key: "footer_section_id", header: "Footer Section" },
+      { key: "sort_order", header: "Sort" },
+    ],
+    formFields: [
+      { key: "title", label: "Title", type: "text", required: true },
+      { key: "slug", label: "URL slug (auto-generated from title if left blank)", type: "text" },
+      { key: "content", label: "Content (HTML)", type: "textarea" },
+      { key: "seo_title", label: "SEO Title", type: "text" },
+      { key: "seo_description", label: "SEO Description", type: "text" },
+      { key: "footer_section_id", label: "Footer Section", type: "select" },
+      { key: "sort_order", label: "Sort Order", type: "number" },
+      { key: "status", label: "Status", type: "select", options: [{ value: "draft", label: "Draft" }, { value: "published", label: "Published" }], required: true },
     ],
   },
 ];
@@ -784,10 +811,12 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
   const [tourImages, setTourImages] = useState<Record<string, string>>({});
   const [countryOptions, setCountryOptions] = useState<{ id: number; name: string }[]>([]);
   const [cityOptions, setCityOptions] = useState<{ id: number; name: string }[]>([]);
+  const [footerSectionOptions, setFooterSectionOptions] = useState<{ id: number; title: string }[]>([]);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
   const isDestinationTab = tab.endpoint === "/cms/popular-destinations";
+  const isCmsPageTab = tab.endpoint === "/cms/pages";
   const selectedCountryId = formValues.country_id ?? "";
 
   const fetchItems = useCallback(async () => {
@@ -860,6 +889,15 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
       .catch(() => { if (!cancelled) setCityOptions([]); });
     return () => { cancelled = true; };
   }, [isDestinationTab, selectedCountryId]);
+
+  useEffect(() => {
+    if (!isCmsPageTab) return;
+    let cancelled = false;
+    api.get("/cms/footer-sections", { params: { limit: 100 } })
+      .then((res) => { if (!cancelled) setFooterSectionOptions(res.data?.items ?? []); })
+      .catch(() => { if (!cancelled) setFooterSectionOptions([]); });
+    return () => { cancelled = true; };
+  }, [isCmsPageTab]);
 
   const openCreate = () => {
     setEditingItem(null);
@@ -1124,6 +1162,17 @@ function CmsTabPanel({ tab }: { tab: TabConfig }) {
                     <option value="">{selectedCountryId ? "Select a city..." : "Select a country first"}</option>
                     {cityOptions.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                ) : f.key === "footer_section_id" && isCmsPageTab ? (
+                  <select
+                    value={formValues[f.key] ?? ""}
+                    onChange={e => setFormValues(v => ({ ...v, footer_section_id: e.target.value }))}
+                    className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
+                  >
+                    <option value="">- None (not shown in footer) -</option>
+                    {footerSectionOptions.map(s => (
+                      <option key={s.id} value={s.id}>{s.title}</option>
                     ))}
                   </select>
                 ) : f.type === "select" ? (

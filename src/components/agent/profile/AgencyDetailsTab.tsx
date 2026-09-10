@@ -8,11 +8,12 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
-import PhoneInput from "@/components/ui/PhoneInput";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import {
-  combinePhone, mobileHelp, passwordHelp, splitPhone, validateMobile, validatePassword,
+  combinePhone, mobileHelp, passwordHelp, validateMobile, validatePassword,
 } from "@/lib/utils/validators";
-import { phoneCountryCodeValues } from "@/lib/constants/locationOptions";
+import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import type { CountryCode } from "libphonenumber-js/min";
 
 function apiErr(err: unknown, fallback: string) {
   if (axios.isAxiosError(err)) {
@@ -60,7 +61,7 @@ export default function AgencyDetailsTab() {
     country_id: "",
     city_id: "",
   });
-  const [phoneCountryCode, setPhoneCountryCode] = useState("+91");
+  const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>("IN");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedStateId, setSelectedStateId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -88,9 +89,12 @@ export default function AgencyDetailsTab() {
       .then(([profileRes, agentRes]) => {
         const p = profileRes.data?.data ?? profileRes.data ?? {};
         const a = agentRes.data?.data ?? agentRes.data ?? {};
-        const { countryCode, number } = splitPhone(p.phone || "", phoneCountryCodeValues);
-        setPhoneCountryCode(countryCode);
-        setPhoneNumber(number);
+        if (p.phone) {
+          const iso = isoForDialCode(p.phone);
+          const dial = dialCodeForIso(iso);
+          setPhoneCountryIso(iso);
+          setPhoneNumber(p.phone.startsWith(dial) ? p.phone.slice(dial.length) : p.phone.replace(/^\+/, ""));
+        }
         const bi = (a.business_info ?? {}) as Record<string, unknown>;
         setForm({
           profile_image: p.profile_image || "",
@@ -114,7 +118,7 @@ export default function AgencyDetailsTab() {
 
   async function saveAgency(e: React.FormEvent) {
     e.preventDefault();
-    const phone = combinePhone(phoneCountryCode, phoneNumber);
+    const phone = combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber);
     if (!validateMobile(phone, true)) { toast.error(mobileHelp); return; }
     setSaving(true);
     try {
@@ -227,10 +231,10 @@ export default function AgencyDetailsTab() {
           </label>
 
           {/* Mobile */}
-          <PhoneInput
-            countryCode={phoneCountryCode}
+          <CountryPhoneInput
+            countryIso={phoneCountryIso}
             number={phoneNumber}
-            onCountryCodeChange={setPhoneCountryCode}
+            onCountryChange={setPhoneCountryIso}
             onNumberChange={setPhoneNumber}
             required
             helpText={mobileHelp}

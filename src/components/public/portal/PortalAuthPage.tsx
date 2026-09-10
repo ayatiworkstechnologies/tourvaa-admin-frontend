@@ -14,7 +14,6 @@ import {
   LuEyeOff as EyeOff,
   LuLock as Lock,
   LuMail as Mail,
-  LuPhone as Phone,
   LuRefreshCw as Refresh,
   LuShieldCheck as ShieldCheck,
   LuSparkles as Sparkles,
@@ -27,6 +26,9 @@ import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
 import { useAuthContext } from "@/providers/AuthProvider";
 import type { PortalTheme } from "@/components/public/portal/PortalPublicHeader";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import { dialCodeForIso } from "@/lib/utils/phoneCountries";
+import type { CountryCode } from "libphonenumber-js/min";
 
 export type PortalAuthConfig = {
   theme: PortalTheme;
@@ -46,6 +48,14 @@ export type PortalAuthConfig = {
   signInCta: string;
   wrongRoleMessage: string;
   registerNamePlaceholder: string;
+  /** When set, the "Register" tab navigates here instead of showing the
+   * inline RegisterPanel - lets a portal keep its own dedicated, richer
+   * registration page (e.g. customer's /register, which also collects
+   * address details) while still sharing this login experience/template. */
+  registerHref?: string;
+  /** Optional quick-links to the other portals' logins, shown as a small
+   * row under the form - e.g. customer's login linking to agent/supplier/affiliate. */
+  otherPortals?: { href: string; label: string }[];
 };
 
 const THEME: Record<PortalTheme, {
@@ -276,6 +286,7 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
   const t = THEME[config.theme];
   const key = PENDING_KEY(config.accountType);
   const [form, setForm] = useState({ first_name: "", email: "", country_code: "+91", mobile_number: "", accepted_terms: false });
+  const [phoneIso, setPhoneIso] = useState<CountryCode>("IN");
   const [sentEmail, setSentEmail] = useState(() => readPending(key)?.email ?? "");
   const [changeToken, setChangeToken] = useState(() => readPending(key)?.changeToken ?? "");
   const [error, setError] = useState("");
@@ -394,25 +405,16 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
       {/* Phone */}
       <div>
         <FieldLabel>Mobile number</FieldLabel>
-        <div className="grid grid-cols-[96px_1fr] gap-2">
-          <div className="relative">
-            <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <FieldInput
-              required autoComplete="tel-country-code"
-              value={form.country_code}
-              onChange={(e) => setForm({ ...form, country_code: e.target.value })}
-              placeholder="+91"
-              className={`pl-8 ${t.focusBorder} ${t.focusRing}`}
-            />
-          </div>
-          <FieldInput
-            required autoComplete="tel-national" inputMode="numeric"
-            value={form.mobile_number}
-            onChange={(e) => setForm({ ...form, mobile_number: e.target.value.replace(/\D/g, "") })}
-            placeholder="9876543210"
-            className={`${t.focusBorder} ${t.focusRing}`}
-          />
-        </div>
+        <CountryPhoneInput
+          required
+          countryIso={phoneIso}
+          number={form.mobile_number}
+          onCountryChange={(iso) => {
+            setPhoneIso(iso);
+            setForm({ ...form, country_code: dialCodeForIso(iso) });
+          }}
+          onNumberChange={(digits) => setForm({ ...form, mobile_number: digits })}
+        />
       </div>
 
       {/* Terms */}
@@ -454,10 +456,26 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
 // ── Main Layout ────────────────────────────────────────────────────
 function PortalAuthContent({ config, heroIcon }: { config: PortalAuthConfig; heroIcon: ReactNode }) {
   const t = THEME[config.theme];
+  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams?.get("redirect") ?? null;
   const safeRedirect = redirect?.startsWith("/") && !redirect.startsWith("//") ? redirect : null;
   const [tab, setTab] = useState<Tab>(searchParams?.get("tab") === "register" ? "register" : "login");
+  // Entrance transition - the card starts slightly lower/faded and settles
+  // into place on mount, rather than popping in instantly.
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setEntered(true), 20);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function selectTab(next: Tab) {
+    if (next === "register" && config.registerHref) {
+      router.push(config.registerHref + (safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ""));
+      return;
+    }
+    setTab(next);
+  }
 
   return (
     <main className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
@@ -465,7 +483,11 @@ function PortalAuthContent({ config, heroIcon }: { config: PortalAuthConfig; her
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:40px_40px] opacity-60" />
 
       <div className="relative flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-12 sm:px-6">
-        <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_32px_100px_rgba(15,23,42,.14)] lg:grid lg:grid-cols-[1fr_1.05fr]">
+        <div
+          className={`mx-auto w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_32px_100px_rgba(15,23,42,.14)] transition-all duration-500 ease-out lg:grid lg:grid-cols-[1fr_1.05fr] ${
+            entered ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+          }`}
+        >
 
           {/* ── Form panel (LEFT) ── */}
           <section className="flex flex-col justify-center px-6 py-10 sm:px-10">
@@ -490,8 +512,8 @@ function PortalAuthContent({ config, heroIcon }: { config: PortalAuthConfig; her
                   role="tab"
                   aria-selected={tab === t_tab}
                   type="button"
-                  onClick={() => setTab(t_tab)}
-                  className={`rounded-xl py-2.5 text-xs font-bold transition ${tab === t_tab ? `bg-white ${t.tabActive} shadow-sm` : "text-slate-500 hover:text-slate-800"}`}
+                  onClick={() => selectTab(t_tab)}
+                  className={`rounded-xl py-2.5 text-xs font-bold transition-all duration-200 ${tab === t_tab ? `scale-[1.02] bg-white ${t.tabActive} shadow-sm` : "text-slate-500 hover:text-slate-800"}`}
                 >
                   {t_tab === "login" ? "Login" : "Register"}
                 </button>
@@ -499,9 +521,26 @@ function PortalAuthContent({ config, heroIcon }: { config: PortalAuthConfig; her
             </div>
 
             {tab === "login" ? (
-              <LoginPanel config={config} safeRedirect={safeRedirect} onSwitchToRegister={() => setTab("register")} />
+              <LoginPanel config={config} safeRedirect={safeRedirect} onSwitchToRegister={() => selectTab("register")} />
             ) : (
               <RegisterPanel config={config} safeRedirect={safeRedirect} onSwitchToLogin={() => setTab("login")} />
+            )}
+
+            {config.otherPortals && config.otherPortals.length > 0 && (
+              <div className="mt-6 border-t border-slate-100 pt-4">
+                <p className="mb-2.5 text-center text-xs font-bold uppercase tracking-wider text-slate-400">Other portals</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {config.otherPortals.map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={`rounded-xl border border-slate-200 py-2 text-center text-xs font-bold text-slate-500 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800`}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             )}
           </section>
 

@@ -28,6 +28,7 @@ type Booking = {
   amount_paid?: string | number;
   amount_pending?: string | number;
   currency?: string;
+  rawDate?: string;
 };
 
 type ApiBooking = {
@@ -134,6 +135,7 @@ export default function CustomerBookingsPage() {
               amount_paid: b.amount_paid,
               amount_pending: b.amount_pending,
               currency: b.currency || "USD",
+              rawDate: b.tour_date || b.created_at || "",
             };
           });
           setBookings(mapped);
@@ -157,9 +159,29 @@ export default function CustomerBookingsPage() {
       const matchesStatus =
         statusFilter === "All" || b.status.toLowerCase().includes(statusFilter.toLowerCase());
 
-      return matchesSearch && matchesStatus;
+      const matchesDate =
+        !dateFilter ||
+        Boolean(
+          (b.rawDate && b.rawDate.startsWith(dateFilter)) ||
+          (b.travel_dates && b.travel_dates.toLowerCase().includes(dateFilter.toLowerCase())) ||
+          (b.booking_date && b.booking_date.toLowerCase().includes(dateFilter.toLowerCase()))
+        );
+
+      return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [bookings, searchQuery, statusFilter]);
+  }, [bookings, searchQuery, statusFilter, dateFilter]);
+
+  const PAGE_SIZE = 6;
+  const totalPages = Math.max(1, Math.ceil(filteredBookings.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, dateFilter]);
+
+  const paginatedBookings = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredBookings.slice(start, start + PAGE_SIZE);
+  }, [filteredBookings, currentPage, PAGE_SIZE]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] px-4 py-6 sm:px-8 sm:py-8">
@@ -220,7 +242,7 @@ export default function CustomerBookingsPage() {
 
         {/* ── Booking Cards Stack ── */}
         <div className="mt-6 space-y-4">
-          {filteredBookings.map((b) => (
+          {paginatedBookings.map((b) => (
             <div
               key={b.id}
               className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4"
@@ -307,44 +329,46 @@ export default function CustomerBookingsPage() {
         </div>
 
         {/* ── Pagination ── */}
-        <div className="mt-10 flex items-center justify-between">
-          <button
-            type="button"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-2xs transition hover:bg-slate-50 disabled:opacity-40"
-          >
-            <ChevronLeft size={13} />
-            Previous
-          </button>
+        {totalPages > 1 && (
+          <div className="mt-10 flex items-center justify-between">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-2xs transition hover:bg-slate-50 disabled:opacity-40"
+            >
+              <ChevronLeft size={13} />
+              Previous
+            </button>
 
-          <div className="flex items-center gap-1.5">
-            {[1, 2, 3].map((page) => (
-              <button
-                key={page}
-                type="button"
-                onClick={() => setCurrentPage(page)}
-                className={`flex h-8 w-8 items-center justify-center rounded-xl text-xs font-bold transition ${
-                  currentPage === page
-                    ? "bg-[#0B1527] text-white shadow-xs"
-                    : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCurrentPage(page)}
+                  className={`flex h-8 w-8 items-center justify-center rounded-xl text-xs font-bold transition ${
+                    currentPage === page
+                      ? "bg-[#0B1527] text-white shadow-xs"
+                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-2xs transition hover:bg-slate-50 disabled:opacity-40"
+            >
+              Next
+              <ChevronRight size={13} />
+            </button>
           </div>
-
-          <button
-            type="button"
-            disabled={currentPage === 3}
-            onClick={() => setCurrentPage((p) => Math.min(3, p + 1))}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-2xs transition hover:bg-slate-50 disabled:opacity-40"
-          >
-            Next
-            <ChevronRight size={13} />
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );

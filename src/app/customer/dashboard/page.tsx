@@ -89,41 +89,6 @@ const DEFAULT_BOOKINGS: Booking[] = [
   },
 ];
 
-const DEFAULT_WISHLIST = [
-  {
-    id: "1",
-    title: "South Island Explorer",
-    location: "New Zealand",
-    duration: "10D | 9N",
-    rating: 4.8,
-    reviews: "2,466 reviews",
-    price: "$2,699",
-    image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80",
-    href: "/tours",
-  },
-  {
-    id: "2",
-    title: "South Island Explorer",
-    location: "New Zealand",
-    duration: "10D | 9N",
-    rating: 4.8,
-    reviews: "2,466 reviews",
-    price: "$2,699",
-    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-    href: "/tours",
-  },
-  {
-    id: "3",
-    title: "South Island Explorer",
-    location: "New Zealand",
-    duration: "10D | 9N",
-    rating: 4.8,
-    reviews: "2,466 reviews",
-    price: "$2,699",
-    image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
-    href: "/tours",
-  },
-];
 
 function formatDate(value?: string | null) {
   if (!value) return "Date TBD";
@@ -213,20 +178,18 @@ export default function CustomerDashboardPage() {
   const nationality = profile?.nationality || profile?.country_name || profile?.country || "American";
   const homeAddress = profile?.address || profile?.address_line_1 || "58 Sunset Blvd, Los Angeles, CA 90028";
 
-  // Wishlist items or defaults
-  const wishlistItems = wishlist.length > 0
-    ? wishlist.slice(0, 3).map((w) => ({
-        id: String(w.id),
-        title: w.title || "South Island Explorer",
-        location: w.place || "New Zealand",
-        duration: "10D | 9N",
-        rating: 4.8,
-        reviews: "2,466 reviews",
-        price: w.price ? format(w.price, w.currency || "USD") : "$2,699",
-        image: mediaUrl(w.image) || DEFAULT_WISHLIST[0].image,
-        href: w.href || `/tours/${w.id}`,
-      }))
-    : DEFAULT_WISHLIST;
+  // Wishlist items from real travel store
+  const wishlistItems = wishlist.slice(0, 3).map((w) => ({
+    id: String(w.id),
+    title: w.title || "Tour Experience",
+    location: w.place || "Destination",
+    duration: w.duration || "Flexible",
+    rating: 4.8,
+    reviews: "Saved",
+    price: w.price ? format(w.price, w.currency || "USD") : "Price on request",
+    image: mediaUrl(w.image) || "/images/tour-card-fallback.jpg",
+    href: w.href || `/tours/${w.id}`,
+  }));
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] px-4 py-6 sm:px-8 sm:py-8">
@@ -436,74 +399,88 @@ export default function CustomerDashboardPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            {wishlistItems.map((item, idx) => (
-              <div
-                key={`${item.id}-${idx}`}
-                className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition hover:-translate-y-0.5 hover:shadow-md"
+          {wishlistItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
+              <Heart size={28} className="text-slate-300" />
+              <p className="mt-2 text-xs font-bold text-slate-600">No saved tours yet</p>
+              <p className="mt-0.5 text-[11px] text-slate-400">Explore our destinations and save tours to your wishlist</p>
+              <Link
+                href="/tours"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
               >
-                {/* Image & Badges */}
-                <div className="relative h-44 w-full overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="h-full w-full object-cover transition duration-300 hover:scale-105"
-                  />
-                  {/* Top-Left Location Badge */}
-                  <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-slate-800 backdrop-blur-xs shadow-xs">
-                    <MapPin size={11} className="text-slate-600" />
-                    {item.location}
-                  </span>
-                  {/* Top-Right Heart Button */}
-                  <button
-                    type="button"
-                    aria-label="Wishlist"
-                    className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-blue-600 shadow-xs hover:scale-110 transition"
-                  >
-                    <Heart size={14} className="fill-current text-blue-600" />
-                  </button>
-                </div>
-
-                {/* Card Content */}
-                <div className="p-4">
-                  {/* Title & Duration */}
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-xs font-bold text-slate-900 truncate">{item.title}</h3>
-                    <span className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
-                      {item.duration}
+                Explore Tours
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+              {wishlistItems.map((item, idx) => (
+                <div
+                  key={`${item.id}-${idx}`}
+                  className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  {/* Image & Badges */}
+                  <div className="relative h-44 w-full overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="h-full w-full object-cover transition duration-300 hover:scale-105"
+                    />
+                    {/* Top-Left Location Badge */}
+                    <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-slate-800 backdrop-blur-xs shadow-xs">
+                      <MapPin size={11} className="text-slate-600" />
+                      {item.location}
                     </span>
-                  </div>
-
-                  {/* Rating */}
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <div className="flex items-center text-amber-400">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} size={11} className="fill-current text-amber-400" />
-                      ))}
-                    </div>
-                    <span className="text-[11px] font-bold text-slate-900">{item.rating}</span>
-                    <span className="text-[10px] text-slate-400">({item.reviews})</span>
-                  </div>
-
-                  {/* Price & Book Now */}
-                  <div className="mt-3.5 flex items-center justify-between pt-2 border-t border-slate-100">
-                    <div>
-                      <span className="text-[11px] text-slate-500">Price </span>
-                      <span className="text-xs font-black text-slate-900">{item.price}</span>
-                      <span className="text-[10px] text-slate-400"> pp</span>
-                    </div>
-                    <Link
-                      href={item.href || "/tours"}
-                      className="rounded-xl bg-[#0B1527] px-3.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#15233C]"
+                    {/* Top-Right Heart Button */}
+                    <button
+                      type="button"
+                      aria-label="Wishlist"
+                      className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-blue-600 shadow-xs hover:scale-110 transition"
                     >
-                      Book Now
-                    </Link>
+                      <Heart size={14} className="fill-current text-blue-600" />
+                    </button>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="p-4">
+                    {/* Title & Duration */}
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-xs font-bold text-slate-900 truncate">{item.title}</h3>
+                      <span className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
+                        {item.duration}
+                      </span>
+                    </div>
+
+                    {/* Rating */}
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <div className="flex items-center text-amber-400">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} size={11} className="fill-current text-amber-400" />
+                        ))}
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-900">{item.rating}</span>
+                      <span className="text-[10px] text-slate-400">({item.reviews})</span>
+                    </div>
+
+                    {/* Price & Book Now */}
+                    <div className="mt-3.5 flex items-center justify-between pt-2 border-t border-slate-100">
+                      <div>
+                        <span className="text-[11px] text-slate-500">Price </span>
+                        <span className="text-xs font-black text-slate-900">{item.price}</span>
+                        <span className="text-[10px] text-slate-400"> pp</span>
+                      </div>
+                      <Link
+                        href={item.href || "/tours"}
+                        className="rounded-xl bg-[#0B1527] px-3.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#15233C]"
+                      >
+                        Book Now
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

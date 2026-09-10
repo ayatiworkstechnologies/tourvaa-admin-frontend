@@ -250,6 +250,13 @@ export default function TourPricingTab({
 
   if (loading) return <Loader label="Loading pricing..." />;
 
+  // The 1-pax tier -- same slab TourDiscountsTab's preview card uses -- as
+  // the single reference point for "what does the tour page currently show
+  // travellers", at the top of this tab so it's visible without switching
+  // to Discounts. Always the real, undiscounted storefront price plus,
+  // while a promo is active, the discounted price alongside it.
+  const onePaxSlab = slabs.find((s) => s.passenger_from <= 1 && (s.passenger_to ?? 1) >= 1) ?? slabs[0];
+
   const addButton = (
     <button type="button" onClick={openNewSlab}
       className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 ${accent.solidBtn}`}>
@@ -259,6 +266,26 @@ export default function TourPricingTab({
 
   return (
     <div className="space-y-6">
+      {onePaxSlab && (
+        <SectionCard
+          icon={BadgeDollarSign}
+          iconTone={isSupplier ? "emerald" : "brand"}
+          title="Public Price Preview"
+          description="The 1-pax price travellers see on the tour page right now -- the actual listed price, unaffected by any promo (see the Discounts tab for that preview)."
+        >
+          <div className="flex flex-wrap gap-6">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Actual price (adult)</p>
+              <PriceCell value={onePaxSlab.storefront_adult_price ?? onePaxSlab.adult_price} currency={onePaxSlab.currency} discountPercent={null} valueClassName="text-base font-black text-dash-text" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Actual price (child)</p>
+              <PriceCell value={onePaxSlab.storefront_child_price ?? onePaxSlab.child_price} currency={onePaxSlab.currency} discountPercent={null} valueClassName="text-base font-black text-dash-text" />
+            </div>
+          </div>
+        </SectionCard>
+      )}
+
       <SectionCard
         icon={BadgeDollarSign}
         iconTone={isSupplier ? "emerald" : "brand"}
@@ -367,8 +394,8 @@ export default function TourPricingTab({
           ) : (
             <div className="overflow-hidden rounded-2xl border border-dash-border-soft">
               {/* Header */}
-              <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
-                {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "ADMIN MARKUP", "FINAL SUPPLIER PAYABLE", "ACTIONS"].map((h) => (
+              <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1.2fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
+                {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "ADMIN MARKUP", "PUBLIC PRICE (CUSTOMER PAYS)", "FINAL SUPPLIER PAYABLE", "ACTIONS"].map((h) => (
                   <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
                 ))}
               </div>
@@ -376,7 +403,7 @@ export default function TourPricingTab({
               {/* Rows */}
               {slabs.map((r, idx) => (
                 <div key={r.id ?? idx}
-                  className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_auto] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30"
+                  className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1.2fr_auto] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30"
                 >
                   <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
                     {r.passenger_from}–{r.passenger_to} pax
@@ -386,6 +413,14 @@ export default function TourPricingTab({
                   <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
                     <Percent size={10} />{r.admin_markup_value ?? 0}
                   </span>
+                  {/* The actual configured public/customer price -- services.tours.
+                      _apply_pricing_computation's storefront_adult_price, the same field
+                      routers.public._public_pricing_rows and services.bookings._price_booking
+                      both charge from (with no markup set this equals the supplier's own
+                      price verbatim). Always the real, undiscounted figure -- any active
+                      promo discount is a separate, time-limited overlay shown on the
+                      Discounts tab, not this column's job to reflect. */}
+                  <PriceCell value={r.storefront_adult_price ?? r.adult_price} currency={r.currency} discountPercent={null} valueClassName="font-bold text-blue-700 text-sm" />
                   {/* Per-pax net after commission -- what the supplier is ultimately paid (see services.bookings.compute_supplier_commission_breakdown) */}
                   <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-dash-body text-sm" />
                   <ActionButtons onEdit={() => setMarkupEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />

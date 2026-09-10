@@ -11,6 +11,16 @@ const config: PortalAuthConfig = {
   heroBadge: "Affiliate Portal",
   heroTitle: "Earn commission promoting Tourvaa tours.",
   heroSubtitle: "Generate referral links, track clicks and conversions, and get paid - login or register in the same place.",
+  heroBullets: [
+    "Share trackable referral links anywhere",
+    "Earn commission on every completed booking",
+    "Real-time clicks & conversion tracking",
+    "Reliable, on-time payouts",
+  ],
+  heroStats: [
+    { value: "1,000+", label: "Active affiliates" },
+    { value: "12%", label: "Avg. commission" },
+  ],
   signInCta: "Sign in as Affiliate",
   wrongRoleMessage: "This login is for affiliate accounts. Use the correct portal for other account types.",
   registerNamePlaceholder: "Full name",

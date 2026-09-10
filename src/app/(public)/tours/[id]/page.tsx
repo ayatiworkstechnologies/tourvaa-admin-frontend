@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
@@ -49,7 +49,7 @@ function GuestPrompt({ onClose, returnPath, isLoggedIn }: { onClose: () => void;
           <button
             type="button"
             onClick={() => { onClose(); router.push(`/login?role=traveller&redirect=${encodeURIComponent(returnPath)}`); }}
-            className="flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-3 text-sm font-bold text-white hover:bg-teal-700"
+            className="flex items-center justify-center gap-2 rounded-xl bg-pub-secondary py-3 text-sm font-bold text-white hover:bg-pub-secondary/90"
           >
             <LogIn size={15} /> Customer login
           </button>
@@ -60,7 +60,7 @@ function GuestPrompt({ onClose, returnPath, isLoggedIn }: { onClose: () => void;
           >
             Agent login
           </button>
-          {!isLoggedIn && <Link href={`/register?redirect=${encodeURIComponent(returnPath)}`} onClick={onClose} className="py-2 text-center text-xs font-bold text-teal-700">Create customer account</Link>}
+          {!isLoggedIn && <Link href={`/register?redirect=${encodeURIComponent(returnPath)}`} onClick={onClose} className="py-2 text-center text-xs font-bold text-pub-secondary">Create customer account</Link>}
         </div>
       </div>
     </div>
@@ -110,6 +110,7 @@ export default function TourDetailPage() {
           extensions: data.extensions ?? [],
           discounts: data.discounts ?? [],
           calendar: data.calendar ?? [],
+          departures: data.departures ?? [],
           similar_tours: data.similar_tours ?? [],
         });
       })

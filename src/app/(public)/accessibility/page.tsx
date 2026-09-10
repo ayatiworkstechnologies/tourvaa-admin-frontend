@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 const features = [
   ["Keyboard navigation", "All interactive elements - menus, forms, buttons, and links - are fully operable using a keyboard alone. Focus states are visible at all times."],
@@ -24,22 +24,22 @@ export default function AccessibilityPage() {
       <div className="mx-auto max-w-4xl px-5 py-12 md:px-8">
         <div className="space-y-6">
           <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
-            <h2 className="mb-3 font-bold text-zinc-950">Our commitment</h2>
-            <p className="text-sm leading-7 text-zinc-500">
+            <h2 className="mb-3 font-bold text-slate-950">Our commitment</h2>
+            <p className="text-sm leading-7 text-slate-500">
               Tourvaa is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply relevant accessibility standards.
             </p>
-            <p className="mt-3 text-sm leading-7 text-zinc-500">
+            <p className="mt-3 text-sm leading-7 text-slate-500">
               We aim to conform to the Web Content Accessibility Guidelines (WCAG) 2.1 at Level AA. These guidelines explain how to make web content more accessible to people with disabilities.
             </p>
           </div>
 
           <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
-            <h2 className="mb-5 font-bold text-zinc-950">Accessibility features</h2>
+            <h2 className="mb-5 font-bold text-slate-950">Accessibility features</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               {features.map(([title, desc]) => (
-                <div key={title} className="rounded-xl border border-zinc-200 p-4">
-                  <p className="font-bold text-zinc-950">{title}</p>
-                  <p className="mt-1 text-sm leading-6 text-zinc-500">{desc}</p>
+                <div key={title} className="rounded-xl border border-slate-200 p-4">
+                  <p className="font-bold text-slate-950">{title}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">{desc}</p>
                 </div>
               ))}
             </div>
@@ -51,14 +51,14 @@ export default function AccessibilityPage() {
             ["Technical specifications", "Tourvaa uses the following technologies: HTML5, CSS3, JavaScript (React / Next.js). Accessibility has been tested with NVDA on Windows and VoiceOver on macOS and iOS."],
           ].map(([title, text]) => (
             <div key={String(title)} className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
-              <h2 className="mb-3 font-bold text-zinc-950">{String(title)}</h2>
-              <p className="whitespace-pre-line text-sm leading-7 text-zinc-500">{String(text)}</p>
+              <h2 className="mb-3 font-bold text-slate-950">{String(title)}</h2>
+              <p className="whitespace-pre-line text-sm leading-7 text-slate-500">{String(text)}</p>
             </div>
           ))}
 
-          <div className="rounded-xl bg-teal-50 p-5 text-sm text-zinc-600">
+          <div className="rounded-xl bg-blue-50 p-5 text-sm text-slate-600">
             Need help accessing any part of our platform?{" "}
-            <Link href="/contact" className="font-bold text-teal-600 hover:underline">Contact our team</Link>{" "}
+            <Link href="/contact" className="font-bold text-pub-secondary hover:underline">Contact our team</Link>{" "}
             and we will assist you directly.
           </div>
         </div>

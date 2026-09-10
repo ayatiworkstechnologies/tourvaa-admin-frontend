@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import ConfiguredSupportEmail from "@/components/public/ConfiguredSupportEmail";
 
@@ -15,7 +15,7 @@ export default function CancellationPolicyPage() {
     <main className="min-h-screen bg-slate-50 pb-20">
       <section className="bg-[#063c42] pb-14 pt-32 text-white">
         <div className="mx-auto max-w-4xl px-5 md:px-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-teal-400">Policy</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-pub-secondary">Policy</p>
           <h1 className="mt-2 text-4xl font-bold">Cancellation Policy</h1>
           <p className="mt-3 text-sm text-white/60">Last updated: June 2026</p>
         </div>
@@ -24,22 +24,22 @@ export default function CancellationPolicyPage() {
       <div className="mx-auto max-w-4xl px-5 py-12 md:px-8">
         <div className="space-y-6">
           <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
-            <h2 className="mb-4 font-bold text-zinc-950">Standard Cancellation Schedule</h2>
-            <p className="mb-5 text-sm leading-6 text-zinc-500">
+            <h2 className="mb-4 font-bold text-slate-950">Standard Cancellation Schedule</h2>
+            <p className="mb-5 text-sm leading-6 text-slate-500">
               The following cancellation schedule applies to most Tourvaa bookings. Individual tours may have more restrictive policies - always check the specific policy shown on the tour detail page before booking.
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-50">
-                    <th className="rounded-tl-xl px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Cancellation Window</th>
-                    <th className="rounded-tr-xl px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Refund Amount</th>
+                    <th className="rounded-tl-xl px-4 py-3 text-left text-xs font-bold uppercase text-slate-500">Cancellation Window</th>
+                    <th className="rounded-tr-xl px-4 py-3 text-left text-xs font-bold uppercase text-slate-500">Refund Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200">
+                <tbody className="divide-y divide-slate-200">
                   {tiers.map((t, i) => (
                     <tr key={i}>
-                      <td className="px-4 py-3 font-semibold text-zinc-950">{t.window}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-950">{t.window}</td>
                       <td className={`px-4 py-3 ${i === tiers.length - 1 ? "text-red-500 font-bold" : "text-emerald-600 font-semibold"}`}>{t.refund}</td>
                     </tr>
                   ))}
@@ -56,15 +56,15 @@ export default function CancellationPolicyPage() {
             ["Travel Insurance", "We strongly recommend purchasing comprehensive travel insurance that covers trip cancellation, medical emergencies, and personal liability. Tourvaa does not provide travel insurance but can refer you to approved insurance partners."],
           ].map(([title, text]) => (
             <div key={String(title)} className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
-              <h2 className="mb-3 font-bold text-zinc-950">{String(title)}</h2>
-              <p className="whitespace-pre-line text-sm leading-7 text-zinc-500">{String(text)}</p>
+              <h2 className="mb-3 font-bold text-slate-950">{String(title)}</h2>
+              <p className="whitespace-pre-line text-sm leading-7 text-slate-500">{String(text)}</p>
             </div>
           ))}
 
-          <div className="rounded-xl bg-teal-50 p-5 text-sm text-zinc-600">
+          <div className="rounded-xl bg-blue-50 p-5 text-sm text-slate-600">
             Questions about a cancellation?{" "}
-            <Link href="/contact" className="font-bold text-teal-600 hover:underline">Contact us</Link>.
-            <ConfiguredSupportEmail prefix=" You can also email " suffix="." className="font-bold text-teal-600 hover:underline" />
+            <Link href="/contact" className="font-bold text-pub-secondary hover:underline">Contact us</Link>.
+            <ConfiguredSupportEmail prefix=" You can also email " suffix="." className="font-bold text-pub-secondary hover:underline" />
           </div>
         </div>
       </div>

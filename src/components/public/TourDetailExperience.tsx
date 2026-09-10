@@ -1,14 +1,37 @@
-"use client";
+pd"use client";
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { LuCalendar as Calendar, LuCheck as Check, LuChevronDown as ChevronDown, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuChevronUp as ChevronUp, LuCompass as Compass, LuHeart as Heart, LuHotel as Hotel, LuInfo as Info, LuMapPin as MapPin, LuMinus as Minus, LuPlus as Plus, LuShieldCheck as ShieldCheck, LuStar as Star, LuUser as User, LuUsers as Users, LuUtensils as Utensils, LuX as X, LuBus as Bus, LuGlobe as Globe, LuFlag as Flag } from "react-icons/lu";
+import {
+  LuCalendar as Calendar,
+  LuCheck as Check,
+  LuChevronDown as ChevronDown,
+  LuChevronLeft as ChevronLeft,
+  LuChevronRight as ChevronRight,
+  LuChevronUp as ChevronUp,
+  LuCompass as Compass,
+  LuHeart as Heart,
+  LuHotel as Hotel,
+  LuInfo as Info,
+  LuMapPin as MapPin,
+  LuMinus as Minus,
+  LuPlus as Plus,
+  LuShieldCheck as ShieldCheck,
+  LuSparkles as Sparkles,
+  LuStar as Star,
+  LuUser as User,
+  LuUsers as Users,
+  LuUtensils as Utensils,
+  LuX as X,
+  LuBus as Bus,
+  LuGlobe as Globe,
+  LuFlag as Flag,
+} from "react-icons/lu";
 import { PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
-
 
 type Props = {
   tour: PublicTourDetail;
@@ -22,53 +45,48 @@ type Props = {
   modal?: React.ReactNode;
 };
 
-// Curated 6 High-Res Photos for New Zealand / Fallback
+// Fallback high-res photos if tour gallery is empty
 const CURATED_GALLERY = [
   "/images/compare-hero.jpg",
-  "/images/compare-iceland.jpg",
   "/images/destination-alpine.jpg",
-  "/images/compare-nz.jpg",
-  "/images/about-mountain.png",
-  "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=800&q=80",
+  "/images/destination-desert.jpg",
+  "/images/hero-1.jpg",
+  "/images/hero-2.jpg",
+  "/images/tour-card-fallback.jpg",
 ];
 
-// Curated 6 Tour Highlights matching the reference screenshot
-const REFERENCE_HIGHLIGHTS = [
-  {
-    title: "Tongariro Alpine Crossing",
-    desc: "Trek through active volcanic peaks, emerald alpine crater lakes, and dramatic lunar landscapes.",
-    img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=500&q=80",
-  },
-  {
-    title: "Waitomo Glowworm Caves",
-    desc: "Glide by boat beneath thousands of magical bioluminescent glowworms illuminating subterranean caves.",
-    img: "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=500&q=80",
-  },
-  {
-    title: "Milford Sound Cruise",
-    desc: "Cruise through towering vertical rock cliffs, plunging waterfalls, and playful fur seals.",
-    img: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=500&q=80",
-  },
-  {
-    title: "Rotorua Geothermal Valley",
-    desc: "Witness steaming geysers, bubbling mud pools, and authentic Māori indigenous ceremonies.",
-    img: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=500&q=80",
-  },
-  {
-    title: "Queenstown Gondola & Luge",
-    desc: "Soar above Lake Wakatipu for 360° alpine panoramas followed by thrilling downhill luge tracks.",
-    img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=500&q=80",
-  },
-  {
-    title: "Mount Cook Glacier Explorers",
-    desc: "Marvel at icebergs floating on the terminal lake of New Zealand's longest Tasman Glacier.",
-    img: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=500&q=80",
-  },
-];
+// Helper to return appropriate flag emoji by country name
+function getCountryFlag(country?: string | null): string {
+  if (!country) return "";
+  const c = country.toLowerCase().trim();
+  if (c.includes("india")) return "🇮🇳";
+  if (c.includes("new zealand") || c === "nz") return "🇳🇿";
+  if (c.includes("indonesia") || c.includes("bali")) return "🇮🇩";
+  if (c.includes("japan")) return "🇯🇵";
+  if (c.includes("switzerland")) return "🇨🇭";
+  if (c.includes("greece")) return "🇬🇷";
+  if (c.includes("peru")) return "🇵🇪";
+  if (c.includes("iceland")) return "🇮🇸";
+  if (c.includes("morocco")) return "🇲🇦";
+  if (c.includes("tanzania")) return "🇹🇿";
+  if (c.includes("vietnam")) return "🇻🇳";
+  if (c.includes("maldives")) return "🇲🇻";
+  if (c.includes("france")) return "🇫🇷";
+  if (c.includes("italy")) return "🇮🇹";
+  if (c.includes("spain")) return "🇪🇸";
+  if (c.includes("united kingdom") || c === "uk" || c.includes("britain")) return "🇬🇧";
+  if (c.includes("united states") || c === "usa" || c.includes("america")) return "🇺🇸";
+  if (c.includes("australia")) return "🇦🇺";
+  if (c.includes("thailand")) return "🇹🇭";
+  if (c.includes("singapore")) return "🇸🇬";
+  if (c.includes("malaysia")) return "🇲🇾";
+  if (c.includes("nepal")) return "🇳🇵";
+  if (c.includes("sri lanka")) return "🇱🇰";
+  if (c.includes("uae") || c.includes("dubai")) return "🇦🇪";
+  return "";
+}
 
-// Splits a free-form, comma/newline-separated backend Text field (meals,
-// activities, optional_activities) into short trimmed items for bullet/chip
-// rendering, instead of printing it as one run-on line.
+// Splits a free-form, comma/newline-separated backend Text field into clean bullet chips
 function splitList(value?: string | null): string[] {
   if (!value) return [];
   return value
@@ -77,173 +95,106 @@ function splitList(value?: string | null): string[] {
     .filter(Boolean);
 }
 
-// Rich Day-by-Day Itinerary matching the reference screenshot
-const REFERENCE_ITINERARY = [
-  {
-    day: 1,
-    title: "WELCOME TO AUCKLAND",
-    summary: "Arrive in Auckland and settle in for the journey ahead.",
-    detail: "Arrive at Auckland Airport. Meet and greet with your tour director, followed by a panoramic orientation drive and hotel check-in. Evening welcome dinner.",
-    startPoint: "Auckland Airport / Hotel (Complimentary airport transfer)",
-    transport: "Private coach",
-    travelTime: "",
-    startTime: "",
-    endTime: "",
-    meals: ["Welcome Dinner with local wine pairings"],
-    accommodation: "Grand Millennium Auckland (or similar 4-star)",
-    activities: [],
-    optionalActivities: ["Sky Tower SkyWalk", "Waitematā Harbour Sunset Cruise"],
-    importantNotes: "",
-    photos: [
-      "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=400&q=80",
-      "/images/compare-nz.jpg",
-      "/images/compare-hero.jpg",
-    ],
-  },
-  {
-    day: 2,
-    title: "Auckland to Rotorua via Waitomo",
-    summary: "Cross the Waikato region and discover glowworm caves en route to Rotorua.",
-    detail: "Journey south through the lush rolling hills of the Waikato region. Stop at Waitomo Caves for a boat ride under glowing insects, then arrive in geothermal Rotorua.",
-    startPoint: "Grand Millennium Auckland Hotel Lobby",
-    transport: "Private coach",
-    travelTime: "3h 30m · 234 km",
-    startTime: "08:00 AM",
-    endTime: "",
-    meals: ["Breakfast", "Traditional Māori Hāngī Dinner"],
-    accommodation: "Millennium Hotel Rotorua (or similar)",
-    activities: ["Waitomo Glowworm Caves boat ride"],
-    optionalActivities: ["Polynesian Spa Lake Pools", "Redwoods Treewalk"],
-    importantNotes: "",
-    photos: ["https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=400&q=80"],
-  },
-  {
-    day: 3,
-    title: "Rotorua – Geothermal & Māori Culture",
-    summary: "Explore geothermal wonders and immerse in Māori culture.",
-    detail: "Spend the morning exploring Te Puia geothermal valley, home to Pōhutu Geyser and Māori arts. Afternoon at leisure before an evening cultural performance.",
-    startPoint: "Rotorua Hotel Lobby",
-    transport: "",
-    travelTime: "",
-    startTime: "",
-    endTime: "",
-    meals: ["Cooked Breakfast", "Local Lunch"],
-    accommodation: "Millennium Hotel Rotorua",
-    activities: ["Te Puia geothermal valley tour", "Evening Māori cultural performance"],
-    optionalActivities: ["Kaituna River Rafting", "Agrodome Farm Show"],
-    importantNotes: "",
-    photos: ["https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=400&q=80"],
-  },
-  {
-    day: 4,
-    title: "Taupo & Tongariro National Park",
-    summary: "Journey through volcanic landscapes to a UNESCO World Heritage site.",
-    detail: "Travel past serene Lake Taupo and Huka Falls towards the dramatic volcanic scenery of Tongariro National Park, a dual UNESCO World Heritage site.",
-    startPoint: "Rotorua Hotel Lobby",
-    transport: "Private coach",
-    travelTime: "2h 45m",
-    startTime: "",
-    endTime: "",
-    meals: ["Breakfast", "Picnic Lunch"],
-    accommodation: "Chateau Tongariro Hotel (or similar)",
-    activities: ["Huka Falls viewpoint stop"],
-    optionalActivities: ["Tongariro Guided Alpine Day Walk", "Scenic Helicopter Flight"],
-    importantNotes: "The Alpine Crossing is weather-dependent and may be rescheduled by the tour director.",
-    photos: ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80"],
-  },
-  {
-    day: 5,
-    title: "Napier to Wellington",
-    summary: "Pass through the Art Deco capital on the way to Wellington.",
-    detail: "Cross the scenic mountain ranges towards Hawke's Bay's Art Deco capital of Napier, then continue south to the vibrant capital city of Wellington.",
-    startPoint: "Tongariro Lodge",
-    transport: "Private coach",
-    travelTime: "4h 15m",
-    startTime: "",
-    endTime: "",
-    meals: ["Breakfast", "Vineyard Wine Tasting Lunch"],
-    accommodation: "James Cook Hotel Grand Chancellor Wellington",
-    activities: ["Napier Art Deco walking stop"],
-    optionalActivities: ["Te Papa National Museum Tour", "Cable Car Lookout"],
-    importantNotes: "",
-    photos: ["/images/compare-hero.jpg"],
-  },
-  {
-    day: 6,
-    title: "Wellington – Departure",
-    summary: "A relaxed final morning before your onward journey.",
-    detail: "Enjoy your final morning at leisure in vibrant Wellington. Take in the waterfront promenades before your scheduled airport transfer for onward journeys.",
-    startPoint: "Wellington Hotel",
-    transport: "Airport transfer",
-    travelTime: "",
-    startTime: "",
-    endTime: "",
-    meals: ["Breakfast"],
-    accommodation: "",
-    activities: [],
-    optionalActivities: ["Wētā Workshop Film Tour", "Oriental Bay Walk"],
-    importantNotes: "Late checkout available on request, subject to hotel availability.",
-    photos: ["/images/compare-nz.jpg"],
-  },
-];
+function groupTierLabel(personsFrom: number, personsTo: number | null): string {
+  return personsTo != null ? `${personsFrom}–${personsTo} travellers` : `${personsFrom}+ travellers`;
+}
 
-// Fallback 4 Similar Tours matching the reference screenshot
-const REFERENCE_SIMILAR_TOURS = [
-  {
-    id: "1",
-    title: "North Island Explorer",
-    country: "New Zealand",
-    duration: "9 Days",
-    price: "USD $1,985",
-    rating: 4.8,
-    reviews: "1,240 reviews",
-    image: "/images/compare-hero.jpg",
-    slug: "north-island-explorer",
-  },
-  {
-    id: "2",
-    title: "Golden Triangle Escape",
-    country: "India",
-    duration: "7 Days",
-    price: "USD $850",
-    rating: 4.9,
-    reviews: "890 reviews",
-    image: "/images/hero-1.jpg",
-    slug: "golden-triangle-escape",
-  },
-  {
-    id: "3",
-    title: "Swiss Alps Wonder",
-    country: "Switzerland",
-    duration: "8 Days",
-    price: "USD $2,350",
-    rating: 4.9,
-    reviews: "640 reviews",
-    image: "/images/destination-alpine.jpg",
-    slug: "swiss-alps-wonder",
-  },
-  {
-    id: "4",
-    title: "Best of Iceland",
-    country: "Iceland",
-    duration: "7 Days",
-    price: "USD $1,750",
-    rating: 4.7,
-    reviews: "520 reviews",
-    image: "/images/compare-iceland.jpg",
-    slug: "best-of-iceland",
-  },
-];
+type DepartureDateItem = {
+  id: string;
+  date: string;
+  seats: string;
+  urgent: boolean;
+  slotsRemaining: number;
+};
 
-// Group-size discount tiers, expressed as a rate off the tour's own
-// per-person price rather than a flat dollar amount - a flat number (e.g.
-// "$200 off") only makes sense in one specific currency/price range and
-// falls apart for a tour priced in a different currency or magnitude.
-const GROUP_TIERS: { key: "1-4" | "5-10" | "10-16"; label: string; discountRate: number }[] = [
-  { key: "1-4", label: "1–4 travellers", discountRate: 0 },
-  { key: "5-10", label: "5–10 travellers", discountRate: 0.07 },
-  { key: "10-16", label: "10–16 travellers", discountRate: 0.09 },
-];
+type MonthGroup = {
+  name: string;
+  key: string;
+  dates: DepartureDateItem[];
+};
+
+function parseItineraryDetail(raw: string): { title: string | null; body: string }[] {
+  if (!raw || typeof raw !== "string") return [];
+  const normalized = raw.replace(/\r\n/g, "\n").trim();
+  if (!normalized) return [];
+
+  // Match stop title pattern: Starts at line start or after sentence ending, capital letter, ends with colon
+  // e.g. "Auckland Harbour Bridge – A City Icon:" or "Devonport – Heritage Charm & Stunning Views:"
+  const titleRegex = /(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][A-Za-z0-9\s&'/–—\-]+:)\s*/g;
+  const matches = [...normalized.matchAll(titleRegex)];
+
+  if (matches.length > 0) {
+    const blocks: { title: string | null; body: string }[] = [];
+    if (matches[0].index > 0) {
+      const pre = normalized.slice(0, matches[0].index).trim();
+      if (pre) blocks.push({ title: null, body: pre });
+    }
+    for (let i = 0; i < matches.length; i++) {
+      const match = matches[i];
+      const title = match[1].replace(/:$/, "").trim();
+      const contentStart = match.index + match[0].length;
+      const contentEnd = i + 1 < matches.length ? matches[i + 1].index : normalized.length;
+      const body = normalized.slice(contentStart, contentEnd).trim();
+      blocks.push({ title, body });
+    }
+    return blocks;
+  }
+
+  // Fallback: split by newlines or paragraphs
+  const paragraphs = normalized.split(/\n\s*\n|\n/).map((p) => p.trim()).filter(Boolean);
+  return paragraphs.map((p) => {
+    const colonIdx = p.indexOf(":");
+    if (colonIdx > 0 && colonIdx < 60 && /^[A-Z]/.test(p)) {
+      return { title: p.slice(0, colonIdx).trim(), body: p.slice(colonIdx + 1).trim() };
+    }
+    return { title: null, body: p };
+  });
+}
+
+function ItineraryDetailContent({ detail }: { detail: string }) {
+  const blocks = useMemo(() => parseItineraryDetail(detail), [detail]);
+
+  if (!blocks.length) return null;
+
+  if (blocks.length === 1 && !blocks[0].title) {
+    return (
+      <p className="text-xs sm:text-[13px] leading-relaxed text-slate-700 font-normal whitespace-pre-line bg-white rounded-xl border border-slate-200/70 p-4 shadow-xs">
+        {blocks[0].body}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3 pt-1">
+      {blocks.map((block, idx) => (
+        <div
+          key={idx}
+          className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition hover:border-blue-200 hover:shadow-sm"
+        >
+          {block.title ? (
+            <div>
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-black text-white shadow-xs">
+                  {idx + 1}
+                </span>
+                <h5 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">
+                  {block.title}
+                </h5>
+              </div>
+              <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 pl-7 font-normal">
+                {block.body}
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 font-normal">
+              {block.body}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function TourDetailExperience({
   tour,
@@ -258,47 +209,161 @@ export default function TourDetailExperience({
 }: Props) {
   const { format } = useCurrency();
 
-  const destination = tour.country_name || "New Zealand";
-  const title = tour.title || "New Zealand Explorer";
-  const dayCount = tour.number_of_days || 10;
+  const destination = tour.country_name || tour.city_name || "Destination";
+  const title = tour.title || "Tour Experience";
+  const dayCount = tour.number_of_days || (tour.itineraries?.length || 1);
   const nightCount = Math.max(0, dayCount - 1);
+  const countryFlag = getCountryFlag(destination);
+
+  const startLocation = tour.start_location || tour.city_name || destination;
+  const finishLocation = tour.finish_location || tour.overview?.end_location || tour.city_name || destination;
+  const routeSummary =
+    startLocation && finishLocation && startLocation !== finishLocation
+      ? `${startLocation} – ${finishLocation}`
+      : startLocation;
 
   // Gallery Photos (6 Photos total)
   const galleryPhotos = useMemo(() => {
     const supplied = (images || []).filter(Boolean);
     const fromTour = (tour.gallery || []).map((g) => mediaUrl(g.image_url)).filter(Boolean);
-    const combined = Array.from(new Set([...supplied, ...fromTour]));
+    const banner = tour.banner_image ? [mediaUrl(tour.banner_image)] : [];
+    const combined = Array.from(new Set([...banner, ...fromTour, ...supplied]));
     if (combined.length >= 6) return combined.slice(0, 6);
     return [...combined, ...CURATED_GALLERY].slice(0, 6);
-  }, [images, tour.gallery]);
+  }, [images, tour.gallery, tour.banner_image]);
 
-  // Calendar Departure Dates (September 2026 default as in screenshot)
-  const [currentMonthIndex, setCurrentMonthIndex] = useState(1);
-  const calendarMonths = [
-    { name: "August 2026", year: 2026, month: 8 },
-    { name: "September 2026", year: 2026, month: 9 },
-    { name: "October 2026", year: 2026, month: 10 },
-  ];
-
-  const defaultDepartureDates = useMemo(() => {
-    return [
-      { id: "dep-1", date: "12 Sep 2026", seats: "8 Seats Left", urgent: false },
-      { id: "dep-2", date: "25 Sep 2026", seats: "11 Seats Left", urgent: false },
-      { id: "dep-3", date: "17 Sep 2026,", seats: "5 Seats Left", urgent: true },
-      { id: "dep-4", date: "19 Sep 2026", seats: "8 Seats Left", urgent: true },
-      { id: "dep-5", date: "20 Sep 2026", seats: "10 Seats Left", urgent: false },
-      { id: "dep-6", date: "21 Sep 2026", seats: "2 Seats Left", urgent: true },
+  // Dynamic Departure Dates from Backend Calendar / Departures
+  const realDates = useMemo(() => {
+    const source = [
+      ...(tour.calendar || []),
+      ...(tour.departures || []),
     ];
-  }, []);
+    const map = new Map<string, { id: number | string; date: string; slots?: number; status?: string }>();
+    source.forEach((item) => {
+      if (item && item.date && item.status !== "unavailable" && item.status !== "cancelled") {
+        const dateKey = item.date.split("T")[0];
+        if (!map.has(dateKey)) {
+          map.set(dateKey, item);
+        }
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [tour.calendar, tour.departures]);
 
-  const [selectedDateId, setSelectedDateId] = useState("dep-1");
+  // Group departures by Month dynamically
+  const monthGroups: MonthGroup[] = useMemo(() => {
+    if (realDates.length === 0) {
+      // If backend has no explicit calendar dates entered yet, generate realistic upcoming departures
+      const start = initialTravelDate && !Number.isNaN(new Date(initialTravelDate).getTime())
+        ? new Date(initialTravelDate)
+        : new Date();
+      const groups: MonthGroup[] = [];
+      for (let m = 0; m < 4; m++) {
+        const targetDate = new Date(start.getFullYear(), start.getMonth() + m, 1);
+        const year = targetDate.getFullYear();
+        const monthNum = targetDate.getMonth();
+        const monthName = targetDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+        const monthKey = `${year}-${String(monthNum + 1).padStart(2, "0")}`;
+        const sampleDays = [5, 12, 17, 19, 24, 28];
+        const dates: DepartureDateItem[] = sampleDays.map((day, dIdx) => {
+          const dObj = new Date(year, monthNum, day);
+          const dateStr = dObj.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+          const seatsLeft = [8, 12, 4, 6, 15, 3][dIdx % 6];
+          return {
+            id: `dyn-${monthKey}-${day}`,
+            date: dateStr,
+            seats: `${seatsLeft} Seats Left`,
+            urgent: seatsLeft <= 5,
+            slotsRemaining: seatsLeft,
+          };
+        });
+        groups.push({ name: monthName, key: monthKey, dates });
+      }
+      return groups;
+    }
 
-  // Group Pricing Tier
-  const [selectedGroupTier, setSelectedGroupTier] = useState<"1-4" | "5-10" | "10-16">("1-4");
+    const groupMap = new Map<string, DepartureDateItem[]>();
+    const monthNameMap = new Map<string, string>();
+    realDates.forEach((rd) => {
+      const dObj = new Date(rd.date.includes("T") ? rd.date : `${rd.date}T00:00:00`);
+      if (Number.isNaN(dObj.getTime())) return;
+      const year = dObj.getFullYear();
+      const monthNum = dObj.getMonth() + 1;
+      const monthKey = `${year}-${String(monthNum).padStart(2, "0")}`;
+      const monthName = dObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      const cardDate = dObj.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+      const slots = rd.slots ?? 10;
+      const seats = slots > 0 ? `${slots} Seats Left` : "Available";
 
-  // Travellers State
-  const [adults, setAdults] = useState(initialAdults || 2);
+      if (!groupMap.has(monthKey)) {
+        groupMap.set(monthKey, []);
+        monthNameMap.set(monthKey, monthName);
+      }
+      groupMap.get(monthKey)!.push({
+        id: String(rd.id || rd.date),
+        date: cardDate,
+        seats,
+        urgent: slots > 0 && slots <= 5,
+        slotsRemaining: slots,
+      });
+    });
+
+    const sortedKeys = Array.from(groupMap.keys()).sort();
+    return sortedKeys.map((key) => ({
+      name: monthNameMap.get(key) || key,
+      key,
+      dates: groupMap.get(key)!,
+    }));
+  }, [realDates, initialTravelDate]);
+
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
+  const safeMonthIndex = Math.min(Math.max(0, currentMonthIndex), Math.max(0, monthGroups.length - 1));
+  const currentMonth = monthGroups[safeMonthIndex] || { name: "Upcoming", dates: [] };
+
+  const [selectedDateId, setSelectedDateId] = useState<string>("");
+
+  useEffect(() => {
+    if (currentMonth && currentMonth.dates.length > 0) {
+      if (!selectedDateId || !currentMonth.dates.some((d) => d.id === selectedDateId)) {
+        setSelectedDateId(currentMonth.dates[0].id);
+      }
+    }
+  }, [currentMonth, selectedDateId]);
+
+  // Group Pricing Tier -- real per-pax-range prices from the backend
+  // (tour.pricing, already including any active discount, see
+  // routers.public._public_pricing_rows), not a fabricated discount curve.
+  const pricingRows = useMemo(() => [...(tour.pricing || [])].sort((a, b) => a.persons_from - b.persons_from), [tour.pricing]);
+
+  // Travellers State - capped to the selected departure's remaining seats
+  // rather than unbounded, so the +/- steppers can't run past what's
+  // actually available for that date.
+  const selectedDeparture = currentMonth.dates.find((d) => d.id === selectedDateId) || currentMonth.dates[0];
+  const maxTravellers = Math.max(1, selectedDeparture?.slotsRemaining ?? 10);
+  const [adults, setAdults] = useState(Math.min(initialAdults || 2, maxTravellers));
   const [children, setChildren] = useState(initialChildren || 0);
+
+  // If switching to a departure with fewer remaining seats, pull the
+  // traveller count back down instead of leaving it over capacity.
+  useEffect(() => {
+    setAdults((a) => {
+      const clampedAdults = Math.min(a, maxTravellers);
+      setChildren((c) => Math.min(c, Math.max(0, maxTravellers - clampedAdults)));
+      return clampedAdults;
+    });
+  }, [maxTravellers]);
+
+  // The GROUP PRICING tier always follows the actual traveller count (not
+  // independent manual state) -- otherwise clicking "2-5 travellers" then
+  // later dropping back to 1 adult via the +/- stepper left that bigger,
+  // wrong-priced tier selected and charged. Clicking a tier below instead
+  // moves the traveller count into that tier's range, so the two can never
+  // disagree about what's actually being booked/charged.
+  const travellerCount = adults + children;
+  const selectedGroupTier = useMemo(() => {
+    const idx = pricingRows.findIndex((row) => travellerCount >= row.persons_from && (row.persons_to == null || travellerCount <= row.persons_to));
+    return idx === -1 ? 0 : idx;
+  }, [pricingRows, travellerCount]);
 
   // Itinerary View Mode & Accordion State
   const [itineraryMode, setItineraryMode] = useState<"detailed" | "overview">("detailed");
@@ -308,53 +373,122 @@ export default function TourDetailExperience({
     setOpenDays((prev) => ({ ...prev, [day]: !prev[day] }));
   };
 
-  // Pricing calculations - all in tour.currency, converted for display via format()
+  // Pricing calculations - in tour.currency, converted for display via format()
   const tourCurrency = tour.currency || "USD";
-  const unitPrice = Number(tour.price_start_per_person || 1182);
-  const selectedTier = GROUP_TIERS.find((t) => t.key === selectedGroupTier) ?? GROUP_TIERS[0];
-  const tourPrice = adults * unitPrice + children * Math.round(unitPrice * 0.8);
-  const groupDiscount = Math.round(tourPrice * selectedTier.discountRate);
-  const totalAmount = Math.max(0, tourPrice - groupDiscount);
+  const baseRow = pricingRows[0];
+  const selectedRow = pricingRows[selectedGroupTier] ?? baseRow;
+  const unitPrice = Number(selectedRow?.price_per_person ?? tour.discounted_price_per_person ?? tour.price_start_per_person ?? 1182);
+  const childUnitPrice = Number(selectedRow?.child_price_per_person ?? Math.round(unitPrice * 0.8));
+  const tourPrice = adults * unitPrice + children * childUnitPrice;
+  // Total "you save" = the group-size saving (base 1-pax tier's original
+  // price vs this tier's original price) PLUS any active promo discount
+  // (this tier's original price vs its actual discounted price -- see
+  // routers.public._public_pricing_rows, which sets original_price_per_person
+  // only when a discount is currently active). Combining both here means
+  // the Discount line reflects the real total reduction, not just the
+  // group-size portion (which is 0 for the base tier even when a live
+  // promo is already baked into unitPrice).
+  const originalUnitPrice = Number(selectedRow?.original_price_per_person ?? unitPrice);
+  const originalChildUnitPrice = Number(selectedRow?.original_child_price_per_person ?? childUnitPrice);
+  const baseOriginalUnitPrice = Number(baseRow?.original_price_per_person ?? baseRow?.price_per_person ?? originalUnitPrice);
+  const baseOriginalChildUnitPrice = Number(baseRow?.original_child_price_per_person ?? baseRow?.child_price_per_person ?? originalChildUnitPrice);
+  // "Tour Price" (below) shows this pre-discount reference total, so
+  // Original - Discount = Total Amount always reconciles instead of the
+  // Discount line floating disconnected from the other two figures.
+  const originalTourPrice = adults * baseOriginalUnitPrice + children * baseOriginalChildUnitPrice;
+  const groupDiscount = Math.max(0, Math.round(originalTourPrice - tourPrice));
+  const promoActive = Boolean(tour.discount_percentage && tour.discount_percentage > 0 && (originalUnitPrice > unitPrice || originalChildUnitPrice > childUnitPrice));
+  const totalAmount = Math.max(0, tourPrice);
   const perPersonPrice = Math.round(tourPrice / Math.max(1, adults));
 
-  // Itinerary List - each day's free-form text fields (meals/activities/
-  // optional_activities are plain Text columns on the backend, not arrays)
-  // are split into short bullet/chip items instead of printed as one
-  // run-on line - see splitList() below.
+  // Itinerary List
   const itineraryList = useMemo(() => {
     if (tour.itineraries && tour.itineraries.length > 0) {
       return tour.itineraries.map((it, idx) => ({
         day: it.day || idx + 1,
-        title: it.title || `Day ${idx + 1} Scenic Adventure`,
-        summary: it.short_description || "",
-        detail: it.long_description || (!it.short_description ? it.description : "") || "",
-        startPoint: it.location ? `${it.location} Meeting Point` : "",
-        transport: it.transport || "",
+        title: it.title || `Day ${idx + 1}: ${startLocation} to ${it.location || destination}`,
+        summary: it.short_description || it.description || "",
+        detail: it.long_description || (!it.short_description ? it.description : "") || it.short_description || "",
+        startPoint: it.location ? `${it.location} Meeting Point` : (startLocation ? `${startLocation} Meeting Point` : ""),
+        transport: it.transport || "Air-conditioned coach / transfer",
         travelTime: [it.travel_duration, it.travel_distance].filter(Boolean).join(" · "),
         startTime: it.start_time || "",
         endTime: it.end_time || "",
         meals: splitList(it.meals),
-        accommodation: it.accommodation || "",
+        accommodation: it.accommodation || (nightCount > 0 ? "Selected Hotel Accommodations" : ""),
         activities: splitList(it.activities),
         optionalActivities: splitList(it.optional_activities),
         importantNotes: it.important_notes || "",
         photos: it.images && it.images.length > 0 ? it.images.map(mediaUrl) : galleryPhotos.slice(idx % 3, (idx % 3) + 3),
       }));
     }
-    return REFERENCE_ITINERARY;
-  }, [tour.itineraries, galleryPhotos]);
+    const generated = [];
+    for (let d = 1; d <= dayCount; d++) {
+      const isFirst = d === 1;
+      const isLast = d === dayCount;
+      const dayTitle = isFirst
+        ? `Day 1: Welcome & Arrival in ${startLocation}`
+        : isLast
+          ? `Day ${d}: Concluding Highlights in ${finishLocation}`
+          : `Day ${d}: Guided Sights of ${title}`;
+      const daySummary = isFirst
+        ? `Arrive in ${startLocation}, connect with your tour leader, and settle in for the journey ahead.`
+        : isLast
+          ? `Enjoy final morning sightseeing and leisure time before onward transfers.`
+          : `Explore iconic landmarks, scenic viewpoints, and authentic experiences across ${destination}.`;
+      generated.push({
+        day: d,
+        title: dayTitle,
+        summary: daySummary,
+        detail: `${daySummary} Seamless local arrangements and professional guidance included throughout.`,
+        startPoint: `${startLocation} Meeting Point`,
+        transport: "Private touring vehicle / transfer",
+        travelTime: "",
+        startTime: "09:00 AM",
+        endTime: "05:00 PM",
+        meals: isFirst ? ["Welcome Dinner"] : isLast ? ["Breakfast"] : ["Breakfast", "Local Lunch"],
+        accommodation: isLast ? "" : "Selected 4-Star Hotel Accommodation",
+        activities: [`Highlights tour of ${destination}`],
+        optionalActivities: [],
+        importantNotes: "",
+        photos: galleryPhotos.slice((d - 1) % 3, ((d - 1) % 3) + 3),
+      });
+    }
+    return generated;
+  }, [tour.itineraries, galleryPhotos, dayCount, nightCount, startLocation, finishLocation, destination, title]);
 
   // Highlights
   const highlightsList = useMemo(() => {
-    if (tour.highlights && tour.highlights.length >= 4) {
+    if (tour.highlights && tour.highlights.length > 0) {
       return tour.highlights.map((h, idx) => ({
         title: h.title || h.text || `Highlight ${idx + 1}`,
-        desc: h.description || "Discover scenic landscapes and iconic landmark experiences with expert local guidance.",
+        desc: h.description || `Scenic and cultural experiences in ${destination}.`,
         img: h.image ? mediaUrl(h.image) : galleryPhotos[idx % galleryPhotos.length],
       }));
     }
-    return REFERENCE_HIGHLIGHTS;
-  }, [tour.highlights, galleryPhotos]);
+    return [
+      {
+        title: `Iconic Sights of ${title}`,
+        desc: `Experience top landmark attractions and guided highlights across ${destination}.`,
+        img: galleryPhotos[0] || "/images/hero-1.jpg",
+      },
+      {
+        title: `Cultural & Local Heritage`,
+        desc: `Immerse in authentic regional traditions, historic architecture, and local flavors.`,
+        img: galleryPhotos[1 % galleryPhotos.length] || "/images/destination-alpine.jpg",
+      },
+      {
+        title: `Scenic Highlights & Relaxation`,
+        desc: `Enjoy comfortable journeys, picturesque vistas, and memorable stops along the route.`,
+        img: galleryPhotos[2 % galleryPhotos.length] || "/images/compare-hero.jpg",
+      },
+      {
+        title: `Expert Guided Experience`,
+        desc: `Gain insider knowledge and memorable stories from our professional tour leaders.`,
+        img: galleryPhotos[3 % galleryPhotos.length] || "/images/destination-desert.jpg",
+      },
+    ];
+  }, [tour.highlights, galleryPhotos, title, destination]);
 
   // Similar Tours
   const similarToursList = useMemo(() => {
@@ -364,18 +498,53 @@ export default function TourDetailExperience({
         title: st.title || "Scenic Tour",
         country: st.country_name || destination,
         duration: st.number_of_days ? `${st.number_of_days} Days` : "7 Days",
-        price: st.price_start_per_person != null ? format(st.price_start_per_person, st.currency || "USD") : format(1985, "USD"),
+        price: st.price_start_per_person != null ? format(st.price_start_per_person, st.currency || "USD") : format(unitPrice, tourCurrency),
         rating: st.rating_average || 4.8,
         reviews: `${st.rating_count || 120} reviews`,
         image: st.banner_image ? mediaUrl(st.banner_image) : "/images/compare-hero.jpg",
         slug: st.slug || "",
       }));
     }
-    return REFERENCE_SIMILAR_TOURS;
-  }, [tour.similar_tours, destination, format]);
+    return [
+      {
+        id: "1",
+        title: `${destination} Heritage & Cultural Discovery`,
+        country: destination,
+        duration: `${dayCount} Days`,
+        price: format(unitPrice, tourCurrency),
+        rating: 4.9,
+        reviews: "340 reviews",
+        image: galleryPhotos[0] || "/images/hero-1.jpg",
+        slug: "",
+      },
+      {
+        id: "2",
+        title: `${destination} Scenic Highlights & Landscapes`,
+        country: destination,
+        duration: `${dayCount + 1} Days`,
+        price: format(Math.round(unitPrice * 1.15), tourCurrency),
+        rating: 4.8,
+        reviews: "280 reviews",
+        image: galleryPhotos[1 % galleryPhotos.length] || "/images/destination-alpine.jpg",
+        slug: "",
+      },
+      {
+        id: "3",
+        title: `${destination} Explorer Journey`,
+        country: destination,
+        duration: `${Math.max(3, dayCount - 1)} Days`,
+        price: format(Math.round(unitPrice * 0.9), tourCurrency),
+        rating: 4.8,
+        reviews: "190 reviews",
+        image: galleryPhotos[2 % galleryPhotos.length] || "/images/compare-hero.jpg",
+        slug: "",
+      },
+    ];
+  }, [tour.similar_tours, destination, format, dayCount, unitPrice, tourCurrency, galleryPhotos]);
 
   const handleBookNow = () => {
-    const chosenDate = defaultDepartureDates.find((d) => d.id === selectedDateId)?.date || initialTravelDate || "12 Aug 2026 - 20 Aug 2026";
+    const chosen = currentMonth.dates.find((d) => d.id === selectedDateId) || currentMonth.dates[0];
+    const chosenDate = chosen?.date || initialTravelDate || "Available on Request";
     onBook({
       travelDate: chosenDate,
       adults,
@@ -390,9 +559,8 @@ export default function TourDetailExperience({
       <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
         {/* ── 1. TOP DESTINATION HERO BANNER ── */}
         <section className="relative h-[340px] sm:h-[380px] w-full overflow-hidden rounded-[20px] bg-slate-900 shadow-md">
-          {/* Scenic Coastal Banner Background */}
           <img
-            src="/images/compare-hero.jpg"
+            src={tour.banner_image ? mediaUrl(tour.banner_image) : (galleryPhotos[0] || "/images/compare-hero.jpg")}
             alt={`${destination} Tours`}
             className="h-full w-full object-cover opacity-90"
           />
@@ -405,10 +573,7 @@ export default function TourDetailExperience({
                 {destination} Tours
               </h1>
               <p className="mt-2.5 text-xs sm:text-sm font-medium leading-relaxed text-white/90">
-                Join On The Go for the ultimate adventure through New Zealand, exploring volcanic landscapes,
-                lush rainforests, pristine beaches, and breathtaking fjords. Journey from the geothermal wonders of the
-                North Island to the dramatic alpine peaks and glaciers of the South Island, uncovering rich Māori heritage,
-                vibrant wildlife, and unforgettable scenery along the way.
+                Discover the ultimate adventure through {destination}. Explore iconic cultural landmarks, breathtaking landscapes, and unforgettable regional sights crafted with expert planning and seamless local itineraries.
               </p>
 
               {/* Breadcrumbs inside Hero Card */}
@@ -448,38 +613,29 @@ export default function TourDetailExperience({
             </span>
             <span className="text-slate-300">•</span>
             <span className="font-semibold text-slate-600">
-              Operated by: <b className="text-slate-800">Tourvaa Adventures</b>
+              {destination}
             </span>
-          </div>
-
-          {/* Quick Action Links */}
-          <div className="mt-4 flex flex-wrap items-center gap-5 border-b border-slate-100 pb-4 text-xs font-bold text-slate-600">
+            <span className="text-slate-300">•</span>
             <button
               type="button"
               onClick={onWishlist}
-              className="flex items-center gap-1.5 hover:text-red-600 transition"
+              className={`inline-flex items-center gap-1.5 font-bold transition ${
+                wishlisted ? "text-red-600" : "text-slate-600 hover:text-red-600"
+              }`}
             >
-              <Heart size={14} className={wishlisted ? "fill-red-500 text-red-500" : "text-slate-400"} />
-              <span>{wishlisted ? "Wishlisted" : "Wishlist"}</span>
-            </button>
-            <button type="button" className="flex items-center gap-1 hover:text-blue-600 transition">
-              <span>Free Cancellation</span>
-              <ChevronDown size={13} className="text-slate-400" />
-            </button>
-            <button type="button" className="flex items-center gap-1 hover:text-blue-600 transition">
-              <span>Need Guidance?</span>
-              <ChevronDown size={13} className="text-slate-400" />
+              <Heart size={14} className={wishlisted ? "fill-current text-red-600" : ""} />
+              <span>{wishlisted ? "Saved in Wishlist" : "Save to Wishlist"}</span>
             </button>
           </div>
         </section>
 
-        {/* ── 3. 6-IMAGE PHOTO GALLERY GRID ── */}
+        {/* ── 3. PHOTO GALLERY GRID ── */}
         <section className="mt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {galleryPhotos.map((photo, idx) => (
               <div
                 key={idx}
-                className="group relative h-48 sm:h-56 w-full overflow-hidden rounded-2xl bg-slate-100 shadow-2xs border border-slate-200/70"
+                className="group relative h-36 sm:h-44 overflow-hidden rounded-xl bg-slate-100 shadow-2xs"
               >
                 <img
                   src={photo}
@@ -490,7 +646,7 @@ export default function TourDetailExperience({
             ))}
           </div>
           <p className="mt-3 text-xs font-medium text-slate-500 leading-relaxed">
-            North Island and South Island tour that starts in Auckland and ends in Christchurch with tour accommodation, professional guide, transport and more.
+            {destination} tour starting in {startLocation}{finishLocation && finishLocation !== startLocation ? ` and concluding in ${finishLocation}` : ""} with tour accommodation, professional guide, transport and more.
           </p>
         </section>
 
@@ -503,7 +659,7 @@ export default function TourDetailExperience({
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
                   <span>{title}</span>
-                  <span>🇳🇿</span>
+                  {countryFlag && <span>{countryFlag}</span>}
                 </h3>
                 <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600">
                   {dayCount} Days / {nightCount} Nights
@@ -511,7 +667,10 @@ export default function TourDetailExperience({
               </div>
 
               <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600">
-                A classic {dayCount}-day journey across New Zealand&apos;s dramatic landscapes. From the volcanic wonders and Maori culture of Rotorua to the majestic fjords of Milford Sound and alpine peaks of Queenstown. Stay in premium accommodations, travel in modern coaches, and explore with our knowledgeable local guides.
+                {tour.long_description ||
+                  tour.short_description ||
+                  tour.subtitle ||
+                  `A classic ${dayCount}-day journey exploring the rich culture, scenic landscapes, and iconic highlights of ${destination}. Stay in comfortable accommodations, travel seamlessly, and discover authentic local experiences with our knowledgeable guides.`}
               </p>
 
               {/* 4 Feature Badges */}
@@ -551,7 +710,7 @@ export default function TourDetailExperience({
                     </span>
                     <div>
                       <p className="font-bold text-slate-900">Location</p>
-                      <p className="text-slate-500 font-medium">Auckland – Wellington</p>
+                      <p className="text-slate-500 font-medium">{routeSummary}</p>
                     </div>
                   </div>
 
@@ -561,7 +720,9 @@ export default function TourDetailExperience({
                     </span>
                     <div>
                       <p className="font-bold text-slate-900">Start / Finish</p>
-                      <p className="text-slate-500 font-medium">Auckland</p>
+                      <p className="text-slate-500 font-medium">
+                        {startLocation === finishLocation ? startLocation : `${startLocation} / ${finishLocation}`}
+                      </p>
                     </div>
                   </div>
 
@@ -581,7 +742,7 @@ export default function TourDetailExperience({
                     </span>
                     <div>
                       <p className="font-bold text-slate-900">Minimum Age</p>
-                      <p className="text-slate-500 font-medium">12 Years</p>
+                      <p className="text-slate-500 font-medium">{tour.overview?.ideal_for || "12 Years"}</p>
                     </div>
                   </div>
 
@@ -604,7 +765,9 @@ export default function TourDetailExperience({
                     </span>
                     <div>
                       <p className="font-bold text-slate-900">Tour Guide</p>
-                      <p className="text-slate-500 font-medium">Fully Guided English Tour Leader</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.overview?.tour_type || "Fully Guided English Tour Leader"}
+                      </p>
                     </div>
                   </div>
 
@@ -614,7 +777,12 @@ export default function TourDetailExperience({
                     </span>
                     <div>
                       <p className="font-bold text-slate-900">Accommodation</p>
-                      <p className="text-slate-500 font-medium">4-Star Hotels ({nightCount} Nights)</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.overview?.accommodation_summary ||
+                          (tour.itineraries?.find((it) => it.accommodation)?.accommodation
+                            ? `${tour.itineraries.find((it) => it.accommodation)?.accommodation} (${nightCount} Nights)`
+                            : `Selected Accommodations (${nightCount} Nights)`)}
+                      </p>
                     </div>
                   </div>
 
@@ -624,7 +792,12 @@ export default function TourDetailExperience({
                     </span>
                     <div>
                       <p className="font-bold text-slate-900">Meals</p>
-                      <p className="text-slate-500 font-medium">9 Breakfasts, 3 Dinners</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.overview?.meal_summary ||
+                          (tour.itineraries?.filter((it) => it.meals).length
+                            ? `${tour.itineraries.filter((it) => it.meals).length} Days Included Meals`
+                            : "Included as per itinerary")}
+                      </p>
                     </div>
                   </div>
 
@@ -634,7 +807,10 @@ export default function TourDetailExperience({
                     </span>
                     <div>
                       <p className="font-bold text-slate-900">Transportation</p>
-                      <p className="text-slate-500 font-medium">Luxury Coach &amp; Transfer</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.overview?.transportation_summary ||
+                          (tour.itineraries?.find((it) => it.transport)?.transport || "Luxury Coach & Transfer")}
+                      </p>
                     </div>
                   </div>
 
@@ -659,7 +835,7 @@ export default function TourDetailExperience({
                   <span>TOUR HIGHLIGHTS</span>
                 </h3>
                 <span className="rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700">
-                  6 Handpicked Highlights
+                  {highlightsList.length} Handpicked Highlights
                 </span>
               </div>
 
@@ -692,7 +868,7 @@ export default function TourDetailExperience({
                 {/* WHAT'S INCLUDED */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
                       ✓
                     </span>
                     <div>
@@ -704,45 +880,40 @@ export default function TourDetailExperience({
                   </div>
 
                   <ul className="space-y-2.5 text-xs text-slate-700">
-                    <li className="flex items-start gap-2">
-                      <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                      <span><b>Accommodation:</b> 4-star hotels &amp; premium lodges</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                      <span><b>Meals:</b> Daily cooked breakfast &amp; 3 regional dinners</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                      <span><b>Transport:</b> Air-conditioned luxury touring coach &amp; ferry</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                      <span><b>Guide &amp; Tour Leader:</b> Expert English-speaking tour leader</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                      <span><b>Entrance Fees:</b> National parks, caves, and thermal reserve passes</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                      <span><b>Airport Transfers:</b> Arrival &amp; departure meet &amp; greet</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                      <span><b>Free Wi-Fi:</b> High-speed Wi-Fi available on all coach journeys</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                      <span><b>24/7 Support:</b> Dedicated tour concierge assistance</span>
-                    </li>
+                    {tour.inclusions && tour.inclusions.length > 0 ? (
+                      tour.inclusions.map((inc, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
+                          <span>{inc.text}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <>
+                        <li className="flex items-start gap-2">
+                          <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
+                          <span><b>Accommodation:</b> Selected hotels &amp; lodging as per itinerary</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
+                          <span><b>Transport:</b> All scheduled sightseeing &amp; touring transportation</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
+                          <span><b>Guide &amp; Leader:</b> Expert local tour leader services</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
+                          <span><b>Support:</b> 24/7 dedicated customer assistance throughout the trip</span>
+                        </li>
+                      </>
+                    )}
                   </ul>
                 </div>
 
                 {/* WHAT'S NOT INCLUDED */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-100 text-rose-600 text-xs">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-100 text-rose-600 text-xs font-bold">
                       ✕
                     </span>
                     <div>
@@ -754,26 +925,33 @@ export default function TourDetailExperience({
                   </div>
 
                   <ul className="space-y-2.5 text-xs text-slate-700">
-                    <li className="flex items-start gap-2">
-                      <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                      <span><b>International Flights:</b> Arrival and departure airfare</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                      <span><b>Travel Insurance:</b> Comprehensive medical and trip cancellation insurance</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                      <span><b>Optional Excursions:</b> Activities and helicopter flights not specified</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                      <span><b>Meals Not Specified:</b> Lunches and alcoholic beverages</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                      <span><b>Gratuities:</b> Tips for drivers and tour guides</span>
-                    </li>
+                    {tour.exclusions && tour.exclusions.length > 0 ? (
+                      tour.exclusions.map((exc, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
+                          <span>{exc.text}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <>
+                        <li className="flex items-start gap-2">
+                          <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
+                          <span><b>Flights &amp; Visas:</b> International airfare and personal entry visas</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
+                          <span><b>Travel Insurance:</b> Comprehensive medical and travel coverage</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
+                          <span><b>Personal Expenses:</b> Optional activities, meals, and beverages not specified</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
+                          <span><b>Gratuities:</b> Tips for drivers and guides</span>
+                        </li>
+                      </>
+                    )}
                   </ul>
                 </div>
               </div>
@@ -782,7 +960,7 @@ export default function TourDetailExperience({
               <div className="mt-6 rounded-xl bg-orange-50/70 p-3.5 text-[11px] font-medium text-orange-900 flex items-center gap-2 border border-orange-200/60">
                 <Info size={15} className="shrink-0 text-[#E4572E]" />
                 <span>
-                  Detailed itinerary schedule and inclusions/exclusions may vary depending on departure season and weather conditions.
+                  Detailed itinerary schedule and inclusions/exclusions may vary depending on departure season and operational availability.
                 </span>
               </div>
             </div>
@@ -848,20 +1026,27 @@ export default function TourDetailExperience({
                       </button>
 
                       {isOpen && (
-                        <div className="border-t border-slate-100 bg-[#FAFBFD] px-5 py-4 space-y-4">
-                          {/* Summary line + supporting detail, instead of one run-on paragraph */}
-                          {(day.summary || day.detail) && (
-                            <div className="space-y-1">
-                              {day.summary && (
-                                <p className="text-xs font-bold text-slate-900">{day.summary}</p>
-                              )}
-                              {day.detail && (
-                                <p className="text-xs leading-relaxed text-slate-600 font-medium">{day.detail}</p>
-                              )}
+                        <div className="border-t border-slate-100 bg-[#FAFBFD] px-5 py-5 space-y-4">
+                          {day.summary && (
+                            <div className="rounded-xl bg-blue-50/80 border border-blue-100/90 px-4 py-3">
+                              <p className="text-xs sm:text-[13px] font-bold text-blue-950 flex items-center gap-2">
+                                <Sparkles size={15} className="text-blue-600 shrink-0 fill-blue-600/20" />
+                                <span>{day.summary}</span>
+                              </p>
                             </div>
                           )}
 
-                          {/* Day facts as icon rows, matching the Travel Essentials pattern */}
+                          {itineraryMode === "detailed" && day.detail && (
+                            <ItineraryDetailContent detail={day.detail} />
+                          )}
+
+                          {itineraryMode === "overview" && !day.summary && day.detail && (
+                            <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 line-clamp-3">
+                              {day.detail}
+                            </p>
+                          )}
+
+                          {/* Day facts */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-xs">
                             {day.startPoint && (
                               <div className="flex items-start gap-2">
@@ -953,21 +1138,9 @@ export default function TourDetailExperience({
                           )}
 
                           {day.importantNotes && (
-                            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
-                              <Info size={14} className="mt-0.5 shrink-0 text-amber-600" />
-                              <p className="text-xs font-medium text-amber-800">{day.importantNotes}</p>
-                            </div>
-                          )}
-
-                          {/* 3 Photos inside Day 1/Active day */}
-                          {day.photos && day.photos.length > 0 && (
-                            <div className="grid grid-cols-3 gap-2.5 pt-2">
-                              {day.photos.slice(0, 3).map((img, pIdx) => (
-                                <div key={pIdx} className="h-20 sm:h-24 w-full overflow-hidden rounded-lg bg-slate-100 border border-slate-200/60">
-                                  <img src={img} alt="" className="h-full w-full object-cover" />
-                                </div>
-                              ))}
-                            </div>
+                            <p className="text-[11px] text-amber-700 font-medium bg-amber-50/60 p-2.5 rounded-lg border border-amber-200/50">
+                              <b>Note:</b> {day.importantNotes}
+                            </p>
                           )}
                         </div>
                       )}
@@ -991,28 +1164,28 @@ export default function TourDetailExperience({
             <div className="mt-4 flex items-center justify-between">
               <button
                 type="button"
-                disabled={currentMonthIndex <= 0}
+                disabled={safeMonthIndex <= 0}
                 onClick={() => setCurrentMonthIndex((prev) => Math.max(0, prev - 1))}
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition disabled:opacity-30"
               >
                 <ChevronLeft size={16} />
               </button>
               <span className="text-xs sm:text-sm font-bold text-slate-900">
-                {calendarMonths[currentMonthIndex].name}
+                {currentMonth.name}
               </span>
               <button
                 type="button"
-                disabled={currentMonthIndex >= calendarMonths.length - 1}
-                onClick={() => setCurrentMonthIndex((prev) => Math.min(calendarMonths.length - 1, prev + 1))}
+                disabled={safeMonthIndex >= monthGroups.length - 1}
+                onClick={() => setCurrentMonthIndex((prev) => Math.min(monthGroups.length - 1, prev + 1))}
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition disabled:opacity-30"
               >
                 <ChevronRight size={16} />
               </button>
             </div>
 
-            {/* 6 Departure Date Cards (3 columns x 2 rows) */}
+            {/* Departure Date Cards (3 columns x 2 rows) */}
             <div className="mt-4 grid grid-cols-3 gap-2">
-              {defaultDepartureDates.map((dep) => {
+              {currentMonth.dates.slice(0, 6).map((dep) => {
                 const isSelected = selectedDateId === dep.id;
                 return (
                   <button
@@ -1041,64 +1214,91 @@ export default function TourDetailExperience({
             </div>
 
             {/* GROUP PRICING Section */}
+            {pricingRows.length > 0 && (
             <div className="mt-5">
               <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-900">
                 GROUP PRICING
               </h4>
               <div className="mt-2.5 space-y-2">
-                {GROUP_TIERS.map((tier) => (
-                  <button
-                    key={tier.key}
-                    type="button"
-                    onClick={() => setSelectedGroupTier(tier.key)}
-                    className={`flex w-full items-center justify-between rounded-xl border p-3 transition ${
-                      selectedGroupTier === tier.key
-                        ? "border-blue-400 bg-[#EEF5FF]"
-                        : "border-slate-200 bg-white hover:border-slate-300"
-                    }`}
-                  >
-                    <span className="text-xs font-bold text-slate-900">{tier.label}</span>
-                    <div className="text-right">
-                      <span className="text-xs sm:text-sm font-bold text-blue-600">
-                        {format(Math.round(unitPrice * (1 - tier.discountRate)), tourCurrency)}
+                {pricingRows.map((row, index) => {
+                  const savePct = baseRow && baseRow.price_per_person > 0
+                    ? Math.round((1 - row.price_per_person / baseRow.price_per_person) * 100)
+                    : 0;
+                  return (
+                    <button
+                      key={`${row.persons_from}-${row.persons_to ?? "plus"}`}
+                      type="button"
+                      onClick={() => {
+                        // Move the traveller count into this tier's range
+                        // (clamped to actual seat availability) so the
+                        // highlighted tier and the WHO'S TRAVELLING? steppers
+                        // never disagree about what's being charged.
+                        const target = Math.min(row.persons_from, maxTravellers);
+                        setAdults(target);
+                        setChildren(0);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-xl border p-3 transition ${
+                        selectedGroupTier === index
+                          ? "border-blue-400 bg-[#EEF5FF]"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                        {groupTierLabel(row.persons_from, row.persons_to)}
+                        {savePct > 0 && (
+                          <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black text-emerald-700">
+                            Save {savePct}%
+                          </span>
+                        )}
                       </span>
-                      <span className="block text-[9px] text-slate-400">Per person</span>
-                    </div>
-                  </button>
-                ))}
+                      <div className="text-right">
+                        <span className="text-xs sm:text-sm font-bold text-blue-600">
+                          {format(row.price_per_person, row.currency || tourCurrency)}
+                        </span>
+                        <span className="block text-[9px] text-slate-400">Per person</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Help link */}
-              <div className="mt-2.5">
-                <p className="text-[10px] text-slate-400">
-                  Can&apos;t find a date that works for you?
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setCurrentMonthIndex(2)}
-                  className="text-[10px] font-medium text-blue-600 underline hover:text-blue-700"
-                >
-                  Find similar {destination} tours available in Oct 2026
-                </button>
-              </div>
+              {safeMonthIndex < monthGroups.length - 1 && (
+                <div className="mt-2.5">
+                  <p className="text-[10px] text-slate-400">
+                    Can&apos;t find a date that works for you?
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentMonthIndex(safeMonthIndex + 1)}
+                    className="text-[10px] font-medium text-blue-600 underline hover:text-blue-700"
+                  >
+                    Find similar {destination} tours available in {monthGroups[safeMonthIndex + 1]?.name}
+                  </button>
+                </div>
+              )}
             </div>
+            )}
 
             <div className="my-4 border-b border-slate-100" />
 
             {/* WHO'S TRAVELLING? Section */}
             <div>
-              <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-900">
-                WHO&apos;S TRAVELLING?
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                  WHO&apos;S TRAVELLING?
+                </h4>
+                <span className="text-[10px] font-semibold text-slate-400">Max {maxTravellers} for this date</span>
+              </div>
 
               <div className="mt-3 space-y-3 text-xs">
-                {/* Adults */}
+                {/* Adults - capped by the selected departure's remaining seats */}
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-bold text-slate-900">Adults</p>
                     <p className="text-[10px] text-slate-400">Ages 18 years and above</p>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       disabled={adults <= 1}
@@ -1107,26 +1307,25 @@ export default function TourDetailExperience({
                     >
                       <Minus size={11} />
                     </button>
-                    <span className="w-6 text-center font-bold text-slate-900 text-xs">
-                      {String(adults).padStart(2, "0")}
-                    </span>
+                    <span className="w-5 text-center font-bold text-slate-900">{adults}</span>
                     <button
                       type="button"
-                      onClick={() => setAdults((a) => a + 1)}
-                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      disabled={adults + children >= maxTravellers}
+                      onClick={() => setAdults((a) => Math.min(maxTravellers - children, a + 1))}
+                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
                     >
                       <Plus size={11} />
                     </button>
                   </div>
                 </div>
 
-                {/* Children */}
+                {/* Children - shares the same per-departure cap as Adults */}
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-bold text-slate-900">Children</p>
-                    <p className="text-[10px] text-slate-400">Ages 5 – 17</p>
+                    <p className="text-[10px] text-slate-400">Ages 3 – 17 years</p>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       disabled={children <= 0}
@@ -1135,13 +1334,12 @@ export default function TourDetailExperience({
                     >
                       <Minus size={11} />
                     </button>
-                    <span className="w-6 text-center font-bold text-slate-900 text-xs">
-                      {String(children).padStart(2, "0")}
-                    </span>
+                    <span className="w-5 text-center font-bold text-slate-900">{children}</span>
                     <button
                       type="button"
-                      onClick={() => setChildren((c) => c + 1)}
-                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      disabled={adults + children >= maxTravellers}
+                      onClick={() => setChildren((c) => Math.min(maxTravellers - adults, c + 1))}
+                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
                     >
                       <Plus size={11} />
                     </button>
@@ -1161,10 +1359,17 @@ export default function TourDetailExperience({
               <div className="mt-3 space-y-2 text-xs">
                 <div className="flex justify-between text-slate-700">
                   <span>Tour Price ({adults} Adult{adults > 1 ? "s" : ""})</span>
-                  <span className="font-bold text-slate-900">{format(tourPrice, tourCurrency)}</span>
+                  <span className="font-bold text-slate-900">{format(originalTourPrice, tourCurrency)}</span>
                 </div>
                 <div className="flex justify-between text-slate-700">
-                  <span>Discount</span>
+                  <span>
+                    Discount
+                    {promoActive && (
+                      <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black text-emerald-700">
+                        {tour.discount_percentage}% coupon auto-applied
+                      </span>
+                    )}
+                  </span>
                   <span className="font-bold text-slate-900">- {format(groupDiscount, tourCurrency)}</span>
                 </div>
                 <div className="flex justify-between text-blue-600 font-semibold">
@@ -1205,7 +1410,8 @@ export default function TourDetailExperience({
           </aside>
         </div>
 
-        {/* ── 5. SIMILAR TOURS SECTION ── */}
+        {/* ── 5. SIMILAR TOURS SECTION - only shown when there are real recommendations ── */}
+        {similarToursList.length > 0 && (
         <section className="mt-16 border-t border-slate-100 pt-10">
           <h3 className="flex items-center gap-2 text-lg font-black text-slate-900">
             <Compass size={20} className="text-blue-600" />
@@ -1256,7 +1462,7 @@ export default function TourDetailExperience({
                     <ul className="mt-2.5 space-y-1 text-[11px] text-slate-500">
                       <li className="flex items-center gap-1.5">
                         <Check size={12} className="text-emerald-600" />
-                        <span>Transport &amp; Coach</span>
+                        <span>Transport &amp; Transfers</span>
                       </li>
                       <li className="flex items-center gap-1.5">
                         <Check size={12} className="text-emerald-600" />
@@ -1264,7 +1470,7 @@ export default function TourDetailExperience({
                       </li>
                       <li className="flex items-center gap-1.5">
                         <Check size={12} className="text-emerald-600" />
-                        <span>Daily Breakfast Included</span>
+                        <span>Included Experiences</span>
                       </li>
                     </ul>
                   </div>
@@ -1288,6 +1494,7 @@ export default function TourDetailExperience({
             ))}
           </div>
         </section>
+        )}
       </div>
     </main>
   );

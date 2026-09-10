@@ -15,6 +15,7 @@ type PageDefinition = {
 export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/": { title: "Curated Tours & Travel Experiences", description: DEFAULT_DESCRIPTION, keywords: ["tours", "travel experiences", "holiday packages", "Tourvaa"] },
   "/[...catchAll]": { title: "Page Not Found", description: "The page you're looking for doesn't exist. Explore Tourvaa's tours and destinations instead.", index: false },
+  "/[slug]": { title: "Page", description: "An admin-published Tourvaa page." },
   "/about": { title: "About Us", description: "Learn how Tourvaa connects travellers with curated tours, trusted suppliers, and dependable booking support." },
   "/accessibility": { title: "Accessibility", description: "Read Tourvaa's accessibility commitment and learn how we make travel discovery and booking easier for everyone." },
   "/blogs": { title: "Travel Guides & Stories", description: "Explore Tourvaa travel guides, destination inspiration, planning advice, and stories for your next journey." },

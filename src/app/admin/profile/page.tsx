@@ -9,19 +9,18 @@ import { useDashboard } from "@/hooks/useDashboard";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
-import PhoneInput from "@/components/ui/PhoneInput";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import LocationInput from "@/components/ui/LocationInput";
 import {
   combinePhone,
   digitsOnly,
   mobileHelp,
   passwordHelp,
-  splitPhone,
   validateMobile,
   validatePassword,
 } from "@/lib/utils/validators";
-import {  phoneCountryCodeValues,
-} from "@/lib/constants/locationOptions";
+import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import type { CountryCode } from "libphonenumber-js/min";
 
 const emptyProfile = {
   name: "",
@@ -53,7 +52,7 @@ export default function ProfilePage() {
   });
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [phoneCountryCode, setPhoneCountryCode] = useState("+91");
+  const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>("IN");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -69,9 +68,13 @@ export default function ProfilePage() {
           ...emptyProfile,
           ...response.data.data,
         });
-        const phoneParts = splitPhone(response.data.data?.phone || "", phoneCountryCodeValues);
-        setPhoneCountryCode(phoneParts.countryCode);
-        setPhoneNumber(phoneParts.number);
+        const phone = response.data.data?.phone || "";
+        if (phone) {
+          const iso = isoForDialCode(phone);
+          const dial = dialCodeForIso(iso);
+          setPhoneCountryIso(iso);
+          setPhoneNumber(phone.startsWith(dial) ? phone.slice(dial.length) : phone.replace(/^\+/, ""));
+        }
       } catch {
         setProfile({
           ...emptyProfile,
@@ -90,7 +93,7 @@ export default function ProfilePage() {
     setMessage("");
     setError("");
 
-    const phone = combinePhone(phoneCountryCode, phoneNumber);
+    const phone = combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber);
 
     if (!validateMobile(phone, true)) {
       setError(mobileHelp);
@@ -211,10 +214,10 @@ export default function ProfilePage() {
                   Email cannot be changed from profile.
                 </p>
               </label>
-              <PhoneInput
-                countryCode={phoneCountryCode}
+              <CountryPhoneInput
+                countryIso={phoneCountryIso}
                 number={phoneNumber}
-                onCountryCodeChange={setPhoneCountryCode}
+                onCountryChange={setPhoneCountryIso}
                 onNumberChange={setPhoneNumber}
                 required
                 helpText={mobileHelp}

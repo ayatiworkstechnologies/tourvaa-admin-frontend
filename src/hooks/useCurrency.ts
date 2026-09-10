@@ -15,11 +15,19 @@ type CurrencyState = {
    * Defaults → Currency) — every visitor sees that currency and cannot
    * switch, rather than the old per-browser locale-detected preference. */
   forced: boolean;
+  /** ISO2 country code (e.g. "IN") the visitor is browsing as - IP-detected
+   * by default (see loadCurrency below), manually override-able via
+   * setCountry, and persisted the same way as the display currency. This is
+   * a browsing/display preference only: it never changes what a booking is
+   * actually charged (see formatExact's docstring for that same rule on
+   * currency). */
+  countryCode: string;
 };
 
 const STORAGE_KEY = "tourvaa_display_currency";
+const COUNTRY_STORAGE_KEY = "tourvaa_display_country";
 const listeners = new Set<(state: CurrencyState) => void>();
-let state: CurrencyState = { code: "USD", baseCode: "USD", rates: { USD: 1 }, loading: true, isStale: false, forced: false };
+let state: CurrencyState = { code: "USD", baseCode: "USD", rates: { USD: 1 }, loading: true, isStale: false, forced: false, countryCode: "" };
 let loadPromise: Promise<void> | null = null;
 
 function emit(next: Partial<CurrencyState>) {
@@ -40,6 +48,7 @@ async function loadCurrency() {
   if (loadPromise) return loadPromise;
   loadPromise = (async () => {
     const savedAtStart = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+    const savedCountryAtStart = typeof window !== "undefined" ? localStorage.getItem(COUNTRY_STORAGE_KEY) : null;
     // Leave `country` unset on the first call: the backend then geolocates
     // by request IP (cf-ipcountry / x-vercel-ip-country), which is what
     // should decide the default currency, not the browser's language
@@ -69,6 +78,10 @@ async function loadCurrency() {
     const publicSettings = settingsResult.status === "fulfilled" ? settingsResult.value.data?.data : null;
     const rates = rateData?.rates && typeof rateData.rates === "object" ? rateData.rates : { USD: 1 };
 
+    const detectedCountry = String(contextData?.country_code || "").toUpperCase();
+    const latestSavedCountry = typeof window !== "undefined" ? localStorage.getItem(COUNTRY_STORAGE_KEY) : null;
+    const preferredCountry = String(latestSavedCountry || savedCountryAtStart || detectedCountry || "").toUpperCase();
+
     // An admin-set site currency is a strict override: every visitor sees it,
     // no per-browser choice. Gated on the separate "force_site_currency"
     // toggle, NOT merely on "currency" being non-blank - "currency" also
@@ -86,6 +99,7 @@ async function loadCurrency() {
         isStale: Boolean(rateData?.is_stale),
         rateDate: rateData?.rate_date || undefined,
         forced: true,
+        countryCode: preferredCountry,
       });
       return;
     }
@@ -103,6 +117,7 @@ async function loadCurrency() {
       loading: false,
       isStale: Boolean(rateData?.is_stale),
       rateDate: rateData?.rate_date || undefined,
+      countryCode: preferredCountry,
       forced: false,
     });
   })().catch(() => emit({ loading: false, isStale: true }));
@@ -127,6 +142,29 @@ export function setDisplayCurrency(code: string) {
   if (state.rates[normalized]) emit({ code: normalized });
 }
 
+/** Manually overrides the browsing country - persisted the same way as
+ * currency, and (unless an admin has forced a single site-wide currency)
+ * also re-derives the suggested currency for that country, matching the
+ * same "currency follows country" auto-detection logic used on first
+ * load. A visitor who then picks a different currency via setDisplayCurrency
+ * still wins - this only sets the country-implied suggestion. */
+export async function setDisplayCountry(code: string) {
+  const normalized = code.toUpperCase();
+  if (typeof window !== "undefined") localStorage.setItem(COUNTRY_STORAGE_KEY, normalized);
+  emit({ countryCode: normalized });
+  if (state.forced) return;
+  try {
+    const res = await api.get("/currency/context", { params: { country: normalized } });
+    const nextCurrency = String(res.data?.data?.currency || "").toUpperCase();
+    if (nextCurrency && state.rates[nextCurrency]) {
+      if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, nextCurrency);
+      emit({ code: nextCurrency });
+    }
+  } catch {
+    // Keep the existing currency selection if the lookup fails.
+  }
+}
+
 export function useCurrency() {
   const [snapshot, setSnapshot] = useState(state);
 
@@ -134,9 +172,13 @@ export function useCurrency() {
     listeners.add(setSnapshot);
     void loadCurrency();
     const syncStoredCurrency = (event: StorageEvent) => {
-      if (event.key !== STORAGE_KEY || !event.newValue || state.forced) return;
-      const normalized = event.newValue.toUpperCase();
-      if (state.rates[normalized]) emit({ code: normalized });
+      if (event.newValue == null) return;
+      if (event.key === STORAGE_KEY && !state.forced) {
+        const normalized = event.newValue.toUpperCase();
+        if (state.rates[normalized]) emit({ code: normalized });
+      } else if (event.key === COUNTRY_STORAGE_KEY) {
+        emit({ countryCode: event.newValue.toUpperCase() });
+      }
     };
     window.addEventListener("storage", syncStoredCurrency);
     return () => {
@@ -195,6 +237,7 @@ export function useCurrency() {
       symbol: currencySymbol(currencyCode),
     })),
     setCode: setDisplayCurrency,
+    setCountry: setDisplayCountry,
     convert,
     format,
     formatCompact,
