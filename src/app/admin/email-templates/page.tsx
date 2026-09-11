@@ -9,6 +9,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { useConfirm } from "@/hooks/useConfirm";
 
 type EmailTemplate = {
   id: number;
@@ -36,6 +37,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export default function EmailTemplatesPage() {
+  const { confirm, dialog } = useConfirm();
   const { dashboard, loading: dashboardLoading } = useDashboard();
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,7 +174,7 @@ export default function EmailTemplatesPage() {
   };
 
   const remove = async (template: EmailTemplate) => {
-    const ok = confirm(`Delete template "${template.name}"?`);
+    const ok = await confirm({ title: "Delete email template", message: `Delete template "${template.name}"?`, confirmLabel: "Delete", danger: true });
     if (!ok) return;
 
     try {
@@ -517,6 +519,7 @@ export default function EmailTemplatesPage() {
           </div>
         </div>
       )}
+      {dialog}
     </DashboardLayout>
     </ProtectedRoute>
   );

@@ -17,6 +17,7 @@ import LocationEditModal from "@/components/common/LocationEditModal";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";
 import {
@@ -39,6 +40,7 @@ export default function CustomerDetailPage() {
   const params = useParams<{ id: string }>();
   const customerId = params.id;
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const { hasPermission } = useAuthContext();
   const { format } = useCurrency();
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -109,7 +111,8 @@ export default function CustomerDetailPage() {
   };
 
   const handleUnblock = async () => {
-    if (!customer || !window.confirm("Unblock this customer?")) return;
+    if (!customer) return;
+    if (!(await confirm({ title: "Unblock customer", message: "Unblock this customer?", confirmLabel: "Unblock" }))) return;
 
     setSaving(true);
     try {
@@ -124,7 +127,8 @@ export default function CustomerDetailPage() {
   };
 
   const handleReset = async () => {
-    if (!customer || !window.confirm("Send password reset email to this customer?")) return;
+    if (!customer) return;
+    if (!(await confirm({ title: "Send password reset", message: "Send password reset email to this customer?", confirmLabel: "Send" }))) return;
 
     setSaving(true);
     try {
@@ -307,6 +311,7 @@ export default function CustomerDetailPage() {
           Customer not found.
         </section>
       )}
+      {dialog}
     </ModuleWrapper>
   );
 }

@@ -8,6 +8,7 @@ import {
   getExclusions, createExclusion, updateExclusion, deleteExclusion,
 } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
@@ -24,6 +25,7 @@ function isIconUrl(icon: string) {
 
 export default function TourItemsTab({ tourId, segment, label }: { tourId: string; segment: "inclusions" | "exclusions"; label: string }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const api = APIs[segment];
   const [items, setItems] = useState<TourItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,7 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
   };
 
   const remove = async (id: number) => {
-    if (!confirm(`Delete this ${label.toLowerCase()}?`)) return;
+    if (!(await confirm({ title: `Delete ${label.toLowerCase()}`, message: `Delete this ${label.toLowerCase()}?`, confirmLabel: "Delete", danger: true }))) return;
     try {
       await api.delete(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
@@ -164,6 +166,7 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
           </div>
         </form>
       )}
+      {dialog}
     </div>
   );
 }

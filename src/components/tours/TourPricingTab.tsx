@@ -5,6 +5,7 @@ import { LuBadgeDollarSign as BadgeDollarSign, LuInfo as Info, LuPencil as Penci
 import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } from "@/lib/api/services/tourDetailService";
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import CurrencySelect from "@/components/ui/CurrencySelect";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
@@ -112,6 +113,7 @@ export default function TourPricingTab({
   tourStatus?: string;
 }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const isSupplier = role === "supplier";
   const isLiveTour = ["active", "published"].includes((tourStatus ?? "").toLowerCase());
   const accent = isSupplier
@@ -221,7 +223,7 @@ export default function TourPricingTab({
   };
 
   const removeSlab = async (id: number) => {
-    if (!confirm("Delete this pricing slab?")) return;
+    if (!(await confirm({ title: "Delete pricing slab", message: "Delete this pricing slab?", confirmLabel: "Delete", danger: true }))) return;
     try {
       await deletePricing(tourId, id);
       setSlabs((prev) => prev.filter((s) => s.id !== id));
@@ -549,6 +551,7 @@ export default function TourPricingTab({
           </form>
         </div>
       )}
+      {dialog}
     </div>
   );
 }

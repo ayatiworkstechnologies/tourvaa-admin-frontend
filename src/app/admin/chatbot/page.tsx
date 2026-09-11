@@ -9,6 +9,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { useConfirm } from "@/hooks/useConfirm";
 
 type FAQ = {
   id: number;
@@ -53,6 +54,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export default function ChatbotFAQPage() {
+  const { confirm, dialog } = useConfirm();
   const { dashboard, loading: dashboardLoading } = useDashboard();
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +185,7 @@ export default function ChatbotFAQPage() {
   };
 
   const remove = async (faq: FAQ) => {
-    if (!confirm(`Delete FAQ: "${faq.question}"?`)) return;
+    if (!(await confirm({ title: "Delete FAQ", message: `Delete FAQ: "${faq.question}"?`, confirmLabel: "Delete", danger: true }))) return;
     try {
       await api.delete(`/chatbot/admin/faqs/${faq.id}`);
       await fetchFAQs();
@@ -524,6 +526,7 @@ export default function ChatbotFAQPage() {
           </div>
         )}
       </DashboardLayout>
+      {dialog}
     </ProtectedRoute>
   );
 }

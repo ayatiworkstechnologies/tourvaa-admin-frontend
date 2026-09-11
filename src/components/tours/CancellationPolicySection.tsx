@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 
 type RefundRule = {
@@ -19,6 +20,7 @@ const emptyForm = { days_before_tour_min: "", days_before_tour_max: "", refund_p
 
 export default function CancellationPolicySection({ tourId }: { tourId: string }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [rules, setRules] = useState<RefundRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -122,7 +124,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Delete this cancellation rule?")) return;
+    if (!(await confirm({ title: "Delete cancellation rule", message: "Delete this cancellation rule?", confirmLabel: "Delete", danger: true }))) return;
     try {
       await api.delete(`/refund-rules/${id}`);
       await load();
@@ -263,6 +265,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
           </div>
         </form>
       )}
+      {dialog}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { usePagination } from "@/hooks/usePagination";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import {
   createCommissionRule,
   deleteCommissionRule,
@@ -29,6 +30,7 @@ function scopeLabel(r: AffiliateCommissionRule) {
 
 export default function AdminAffiliateCommissionRulesPage() {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const pagination = usePagination(15);
   const [rules, setRules] = useState<AffiliateCommissionRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +98,7 @@ export default function AdminAffiliateCommissionRulesPage() {
   }
 
   async function removeRule(rule: AffiliateCommissionRule) {
-    if (!window.confirm("Remove this commission rule?")) return;
+    if (!(await confirm({ title: "Remove commission rule", message: "Remove this commission rule?", confirmLabel: "Remove", danger: true }))) return;
     try {
       const result = await deleteCommissionRule(rule.id);
       toast.success(result?.deactivated ? "Rule was in use, so it was deactivated instead of deleted." : "Rule deleted.");
@@ -229,6 +231,7 @@ export default function AdminAffiliateCommissionRulesPage() {
           </div>
         </div>
       </div>
+      {dialog}
     </ModuleWrapper>
   );
 }

@@ -179,6 +179,7 @@ export type TourExtension = {
   extension_title: string;
   extension_note: string;
   extra_price: number;
+  price_type: "per_booking" | "per_person" | "per_room" | "per_person_per_night" | "per_room_per_night";
   category: string;
   display_order: number;
   status: string;
@@ -303,6 +304,9 @@ export type OptionalActivity = {
   activity_name: string;
   description: string;
   price_per_person: number;
+  child_price_per_person?: number | null;
+  infant_price_per_person?: number | null;
+  pricing_mode: "flat" | "per_passenger_type";
   image: string;
   category: string;
   status: string;
@@ -332,7 +336,7 @@ export type AccommodationExtra = {
   accommodation_name: string;
   description: string;
   extra_price: number;
-  price_type: "per_person" | "per_booking";
+  price_type: "per_person" | "per_booking" | "per_room" | "per_person_per_night" | "per_room_per_night";
   image?: string;
   category: string;
   is_default: boolean;
@@ -475,11 +479,21 @@ export async function createDiscount(tourId: number | string, data: TourDiscount
   const r = await api.post<{ data: TourDiscount }>(`${base(tourId)}/discounts`, data);
   return r.data.data;
 }
-// Edit/Delete are removed -- a discount may only be amended (percentage
-// and/or a later end date), and every amendment is recorded as a new
-// history version rather than overwriting the original record.
+// Edit replaces every field (name, code, type, value, dates, min amount,
+// status -- including reactivating an inactive discount). Still recorded as
+// a new history version server-side. Delete is a soft-deactivate (status ->
+// inactive) rather than a real row delete, so a discount that already has
+// bookings referencing it keeps its history.
+export async function updateDiscount(tourId: number | string, id: number, data: TourDiscount): Promise<TourDiscount> {
+  const r = await api.put<{ data: TourDiscount }>(`${base(tourId)}/discounts/${id}`, data);
+  return r.data.data;
+}
 export async function amendDiscount(tourId: number | string, id: number, data: DiscountAmendment): Promise<TourDiscount> {
   const r = await api.patch<{ data: TourDiscount }>(`${base(tourId)}/discounts/${id}/amend`, data);
+  return r.data.data;
+}
+export async function deactivateDiscount(tourId: number | string, id: number, reason?: string | null): Promise<TourDiscount> {
+  const r = await api.patch<{ data: TourDiscount }>(`${base(tourId)}/discounts/${id}/deactivate`, { reason: reason || null });
   return r.data.data;
 }
 export async function getDiscountHistory(tourId: number | string, id: number): Promise<DiscountHistoryEntry[]> {

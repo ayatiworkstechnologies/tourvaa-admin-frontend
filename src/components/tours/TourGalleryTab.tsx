@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import { GalleryImage, getGallery, createGalleryImage, updateGalleryImage, deleteGalleryImage } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
@@ -13,6 +14,7 @@ const empty = (): GalleryImage => ({ image_path: "", image_title: "", image_alt_
 
 export default function TourGalleryTab({ tourId }: { tourId: string }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<GalleryImage | null>(null);
@@ -58,7 +60,7 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Delete this image?")) return;
+    if (!(await confirm({ title: "Delete image", message: "Delete this image?", confirmLabel: "Delete", danger: true }))) return;
     try {
       await deleteGalleryImage(tourId, id);
       setItems((previousItems) => previousItems.filter((item) => item.id !== id));
@@ -154,6 +156,7 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
           </div>
         </form>
       )}
+      {dialog}
     </div>
   );
 }

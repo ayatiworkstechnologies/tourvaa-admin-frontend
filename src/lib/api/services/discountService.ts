@@ -52,9 +52,21 @@ export type GlobalDiscountHistoryEntry = {
   created_at: string;
 };
 
-// Edit/Delete are removed -- only an amendment (percentage/value and/or a
-// later end date) is allowed, and every amendment is recorded as a new
-// history version rather than overwriting the original record.
+// Edit replaces every field (including scope/status -- setting status back
+// to "active" reactivates an inactive discount). Delete is a soft-deactivate
+// (status -> inactive) rather than a real row delete, so a discount that
+// already has bookings referencing it keeps its history. Both are still
+// recorded as a new history version server-side.
+export async function updateGlobalDiscount(id: number, payload: GlobalDiscount): Promise<GlobalDiscount> {
+  const response = await api.put<{ data: GlobalDiscount }>(`/discounts/${id}`, payload);
+  return response.data.data;
+}
+
+export async function deactivateGlobalDiscount(id: number, reason?: string | null): Promise<GlobalDiscount> {
+  const response = await api.patch<{ data: GlobalDiscount }>(`/discounts/${id}/deactivate`, { reason: reason || null });
+  return response.data.data;
+}
+
 export async function amendGlobalDiscount(id: number, payload: GlobalDiscountAmendment): Promise<GlobalDiscount> {
   const response = await api.patch<{ data: GlobalDiscount }>(`/discounts/${id}/amend`, payload);
   return response.data.data;

@@ -8,6 +8,7 @@ import api from "@/lib/api/client";
 import { Role } from "@/types/user";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 
 type Permission = {
   id: number;
@@ -32,6 +33,7 @@ const emptyForm: RoleForm = {
 
 export default function RolesPage() {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,7 +186,7 @@ export default function RolesPage() {
   };
 
   const deleteRole = async (role: Role) => {
-    const ok = confirm(`Delete role "${role.name}"?`);
+    const ok = await confirm({ title: "Delete role", message: `Delete role "${role.name}"?`, confirmLabel: "Delete", danger: true });
     if (!ok) return;
 
     try {
@@ -645,6 +647,7 @@ export default function RolesPage() {
           </div>
         </div>
       )}
+      {dialog}
     </ModuleWrapper>
   );
 }

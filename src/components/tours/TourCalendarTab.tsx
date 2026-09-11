@@ -1,9 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  LuPlus as Plus,
+  LuPencil as Pencil,
+  LuTrash2 as Trash2,
+  LuSave as Save,
+  LuX as X,
+  LuCircleCheck as CheckCircle,
+  LuRotateCcw as RotateCcw,
+} from "react-icons/lu";
 import { CalendarEntry, getCalendar, createCalendarEntry, updateCalendarEntry, deleteCalendarEntry, UnavailableDate, getUnavailableDates, createUnavailableDate, deleteUnavailableDate, AvailabilityConfig, getAvailabilityConfig, saveAvailabilityConfig } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import DataTable from "@/components/ui/DataTable";
 import DatePicker from "@/components/ui/DatePicker";
@@ -11,6 +20,30 @@ import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/
 
 const STATUSES = ["available", "unavailable", "sold_out", "blocked"];
 const emptyEntry = (): CalendarEntry => ({ tour_date: "", available_seats: 10, booked_seats: 0, status: "available" });
+
+const MONTH_OPTIONS = [
+  { value: "all", label: "All Months" },
+  { value: "01", label: "January (01)" },
+  { value: "02", label: "February (02)" },
+  { value: "03", label: "March (03)" },
+  { value: "04", label: "April (04)" },
+  { value: "05", label: "May (05)" },
+  { value: "06", label: "June (06)" },
+  { value: "07", label: "July (07)" },
+  { value: "08", label: "August (08)" },
+  { value: "09", label: "September (09)" },
+  { value: "10", label: "October (10)" },
+  { value: "11", label: "November (11)" },
+  { value: "12", label: "December (12)" },
+];
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "All Statuses" },
+  { value: "available", label: "Available" },
+  { value: "sold_out", label: "Sold Out" },
+  { value: "unavailable", label: "Unavailable" },
+  { value: "blocked", label: "Blocked" },
+];
 
 const WEEKDAYS = [
   { value: 0, label: "Monday" }, { value: 1, label: "Tuesday" }, { value: 2, label: "Wednesday" },
@@ -40,6 +73,7 @@ function earliestBookableDate(minDays: number) {
 
 export default function TourCalendarTab({ tourId }: { tourId: string }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [entries, setEntries] = useState<CalendarEntry[]>([]);
   const [blocked, setBlocked] = useState<UnavailableDate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +85,96 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
   const [blocking, setBlocking] = useState(false);
   const [schedule, setSchedule] = useState<AvailabilityConfig>(emptyAvailability());
   const [savingSchedule, setSavingSchedule] = useState(false);
+  const [syncingSeats, setSyncingSeats] = useState(false);
+
+  // Filters & Pagination state for Tour Calendar
+  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [onlyAvailable, setOnlyAvailable] = useState<boolean>(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  // Dynamically extract all years from calendar entries
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    const currentYear = new Date().getFullYear();
+    years.add(currentYear.toString());
+    years.add((currentYear + 1).toString());
+
+    for (const entry of entries) {
+      if (entry.tour_date) {
+        const match = entry.tour_date.toString().match(/^(\d{4})/);
+        if (match) years.add(match[1]);
+      }
+    }
+    return Array.from(years).sort();
+  }, [entries]);
+
+  // Filtered calendar entries based on Year, Month, Status & "Available Only"
+  const filteredEntries = useMemo(() => {
+    return entries.filter((item) => {
+      const dateStr = item.tour_date ? item.tour_date.toString().slice(0, 10) : "";
+      if (!dateStr) return false;
+
+      if (selectedYear !== "all") {
+        if (!dateStr.startsWith(selectedYear)) return false;
+      }
+
+      if (selectedMonth !== "all") {
+        const m = dateStr.slice(5, 7);
+        if (m !== selectedMonth) return false;
+      }
+
+      if (onlyAvailable) {
+        if (item.status !== "available") return false;
+      } else if (statusFilter !== "all") {
+        if (item.status !== statusFilter) return false;
+      }
+
+      return true;
+    });
+  }, [entries, selectedYear, selectedMonth, onlyAvailable, statusFilter]);
+
+  // Pagination calculation
+  const total = filteredEntries.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => {
+    setPage(1);
+  }, [selectedYear, selectedMonth, onlyAvailable, statusFilter, pageSize]);
+
+  // Ensure current page does not exceed totalPages
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
+  // Paginated slice for current page
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredEntries.slice(start, start + pageSize);
+  }, [filteredEntries, page, pageSize]);
+
+  const hasActiveFilters =
+    selectedYear !== "all" ||
+    selectedMonth !== "all" ||
+    onlyAvailable ||
+    statusFilter !== "all";
+
+  const clearFilters = () => {
+    setSelectedYear("all");
+    setSelectedMonth("all");
+    setOnlyAvailable(false);
+    setStatusFilter("all");
+  };
+
+  const toastRef = useRef(toast);
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,11 +184,11 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       setBlocked(unav);
       if (availability) setSchedule(availability);
     } catch {
-      toast.error("Failed to load.");
+      toastRef.current.error("Failed to load.");
     } finally {
       setLoading(false);
     }
-  }, [tourId, toast]);
+  }, [tourId]);
 
   useEffect(() => {
     void load();
@@ -88,20 +212,65 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
     }
     setSavingSchedule(true);
     try {
+      const targetSeats = sanitizeNumber(schedule.seats_per_occurrence) || 10;
       const saved = await saveAvailabilityConfig(tourId, {
         ...schedule,
         min_advance_booking_days: sanitizeNumber(schedule.min_advance_booking_days),
         agent_no_deposit_buffer_weeks: sanitizeNumber(schedule.agent_no_deposit_buffer_weeks),
-        seats_per_occurrence: sanitizeNumber(schedule.seats_per_occurrence),
+        seats_per_occurrence: targetSeats,
       });
       setSchedule(saved);
       await load();
-      toast.success("Schedule saved. Calendar dates generated for the selected frequency.");
+      toast.success(`Schedule saved. Calendar dates updated with ${targetSeats} available seats.`);
     } catch (error: unknown) {
       const message = (error as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
       toast.error(message?.detail || message?.message || "Failed to save schedule.");
     } finally {
       setSavingSchedule(false);
+    }
+  };
+
+  const syncSeatsToAll = async () => {
+    const targetSeats = sanitizeNumber(schedule.seats_per_occurrence) || 10;
+    if (
+      !(await confirm({
+        title: "Apply Available Seats to All Dates",
+        message: `Set available seats to ${targetSeats} for all unbooked dates in the calendar?`,
+        confirmLabel: `Apply ${targetSeats} Seats`,
+      }))
+    ) {
+      return;
+    }
+
+    setSyncingSeats(true);
+    try {
+      if (schedule.availability_start_date && schedule.availability_end_date) {
+        await saveAvailabilityConfig(tourId, {
+          ...schedule,
+          min_advance_booking_days: sanitizeNumber(schedule.min_advance_booking_days),
+          agent_no_deposit_buffer_weeks: sanitizeNumber(schedule.agent_no_deposit_buffer_weeks),
+          seats_per_occurrence: targetSeats,
+        });
+      } else {
+        const unbooked = entries.filter((e) => !e.booked_seats || e.booked_seats === 0);
+        await Promise.all(
+          unbooked.map((entry) =>
+            entry.id
+              ? updateCalendarEntry(tourId, entry.id, {
+                  ...entry,
+                  available_seats: targetSeats,
+                  status: entry.status === "sold_out" ? "available" : entry.status,
+                })
+              : Promise.resolve()
+          )
+        );
+      }
+      await load();
+      toast.success(`Updated all unbooked dates to ${targetSeats} available seats.`);
+    } catch {
+      toast.error("Failed to update seats for all dates.");
+    } finally {
+      setSyncingSeats(false);
     }
   };
 
@@ -131,7 +300,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
   };
 
   const removeEntry = async (id: number) => {
-    if (!confirm("Delete this calendar entry?")) return;
+    if (!(await confirm({ title: "Delete calendar entry", message: "Delete this calendar entry?", confirmLabel: "Delete", danger: true }))) return;
     try {
       await deleteCalendarEntry(tourId, id);
       setEntries((previousEntries) => previousEntries.filter((entry) => entry.id !== id));
@@ -308,41 +477,248 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
 
       {/* Available dates */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-dash-text">Tour Calendar</h2>
-          <button type="button" onClick={() => setEditing(emptyEntry())}
-            className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white">
-            <Plus size={16} /> Add Date
-          </button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-dash-text">Tour Calendar</h2>
+            <p className="mt-0.5 text-xs text-dash-subtle">
+              Manage individual dates, seat capacities, and availability status.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {entries.length > 0 && (
+              <button
+                type="button"
+                onClick={syncSeatsToAll}
+                disabled={syncingSeats}
+                title={`Apply ${schedule.seats_per_occurrence || 10} available seats to all unbooked calendar dates`}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3.5 py-2 text-xs font-bold text-dash-text shadow-2xs hover:bg-slate-50 hover:border-dash-brand/50 transition cursor-pointer disabled:opacity-60"
+              >
+                <RotateCcw size={13} className={syncingSeats ? "animate-spin text-dash-brand" : "text-dash-muted"} />
+                <span>Apply {schedule.seats_per_occurrence || 10} Seats to All</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setEditing({ ...emptyEntry(), available_seats: schedule.seats_per_occurrence || 10 })}
+              className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white shadow-xs transition hover:opacity-90 active:scale-95 cursor-pointer self-start sm:self-auto"
+            >
+              <Plus size={16} /> Add Date
+            </button>
+          </div>
         </div>
 
-        {entries.length === 0 && !editing && (
-          <div className="rounded-xl border border-dashed border-dash-border p-8 text-center text-sm text-dash-subtle">No calendar entries yet.</div>
+        {/* Filter Bar when entries exist */}
+        {entries.length > 0 && (
+          <div className="mb-4 rounded-2xl border border-dash-border bg-white p-4 shadow-2xs">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              {/* Filter controls */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {/* Year selector */}
+                <div className="flex items-center gap-1.5">
+                  <label htmlFor="calendar-year-filter" className="text-xs font-bold text-dash-subtle uppercase">
+                    Year:
+                  </label>
+                  <select
+                    id="calendar-year-filter"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="rounded-xl border border-dash-border bg-white px-3 py-2 text-xs font-semibold text-dash-text outline-none transition focus:border-dash-brand focus:ring-2 focus:ring-dash-brand/10 cursor-pointer shadow-2xs"
+                  >
+                    <option value="all">All Years</option>
+                    {availableYears.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Month selector */}
+                <div className="flex items-center gap-1.5">
+                  <label htmlFor="calendar-month-filter" className="text-xs font-bold text-dash-subtle uppercase">
+                    Month:
+                  </label>
+                  <select
+                    id="calendar-month-filter"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="rounded-xl border border-dash-border bg-white px-3 py-2 text-xs font-semibold text-dash-text outline-none transition focus:border-dash-brand focus:ring-2 focus:ring-dash-brand/10 cursor-pointer shadow-2xs"
+                  >
+                    {MONTH_OPTIONS.map((m) => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Status selector */}
+                <div className="flex items-center gap-1.5">
+                  <label htmlFor="calendar-status-filter" className="text-xs font-bold text-dash-subtle uppercase">
+                    Status:
+                  </label>
+                  <select
+                    id="calendar-status-filter"
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      if (e.target.value !== "all") {
+                        setOnlyAvailable(false);
+                      }
+                    }}
+                    className="rounded-xl border border-dash-border bg-white px-3 py-2 text-xs font-semibold text-dash-text outline-none transition focus:border-dash-brand focus:ring-2 focus:ring-dash-brand/10 cursor-pointer shadow-2xs"
+                  >
+                    {STATUS_FILTER_OPTIONS.map((s) => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Available Only quick pill */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOnlyAvailable((prev) => !prev);
+                    if (!onlyAvailable) {
+                      setStatusFilter("all");
+                    }
+                  }}
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all duration-200 cursor-pointer ${
+                    onlyAvailable
+                      ? "bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300 scale-[1.02]"
+                      : "border border-dash-border bg-slate-50/80 text-dash-text hover:bg-white hover:border-emerald-400 hover:text-emerald-700"
+                  }`}
+                >
+                  <CheckCircle size={14} className={onlyAvailable ? "text-white" : "text-emerald-600"} />
+                  <span>Available Only</span>
+                </button>
+
+                {/* Reset Filters button */}
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw size={12} />
+                    <span>Reset</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Right: Counter & Page Size */}
+              <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                <span data-testid="calendar-dates-count" className="text-xs text-dash-subtle font-medium">
+                  Showing <strong className="text-dash-text font-bold">{filteredEntries.length}</strong> of{" "}
+                  <strong className="text-dash-text font-bold">{entries.length}</strong> date{entries.length === 1 ? "" : "s"}
+                </span>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-dash-subtle font-medium">Rows:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    className="rounded-xl border border-dash-border bg-white px-2.5 py-1.5 text-xs font-semibold text-dash-text outline-none focus:border-dash-brand cursor-pointer shadow-2xs"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
-        {entries.length > 0 && (
+        {entries.length === 0 && !editing && (
+          <div className="rounded-xl border border-dashed border-dash-border p-8 text-center text-sm text-dash-subtle">
+            No calendar entries yet.
+          </div>
+        )}
+
+        {entries.length > 0 && filteredEntries.length === 0 && (
+          <div className="rounded-xl border border-dashed border-dash-border bg-white p-8 text-center text-sm text-dash-subtle">
+            <p className="font-semibold text-slate-700">No dates match your selected filters.</p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-dash-brand px-4 py-2 text-xs font-bold text-white shadow-xs hover:opacity-90 cursor-pointer"
+            >
+              <RotateCcw size={13} /> Clear Filters
+            </button>
+          </div>
+        )}
+
+        {filteredEntries.length > 0 && (
           <div className="rounded-xl border border-dash-border bg-white p-0">
             <DataTable
               ariaLabel="Tour Calendar"
               columns={[
-                { key: "date", header: "Date", render: (item) => item.tour_date?.toString().slice(0, 10) },
+                {
+                  key: "date",
+                  header: "Date",
+                  render: (item) => (
+                    <span className="font-semibold text-slate-900">
+                      {item.tour_date?.toString().slice(0, 10)}
+                    </span>
+                  ),
+                },
                 { key: "available", header: "Available", render: (item) => item.available_seats },
                 { key: "booked", header: "Booked", render: (item) => item.booked_seats },
                 {
                   key: "status",
                   header: "Status",
                   render: (item) => (
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.status === "available" ? "bg-green-100 text-green-700" : item.status === "sold_out" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>
-                      {item.status}
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold capitalize ${
+                        item.status === "available"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : item.status === "sold_out"
+                            ? "bg-rose-50 text-rose-700 border border-rose-200"
+                            : item.status === "blocked"
+                              ? "bg-slate-100 text-slate-700 border border-slate-200"
+                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          item.status === "available"
+                            ? "bg-emerald-600"
+                            : item.status === "sold_out"
+                              ? "bg-rose-600"
+                              : item.status === "blocked"
+                                ? "bg-slate-500"
+                                : "bg-amber-600"
+                        }`}
+                      />
+                      {item.status.replace("_", " ")}
                     </span>
                   ),
                 },
               ]}
-              rows={entries}
+              rows={paginatedRows}
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              totalPages={totalPages}
+              onPageChange={setPage}
               actions={(item) => (
                 <div className="flex items-center justify-end gap-2">
-                  <button type="button" onClick={() => setEditing({ ...item })} aria-label="Edit calendar entry" title="Edit calendar entry" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"><Pencil size={15} /></button>
-                  <button type="button" onClick={() => removeEntry(item.id!)} aria-label="Delete calendar entry" title="Delete calendar entry" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ ...item })}
+                    aria-label="Edit calendar entry"
+                    title="Edit calendar entry"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover cursor-pointer"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeEntry(item.id!)}
+                    aria-label="Delete calendar entry"
+                    title="Delete calendar entry"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
               )}
             />
@@ -419,6 +795,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
           </div>
         )}
       </div>
+      {dialog}
     </div>
   );
 }

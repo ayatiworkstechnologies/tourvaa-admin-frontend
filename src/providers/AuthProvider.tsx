@@ -205,6 +205,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      // If on a public route and the visitor has no active session cookie or stored token,
+      // skip probing /dashboard/me to prevent spurious 401 Unauthorized errors in the console.
+      const hasSession =
+        typeof document !== "undefined" &&
+        (document.cookie.includes("tourvaa_csrf=") ||
+          Boolean(window.localStorage.getItem("tourvaa_token")));
+
+      if (!hasSession && isPublicRoute(pathname)) {
+        if (active) {
+          setTokenState(null);
+          setDashboard(null);
+          setLoading(false);
+        }
+        return;
+      }
+
       await refreshSession();
       if (active) setLoading(false);
     };
@@ -214,7 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false;
     };
-  }, [refreshSession]);
+  }, [pathname, refreshSession]);
 
   useEffect(() => {
     if (loading) return;

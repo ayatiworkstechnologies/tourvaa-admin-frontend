@@ -25,7 +25,9 @@
 
 .featureCard,
 .stepCard,
-.documentCard {
+.documentCard,
+.calculatorCard,
+.faqCard {
   transition: border-color .3s ease, box-shadow .3s ease, transform .3s cubic-bezier(.22, 1, .36, 1), background-color .3s ease;
 }
 
@@ -49,6 +51,48 @@
 
 .ctaGlow {
   animation: glowBreath 5s ease-in-out infinite;
+}
+
+.stickyNav {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Custom range slider styling */
+.calcSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  background: #E2E8F0;
+  outline: none;
+}
+
+.calcSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: currentColor;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: transform .15s ease;
+}
+
+.calcSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.calcSlider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: currentColor;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: none;
 }
 
 @keyframes heroReveal {

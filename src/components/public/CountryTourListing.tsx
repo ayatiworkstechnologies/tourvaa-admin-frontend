@@ -23,7 +23,7 @@ import {
   LuUsers as Users,
   LuX as X,
 } from "react-icons/lu";
-import { fetchPublicCategories, fetchPublicCountries, fetchPublicSubcategories, fetchPublicTours, PublicCategory, PublicSubcategory } from "@/lib/api/publicClient";
+import { CmsCountryPage, fetchCountryPages, fetchPublicCategories, fetchPublicCountries, fetchPublicSubcategories, fetchPublicTours, PublicCategory, PublicSubcategory } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
@@ -154,6 +154,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   };
 
   const [countryName, setCountryName] = useState("");
+  const [countryPages, setCountryPages] = useState<CmsCountryPage[]>([]);
   const [categories, setCategories] = useState<PublicCategory[]>([]);
   const [subcategories, setSubcategories] = useState<PublicSubcategory[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -242,6 +243,23 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           { value: "2000+", label: "Above $2,000", min: 2000, max: undefined },
         ]
   ), [isIndia]);
+
+  // Admin-editable per-country landing page overrides (see admin/cms >
+  // Country Pages) - fetched once, matched against the resolved
+  // countryName below. Falls back to the algorithmically generated hero/
+  // showcase copy when no active row exists for the country.
+  useEffect(() => {
+    let active = true;
+    fetchCountryPages()
+      .then((pages) => { if (active) setCountryPages(pages); })
+      .catch(() => { if (active) setCountryPages([]); });
+    return () => { active = false; };
+  }, []);
+
+  const countryPage = useMemo(
+    () => countryPages.find((p) => p.country_name.toLowerCase() === countryName.toLowerCase()) ?? null,
+    [countryPages, countryName]
+  );
 
   const [tours, setTours] = useState<TourItem[]>([]);
 
@@ -552,32 +570,35 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     });
   }, [tours, selectedDestination, selectedRating]);
 
-  // Dynamic titles and descriptions
-  const heroTitle = hasSpecificCountry ? `${destinationTitle} Tours` : "Explore the World's Best Tours";
+  // Dynamic titles and descriptions - an active admin-authored CountryPage
+  // (see admin/cms > Country Pages) overrides these on a per-field basis;
+  // anything it doesn't set falls back to the algorithmically generated
+  // copy below.
+  const heroTitle = countryPage?.hero_title?.trim() || (hasSpecificCountry ? `${destinationTitle} Tours` : "Explore the World's Best Tours");
 
-  const heroDescription = hasSpecificCountry
+  const heroDescription = countryPage?.hero_description?.trim() || (hasSpecificCountry
     ? isIndia
       ? "India tours bring together breathtaking heritage palaces, vibrant cultural festivals, golden desert landscapes, and tranquil coastal backwaters, making every journey packed with unforgettable experiences. Explore iconic destinations such as Delhi, Agra, Jaipur, Kerala, and Varanasi."
       : `${destinationTitle} tours bring together breathtaking mountains, pristine lakes, dramatic coastlines and vibrant cities, making every journey packed with unforgettable experiences. Explore iconic destinations with scenic road trips, guided adventures and plenty of time to discover the natural beauty.`
-    : "Discover handpicked tour packages across the world's most incredible destinations — from the alpine peaks of Switzerland and New Zealand to the rich heritage of India and the tropical islands of Bali. Guided journeys, scenic road trips, and memorable adventures crafted for every traveller.";
+    : "Discover handpicked tour packages across the world's most incredible destinations — from the alpine peaks of Switzerland and New Zealand to the rich heritage of India and the tropical islands of Bali. Guided journeys, scenic road trips, and memorable adventures crafted for every traveller.");
 
-  const heroBannerImage = hasSpecificCountry
+  const heroBannerImage = countryPage?.hero_image ? mediaUrl(countryPage.hero_image) : (hasSpecificCountry
     ? isIndia
       ? "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1600&q=80"
       : "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80"
-    : "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80";
+    : "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80");
 
-  const showcaseTitle = hasSpecificCountry ? `${destinationTitle} Group Tours` : "World Best Group & Private Tours";
+  const showcaseTitle = countryPage?.showcase_title?.trim() || (hasSpecificCountry ? `${destinationTitle} Group Tours` : "World Best Group & Private Tours");
 
-  const showcaseDescription = hasSpecificCountry
+  const showcaseDescription = countryPage?.showcase_description?.trim() || (hasSpecificCountry
     ? "Travel together, share unforgettable experiences, and explore incredible destinations with expertly planned group tours. Meet like-minded travellers, enjoy seamless itineraries, and create lasting memories along the way."
-    : "Travel together, share unforgettable experiences, and explore incredible destinations with expertly planned tours across 50+ countries. Meet like-minded travellers, enjoy seamless itineraries, and create lasting memories along the way.";
+    : "Travel together, share unforgettable experiences, and explore incredible destinations with expertly planned tours across 50+ countries. Meet like-minded travellers, enjoy seamless itineraries, and create lasting memories along the way.");
 
-  const showcaseImage = hasSpecificCountry
+  const showcaseImage = countryPage?.showcase_image ? mediaUrl(countryPage.showcase_image) : (hasSpecificCountry
     ? isIndia
       ? "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80"
       : "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80"
-    : "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80";
+    : "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80");
 
   return (
     <main className="min-h-screen bg-white pb-24 pt-3 text-slate-950">

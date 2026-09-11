@@ -478,11 +478,11 @@ function PortalAuthContent({ config, heroIcon }: { config: PortalAuthConfig; her
   }
 
   return (
-    <main className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
+    <main className="relative min-h-[calc(100vh-64px)] bg-slate-50">
       {/* subtle grid bg */}
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:40px_40px] opacity-60" />
 
-      <div className="relative flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-12 sm:px-6">
+      <div className="relative flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-8 sm:py-12 sm:px-6">
         <div
           className={`mx-auto w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_32px_100px_rgba(15,23,42,.14)] transition-all duration-500 ease-out lg:grid lg:grid-cols-[1fr_1.05fr] ${
             entered ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"

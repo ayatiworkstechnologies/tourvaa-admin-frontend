@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourExtension, getExtensions, createExtension, updateExtension, deleteExtension } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import TourPicker from "@/components/tours/TourPicker";
 import { ADDON_CATEGORIES, addonCategoryLabel } from "@/lib/constants/addonCategories";
@@ -11,14 +12,23 @@ import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/
 
 const empty = (): TourExtension => ({
   extension_tour_id: 0, extension_title: "", extension_note: "",
-  extra_price: 0, category: "other", display_order: 0, status: "active",
+  extra_price: 0, price_type: "per_booking", category: "other", display_order: 0, status: "active",
 });
+
+const PRICE_TYPE_LABELS: Record<TourExtension["price_type"], string> = {
+  per_booking: "per booking",
+  per_person: "per person",
+  per_room: "per room",
+  per_person_per_night: "per person / night",
+  per_room_per_night: "per room / night",
+};
 
 const inputClass =
   "w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10";
 
 export default function TourExtensionsTab({ tourId }: { tourId: string }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<TourExtension[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourExtension | null>(null);
@@ -65,7 +75,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Delete this extension?")) return;
+    if (!(await confirm({ title: "Delete extension", message: "Delete this extension?", confirmLabel: "Delete", danger: true }))) return;
     try {
       await deleteExtension(tourId, id);
       setItems((previousItems) => previousItems.filter((item) => item.id !== id));
@@ -103,7 +113,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
             <div>
               <div className="flex items-center gap-2"><p className="font-semibold text-dash-text">{item.extension_title || item.extension_tour_title || `Tour #${item.extension_tour_id}`}</p><span className="rounded-full bg-[var(--portal-soft)] px-2 py-0.5 text-[10px] font-bold text-dash-brand">{addonCategoryLabel(item.category)}</span></div>
               {item.extension_note && <p className="text-sm text-dash-subtle">{item.extension_note}</p>}
-              <p className="mt-1 text-sm font-semibold text-dash-brand">Extra: {item.extra_price}</p>
+              <p className="mt-1 text-sm font-semibold text-dash-brand">Extra: {item.extra_price} <span className="font-normal text-dash-subtle">({PRICE_TYPE_LABELS[item.price_type] ?? item.price_type})</span></p>
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border p-2 hover:bg-[#F2F4F7]"><Pencil size={14} /></button>
@@ -158,6 +168,20 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
               />
             </label>
             <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Price type</span>
+              <select
+                value={editing.price_type}
+                onChange={(e) => setEditing((p) => (p ? { ...p, price_type: e.target.value as TourExtension["price_type"] } : p))}
+                className={inputClass}
+              >
+                <option value="per_booking">Per booking</option>
+                <option value="per_person">Per person</option>
+                <option value="per_room">Per room</option>
+                <option value="per_person_per_night">Per person / night</option>
+                <option value="per_room_per_night">Per room / night</option>
+              </select>
+            </label>
+            <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Order</span>
               <input
                 type="number"
@@ -197,6 +221,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
           </div>
         </form>
       )}
+      {dialog}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import { usePagination } from "@/hooks/usePagination";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import {
   combinePhone,
   digitsOnly,
@@ -54,6 +55,7 @@ export default function UsersPage() {
   const [userTypeFilter, setUserTypeFilter] = useState("");
   const { setTotal, setTotalPages } = pagination;
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const canLoadProtectedData = Boolean(dashboard);
   const {
     users,
@@ -231,6 +233,12 @@ export default function UsersPage() {
     const sent = await sendPasswordReset(userId);
     setMessage(sent ? "Password reset email sent." : "Could not send reset email.");
     if (sent) toast.success("Password reset email sent.");
+  };
+
+  const handleDelete = async (user: User) => {
+    const ok = await confirm({ title: "Delete user", message: `Are you sure you want to delete ${user.name}?`, confirmLabel: "Delete", danger: true });
+    if (!ok) return;
+    await deleteUser(user.id);
   };
 
   const columns: DataTableColumn<User>[] = [
@@ -427,7 +435,7 @@ export default function UsersPage() {
 
                 <button
                   type="button"
-                  onClick={() => deleteUser(user.id)}
+                  onClick={() => handleDelete(user)}
                   aria-label={`Delete ${user.name}`}
                   title={`Delete ${user.name}`}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"
@@ -705,6 +713,7 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+      {dialog}
     </ModuleWrapper>
   );
 }

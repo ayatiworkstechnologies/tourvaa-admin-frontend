@@ -20,6 +20,7 @@ import {
   getItineraries, createItinerary, updateItinerary, deleteItinerary, reorderItineraries, ItineraryDay,
 } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
@@ -46,6 +47,7 @@ function ItineraryLongDescriptionEditor({
   onChange: (val: string) => void;
 }) {
   const [showPreview, setShowPreview] = useState(false);
+  const { confirm, dialog } = useConfirm();
 
   const points = useMemo(() => parseStopTitles(value), [value]);
   const wordCount = useMemo(() => (value ? value.trim().split(/\s+/).filter(Boolean).length : 0), [value]);
@@ -61,9 +63,9 @@ function ItineraryLongDescriptionEditor({
     onChange((value ? value.trimEnd() : "") + addition);
   };
 
-  const handleInsertTemplate = () => {
+  const handleInsertTemplate = async () => {
     const sample = `Auckland Harbour Bridge – A City Icon: Begin your journey with a smooth drive over the Auckland Harbour Bridge, enjoying panoramic harbour views and distant volcanic peaks.\n\nDevonport – Heritage Charm & Stunning Views: Cross to Devonport, a charming waterfront gem with Victorian-style streets, art galleries, and historic Mount Victoria lookouts.\n\nSky Tower – Auckland's Iconic Skyline: End your luxurious city adventure with a visit to the Sky Tower for breathtaking 360-degree vistas of the city and beyond.`;
-    if (!value || confirm("Insert structured multi-point itinerary template?")) {
+    if (!value || (await confirm({ title: "Insert template", message: "Insert structured multi-point itinerary template? This will replace the current text.", confirmLabel: "Insert" }))) {
       onChange(sample);
     }
   };
@@ -265,12 +267,14 @@ Each formatted point automatically generates an individual numbered milestone ca
           Format points as <strong className="text-slate-700">Landmark – Highlight: Description</strong> to automatically render numbered point cards on the traveller tour page.
         </span>
       </div>
+      {dialog}
     </div>
   );
 }
 
 export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: string; numberOfDays?: number | null }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<ItineraryDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ItineraryDay | null>(null);
@@ -326,7 +330,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Delete this itinerary day?")) return;
+    if (!(await confirm({ title: "Delete itinerary day", message: "Delete this itinerary day?", confirmLabel: "Delete", danger: true }))) return;
     try {
       await deleteItinerary(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
@@ -577,6 +581,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
           </div>
         </form>
       )}
+      {dialog}
     </div>
   );
 }

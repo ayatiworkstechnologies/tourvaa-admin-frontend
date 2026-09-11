@@ -16,12 +16,14 @@ import { exportTourExcel } from "@/lib/api/services/tourImportExportService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import { useCurrency } from "@/hooks/useCurrency";
 
 const PAGE_SIZE = 12;
 
 export default function ToursPage() {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const { hasPermission } = useAuthContext();
   const { format } = useCurrency();
   const searchParams = useSearchParams();
@@ -106,7 +108,7 @@ export default function ToursPage() {
   }, [debouncedSearch, statusFilter]);
 
   const deleteTour = async (row: CmsRecord) => {
-    if (!confirm(`Delete "${row.title || "this tour"}" permanently? This cannot be undone.`)) return;
+    if (!(await confirm({ title: "Delete tour", message: `Delete "${row.title || "this tour"}" permanently? This cannot be undone.`, confirmLabel: "Delete", danger: true }))) return;
     setDeletingId(row.id);
     try {
       await deleteCms("/tours", row.id);
@@ -398,6 +400,7 @@ export default function ToursPage() {
           </div>
         )}
       </div>
+      {dialog}
     </ModuleWrapper>
   );
 }

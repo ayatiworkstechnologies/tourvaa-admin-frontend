@@ -38,7 +38,7 @@ const IDEAL_FOR = [
 export default function AffiliatePortalLandingPage() {
   return (
     <main className="overflow-hidden bg-white text-slate-900">
-      <section className="relative isolate overflow-hidden bg-purple-950 text-white">
+      <section id="overview" className="relative isolate overflow-hidden bg-purple-950 text-white">
         <div className="pointer-events-none absolute -right-16 -top-24 h-96 w-96 rounded-full bg-purple-400/15 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 bottom-0 h-72 w-72 rounded-full bg-fuchsia-400/10 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-5 py-24 sm:px-8">
@@ -61,6 +61,23 @@ export default function AffiliatePortalLandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Cross-portal banner */}
+      <div className="bg-purple-900/10 border-b border-purple-100 py-3 px-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 text-xs">
+          <span className="text-slate-600 font-medium">
+            Are you a tour operator or travel agency?
+          </span>
+          <div className="flex items-center gap-4 font-bold">
+            <Link href="/supplier-portal" className="text-emerald-700 hover:underline">
+              Supplier Portal &rarr;
+            </Link>
+            <Link href="/agent-portal" className="text-indigo-700 hover:underline">
+              Agent Portal &rarr;
+            </Link>
+          </div>
+        </div>
+      </div>
 
       <section className="relative z-10 mx-auto -mt-10 max-w-6xl px-4 sm:px-6">
         <div className="grid overflow-hidden rounded-3xl border border-purple-100 bg-white shadow-[0_25px_70px_-35px_rgba(88,28,135,.35)] sm:grid-cols-3">

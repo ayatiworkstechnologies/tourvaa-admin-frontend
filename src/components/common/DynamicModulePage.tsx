@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LuSquarePen as Edit, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable from "@/components/ui/DataTable";
+import { useConfirm } from "@/hooks/useConfirm";
 
 type Field = {
   name: string;
@@ -63,6 +64,7 @@ export default function DynamicModulePage({
   endpoint,
   fields,
 }: DynamicModulePageProps) {
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<DynamicItem[]>([]);
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DynamicItem | null>(null);
@@ -146,7 +148,7 @@ export default function DynamicModulePage({
   };
 
   const deleteItem = async (id: number) => {
-    const ok = confirm("Are you sure you want to delete this record?");
+    const ok = await confirm({ title: "Delete record", message: "Are you sure you want to delete this record?", confirmLabel: "Delete", danger: true });
     if (!ok) return;
 
     try {
@@ -317,6 +319,7 @@ export default function DynamicModulePage({
           </div>
         </div>
       )}
+      {dialog}
     </div>
   );
 }

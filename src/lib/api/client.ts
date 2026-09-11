@@ -156,6 +156,15 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      // If the user has no session indicator (CSRF cookie), they are unauthenticated.
+      // Probing /auth/refresh-token without session cookies is guaranteed to fail and log a secondary 401 error.
+      if (!getCookie(CSRF_COOKIE_NAME)) {
+        if (!isPublicPagePath(window.location.pathname)) {
+          hardLogout();
+        }
+        return Promise.reject(error);
+      }
+
       // Already retried once - give up.
       if (originalRequest?._retry) {
         hardLogout();

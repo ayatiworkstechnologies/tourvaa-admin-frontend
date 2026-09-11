@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourHighlight, getHighlights, createHighlight, updateHighlight, deleteHighlight } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
@@ -12,6 +13,7 @@ const empty = (): TourHighlight => ({ image: "", title: "", short_description: "
 
 export default function TourHighlightsTab({ tourId }: { tourId: string }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<TourHighlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourHighlight | null>(null);
@@ -58,7 +60,7 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Delete this highlight?")) return;
+    if (!(await confirm({ title: "Delete highlight", message: "Delete this highlight?", confirmLabel: "Delete", danger: true }))) return;
     try {
       await deleteHighlight(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
@@ -148,6 +150,7 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
           </div>
         </form>
       )}
+      {dialog}
     </div>
   );
 }

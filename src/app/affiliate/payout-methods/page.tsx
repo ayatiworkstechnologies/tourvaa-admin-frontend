@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LuCreditCard as CreditCard, LuPlus as Plus, LuStar as Star, LuTrash2 as Trash2 } from "react-icons/lu";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import {
   createPayoutMethod,
   deletePayoutMethod,
@@ -17,6 +18,7 @@ const labelCls = "mb-1 block text-xs font-bold text-dash-body";
 
 export default function PayoutMethodsPage() {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [methods, setMethods] = useState<AffiliatePayoutMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -64,7 +66,7 @@ export default function PayoutMethodsPage() {
   }
 
   async function remove(id: number) {
-    if (!window.confirm("Remove this payout method?")) return;
+    if (!(await confirm({ title: "Remove payout method", message: "Remove this payout method?", confirmLabel: "Remove", danger: true }))) return;
     try {
       await deletePayoutMethod(id);
       toast.success("Payout method removed.");
@@ -181,6 +183,7 @@ export default function PayoutMethodsPage() {
           ))}
         </div>
       )}
+      {dialog}
     </div>
   );
 }

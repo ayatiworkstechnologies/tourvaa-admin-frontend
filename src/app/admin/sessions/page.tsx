@@ -6,12 +6,14 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { LoginHistoryEntry, UserSession, forceLogoutUser, getLoginHistory, getSessions, revokeSession } from "@/lib/api/services/sessionService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 const PAGE_SIZE = 10;
 
 export default function SessionsPage() {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const { hasPermission } = useAuthContext();
   const [userSessions, setUserSessions] = useState<UserSession[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,7 +84,7 @@ export default function SessionsPage() {
 
   async function handleForceLogout(session: UserSession) {
     const label = session.user_name || `User #${session.user_id}`;
-    if (!confirm(`Force logout ${label}? This revokes all of their active sessions immediately.`)) return;
+    if (!(await confirm({ title: "Force logout", message: `Force logout ${label}? This revokes all of their active sessions immediately.`, confirmLabel: "Force logout", danger: true }))) return;
     setForcingLogoutUserId(session.user_id);
     try {
       await forceLogoutUser(session.user_id);
@@ -214,6 +216,7 @@ export default function SessionsPage() {
           />
         )}
       </div>
+      {dialog}
     </ModuleWrapper>
   );
 }

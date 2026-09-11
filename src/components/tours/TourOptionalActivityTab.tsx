@@ -10,6 +10,7 @@ import {
   deleteOptionalActivity,
 } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { ADDON_CATEGORIES, addonCategoryLabel } from "@/lib/constants/addonCategories";
@@ -19,6 +20,9 @@ const empty = (): OptionalActivity => ({
   activity_name: "",
   description: "",
   price_per_person: 0,
+  child_price_per_person: null,
+  infant_price_per_person: null,
+  pricing_mode: "flat",
   image: "",
   category: "other",
   status: "active",
@@ -26,6 +30,7 @@ const empty = (): OptionalActivity => ({
 
 export default function TourOptionalActivityTab({ tourId }: { tourId: string }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<OptionalActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<OptionalActivity | null>(null);
@@ -51,7 +56,12 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
     if (!editing) return;
     setSaving(true);
     try {
-      const payload = { ...editing, price_per_person: sanitizeNumber(editing.price_per_person) };
+      const payload = {
+        ...editing,
+        price_per_person: sanitizeNumber(editing.price_per_person),
+        child_price_per_person: editing.child_price_per_person == null ? null : sanitizeNumber(editing.child_price_per_person),
+        infant_price_per_person: editing.infant_price_per_person == null ? null : sanitizeNumber(editing.infant_price_per_person),
+      };
       if (editing.id) {
         const updated = await updateOptionalActivity(tourId, editing.id, payload);
         setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
@@ -69,7 +79,7 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Delete this activity?")) return;
+    if (!(await confirm({ title: "Delete activity", message: "Delete this activity?", confirmLabel: "Delete", danger: true }))) return;
     try {
       await deleteOptionalActivity(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
@@ -112,7 +122,15 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
             <div className="p-4">
               <div className="flex items-center gap-2"><p className="font-semibold text-dash-text">{item.activity_name}</p><span className="rounded-full bg-[var(--portal-soft)] px-2 py-0.5 text-[10px] font-bold text-dash-brand">{addonCategoryLabel(item.category)}</span></div>
               <p className="mt-1 text-sm text-dash-subtle">{item.description}</p>
-              <p className="mt-2 text-sm font-bold text-dash-text">+{item.price_per_person} <span className="font-normal text-dash-subtle">per person</span></p>
+              {item.pricing_mode === "per_passenger_type" ? (
+                <p className="mt-2 text-sm font-bold text-dash-text">
+                  +{item.price_per_person} <span className="font-normal text-dash-subtle">adult</span>
+                  {" / "}+{item.child_price_per_person ?? item.price_per_person} <span className="font-normal text-dash-subtle">child</span>
+                  {" / "}+{item.infant_price_per_person ?? 0} <span className="font-normal text-dash-subtle">infant</span>
+                </p>
+              ) : (
+                <p className="mt-2 text-sm font-bold text-dash-text">+{item.price_per_person} <span className="font-normal text-dash-subtle">per person</span></p>
+              )}
               <div className="mt-3 flex gap-2">
                 <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border px-3 py-1.5 text-xs font-semibold hover:bg-[#F2F4F7]">Edit</button>
                 <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-[#FFF0F0]">Delete</button>
@@ -154,6 +172,39 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
               />
             </label>
             <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pricing mode</span>
+              <select
+                value={editing.pricing_mode}
+                onChange={(e) => setEditing((p) => (p ? { ...p, pricing_mode: e.target.value as OptionalActivity["pricing_mode"] } : p))}
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+              >
+                <option value="flat">Flat (same price, quantity chosen by traveller)</option>
+                <option value="per_passenger_type">Per passenger type (adult / child / infant)</option>
+              </select>
+            </label>
+            {editing.pricing_mode === "per_passenger_type" && (
+              <>
+                <label>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Child price <span className="normal-case font-normal">(blank = same as adult)</span></span>
+                  <input
+                    type="number"
+                    value={editing.child_price_per_person == null ? "" : numberInputValue(editing.child_price_per_person)}
+                    onChange={(e) => setEditing((p) => (p ? { ...p, child_price_per_person: e.target.value === "" ? null : parseNumberInput(e.target.value) } : p))}
+                    className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                  />
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Infant price <span className="normal-case font-normal">(blank = free)</span></span>
+                  <input
+                    type="number"
+                    value={editing.infant_price_per_person == null ? "" : numberInputValue(editing.infant_price_per_person)}
+                    onChange={(e) => setEditing((p) => (p ? { ...p, infant_price_per_person: e.target.value === "" ? null : parseNumberInput(e.target.value) } : p))}
+                    className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                  />
+                </label>
+              </>
+            )}
+            <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Category</span>
               <select
                 value={editing.category}
@@ -192,6 +243,7 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
           </div>
         </form>
       )}
+      {dialog}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import StatusBadge from "@/components/operations/StatusBadge";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 
 type CancellationRequest = {
   id: number;
@@ -48,6 +49,7 @@ type Tab = (typeof TABS)[number];
 
 export default function RefundsPage() {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [activeTab, setActiveTab] = useState<Tab>("Cancellation Requests");
 
   // Cancellation requests state
@@ -145,7 +147,7 @@ export default function RefundsPage() {
   };
 
   const processRefund = async (req: CancellationRequest) => {
-    if (!window.confirm("This will issue a real refund through the original payment gateway (Stripe/PayPal) for the approved amount. Continue?")) return;
+    if (!(await confirm({ title: "Process refund", message: "This will issue a real refund through the original payment gateway (Stripe/PayPal) for the approved amount. Continue?", confirmLabel: "Process refund", danger: true }))) return;
     setProcessingId(req.id);
     try {
       await api.post(`/cancellations/${req.id}/process-refund`, {});
@@ -159,7 +161,7 @@ export default function RefundsPage() {
   };
 
   const deleteRule = async (id: number) => {
-    if (!window.confirm("Delete this refund rule?")) return;
+    if (!(await confirm({ title: "Delete refund rule", message: "Delete this refund rule?", confirmLabel: "Delete", danger: true }))) return;
     try {
       await api.delete(`/refund-rules/${id}`);
       toast.success("Refund rule deleted.");
@@ -591,6 +593,7 @@ export default function RefundsPage() {
           </div>
         )}
       </div>
+      {dialog}
     </ModuleWrapper>
   );
 }

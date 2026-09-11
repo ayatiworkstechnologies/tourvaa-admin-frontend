@@ -5,11 +5,13 @@ import { LuMapPin as MapPin, LuPlus as Plus, LuTrash2 as Trash2 } from "react-ic
 import { getSimilarTours, addSimilarTour, deleteSimilarTour, SimilarTour } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import TourPicker from "@/components/tours/TourPicker";
 
 export default function TourSimilarTab({ tourId }: { tourId: string }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<SimilarTour[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -48,7 +50,7 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Remove this similar tour?")) return;
+    if (!(await confirm({ title: "Remove similar tour", message: "Remove this similar tour?", confirmLabel: "Remove", danger: true }))) return;
     try {
       await deleteSimilarTour(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
@@ -110,6 +112,7 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
           ))}
         </div>
       )}
+      {dialog}
     </div>
   );
 }

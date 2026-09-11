@@ -11,6 +11,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { usePagination } from "@/hooks/usePagination";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import {
   blockCustomer,
   Customer,
@@ -35,6 +36,7 @@ export default function CustomersPage() {
   const { page, limit, total, totalPages, setPage, setTotal, setTotalPages } = pagination;
   const { hasPermission } = useAuthContext();
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [filters, setFilters] = useState(initialFilters);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +104,7 @@ export default function CustomersPage() {
   };
 
   const handleUnblock = async (customer: Customer) => {
-    if (!window.confirm("Unblock this customer?")) return;
+    if (!(await confirm({ title: "Unblock customer", message: "Unblock this customer?", confirmLabel: "Unblock" }))) return;
 
     setSavingId(customer.id);
     try {
@@ -117,7 +119,7 @@ export default function CustomersPage() {
   };
 
   const handleResetPassword = async (customer: Customer) => {
-    if (!window.confirm("Send password reset email to this customer?")) return;
+    if (!(await confirm({ title: "Send password reset", message: "Send password reset email to this customer?", confirmLabel: "Send" }))) return;
 
     setSavingId(customer.id);
     try {
@@ -175,6 +177,7 @@ export default function CustomersPage() {
           )}
         </section>
       </div>
+      {dialog}
     </ModuleWrapper>
   );
 }

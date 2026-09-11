@@ -133,11 +133,14 @@ export type CmsFooterSection = { id: number; title: string; links: CmsFooterLink
 export type CmsPopularTour = { id: number; tour_id: number; tour_title: string; tour_code: string; sort_order: number; is_active: boolean };
 export type CmsHandpickedTour = { id: number; tour_id: number; tour_title: string; tour_code: string; sort_order: number; is_active: boolean };
 export type CmsFavouriteCountry = { id: number; country_id: number | null; title: string; snippet: string | null; image: string | null; href: string | null; sort_order: number; is_active: boolean };
+export type CmsCountryPage = { id: number; country_id: number; country_name: string; hero_title: string | null; hero_description: string | null; hero_image: string | null; showcase_title: string | null; showcase_description: string | null; showcase_image: string | null; seo_title: string | null; seo_description: string | null; is_active: boolean };
 export type CmsContentBlock<T extends Record<string, unknown> = Record<string, unknown>> = { key: string; data: Partial<T>; updated_at: string | null };
 export type HeroExtrasBlock = { rating: number; review_count: number; review_source: string; offer_text: string; offer_cta_text: string; offer_cta_url: string };
 export type AboutSectionBlock = { heading: string; body: string; image: string };
 export type BlogTeaserBlock = { eyebrow: string; heading: string; subtitle: string; cta_text: string; cta_url: string; image: string };
 export type AirportTransferBlock = { eyebrow: string; heading: string; subtitle: string; features: string[]; cta_text: string; cta_url: string; image: string };
+export type TravelSupportBlock = { eyebrow: string; heading: string; subtitle: string; cta_text: string; cta_url: string; image: string };
+export type NewsletterBannerBlock = { badge: string; heading: string; subtitle: string; image: string };
 export type CmsDealTour = { id: number; tour_id: number; tour_title: string; tour_code: string; deal_label: string | null; discount_percentage: number | null; sort_order: number; is_active: boolean };
 export type CmsHelpArticle = { id: number; question: string; answer: string; category: string; sort_order: number; is_active: boolean };
 export type CmsPromoPopup = {
@@ -228,6 +231,11 @@ export async function fetchPublicSubcategories(category?: string) {
 export async function fetchPublicCountries() {
   const res = await publicApi.get("/countries");
   return res.data.items as PublicCountry[];
+}
+
+export async function fetchCountryPages() {
+  const res = await publicApi.get("/country-pages");
+  return (res.data.items || []) as CmsCountryPage[];
 }
 
 export async function fetchPublicCities(country?: string) {

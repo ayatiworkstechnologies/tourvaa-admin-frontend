@@ -10,10 +10,19 @@ import {
   deleteAccommodationExtra,
 } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import { ADDON_CATEGORIES, addonCategoryLabel } from "@/lib/constants/addonCategories";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
+
+const PRICE_TYPE_LABELS: Record<AccommodationExtra["price_type"], string> = {
+  per_person: "per person",
+  per_booking: "per booking",
+  per_room: "per room",
+  per_person_per_night: "per person / night",
+  per_room_per_night: "per room / night",
+};
 
 const empty = (): AccommodationExtra => ({
   accommodation_name: "",
@@ -28,6 +37,7 @@ const empty = (): AccommodationExtra => ({
 
 export default function TourAccommodationExtraTab({ tourId }: { tourId: string }) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<AccommodationExtra[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<AccommodationExtra | null>(null);
@@ -71,7 +81,7 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Delete this accommodation option?")) return;
+    if (!(await confirm({ title: "Delete accommodation option", message: "Delete this accommodation option?", confirmLabel: "Delete", danger: true }))) return;
     try {
       await deleteAccommodationExtra(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
@@ -115,7 +125,7 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
             </div>
             <p className="mt-1 text-sm text-dash-subtle">{item.description}</p>
             <p className="mt-2 text-sm font-bold text-dash-text">
-              +{item.extra_price} <span className="font-normal text-dash-subtle">({item.price_type === "per_person" ? "per person" : "per booking"})</span>
+              +{item.extra_price} <span className="font-normal text-dash-subtle">({PRICE_TYPE_LABELS[item.price_type] ?? item.price_type})</span>
             </p>
             <div className="mt-3 flex gap-2">
               <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border px-3 py-1.5 text-xs font-semibold hover:bg-[#F2F4F7]">Edit</button>
@@ -165,6 +175,9 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
               >
                 <option value="per_person">Per person</option>
                 <option value="per_booking">Per booking</option>
+                <option value="per_room">Per room</option>
+                <option value="per_person_per_night">Per person / night</option>
+                <option value="per_room_per_night">Per room / night</option>
               </select>
             </label>
             <label>
@@ -214,6 +227,7 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
           </div>
         </form>
       )}
+      {dialog}
     </div>
   );
 }

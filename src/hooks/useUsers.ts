@@ -100,10 +100,6 @@ export function useUsers({ enabled = true, page = 1, limit = 10, search = "", ac
   };
 
   const deleteUser = async (id: number) => {
-    const confirmDelete = confirm("Are you sure you want to delete this user?");
-
-    if (!confirmDelete) return false;
-
     try {
       await api.delete(`/users/${id}`);
       await fetchUsers();

@@ -209,6 +209,12 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
 
   test("audit after-login profile dropdown functionality and appearance", async ({ page }) => {
     // Mock the session endpoint so this UI check also runs in production builds.
+    await page.addInitScript(() => {
+      window.localStorage.setItem("tourvaa_docs_dashboard", JSON.stringify({
+        user: { id: 1, name: "Super Admin", full_name: "Super Admin", email: "admin@tourvaa.com", role: { slug: "super-admin", name: "Super Admin" } },
+        dashboard_type: "admin", permissions: [], menus: [], sidebar_menu: [], allowed_modules: [], stats: {},
+      }));
+    });
     await page.route("**/api/dashboard/me", route => route.fulfill({ json: { data: {
       user: { id: 1, name: "Super Admin", full_name: "Super Admin", email: "admin@tourvaa.com", role: { slug: "super-admin", name: "Super Admin" } },
       dashboard_type: "admin", permissions: [], menus: [], sidebar_menu: [], allowed_modules: [], stats: {},

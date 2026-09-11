@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuAlignLeft as AlignLeft,
   LuArrowLeft as ArrowLeft,
@@ -13,6 +13,9 @@ import {
   LuPlus as Plus,
   LuSparkles as Sparkles,
   LuInfo as Info,
+  LuCheck as Check,
+  LuChevronDown as ChevronDown,
+  LuX as X,
 } from "react-icons/lu";
 
 import Loader from "@/components/ui/Loader";
@@ -21,6 +24,7 @@ import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { TourWorkspaceHeader } from "@/components/tours/TourWorkspace";
 import { createCms, getCms, listCms, updateCms } from "@/lib/api/services/cmsService";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import api from "@/lib/api/client";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 
@@ -96,6 +100,602 @@ const mediaSeoTextFields: [string, string][] = [
   ["tour_video_url", "Tour video URL"],
 ];
 
+const DAY_OPTIONS = [
+  { value: "1", label: "1 Day (Single day tour)" },
+  { value: "2", label: "2 Days" },
+  { value: "3", label: "3 Days" },
+  { value: "4", label: "4 Days" },
+  { value: "5", label: "5 Days" },
+  { value: "6", label: "6 Days" },
+  { value: "7", label: "7 Days (1 Week)" },
+  { value: "8", label: "8 Days" },
+  { value: "9", label: "9 Days" },
+  { value: "10", label: "10 Days" },
+  { value: "11", label: "11 Days" },
+  { value: "12", label: "12 Days" },
+  { value: "13", label: "13 Days" },
+  { value: "14", label: "14 Days (2 Weeks)" },
+  { value: "15", label: "15 Days" },
+  { value: "16", label: "16 Days" },
+  { value: "17", label: "17 Days" },
+  { value: "18", label: "18 Days" },
+  { value: "19", label: "19 Days" },
+  { value: "20", label: "20 Days" },
+  { value: "21", label: "21 Days (3 Weeks)" },
+  { value: "22", label: "22 Days" },
+  { value: "23", label: "23 Days" },
+  { value: "24", label: "24 Days" },
+  { value: "25", label: "25 Days" },
+  { value: "26", label: "26 Days" },
+  { value: "27", label: "27 Days" },
+  { value: "28", label: "28 Days (4 Weeks)" },
+  { value: "29", label: "29 Days" },
+  { value: "30", label: "30 Days (1 Month)" },
+  { value: "35", label: "35 Days (5 Weeks)" },
+  { value: "40", label: "40 Days" },
+  { value: "45", label: "45 Days (1.5 Months)" },
+  { value: "50", label: "50 Days" },
+  { value: "60", label: "60 Days (2 Months)" },
+  { value: "90", label: "90 Days (3 Months)" },
+];
+
+const NIGHT_OPTIONS = [
+  { value: "0", label: "0 Nights (Day tour)" },
+  { value: "1", label: "1 Night" },
+  { value: "2", label: "2 Nights" },
+  { value: "3", label: "3 Nights" },
+  { value: "4", label: "4 Nights" },
+  { value: "5", label: "5 Nights" },
+  { value: "6", label: "6 Nights" },
+  { value: "7", label: "7 Nights (1 Week)" },
+  { value: "8", label: "8 Nights" },
+  { value: "9", label: "9 Nights" },
+  { value: "10", label: "10 Nights" },
+  { value: "11", label: "11 Nights" },
+  { value: "12", label: "12 Nights" },
+  { value: "13", label: "13 Nights" },
+  { value: "14", label: "14 Nights (2 Weeks)" },
+  { value: "15", label: "15 Nights" },
+  { value: "16", label: "16 Nights" },
+  { value: "17", label: "17 Nights" },
+  { value: "18", label: "18 Nights" },
+  { value: "19", label: "19 Nights" },
+  { value: "20", label: "20 Nights" },
+  { value: "21", label: "21 Nights (3 Weeks)" },
+  { value: "22", label: "22 Nights" },
+  { value: "23", label: "23 Nights" },
+  { value: "24", label: "24 Nights" },
+  { value: "25", label: "25 Nights" },
+  { value: "26", label: "26 Nights" },
+  { value: "27", label: "27 Nights" },
+  { value: "28", label: "28 Nights (4 Weeks)" },
+  { value: "29", label: "29 Nights" },
+  { value: "30", label: "30 Nights (1 Month)" },
+  { value: "35", label: "35 Nights" },
+  { value: "40", label: "40 Nights" },
+  { value: "45", label: "45 Nights" },
+  { value: "50", label: "50 Nights" },
+  { value: "60", label: "60 Nights" },
+  { value: "90", label: "90 Nights" },
+];
+
+const HOUR_OPTIONS = [
+  { value: "", label: "Not set / Multi-day tour" },
+  { value: "0", label: "0 Hours" },
+  { value: "1", label: "1 Hour" },
+  { value: "2", label: "2 Hours" },
+  { value: "3", label: "3 Hours" },
+  { value: "4", label: "4 Hours (Half Day)" },
+  { value: "5", label: "5 Hours" },
+  { value: "6", label: "6 Hours" },
+  { value: "7", label: "7 Hours" },
+  { value: "8", label: "8 Hours (Full Day)" },
+  { value: "9", label: "9 Hours" },
+  { value: "10", label: "10 Hours" },
+  { value: "11", label: "11 Hours" },
+  { value: "12", label: "12 Hours (Half Day 12h)" },
+  { value: "14", label: "14 Hours" },
+  { value: "16", label: "16 Hours" },
+  { value: "18", label: "18 Hours" },
+  { value: "20", label: "20 Hours" },
+  { value: "24", label: "24 Hours (Full 24h)" },
+];
+
+const MAX_GROUP_SIZE_OPTIONS = [
+  { value: "", label: "Not set / Unlimited" },
+  { value: "1", label: "1 (Private Solo)" },
+  { value: "2", label: "2 (Couple / Duo)" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4 (Small Private)" },
+  { value: "5", label: "5" },
+  { value: "6", label: "6 (Small Group)" },
+  { value: "8", label: "8" },
+  { value: "10", label: "10" },
+  { value: "12", label: "12" },
+  { value: "14", label: "14" },
+  { value: "15", label: "15" },
+  { value: "16", label: "16" },
+  { value: "18", label: "18" },
+  { value: "20", label: "20" },
+  { value: "24", label: "24" },
+  { value: "25", label: "25" },
+  { value: "30", label: "30" },
+  { value: "35", label: "35" },
+  { value: "40", label: "40" },
+  { value: "50", label: "50 (Coach Tour)" },
+  { value: "60", label: "60" },
+  { value: "80", label: "80" },
+  { value: "100", label: "100+ (Large Group)" },
+];
+
+const MIN_BOOKING_SIZE_OPTIONS = [
+  { value: "1", label: "1 Person (Standard)" },
+  { value: "2", label: "2 People (Min 2 required)" },
+  { value: "3", label: "3 People" },
+  { value: "4", label: "4 People" },
+  { value: "5", label: "5 People" },
+  { value: "6", label: "6 People" },
+  { value: "8", label: "8 People" },
+  { value: "10", label: "10 People" },
+];
+
+type LanguageItem = {
+  name: string;
+  native: string;
+  category: "Indian" | "International";
+};
+
+const ALL_LANGUAGES: LanguageItem[] = [
+  // Indian Languages
+  { name: "Hindi", native: "हिन्दी", category: "Indian" },
+  { name: "Tamil", native: "தமிழ்", category: "Indian" },
+  { name: "Telugu", native: "తెలుగు", category: "Indian" },
+  { name: "Kannada", native: "ಕನ್ನಡ", category: "Indian" },
+  { name: "Malayalam", native: "മലയാളം", category: "Indian" },
+  { name: "Bengali", native: "বাংলা", category: "Indian" },
+  { name: "Marathi", native: "मराठी", category: "Indian" },
+  { name: "Gujarati", native: "ગુજરાતી", category: "Indian" },
+  { name: "Punjabi", native: "ਪੰਜਾਬੀ", category: "Indian" },
+  { name: "Urdu", native: "اردو", category: "Indian" },
+  { name: "Odia", native: "ଓଡ଼ିଆ", category: "Indian" },
+  { name: "Assamese", native: "অসমীয়া", category: "Indian" },
+  { name: "Sanskrit", native: "संस्कृतम्", category: "Indian" },
+  { name: "Konkani", native: "कोंकणी", category: "Indian" },
+
+  // International Languages
+  { name: "English", native: "English", category: "International" },
+  { name: "Spanish", native: "Español", category: "International" },
+  { name: "French", native: "Français", category: "International" },
+  { name: "German", native: "Deutsch", category: "International" },
+  { name: "Italian", native: "Italiano", category: "International" },
+  { name: "Portuguese", native: "Português", category: "International" },
+  { name: "Russian", native: "Русский", category: "International" },
+  { name: "Mandarin Chinese", native: "中文", category: "International" },
+  { name: "Cantonese", native: "粵語", category: "International" },
+  { name: "Japanese", native: "日本語", category: "International" },
+  { name: "Korean", native: "한국어", category: "International" },
+  { name: "Arabic", native: "العربية", category: "International" },
+  { name: "Turkish", native: "Türkçe", category: "International" },
+  { name: "Dutch", native: "Nederlands", category: "International" },
+  { name: "Greek", native: "Ελληνικά", category: "International" },
+  { name: "Thai", native: "ไทย", category: "International" },
+  { name: "Vietnamese", native: "Tiếng Việt", category: "International" },
+  { name: "Indonesian", native: "Bahasa Indonesia", category: "International" },
+  { name: "Malay", native: "Bahasa Melayu", category: "International" },
+  { name: "Persian / Farsi", native: "فارسی", category: "International" },
+  { name: "Hebrew", native: "עברית", category: "International" },
+  { name: "Polish", native: "Polski", category: "International" },
+  { name: "Swedish", native: "Svenska", category: "International" },
+  { name: "Tagalog", native: "Filipino", category: "International" },
+  { name: "Multilingual", native: "Multiple Guides", category: "International" },
+];
+
+function LanguageMultiSelect({
+  value,
+  onChange,
+  inputClass,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  inputClass: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<"All" | "Indian" | "International">("All");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedList = useMemo(() => {
+    if (!value) return [];
+    return value
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }, [value]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
+
+  const toggleLanguage = (langName: string) => {
+    const isSelected = selectedList.some(
+      (s) => s.toLowerCase() === langName.toLowerCase()
+    );
+    let updated: string[];
+    if (isSelected) {
+      updated = selectedList.filter(
+        (s) => s.toLowerCase() !== langName.toLowerCase()
+      );
+    } else {
+      updated = [...selectedList, langName];
+    }
+    onChange(updated.join(", "));
+  };
+
+  const removeLanguage = (langName: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const updated = selectedList.filter(
+      (s) => s.toLowerCase() !== langName.toLowerCase()
+    );
+    onChange(updated.join(", "));
+  };
+
+  const addCustomLanguage = (custom: string) => {
+    const trimmed = custom.trim();
+    if (!trimmed) return;
+    if (!selectedList.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      onChange([...selectedList, trimmed].join(", "));
+    }
+    setSearch("");
+  };
+
+  const filteredLanguages = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return ALL_LANGUAGES.filter((item) => {
+      if (activeCategory !== "All" && item.category !== activeCategory) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        item.name.toLowerCase().includes(q) ||
+        item.native.toLowerCase().includes(q)
+      );
+    });
+  }, [search, activeCategory]);
+
+  const hasExactMatch = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return ALL_LANGUAGES.some((l) => l.name.toLowerCase() === q);
+  }, [search]);
+
+  return (
+    <div ref={containerRef} className="relative block">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="block text-xs font-bold uppercase text-dash-subtle">
+          Tour language (Multi-select)
+        </span>
+        {selectedList.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="text-[11px] font-semibold text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+          >
+            Clear all
+          </button>
+        )}
+      </div>
+
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen((prev) => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((prev) => !prev);
+          }
+        }}
+        className={`${inputClass} min-h-[44px] p-2 flex items-center justify-between gap-2 cursor-pointer select-none`}
+      >
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0 flex-1">
+          {selectedList.length === 0 ? (
+            <span className="text-slate-400 text-sm">Select languages...</span>
+          ) : (
+            selectedList.map((lang) => (
+              <span
+                key={lang}
+                className="inline-flex items-center gap-1 rounded-lg bg-blue-50 border border-blue-200/90 px-2 py-0.5 text-xs font-semibold text-blue-700 shadow-2xs"
+              >
+                <span>{lang}</span>
+                <button
+                  type="button"
+                  onClick={(e) => removeLanguage(lang, e)}
+                  className="rounded-full p-0.5 hover:bg-blue-200/70 text-blue-500 hover:text-blue-800 transition cursor-pointer"
+                  aria-label={`Remove ${lang}`}
+                >
+                  <X size={11} className="stroke-[2.5]" />
+                </button>
+              </span>
+            ))
+          )}
+        </div>
+        <ChevronDown
+          size={16}
+          className={`text-slate-400 shrink-0 transition-transform duration-200 ${
+            open ? "rotate-180 text-dash-brand" : ""
+          }`}
+        />
+      </div>
+
+      {open && (
+        <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="relative">
+            <Search
+              size={15}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search Indian or World languages (e.g. Hindi, Tamil, French)..."
+              autoFocus
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-9 pr-8 py-2 text-xs sm:text-sm outline-none focus:border-dash-brand focus:bg-white focus:ring-2 focus:ring-dash-brand/10 transition"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 border-b border-slate-100 pb-2 text-[11px] font-bold">
+            {(["All", "Indian", "International"] as const).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={`rounded-lg px-2.5 py-1 transition cursor-pointer ${
+                  activeCategory === cat
+                    ? "bg-dash-brand text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {cat === "Indian" ? "🇮🇳 Indian" : cat === "International" ? "🌍 International" : "All Languages"}
+              </button>
+            ))}
+          </div>
+
+          <div className="max-h-56 overflow-y-auto space-y-1 pr-1 no-scrollbar">
+            {filteredLanguages.map((lang) => {
+              const isSelected = selectedList.some(
+                (s) => s.toLowerCase() === lang.name.toLowerCase()
+              );
+              return (
+                <button
+                  key={lang.name}
+                  type="button"
+                  onClick={() => toggleLanguage(lang.name)}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs sm:text-sm font-medium transition cursor-pointer ${
+                    isSelected
+                      ? "bg-blue-50/80 text-blue-900 font-semibold"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`flex h-4 w-4 items-center justify-center rounded border transition ${
+                        isSelected
+                          ? "border-blue-600 bg-blue-600 text-white"
+                          : "border-slate-300 bg-white"
+                      }`}
+                    >
+                      {isSelected && <Check size={12} className="stroke-[3]" />}
+                    </span>
+                    <span>{lang.name}</span>
+                    <span className="text-xs text-slate-400 font-normal">
+                      ({lang.native})
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    {lang.category === "Indian" ? "Indian" : "Global"}
+                  </span>
+                </button>
+              );
+            })}
+
+            {filteredLanguages.length === 0 && !search && (
+              <p className="py-4 text-center text-xs text-slate-400">
+                No languages found in this category.
+              </p>
+            )}
+
+            {search.trim() && !hasExactMatch && (
+              <button
+                type="button"
+                onClick={() => addCustomLanguage(search)}
+                className="flex w-full items-center gap-2 rounded-xl border border-dashed border-blue-300 bg-blue-50/50 px-3 py-2 text-left text-xs font-bold text-blue-700 hover:bg-blue-100/70 transition cursor-pointer"
+              >
+                <Plus size={14} className="stroke-[2.5]" />
+                <span>Add &quot;{search.trim()}&quot; as custom language</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-xs">
+            <span className="text-slate-500 font-medium">
+              {selectedList.length === 0
+                ? "No languages selected"
+                : `${selectedList.length} selected`}
+            </span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition cursor-pointer"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const SUITABLE_AGE_RANGE_OPTIONS = [
+  { value: "", label: "Not specified" },
+  { value: "All ages", label: "All ages (0+)" },
+  { value: "3+", label: "3+ years (Family friendly)" },
+  { value: "6+", label: "6+ years (Kids & Families)" },
+  { value: "10+", label: "10+ years" },
+  { value: "12", label: "12+ years" },
+  { value: "12+", label: "12+ years (Teens & Adults)" },
+  { value: "15+", label: "15+ years" },
+  { value: "16+", label: "16+ years" },
+  { value: "18+", label: "18+ years (Adults only)" },
+  { value: "21+", label: "21+ years (Drinking & Nightlife)" },
+  { value: "50+", label: "Seniors (50+)" },
+];
+
+const DEPOSIT_CUTOFF_OPTIONS = [
+  { value: "", label: "No cutoff -- deposit always allowed" },
+  { value: "0", label: "0 days (Until departure day)" },
+  { value: "1", label: "1 day before departure" },
+  { value: "2", label: "2 days before departure" },
+  { value: "3", label: "3 days before departure" },
+  { value: "5", label: "5 days before departure" },
+  { value: "7", label: "7 days before departure (1 Week)" },
+  { value: "10", label: "10 days before departure" },
+  { value: "14", label: "14 days before departure (2 Weeks)" },
+  { value: "21", label: "21 days before departure (3 Weeks)" },
+  { value: "30", label: "30 days before departure (1 Month)" },
+  { value: "45", label: "45 days before departure" },
+  { value: "60", label: "60 days before departure (2 Months)" },
+];
+
+const BALANCE_DEADLINE_OPTIONS = [
+  { value: "", label: "Not set" },
+  { value: "0", label: "0 days (Due on departure day)" },
+  { value: "7", label: "7 days before departure (1 Week)" },
+  { value: "14", label: "14 days before departure (2 Weeks)" },
+  { value: "21", label: "21 days before departure (3 Weeks)" },
+  { value: "30", label: "30 days before departure (1 Month)" },
+  { value: "45", label: "45 days before departure" },
+  { value: "60", label: "60 days before departure (2 Months)" },
+  { value: "90", label: "90 days before departure (3 Months)" },
+];
+
+function FormDropdownField({
+  label,
+  value,
+  onChange,
+  options,
+  inputClass,
+  placeholder,
+  inputType = "text",
+  min,
+  max,
+  helpText,
+}: {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: string }[];
+  inputClass: string;
+  placeholder?: string;
+  inputType?: "text" | "number";
+  min?: number;
+  max?: number;
+  helpText?: string;
+}) {
+  const isPreset = useMemo(() => {
+    if (!value) return true;
+    return options.some((opt) => opt.value === String(value));
+  }, [options, value]);
+
+  const [customMode, setCustomMode] = useState<boolean>(false);
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selected = e.target.value;
+    if (selected === "__custom__") {
+      setCustomMode(true);
+    } else {
+      setCustomMode(false);
+      onChange(selected);
+    }
+  };
+
+  const selectValue = value !== undefined && value !== null ? String(value) : "";
+
+  return (
+    <div className="block">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="block text-xs font-bold uppercase text-dash-subtle">{label}</span>
+        {customMode ? (
+          <button
+            type="button"
+            onClick={() => setCustomMode(false)}
+            className="text-[11px] font-bold text-dash-brand hover:underline cursor-pointer"
+          >
+            ← Quick Select
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCustomMode(true)}
+            className="text-[11px] font-medium text-slate-400 hover:text-dash-brand hover:underline cursor-pointer"
+          >
+            Custom
+          </button>
+        )}
+      </div>
+
+      {customMode ? (
+        <input
+          type={inputType}
+          min={min}
+          max={max}
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+          autoFocus
+          className={inputClass}
+        />
+      ) : (
+        <select
+          value={selectValue}
+          onChange={handleSelectChange}
+          className={`${inputClass} cursor-pointer`}
+        >
+          {!isPreset && value ? (
+            <option value={value}>{value} (Current)</option>
+          ) : null}
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+          <option value="__custom__">✏️ Custom / Enter manually...</option>
+        </select>
+      )}
+      {helpText && <span className="mt-1 block text-[11px] text-dash-subtle">{helpText}</span>}
+    </div>
+  );
+}
+
 function FormSection({
   icon: Icon,
   title,
@@ -110,8 +710,8 @@ function FormSection({
   role: "admin" | "supplier";
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-[#DCE6F3] bg-white shadow-[0_12px_34px_-29px_rgba(28,83,160,.7)]">
-      <div className="flex items-center gap-3 border-b border-[#E8EDF5] px-5 py-4 sm:px-6">
+    <section className="rounded-2xl border border-[#DCE6F3] bg-white shadow-[0_12px_34px_-29px_rgba(28,83,160,.7)]">
+      <div className="flex items-center gap-3 border-b border-[#E8EDF5] px-5 py-4 sm:px-6 rounded-t-2xl">
         <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl ${
           role === "supplier" ? "bg-emerald-50 text-emerald-700" : "bg-[#EDF5FF] text-dash-brand-hover"
         }`}>
@@ -138,6 +738,7 @@ export default function TourFormPage({
   formId,
 }: Props) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const showBasic = sections.includes("basic-core");
   const showSettings = sections.includes("settings");
   const showLocation = sections.includes("location");
@@ -563,41 +1164,76 @@ export default function TourFormPage({
               <CurrencySelect value={form.currency ?? "USD"} onChange={(code) => update("currency", code)} className={inputClass} />
             </label>
 
-            {simpleNumberFields.map(([key, label]) => (
-              <label key={key}>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
-                <input
-                  type="number"
-                  min={key === "number_of_days" ? 1 : 0}
-                  value={form[key] ?? ""}
-                  onChange={(e) => update(key, e.target.value)}
-                  className={inputClass}
-                />
-              </label>
-            ))}
+            <FormDropdownField
+              label="Days"
+              value={form.number_of_days ?? "1"}
+              onChange={(val) => update("number_of_days", val)}
+              options={DAY_OPTIONS}
+              inputClass={inputClass}
+              inputType="number"
+              min={1}
+              placeholder="e.g. 1"
+            />
 
-            {coreDetailFields.map(([key, label]) => (
-              <label key={key}>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
-                <input
-                  type="number"
-                  min={key === "number_of_nights" ? 0 : 1}
-                  value={form[key] ?? ""}
-                  onChange={(e) => update(key, e.target.value)}
-                  className={inputClass}
-                />
-              </label>
-            ))}
+            <FormDropdownField
+              label="Hours"
+              value={form.number_of_hours ?? ""}
+              onChange={(val) => update("number_of_hours", val)}
+              options={HOUR_OPTIONS}
+              inputClass={inputClass}
+              inputType="number"
+              min={0}
+              placeholder="e.g. 8"
+            />
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tour language</span>
-              <input value={form.tour_language ?? ""} onChange={(e) => update("tour_language", e.target.value)} className={inputClass} />
-            </label>
+            <FormDropdownField
+              label="Nights"
+              value={form.number_of_nights ?? "0"}
+              onChange={(val) => update("number_of_nights", val)}
+              options={NIGHT_OPTIONS}
+              inputClass={inputClass}
+              inputType="number"
+              min={0}
+              placeholder="e.g. 0"
+            />
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Suitable age range</span>
-              <input value={form.suitable_age_range ?? ""} onChange={(e) => update("suitable_age_range", e.target.value)} placeholder="e.g. 12+" className={inputClass} />
-            </label>
+            <FormDropdownField
+              label="Max group size"
+              value={form.max_group_size ?? ""}
+              onChange={(val) => update("max_group_size", val)}
+              options={MAX_GROUP_SIZE_OPTIONS}
+              inputClass={inputClass}
+              inputType="number"
+              min={1}
+              placeholder="e.g. 16"
+            />
+
+            <FormDropdownField
+              label="Min booking size"
+              value={form.min_booking_size ?? "1"}
+              onChange={(val) => update("min_booking_size", val)}
+              options={MIN_BOOKING_SIZE_OPTIONS}
+              inputClass={inputClass}
+              inputType="number"
+              min={1}
+              placeholder="e.g. 1"
+            />
+
+            <LanguageMultiSelect
+              value={form.tour_language ?? "English"}
+              onChange={(val) => update("tour_language", val)}
+              inputClass={inputClass}
+            />
+
+            <FormDropdownField
+              label="Suitable age range"
+              value={form.suitable_age_range ?? ""}
+              onChange={(val) => update("suitable_age_range", val)}
+              options={SUITABLE_AGE_RANGE_OPTIONS}
+              inputClass={inputClass}
+              inputType="text"
+              placeholder="e.g. 12+"
+            />
 
           </FormSection>
           )}
@@ -613,9 +1249,9 @@ export default function TourFormPage({
                   update("long_description", (form.long_description ? form.long_description.trimEnd() : "") + add);
                 };
 
-                const handleTemplate = () => {
+                const handleTemplate = async () => {
                   const sample = `Tour Overview & Atmosphere: Embark on an unforgettable voyage curated for travellers seeking scenic wonder, effortless comfort, and genuine cultural immersion.\n\nKey Highlights: Marvel at world-renowned landscapes, wander charming historic districts, and capture panoramic views from iconic viewpoints along the journey.\n\nTravel Comfort & Inclusions: Travel in modern, climate-controlled comfort with expert local guidance, boutique accommodation stays, and authentic culinary stops curated at every turn.`;
-                  if (!form.long_description || confirm("Insert standard tour overview narrative template?")) {
+                  if (!form.long_description || (await confirm({ title: "Insert template", message: "Insert standard tour overview narrative template? This will replace the current text.", confirmLabel: "Insert" }))) {
                     update("long_description", sample);
                   }
                 };
@@ -782,17 +1418,29 @@ export default function TourFormPage({
               </label>
             )}
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Deposit allowed until (days before departure)</span>
-              <input type="number" min={0} value={form.deposit_cutoff_days ?? ""} onChange={(e) => update("deposit_cutoff_days", e.target.value)} className={inputClass} placeholder="No cutoff -- deposit always allowed" />
-              <span className="mt-1 block text-[11px] text-dash-subtle">Leave blank to allow a deposit right up to departure. Once fewer days remain, customers see only &quot;Pay in Full Today&quot;.</span>
-            </label>
+            <FormDropdownField
+              label="Deposit allowed until (days before departure)"
+              value={form.deposit_cutoff_days ?? ""}
+              onChange={(val) => update("deposit_cutoff_days", val)}
+              options={DEPOSIT_CUTOFF_OPTIONS}
+              inputClass={inputClass}
+              inputType="number"
+              min={0}
+              placeholder="e.g. 30"
+              helpText="Leave blank to allow a deposit right up to departure. Once fewer days remain, customers see only 'Pay in Full Today'."
+            />
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Final payment due (days before departure)</span>
-              <input type="number" min={0} value={form.balance_payment_deadline_days ?? ""} onChange={(e) => update("balance_payment_deadline_days", e.target.value)} className={inputClass} placeholder="e.g. 30" />
-              <span className="mt-1 block text-[11px] text-dash-subtle">After paying a deposit, the customer must clear the remaining balance by this many days before departure.</span>
-            </label>
+            <FormDropdownField
+              label="Final payment due (days before departure)"
+              value={form.balance_payment_deadline_days ?? ""}
+              onChange={(val) => update("balance_payment_deadline_days", val)}
+              options={BALANCE_DEADLINE_OPTIONS}
+              inputClass={inputClass}
+              inputType="number"
+              min={0}
+              placeholder="e.g. 30"
+              helpText="After paying a deposit, the customer must clear the remaining balance by this many days before departure."
+            />
 
             <div className="md:col-span-2 mt-2 border-t border-dash-border-soft pt-4">
               <p className="text-xs font-black uppercase tracking-wide text-dash-subtle">Tax &amp; service fee</p>
@@ -1006,6 +1654,7 @@ export default function TourFormPage({
           </div>
         </form>
       )}
+      {dialog}
     </div>
   );
 }

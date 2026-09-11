@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LuPlus as Plus, LuHistory as History, LuSave as Save, LuX as X } from "react-icons/lu";
-import { TourDiscount, DiscountHistoryEntry, getDiscounts, createDiscount, amendDiscount, getDiscountHistory, getPricing } from "@/lib/api/services/tourDetailService";
+import { LuPlus as Plus, LuHistory as History, LuPencil as Pencil, LuSave as Save, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
+import { TourDiscount, DiscountHistoryEntry, getDiscounts, createDiscount, updateDiscount, deactivateDiscount, getDiscountHistory, getPricing } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import DatePicker from "@/components/ui/DatePicker";
 import api from "@/lib/api/client";
@@ -96,6 +97,7 @@ const empty = (): TourDiscount => ({
 export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: string; role?: "admin" | "supplier" }) {
   const isSupplier = role === "supplier";
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<TourDiscount[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourDiscount | null>(null);
@@ -109,10 +111,6 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
   const [storefrontAdultPrice, setStorefrontAdultPrice] = useState(0);
   const [storefrontChildPrice, setStorefrontChildPrice] = useState(0);
   const [currency, setCurrency] = useState("USD");
-  const [amending, setAmending] = useState<TourDiscount | null>(null);
-  const [amendValue, setAmendValue] = useState("");
-  const [amendEndDate, setAmendEndDate] = useState("");
-  const [amendReason, setAmendReason] = useState("");
   const [historyFor, setHistoryFor] = useState<TourDiscount | null>(null);
   const [history, setHistory] = useState<DiscountHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -175,10 +173,16 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     setSaving(true);
     try {
       const payload = { ...editing, discount_value: sanitizeNumber(editing.discount_value), minimum_booking_amount: sanitizeNumber(editing.minimum_booking_amount) };
-      const created = await createDiscount(tourId, payload);
-      setItems((prev) => [...prev, created]);
+      if (editing.id) {
+        const updated = await updateDiscount(tourId, editing.id, payload);
+        setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+        toast.success("Discount updated.");
+      } else {
+        const created = await createDiscount(tourId, payload);
+        setItems((prev) => [...prev, created]);
+        toast.success("Discount created.");
+      }
       setEditing(null);
-      toast.success("Discount created.");
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err));
     } finally {
@@ -186,38 +190,21 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     }
   };
 
-  const openAmend = (item: TourDiscount) => {
-    setAmending(item);
-    setAmendValue(String(item.discount_value));
-    setAmendEndDate(item.end_date?.slice(0, 10) ?? "");
-    setAmendReason("");
-  };
-
-  const submitAmend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amending?.id) return;
-    const newValue = Number(amendValue);
-    const valueChanged = amending.discount_value !== newValue;
-    const newEndDate = amendEndDate ? `${amendEndDate}T23:59:59` : null;
-    const endDateChanged = newEndDate && newEndDate !== amending.end_date;
-    if (!valueChanged && !endDateChanged) {
-      toast.error("Change the percentage/value and/or extend the end date first.");
-      return;
-    }
-    setSaving(true);
+  const deactivate = async (item: TourDiscount) => {
+    if (!item.id) return;
+    const ok = await confirm({
+      title: "Deactivate discount",
+      message: `Deactivate "${item.discount_name}"? It will stop applying to new bookings, but its history is kept.`,
+      confirmLabel: "Deactivate",
+      danger: true,
+    });
+    if (!ok) return;
     try {
-      const updated = await amendDiscount(tourId, amending.id, {
-        new_discount_value: valueChanged ? newValue : null,
-        new_end_date: endDateChanged ? newEndDate : null,
-        reason: amendReason.trim() || null,
-      });
-      setItems((prev) => prev.map((i) => i.id === updated.id ? updated : i));
-      setAmending(null);
-      toast.success("Discount amended -- a new history version was recorded.");
+      const updated = await deactivateDiscount(tourId, item.id);
+      setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+      toast.success("Discount deactivated.");
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err));
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -254,7 +241,12 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
           <div key={item.id} className="rounded-xl border border-dash-border bg-white p-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="font-semibold text-dash-text">{item.discount_name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-dash-text">{item.discount_name}</p>
+                  {item.status === "inactive" && (
+                    <span className="rounded-full bg-[#FBEAEA] px-2 py-0.5 text-[10px] font-bold uppercase text-red-600">Inactive</span>
+                  )}
+                </div>
                 {item.discount_code && (
                   <span className="mt-1 inline-block rounded-full bg-[#EEF8FF] px-2.5 py-0.5 text-xs font-bold text-dash-brand">{item.discount_code}</span>
                 )}
@@ -283,7 +275,10 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={() => openHistory(item)} className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F2F4F7]"><History size={14} /> History</button>
-                <button type="button" onClick={() => openAmend(item)} className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white hover:bg-dash-brand-hover">Extend / Change %</button>
+                <button type="button" onClick={() => setEditing({ ...item })} className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white hover:bg-dash-brand-hover"><Pencil size={14} /> Edit</button>
+                {item.status !== "inactive" && (
+                  <button type="button" onClick={() => deactivate(item)} aria-label="Delete discount" title="Delete discount" className="inline-flex items-center justify-center rounded-lg border border-[#FFCDD2] p-2 text-red-500 hover:bg-[#FFF0F0]"><Trash2 size={14} /></button>
+                )}
               </div>
             </div>
           </div>
@@ -331,9 +326,10 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
       </div>
 
       {editing && (
-        <form onSubmit={save} className="rounded-xl border-2 border-dash-brand bg-white p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true">
+          <form onSubmit={save} className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-bold">New Discount</h3>
+            <h3 className="font-bold text-dash-text">{editing.id ? "Edit Discount" : "New Discount"}</h3>
             <button type="button" aria-label="Close editor" title="Close editor" onClick={() => setEditing(null)}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -386,37 +382,9 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
           <div className="mt-4 flex justify-end gap-3">
             <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
             <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
-              <Save size={14} /> {saving ? "Saving..." : "Save Discount"}
+              <Save size={14} /> {saving ? "Saving..." : editing.id ? "Save Changes" : "Save Discount"}
             </button>
           </div>
-        </form>
-      )}
-
-      {amending && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true">
-          <form onSubmit={submitAmend} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-dash-text">Extend validity / change percentage</h3>
-              <button type="button" aria-label="Close" onClick={() => setAmending(null)}><X size={18} /></button>
-            </div>
-            <p className="mt-1 text-xs text-dash-subtle">{amending.discount_name} -- editing is disabled; this creates a new history version instead.</p>
-            <div className="mt-4 grid gap-4">
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{amending.discount_type === "percentage" ? "New percentage (%)" : "New amount"}</span>
-                <input type="number" value={amendValue} onChange={(e) => setAmendValue(e.target.value)} className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-              </label>
-              <DatePicker label="New end date (must be later)" value={amendEndDate} minDate={amending.end_date?.slice(0, 10) || undefined} onChange={setAmendEndDate} />
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Reason (optional)</span>
-                <input value={amendReason} onChange={(e) => setAmendReason(e.target.value)} placeholder="e.g. Peak-season extension" className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-              </label>
-            </div>
-            <div className="mt-5 flex justify-end gap-3">
-              <button type="button" onClick={() => setAmending(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
-              <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
-                <Save size={14} /> {saving ? "Saving..." : "Save Amendment"}
-              </button>
-            </div>
           </form>
         </div>
       )}
@@ -454,6 +422,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
           </div>
         </div>
       )}
+      {dialog}
     </div>
   );
 }
