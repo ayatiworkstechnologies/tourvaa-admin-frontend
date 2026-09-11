@@ -61,7 +61,7 @@ export default function TravelSupportBanner({
     propImage || (data.image ? mediaUrl(data.image) : "/images/offer.png");
 
   return (
-    <section className="group relative w-full overflow-hidden my-3 sm:my-5 py-6 sm:py-8 md:py-9 bg-white border-y border-slate-200/60 shadow-2xs min-h-[190px] sm:min-h-[220px] md:min-h-[240px] flex items-center">
+    <section className="group relative w-full overflow-hidden my-3 sm:my-5 py-6 sm:py-8 md:py-9 bg-white border-y border-orange-200/50 shadow-md min-h-[190px] sm:min-h-[220px] md:min-h-[240px] flex items-center">
       {/* Full panoramic background image - left aligned so agents remain clearly in frame */}
       <img
         src={image}

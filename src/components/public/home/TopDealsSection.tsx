@@ -16,9 +16,11 @@ import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { useCurrency } from "@/hooks/useCurrency";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import {
+  fetchContentBlock,
   fetchFeaturedTours,
   fetchPublicTourDetail,
   fetchToursOnDeals,
+  SectionVisibilityBlock,
 } from "@/lib/api/publicClient";
 import {
   mapPublicTour,
@@ -26,6 +28,8 @@ import {
   Tour,
 } from "./homeTypes";
 import { EmptyCollection, TourCardSkeleton } from "./HomeHelpers";
+import { useAutoSlide } from "./useAutoSlide";
+import { smoothScrollTo } from "./smoothScrollTo";
 
 export function TopDealCard({ tour }: { tour: Tour }) {
   const { isWishlisted, toggleWishlist } = useTravelStore();
@@ -49,21 +53,10 @@ export function TopDealCard({ tour }: { tour: Tour }) {
   const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.9";
   const reviewCountStr = tour.reviews || "1,842 reviews";
 
-  // Dynamic discount badge calculation
-  const calculatedPct =
-    tour.originalPrice && tour.rawPrice && tour.originalPrice > tour.rawPrice
-      ? Math.round(
-          ((tour.originalPrice - tour.rawPrice) / tour.originalPrice) * 100,
-        )
-      : null;
-  const dealBadge =
-    tour.discountBadge ||
-    (calculatedPct ? `Save ${calculatedPct}%` : "Special Deal");
-
   return (
     <article
       data-deal-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5 h-full"
     >
       {/* Image with Deal badge, Location badge & Wishlist button */}
       <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
@@ -82,11 +75,6 @@ export function TopDealCard({ tour }: { tour: Tour }) {
 
         {/* Top-Left Badges */}
         <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-md shadow-orange-600/30">
-            <Sparkles size={11} className="fill-white animate-sparkle-glow" />
-            <span>{dealBadge}</span>
-          </span>
-
           <span className="inline-flex items-center gap-1 rounded-full bg-slate-950/70 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-white shadow-xs">
             <MapPin size={11} className="text-orange-400 shrink-0" />
             <span className="truncate max-w-[110px]">{tour.place}</span>
@@ -195,7 +183,20 @@ export default function TopDealsSection({
     initialLoading !== undefined ? initialLoading : !initialTours?.length,
   );
   const [activeTab, setActiveTab] = useState("Top deals");
+  const [sectionEnabled, setSectionEnabled] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Section can be switched off from admin/cms > Top Deals; defaults to
+  // shown (true) when no admin has set it either way.
+  useEffect(() => {
+    let active = true;
+    fetchContentBlock<SectionVisibilityBlock>("top_deals_section")
+      .then((res) => {
+        if (active && res?.data?.enabled === false) setSectionEnabled(false);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   // Fast independent data loading
   useEffect(() => {
@@ -317,13 +318,23 @@ export default function TopDealsSection({
 
   const displayTours = filteredTours;
 
+  // Auto-slides right-to-left every few seconds; pauses on hover/touch/drag
+  // or a manual arrow click, resuming shortly after.
+  const { notifyInteraction } = useAutoSlide(scrollRef, {
+    cardSelector: "[data-deal-card]",
+    enabled: !loading && displayTours.length > 1,
+  });
+
+  if (!sectionEnabled) return null;
+
   const move = (direction: number) => {
+    notifyInteraction();
     const el = scrollRef.current;
     if (!el) return;
     const firstCard = el.querySelector<HTMLElement>("[data-deal-card]");
     const gap = 20; // 1.25rem gap-5
     const step = firstCard ? firstCard.offsetWidth + gap : 320;
-    el.scrollBy({ left: direction * step, behavior: "smooth" });
+    smoothScrollTo(el, el.scrollLeft + direction * step);
   };
 
   return (
@@ -417,7 +428,7 @@ export default function TopDealsSection({
         {/* Carousel list */}
         <div
           ref={scrollRef}
-          className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
+          className="no-scrollbar reveal-stagger flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
         >
           {loading ? (
             Array.from({ length: 4 }).map((_, index) => (

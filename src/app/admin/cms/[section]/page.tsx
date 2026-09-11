@@ -14,6 +14,8 @@ import {
   CmsTabPanel,
   TABS,
   TAB_DESCRIPTIONS,
+  TOP_DEALS_VISIBILITY_BLOCK,
+  TRENDING_VISIBILITY_BLOCK,
 } from "../cmsShared";
 
 export default function CmsSectionPage() {
@@ -84,6 +86,12 @@ export default function CmsSectionPage() {
             <CmsTabPanel key={currentListTab.key} tab={currentListTab} />
             {currentListTab.key === "banners" && (
               <ContentBlockPanel key={HERO_EXTRAS_BLOCK.key} tab={HERO_EXTRAS_BLOCK} />
+            )}
+            {currentListTab.key === "tours-on-deals" && (
+              <ContentBlockPanel key={TOP_DEALS_VISIBILITY_BLOCK.key} tab={TOP_DEALS_VISIBILITY_BLOCK} />
+            )}
+            {currentListTab.key === "popular-tours" && (
+              <ContentBlockPanel key={TRENDING_VISIBILITY_BLOCK.key} tab={TRENDING_VISIBILITY_BLOCK} />
             )}
           </div>
         ) : currentBlockTab ? (

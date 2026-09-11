@@ -84,7 +84,7 @@ export default function AirportTransfersBanner({
   return (
     <div className="relative z-10 mx-auto max-w-[1380px] px-5">
       <section className="py-6 sm:py-10">
-        <div className="group grid gap-6 lg:gap-10 overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-6 sm:p-8 lg:p-10 md:grid-cols-2 md:items-center shadow-xs hover:border-slate-300 hover:shadow-lg transition-all duration-300 ease-out">
+        <div className="group grid gap-6 lg:gap-10 overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-6 sm:p-8 lg:p-10 md:grid-cols-2 md:items-center shadow-xs hover:border-slate-300 hover:shadow-lg transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]">
           <div className="flex flex-col items-start justify-center py-2 text-left">
             {/* Tag / Badge */}
             <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E4572E]">

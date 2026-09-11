@@ -49,19 +49,19 @@ export type TabConfig = {
 // A "block" tab edits a single key/JSON record (GET/PUT /cms/content-blocks/{blockKey})
 // instead of a list of rows - used for one-off homepage sections that don't
 // need their own table (hero extras, About Tourvaa, blog teaser, transfers banner).
-type BlockFieldType = "text" | "textarea" | "url" | "number" | "asset";
+type BlockFieldType = "text" | "textarea" | "url" | "number" | "asset" | "boolean";
 export type ContentBlockTabConfig = {
   key: string;
   label: string;
   blockKey: string;
-  fields: { key: string; label: string; type: BlockFieldType; hint?: string }[];
+  fields: { key: string; label: string; type: BlockFieldType; hint?: string; default?: string }[];
 };
 
 
 export const TAB_DESCRIPTIONS: Record<string, string> = {
   banners: "The homepage hero: background banners/video, the trust-rating badge, and the promotional offer strip.",
-  "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order.",
-  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Only tours with an active discount can be picked.",
+  "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order. Toggle the whole section on/off below.",
+  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Only tours with an active discount can be picked. Toggle the whole section on/off below.",
   "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section - a separate curated list from Trending Tour Packages.",
   "popular-destinations": "Country images shown in Countries Worth Exploring (the country list itself is calculated automatically from real tour counts).",
   "favourite-countries": "The editorial country list and snippet copy shown in the homepage Favourite Countries section.",
@@ -285,6 +285,27 @@ export const HERO_EXTRAS_BLOCK: ContentBlockTabConfig = {
   ],
 };
 
+// Rendered together with the Top Deals / Trending Tour Packages list tabs -
+// a simple on/off switch for whether that whole homepage section shows at
+// all, independent of which tours are pinned into it.
+export const TOP_DEALS_VISIBILITY_BLOCK: ContentBlockTabConfig = {
+  key: "top-deals-visibility",
+  label: "Top Deals Section Visibility",
+  blockKey: "top_deals_section",
+  fields: [
+    { key: "enabled", label: "Show the Top Deals section on the homepage", type: "boolean", default: "true" },
+  ],
+};
+
+export const TRENDING_VISIBILITY_BLOCK: ContentBlockTabConfig = {
+  key: "trending-visibility",
+  label: "Trending Section Visibility",
+  blockKey: "trending_section",
+  fields: [
+    { key: "enabled", label: "Show the Trending Tour Packages section on the homepage", type: "boolean", default: "false" },
+  ],
+};
+
 export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
   {
     key: "about-section",
@@ -364,7 +385,7 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
     try {
       const res = await api.get(`/cms/content-blocks/${tab.blockKey}`);
       const data = (res.data?.data?.data ?? {}) as Record<string, unknown>;
-      setValues(Object.fromEntries(tab.fields.map((f) => [f.key, data[f.key] != null ? String(data[f.key]) : ""])));
+      setValues(Object.fromEntries(tab.fields.map((f) => [f.key, data[f.key] != null ? String(data[f.key]) : (f.default ?? "")])));
     } catch {
       toast.error(`Could not load ${tab.label}.`);
     } finally {
@@ -384,7 +405,11 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
       const data: Record<string, unknown> = {};
       for (const f of tab.fields) {
         const raw = values[f.key] ?? "";
-        data[f.key] = f.key === "features" ? raw.split(",").map((v) => v.trim()).filter(Boolean) : f.type === "number" ? (raw === "" ? "" : Number(raw)) : raw;
+        data[f.key] = f.key === "features"
+          ? raw.split(",").map((v) => v.trim()).filter(Boolean)
+          : f.type === "number" ? (raw === "" ? "" : Number(raw))
+          : f.type === "boolean" ? raw === "true"
+          : raw;
       }
       await api.put(`/cms/content-blocks/${tab.blockKey}`, { data });
       toast.success(`${tab.label} updated.`);
@@ -421,6 +446,21 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
                       value={values[f.key] ?? ""}
                       onChange={(value) => setValues((v) => ({ ...v, [f.key]: value }))}
                     />
+                  ) : f.type === "boolean" ? (
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={values[f.key] === "true"}
+                      onClick={() => setValues((v) => ({ ...v, [f.key]: v[f.key] === "true" ? "false" : "true" }))}
+                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
+                        values[f.key] === "true" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      <span className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${values[f.key] === "true" ? "bg-emerald-500" : "bg-slate-300"}`}>
+                        <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${values[f.key] === "true" ? "translate-x-3" : "translate-x-0"}`} />
+                      </span>
+                      <span>{values[f.key] === "true" ? "Enabled" : "Disabled"}</span>
+                    </button>
                   ) : f.type === "textarea" ? (
                     <textarea
                       rows={4}

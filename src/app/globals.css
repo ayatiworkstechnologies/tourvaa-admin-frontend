@@ -466,25 +466,91 @@ button {
   transform: translateY(-2px);
 }
 
-/* Scroll-reveal block with smooth hardware acceleration */
+/* ==========================================================================
+   Tourvaa Modern Scroll-Reveal Animation Engine
+   High-performance GPU-accelerated motion with physics-based cubic-bezier
+   ========================================================================== */
 .reveal-block {
+  --reveal-duration: 0.75s;
+  --reveal-delay: 0ms;
+  --reveal-easing: cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  will-change: opacity, transform;
+  transition: opacity var(--reveal-duration) var(--reveal-easing) var(--reveal-delay),
+              transform var(--reveal-duration) var(--reveal-easing) var(--reveal-delay);
+}
+
+/* Motion Variants */
+.reveal-fade-up {
+  transform: translateY(36px);
+}
+.reveal-fade-down {
+  transform: translateY(-36px);
+}
+.reveal-fade-left {
+  transform: translateX(-40px);
+}
+.reveal-fade-right {
+  transform: translateX(40px);
+}
+.reveal-scale-up {
+  transform: translateY(24px) scale(0.95);
+}
+.reveal-fade {
+  transform: none;
+}
+
+/* Active In-Viewport State */
+.reveal-block.is-visible {
+  opacity: 1;
+  transform: translateY(0) translateX(0) scale(1);
+}
+
+/* Child Stagger Support */
+.reveal-stagger > * {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.reveal-block.is-visible {
+.reveal-block.is-visible.reveal-stagger > *,
+.reveal-block.is-visible .reveal-stagger > * {
   opacity: 1;
   transform: translateY(0);
 }
+.reveal-stagger > *:nth-child(1) { transition-delay: 40ms; }
+.reveal-stagger > *:nth-child(2) { transition-delay: 110ms; }
+.reveal-stagger > *:nth-child(3) { transition-delay: 180ms; }
+.reveal-stagger > *:nth-child(4) { transition-delay: 250ms; }
+.reveal-stagger > *:nth-child(5) { transition-delay: 320ms; }
+.reveal-stagger > *:nth-child(6) { transition-delay: 390ms; }
+.reveal-stagger > *:nth-child(7) { transition-delay: 460ms; }
+.reveal-stagger > *:nth-child(8) { transition-delay: 530ms; }
 
-/* Mobile gets a lighter, faster reveal: less vertical travel and a shorter
-   transition, since the desktop timing/offset reads as sluggish on phones -
-   desktop (sm and up) keeps the original values above untouched. */
+/* Mobile Optimizations */
 @media (max-width: 639px) {
   .reveal-block {
-    transform: translateY(10px);
-    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    --reveal-duration: 0.5s;
+  }
+  .reveal-fade-up {
+    transform: translateY(18px);
+  }
+  .reveal-fade-down {
+    transform: translateY(-18px);
+  }
+  .reveal-fade-left {
+    transform: translateX(-18px);
+  }
+  .reveal-fade-right {
+    transform: translateX(18px);
+  }
+  .reveal-scale-up {
+    transform: translateY(14px) scale(0.97);
+  }
+  .reveal-stagger > * {
+    transform: translateY(14px);
+    transition-duration: 0.45s;
   }
 }
 

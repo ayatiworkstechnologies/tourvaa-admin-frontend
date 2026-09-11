@@ -59,7 +59,7 @@ export default function BlogTeaserSection({
       <div className="pointer-events-none absolute -bottom-24 -right-24 h-[420px] w-[420px] rounded-full bg-gradient-to-tl from-sky-400/25 via-blue-300/15 to-transparent blur-3xl animate-float-orb-alt" />
 
       <div className="relative z-10 mx-auto max-w-[1380px] px-5">
-        <div className="group grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-5 sm:p-6 lg:p-7 shadow-xs hover:border-slate-300 hover:shadow-lg transition-all duration-300 ease-out">
+        <div className="group grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-5 sm:p-6 lg:p-7 shadow-xs hover:border-slate-300 hover:shadow-lg transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]">
           {/* Left Image: rounded-[18px] with smooth hover zoom */}
           <div className="relative h-[280px] sm:h-[340px] lg:h-[400px] w-full overflow-hidden rounded-[18px] bg-slate-100 shadow-sm">
             <img

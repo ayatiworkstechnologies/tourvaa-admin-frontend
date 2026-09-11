@@ -25,6 +25,8 @@ import {
   Tour,
 } from "./homeTypes";
 import { EmptyCollection, TourCardSkeleton } from "./HomeHelpers";
+import { useAutoSlide } from "./useAutoSlide";
+import { smoothScrollTo } from "./smoothScrollTo";
 
 export function HandpickedTourCard({ tour }: { tour: Tour }) {
   const { isWishlisted, toggleWishlist } = useTravelStore();
@@ -51,7 +53,7 @@ export function HandpickedTourCard({ tour }: { tour: Tour }) {
   return (
     <article
       data-handpicked-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5 h-full"
     >
       {/* Image with Location badge & Wishlist */}
       <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
@@ -237,20 +239,28 @@ export default function HandpickedToursSection({
     };
   }, [initialTours]);
 
+  const displayTours = tours;
+
+  // Auto-slides right-to-left every few seconds; pauses on hover/touch/drag
+  // or a manual arrow click, resuming shortly after.
+  const { notifyInteraction } = useAutoSlide(scrollRef, {
+    cardSelector: "[data-handpicked-card]",
+    enabled: !loading && displayTours.length > 1,
+  });
+
   const move = (direction: number) => {
+    notifyInteraction();
     const el = scrollRef.current;
     if (!el) return;
     const firstCard = el.querySelector<HTMLElement>("[data-handpicked-card]");
     const gap = 20;
     const step = firstCard ? firstCard.offsetWidth + gap : 320;
-    el.scrollBy({ left: direction * step, behavior: "smooth" });
+    smoothScrollTo(el, el.scrollLeft + direction * step);
   };
 
-  const displayTours = tours;
-
   return (
-    <div className="relative z-10 mx-auto max-w-[1380px] px-5">
-      <section className="py-8 sm:py-10">
+    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-14 bg-gradient-to-b from-white via-[#F3FAF6] to-[#EAF6EF] border-y border-emerald-100/70 shadow-2xs">
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         {/* Section Header with Arrows on right */}
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
@@ -282,7 +292,7 @@ export default function HandpickedToursSection({
         {/* Carousel list */}
         <div
           ref={scrollRef}
-          className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
+          className="no-scrollbar reveal-stagger flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
         >
           {loading ? (
             Array.from({ length: 4 }).map((_, index) => (
@@ -305,7 +315,7 @@ export default function HandpickedToursSection({
             />
           )}
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

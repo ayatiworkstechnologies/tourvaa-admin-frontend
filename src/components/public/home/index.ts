@@ -1,7 +1,7 @@
 export * from "./homeTypes";
 export * from "./HomeHelpers";
 export { default as HeroSection } from "./HeroSection";
-export { default as VisualPromoBanner } from "./VisualPromoBanner";
+export { default as EscapeSaleSection } from "./EscapeSaleSection";
 export { default as TopDealsSection, TopDealCard } from "./TopDealsSection";
 export { default as FavouriteCountriesSection } from "./FavouriteCountriesSection";
 export { default as AboutTourvaaBanner } from "./AboutTourvaaBanner";

@@ -141,6 +141,7 @@ export type BlogTeaserBlock = { eyebrow: string; heading: string; subtitle: stri
 export type AirportTransferBlock = { eyebrow: string; heading: string; subtitle: string; features: string[]; cta_text: string; cta_url: string; image: string };
 export type TravelSupportBlock = { eyebrow: string; heading: string; subtitle: string; cta_text: string; cta_url: string; image: string };
 export type NewsletterBannerBlock = { badge: string; heading: string; subtitle: string; image: string };
+export type SectionVisibilityBlock = { enabled: boolean };
 export type CmsDealTour = { id: number; tour_id: number; tour_title: string; tour_code: string; deal_label: string | null; discount_percentage: number | null; sort_order: number; is_active: boolean };
 export type CmsHelpArticle = { id: number; question: string; answer: string; category: string; sort_order: number; is_active: boolean };
 export type CmsPromoPopup = {

@@ -10,15 +10,18 @@ import {
   LuMapPin as MapPin,
   LuSparkles as Sparkles,
   LuStar as Star,
+  LuTrendingUp as TrendingUp,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { useCurrency } from "@/hooks/useCurrency";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import {
+  fetchContentBlock,
   fetchFeaturedTours,
   fetchPopularTours,
   fetchPublicTourDetail,
+  SectionVisibilityBlock,
 } from "@/lib/api/publicClient";
 import {
   mapPublicTour,
@@ -26,6 +29,8 @@ import {
   Tour,
 } from "./homeTypes";
 import { EmptyCollection, TourCardSkeleton } from "./HomeHelpers";
+import { useAutoSlide } from "./useAutoSlide";
+import { smoothScrollTo } from "./smoothScrollTo";
 
 export function TrendingTourCard({ tour }: { tour: Tour }) {
   const { isWishlisted, toggleWishlist } = useTravelStore();
@@ -63,7 +68,7 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
   return (
     <article
       data-trending-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5 h-full"
     >
       {/* Top Image Container */}
       <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
@@ -80,8 +85,13 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
         {/* Subtle vignette overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20 pointer-events-none" />
 
-        {/* Location pill badge (top-left) */}
+        {/* Trending & Location pill badges (top-left) */}
         <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 rounded-full bg-sky-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-md shadow-sky-600/30">
+            <TrendingUp size={11} className="stroke-[2.5]" />
+            <span>Trending</span>
+          </span>
+
           <span className="inline-flex items-center gap-1 rounded-full bg-slate-950/70 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-white shadow-xs">
             <MapPin size={11} className="text-orange-400 shrink-0" />
             <span className="truncate max-w-[120px]">{tour.place}</span>
@@ -212,7 +222,20 @@ export default function TrendingToursSection({
   const [loading, setLoading] = useState<boolean>(
     initialLoading !== undefined ? initialLoading : !initialTours?.length,
   );
+  const [sectionEnabled, setSectionEnabled] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Section is switched off by default (per current requirement) until
+  // enabled from admin/cms > Trending Tour Packages.
+  useEffect(() => {
+    let active = true;
+    fetchContentBlock<SectionVisibilityBlock>("trending_section")
+      .then((res) => {
+        if (active && res?.data?.enabled === true) setSectionEnabled(true);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   // Fast independent data loading
   useEffect(() => {
@@ -274,16 +297,26 @@ export default function TrendingToursSection({
     };
   }, [initialTours]);
 
+  const displayTours = tours;
+
+  // Auto-slides right-to-left every few seconds; pauses on hover/touch/drag
+  // or a manual arrow click, resuming shortly after.
+  const { notifyInteraction } = useAutoSlide(scrollRef, {
+    cardSelector: "[data-trending-card]",
+    enabled: !loading && displayTours.length > 1,
+  });
+
+  if (!sectionEnabled) return null;
+
   const move = (direction: number) => {
+    notifyInteraction();
     const el = scrollRef.current;
     if (!el) return;
     const firstCard = el.querySelector<HTMLElement>("[data-trending-card]");
     const gap = 20;
     const step = firstCard ? firstCard.offsetWidth + gap : 320;
-    el.scrollBy({ left: direction * step, behavior: "smooth" });
+    smoothScrollTo(el, el.scrollLeft + direction * step);
   };
-
-  const displayTours = tours;
 
   return (
     <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-16 bg-gradient-to-b from-white via-[#F8FAFC] to-[#F1F5F9] border-y border-slate-200/70 shadow-2xs">
@@ -336,7 +369,7 @@ export default function TrendingToursSection({
         {/* Carousel list */}
         <div
           ref={scrollRef}
-          className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
+          className="no-scrollbar reveal-stagger flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
         >
           {loading ? (
             Array.from({ length: 4 }).map((_, index) => (

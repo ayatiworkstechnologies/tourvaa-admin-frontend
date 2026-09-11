@@ -89,7 +89,7 @@ export default function HomeNewsletterBanner({
   return (
     <section className="w-full my-3 sm:my-5">
       <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8">
-        <div className="group relative w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm transition-all duration-300 ease-out hover:shadow-xl">
+        <div className="group relative w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-xl">
           {/* Background image & gradient overlay */}
           <div className="absolute inset-0 overflow-hidden">
             <img

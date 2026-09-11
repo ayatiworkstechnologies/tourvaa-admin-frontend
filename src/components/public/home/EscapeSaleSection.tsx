@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { LuArrowRight as ArrowRight } from "react-icons/lu";
@@ -12,17 +14,17 @@ import {
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { Reveal } from "./HomeHelpers";
 
-export interface VisualPromoBannerProps {
+export interface EscapeSaleSectionProps {
   promoBanner?: CmsBanner | null;
   heroExtras?: Partial<HeroExtrasBlock>;
   maxDiscount?: number;
 }
 
-export default function VisualPromoBanner({
+export default function EscapeSaleSection({
   promoBanner: initialPromoBanner,
   heroExtras: initialHeroExtras,
   maxDiscount = 60,
-}: VisualPromoBannerProps) {
+}: EscapeSaleSectionProps) {
   const [promoBanner, setPromoBanner] = useState<CmsBanner | null | undefined>(
     initialPromoBanner,
   );
@@ -36,7 +38,7 @@ export default function VisualPromoBanner({
     if (initialPromoBanner === undefined) {
       fetchHomepageBanners()
         .then((banners) => {
-          if (active && banners?.length > 1) {
+          if (active && banners && banners.length > 1) {
             setPromoBanner(banners[1]);
           }
         })
@@ -57,42 +59,52 @@ export default function VisualPromoBanner({
       active = false;
     };
   }, [initialPromoBanner, initialHeroExtras]);
+
+  const rawExtras = (heroExtras || {}) as Record<string, unknown>;
+
   const visualBannerBadge =
-    ((heroExtras as Record<string, unknown>).deal_badge as string) ||
-    "Offer Ends Soon";
+    (rawExtras.deal_badge as string) || "OFFER ENDS SOON";
+
   const visualBannerTitle =
     promoBanner?.title ||
-    ((heroExtras as Record<string, unknown>).deal_title as string) ||
+    (rawExtras.deal_title as string) ||
     `Big Adventures. Smaller Prices. Save up to ${maxDiscount}% off.`;
+
   const visualBannerSubtitle =
     promoBanner?.subtitle ||
-    ((heroExtras as Record<string, unknown>).deal_subtitle as string) ||
+    (rawExtras.deal_subtitle as string) ||
     "Explore handpicked tours at special prices and make your next journey one to remember.";
+
   const visualBannerCtaText =
     promoBanner?.cta_text ||
-    ((heroExtras as Record<string, unknown>).deal_cta_text as string) ||
+    (rawExtras.deal_cta_text as string) ||
     "Explore Deals";
+
   const visualBannerCtaUrl =
     promoBanner?.cta_url ||
-    ((heroExtras as Record<string, unknown>).deal_cta_url as string) ||
+    (rawExtras.deal_cta_url as string) ||
     "/tours?sort=price_asc";
+
   const visualBannerImage = promoBanner?.image
     ? mediaUrl(promoBanner.image)
     : "/images/destination-alpine.jpg";
 
   return (
-    <div className="relative z-10 mx-auto max-w-[1400px] px-5 mb-4 sm:mb-6">
-      <Reveal>
-        <section className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] border border-slate-100/90 shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
+    <div className="relative z-10 mx-auto max-w-[1400px] px-5 my-4 sm:my-6">
+      <Reveal variant="scale-up">
+        <section className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] border border-slate-200/80 shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
+          {/* Background panoramic mountain image with smooth zoom on hover */}
           <div className="absolute inset-0 overflow-hidden">
             <img
               src={visualBannerImage}
               alt={visualBannerTitle}
-              className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+              className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/60 to-slate-950/30" />
+            {/* Gradient overlay for text contrast and depth */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/60 to-slate-950/20" />
           </div>
 
+          {/* Banner content */}
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 sm:p-8 lg:p-10 min-h-[170px] sm:min-h-[190px]">
             <div className="max-w-2xl text-left">
               {visualBannerBadge && (
@@ -100,10 +112,10 @@ export default function VisualPromoBanner({
                   {visualBannerBadge}
                 </span>
               )}
-              <h2 className="mt-3 text-xl sm:text-2xl lg:text-[32px] font-bold text-white tracking-tight leading-tight">
+              <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-white tracking-tight leading-tight">
                 {visualBannerTitle}
               </h2>
-              <p className="mt-2 text-xs sm:text-sm md:text-[15px] text-white/90 font-normal leading-relaxed max-w-xl">
+              <p className="mt-2.5 text-xs sm:text-sm md:text-[15px] text-white/90 font-medium leading-relaxed max-w-xl">
                 {visualBannerSubtitle}
               </p>
             </div>

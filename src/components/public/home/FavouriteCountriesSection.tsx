@@ -88,8 +88,8 @@ export default function FavouriteCountriesSection({
   }, [initialDestinations]);
 
   return (
-    <div className="relative z-10 mx-auto max-w-[1380px] px-5">
-      <section className="py-10 sm:py-14">
+    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-14 bg-gradient-to-b from-white via-[#F4F6FA] to-[#EDF1F7] border-y border-slate-200/60 shadow-2xs">
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         {/* Header */}
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
@@ -101,7 +101,7 @@ export default function FavouriteCountriesSection({
         </div>
 
         {/* 8 Country Cards in Responsive Grid */}
-        <div className="mt-8 sm:mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
+        <div className="mt-8 sm:mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 reveal-stagger">
           {destinations.map((country) => (
             <Link
               key={country.name}
@@ -109,7 +109,7 @@ export default function FavouriteCountriesSection({
                 country.href ||
                 `/tours?country=${encodeURIComponent(country.name)}`
               }
-              className="group relative h-[420px] w-full overflow-hidden rounded-[20px] bg-white p-4 border border-slate-200/80 shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 focus:outline-none flex flex-col"
+              className="group relative h-[420px] w-full overflow-hidden rounded-[20px] bg-white p-4 border border-slate-200/80 shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5 focus:outline-none flex flex-col"
             >
               {/* Inner Image Container with 16px radius */}
               <div className="relative h-full w-full overflow-hidden rounded-[16px] bg-slate-900">
@@ -147,7 +147,7 @@ export default function FavouriteCountriesSection({
             </Link>
           ))}
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

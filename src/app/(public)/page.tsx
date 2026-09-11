@@ -6,6 +6,7 @@ import {
   AirportTransfersBanner,
   BlogTeaserSection,
   CountriesWorthExploringSection,
+  EscapeSaleSection,
   FavouriteCountriesSection,
   HandpickedToursSection,
   HeroSection,
@@ -16,7 +17,6 @@ import {
   TopDealsSection,
   TravelSupportBanner,
   TrendingToursSection,
-  VisualPromoBanner,
 } from "@/components/public/home";
 
 export default function Home() {
@@ -25,66 +25,66 @@ export default function Home() {
       {/* 1. Hero Banner with Image/Video Carousel, Filter Bar & Trust Rating */}
       <HeroSection />
 
-      {/* 2. Visual Promotional Banner */}
-      <VisualPromoBanner />
+      {/* 2. Escape Sale: urgency banner + auto-sliding deal carousel */}
+      <EscapeSaleSection />
 
       {/* 3. Top Deals Section with Dynamic Destination Tabs */}
-      <Reveal>
+      <Reveal variant="fade-up">
         <TopDealsSection />
       </Reveal>
 
       {/* 4. Favourite Countries Section */}
-      <Reveal>
+      <Reveal variant="fade-up">
         <FavouriteCountriesSection />
       </Reveal>
 
       {/* 5. About Tourvaa Panoramic Banner */}
-      <Reveal>
+      <Reveal variant="scale-up">
         <AboutTourvaaBanner />
       </Reveal>
 
       {/* 6. Trending Tour Packages Carousel */}
-      <Reveal>
+      <Reveal variant="fade-up">
         <TrendingToursSection />
       </Reveal>
 
       {/* 7. Blog Teaser Banner */}
-      <Reveal>
+      <Reveal variant="fade-up">
         <BlogTeaserSection />
       </Reveal>
 
       {/* 8. Handpicked Tours for You */}
-      <Reveal>
+      <Reveal variant="fade-up">
         <HandpickedToursSection />
       </Reveal>
 
       {/* 9. Countries Worth Exploring Carousel */}
-      <Reveal>
+      <Reveal variant="fade-up">
         <CountriesWorthExploringSection />
       </Reveal>
 
       {/* 10. Travellers' Testimonials Carousel */}
-      <Reveal>
+      <Reveal variant="scale-up">
         <HomeTestimonialsSection />
       </Reveal>
 
       {/* 11. Airport Transfers Partner Banner */}
-      <Reveal>
+      <Reveal variant="scale-up">
         <AirportTransfersBanner />
       </Reveal>
 
       {/* 12. Frequently Asked Questions Accordion */}
-      <Reveal>
+      <Reveal variant="fade-up">
         <HomeFaqSection />
       </Reveal>
 
       {/* 13. 24/7 Travel Support Banner */}
-      <Reveal>
+      <Reveal variant="scale-up">
         <TravelSupportBanner />
       </Reveal>
 
       {/* 14. Panoramic Travel Newsletter Registration Banner */}
-      <Reveal>
+      <Reveal variant="fade-up">
         <HomeNewsletterBanner />
       </Reveal>
     </main>

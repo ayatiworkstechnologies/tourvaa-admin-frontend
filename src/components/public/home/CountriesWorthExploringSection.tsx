@@ -24,6 +24,8 @@ import {
   topDestinationsFromCountries,
 } from "./homeTypes";
 import { EmptyCollection } from "./HomeHelpers";
+import { useAutoSlide } from "./useAutoSlide";
+import { smoothScrollTo } from "./smoothScrollTo";
 
 export function CountryWorthExploringCard({
   country,
@@ -51,7 +53,7 @@ export function CountryWorthExploringCard({
   return (
     <div
       data-country-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 flex flex-col justify-between h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5 flex flex-col justify-between h-full"
     >
       {/* Top Image Container */}
       <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
@@ -206,22 +208,30 @@ export default function CountriesWorthExploringSection({
     };
   }, [initialCountries]);
 
+  const displayCountries = countries;
+
+  // Auto-slides right-to-left every few seconds; pauses on hover/touch/drag
+  // or a manual arrow click, resuming shortly after.
+  const { notifyInteraction } = useAutoSlide(scrollRef, {
+    cardSelector: "[data-country-card]",
+    enabled: !loading && displayCountries.length > 1,
+  });
+
   const move = (direction: number) => {
+    notifyInteraction();
     const el = scrollRef.current;
     if (!el) return;
     const firstCard = el.querySelector<HTMLElement>("[data-country-card]");
     const gap = 20;
     const step = firstCard ? firstCard.offsetWidth + gap : 320;
-    el.scrollBy({ left: direction * step, behavior: "smooth" });
+    smoothScrollTo(el, el.scrollLeft + direction * step);
   };
 
-  const displayCountries = countries;
-
   return (
-    <section className="relative w-full overflow-hidden my-8 sm:my-14 py-12 sm:py-20 bg-gradient-to-b from-white via-[#FAF7F2] to-[#F4EFE7] border-y border-slate-200/60 shadow-2xs">
+    <section className="relative w-full overflow-hidden my-8 sm:my-14 py-12 sm:py-20 bg-gradient-to-b from-white via-[#F7F5FC] to-[#F0ECFA] border-y border-violet-100/70 shadow-2xs">
       {/* Ambient decorative glowing blobs */}
-      <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-bl from-amber-200/20 via-orange-100/15 to-transparent blur-3xl animate-float-orb" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-emerald-100/20 via-slate-100/20 to-transparent blur-3xl animate-float-orb-alt" />
+      <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-bl from-violet-200/20 via-purple-100/15 to-transparent blur-3xl animate-float-orb" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-indigo-100/20 via-slate-100/20 to-transparent blur-3xl animate-float-orb-alt" />
 
       <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         {/* Header */}
@@ -268,7 +278,7 @@ export default function CountriesWorthExploringSection({
         {/* Carousel */}
         <div
           ref={scrollRef}
-          className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
+          className="no-scrollbar reveal-stagger flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
         >
           {loading ? (
             Array.from({ length: 4 }).map((_, index) => (

@@ -4,14 +4,37 @@ import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { LuArrowRight as ArrowRight } from "react-icons/lu";
 
+export type RevealVariant =
+  | "fade-up"
+  | "fade-down"
+  | "fade-left"
+  | "fade-right"
+  | "scale-up"
+  | "fade";
+
+export interface RevealProps {
+  children: React.ReactNode;
+  className?: string;
+  variant?: RevealVariant;
+  delay?: number;
+  duration?: number;
+  threshold?: number;
+  rootMargin?: string;
+  once?: boolean;
+}
+
 export function Reveal({
   children,
   className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+  variant = "fade-up",
+  delay = 0,
+  duration,
+  threshold = 0.08,
+  rootMargin = "0px 0px -40px 0px",
+  once = true,
+}: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
@@ -21,32 +44,81 @@ export function Reveal({
       return;
     }
 
+    // Check if element is already within viewport on initial render
+    const rect = node.getBoundingClientRect();
+    const windowHeight =
+      window.innerHeight || document.documentElement.clientHeight;
+    if (rect.top < windowHeight * 0.92 && rect.bottom > 0) {
+      const initialTimer = setTimeout(
+        () => {
+          node.classList.add("is-visible");
+        },
+        delay > 0 ? delay : 40,
+      );
+      return () => clearTimeout(initialTimer);
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             node.classList.add("is-visible");
-            observer.unobserve(node);
+            if (once) {
+              observer.unobserve(node);
+            }
+          } else if (!once) {
+            node.classList.remove("is-visible");
           }
         });
       },
-      { threshold: 0.01, rootMargin: "250px" },
+      { threshold, rootMargin },
     );
-    observer.observe(node);
 
-    const timer = setTimeout(() => {
-      node.classList.add("is-visible");
-    }, 800);
+    observer.observe(node);
 
     return () => {
       observer.disconnect();
-      clearTimeout(timer);
     };
-  }, []);
+  }, [delay, threshold, rootMargin, once]);
+
+  const variantClass = `reveal-${variant}`;
+  const customStyles: React.CSSProperties & Record<string, string> = {};
+  if (delay) customStyles["--reveal-delay"] = `${delay}ms`;
+  if (duration) customStyles["--reveal-duration"] = `${duration}ms`;
+
   return (
-    <div ref={ref} className={`reveal-block ${className}`}>
+    <div
+      ref={ref}
+      style={customStyles}
+      className={`reveal-block ${variantClass} ${className}`}
+    >
       {children}
     </div>
+  );
+}
+
+export function RevealStagger({
+  children,
+  className = "",
+  variant = "fade-up",
+  delay = 0,
+  duration,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  variant?: RevealVariant;
+  delay?: number;
+  duration?: number;
+}) {
+  return (
+    <Reveal
+      className={`reveal-stagger ${className}`}
+      variant={variant}
+      delay={delay}
+      duration={duration}
+    >
+      {children}
+    </Reveal>
   );
 }
 

@@ -10,6 +10,7 @@ import {
 } from "react-icons/lu";
 import { fetchCustomerReviews } from "@/lib/api/publicClient";
 import { CURATED_REVIEWS, mapReview, ReviewItem } from "./homeTypes";
+import { smoothScrollTo } from "./smoothScrollTo";
 
 export interface HomeTestimonialsSectionProps {
   initialReviews?: ReviewItem[];
@@ -77,14 +78,14 @@ export default function HomeTestimonialsSection({
       0,
       Math.min(maxScrollLeft, (currentIndex + direction) * step),
     );
-    carousel.scrollTo({ left: target, behavior: "smooth" });
+    smoothScrollTo(carousel, target);
   };
 
   const displayReviews = reviews.length > 0 ? reviews : CURATED_REVIEWS;
 
   return (
-    <div className="relative z-10 mx-auto max-w-[1380px] px-5">
-      <section className="py-12 sm:py-16">
+    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-12 sm:py-16 bg-gradient-to-b from-white via-[#FFF8EF] to-[#FDF3E4] border-y border-amber-100/70 shadow-2xs">
+      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
@@ -146,7 +147,7 @@ export default function HomeTestimonialsSection({
                   <article
                     key={`${review.name}-${index}`}
                     data-review-card
-                    className="group w-[calc(100%-1rem)] max-w-[290px] sm:w-[350px] sm:max-w-none lg:w-[370px] shrink-0 snap-start flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-7 text-left shadow-xs transition-all duration-300 ease-out hover:border-slate-300 hover:shadow-lg hover:-translate-y-1"
+                    className="group w-[calc(100%-1rem)] max-w-[290px] sm:w-[350px] sm:max-w-none lg:w-[370px] shrink-0 snap-start flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-7 text-left shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5"
                   >
                     <div>
                       <span className="block text-slate-300 text-3xl sm:text-4xl font-serif leading-none select-none mb-3 transition-colors duration-200 group-hover:text-amber-400">
@@ -196,7 +197,7 @@ export default function HomeTestimonialsSection({
                 ))}
           </div>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }
