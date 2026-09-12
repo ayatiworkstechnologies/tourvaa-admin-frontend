@@ -15,10 +15,14 @@ type AdminSidebarProps = {
 
 export default function AdminSidebar(props: AdminSidebarProps) {
   const { hasPermission } = useAuthContext();
-  const allowedMenus = adminNavItems.filter((item) =>
-    props.menus.some((menu) => menuMatchesNavItem(menu, item)) ||
-    item.permissions.some((permission) => hasPermission(permission))
-  );
+  const allowedMenus = adminNavItems
+    // Website CMS now lives as its own button in the top header bar (see
+    // Header.tsx), not in the sidebar's System group.
+    .filter((item) => item.module !== "website_cms")
+    .filter((item) =>
+      props.menus.some((menu) => menuMatchesNavItem(menu, item)) ||
+      item.permissions.some((permission) => hasPermission(permission))
+    );
 
   return (
     <Sidebar 

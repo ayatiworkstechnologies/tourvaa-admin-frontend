@@ -3,7 +3,7 @@
 import { LuLock as Lock } from "react-icons/lu";
 import { useRouter } from "next/navigation";
 
-export default function AccessDenied() {
+export default function AccessDenied({ dashboardHref = "/admin/dashboard" }: { dashboardHref?: string }) {
   const router = useRouter();
 
   return (
@@ -26,7 +26,7 @@ export default function AccessDenied() {
           </button>
           <button
             type="button"
-            onClick={() => router.push("/admin/dashboard")}
+            onClick={() => router.push(dashboardHref)}
             className="rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover"
           >
             Go to Dashboard

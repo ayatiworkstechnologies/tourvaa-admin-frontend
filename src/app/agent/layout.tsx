@@ -13,7 +13,7 @@ import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
 
 const NAV = [
   { href: "/agent/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/agent/tours", icon: Compass, label: "Browse Tours", section: "Sales Workspace" },
+  { href: "/agent/tours", icon: Compass, label: "Browse Tours", section: "Sales Workspace", permissions: ["tours.view", "view-tours"] },
   { href: "/agent/bookings", icon: CalendarCheck, label: "Bookings", section: "Sales Workspace" },
   { href: "/agent/customers", icon: Users, label: "My Customers", section: "Sales Workspace" },
   { href: "/agent/invoices", icon: ReceiptText, label: "Invoices", section: "Finance" },
@@ -44,7 +44,7 @@ function getTitle(pathname: string) {
 export default function AgentLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isLoggedIn, loading, user, dashboard } = useAuthContext();
+  const { isLoggedIn, loading, user, dashboard, hasPermission } = useAuthContext();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [commissionAccepted, setCommissionAccepted] = useState<boolean | null>(null);
@@ -112,11 +112,12 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   }
 
   const pageTitle = getTitle(pathname);
+  const visibleNav = NAV.filter((item) => !("permissions" in item) || !item.permissions || item.permissions.some((permission) => hasPermission(permission)));
 
   return (
     <div className="agent-portal flex min-h-screen bg-dash-bg" style={portalThemeStyles.agent}>
       <Sidebar
-        navItems={NAV}
+        navItems={visibleNav}
         title="Tourvaa"
         subtitle="Agent"
         logoIcon={BriefcaseBusiness}
@@ -130,7 +131,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         <div className="fixed inset-0 z-50 lg:hidden">
           <button className="absolute inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />
           <div className="relative h-full w-[260px] bg-white shadow-2xl">
-            <Sidebar navItems={NAV} title="Tourvaa" subtitle="Agent" logoIcon={BriefcaseBusiness} theme="agent" mobile={true} collapsed={false} onToggleCollapse={() => {}} />
+            <Sidebar navItems={visibleNav} title="Tourvaa" subtitle="Agent" logoIcon={BriefcaseBusiness} theme="agent" mobile={true} collapsed={false} onToggleCollapse={() => {}} />
           </div>
         </div>
       )}

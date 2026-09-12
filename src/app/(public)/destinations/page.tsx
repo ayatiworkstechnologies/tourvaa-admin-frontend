@@ -13,6 +13,7 @@ import {
   LuX as X,
 } from "react-icons/lu";
 import { fetchPublicCountries, PublicCountry } from "@/lib/api/publicClient";
+import { slugifyTourSegment } from "@/lib/utils/tourUrl";
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -116,7 +117,7 @@ export default function DestinationsPage() {
               return (
                 <Link
                   key={country.id}
-                  href={`/tours?country=${encodeURIComponent(country.country_name)}`}
+                  href={`/destinations/${slugifyTourSegment(country.country_name)}`}
                   className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-[#063c42] shadow-sm ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-1 hover:shadow-xl"
                   style={{ animationDelay: `${(index % 6) * 60}ms` }}
                 >

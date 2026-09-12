@@ -56,6 +56,42 @@ export type ReviewRecord = {
   business_info?: Record<string, unknown> | null;
   marketing_info?: Record<string, unknown> | null;
   invoicing?: Record<string, unknown> | null;
+  activity?: {
+    summary: {
+      total_bookings: number;
+      total_customers: number;
+      total_booking_value: string;
+      amount_paid: string;
+      amount_pending: string;
+      confirmed_bookings: number;
+      completed_bookings: number;
+      cancelled_bookings: number;
+    };
+    recent_bookings: Array<{
+      id: number;
+      booking_code: string;
+      customer_id: number;
+      customer_name: string;
+      tour_id?: number | null;
+      tour_name: string;
+      tour_start_date?: string | null;
+      booking_status: string;
+      payment_status: string;
+      currency: string;
+      final_amount: string;
+      created_at?: string;
+    }>;
+    customers: Array<{
+      id: number;
+      customer_code?: string | null;
+      full_name: string;
+      email: string;
+      phone: string;
+      status: string;
+      booking_count: number;
+      booking_value: string;
+    }>;
+  };
   created_at?: string;
   updated_at?: string;
 };

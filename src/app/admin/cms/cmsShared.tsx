@@ -66,6 +66,7 @@ export const TAB_DESCRIPTIONS: Record<string, string> = {
   "popular-destinations": "Country images shown in Countries Worth Exploring (the country list itself is calculated automatically from real tour counts).",
   "favourite-countries": "The editorial country list and snippet copy shown in the homepage Favourite Countries section.",
   "country-pages": "Override the hero banner, showcase panel, and SEO title/description for each country's dynamic /tours/{country} landing page. Countries without a row here use auto-generated content.",
+  "country-destination-guide": "The full destination guide shown at /destinations/{country}: best time to visit, monsoon/season info, temperature, best places to visit, why visit, and travel info, per country.",
   "customer-reviews": "Customer testimonials shown in the homepage Testimonials section.",
   "help-centre": "Questions and answers shown in the homepage FAQ section.",
   "hero-extras": "The trust-rating badge and the promotional offer strip shown over the homepage hero banner.",
@@ -194,16 +195,17 @@ export const TABS: TabConfig[] = [
     columns: [
       { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Country image"), className: "w-32" },
       { key: "title", header: "Title" },
-      { key: "snippet", header: "Snippet" },
+      { key: "snippet", header: "Description" },
       { key: "sort_order", header: "Sort" },
+      { key: "is_active", header: "Active" },
     ],
     formFields: [
       { key: "title", label: "Title (e.g. a country name)", type: "text", required: true },
-      { key: "snippet", label: "Snippet", type: "textarea" },
-      { key: "image", label: "Image", type: "asset" },
-      { key: "href", label: "Link (e.g. /tours?country=Morocco)", type: "url" },
-      { key: "country_id", label: "Country ID (optional)", type: "number" },
-      { key: "sort_order", label: "Sort Order", type: "number" },
+      { key: "country_id", label: "Country", type: "select" },
+      { key: "image", label: "Country Image", type: "asset" },
+      { key: "snippet", label: "Description", type: "textarea" },
+      { key: "href", label: "Destination Link (e.g. /tours?country=Egypt)", type: "url" },
+      { key: "sort_order", label: "Display Order", type: "number" },
     ],
   },
   {
@@ -218,6 +220,7 @@ export const TABS: TabConfig[] = [
     ],
     formFields: [
       { key: "reviewer_name", label: "Reviewer Name", type: "text", required: true },
+      { key: "country", label: "Reviewer Location/Country (e.g. Kerala, India)", type: "text" },
       { key: "rating", label: "Rating (1-5)", type: "number" },
       { key: "review_text", label: "Review Text", type: "textarea" },
       { key: "reviewer_image", label: "Reviewer Image", type: "asset" },
@@ -282,6 +285,12 @@ export const HERO_EXTRAS_BLOCK: ContentBlockTabConfig = {
     { key: "offer_text", label: "Offer Banner Text", type: "text", hint: "Leave blank to hide the offer strip." },
     { key: "offer_cta_text", label: "Offer CTA Text", type: "text" },
     { key: "offer_cta_url", label: "Offer CTA URL", type: "url" },
+    { key: "sub_hero_text", label: "Sub-Hero Trust Line (under the search bar)", type: "text" },
+    { key: "deal_badge", label: "Escape Sale Badge (e.g. OFFER ENDS SOON)", type: "text", hint: "The badge on the Escape Sale banner just below the hero. Title/subtitle/image/CTA there come from the 2nd banner above if one is set; these deal_* fields are only the fallback used when it isn't." },
+    { key: "deal_title", label: "Escape Sale Title (fallback)", type: "text" },
+    { key: "deal_subtitle", label: "Escape Sale Subtitle (fallback)", type: "text" },
+    { key: "deal_cta_text", label: "Escape Sale CTA Text (fallback)", type: "text" },
+    { key: "deal_cta_url", label: "Escape Sale CTA URL (fallback)", type: "url" },
   ],
 };
 
@@ -306,6 +315,20 @@ export const TRENDING_VISIBILITY_BLOCK: ContentBlockTabConfig = {
   ],
 };
 
+// Rendered together with the Favourite Countries list tab - the section's
+// own heading/subtitle (shown above the country cards) had no CMS field at
+// all until now; FavouriteCountriesSection.tsx falls back to hardcoded
+// copy when this block is empty.
+export const FAVOURITE_COUNTRIES_HEADING_BLOCK: ContentBlockTabConfig = {
+  key: "favourite-countries-heading",
+  label: "Favourite Countries Section Heading",
+  blockKey: "favourite_countries_section",
+  fields: [
+    { key: "title", label: "Section Title", type: "text" },
+    { key: "subtitle", label: "Section Subtitle", type: "textarea" },
+  ],
+};
+
 export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
   {
     key: "about-section",
@@ -315,6 +338,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "heading", label: "Heading", type: "text" },
       { key: "body", label: "Body", type: "textarea" },
       { key: "image", label: "Background Image", type: "asset" },
+      { key: "cta_text", label: "CTA Button Text", type: "text", hint: "Defaults to \"Explore About Tourvaa\" if left blank." },
+      { key: "cta_url", label: "CTA Button Link", type: "url", hint: "Defaults to /about if left blank." },
     ],
   },
   {
@@ -912,6 +937,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
 
   const isDestinationTab = tab.endpoint === "/cms/popular-destinations";
   const isCountryPageTab = tab.endpoint === "/cms/country-pages";
+  const isFavouriteCountriesTab = tab.endpoint === "/cms/favourite-countries";
   const isCmsPageTab = tab.endpoint === "/cms/pages";
   const selectedCountryId = formValues.country_id ?? "";
 
@@ -968,13 +994,13 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
   }, [tab.endpoint]);
 
   useEffect(() => {
-    if (!isDestinationTab && !isCountryPageTab) return;
+    if (!isDestinationTab && !isCountryPageTab && !isFavouriteCountriesTab) return;
     let cancelled = false;
     api.get("/geo/countries")
       .then((res) => { if (!cancelled) setCountryOptions(res.data?.data ?? []); })
       .catch(() => { if (!cancelled) setCountryOptions([]); });
     return () => { cancelled = true; };
-  }, [isDestinationTab, isCountryPageTab]);
+  }, [isDestinationTab, isCountryPageTab, isFavouriteCountriesTab]);
 
   useEffect(() => {
     if (!isDestinationTab) return;
@@ -1237,7 +1263,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
                     value={formValues[f.key] ?? ""}
                     onChange={(value) => setFormValues(v => ({ ...v, [f.key]: value }))}
                   />
-                ) : f.key === "country_id" && (isDestinationTab || isCountryPageTab) ? (
+                ) : f.key === "country_id" && (isDestinationTab || isCountryPageTab || isFavouriteCountriesTab) ? (
                   <select
                     value={formValues[f.key] ?? ""}
                     onChange={e => setFormValues(v => ({ ...v, country_id: e.target.value, city_id: "" }))}
@@ -1347,8 +1373,63 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
 // ---- Section registry -----------------------------------------------------
 export const FOOTER_TAB = { key: "footer", label: "Footer" };
 
+// Its own top-level CMS section (rather than nested under "Country Pages") -
+// a single country-scoped editor (CountryDestinationInfoPanel), not a list
+// of rows, so it's registered here alongside FOOTER_TAB instead of in TABS.
+export const COUNTRY_DESTINATION_GUIDE_TAB = { key: "country-destination-guide", label: "Country Destination Guide" };
+
 export const ALL_TABS: { key: string; label: string }[] = [
   ...TABS.map((t) => ({ key: t.key, label: t.label })),
   ...CONTENT_BLOCK_TABS.map((t) => ({ key: t.key, label: t.label })),
   FOOTER_TAB,
+  COUNTRY_DESTINATION_GUIDE_TAB,
+];
+
+// ---- Dashboard grouping ----------------------------------------------------
+// The CMS landing page (/admin/cms) groups the sections above by the real
+// site area an editor is working on ("update the Contact page", "update the
+// homepage"), instead of the flat A-Z list of ~20 tiles used on every
+// section's own page. A group's `tabs` are keys into ALL_TABS; `external`
+// entries link out to a different module entirely (e.g. Settings, where
+// contact details actually live) rather than a CMS tab.
+export type CmsDashboardGroup = {
+  key: string;
+  label: string;
+  description: string;
+  tabs: string[];
+  external?: { label: string; href: string; description: string }[];
+};
+
+export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
+  {
+    key: "home",
+    label: "Home Page",
+    description: "Every section on the public homepage, top to bottom.",
+    tabs: [
+      "banners", "popular-tours", "handpicked-tours", "tours-on-deals",
+      "popular-destinations", "favourite-countries", "about-section",
+      "blog-teaser", "airport-transfer", "travel-support", "newsletter-banner",
+    ],
+  },
+  {
+    key: "destinations",
+    label: "Country Pages",
+    description: "The dynamic per-country tour listing and destination guide pages.",
+    tabs: ["country-pages", "country-destination-guide"],
+  },
+  {
+    key: "content",
+    label: "Content & Pages",
+    description: "Testimonials, FAQs, and standalone pages (About Us, Contact, policies, etc).",
+    tabs: ["customer-reviews", "help-centre", "cms-pages"],
+  },
+  {
+    key: "site",
+    label: "Header, Footer & Contact",
+    description: "The footer's link sections, plus contact details and other site-wide settings.",
+    tabs: ["footer"],
+    external: [
+      { label: "Contact Details", href: "/admin/settings", description: "Support email, phone, and company address (Settings > General)." },
+    ],
+  },
 ];

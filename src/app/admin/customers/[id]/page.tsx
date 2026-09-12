@@ -58,6 +58,7 @@ export default function CustomerDetailPage() {
   const canUnblock = hasPermission("customers.unblock") || hasPermission("customers.edit");
   const canReset = hasPermission("customers.reset_password") || hasPermission("customers.edit");
   const canViewPayments = hasPermission("customers.view_payments") || hasPermission("customers.view");
+  const canViewBookings = hasPermission("customers.view_bookings") || hasPermission("customers.view");
   const canViewCommunications =
     hasPermission("customers.view_communications") || hasPermission("customers.view");
   const canCommunicate = hasPermission("customers.communicate");
@@ -73,7 +74,7 @@ export default function CustomerDetailPage() {
       setCustomer(detail);
 
       const [bookingResponse, paymentResponse, communicationResponse] = await Promise.all([
-        getCustomerBookings(customerId),
+        canViewBookings ? getCustomerBookings(customerId) : Promise.resolve({ items: [] }),
         canViewPayments ? getCustomerPayments(customerId) : Promise.resolve({ items: [] }),
         canViewCommunications ? getCustomerCommunications(customerId) : Promise.resolve({ items: [] }),
       ]);
@@ -87,7 +88,7 @@ export default function CustomerDetailPage() {
     } finally {
       if (requestIdRef.current === requestId) setLoading(false);
     }
-  }, [canViewCommunications, canViewPayments, customerId, toast]);
+  }, [canViewBookings, canViewCommunications, canViewPayments, customerId, toast]);
 
   useEffect(() => {
     void fetchCustomer();
@@ -173,7 +174,7 @@ export default function CustomerDetailPage() {
   const tabs = useMemo(
     () =>
       [
-        { key: "bookings" as const, label: "Bookings", icon: Calendar, count: bookings.length, visible: true },
+        { key: "bookings" as const, label: "Bookings", icon: Calendar, count: bookings.length, visible: canViewBookings },
         { key: "payments" as const, label: "Payments", icon: CreditCard, count: payments.length, visible: canViewPayments },
         {
           key: "communications" as const,
@@ -183,8 +184,14 @@ export default function CustomerDetailPage() {
           visible: canViewCommunications,
         },
       ].filter((tab) => tab.visible),
-    [bookings.length, canViewCommunications, canViewPayments, communications.length, payments.length]
+    [bookings.length, canViewBookings, canViewCommunications, canViewPayments, communications.length, payments.length]
   );
+
+  useEffect(() => {
+    if (!tabs.some((tab) => tab.key === activeTab) && tabs[0]) {
+      setActiveTab(tabs[0].key);
+    }
+  }, [activeTab, tabs]);
 
   return (
     <ModuleWrapper title="Customer Detail" requiredPermission="customers.view">
@@ -282,7 +289,7 @@ export default function CustomerDetailPage() {
             </div>
 
             <div className="p-6">
-              {activeTab === "bookings" && <CustomerBookingHistory rows={bookings} />}
+              {activeTab === "bookings" && canViewBookings && <CustomerBookingHistory rows={bookings} />}
               {activeTab === "payments" && canViewPayments && <CustomerPaymentHistory rows={payments} />}
               {activeTab === "communications" && canViewCommunications && (
                 <CustomerCommunicationHistory rows={communications} />

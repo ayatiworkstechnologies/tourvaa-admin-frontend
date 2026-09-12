@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuChevronDown as ChevronDown, LuCompass as Compass, LuHouse as House, LuLogOut as LogOut, LuMenu as Menu, LuSettings as Settings, LuUser as User } from "react-icons/lu";
+import { LuChevronDown as ChevronDown, LuCompass as Compass, LuGlobe as Globe, LuHouse as House, LuLogOut as LogOut, LuMenu as Menu, LuSettings as Settings, LuUser as User } from "react-icons/lu";
 import NotificationInbox from "@/components/ui/NotificationInbox";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/providers/AuthProvider";
 import { MenuItem } from "@/types/auth";
-import { getMenuHref } from "@/lib/constants/navigation";
+import { adminNavItems, getMenuHref } from "@/lib/constants/navigation";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import CurrencySelector from "@/components/public/CurrencySelector";
 
@@ -52,6 +53,7 @@ export default function Header({
   headerOffset = false,
 }: HeaderProps) {
   const { logout } = useAuth();
+  const { hasPermission } = useAuthContext();
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -85,6 +87,18 @@ export default function Header({
   const avatarColors = AVATAR_BG[theme] ?? AVATAR_BG.sky;
   const initial = name?.charAt(0)?.toUpperCase() ?? "A";
 
+  // Website CMS moved here from the sidebar (see AdminSidebar, which filters
+  // the "website_cms" module out of its own nav list). Mirrors AdminSidebar's
+  // own visibility check exactly: the raw `menus` list from the dashboard API
+  // doesn't always carry every module (e.g. one only reachable via a shared
+  // permission like settings.view), so this also falls back to hasPermission
+  // directly - relying on `menus` alone silently hid the button for any admin
+  // whose menu list didn't include a discrete "website_cms" entry.
+  const websiteCmsNavItem = adminNavItems.find((item) => item.module === "website_cms");
+  const canCms =
+    allowedMenus.some((m) => m.href === "/admin/cms") ||
+    (websiteCmsNavItem?.permissions.some((permission) => hasPermission(permission)) ?? false);
+
   return (
     <header className={`sticky z-30 border-b border-[#E8ECF3] bg-white/95 shadow-[0_1px_6px_-1px_rgba(15,23,42,0.06)] backdrop-blur-xl ${headerOffset ? "top-20" : "top-0"}`}>
       {/* Keep the same right-side lane as PublicHeader for the fixed Elfsight
@@ -112,6 +126,18 @@ export default function Header({
 
         {/* right */}
         <div className="flex shrink-0 items-center gap-2">
+
+          {canCms && (
+            <button
+              type="button"
+              onClick={() => router.push("/admin/cms")}
+              className="hidden h-10 items-center gap-2 rounded-xl bg-[#132A52] pl-3.5 pr-3 text-sm font-bold text-white shadow-sm shadow-[#132A52]/25 transition hover:-translate-y-0.5 hover:bg-[#1B3A6E] sm:flex"
+            >
+              <Globe size={16} />
+              Website CMS
+              <span className="ml-1 h-1.5 w-1.5 rounded-full bg-white" />
+            </button>
+          )}
 
           {websiteHref && (
             <button type="button" onClick={() => router.push(websiteHref)} className="hidden h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-slate-500 transition hover:bg-blue-50 hover:text-blue-700 xl:flex">

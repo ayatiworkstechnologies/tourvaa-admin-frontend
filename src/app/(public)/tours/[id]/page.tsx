@@ -73,7 +73,7 @@ export default function TourDetailPage() {
   const params = useParams<{ id?: string; country?: string; slug?: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isLoggedIn, loading: authLoading, user, dashboard, refreshSession } = useAuthContext();
+  const { isLoggedIn, loading: authLoading, user, dashboard, refreshSession, hasPermission } = useAuthContext();
   const [tour, setTour] = useState<PublicTourDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -107,11 +107,14 @@ export default function TourDetailPage() {
           gallery: data.gallery ?? [],
           pricing: data.pricing ?? [],
           optional_activities: data.optional_activities ?? [],
+          accommodations: data.accommodations ?? [],
           extensions: data.extensions ?? [],
           discounts: data.discounts ?? [],
           calendar: data.calendar ?? [],
           departures: data.departures ?? [],
           similar_tours: data.similar_tours ?? [],
+          cancellation_policy: data.cancellation_policy ?? [],
+          reviews: data.reviews ?? [],
         });
       })
       .catch((error: unknown) => {
@@ -177,7 +180,7 @@ export default function TourDetailPage() {
   const roleSlug = bookingUser?.role?.slug;
   const isCustomer = isLoggedIn && roleSlug === "customer";
   const isAgent = isLoggedIn && ["agent", "agent-reseller"].includes(roleSlug ?? "");
-  const canBookFromPublic = isCustomer || isAgent;
+  const canBookFromPublic = isCustomer || (isAgent && (hasPermission("bookings.create") || hasPermission("create-bookings")));
   const initialTravelDate = searchParams.get("travel_date") ?? "";
   const initialAdults = Math.max(1, Number(searchParams.get("adults") || 1));
   const initialChildren = Math.max(0, Number(searchParams.get("children") || 0));

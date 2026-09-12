@@ -8,7 +8,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 type Props = {
   title: string;
   children: React.ReactNode;
-  requiredPermission?: string;
+  requiredPermission?: string | string[];
 };
 
 function ModuleShell({ title, children }: Props) {

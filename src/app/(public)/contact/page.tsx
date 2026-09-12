@@ -2,43 +2,103 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { FormEvent, useState } from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 import {
+  LuCalendar as Calendar,
+  LuMessageCircle as MessageCircle,
+  LuCircleHelp as HelpCircle,
+  LuArrowRight as ArrowRight,
+  LuChevronDown as ChevronDown,
+  LuChevronUp as ChevronUp,
+  LuX as X,
   LuCircleAlert as AlertCircle,
   LuCircleCheckBig as CheckCircle,
-  LuChevronDown as ChevronDown,
+  LuSend as Send,
 } from "react-icons/lu";
-
-import AboutReveal from "@/components/public/AboutReveal";
-import publicApi, { subscribeNewsletter } from "@/lib/api/publicClient";
+import publicApi from "@/lib/api/publicClient";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import OfficesWorldMap, { OFFICES } from "@/components/public/contact/OfficesWorldMap";
 
-const INPUT_CLASS =
-  "h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0B1527] focus:ring-4 focus:ring-[#0B1527]/10";
+interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
 
-const INITIAL_FORM = {
-  reservation: "no",
-  name: "",
-  phone: "",
-  email: "",
-  subject: "",
-  message: "",
-};
+const FAQS: FaqItem[] = [
+  {
+    id: "booking",
+    question: "How do I book a tour package with Tourvaa?",
+    answer:
+      "Booking with Tourvaa is effortless. Simply browse our curated destinations, select your preferred departure date, choose between small group or private tailor-made options, and complete our secure checkout. You'll receive instant booking confirmation and direct access to your tour operator conversation dashboard.",
+  },
+  {
+    id: "cancellation",
+    question: "What is your cancellation and refund policy?",
+    answer:
+      "You can cancel your booking up to 14 days before your departure date for a full refund. For cancellations made between 7 to 13 days prior, we offer a 50% refund. Unfortunately, cancellations made within 7 days of the tour start date are non-refundable. Please read our detailed Terms & Conditions for specific destination and partner policies.",
+  },
+  {
+    id: "group-discounts",
+    question: "Are group discounts available for larger bookings?",
+    answer:
+      "Yes! We offer dedicated group pricing for parties of 6 or more travelers. Contact our specialist travel operations team or select the group inquiry option during tour selection for bespoke rates and tailored arrangements.",
+  },
+  {
+    id: "insurance",
+    question: "Does Tourvaa provide comprehensive travel insurance?",
+    answer:
+      "While our packages include full operational ground support and vetted local tour leaders, comprehensive travel medical insurance is strongly recommended for all journeys. You can easily add comprehensive insurance during checkout or through our accredited travel partners.",
+  },
+  {
+    id: "payment-methods",
+    question: "What payment methods do you accept?",
+    answer:
+      "We accept all major credit and debit cards (Visa, MasterCard, American Express), bank wire transfers, and regional payment gateways with 256-bit bank-grade encryption and zero hidden fees.",
+  },
+  {
+    id: "visa-assistance",
+    question: "Do you offer visa assistance for international tours?",
+    answer:
+      "Yes, our destination teams provide official visa support letters, confirmed itinerary documentation, and tailored entry guidance for your embassy or e-Visa application upon booking confirmation.",
+  },
+];
 
 export default function ContactPage() {
-  const [form, setForm] = useState(INITIAL_FORM);
-  const [sent, setSent] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [newsletterMessage, setNewsletterMessage] = useState("");
-  const [subscribing, setSubscribing] = useState(false);
+  const [openFaqId, setOpenFaqId] = useState<string>("cancellation"); // Opened by default per reference image
+  const [activeOfficeId, setActiveOfficeId] = useState<string>("nz"); // NZ active by default per reference image
 
-  const set = (key: keyof typeof form, value: string) =>
-    setForm((current) => ({ ...current, [key]: value }));
+  const [officeSelectionVersion, setOfficeSelectionVersion] = useState(0);
+  const selectOffice = (id: string) => {
+    setActiveOfficeId(id);
+    setOfficeSelectionVersion((version) => version + 1);
+  };
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  // Ask Question / Contact Modal state
+  const [showInquiryModal, setShowInquiryModal] = useState<boolean>(false);
+  const [form, setForm] = useState({
+    reservation: "no",
+    name: "",
+    phone: "",
+    email: "",
+    subject: "General Question",
+    message: "",
+  });
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [sent, setSent] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+
+  const handleOpenChat = () => {
+    window.dispatchEvent(new CustomEvent("tourvaa:open-chat"));
+  };
+
+  const toggleFaq = (id: string) => {
+    setOpenFaqId((prev) => (prev === id ? "" : id));
+  };
+
+  const submitInquiry = async (e: React.FormEvent) => {
+    e.preventDefault();
     setSubmitting(true);
     setError("");
     try {
@@ -56,283 +116,539 @@ export default function ContactPage() {
     } finally {
       setSubmitting(false);
     }
-  }
-
-  async function subscribe(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!newsletterEmail.trim()) return;
-    setSubscribing(true);
-    try {
-      await subscribeNewsletter(newsletterEmail.trim());
-      setNewsletterMessage("Thank you — travel tips are on their way!");
-      setNewsletterEmail("");
-    } catch (err: unknown) {
-      setNewsletterMessage(getApiErrorMessage(err));
-    } finally {
-      setSubscribing(false);
-    }
-  }
+  };
 
   return (
-    <AboutReveal>
-      <main className="overflow-hidden bg-white text-slate-900 pb-20">
-        {/* Top Hero Landscape Banner */}
-        <div className="mx-auto max-w-[1400px] px-5 pt-3">
-          <section className="relative h-[300px] sm:h-[360px] md:h-[400px] w-full overflow-hidden rounded-[20px] bg-slate-900 shadow-md">
-            <img
-              src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80"
-              alt="Panoramic mountain view"
-              className="animate-tourvaa-hero h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-slate-900/15" />
-          </section>
+    <main className="min-h-screen bg-[#FAFAFB] text-slate-900 pb-20">
+      {/* ── 1. Hero Landscape Banner ── */}
+      <div className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-4 sm:pt-6">
+        <section className="relative h-[260px] sm:h-[300px] w-full overflow-hidden rounded-[26px] bg-slate-900 shadow-md">
+          <img
+            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80"
+            alt="Misty mountain valley landscape"
+            className="h-full w-full object-cover opacity-85"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/45 to-transparent" />
+
+          {/* Hero Content */}
+          <div className="relative z-10 flex h-full flex-col justify-center px-6 sm:px-10 lg:px-12">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
+              Contact us
+            </h1>
+            <p className="mt-2.5 max-w-2xl text-xs sm:text-sm font-medium leading-relaxed text-white/90">
+              Tourvaa is the Adventure Booking Platform linking the world&apos;s largest series and multi-day organised adventures worldwide.
+            </p>
+
+            {/* Quick Action Pills */}
+            <div className="mt-5 flex flex-wrap items-center gap-2.5">
+              <a
+                href="#help-cards"
+                className="inline-flex items-center rounded-full border border-white/30 bg-black/25 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-xs transition hover:bg-white/20 hover:border-white/50"
+              >
+                Help &amp; services
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowInquiryModal(true)}
+                className="inline-flex items-center rounded-full border border-white/30 bg-black/25 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-xs transition hover:bg-white/20 hover:border-white/50"
+              >
+                Ask a question
+              </button>
+              <a
+                href="#faqs"
+                className="inline-flex items-center rounded-full border border-white/30 bg-black/25 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-xs transition hover:bg-white/20 hover:border-white/50"
+              >
+                Check out our FAQs
+              </a>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* ── 2. Three Support Cards Grid ── */}
+      <section id="help-cards" className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-8 sm:pt-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1: Existing Booking */}
+          <div className="flex flex-col justify-between rounded-[22px] border border-slate-200/90 bg-white p-7 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+            <div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                <Calendar size={20} />
+              </div>
+              <h3 className="mt-5 text-base font-bold text-slate-950 leading-snug">
+                Questions about existing booking or inquiry?
+              </h3>
+              <p className="mt-2.5 text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                We recommend using the booking conversation page to contact the operator directly for any questions about your booking or inquiry.
+              </p>
+            </div>
+            <Link
+              href="/profile/bookings"
+              className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-[#0A1128] hover:bg-slate-850 text-white text-xs font-bold px-5 py-2.5 w-fit shadow-xs transition"
+            >
+              <span>Check my bookings</span>
+              <ArrowRight size={13} />
+            </Link>
+          </div>
+
+          {/* Card 2: Let's chat */}
+          <div className="flex flex-col justify-between rounded-[22px] border border-slate-200/90 bg-white p-7 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+            <div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                <MessageCircle size={20} />
+              </div>
+              <h3 className="mt-5 text-base font-bold text-slate-950 leading-snug">
+                Let&apos;s chat
+              </h3>
+              <p className="mt-2.5 text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                Chat with our virtual assistant Scout, or get connected with a human. We are available 24/7 to assist you.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenChat}
+              className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-[#0A1128] hover:bg-slate-850 text-white text-xs font-bold px-5 py-2.5 w-fit shadow-xs transition"
+            >
+              <span>Start chat</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          {/* Card 3: Help Center */}
+          <div className="flex flex-col justify-between rounded-[22px] border border-slate-200/90 bg-white p-7 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+            <div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                <HelpCircle size={20} />
+              </div>
+              <h3 className="mt-5 text-base font-bold text-slate-950 leading-snug">
+                Help Center
+              </h3>
+              <p className="mt-2.5 text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                Whether you&apos;re a traveller, operator, or partner, we&apos;ve got answers to some of our most frequently asked questions just a click away.
+              </p>
+            </div>
+            <Link
+              href="/help-centre"
+              className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-[#0A1128] hover:bg-slate-850 text-white text-xs font-bold px-5 py-2.5 w-fit shadow-xs transition"
+            >
+              <span>See all questions</span>
+              <ArrowRight size={13} />
+            </Link>
+          </div>
         </div>
+      </section>
 
-        {/* 2-Column Contact Showcase */}
-        <div className="mx-auto max-w-[1400px] px-5 pt-8 sm:pt-10">
-          <div data-reveal="scale" className="relative overflow-hidden rounded-[24px] bg-slate-900 shadow-xl min-h-[640px]">
-            <img
-              src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80"
-              alt="Misty alpine mountain needles landscape"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/60 via-slate-950/20 to-slate-950/60" />
+      {/* ── 3. Frequently Asked Questions Section ── */}
+      <section id="faqs" className="mx-auto max-w-4xl px-4 sm:px-6 pt-16 sm:pt-20">
+        <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+          Frequently Asked Questions
+        </h2>
 
-            <div className="relative grid min-h-[640px] items-stretch lg:grid-cols-[560px_1fr] p-4 sm:p-6 lg:p-8 gap-6">
-              {/* Left Form Card */}
-              <div className="rounded-[20px] bg-white p-6 sm:p-8 lg:p-9 shadow-2xl flex flex-col justify-center">
-                {sent ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                      <CheckCircle size={36} />
+        <div className="mt-10 space-y-3">
+          {FAQS.map((faq) => {
+            const isOpen = openFaqId === faq.id;
+
+            return (
+              <div
+                key={faq.id}
+                className={`transition-all duration-200 overflow-hidden ${
+                  isOpen
+                    ? "rounded-2xl border-2 border-sky-400/80 bg-sky-50/50 p-6 shadow-xs"
+                    : "border-b border-slate-200/80 py-4 px-2 hover:border-slate-300"
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleFaq(faq.id)}
+                  className="w-full flex items-center justify-between text-left gap-4"
+                >
+                  <span
+                    className={`text-sm sm:text-base font-bold transition-colors ${
+                      isOpen ? "text-slate-950" : "text-slate-800 hover:text-slate-950"
+                    }`}
+                  >
+                    {faq.question}
+                  </span>
+
+                  {isOpen ? (
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E4572E] text-white shadow-xs">
+                      <ChevronUp size={16} />
                     </span>
-                    <h2 className="mt-5 text-2xl font-black text-slate-950">Message Sent!</h2>
-                    <p className="mt-2.5 max-w-sm text-xs sm:text-sm text-slate-500 leading-relaxed font-medium">
-                      Thank you for contacting Tourvaa. One of our local advisors will contact you within 24 hours.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSent(false);
-                        setForm(INITIAL_FORM);
-                      }}
-                      className="mt-6 rounded-xl bg-[#0B1527] px-6 py-3 text-xs font-black text-white shadow-md hover:bg-[#15233C]"
-                    >
-                      Send another message
-                    </button>
+                  ) : (
+                    <span className="text-[#E4572E] hover:text-[#c24118] shrink-0">
+                      <ChevronDown size={18} />
+                    </span>
+                  )}
+                </button>
+
+                {isOpen && (
+                  <div className="mt-3.5 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed pt-1">
+                    {faq.answer}
                   </div>
-                ) : (
-                  <>
-                    <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                      Contact Us
-                    </h2>
-                    <p className="mt-1.5 text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
-                      Fill out the form below and one of our local advisors will contact you within 24 hours.
-                    </p>
-
-                    {error && (
-                      <div
-                        role="alert"
-                        className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-600"
-                      >
-                        <AlertCircle size={15} />
-                        {error}
-                      </div>
-                    )}
-
-                    <form onSubmit={submit} className="mt-5 space-y-4">
-                      {/* Reservation query */}
-                      <div>
-                        <span className="block text-xs font-bold text-slate-900">
-                          Do you have a reservation number?
-                        </span>
-                        <div className="mt-2 flex items-center gap-6 text-xs font-medium text-slate-700">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="reservation"
-                              value="yes"
-                              checked={form.reservation === "yes"}
-                              onChange={() => set("reservation", "yes")}
-                              className="accent-[#0B1527]"
-                            />
-                            <span>Yes</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="reservation"
-                              value="no"
-                              checked={form.reservation === "no"}
-                              onChange={() => set("reservation", "no")}
-                              className="accent-[#0B1527]"
-                            />
-                            <span>No</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700">
-                            Full Name
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="e.g. James Anderson"
-                            value={form.name}
-                            onChange={(e) => set("name", e.target.value)}
-                            className={`mt-1 ${INPUT_CLASS}`}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700">
-                            Phone Number
-                          </label>
-                          <input
-                            type="tel"
-                            placeholder="+1 (555) 000-0000"
-                            value={form.phone}
-                            onChange={(e) => set("phone", e.target.value)}
-                            className={`mt-1 ${INPUT_CLASS}`}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700">
-                          Email Address
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          placeholder="james@travelagency.com"
-                          value={form.email}
-                          onChange={(e) => set("email", e.target.value)}
-                          className={`mt-1 ${INPUT_CLASS}`}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700">
-                          Subject
-                        </label>
-                        <div className="relative mt-1">
-                          <select
-                            value={form.subject}
-                            onChange={(e) => set("subject", e.target.value)}
-                            className={`appearance-none pr-10 ${INPUT_CLASS}`}
-                          >
-                            <option value="">Select a trip category or general inquiry</option>
-                            <option value="Tour Booking & Reservations">Tour Booking &amp; Reservations</option>
-                            <option value="Custom Private Tour Request">Custom Private Tour Request</option>
-                            <option value="Payment & Billing Support">Payment &amp; Billing Support</option>
-                            <option value="Flight & Hotel Transfers">Flight &amp; Hotel Transfers</option>
-                            <option value="General Question">General Question</option>
-                          </select>
-                          <ChevronDown
-                            size={16}
-                            className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700">
-                          Message
-                        </label>
-                        <textarea
-                          required
-                          rows={3}
-                          placeholder="Tell us about your travel plans, destinations, and estimated dates..."
-                          value={form.message}
-                          onChange={(e) => set("message", e.target.value)}
-                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0B1527] focus:ring-4 focus:ring-[#0B1527]/10 resize-none"
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="mt-2 flex h-12 w-full items-center justify-center rounded-xl bg-[#0B1527] px-6 text-sm font-black text-white shadow-md transition hover:bg-[#15233C] disabled:opacity-60"
-                      >
-                        {submitting ? "Sending..." : "Send Message"}
-                      </button>
-
-                      <p className="text-center text-[11px] text-slate-400">
-                        Prefer a direct call? Visit our Direct Contact section.
-                      </p>
-                    </form>
-                  </>
                 )}
               </div>
+            );
+          })}
+        </div>
+      </section>
 
-              {/* Right Content Overlay */}
-              <div className="flex flex-col justify-end p-6 sm:p-10 text-white">
-                <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight">
-                  Get in touch with us
-                </h2>
-                <p className="mt-3 max-w-md text-sm sm:text-base leading-relaxed text-white/90 font-medium">
-                  Whether you have questions about a tour, need help with a booking, or want personalised travel advice — our expert team is here to help.
-                </p>
+      {/* ── 4. "How can we help?" 4-Card Grid ── */}
+      <section className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-20 sm:pt-24">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+          How can we help?
+        </h2>
 
-                <div className="mt-8 flex items-center gap-10 border-t border-white/20 pt-6">
-                  <div>
-                    <span className="block text-3xl font-black text-white">24hrs</span>
-                    <span className="block text-xs font-semibold text-white/70">
-                      Average response time
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-3xl font-black text-white">4.9/5</span>
-                    <span className="block text-xs font-semibold text-white/70">
-                      Customer satisfaction
-                    </span>
-                  </div>
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Card 1: Operators */}
+          <div className="flex flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-xs transition hover:shadow-md">
+            <div>
+              <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                <img
+                  src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80"
+                  alt="Tour operators desk"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="p-5">
+                <h3 className="text-base font-bold text-slate-950">Operators</h3>
+                <div className="mt-2.5 space-y-2 text-xs text-slate-600 leading-relaxed">
+                  <p>
+                    <strong className="text-slate-800">I want to be an operator:</strong> Get in touch with our Business Development team to list your adventures.
+                  </p>
+                  <p>
+                    <strong className="text-slate-800">I&apos;m an operator:</strong> Log in to your Operator Dashboard to talk to our team or have a browse of our FAQs.
+                  </p>
                 </div>
               </div>
             </div>
+            <div className="p-5 pt-0">
+              <Link
+                href="/portal/supplier/login"
+                className="inline-flex items-center gap-1 text-xs font-bold text-sky-700 hover:text-sky-900"
+              >
+                <span>Operator Portal</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
           </div>
 
-          {/* Newsletter Subscribe Banner */}
-          <div data-reveal className="mt-16 sm:mt-20">
-            <section className="rounded-[24px] border border-slate-100/90 bg-white p-6 sm:p-10 shadow-sm">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="max-w-xl">
-                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                    Get Travel Tips Straight to Your Inbox
-                  </h3>
-                  <p className="mt-2 text-xs sm:text-sm text-slate-500 font-medium">
-                    Subscribe to receive tactical gear updates, packing checklists, and sudden destination safety bulletins.
+          {/* Card 2: Travel Agents */}
+          <div className="flex flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-xs transition hover:shadow-md">
+            <div>
+              <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                <img
+                  src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=600&q=80"
+                  alt="Travel agents passport and ticket"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="p-5">
+                <h3 className="text-base font-bold text-slate-950">Travel Agents</h3>
+                <div className="mt-2.5 space-y-2 text-xs text-slate-600 leading-relaxed">
+                  <p>
+                    <strong className="text-slate-800">I want to book adventures:</strong> For more information and to sign up, check out our Booking Platform for Travel Agents.
+                  </p>
+                  <p>
+                    <strong className="text-slate-800">I&apos;m a Tourvaa Travel Agent:</strong> Log in to your Agent Portal to talk to our team and view our FAQs.
                   </p>
                 </div>
-
-                <form onSubmit={subscribe} className="flex w-full max-w-md items-center gap-3">
-                  <input
-                    type="email"
-                    required
-                    placeholder="Enter your email address"
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="h-12 flex-1 rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0B1527] focus:bg-white focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={subscribing}
-                    className="h-12 rounded-xl bg-[#0B1527] px-6 text-sm font-black text-white shadow-md hover:bg-[#15233C] transition disabled:opacity-60"
-                  >
-                    {subscribing ? "Subscribing..." : "Subscribe"}
-                  </button>
-                </form>
               </div>
-              {newsletterMessage && (
-                <p className="mt-3 text-xs font-bold text-emerald-600">{newsletterMessage}</p>
-              )}
-            </section>
+            </div>
+            <div className="p-5 pt-0">
+              <Link
+                href="/portal/agent/login"
+                className="inline-flex items-center gap-1 text-xs font-bold text-sky-700 hover:text-sky-900"
+              >
+                <span>Agent Portal</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 3: Distribution Partners */}
+          <div className="flex flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-xs transition hover:shadow-md">
+            <div>
+              <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                <img
+                  src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80"
+                  alt="Distribution solutions"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="p-5">
+                <h3 className="text-base font-bold text-slate-950">Distribution Partners</h3>
+                <div className="mt-2.5 space-y-2 text-xs text-slate-600 leading-relaxed">
+                  <p>
+                    <strong className="text-slate-800">I want to be a partner:</strong> For more information and to sign up, check out our Distribution Solutions.
+                  </p>
+                  <p>
+                    <strong className="text-slate-800">I&apos;m a partner:</strong> Log in to your Partner Portal to talk to our team and view the Partner Help Centre.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-5 pt-0">
+              <Link
+                href="/portal"
+                className="inline-flex items-center gap-1 text-xs font-bold text-sky-700 hover:text-sky-900"
+              >
+                <span>Distribution Solutions</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 4: Media */}
+          <div className="flex flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-xs transition hover:shadow-md">
+            <div>
+              <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                <img
+                  src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=600&q=80"
+                  alt="Media press postcards"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="p-5">
+                <h3 className="text-base font-bold text-slate-950">Media</h3>
+                <div className="mt-2.5 space-y-2 text-xs text-slate-600 leading-relaxed">
+                  <p>
+                    <strong className="text-slate-800">Journalist looking for our Press page?</strong> It houses everything you could need from an overview of what we do and who we are, as well as our brand guidelines and company logos.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-5 pt-0">
+              <Link
+                href="/about"
+                className="inline-flex items-center gap-1 text-xs font-bold text-sky-700 hover:text-sky-900"
+              >
+                <span>Press &amp; Brand Assets</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
           </div>
         </div>
-      </main>
-    </AboutReveal>
+      </section>
+
+      {/* ── 5. "Our Offices" Section with Dotted World Map ── */}
+      <section className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-20 sm:pt-24">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+          Our Offices
+        </h2>
+
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-500">Local knowledge. A world of possibilities. Select an office to explore where we call home.</p>
+
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 items-center">
+          {/* Left Column: Office Cards */}
+          <div className="space-y-3">
+            {OFFICES.map((office) => {
+              const isSelected = activeOfficeId === office.id;
+
+              return (
+                <button
+                  type="button"
+                  aria-pressed={isSelected}
+                  key={office.id}
+                  onClick={() => selectOffice(office.id)}
+                  className={`w-full text-left cursor-pointer rounded-2xl p-5 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-sky-600 ${
+                    isSelected
+                      ? "bg-white border border-sky-200 shadow-[0_8px_30px_-12px_rgba(2,132,199,0.25)]"
+                      : "bg-transparent border border-slate-200/70 hover:bg-white"
+                  }`}
+                >
+                  <span
+                    className={`block text-lg font-bold tracking-tight ${
+                      isSelected ? "text-[#0284C7]" : "text-slate-900"
+                    }`}
+                  >
+                    {office.country}
+                  </span>
+                  <span className="block mt-2 text-xs sm:text-sm text-slate-700 font-medium leading-snug">
+                    {office.addressLine1}
+                  </span>
+                  <span className="block text-xs sm:text-sm text-slate-700 font-medium leading-snug">
+                    {office.addressLine2}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right Column: Dotted World Map Graphic */}
+          <div className="w-full">
+            <OfficesWorldMap
+              activeOfficeId={activeOfficeId}
+              onSelectOffice={selectOffice}
+              selectionVersion={officeSelectionVersion}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Direct Inquiry Modal (Triggered by "Ask a question") ── */}
+      {showInquiryModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setShowInquiryModal(false)}
+        >
+          <div
+            className="relative max-w-lg w-full rounded-[24px] bg-white p-6 sm:p-8 shadow-2xl border border-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowInquiryModal(false)}
+              className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+            >
+              <X size={16} />
+            </button>
+
+            {sent ? (
+              <div className="py-8 text-center">
+                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                  <CheckCircle size={32} />
+                </span>
+                <h3 className="mt-4 text-xl font-bold text-slate-950">
+                  Message Sent!
+                </h3>
+                <p className="mt-2 text-xs sm:text-sm text-slate-500">
+                  Thank you for reaching out. One of our travel specialists will respond within 24 hours.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSent(false);
+                    setShowInquiryModal(false);
+                  }}
+                  className="mt-6 rounded-full bg-[#0A1128] px-6 py-2.5 text-xs font-bold text-white shadow-md"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-950">
+                  Ask a Question
+                </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Submit your travel question or reservation inquiry directly to our team.
+                </p>
+
+                {error && (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-2.5 text-xs text-red-600 border border-red-200">
+                    <AlertCircle size={14} />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <form onSubmit={submitInquiry} className="mt-4 space-y-3.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700">
+                      Do you have an existing booking?
+                    </label>
+                    <div className="mt-1.5 flex gap-4 text-xs font-medium text-slate-700">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="reservation"
+                          value="yes"
+                          checked={form.reservation === "yes"}
+                          onChange={() => setForm({ ...form, reservation: "yes" })}
+                          className="accent-[#0A1128]"
+                        />
+                        <span>Yes</span>
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="reservation"
+                          value="no"
+                          checked={form.reservation === "no"}
+                          onChange={() => setForm({ ...form, reservation: "no" })}
+                          className="accent-[#0A1128]"
+                        />
+                        <span>No</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        placeholder="Your name"
+                        className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-sky-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        placeholder="+1 (555) 000-0000"
+                        className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-sky-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      placeholder="you@example.com"
+                      className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-sky-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700">
+                      Message
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={form.message}
+                      onChange={(e) => setForm({ ...form, message: e.target.value })}
+                      placeholder="How can we help you?"
+                      className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-xs outline-none focus:border-sky-600 resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#0A1128] text-xs font-bold text-white shadow-md hover:bg-slate-850 disabled:opacity-50"
+                  >
+                    {submitting ? (
+                      "Sending..."
+                    ) : (
+                      <>
+                        <Send size={13} />
+                        <span>Send Message</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </main>
   );
 }

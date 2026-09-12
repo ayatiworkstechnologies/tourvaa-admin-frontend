@@ -1,0 +1,24 @@
+.ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: office-ripple 2.4s ease-out infinite;
+}
+
+.beacon {
+  animation: office-blink 2.4s ease-in-out infinite;
+}
+
+@keyframes office-ripple {
+  0% { transform: scale(0.8); opacity: 0.7; }
+  80%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes office-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ripple { animation: none; opacity: 0; }
+  .beacon { animation: none; }
+}

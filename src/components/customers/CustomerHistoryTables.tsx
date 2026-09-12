@@ -1,20 +1,42 @@
 "use client";
 
+import Link from "next/link";
+import { LuEye as Eye } from "react-icons/lu";
 import {
   BookingHistory,
   CustomerCommunication,
   PaymentHistory,
 } from "@/lib/api/services/customerService";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { useAuthContext } from "@/providers/AuthProvider";
 
 function money(value: number) {
   return `$${Number(value || 0).toLocaleString()}`;
 }
 
 export function CustomerBookingHistory({ rows }: { rows: BookingHistory[] }) {
+  const { hasPermission } = useAuthContext();
+  const canViewTour = hasPermission("tours.view") || hasPermission("view-tours");
+
   const columns: DataTableColumn<BookingHistory>[] = [
     { key: "booking_code", header: "Booking ID", className: "font-bold text-dash-text" },
-    { key: "tour_name", header: "Tour", className: "text-dash-muted" },
+    {
+      key: "tour_name",
+      header: "Tour",
+      className: "text-dash-muted",
+      render: (row) =>
+        canViewTour && row.tour_id ? (
+          <Link
+            href={`/admin/tours/${row.tour_id}/edit`}
+            className="inline-flex items-center gap-1.5 font-semibold text-dash-brand-hover hover:underline"
+          >
+            <Eye size={14} className="shrink-0" />
+            {row.tour_name || "View tour"}
+          </Link>
+        ) : (
+          row.tour_name || "-"
+        ),
+    },
     { key: "tour_date", header: "Date", className: "text-dash-muted" },
     { key: "supplier_name", header: "Supplier", className: "text-dash-muted" },
     { key: "booking_status", header: "Booking", className: "text-dash-muted" },

@@ -132,11 +132,11 @@ export default function CustomerTable({
           <div className="flex items-center justify-end gap-2">
             <Link
               href={`/admin/customers/${customer.id}`}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-dash-border px-3 text-xs font-bold text-dash-brand-hover transition-colors hover:bg-[#E7F5FF]"
               aria-label="View customer"
               title="View customer"
             >
-              <Eye size={15} />
+              <Eye size={14} /> View
             </Link>
             {canReset && (
               <button

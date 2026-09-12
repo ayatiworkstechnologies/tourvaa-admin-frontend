@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { AboutSectionBlock, fetchContentBlock } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { DEFAULT_ABOUT_BODY, DEFAULT_ABOUT_HEADING } from "./homeTypes";
@@ -12,13 +13,20 @@ export interface AboutTourvaaBannerProps {
   heading?: string;
   body?: string;
   image?: string;
+  ctaText?: string;
+  ctaUrl?: string;
 }
+
+const DEFAULT_ABOUT_CTA_TEXT = "Explore About Tourvaa";
+const DEFAULT_ABOUT_CTA_URL = "/about";
 
 export default function AboutTourvaaBanner({
   initialData,
   heading: propHeading,
   body: propBody,
   image: propImage,
+  ctaText: propCtaText,
+  ctaUrl: propCtaUrl,
 }: AboutTourvaaBannerProps) {
   const [data, setData] = useState<Partial<AboutSectionBlock>>(initialData || {});
 
@@ -47,6 +55,8 @@ export default function AboutTourvaaBanner({
   const body = propBody || data.body || DEFAULT_ABOUT_BODY;
   const image =
     propImage || (data.image ? mediaUrl(data.image) : "/images/about-mountain.png");
+  const ctaText = propCtaText || data.cta_text || DEFAULT_ABOUT_CTA_TEXT;
+  const ctaUrl = propCtaUrl || data.cta_url || DEFAULT_ABOUT_CTA_URL;
 
   return (
     <section className="relative w-full overflow-hidden my-6 sm:my-10 py-14 sm:py-20 lg:py-24 shadow-sm">
@@ -67,6 +77,14 @@ export default function AboutTourvaaBanner({
         <p className="mx-auto mt-4 max-w-4xl text-xs sm:text-sm md:text-[15px] leading-relaxed text-white/95 drop-shadow">
           {body}
         </p>
+        <div className="mt-6 sm:mt-8">
+          <Link
+            href={ctaUrl}
+            className="inline-flex items-center justify-center rounded-full bg-white px-6 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 shadow-md transition-all duration-300 hover:bg-pub-secondary hover:text-white hover:-translate-y-0.5"
+          >
+            {ctaText}
+          </Link>
+        </div>
       </div>
     </section>
   );

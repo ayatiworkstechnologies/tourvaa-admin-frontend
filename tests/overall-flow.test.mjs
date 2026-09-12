@@ -37,10 +37,16 @@ check("chat no longer calls the nonexistent customers-me booking route", !chat.i
 check("chat login guidance points to the frontend login page", chat.includes("Open /login"));
 
 const publicHomepage = read("src/app/(public)/page.tsx");
+const homepageSections = [
+  "src/components/public/home/HeroSection.tsx",
+  "src/components/public/home/TrendingToursSection.tsx",
+  "src/components/public/home/HandpickedToursSection.tsx",
+  "src/components/public/home/CountriesWorthExploringSection.tsx",
+].map(read).join("\n");
 check("homepage does not ship fictional tour or destination fallbacks", !publicHomepage.includes("DEMO_TRENDING_TOURS") && !publicHomepage.includes("DEMO_HANDPICKED_TOURS") && !publicHomepage.includes("DEMO_PLACES"));
 check("homepage tour cards do not invent ratings or discounts", !publicHomepage.includes('"2,050 reviews"') && !publicHomepage.includes('"Save 25%"') && !publicHomepage.includes('?? 4.8'));
-check("homepage has truthful empty collection states", publicHomepage.includes("No featured tours are available yet.") && publicHomepage.includes("No destinations are available yet."));
-check("homepage fallbacks use bundled images", publicHomepage.includes('"/images/hero-1.jpg"') && !publicHomepage.includes("images.unsplash.com"));
+check("homepage has truthful empty collection states", homepageSections.includes("No featured tours are available yet.") && homepageSections.includes("No destinations are available yet."));
+check("homepage fallbacks use bundled images", homepageSections.includes('"/images/hero-1.jpg"') && !homepageSections.includes("images.unsplash.com"));
 
 const publicLayout = read("src/components/public/PublicLayout.tsx");
 const publicSettings = read("src/providers/PublicSettingsProvider.tsx");

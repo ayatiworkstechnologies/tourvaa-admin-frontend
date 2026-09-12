@@ -9,6 +9,10 @@ export type TourSeoData = {
   banner_image: string | null;
   seo_title: string | null;
   seo_description: string | null;
+  seo_keywords?: string | null;
+  open_graph_image?: string | null;
+  canonical_url?: string | null;
+  search_visibility?: boolean;
   price_start_per_person: number | null;
   currency: string;
   number_of_days: number | null;
@@ -51,21 +55,23 @@ export function tourMetadataFrom(fallbackPageKey: string, canonicalPath: string,
 
   const title = tour.seo_title?.trim() || tour.title;
   const description = tour.seo_description?.trim() || tour.short_description?.trim() || DEFAULT_DESCRIPTION;
-  const image = tour.banner_image || DEFAULT_SOCIAL_IMAGE;
+  const image = tour.open_graph_image || tour.banner_image || DEFAULT_SOCIAL_IMAGE;
+  const canonical = tour.canonical_url?.trim() || canonicalPath;
   const absoluteTitle = `${title} | ${SITE_NAME}`;
 
   return {
     title,
     description,
-    alternates: { canonical: canonicalPath },
-    robots: { index: true, follow: true },
+    keywords: tour.seo_keywords?.split(",").map((keyword) => keyword.trim()).filter(Boolean),
+    alternates: { canonical },
+    robots: { index: tour.search_visibility !== false, follow: tour.search_visibility !== false },
     openGraph: {
       type: "website",
       siteName: SITE_NAME,
       locale: "en_US",
       title: absoluteTitle,
       description,
-      url: canonicalPath,
+      url: canonical,
       images: [{ url: image, alt: title }],
     },
     twitter: {

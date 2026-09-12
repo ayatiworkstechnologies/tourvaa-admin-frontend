@@ -10,19 +10,10 @@ import {
 
 const DIRECTORY_COUNTRIES = [
   "New Zealand",
-  "India",
-  "Australia",
-  "Canada",
-  "Qatar",
-  "Singapore",
-  "Sri Lanka",
-  "Thailand",
-  "United Arab Emirates",
-  "United Kingdom",
-  "United States",
   "Spain",
   "Italy",
   "Greece",
+  "United States",
   "France",
   "Portugal",
   "Türkiye",
@@ -30,8 +21,17 @@ const DIRECTORY_COUNTRIES = [
   "Netherlands",
   "Croatia",
   "Ireland",
+  "Australia",
   "Morocco",
+  "Thailand",
+  "Malta",
   "Germany",
+  "Canada",
+  "Norway",
+  "Hungary",
+  "Japan",
+  "Czechia",
+  "Indonesia",
   "Switzerland",
 ];
 
@@ -127,7 +127,18 @@ export default function ExploreDirectorySection({
     ]).then(([countryResult, cityResult, categoryResult]) => {
       if (!active) return;
       if (countryResult.status === "fulfilled" && countryResult.value.length) {
-        setCountries(countryResult.value.map((c) => c.country_name));
+        const validNames = Array.from(
+          new Set(
+            countryResult.value
+              .map((c) => c.country_name?.trim())
+              .filter((n): n is string => Boolean(n) && n.length > 2)
+          )
+        );
+        if (validNames.length >= 12 && !validNames.some((n) => n === "Abbeville" || n === "Abbotsford")) {
+          setCountries(validNames);
+        } else {
+          setCountries(DIRECTORY_COUNTRIES);
+        }
       }
       if (cityResult.status === "fulfilled" && cityResult.value.length) {
         setCities(cityResult.value.map((c) => c.city_name));
@@ -210,7 +221,7 @@ export default function ExploreDirectorySection({
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-y-4 gap-x-4 pt-6 sm:pt-8 text-xs sm:text-sm text-slate-700">
           {items.map((item, index) => (
             <Link
-              key={item}
+              key={`${item}-${index}`}
               href={getHref(item)}
               className="group flex items-start gap-1.5 transition-all duration-200 hover:translate-x-1 hover:text-pub-secondary"
             >

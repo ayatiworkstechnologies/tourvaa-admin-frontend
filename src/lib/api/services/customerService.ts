@@ -73,6 +73,7 @@ export type Paginated<T> = {
 export type BookingHistory = {
   id: number;
   booking_code: string;
+  tour_id?: number | null;
   tour_name: string;
   tour_date: string;
   country: string;

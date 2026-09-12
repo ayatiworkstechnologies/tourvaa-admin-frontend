@@ -21,8 +21,8 @@ function check(label, condition) {
 console.log("\n=== Customer Booking Flow ===\n");
 
 const search = read("src/components/public/HeroFilterBar.tsx");
-const homepage = read("src/app/(public)/page.tsx");
-check("homepage destination filter uses the active country API list", homepage.includes("setSearchCountries(countryResult.value)") && homepage.includes("countries={searchCountries}") && search.includes("return countries.filter((c) => c.country_name.toLowerCase().includes(q))") && search.includes("filtered.map((country)"));
+const homepageHero = read("src/components/public/home/HeroSection.tsx");
+check("homepage destination filter uses the active country API list", homepageHero.includes("fetchPublicCountries()") && homepageHero.includes("setSearchCountries(data)") && homepageHero.includes("countries={searchCountries}") && search.includes("return countries.filter((c) => c.country_name.toLowerCase().includes(q))") && search.includes("filtered.map((country)"));
 check("search preserves travel date", search.includes('params.set("travel_date"'));
 check("search preserves adult count", search.includes('params.set("adults"'));
 check("search preserves child count", search.includes('params.set("children"'));

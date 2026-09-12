@@ -212,7 +212,7 @@ export default function TourDetailExperience({
   const destination = tour.country_name || tour.city_name || "Destination";
   const title = tour.title || "Tour Experience";
   const dayCount = tour.number_of_days || (tour.itineraries?.length || 1);
-  const nightCount = Math.max(0, dayCount - 1);
+  const nightCount = tour.number_of_nights ?? Math.max(0, dayCount - 1);
   const countryFlag = getCountryFlag(destination);
 
   const startLocation = tour.start_location || tour.city_name || destination;
@@ -252,35 +252,7 @@ export default function TourDetailExperience({
 
   // Group departures by Month dynamically
   const monthGroups: MonthGroup[] = useMemo(() => {
-    if (realDates.length === 0) {
-      // If backend has no explicit calendar dates entered yet, generate realistic upcoming departures
-      const start = initialTravelDate && !Number.isNaN(new Date(initialTravelDate).getTime())
-        ? new Date(initialTravelDate)
-        : new Date();
-      const groups: MonthGroup[] = [];
-      for (let m = 0; m < 4; m++) {
-        const targetDate = new Date(start.getFullYear(), start.getMonth() + m, 1);
-        const year = targetDate.getFullYear();
-        const monthNum = targetDate.getMonth();
-        const monthName = targetDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-        const monthKey = `${year}-${String(monthNum + 1).padStart(2, "0")}`;
-        const sampleDays = [5, 12, 17, 19, 24, 28];
-        const dates: DepartureDateItem[] = sampleDays.map((day, dIdx) => {
-          const dObj = new Date(year, monthNum, day);
-          const dateStr = dObj.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-          const seatsLeft = [8, 12, 4, 6, 15, 3][dIdx % 6];
-          return {
-            id: `dyn-${monthKey}-${day}`,
-            date: dateStr,
-            seats: `${seatsLeft} Seats Left`,
-            urgent: seatsLeft <= 5,
-            slotsRemaining: seatsLeft,
-          };
-        });
-        groups.push({ name: monthName, key: monthKey, dates });
-      }
-      return groups;
-    }
+    if (realDates.length === 0) return [];
 
     const groupMap = new Map<string, DepartureDateItem[]>();
     const monthNameMap = new Map<string, string>();
@@ -314,11 +286,14 @@ export default function TourDetailExperience({
       key,
       dates: groupMap.get(key)!,
     }));
-  }, [realDates, initialTravelDate]);
+  }, [realDates]);
 
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
   const safeMonthIndex = Math.min(Math.max(0, currentMonthIndex), Math.max(0, monthGroups.length - 1));
-  const currentMonth = monthGroups[safeMonthIndex] || { name: "Upcoming", dates: [] };
+  const currentMonth = useMemo(
+    () => monthGroups[safeMonthIndex] || { name: "No departures", key: "none", dates: [] },
+    [monthGroups, safeMonthIndex],
+  );
 
   const [selectedDateId, setSelectedDateId] = useState<string>("");
 
@@ -639,7 +614,7 @@ export default function TourDetailExperience({
               >
                 <img
                   src={photo}
-                  alt={`${title} view ${idx + 1}`}
+                  alt={tour.gallery.find((item) => mediaUrl(item.image_url) === photo)?.alt_text || tour.image_alt_text || `${title} view ${idx + 1}`}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
               </div>
@@ -648,6 +623,25 @@ export default function TourDetailExperience({
           <p className="mt-3 text-xs font-medium text-slate-500 leading-relaxed">
             {destination} tour starting in {startLocation}{finishLocation && finishLocation !== startLocation ? ` and concluding in ${finishLocation}` : ""} with tour accommodation, professional guide, transport and more.
           </p>
+          {(tour.map_image || tour.tour_video_url || tour.brochure_pdf) && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {tour.map_image && (
+                <a href={mediaUrl(tour.map_image)} target="_blank" rel="noreferrer" className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700">
+                  View tour map
+                </a>
+              )}
+              {tour.tour_video_url && (
+                <a href={tour.tour_video_url} target="_blank" rel="noreferrer" className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700">
+                  Watch tour video
+                </a>
+              )}
+              {tour.brochure_pdf && (
+                <a href={mediaUrl(tour.brochure_pdf)} target="_blank" rel="noreferrer" className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700">
+                  Download brochure
+                </a>
+              )}
+            </div>
+          )}
         </section>
 
         {/* ── 4. MAIN 2-COLUMN SECTION (CONTENT + STICKY WIDGET) ── */}
@@ -741,8 +735,8 @@ export default function TourDetailExperience({
                       <Users size={16} />
                     </span>
                     <div>
-                      <p className="font-bold text-slate-900">Minimum Age</p>
-                      <p className="text-slate-500 font-medium">{tour.overview?.ideal_for || "12 Years"}</p>
+                      <p className="font-bold text-slate-900">Suitable Age</p>
+                      <p className="text-slate-500 font-medium">{tour.suitable_age_range || tour.overview?.ideal_for || "All ages"}</p>
                     </div>
                   </div>
 
@@ -751,8 +745,14 @@ export default function TourDetailExperience({
                       <User size={16} />
                     </span>
                     <div>
-                      <p className="font-bold text-slate-900">Maximum Age</p>
-                      <p className="text-slate-500 font-medium">80 Years</p>
+                      <p className="font-bold text-slate-900">Group Size</p>
+                      <p className="text-slate-500 font-medium">
+                        {tour.min_booking_size && tour.max_group_size
+                          ? `${tour.min_booking_size}–${tour.max_group_size} travellers`
+                          : tour.max_group_size
+                            ? `Up to ${tour.max_group_size} travellers`
+                            : tour.overview?.group_size || "Flexible group size"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -766,7 +766,7 @@ export default function TourDetailExperience({
                     <div>
                       <p className="font-bold text-slate-900">Tour Guide</p>
                       <p className="text-slate-500 font-medium">
-                        {tour.overview?.tour_type || "Fully Guided English Tour Leader"}
+                        {tour.overview?.tour_type || `Guided${tour.tour_language ? ` in ${tour.tour_language}` : ""}`}
                       </p>
                     </div>
                   </div>
@@ -819,8 +819,8 @@ export default function TourDetailExperience({
                       <Globe size={16} />
                     </span>
                     <div>
-                      <p className="font-bold text-slate-900">Destination</p>
-                      <p className="text-slate-500 font-medium">{destination}</p>
+                      <p className="font-bold text-slate-900">Destination / Category</p>
+                      <p className="text-slate-500 font-medium">{[destination, tour.category_name].filter(Boolean).join(" · ")}</p>
                     </div>
                   </div>
                 </div>
@@ -884,7 +884,7 @@ export default function TourDetailExperience({
                       tour.inclusions.map((inc, i) => (
                         <li key={i} className="flex items-start gap-2">
                           <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                          <span>{inc.text}</span>
+                          <span>{inc.text}{inc.description ? <small className="mt-0.5 block text-[11px] text-slate-500">{inc.description}</small> : null}</span>
                         </li>
                       ))
                     ) : (
@@ -929,7 +929,7 @@ export default function TourDetailExperience({
                       tour.exclusions.map((exc, i) => (
                         <li key={i} className="flex items-start gap-2">
                           <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                          <span>{exc.text}</span>
+                          <span>{exc.text}{exc.description ? <small className="mt-0.5 block text-[11px] text-slate-500">{exc.description}</small> : null}</span>
                         </li>
                       ))
                     ) : (
@@ -964,6 +964,41 @@ export default function TourDetailExperience({
                 </span>
               </div>
             </div>
+
+            {(tour.accommodations.length > 0 || tour.optional_activities.length > 0 || tour.extensions.length > 0) && (
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
+                <h3 className="flex items-center gap-2 text-base font-black text-slate-900">
+                  <Sparkles size={18} className="text-blue-600" />
+                  <span>Enhance Your Tour</span>
+                </h3>
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  {tour.accommodations.map((item) => (
+                    <div key={`accommodation-${item.id}`} className="rounded-xl border border-slate-200 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-blue-600">Accommodation</p>
+                      <h4 className="mt-1 text-sm font-bold text-slate-900">{item.name}</h4>
+                      {item.description && <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.description}</p>}
+                      {item.price != null && <p className="mt-3 text-xs font-bold text-slate-800">+ {format(item.price, tourCurrency)}</p>}
+                    </div>
+                  ))}
+                  {tour.optional_activities.map((item) => (
+                    <div key={`activity-${item.id}`} className="rounded-xl border border-slate-200 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-violet-600">Optional activity</p>
+                      <h4 className="mt-1 text-sm font-bold text-slate-900">{item.name}</h4>
+                      {item.description && <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.description}</p>}
+                      {item.price != null && <p className="mt-3 text-xs font-bold text-slate-800">+ {format(item.price, item.currency || tourCurrency)}</p>}
+                    </div>
+                  ))}
+                  {tour.extensions.map((item) => (
+                    <div key={`extension-${item.id}`} className="rounded-xl border border-slate-200 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600">Tour extension</p>
+                      <h4 className="mt-1 text-sm font-bold text-slate-900">{item.title}</h4>
+                      {item.description && <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.description}</p>}
+                      {item.price != null && <p className="mt-3 text-xs font-bold text-slate-800">+ {format(item.price, tourCurrency)}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* E. 📅 ITINERARY ACCORDION */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
@@ -1149,6 +1184,30 @@ export default function TourDetailExperience({
                 })}
               </div>
             </div>
+
+            {tour.cancellation_policy.length > 0 && (
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
+                <h3 className="flex items-center gap-2 text-base font-black text-slate-900">
+                  <ShieldCheck size={18} className="text-blue-600" />
+                  <span>Cancellation &amp; Refund Policy</span>
+                </h3>
+                <div className="mt-4 divide-y divide-slate-100">
+                  {tour.cancellation_policy.map((rule, index) => (
+                    <div key={`${rule.days_before_min}-${rule.days_before_max ?? "plus"}-${index}`} className="grid gap-1 py-3 text-xs sm:grid-cols-[180px_1fr]">
+                      <p className="font-bold text-slate-900">
+                        {rule.days_before_max == null
+                          ? `${rule.days_before_min}+ days before`
+                          : `${rule.days_before_min}–${rule.days_before_max} days before`}
+                      </p>
+                      <p className="text-slate-600">
+                        <span className="font-bold text-emerald-700">{rule.refund_percentage}% refund</span>
+                        {rule.description ? ` · ${rule.description}` : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── RIGHT COLUMN: STICKY BOOKING WIDGET ── */}
@@ -1212,6 +1271,11 @@ export default function TourDetailExperience({
                 );
               })}
             </div>
+            {currentMonth.dates.length === 0 && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-medium text-amber-800">
+                No bookable departure dates are currently available for this tour.
+              </div>
+            )}
 
             {/* GROUP PRICING Section */}
             {pricingRows.length > 0 && (
@@ -1403,9 +1467,10 @@ export default function TourDetailExperience({
             <button
               type="button"
               onClick={handleBookNow}
-              className="mt-4 w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] active:scale-[0.99] text-center"
+              disabled={!selectedDeparture}
+              className="mt-4 w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] active:scale-[0.99] text-center disabled:cursor-not-allowed disabled:bg-slate-300"
             >
-              Proceed to Payment
+              {selectedDeparture ? "Proceed to Payment" : "No Dates Available"}
             </button>
           </aside>
         </div>

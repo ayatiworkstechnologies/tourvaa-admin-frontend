@@ -47,10 +47,25 @@ export type PublicTourDetail = PublicTour & {
   long_description: string;
   start_location: string;
   finish_location: string;
+  number_of_nights?: number | null;
+  max_group_size?: number | null;
+  min_booking_size?: number | null;
+  tour_language?: string | null;
+  suitable_age_range?: string | null;
+  pricing_type?: string | null;
+  offer_price?: number | null;
+  infant_price?: number | null;
+  single_supplement?: number | null;
   map_image: string | null;
+  mobile_cover_image?: string | null;
   image_alt_text?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
+  seo_keywords?: string | null;
+  focus_keyword?: string | null;
+  canonical_url?: string | null;
+  open_graph_image?: string | null;
+  search_visibility?: boolean;
   booking_deposit: number | null;
   deposit_type: "fixed" | "percentage" | null;
   deposit_percentage: number | null;
@@ -94,10 +109,11 @@ export type PublicTourDetail = PublicTour & {
     images?: string[];
   }[];
   highlights: { text: string; title?: string; image?: string | null; description?: string }[];
-  inclusions: { text: string }[];
-  exclusions: { text: string }[];
+  inclusions: { text: string; description?: string }[];
+  exclusions: { text: string; description?: string }[];
   gallery: { image_url: string; alt_text: string; is_banner: boolean }[];
   tour_video_url?: string | null;
+  brochure_pdf?: string | null;
   pricing: {
     persons_from: number;
     persons_to: number | null;
@@ -135,8 +151,14 @@ export type CmsHandpickedTour = { id: number; tour_id: number; tour_title: strin
 export type CmsFavouriteCountry = { id: number; country_id: number | null; title: string; snippet: string | null; image: string | null; href: string | null; sort_order: number; is_active: boolean };
 export type CmsCountryPage = { id: number; country_id: number; country_name: string; hero_title: string | null; hero_description: string | null; hero_image: string | null; showcase_title: string | null; showcase_description: string | null; showcase_image: string | null; seo_title: string | null; seo_description: string | null; is_active: boolean };
 export type CmsContentBlock<T extends Record<string, unknown> = Record<string, unknown>> = { key: string; data: Partial<T>; updated_at: string | null };
-export type HeroExtrasBlock = { rating: number; review_count: number; review_source: string; offer_text: string; offer_cta_text: string; offer_cta_url: string };
-export type AboutSectionBlock = { heading: string; body: string; image: string };
+export type HeroExtrasBlock = {
+  rating: number; review_count: number; review_source: string;
+  offer_text: string; offer_cta_text: string; offer_cta_url: string;
+  sub_hero_text?: string;
+  deal_badge?: string; deal_title?: string; deal_subtitle?: string; deal_cta_text?: string; deal_cta_url?: string;
+};
+export type AboutSectionBlock = { heading: string; body: string; image: string; cta_text?: string; cta_url?: string };
+export type FavouriteCountriesSectionBlock = { title: string; subtitle: string };
 export type BlogTeaserBlock = { eyebrow: string; heading: string; subtitle: string; cta_text: string; cta_url: string; image: string };
 export type AirportTransferBlock = { eyebrow: string; heading: string; subtitle: string; features: string[]; cta_text: string; cta_url: string; image: string };
 export type TravelSupportBlock = { eyebrow: string; heading: string; subtitle: string; cta_text: string; cta_url: string; image: string };
@@ -331,3 +353,64 @@ export async function fetchPublicSettings() {
 export async function subscribeNewsletter(email: string) {
   await publicApi.post("/newsletter/subscribe", { email });
 }
+
+export async function fetchCountryDestinationInfo(slugOrName: string): Promise<import("../types/countryDestination").CountryDestinationInfo> {
+  const { getCountryDestinationDefault } = await import("../data/countryDestinationDefaults");
+  const normalizedSlug = slugOrName.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  const defaultInfo = getCountryDestinationDefault(normalizedSlug);
+
+  try {
+    const blockRes = await fetchContentBlock<import("../types/countryDestination").CountryDestinationInfo>(`country_info_${normalizedSlug}`);
+    if (blockRes?.data && Object.keys(blockRes.data).length > 0) {
+      return {
+        ...defaultInfo,
+        ...blockRes.data,
+        quick_facts: {
+          ...defaultInfo.quick_facts,
+          ...(blockRes.data.quick_facts || {}),
+        },
+        why_visit: {
+          ...defaultInfo.why_visit,
+          ...(blockRes.data.why_visit || {}),
+          reasons: blockRes.data.why_visit?.reasons?.length
+            ? blockRes.data.why_visit.reasons
+            : defaultInfo.why_visit.reasons,
+        },
+        best_time_to_visit: {
+          ...defaultInfo.best_time_to_visit,
+          ...(blockRes.data.best_time_to_visit || {}),
+        },
+        monsoon_info: {
+          ...defaultInfo.monsoon_info,
+          ...(blockRes.data.monsoon_info || {}),
+          regional_variations: blockRes.data.monsoon_info?.regional_variations?.length
+            ? blockRes.data.monsoon_info.regional_variations
+            : defaultInfo.monsoon_info.regional_variations,
+        },
+        temperature_info: {
+          ...defaultInfo.temperature_info,
+          ...(blockRes.data.temperature_info || {}),
+          monthly_weather: blockRes.data.temperature_info?.monthly_weather?.length
+            ? blockRes.data.temperature_info.monthly_weather
+            : defaultInfo.temperature_info.monthly_weather,
+        },
+        best_places_to_visit: {
+          ...defaultInfo.best_places_to_visit,
+          ...(blockRes.data.best_places_to_visit || {}),
+          places: blockRes.data.best_places_to_visit?.places?.length
+            ? blockRes.data.best_places_to_visit.places
+            : defaultInfo.best_places_to_visit.places,
+        },
+        travel_info: {
+          ...defaultInfo.travel_info,
+          ...(blockRes.data.travel_info || {}),
+        },
+      };
+    }
+  } catch {
+    // Return default on error
+  }
+
+  return defaultInfo;
+}
+

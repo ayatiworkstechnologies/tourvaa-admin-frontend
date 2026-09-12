@@ -124,6 +124,12 @@ export default function ChatWidget() {
   }, [cooldownSeconds]);
 
   useEffect(() => {
+    const handleOpenChat = () => setOpen(true);
+    window.addEventListener("tourvaa:open-chat", handleOpenChat);
+    return () => window.removeEventListener("tourvaa:open-chat", handleOpenChat);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     const timer = window.setTimeout(() => inputRef.current?.focus(), 80);

@@ -9,8 +9,10 @@ import {
   LuSquareCheckBig as SquareCheckBig,
 } from "react-icons/lu";
 import {
+  fetchContentBlock,
   fetchFavouriteCountries,
   fetchPopularDestinations,
+  FavouriteCountriesSectionBlock,
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import {
@@ -18,6 +20,9 @@ import {
   DEFAULT_FAVOURITE_COUNTRIES,
   PLACEHOLDER_IMAGE,
 } from "./homeTypes";
+
+const DEFAULT_TITLE = "Favourite Countries for Travellers";
+const DEFAULT_SUBTITLE = "Explore the destinations travellers love most, from sun-soaked coastlines to iconic cultural gems and unforgettable experiences.";
 
 export interface FavouriteCountriesSectionProps {
   initialDestinations?: CountryDestination[];
@@ -27,12 +32,29 @@ export interface FavouriteCountriesSectionProps {
 
 export default function FavouriteCountriesSection({
   initialDestinations,
-  title = "Favourite Countries for Travellers from UK",
-  subtitle = "Explore the destinations our UK travellers love most from sun-soaked coastlines to iconic cultural gems.",
+  title: propTitle,
+  subtitle: propSubtitle,
 }: FavouriteCountriesSectionProps) {
   const [destinations, setDestinations] = useState<CountryDestination[]>(
     initialDestinations || DEFAULT_FAVOURITE_COUNTRIES,
   );
+  const [heading, setHeading] = useState<Partial<FavouriteCountriesSectionBlock>>({});
+
+  useEffect(() => {
+    if (propTitle || propSubtitle) return;
+    let active = true;
+    fetchContentBlock<FavouriteCountriesSectionBlock>("favourite_countries_section")
+      .then((res) => {
+        if (active && res?.data) setHeading(res.data);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [propTitle, propSubtitle]);
+
+  const title = propTitle || heading.title || DEFAULT_TITLE;
+  const subtitle = propSubtitle || heading.subtitle || DEFAULT_SUBTITLE;
 
   // Fast independent data loading
   useEffect(() => {

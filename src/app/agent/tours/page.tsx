@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuClock as Clock, LuMapPin as MapPin, LuRefreshCw as RefreshCw, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuClock as Clock, LuEye as Eye, LuMapPin as MapPin, LuRefreshCw as RefreshCw, LuSearch as Search, LuSlidersHorizontal as SlidersHorizontal } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useAuthContext } from "@/providers/AuthProvider";
+import AccessDenied from "@/components/common/AccessDenied";
 
 type Tour = {
   id: number;
@@ -38,6 +40,9 @@ function TourSkeleton() {
 }
 
 export default function AgentToursPage() {
+  const { hasPermission, loading: authLoading } = useAuthContext();
+  const canViewTours = hasPermission("tours.view") || hasPermission("view-tours");
+  const canCreateBookings = hasPermission("bookings.create") || hasPermission("create-bookings");
   const { format } = useCurrency();
   const money = (value: string | number | undefined, currency = "USD") =>
     value || value === 0 ? format(value, currency) : "-";
@@ -54,6 +59,7 @@ export default function AgentToursPage() {
   useEffect(() => {
     let active = true;
     async function load() {
+      if (authLoading || !canViewTours) return;
       setLoading(true);
       setError("");
       try {
@@ -78,7 +84,7 @@ export default function AgentToursPage() {
     }
     load();
     return () => { active = false; };
-  }, [query, page, retryKey]);
+  }, [authLoading, canViewTours, query, page, retryKey]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -91,6 +97,8 @@ export default function AgentToursPage() {
     // covers browser autofill that may not have emitted a React change event.
     setRetryKey((value) => value + 1);
   }
+
+  if (!authLoading && !canViewTours) return <AccessDenied dashboardHref="/agent/dashboard" />;
 
   return (
     <AgentPageShell>
@@ -201,19 +209,29 @@ export default function AgentToursPage() {
                     )}
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between gap-3">
+                  <div className="mt-3 flex items-end justify-between gap-3">
                     <div>
                       <p className="text-xs text-dash-muted">From</p>
                       <p className="text-base font-black text-dash-brand">
                         {money(tour.price_start_per_person, tour.currency ?? "USD")}
                       </p>
                     </div>
-                    <Link
-                      href={publicTourUrl(tour)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white transition hover:bg-dash-brand-hover"
-                    >
-                      Book This
-                    </Link>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Link
+                        href={publicTourUrl(tour)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover transition hover:bg-[#E7F5FF]"
+                      >
+                        <Eye size={14} /> View Details
+                      </Link>
+                      {canCreateBookings && (
+                        <Link
+                          href={publicTourUrl(tour)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white transition hover:bg-dash-brand-hover"
+                        >
+                          Book This
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

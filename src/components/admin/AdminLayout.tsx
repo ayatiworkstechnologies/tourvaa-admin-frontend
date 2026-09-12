@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import AdminHeader from "@/components/admin/AdminHeader";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import CmsSidebar from "@/components/admin/CmsSidebar";
 import { MenuItem } from "@/types/auth";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
 
@@ -20,6 +22,8 @@ type Props = {
 };
 
 export default function AdminLayout({ children, title, menus, user }: Props) {
+  const pathname = usePathname();
+  const inCms = pathname.startsWith("/admin/cms");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -38,7 +42,11 @@ export default function AdminLayout({ children, title, menus, user }: Props) {
 
   return (
     <div className="h-screen min-w-0 overflow-hidden bg-dash-bg" style={portalThemeStyles.admin}>
-      <AdminSidebar menus={menus} collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
+      {inCms ? (
+        <CmsSidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
+      ) : (
+        <AdminSidebar menus={menus} collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
+      )}
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -48,7 +56,11 @@ export default function AdminLayout({ children, title, menus, user }: Props) {
             aria-label="Close menu"
           />
           <div className="relative h-full w-[min(290px,86vw)] bg-white shadow-2xl">
-            <AdminSidebar menus={menus} mobile collapsed={false} onToggleCollapse={() => {}} />
+            {inCms ? (
+              <CmsSidebar mobile collapsed={false} onToggleCollapse={() => {}} />
+            ) : (
+              <AdminSidebar menus={menus} mobile collapsed={false} onToggleCollapse={() => {}} />
+            )}
           </div>
         </div>
       )}

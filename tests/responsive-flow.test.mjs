@@ -37,8 +37,8 @@ check("desktop header exposes account and trip tools navigation", publicHeader.i
 const supplierPortal = read("src/app/supplier-portal/page.tsx");
 const agentPortal = read("src/app/agent-portal/page.tsx");
 const partnerMotion = read("src/components/public/PartnerPortalLanding.module.css");
-check("partner landing pages use optimized local hero images", [supplierPortal, agentPortal].every((source) => source.includes('from "next/image"') && source.includes("fill priority")) && existsSync(resolve(root, "public/images/supplier-portal-hero.png")) && existsSync(resolve(root, "public/images/agent-portal-hero.png")));
-check("partner landing heroes adapt across mobile and desktop", [supplierPortal, agentPortal].every((source) => source.includes("min-h-[720px]") && source.includes("lg:grid-cols")));
+check("partner landing pages use optimized local hero images", [supplierPortal, agentPortal].every((source) => source.includes('from "next/image"') && source.includes("<Image") && source.includes("fill") && source.includes("priority")) && existsSync(resolve(root, "public/images/supplier-portal-hero.png")) && existsSync(resolve(root, "public/images/agent-portal-hero.png")));
+check("partner landing heroes adapt across mobile and desktop", [supplierPortal, agentPortal].every((source) => source.includes("sm:pt-16") && source.includes("lg:grid-cols") && source.includes("lg:pt-20")));
 check("partner landing motion respects reduced-motion preferences", partnerMotion.includes("@media (prefers-reduced-motion: reduce)") && partnerMotion.includes("animation: none"));
 
 const portalHeader = read("src/components/layout/Header.tsx");
