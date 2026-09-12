@@ -6,6 +6,7 @@ import { LuArrowLeft as ArrowLeft, LuCalendar as Calendar, LuCalendarCheck as Ca
 import { useParams } from "next/navigation";
 
 import CustomerActionButtons from "@/components/customers/CustomerActionButtons";
+import ActionModal from "@/components/operations/ActionModal";
 import {
   CustomerBookingHistory,
   CustomerCommunicationHistory,
@@ -50,6 +51,7 @@ export default function CustomerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"bookings" | "payments" | "communications">("bookings");
 
@@ -94,15 +96,21 @@ export default function CustomerDetailPage() {
     void fetchCustomer();
   }, [fetchCustomer]);
 
-  const handleBlock = async () => {
+  const handleBlock = () => {
     if (!customer) return;
-    const reason = window.prompt("Enter block reason");
-    if (!reason?.trim()) return;
+    setBlockModalOpen(true);
+  };
+
+  const submitBlock = async (payload: Record<string, string | number>) => {
+    if (!customer) return;
+    const reason = String(payload.reason || "").trim();
+    if (!reason) return;
 
     setSaving(true);
     try {
       await blockCustomer(customer.id, reason);
       toast.success("Customer blocked.");
+      setBlockModalOpen(false);
       await fetchCustomer();
     } catch {
       toast.error("Could not block customer.");
@@ -311,6 +319,15 @@ export default function CustomerDetailPage() {
             saving={saving}
             onClose={() => setLocationModalOpen(false)}
             onSave={(value) => void handleSaveLocation(value)}
+          />
+          <ActionModal
+            open={blockModalOpen}
+            title={`Block ${customer.full_name}`}
+            fields={[{ name: "reason", label: "Block reason", type: "textarea", required: true }]}
+            saving={saving}
+            submitLabel="Block"
+            onClose={() => setBlockModalOpen(false)}
+            onSubmit={submitBlock}
           />
         </div>
       ) : (

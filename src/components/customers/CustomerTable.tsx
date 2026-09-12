@@ -3,14 +3,9 @@
 import Link from "next/link";
 import { LuEye as Eye, LuKeyRound as KeyRound, LuLock as Lock, LuLockOpen as Unlock } from "react-icons/lu";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import StatusBadge from "@/components/operations/StatusBadge";
 import { Customer } from "@/lib/api/services/customerService";
 import { useCurrency } from "@/hooks/useCurrency";
-
-const statusClass: Record<Customer["status"], string> = {
-  active: "bg-emerald-50 text-emerald-600",
-  inactive: "bg-amber-50 text-amber-700",
-  blocked: "bg-red-50 text-red-600",
-};
 
 type Props = {
   customers: Customer[];
@@ -78,11 +73,7 @@ export default function CustomerTable({
     {
       key: "status",
       header: "Status",
-      render: (customer) => (
-        <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass[customer.status]}`}>
-          {customer.status}
-        </span>
-      ),
+      render: (customer) => <StatusBadge value={customer.status} />,
     },
     {
       key: "tours",

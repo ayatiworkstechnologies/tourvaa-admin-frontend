@@ -2,19 +2,8 @@
 
 import { LuCalendar as Calendar, LuMail as Mail, LuMapPin as MapPin, LuPhone as Phone } from "react-icons/lu";
 
+import StatusBadge from "@/components/operations/StatusBadge";
 import { Customer } from "@/lib/api/services/customerService";
-
-const statusClass: Record<Customer["status"], string> = {
-  active: "bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-200",
-  inactive: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
-  blocked: "bg-red-50 text-red-600 ring-1 ring-inset ring-red-200",
-};
-
-const statusDot: Record<Customer["status"], string> = {
-  active: "bg-emerald-500",
-  inactive: "bg-amber-500",
-  blocked: "bg-red-500",
-};
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -49,12 +38,7 @@ export default function CustomerProfileCard({ customer }: { customer: Customer }
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
                 <h2 className="text-2xl font-black tracking-tight text-dash-text">{customer.full_name}</h2>
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold capitalize ${statusClass[customer.status]}`}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${statusDot[customer.status]}`} />
-                  {customer.status}
-                </span>
+                <StatusBadge value={customer.status} />
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-dash-muted">

@@ -5,6 +5,7 @@ import { LuRefreshCw as RefreshCw } from "react-icons/lu";
 
 import CustomerFilters, { CustomerFilterState } from "@/components/customers/CustomerFilters";
 import CustomerTable from "@/components/customers/CustomerTable";
+import ActionModal from "@/components/operations/ActionModal";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -41,6 +42,7 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<number | null>(null);
+  const [blockTarget, setBlockTarget] = useState<Customer | null>(null);
 
   const canBlock = hasPermission("customers.block") || hasPermission("customers.edit");
   const canUnblock = hasPermission("customers.unblock") || hasPermission("customers.edit");
@@ -87,14 +89,20 @@ export default function CustomersPage() {
     setPage(1);
   };
 
-  const handleBlock = async (customer: Customer) => {
-    const reason = window.prompt("Enter block reason");
-    if (!reason?.trim()) return;
+  const handleBlock = (customer: Customer) => {
+    setBlockTarget(customer);
+  };
 
-    setSavingId(customer.id);
+  const submitBlock = async (payload: Record<string, string | number>) => {
+    if (!blockTarget) return;
+    const reason = String(payload.reason || "").trim();
+    if (!reason) return;
+
+    setSavingId(blockTarget.id);
     try {
-      await blockCustomer(customer.id, reason);
+      await blockCustomer(blockTarget.id, reason);
       toast.success("Customer blocked.");
+      setBlockTarget(null);
       await fetchCustomers();
     } catch {
       toast.error("Could not block customer.");
@@ -177,6 +185,15 @@ export default function CustomersPage() {
           )}
         </section>
       </div>
+      <ActionModal
+        open={Boolean(blockTarget)}
+        title={`Block ${blockTarget?.full_name ?? "customer"}`}
+        fields={[{ name: "reason", label: "Block reason", type: "textarea", required: true }]}
+        saving={savingId === blockTarget?.id}
+        submitLabel="Block"
+        onClose={() => setBlockTarget(null)}
+        onSubmit={submitBlock}
+      />
       {dialog}
     </ModuleWrapper>
   );

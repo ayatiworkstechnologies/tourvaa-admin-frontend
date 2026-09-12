@@ -28,6 +28,7 @@ import {
   LuBus as Bus,
   LuGlobe as Globe,
   LuFlag as Flag,
+  LuWallet as Wallet,
 } from "react-icons/lu";
 import { PublicTourDetail } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -1184,6 +1185,42 @@ export default function TourDetailExperience({
                 })}
               </div>
             </div>
+
+            {(tour.deposit_type || tour.booking_deposit != null) && (
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
+                <h3 className="flex items-center gap-2 text-base font-black text-slate-900">
+                  <Wallet size={18} className="text-blue-600" />
+                  <span>Deposit &amp; Payment Terms</span>
+                </h3>
+                <ul className="mt-4 space-y-2 text-xs text-slate-600">
+                  <li className="flex items-start gap-2">
+                    <Check size={13} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
+                    <span>
+                      Deposit required:{" "}
+                      <span className="font-bold text-slate-900">
+                        {tour.deposit_type === "percentage" && tour.deposit_percentage != null
+                          ? `${tour.deposit_percentage}% of the tour price`
+                          : tour.booking_deposit != null
+                            ? format(tour.booking_deposit, tourCurrency)
+                            : "Contact us for details"}
+                      </span>
+                    </span>
+                  </li>
+                  {tour.deposit_cutoff_days != null && (
+                    <li className="flex items-start gap-2">
+                      <Check size={13} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
+                      <span>Deposit due within <span className="font-bold text-slate-900">{tour.deposit_cutoff_days} day{tour.deposit_cutoff_days === 1 ? "" : "s"}</span> of booking.</span>
+                    </li>
+                  )}
+                  {tour.balance_payment_deadline_days != null && (
+                    <li className="flex items-start gap-2">
+                      <Check size={13} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
+                      <span>Remaining balance due <span className="font-bold text-slate-900">{tour.balance_payment_deadline_days} day{tour.balance_payment_deadline_days === 1 ? "" : "s"}</span> before departure.</span>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
 
             {tour.cancellation_policy.length > 0 && (
               <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
