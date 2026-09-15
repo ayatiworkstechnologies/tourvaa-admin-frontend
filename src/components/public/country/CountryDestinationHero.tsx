@@ -6,10 +6,8 @@ import React from "react";
 import Link from "next/link";
 import {
   LuArrowRight as ArrowRight,
-  LuCompass as Compass,
   LuHouse as Home,
   LuChevronRight as ChevronRight,
-  LuSparkles as Sparkles,
 } from "react-icons/lu";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 

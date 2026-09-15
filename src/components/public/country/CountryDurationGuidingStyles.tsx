@@ -8,8 +8,6 @@ import {
   LuCalendar as Calendar,
   LuGlobe as Globe,
   LuUsers as Users,
-  LuUserCheck as UserCheck,
-  LuSparkles as Sparkles,
   LuShieldCheck as ShieldCheck,
   LuHeartHandshake as HeartHandshake,
   LuCheck as Check,

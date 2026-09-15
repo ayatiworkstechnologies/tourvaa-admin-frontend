@@ -8,11 +8,8 @@ import {
   LuLeaf as Leaf,
   LuCloudSnow as CloudSnow,
   LuSparkles as Sparkles,
-  LuArrowRight as ArrowRight,
   LuInfo as Info,
-  LuCalendar as Calendar,
   LuThermometer as Thermometer,
-  LuCloudRain as CloudRain,
 } from "react-icons/lu";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 

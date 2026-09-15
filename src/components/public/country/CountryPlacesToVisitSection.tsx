@@ -5,7 +5,6 @@
 import React from "react";
 import {
   LuMapPin as MapPin,
-  LuCompass as Compass,
   LuArrowRight as ArrowRight,
 } from "react-icons/lu";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";

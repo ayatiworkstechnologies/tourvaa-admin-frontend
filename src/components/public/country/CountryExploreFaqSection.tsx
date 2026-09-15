@@ -9,10 +9,6 @@ import {
   LuChevronRight as ChevronRight,
   LuChevronDown as ChevronDown,
   LuChevronUp as ChevronUp,
-  LuCircleHelp as HelpCircle,
-  LuSparkles as Sparkles,
-  LuArrowRight as ArrowRight,
-  LuMapPin as MapPin,
 } from "react-icons/lu";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 

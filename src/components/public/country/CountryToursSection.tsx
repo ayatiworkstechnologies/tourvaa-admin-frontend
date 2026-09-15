@@ -4,9 +4,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import {
   LuCompass as Compass,
-  LuSearch as Search,
   LuArrowRight as ArrowRight,
-  LuSlidersHorizontal as SlidersHorizontal,
 } from "react-icons/lu";
 import { PublicTour, fetchPublicTours } from "@/lib/api/publicClient";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
