@@ -395,6 +395,7 @@ export type AvailabilityConfig = {
   availability_end_date: string | null;
   min_advance_booking_days: number;
   agent_no_deposit_buffer_weeks: number;
+  agent_reserve_deposit_percentage: number;
   frequency: "weekly" | "fortnightly" | "monthly" | null;
   frequency_week: number | null;
   frequency_days: number[];

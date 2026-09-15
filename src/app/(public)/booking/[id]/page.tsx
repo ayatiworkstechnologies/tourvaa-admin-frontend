@@ -260,6 +260,7 @@ function AgentCommercialFields({
   onAgentReferenceChange,
   agentPaymentMethod,
   onAgentPaymentMethodChange,
+  reserveDepositPercentage,
 }: {
   agentMarkup: string;
   onAgentMarkupChange: (value: string) => void;
@@ -267,6 +268,7 @@ function AgentCommercialFields({
   onAgentReferenceChange: (value: string) => void;
   agentPaymentMethod: AgentPaymentMethod;
   onAgentPaymentMethodChange: (value: AgentPaymentMethod) => void;
+  reserveDepositPercentage: number;
 }) {
   return (
     <div className="rounded-xl border border-slate-200 p-4 sm:p-5 space-y-4">
@@ -297,8 +299,8 @@ function AgentCommercialFields({
         <label className="block text-xs font-semibold text-slate-700 mb-2">Booking action</label>
         <div className="grid gap-3 sm:grid-cols-2">
           <button type="button" onClick={() => onAgentPaymentMethodChange("pay_later")} className={`rounded-xl border p-4 text-left transition ${agentPaymentMethod === "pay_later" ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}>
-            <span className="block text-sm font-black text-slate-900">Reserve Now</span>
-            <span className="mt-1 block text-xs leading-5 text-slate-500">Create the reservation now. The full invoice is generated and sent to your agent account.</span>
+            <span className="block text-sm font-black text-slate-900">Reserve Now ({reserveDepositPercentage}% deposit)</span>
+            <span className="mt-1 block text-xs leading-5 text-slate-500">Pay a {reserveDepositPercentage}% deposit now to secure this booking; the remaining balance is due before departure.</span>
           </button>
           <button type="button" onClick={() => onAgentPaymentMethodChange("card")} className={`rounded-xl border p-4 text-left transition ${agentPaymentMethod === "card" ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}>
             <span className="block text-sm font-black text-slate-900">Pay in Full Today</span>
@@ -772,10 +774,10 @@ export default function DynamicTourBookingPage() {
     setStep(3);
   };
 
-  const startPayment = async (booking: { id: number; amount_pending: string; currency: string }) => {
+  const startPayment = async (booking: { id: number; amount_pending: string; currency: string }, amountOverride?: string) => {
     setPendingBooking(booking);
     const base = `${window.location.origin}/${isAgent ? "agent" : "customer"}/bookings/${booking.id}`;
-    const common = { booking_id: booking.id, amount: booking.amount_pending, currency: booking.currency, test_only: true };
+    const common = { booking_id: booking.id, amount: amountOverride || booking.amount_pending, currency: booking.currency, test_only: true };
     if (gateway === "stripe") {
       const { data } = await api.post("/payments/stripe/create-session", {
         ...common, success_url: `${base}?payment=${isAgent ? "stripe_success" : "success"}&session_id={CHECKOUT_SESSION_ID}`,
@@ -796,7 +798,11 @@ export default function DynamicTourBookingPage() {
   const handleConfirmAndPay = async () => {
     setPaymentError(null);
     if (!acceptTerms || paymentSubmitting) return;
-    const onlinePayment = !isAgent || agentPaymentMethod === "card";
+    // Agent "Reserve Now" (pay_later) now requires an upfront deposit
+    // (see agent_reserve_deposit in the booking-creation response) instead
+    // of the old $0-down credit-approval flow, so it goes through the same
+    // gateway checkout as "card" - just for a reduced amount.
+    const onlinePayment = !isAgent || agentPaymentMethod === "card" || agentPaymentMethod === "pay_later";
     if (onlinePayment && !gateways?.[`${gateway}_test`]) {
       setPaymentError("Enable this provider with test credentials in Payment Settings first.");
       return;
@@ -849,7 +855,11 @@ export default function DynamicTourBookingPage() {
           agreed_cancellation_policy: acceptTerms,
         });
         const booking = res.data?.data;
-        if (onlinePayment) { await startPayment(booking); return; }
+        if (onlinePayment) {
+          const depositAmount = agentPaymentMethod === "pay_later" ? booking?.agent_reserve_deposit?.minimum_amount : undefined;
+          await startPayment(booking, depositAmount);
+          return;
+        }
         setBookingResult({
           code: booking?.booking_code || "",
           amount: String(booking?.final_amount ?? booking?.total_cost ?? "0"),
@@ -1642,6 +1652,7 @@ export default function DynamicTourBookingPage() {
                       onAgentReferenceChange={setAgentReference}
                       agentPaymentMethod={agentPaymentMethod}
                       onAgentPaymentMethodChange={setAgentPaymentMethod}
+                      reserveDepositPercentage={tour?.agent_reserve_deposit_percentage ?? 30}
                     />
                   )}
 
@@ -1848,7 +1859,7 @@ export default function DynamicTourBookingPage() {
                       ) : (
                         <>
                           <Lock size={16} />
-                          <span>{isAgent && agentPaymentMethod === "pay_later" ? "Create Reservation" : isAgent ? "Pay in Full Today" : "Confirm and pay"}</span>
+                          <span>{isAgent && agentPaymentMethod === "pay_later" ? "Pay Deposit & Reserve" : isAgent ? "Pay in Full Today" : "Confirm and pay"}</span>
                         </>
                       )}
                     </button>

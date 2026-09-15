@@ -131,6 +131,7 @@ export type PublicTourDetail = PublicTour & {
   calendar: { id: number; date: string; slots: number; status: string }[];
   min_advance_booking_days?: number;
   agent_no_deposit_buffer_weeks?: number;
+  agent_reserve_deposit_percentage?: number;
   availability_end_date?: string | null;
   similar_tours: PublicTour[];
   cancellation_policy: { days_before_min: number; days_before_max: number | null; refund_percentage: number; description: string }[];
