@@ -224,12 +224,20 @@ export default function AgentToursPage() {
                         <Eye size={14} /> View Details
                       </Link>
                       {canCreateBookings && (
-                        <Link
-                          href={publicTourUrl(tour)}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white transition hover:bg-dash-brand-hover"
-                        >
-                          Book This
-                        </Link>
+                        <>
+                          <Link
+                            href={`/booking/${tour.id}?agent_action=reserve`}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100"
+                          >
+                            Reserve Now
+                          </Link>
+                          <Link
+                            href={`/booking/${tour.id}?agent_action=full`}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white transition hover:bg-dash-brand-hover"
+                          >
+                            Pay in Full Today
+                          </Link>
+                        </>
                       )}
                     </div>
                   </div>

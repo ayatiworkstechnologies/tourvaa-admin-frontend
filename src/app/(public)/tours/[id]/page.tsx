@@ -187,12 +187,13 @@ export default function TourDetailPage() {
   const returnQuery = searchParams.toString();
   const returnPath = `/booking/${tour.id}${returnQuery ? `?${returnQuery}` : ""}`;
 
-  const handleBookClick = async (selection?: { travelDate: string; adults: number; children: number }) => {
+  const handleBookClick = async (selection?: { travelDate: string; adults: number; children: number; agentAction?: "reserve" | "full" }) => {
     const bookingQuery = new URLSearchParams(searchParams.toString());
     if (selection?.travelDate) bookingQuery.set("travel_date", selection.travelDate);
     if (selection) {
       bookingQuery.set("adults", String(selection.adults));
       bookingQuery.set("children", String(selection.children));
+      if (selection.agentAction) bookingQuery.set("agent_action", selection.agentAction);
     }
     const query = bookingQuery.toString();
     const bookingPath = `/booking/${tour.id}${query ? `?${query}` : ""}`;
@@ -214,6 +215,7 @@ export default function TourDetailPage() {
       initialTravelDate={initialTravelDate}
       initialAdults={initialAdults}
       initialChildren={initialChildren}
+      agentBooking={isAgent}
       onBook={handleBookClick}
       onWishlist={() => toggleWishlist(travelItem)}
       wishlisted={wishlisted}

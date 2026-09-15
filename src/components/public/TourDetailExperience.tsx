@@ -39,7 +39,8 @@ type Props = {
   initialTravelDate: string;
   initialAdults: number;
   initialChildren: number;
-  onBook: (selection: { travelDate: string; adults: number; children: number }) => void;
+  onBook: (selection: { travelDate: string; adults: number; children: number; agentAction?: "reserve" | "full" }) => void;
+  agentBooking?: boolean;
   onWishlist: () => void;
   wishlisted: boolean;
   modal?: React.ReactNode;
@@ -219,6 +220,7 @@ export default function TourDetailExperience({
   initialAdults,
   initialChildren,
   onBook,
+  agentBooking = false,
   onWishlist,
   wishlisted,
   modal,
@@ -329,7 +331,7 @@ export default function TourDetailExperience({
   // Travellers State - capped to the selected departure's remaining seats
   // rather than unbounded, so the +/- steppers can't run past what's
   // actually available for that date.
-  const selectedDeparture = currentMonth.dates.find((d) => d.id === selectedDateId) || currentMonth.dates[0];
+  const selectedDeparture = currentMonth.dates.find((d) => d.id === selectedDateId);
   const maxTravellers = Math.max(1, selectedDeparture?.slotsRemaining ?? 10);
   const [adults, setAdults] = useState(Math.min(initialAdults || 2, maxTravellers));
   const [children, setChildren] = useState(initialChildren || 0);
@@ -533,13 +535,15 @@ export default function TourDetailExperience({
     ];
   }, [tour.similar_tours, destination, format, dayCount, unitPrice, tourCurrency, galleryPhotos]);
 
-  const handleBookNow = () => {
-    const chosen = currentMonth.dates.find((d) => d.id === selectedDateId) || currentMonth.dates[0];
-    const chosenDate = chosen?.date || initialTravelDate || "Available on Request";
+  const handleBookNow = (agentAction?: "reserve" | "full") => {
+    const chosen = currentMonth.dates.find((d) => d.id === selectedDateId);
+    const chosenDate = chosen?.date || initialTravelDate;
+    if (!chosenDate) return;
     onBook({
       travelDate: chosenDate,
       adults,
       children,
+      agentAction,
     });
   };
 
@@ -1580,14 +1584,20 @@ export default function TourDetailExperience({
             </div>
 
             {/* CTA Button */}
-            <button
-              type="button"
-              onClick={handleBookNow}
-              disabled={!selectedDeparture}
-              className="mt-4 w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] active:scale-[0.99] text-center disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              {selectedDeparture ? "Proceed to Payment" : "No Dates Available"}
-            </button>
+            {agentBooking ? (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                <button type="button" onClick={() => handleBookNow("reserve")} disabled={!selectedDeparture} className="w-full rounded-xl border border-blue-200 bg-blue-50 py-3.5 text-xs sm:text-sm font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50">
+                  Reserve Now
+                </button>
+                <button type="button" onClick={() => handleBookNow("full")} disabled={!selectedDeparture} className="w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] disabled:cursor-not-allowed disabled:bg-slate-300">
+                  Pay in Full Today
+                </button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => handleBookNow()} disabled={!selectedDeparture} className="mt-4 w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] active:scale-[0.99] text-center disabled:cursor-not-allowed disabled:bg-slate-300">
+                {selectedDeparture ? "Proceed to Payment" : "No Dates Available"}
+              </button>
+            )}
           </aside>
         </div>
 

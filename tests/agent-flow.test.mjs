@@ -99,7 +99,8 @@ check("agent inner pages share the upgraded page shell", agentInnerPages.every((
 check("agent inner pages share consistent workspace headers", agentInnerPages.every((page) => page.includes("AgentPageHeader")));
 check("agent page system retains the calm blue visual identity", agentPage.includes("#2563EB") && agentPage.includes("#F5F8FD"));
 check("agent dashboard prioritizes list and catalogue actions", ["Browse Tours", "My Customers", "Invoices"].every((label) => dashboard.includes(label)) && !dashboard.includes('href: "/agent/bookings/create"'));
-check("agent catalogue books directly from polished tour cards", tours.includes("AgentSection") && tours.includes("Book This"));
+check("agent catalogue exposes reserve and full-payment actions", tours.includes("AgentSection") && tours.includes("Reserve Now") && tours.includes("Pay in Full Today") && tours.includes("agent_action=reserve") && tours.includes("agent_action=full"));
+check("agent booking action is preserved into settlement", publicBooking.includes('searchParams.get("agent_action")') && publicBooking.includes('"pay_later"') && publicBooking.includes('payment_type: "full"'));
 check("agent booking creation uses the shared public booking workflow", publicBooking.includes("export default function DynamicTourBookingPage") && publicBooking.includes("AgentCustomerSelector"));
 const agentUi = [...agentInnerPages, layout, agentPage].join("\n");
 check("agent portal uses the calm blue theme", portalTheme.includes('"--color-dash-brand": "#2563EB"') && layout.includes('theme="navy"'));

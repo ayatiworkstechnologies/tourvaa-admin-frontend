@@ -108,7 +108,7 @@ function calcAge(day: string, month: string, year: string): number | null {
   return age;
 }
 
-type AgentPaymentMethod = "card" | "bank_transfer" | "credit" | "pay_later";
+type AgentPaymentMethod = "card" | "pay_later";
 
 type NewCustomerForm = {
   fullName: string;
@@ -294,17 +294,17 @@ function AgentCommercialFields({
         </div>
       </div>
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">Settlement method</label>
-        <select
-          value={agentPaymentMethod}
-          onChange={(e) => onAgentPaymentMethodChange(e.target.value as AgentPaymentMethod)}
-          className="w-full appearance-none rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500"
-        >
-          <option value="card">Card (charge now)</option>
-          <option value="bank_transfer">Bank transfer</option>
-          <option value="credit">Agent credit line</option>
-          <option value="pay_later">Pay later</option>
-        </select>
+        <label className="block text-xs font-semibold text-slate-700 mb-2">Booking action</label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button type="button" onClick={() => onAgentPaymentMethodChange("pay_later")} className={`rounded-xl border p-4 text-left transition ${agentPaymentMethod === "pay_later" ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}>
+            <span className="block text-sm font-black text-slate-900">Reserve Now</span>
+            <span className="mt-1 block text-xs leading-5 text-slate-500">Create the reservation now. The full invoice is generated and sent to your agent account.</span>
+          </button>
+          <button type="button" onClick={() => onAgentPaymentMethodChange("card")} className={`rounded-xl border p-4 text-left transition ${agentPaymentMethod === "card" ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}>
+            <span className="block text-sm font-black text-slate-900">Pay in Full Today</span>
+            <span className="mt-1 block text-xs leading-5 text-slate-500">Create the booking and continue directly to secure full payment.</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -357,7 +357,8 @@ export default function DynamicTourBookingPage() {
   const [newCustomerError, setNewCustomerError] = useState<string | null>(null);
   const [agentMarkup, setAgentMarkup] = useState("0");
   const [agentReference, setAgentReference] = useState("");
-  const [agentPaymentMethod, setAgentPaymentMethod] = useState<AgentPaymentMethod>("card");
+  const initialAgentAction = searchParams.get("agent_action") === "reserve" ? "reserve" : "full";
+  const [agentPaymentMethod, setAgentPaymentMethod] = useState<AgentPaymentMethod>(initialAgentAction === "reserve" ? "pay_later" : "card");
 
   const [gateway, setGateway] = useState<"stripe" | "paypal">("stripe");
   const [gateways, setGateways] = useState<{ stripe_test: boolean; paypal_test: boolean } | null>(null);
@@ -432,6 +433,9 @@ export default function DynamicTourBookingPage() {
     if (travelDate) {
       const match = availableCalendar.find((c) => c.date === travelDate);
       if (match) return match;
+      // A date explicitly selected on the tour page must never be silently
+      // replaced by the first available departure.
+      return null;
     }
     return availableCalendar[0];
   }, [availableCalendar, travelDate]);
@@ -497,6 +501,7 @@ export default function DynamicTourBookingPage() {
       .post("/checkout/start", {
         tour_id: tour.id,
         tour_calendar_id: selectedCalendar?.id ?? null,
+        travel_date: travelDate || undefined,
         session_key: existing || undefined,
       })
       .then((res) => {
@@ -818,12 +823,15 @@ export default function DynamicTourBookingPage() {
           customer_id: agentCustomerId,
           tour_id: tour!.id,
           tour_calendar_id: selectedCalendar?.id ?? null,
+          tour_date: travelDate || undefined,
+          tour_start_date: travelDate || undefined,
           booking_source: "agent",
           no_of_adults: adultCount,
           no_of_children: childCount,
           adults_count: adultCount,
           children_count: childCount,
           currency: tourCurrency,
+          payment_type: "full",
           travellers: buildTravellersPayload(),
           optional_activities: optionalActivitiesPayload,
           accommodations: accommodationsPayload,
@@ -1837,7 +1845,7 @@ export default function DynamicTourBookingPage() {
                       ) : (
                         <>
                           <Lock size={16} />
-                          <span>Confirm and pay</span>
+                          <span>{isAgent && agentPaymentMethod === "pay_later" ? "Create Reservation" : isAgent ? "Pay in Full Today" : "Confirm and pay"}</span>
                         </>
                       )}
                     </button>
