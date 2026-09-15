@@ -52,8 +52,24 @@ const connectSrc =
     ? `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${googleTranslateHosts};`
     : `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${googleTranslateHosts} ${devHmrHosts};`;
 
+const apiProxyUrl = new URL(apiProxyTarget);
+
 const nextConfig: NextConfig = {
-  images: { remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }] },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+      // Admin-uploaded tour/media assets (banner images, highlight photos,
+      // gallery images) are hosted on Cloudinary, not served from the
+      // backend's own origin - relative /storage/:path* paths are the only
+      // case that's same-origin via the rewrite above and need no entry here.
+      { protocol: "https", hostname: "res.cloudinary.com" },
+      {
+        protocol: apiProxyUrl.protocol.replace(":", "") as "http" | "https",
+        hostname: apiProxyUrl.hostname,
+        ...(apiProxyUrl.port ? { port: apiProxyUrl.port } : {}),
+      },
+    ],
+  },
   // Produces the minimal server bundle consumed by the production Docker image.
   // Static assets and public files are copied beside this bundle in Dockerfile.
   // Only set for the Docker build - Vercel has its own deployment output and

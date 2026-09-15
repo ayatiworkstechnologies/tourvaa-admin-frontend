@@ -16,6 +16,8 @@ import { useCurrency } from "@/hooks/useCurrency";
 import {
   CmsFooterSection,
   PublicCountry,
+  SocialLinksBlock,
+  fetchContentBlock,
   fetchFooterSections,
   fetchPublicCountries,
 } from "@/lib/api/publicClient";
@@ -166,6 +168,16 @@ export default function PublicFooter() {
   const [footerSections, setFooterSections] = useState<CmsFooterSection[]>(
     FALLBACK_FOOTER_SECTIONS,
   );
+  // Generic placeholder hosts until the admin sets Tourvaa's real handles via
+  // the Website CMS - see F-05 in _audit_tools/CONSOLIDATED-BUG-REPORT.md.
+  const [socialLinks, setSocialLinks] = useState<SocialLinksBlock>({
+    facebook: "https://facebook.com",
+    instagram: "https://instagram.com",
+    youtube: "https://youtube.com",
+    whatsapp: "https://whatsapp.com",
+    twitter: "https://twitter.com",
+    linkedin: "https://linkedin.com",
+  });
 
   const currencyRef = useRef<HTMLDivElement>(null);
   const countryRef = useRef<HTMLDivElement>(null);
@@ -194,6 +206,22 @@ export default function PublicFooter() {
       })
       .catch(() => {
         /* Fixed fallback list remains available. */
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetchContentBlock<SocialLinksBlock>("social_links")
+      .then((res) => {
+        if (active && res?.data) {
+          setSocialLinks((prev) => ({ ...prev, ...res.data }));
+        }
+      })
+      .catch(() => {
+        /* Generic placeholder URLs remain available. */
       });
     return () => {
       active = false;
@@ -407,10 +435,11 @@ export default function PublicFooter() {
                 </div>
               </div>
 
-              {/* Social Media Icons */}
+              {/* Social Media Icons - URLs are CMS-managed (social_links content
+                  block); admin can set Tourvaa's real handles without a deploy. */}
               <div className="flex items-center gap-4 sm:gap-5 text-white/90">
                 <a
-                  href="https://facebook.com"
+                  href={socialLinks.facebook || "https://facebook.com"}
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Facebook"
@@ -419,7 +448,7 @@ export default function PublicFooter() {
                   <FaFacebookF size={16} />
                 </a>
                 <a
-                  href="https://instagram.com"
+                  href={socialLinks.instagram || "https://instagram.com"}
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Instagram"
@@ -428,7 +457,7 @@ export default function PublicFooter() {
                   <FaInstagram size={16} />
                 </a>
                 <a
-                  href="https://youtube.com"
+                  href={socialLinks.youtube || "https://youtube.com"}
                   target="_blank"
                   rel="noreferrer"
                   aria-label="YouTube"
@@ -437,7 +466,7 @@ export default function PublicFooter() {
                   <FaYoutube size={16} />
                 </a>
                 <a
-                  href="https://whatsapp.com"
+                  href={socialLinks.whatsapp || "https://whatsapp.com"}
                   target="_blank"
                   rel="noreferrer"
                   aria-label="WhatsApp"
@@ -446,7 +475,7 @@ export default function PublicFooter() {
                   <FaWhatsapp size={16} />
                 </a>
                 <a
-                  href="https://twitter.com"
+                  href={socialLinks.twitter || "https://twitter.com"}
                   target="_blank"
                   rel="noreferrer"
                   aria-label="X Twitter"
@@ -455,7 +484,7 @@ export default function PublicFooter() {
                   <FaXTwitter size={16} />
                 </a>
                 <a
-                  href="https://linkedin.com"
+                  href={socialLinks.linkedin || "https://linkedin.com"}
                   target="_blank"
                   rel="noreferrer"
                   aria-label="LinkedIn"

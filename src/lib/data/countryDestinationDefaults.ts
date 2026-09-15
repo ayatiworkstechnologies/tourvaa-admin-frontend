@@ -1,4 +1,4 @@
-import { CountryDestinationInfo, MonthlyWeather } from "../types/countryDestination";
+import { CountryDestinationInfo } from "../types/countryDestination";
 
 function toF(c: number): number {
   return Math.round((c * 9) / 5 + 32);
@@ -762,11 +762,181 @@ export function getFallbackCountryDestinationInfo(
   };
 }
 
+// ─── 4. CHINA ────────────────────────────────────────────────────────────────
+const CHINA_DEFAULT: CountryDestinationInfo = {
+  country_id: 12,
+  country_name: "China",
+  country_slug: "china",
+  country_code: "CN",
+  tagline: "An Ancient Land of Contrasts, Imperial Splendour & Futuristic Wonders",
+  hero_title: "China Tours",
+  hero_subtitle:
+    "Discover ancient wonders, mist-shrouded peaks, futuristic skylines, and thousand-year traditions on unforgettable journeys across China.",
+  hero_image:
+    "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=1800&q=80",
+  overview_narrative:
+    "From the monumental Great Wall undulating across rugged ridge lines to the surreal limestone karst pillars of Guilin and the bustling, neon-lit alleys of Shanghai, China is a country of staggering scale, deep history, and relentless modern vitality. Walk through the sprawling courtyards of Beijing's Forbidden City, stand face-to-face with the ancient Terracotta Army in Xi'an, and cruise through the dramatic Three Gorges along the Yangtze River. Whether you are savouring regional culinary delicacies in Sichuan, exploring classical silk gardens in Suzhou, or gazing at futuristic superstructures in Shenzhen, China promises an extraordinary travel adventure.",
+  quick_facts: {
+    capital: "Beijing",
+    currency: "Chinese Yuan (CNY ¥)",
+    languages: "Mandarin Chinese (Standard)",
+    timezone: "CST (UTC+8)",
+    ideal_duration: "10 - 21 Days",
+    plug_types: "Plug Type A, C, I (220V / 50Hz)",
+    dialing_code: "+86",
+    driving_side: "Right",
+  },
+  why_visit: {
+    title: "Why Visit China?",
+    subtitle:
+      "A civilization spanning millennia alongside futuristic innovation, rare giant pandas, and world-wonder monuments.",
+    reasons: [
+      {
+        id: "c1",
+        title: "The Great Wall & Imperial Relics",
+        description: "Climb watchtowers along the Great Wall and explore the Ming and Qing dynasties' Forbidden City.",
+        badge: "UNESCO Wonders",
+        image: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80",
+      },
+      {
+        id: "c2",
+        title: "The Terracotta Warriors of Xi'an",
+        description: "Behold the silent underground army guarding the mausoleum of China's first emperor for 2,200 years.",
+        badge: "Archaeological Marvel",
+        image: "https://images.unsplash.com/photo-1599839575945-a9e5af0c3fa5?auto=format&fit=crop&w=800&q=80",
+      },
+      {
+        id: "c3",
+        title: "Yangtze Gorges & Guilin Karsts",
+        description: "Sail past dramatic limestone peaks and mist-crowned river canyons that inspired classical brush paintings.",
+        badge: "Pristine Nature",
+        image: "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80",
+      },
+      {
+        id: "c4",
+        title: "Chengdu Giant Panda Sanctuaries",
+        description: "Get up close with adorable giant pandas in their lush bamboo habitats in Sichuan.",
+        badge: "Rare Wildlife",
+        image: "https://images.unsplash.com/photo-1527118732049-c88155f2107c?auto=format&fit=crop&w=800&q=80",
+      },
+    ],
+  },
+  best_time_to_visit: {
+    summary:
+      "Autumn (September to November) and Spring (March to May) offer the most pleasant weather nationwide, with clear skies and comfortable sightseeing temperatures across both northern and southern regions.",
+    peak_season: {
+      label: "Peak / Autumn & Spring",
+      months: "September - November & April - May",
+      weather: "Warm, crisp, and sunny days with clear mountain views and blooming spring cherry blossoms.",
+      description:
+        "The ideal window for comfortable exploration of the Great Wall, Beijing, and Yangtze river cruises without intense heat.",
+      crowds: "High",
+      price_level: "High",
+    },
+    shoulder_season: {
+      label: "Shoulder Season",
+      months: "March & October",
+      weather: "Mild to cool temperatures with lower rainfall and moderate humidity.",
+      description:
+        "Great for visiting cultural sites with fewer crowds, outside the Golden Week national holiday week.",
+      crowds: "Moderate",
+      price_level: "Moderate",
+    },
+    low_season: {
+      label: "Low / Winter Season",
+      months: "December - February",
+      weather: "Cold and snowy in northern cities; mild in southern subtropical regions.",
+      description:
+        "Best for Harbin ice festivals, seeing snow on the Great Wall, and securing the lowest hotel rates.",
+      crowds: "Low",
+      price_level: "Value / Low",
+    },
+  },
+  monsoon_info: {
+    headline: "Seasonal Patterns & Regional Variations in China",
+    monsoon_overview:
+      "China spans multiple climate zones. The southern regions experience summer monsoon rains between June and August, while northern and western regions remain continental and dry.",
+    rainfall_schedule:
+      "Carry a light rain jacket during summer trips to southern cities like Guilin, Shanghai, and Hong Kong.",
+    regional_variations: [
+      { region: "North (Beijing & Xi'an)", climate_note: "Four distinct seasons with dry crisp autumns and freezing winters." },
+      { region: "Central & Yangtze River", climate_note: "Hot humid summers with pleasant springs and autumn foliage." },
+      { region: "South (Guilin & Guangzhou)", climate_note: "Subtropical climate with warm temperatures and summer monsoon showers." },
+    ],
+  },
+  temperature_info: {
+    headline: "Average Monthly Temperatures in China",
+    climate_overview: "Average temperatures across Beijing and central regions throughout the year.",
+    monthly_weather: [
+      { month: "Jan", full_month: "January", avg_high_c: 2, avg_low_c: -8, avg_high_f: 36, avg_low_f: 18, rainfall_days: 2, recommendation: "Monsoon / Low", highlight: "Crisp winter skies and Harbin ice sculptures" },
+      { month: "Feb", full_month: "February", avg_high_c: 5, avg_low_c: -5, avg_high_f: 41, avg_low_f: 23, rainfall_days: 3, recommendation: "Monsoon / Low", highlight: "Spring Festival & Chinese New Year celebrations" },
+      { month: "Mar", full_month: "March", avg_high_c: 12, avg_low_c: 1, avg_high_f: 54, avg_low_f: 34, rainfall_days: 4, recommendation: "Good", highlight: "Spring blossoms appear across parks" },
+      { month: "Apr", full_month: "April", avg_high_c: 20, avg_low_c: 8, avg_high_f: 68, avg_low_f: 46, rainfall_days: 5, recommendation: "Peak", highlight: "Ideal weather for Great Wall hikes" },
+      { month: "May", full_month: "May", avg_high_c: 26, avg_low_c: 14, avg_high_f: 79, avg_low_f: 57, rainfall_days: 6, recommendation: "Peak", highlight: "Long sunny days and lush botanical scenery" },
+      { month: "Jun", full_month: "June", avg_high_c: 30, avg_low_c: 19, avg_high_f: 86, avg_low_f: 66, rainfall_days: 9, recommendation: "Shoulder", highlight: "Dragon Boat Festival and summer energy" },
+      { month: "Jul", full_month: "July", avg_high_c: 31, avg_low_c: 22, avg_high_f: 88, avg_low_f: 72, rainfall_days: 12, recommendation: "Shoulder", highlight: "Highland Tibetan plateau escapes" },
+      { month: "Aug", full_month: "August", avg_high_c: 30, avg_low_c: 21, avg_high_f: 86, avg_low_f: 70, rainfall_days: 10, recommendation: "Shoulder", highlight: "Summer river cruises on the Yangtze" },
+      { month: "Sep", full_month: "September", avg_high_c: 26, avg_low_c: 15, avg_high_f: 79, avg_low_f: 59, rainfall_days: 6, recommendation: "Peak", highlight: "Golden autumn season begins with clear blue skies" },
+      { month: "Oct", full_month: "October", avg_high_c: 19, avg_low_c: 8, avg_high_f: 66, avg_low_f: 46, rainfall_days: 4, recommendation: "Peak", highlight: "Best overall travel month across China" },
+      { month: "Nov", full_month: "November", avg_high_c: 10, avg_low_c: 0, avg_high_f: 50, avg_low_f: 32, rainfall_days: 3, recommendation: "Good", highlight: "Crisp air and uncrowded palaces" },
+      { month: "Dec", full_month: "December", avg_high_c: 3, avg_low_c: -6, avg_high_f: 37, avg_low_f: 21, rainfall_days: 2, recommendation: "Monsoon / Low", highlight: "Winter wonderland sights on northern peaks" },
+    ],
+  },
+  best_places_to_visit: {
+    headline: "Places to Visit in China",
+    subtitle: "Key highlights and iconic destinations you must see during your trip.",
+    places: [
+      {
+        name: "The Great Wall of China",
+        tag: "UNESCO World Wonder",
+        image: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80",
+        description: "Winding over 13,000 miles across northern mountains, this ancient fortification is one of humanity's greatest architectural achievements.",
+        highlights: ["Mutianyu section", "Watchtower vistas", "Cable car ascent"],
+        best_for: "History & Hiking",
+      },
+      {
+        name: "The Forbidden City, Beijing",
+        tag: "Imperial Palace",
+        image: "https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?auto=format&fit=crop&w=800&q=80",
+        description: "The world's largest imperial palace complex, home to 24 Ming and Qing emperors across 980 surviving ornate pavilions.",
+        highlights: ["Hall of Supreme Harmony", "Imperial Garden", "Tiananmen Square"],
+        best_for: "Imperial Heritage",
+      },
+      {
+        name: "The Terracotta Army, Xi'an",
+        tag: "Ancient Wonder",
+        image: "https://images.unsplash.com/photo-1599839575945-a9e5af0c3fa5?auto=format&fit=crop&w=800&q=80",
+        description: "Thousands of life-sized terracotta soldiers, horses, and chariots buried for over 2,200 years to guard China's first emperor.",
+        highlights: ["Pit 1 battle formation", "Bronze chariots", "Ancient city wall"],
+        best_for: "Archaeology",
+      },
+      {
+        name: "The Bund & Skylines, Shanghai",
+        tag: "Metropolitan Icon",
+        image: "https://images.unsplash.com/photo-1538428494232-9c0d8a3ab403?auto=format&fit=crop&w=800&q=80",
+        description: "A striking waterfront promenade blending European colonial architecture with the gleaming futuristic skyscrapers of Pudong.",
+        highlights: ["Oriental Pearl Tower", "Huangpu River cruise", "Nanjing Road"],
+        best_for: "City & Architecture",
+      },
+    ],
+  },
+  travel_info: {
+    visas_and_passports: "Check entry visa requirements with the Chinese embassy or visa application service before departure. Transit visa-free policies (72/144-hour) are available at designated international airports for qualifying passport holders. Ensure your passport is valid for at least 6 months.",
+    money_and_tipping: "Mobile payments (Alipay and WeChat Pay linked to international credit cards) are universally used in China. Carry a small amount of Chinese Yuan (CNY) cash for remote areas. Tipping is not traditionally customary in mainland China.",
+    health_and_vaccinations: "Routine travel vaccinations are recommended. Tap water is not recommended for drinking; boiled or bottled water is readily accessible. Carry an international roaming plan or local eSIM for internet access.",
+    local_customs_and_culture: "Remove shoes where requested and speak respectfully in Buddhist and Taoist temples. Exchanging business cards and gifts with both hands is a polite traditional gesture.",
+    getting_around_and_transport: "China boasts the world's most extensive high-speed railway (CRH) network, connecting major hubs in record time. Modern metros and licensed taxis operate seamlessly across all tier-one and tier-two cities.",
+    packing_essentials: "Pack comfortable walking shoes, weather-appropriate layers, a universal power adaptor (Type A/C/I), a portable power bank, and a phrasebook or translation app.",
+    emergency_numbers: "Police: 110 | Medical Ambulance: 120 | Fire: 119",
+  },
+};
+
 // ─── REGISTRY ───────────────────────────────────────────────────────────────
 export const COUNTRY_DESTINATION_DEFAULTS: Record<string, CountryDestinationInfo> = {
   india: INDIA_DEFAULT,
   "new-zealand": NEW_ZEALAND_DEFAULT,
   thailand: THAILAND_DEFAULT,
+  china: CHINA_DEFAULT,
 };
 
 export const CURATED_COUNTRY_INFOS = COUNTRY_DESTINATION_DEFAULTS;

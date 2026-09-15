@@ -144,7 +144,7 @@ src/
 
 | Service | Covers |
 | --- | --- |
-| `dashboardService.ts` | `getDashboardMe/Summary/Charts/RecentActivities/Alerts` - all hit `/api/dashboard/*` |
+| _(none - see note)_ | Dashboard `/api/dashboard/*` calls are made directly via the shared `api` client from `providers/AuthProvider.tsx` and `app/admin/dashboard/page.tsx` - there is no dedicated `dashboardService.ts` wrapper |
 | `bookingService.ts` | Booking CRUD, calculate-price, calendar, status history |
 | `paymentService.ts` | Payment authorize/capture/refund/status |
 | `invoiceService.ts` | Invoice list/detail, `downloadInvoicePdf()` (authenticated blob download), `regenerateInvoicePdf()` |
@@ -179,7 +179,7 @@ node tests/dashboard.test.mjs
 
 The test file (`tests/dashboard.test.mjs`) verifies:
 
-- `dashboardService.ts` exists and exports all five dashboard functions
+- `AuthProvider.tsx` fetches `/dashboard/me` directly (no dedicated `dashboardService.ts` wrapper exists)
 - `AuthProvider` includes `dashboard_type`, `allowed_modules`, `sidebar_menu`
 - `AuthUser` type has `user_type` and `approval_status`
 - No `/api/v1` references anywhere in dashboard files
@@ -190,5 +190,5 @@ No automated browser/E2E suite exists yet - UI/flow verification is currently ma
 
 ## Known Gaps
 
-- **Affiliate self-service portal** (`app/affiliate/*`) has UI pages but no working self-registration or scoped permissions on the backend yet - treat as non-functional until the backend affiliate-auth work lands.
-- `/admin/reports` is a UI stub with no real data wired up.
+- ~~**Affiliate self-service portal** (`app/affiliate/*`) has UI pages but no working self-registration or scoped permissions on the backend yet.~~ **Stale as of 2026-09-15** — self-registration works end-to-end: `affiliate-portal/login?tab=register` posts to `POST /auth/register` with `account_type: "AFFILIATE"`, which creates a real `Affiliate` record (`app/services/auth.py:266-267`) and sends email verification. The `affiliate` role also has properly scoped default permissions in `app/seed.py:581-592` (own referral links/payout requests only — approve/reject/process stay admin-only).
+- ~~`/admin/reports` is a UI stub with no real data wired up.~~ **Stale as of 2026-09-15** — this page is fully built out: 12+ report types (summary, bookings, payments, pending/overdue payments, country-wise, cancellations, suppliers, agents, customers, sales/revenue with time-series charts, plus detail drill-downs), CSV export, and report scheduling, all backed by 24 real endpoints in `app/routers/reports.py` via `src/lib/api/services/reportService.ts`.

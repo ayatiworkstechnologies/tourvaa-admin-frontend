@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   LuCalendar as Calendar,
@@ -85,6 +84,22 @@ function getCountryFlag(country?: string | null): string {
   if (c.includes("sri lanka")) return "🇱🇰";
   if (c.includes("uae") || c.includes("dubai")) return "🇦🇪";
   return "";
+}
+
+// Renders an inclusion/exclusion's admin-set icon (an emoji or an image URL,
+// same format as the admin's TourItemsTab), falling back to the given
+// Lucide icon when none is set.
+function renderItemIcon(icon: string | null | undefined, FallbackIcon: typeof Check, colorClass: string) {
+  if (icon && /^https?:\/\//i.test(icon)) {
+    // Admin-uploaded inclusion/exclusion icons can come from any external
+    // host, which can't be pre-configured in next.config.ts remotePatterns.
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={icon} alt="" className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded object-cover" />;
+  }
+  if (icon) {
+    return <span className="mt-0.5 shrink-0 text-sm leading-none">{icon}</span>;
+  }
+  return <FallbackIcon size={14} className={`mt-0.5 shrink-0 stroke-[3] ${colorClass}`} />;
 }
 
 // Splits a free-form, comma/newline-separated backend Text field into clean bullet chips
@@ -535,10 +550,13 @@ export default function TourDetailExperience({
       <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
         {/* ── 1. TOP DESTINATION HERO BANNER ── */}
         <section className="relative h-[340px] sm:h-[380px] w-full overflow-hidden rounded-[20px] bg-slate-900 shadow-md">
-          <img
+          <Image
             src={tour.banner_image ? mediaUrl(tour.banner_image) : (galleryPhotos[0] || "/images/compare-hero.jpg")}
             alt={`${destination} Tours`}
-            className="h-full w-full object-cover opacity-90"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover opacity-90"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/30 to-transparent" />
 
@@ -608,18 +626,29 @@ export default function TourDetailExperience({
         {/* ── 3. PHOTO GALLERY GRID ── */}
         <section className="mt-6">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {galleryPhotos.map((photo, idx) => (
-              <div
-                key={idx}
-                className="group relative h-36 sm:h-44 overflow-hidden rounded-xl bg-slate-100 shadow-2xs"
-              >
-                <img
-                  src={photo}
-                  alt={tour.gallery.find((item) => mediaUrl(item.image_url) === photo)?.alt_text || tour.image_alt_text || `${title} view ${idx + 1}`}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                />
-              </div>
-            ))}
+            {galleryPhotos.map((photo, idx) => {
+              const galleryItem = tour.gallery.find((item) => mediaUrl(item.image_url) === photo);
+              const caption = galleryItem?.title || galleryItem?.caption;
+              return (
+                <div
+                  key={idx}
+                  className="group relative h-36 sm:h-44 overflow-hidden rounded-xl bg-slate-100 shadow-2xs"
+                >
+                  <Image
+                    src={photo}
+                    alt={galleryItem?.alt_text || tour.image_alt_text || `${title} view ${idx + 1}`}
+                    fill
+                    sizes="(min-width: 640px) 33vw, 50vw"
+                    className="object-cover transition duration-500 group-hover:scale-105"
+                  />
+                  {caption && (
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 to-transparent p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <p className="line-clamp-2 text-[10px] font-semibold text-white">{caption}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <p className="mt-3 text-xs font-medium text-slate-500 leading-relaxed">
             {destination} tour starting in {startLocation}{finishLocation && finishLocation !== startLocation ? ` and concluding in ${finishLocation}` : ""} with tour accommodation, professional guide, transport and more.
@@ -756,6 +785,21 @@ export default function TourDetailExperience({
                       </p>
                     </div>
                   </div>
+
+                  {tour.overview?.physical_rating && (
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        <ShieldCheck size={16} />
+                      </span>
+                      <div>
+                        <p className="font-bold text-slate-900">Physical Rating</p>
+                        <p className="text-slate-500 font-medium">
+                          {tour.overview.physical_rating}
+                          {tour.overview?.tour_pace ? ` · ${tour.overview.tour_pace} pace` : ""}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Col 2 */}
@@ -824,8 +868,27 @@ export default function TourDetailExperience({
                       <p className="text-slate-500 font-medium">{[destination, tour.category_name].filter(Boolean).join(" · ")}</p>
                     </div>
                   </div>
+
+                  {tour.overview?.best_season && (
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        <Sparkles size={16} />
+                      </span>
+                      <div>
+                        <p className="font-bold text-slate-900">Best Time to Visit</p>
+                        <p className="text-slate-500 font-medium">{tour.overview.best_season}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {tour.overview?.why_choose_this_tour && (
+                <div className="mt-5 rounded-xl bg-blue-50/60 p-4 border border-blue-100">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-blue-700">Why Choose This Tour</p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-slate-700">{tour.overview.why_choose_this_tour}</p>
+                </div>
+              )}
             </div>
 
             {/* C. ⭐ TOUR HIGHLIGHTS */}
@@ -846,8 +909,8 @@ export default function TourDetailExperience({
                     key={i}
                     className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs transition hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    <div className="h-32 w-full overflow-hidden bg-slate-100">
-                      <img src={h.img} alt={h.title} className="h-full w-full object-cover" />
+                    <div className="relative h-32 w-full overflow-hidden bg-slate-100">
+                      <Image src={h.img} alt={h.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
                     </div>
                     <div className="p-3.5">
                       <h4 className="text-xs font-bold text-slate-900 leading-snug line-clamp-1">{h.title}</h4>
@@ -884,7 +947,7 @@ export default function TourDetailExperience({
                     {tour.inclusions && tour.inclusions.length > 0 ? (
                       tour.inclusions.map((inc, i) => (
                         <li key={i} className="flex items-start gap-2">
-                          <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
+                          {renderItemIcon(inc.icon, Check, "text-emerald-600")}
                           <span>{inc.text}{inc.description ? <small className="mt-0.5 block text-[11px] text-slate-500">{inc.description}</small> : null}</span>
                         </li>
                       ))
@@ -929,7 +992,7 @@ export default function TourDetailExperience({
                     {tour.exclusions && tour.exclusions.length > 0 ? (
                       tour.exclusions.map((exc, i) => (
                         <li key={i} className="flex items-start gap-2">
-                          <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
+                          {renderItemIcon(exc.icon, X, "text-rose-500")}
                           <span>{exc.text}{exc.description ? <small className="mt-0.5 block text-[11px] text-slate-500">{exc.description}</small> : null}</span>
                         </li>
                       ))
@@ -986,7 +1049,11 @@ export default function TourDetailExperience({
                       <p className="text-[10px] font-black uppercase tracking-wider text-violet-600">Optional activity</p>
                       <h4 className="mt-1 text-sm font-bold text-slate-900">{item.name}</h4>
                       {item.description && <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.description}</p>}
-                      {item.price != null && <p className="mt-3 text-xs font-bold text-slate-800">+ {format(item.price, item.currency || tourCurrency)}</p>}
+                      <div className="mt-3 space-y-0.5 text-xs font-bold text-slate-800">
+                        {item.price != null && <p>+ {format(item.price, item.currency || tourCurrency)} / adult</p>}
+                        {item.child_price != null && <p className="text-slate-600">+ {format(item.child_price, item.currency || tourCurrency)} / child</p>}
+                        {item.infant_price != null && <p className="text-slate-600">+ {format(item.infant_price, item.currency || tourCurrency)} / infant</p>}
+                      </div>
                     </div>
                   ))}
                   {tour.extensions.map((item) => (
@@ -1255,6 +1322,18 @@ export default function TourDetailExperience({
             <p className="mt-1 text-xs text-slate-400">
               Secure your preferred departure in just a few steps.
             </p>
+
+            {(tour.min_advance_booking_days != null || tour.availability_end_date) && (
+              <p className="mt-2 flex items-start gap-1.5 text-[11px] font-medium text-amber-700">
+                <Info size={13} className="mt-0.5 shrink-0" />
+                <span>
+                  {tour.min_advance_booking_days != null &&
+                    `Book at least ${tour.min_advance_booking_days} day${tour.min_advance_booking_days === 1 ? "" : "s"} before departure. `}
+                  {tour.availability_end_date &&
+                    `Bookable through ${new Date(tour.availability_end_date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}.`}
+                </span>
+              </p>
+            )}
 
             {/* Month-based Departure Navigation */}
             <div className="mt-4 flex items-center justify-between">
@@ -1528,10 +1607,12 @@ export default function TourDetailExperience({
               >
                 <div>
                   <div className="relative h-44 w-full overflow-hidden bg-slate-100">
-                    <img
+                    <Image
                       src={sim.image}
                       alt={sim.title}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      fill
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover transition duration-500 group-hover:scale-105"
                     />
                     <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-xs">
                       {sim.duration}

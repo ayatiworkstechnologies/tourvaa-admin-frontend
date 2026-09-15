@@ -8,9 +8,11 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import StatusBadge from "@/components/operations/StatusBadge";
 import ActionModal from "@/components/operations/ActionModal";
+import DatePicker from "@/components/ui/DatePicker";
 import { bulkApproveAgents, bulkApproveSuppliers, bulkRejectAgents, bulkRejectSuppliers, createReviewRecord, listReviewRecords, ReviewModule, ReviewRecord } from "@/lib/api/services/operationsService";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
+import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
@@ -54,6 +56,7 @@ function MiniCheck({ ok, label }: { ok: boolean; label: string }) {
 export default function ReviewListPage({ module, title, requiredPermission }: Props) {
   const toast = useToast();
   const { hasPermission } = useAuthContext();
+  const { countries } = useGeoCountries();
   const [rows, setRows] = useState<ReviewRecord[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -64,6 +67,13 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   const [saving, setSaving] = useState(false);
   const [statusView, setStatusView] = useState<"all" | "pending" | "approved" | "inactive">("all");
   const supportsStatusView = module === "suppliers" || module === "agents";
+  // Richer filters (country/date range/sort) match Customer Management's
+  // filter set for consistency - only offered where the backend supports
+  // them (agents/suppliers), not affiliates.
+  const [countryFilter, setCountryFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name_az">("newest");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -166,6 +176,10 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         if (statusView === "pending") statusFilters.approval_status = "pending";
         if (statusView === "approved") statusFilters.approval_status = "approved";
         if (statusView === "inactive") statusFilters.status = "inactive";
+        if (countryFilter) statusFilters.country_id = countryFilter;
+        if (startDate) statusFilters.start_date = startDate;
+        if (endDate) statusFilters.end_date = endDate;
+        if (sortBy !== "newest") statusFilters.sort_by = sortBy;
       }
       const response = await listReviewRecords(module, { page, limit: 10, search, ...statusFilters });
       setRows(response.items || response.data || []);
@@ -176,7 +190,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     } finally {
       setLoading(false);
     }
-  }, [module, page, search, statusView, supportsStatusView, toast]);
+  }, [module, page, search, statusView, supportsStatusView, countryFilter, startDate, endDate, sortBy, toast]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchRows(), 200);
@@ -400,21 +414,54 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           </div>
         </section>
         {supportsStatusView && (
-          <nav className="flex flex-wrap gap-2 rounded-xl border border-dash-border bg-white p-2" aria-label={`${entityLabel} status filters`}>
-            {(["all", "pending", "approved", "inactive"] as const).map((view) => (
-              <button
-                key={view}
-                type="button"
-                onClick={() => {
-                  setStatusView(view);
+          <section className="space-y-3 rounded-xl border border-dash-border bg-white p-4">
+            <nav className="flex flex-wrap gap-2" aria-label={`${entityLabel} status filters`}>
+              {(["all", "pending", "approved", "inactive"] as const).map((view) => (
+                <button
+                  key={view}
+                  type="button"
+                  onClick={() => {
+                    setStatusView(view);
+                    setPage(1);
+                  }}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold capitalize ${statusView === view ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
+                >
+                  {view}
+                </button>
+              ))}
+            </nav>
+            <div className="grid gap-3 border-t border-dash-border-soft pt-3 sm:grid-cols-2 lg:grid-cols-4">
+              <select
+                value={countryFilter}
+                onChange={(event) => {
+                  setCountryFilter(event.target.value);
                   setPage(1);
                 }}
-                className={`rounded-lg px-4 py-2 text-sm font-bold capitalize ${statusView === view ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
+                className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand"
               >
-                {view}
-              </button>
-            ))}
-          </nav>
+                <option value="">All countries</option>
+                {countries.map((country) => (
+                  <option key={country.id} value={country.id}>
+                    {country.name}
+                  </option>
+                ))}
+              </select>
+              <DatePicker value={startDate} maxDate={endDate || undefined} onChange={(date) => { setStartDate(date); setPage(1); }} placeholder="Start date" />
+              <DatePicker value={endDate} minDate={startDate || undefined} onChange={(date) => { setEndDate(date); setPage(1); }} placeholder="End date" align="right" />
+              <select
+                value={sortBy}
+                onChange={(event) => {
+                  setSortBy(event.target.value as typeof sortBy);
+                  setPage(1);
+                }}
+                className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand"
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="name_az">Name A to Z</option>
+              </select>
+            </div>
+          </section>
         )}
         {selectedIds.size > 0 && (canBulkApprove || canBulkReject) && (
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dash-brand bg-[#EDF5FF] px-4 py-3">

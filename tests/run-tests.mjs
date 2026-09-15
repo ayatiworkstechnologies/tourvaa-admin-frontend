@@ -1,6 +1,6 @@
 /**
  * Frontend test runner - executes all module test files sequentially.
- * Usage: node frontend/tests/run-tests.mjs
+ * Usage: node tests/run-tests.mjs
  */
 import { spawnSync } from "child_process";
 import { dirname, resolve } from "path";

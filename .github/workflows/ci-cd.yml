@@ -28,6 +28,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Cross-repo API contract check (tests/api-contract.test.mjs) needs the
+      # backend checked out as a sibling directory (../tourvaa-admin-backend)
+      # and a Python env it can import `app.main` from - see ENV-01 in
+      # _audit_tools/CONSOLIDATED-BUG-REPORT.md. Requires a PAT with read
+      # access to tourvaa-admin-backend stored as the BACKEND_CHECKOUT_TOKEN
+      # secret (the default GITHUB_TOKEN can't reach a sibling repo); without
+      # it this step is skipped and the contract test falls back to its
+      # existing single-repo skip instead of failing the build.
+      - name: Check backend checkout token availability
+        id: backend_token
+        run: echo "available=${{ secrets.BACKEND_CHECKOUT_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout sibling backend repo
+        if: steps.backend_token.outputs.available == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ayatiworkstechnologies/tourvaa-admin-backend
+          token: ${{ secrets.BACKEND_CHECKOUT_TOKEN }}
+          path: ../tourvaa-admin-backend
+
+      - name: Set up backend Python for contract check
+        if: steps.backend_token.outputs.available == 'true'
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ../tourvaa-admin-backend/requirements.txt
+
+      - name: Install backend deps for contract check
+        if: steps.backend_token.outputs.available == 'true'
+        working-directory: ../tourvaa-admin-backend
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -38,6 +71,19 @@ jobs:
       - run: npm run lint
       - name: Contract tests (tests/run-tests.mjs)
         run: node tests/run-tests.mjs
+        env:
+          # Only needed for app.main to import cleanly - no DB/Redis is
+          # actually queried to build the OpenAPI schema, so a reachable
+          # database is not required here.
+          TOURVAA_TEST_PYTHON: python
+          DATABASE_URL: mysql+pymysql://tourvaa:tourvaa_ci@127.0.0.1:3306/tourvaa_ci
+          JWT_SECRET_KEY: ci-only-jwt-secret-that-is-longer-than-32-characters
+          SETTINGS_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          SUPER_ADMIN_EMAIL: admin@tourvaa.com
+          SUPER_ADMIN_PASSWORD: Admin@123
+          APP_ENV: development
+          FRONTEND_URL: http://127.0.0.1:3000
+          ALLOWED_ORIGINS: http://127.0.0.1:3000
       - name: Unit tests (vitest)
         run: npm run test:unit
       - name: Type-check

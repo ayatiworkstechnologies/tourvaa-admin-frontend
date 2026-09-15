@@ -12,7 +12,6 @@ import {
   LuChevronDown as ChevronDown,
   LuCircleCheckBig as CheckCircle2,
   LuClock as Clock,
-  LuCreditCard as CreditCard,
   LuDollarSign as DollarSign,
   LuFileCheck2 as FileCheck,
   LuFileText as FileText,
@@ -25,7 +24,6 @@ import {
   LuSparkles as Sparkles,
   LuTrendingUp as TrendingUp,
   LuUserCheck as UserCheck,
-  LuUsers as Users,
   LuWallet as Wallet,
   LuZap as Zap,
 } from "react-icons/lu";

@@ -76,6 +76,7 @@ export const TAB_DESCRIPTIONS: Record<string, string> = {
   "travel-support": "The 24/7 Travel Support banner shown on the homepage.",
   "newsletter-banner": "The newsletter signup banner shown at the bottom of the homepage.",
   footer: "The public site footer's link sections (Support, Our Company, Login) - sections and links, each independently enable/disable-able and orderable.",
+  "social-links": "The social media icon links shown in the site footer. Any left blank keep showing a generic placeholder URL.",
   "cms-pages": "Create standalone pages with their own URL, content, and SEO details. Published pages become live at /{slug} and automatically appear as a footer link if assigned to a section - draft pages are never shown publicly.",
 };
 export const TABS: TabConfig[] = [
@@ -391,6 +392,19 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "heading", label: "Heading", type: "text" },
       { key: "subtitle", label: "Subtitle", type: "textarea" },
       { key: "image", label: "Image", type: "asset" },
+    ],
+  },
+  {
+    key: "social-links",
+    label: "Social Media Links",
+    blockKey: "social_links",
+    fields: [
+      { key: "facebook", label: "Facebook URL", type: "url", hint: "Shown in the site footer. Leave blank to keep the generic https://facebook.com placeholder." },
+      { key: "instagram", label: "Instagram URL", type: "url" },
+      { key: "youtube", label: "YouTube URL", type: "url" },
+      { key: "whatsapp", label: "WhatsApp URL", type: "url" },
+      { key: "twitter", label: "X (Twitter) URL", type: "url" },
+      { key: "linkedin", label: "LinkedIn URL", type: "url" },
     ],
   },
 ];
@@ -1427,7 +1441,7 @@ export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
     key: "site",
     label: "Header, Footer & Contact",
     description: "The footer's link sections, plus contact details and other site-wide settings.",
-    tabs: ["footer"],
+    tabs: ["footer", "social-links"],
     external: [
       { label: "Contact Details", href: "/admin/settings", description: "Support email, phone, and company address (Settings > General)." },
     ],

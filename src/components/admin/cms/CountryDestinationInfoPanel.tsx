@@ -4,11 +4,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   LuBookOpen as BookOpen,
-  LuCalendar as Calendar,
   LuCloudRain as CloudRain,
   LuCompass as Compass,
   LuExternalLink as ExternalLink,
-  LuGlobe as Globe,
   LuInfo as Info,
   LuMapPin as MapPin,
   LuPlus as Plus,
@@ -23,7 +21,7 @@ import {
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
-import { CountryDestinationInfo, PlaceToVisit, WhyVisitReason } from "@/lib/types/countryDestination";
+import { CountryDestinationInfo, MonthlyWeather, PlaceToVisit, WhyVisitReason } from "@/lib/types/countryDestination";
 import {
   CURATED_COUNTRY_INFOS,
   getFallbackCountryDestinationInfo,
@@ -60,7 +58,8 @@ export default function CountryDestinationInfoPanel() {
     api
       .get("/public/countries")
       .then((res) => {
-        const items = (res.data?.items || res.data || []) as any[];
+        type RawCountry = { id: number; name?: string; country_name?: string; code?: string; country_code?: string };
+        const items = (res.data?.items || res.data || []) as RawCountry[];
         const mapped: CountryOption[] = items.map((c) => ({
           id: c.id,
           name: c.country_name || c.name || "Unknown",
@@ -1191,7 +1190,7 @@ export default function CountryDestinationInfoPanel() {
                         value={m.recommendation}
                         onChange={(e) => {
                           const updated = [...info.temperature_info.monthly_weather];
-                          updated[idx].recommendation = e.target.value as any;
+                          updated[idx].recommendation = e.target.value as MonthlyWeather["recommendation"];
                           setInfo({
                             ...info,
                             temperature_info: {

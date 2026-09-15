@@ -27,7 +27,6 @@ import {
   fetchFavouriteCountries,
   fetchPopularDestinations,
   fetchPublicCountries,
-  PublicCountry,
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { slugifyTourSegment } from "@/lib/utils/tourUrl";

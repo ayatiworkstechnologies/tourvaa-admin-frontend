@@ -106,12 +106,13 @@ export type PublicTourDetail = PublicTour & {
     activities: string;
     optional_activities?: string;
     image?: string | null;
+    image_alt_text?: string;
     images?: string[];
   }[];
   highlights: { text: string; title?: string; image?: string | null; description?: string }[];
-  inclusions: { text: string; description?: string }[];
-  exclusions: { text: string; description?: string }[];
-  gallery: { image_url: string; alt_text: string; is_banner: boolean }[];
+  inclusions: { text: string; description?: string; icon?: string | null }[];
+  exclusions: { text: string; description?: string; icon?: string | null }[];
+  gallery: { image_url: string; alt_text: string; title?: string; caption?: string; is_banner: boolean }[];
   tour_video_url?: string | null;
   brochure_pdf?: string | null;
   pricing: {
@@ -123,7 +124,7 @@ export type PublicTourDetail = PublicTour & {
     original_price_per_person?: number;
     original_child_price_per_person?: number;
   }[];
-  optional_activities: { id: number; name: string; description: string; price: number | null; currency: string; category: string; image?: string | null }[];
+  optional_activities: { id: number; name: string; description: string; price: number | null; child_price?: number | null; infant_price?: number | null; pricing_mode?: string; currency: string; category: string; image?: string | null }[];
   accommodations: { id: number; name: string; description: string; price: number | null; category: string; image?: string | null }[];
   extensions: { id: number; title: string; description: string; duration_days: number | null; price: number | null; category: string; image?: string | null }[];
   discounts: { label: string; discount_type: string; value: number; valid_from: string | null; valid_to: string | null }[];
@@ -160,6 +161,7 @@ export type HeroExtrasBlock = {
 export type AboutSectionBlock = { heading: string; body: string; image: string; cta_text?: string; cta_url?: string };
 export type FavouriteCountriesSectionBlock = { title: string; subtitle: string };
 export type BlogTeaserBlock = { eyebrow: string; heading: string; subtitle: string; cta_text: string; cta_url: string; image: string };
+export type SocialLinksBlock = { facebook?: string; instagram?: string; youtube?: string; whatsapp?: string; twitter?: string; linkedin?: string };
 export type AirportTransferBlock = { eyebrow: string; heading: string; subtitle: string; features: string[]; cta_text: string; cta_url: string; image: string };
 export type TravelSupportBlock = { eyebrow: string; heading: string; subtitle: string; cta_text: string; cta_url: string; image: string };
 export type NewsletterBannerBlock = { badge: string; heading: string; subtitle: string; image: string };

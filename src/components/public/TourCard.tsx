@@ -1,7 +1,6 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LuArrowRight as ArrowRight, LuCalendarDays as Calendar, LuCheck as Check, LuHeart as Heart, LuMapPin as MapPin, LuStar as Star, LuUsers as Users } from "react-icons/lu";
@@ -88,7 +87,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
     return (
       <Link href={resolvedHref} className="group overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
         <div className="relative aspect-[4/3] overflow-hidden">
-          <img src={imgSrc} alt={tour.title || "Tour"} onError={() => setImgSrc(FALLBACK)} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
+          <Image src={imgSrc} alt={tour.title || "Tour"} fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" onError={() => setImgSrc(FALLBACK)} className="object-cover transition duration-700 group-hover:scale-110" />
           <span className="absolute bottom-3 left-3 rounded-md bg-orange-500 px-2.5 py-1 text-[10px] font-black uppercase text-white shadow">{categoryLabel || tour.category_name || "Featured"}</span>
           {discounted && <DiscountCardBadge percentage={tour.discount_percentage!} />}
         </div>
@@ -113,7 +112,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
         <button type="button" onClick={compactToggleWishlist} aria-label={compactWishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`} className={`absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur transition hover:scale-110 ${compactWishlisted ? "bg-red-500 text-white" : "bg-black/20 text-white hover:bg-white hover:text-red-500"}`}><Heart size={15} className={compactWishlisted ? "fill-current" : ""} /></button>
         <a href={resolvedHref} className="block">
           <div className="relative h-48 overflow-hidden">
-            <img src={imgSrc} alt={tour.title || "Tour"} onError={() => setImgSrc(FALLBACK)} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+            <Image src={imgSrc} alt={tour.title || "Tour"} fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" onError={() => setImgSrc(FALLBACK)} className="object-cover transition duration-700 group-hover:scale-105" />
             {discounted && <DiscountCardBadge percentage={tour.discount_percentage!} />}
           </div>
           <div className="p-5">
@@ -135,7 +134,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
   return (
     <article className={`group relative flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_12px_30px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(15,23,42,.14)] ${view === "list" ? "sm:grid sm:grid-cols-[340px_1fr]" : ""}`}>
       <Link href={resolvedHref} className={`relative block h-52 shrink-0 overflow-hidden ${view === "list" ? "sm:h-full" : ""}`}>
-        <img src={imgSrc} alt={tour.title || "Tour"} onError={() => setImgSrc(FALLBACK)} className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
+        <Image src={imgSrc} alt={tour.title || "Tour"} fill sizes="(min-width: 640px) 340px, 100vw" onError={() => setImgSrc(FALLBACK)} className="object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-transparent" />
         <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
           {isBestSeller && <span className="rounded-full bg-orange-500 px-3 py-1 text-[9px] font-black uppercase tracking-wide text-white shadow-md shadow-orange-500/30">Best Seller</span>}

@@ -10,7 +10,6 @@ import {
   LuTrash2 as Trash2,
   LuSave as Save,
   LuX as X,
-  LuCheck as Check,
   LuEye as Eye,
   LuInfo as Info,
   LuSparkles as Sparkles,
@@ -516,6 +515,16 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
                 onChange={(value) => setEditing((prev) => (prev ? { ...prev, image: value } : prev))}
               />
             </div>
+            <label className="md:col-span-2">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Day image alt text</span>
+              <input
+                type="text"
+                value={editing.image_alt_text ?? ""}
+                onChange={(e) => setEditing((prev) => (prev ? { ...prev, image_alt_text: e.target.value } : prev))}
+                placeholder="Describe the day image for accessibility and SEO..."
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
+              />
+            </label>
             <div className="md:col-span-2 space-y-3">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Day image carousel (additional images)</span>
               {(editing.images ?? []).map((src, index) => (

@@ -6,12 +6,8 @@ import {
   LuSearch as Search,
   LuChevronDown as ChevronDown,
   LuChevronUp as ChevronUp,
-  LuSparkles as Sparkles,
-  LuShieldCheck as ShieldCheck,
   LuMessageCircle as MessageCircle,
   LuArrowRight as ArrowRight,
-  LuCompass as Compass,
-  LuBookOpen as BookOpen,
   LuCircleHelp as HelpCircle,
 } from "react-icons/lu";
 

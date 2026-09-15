@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React from "react";
-import { LuHeart as Heart } from "react-icons/lu";
+import { LuSparkles as Sparkles } from "react-icons/lu";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 
 export interface CountryWhyVisitSectionProps {
@@ -11,62 +11,35 @@ export interface CountryWhyVisitSectionProps {
 }
 
 export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionProps) {
-  const { why_visit } = info;
-  const reasons = why_visit.reasons || [];
-
   return (
-    <section id="section-why-visit" className="py-12 sm:py-16 bg-slate-50 border-b border-slate-200/70">
-      <div className="mx-auto max-w-[1380px] px-5">
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#E4572E]">
-            <Heart size={12} className="fill-[#E4572E]" />
-            <span>Highlights & Reasons</span>
+    <section id="section-why-visit" className="py-6 sm:py-8 bg-white">
+      <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
+        {/* Wide Panoramic Highlight Banner */}
+        <div className="relative h-[240px] sm:h-[280px] w-full overflow-hidden rounded-[24px] bg-slate-950 flex items-center justify-center text-center p-6 sm:p-10 shadow-md">
+          {/* Background image */}
+          <img
+            src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1800&q=80"
+            alt="Scenic mountain highlight"
+            className="absolute inset-0 h-full w-full object-cover object-center opacity-45 scale-102"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/30" />
+
+          {/* Centered Content */}
+          <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+              <Sparkles size={11} className="fill-white" />
+              <span>Must-See Highlight</span>
+            </span>
+
+            <h2 className="mt-3.5 text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
+              {info.tagline || "An Ancient Land of Contrasts & Wonder"}
+            </h2>
+
+            <p className="mt-2 text-xs sm:text-sm text-white/85 font-medium leading-relaxed max-w-xl">
+              {info.why_visit?.subtitle ||
+                `Immerse yourself in centuries of living culture, dramatic scenery, and legendary hospitality across ${info.country_name}.`}
+            </p>
           </div>
-
-          <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-950 tracking-tight">
-            {why_visit.title || `Why Visit ${info.country_name}?`}
-          </h2>
-
-          <p className="mt-2 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-            {why_visit.subtitle || `From iconic UNESCO World Heritage sites to unique local encounters.`}
-          </p>
-        </div>
-
-        {/* Pillars Grid */}
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {reasons.map((reason, idx) => (
-            <article
-              key={reason.id || reason.title || idx}
-              className="group flex flex-col overflow-hidden rounded-[20px] border border-slate-200/80 bg-white shadow-xs transition-all duration-300 hover:border-slate-300 hover:shadow-xl hover:-translate-y-1"
-            >
-              {/* Image Container */}
-              <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
-                <img
-                  src={reason.image || info.hero_image || "/images/destination-alpine.jpg"}
-                  alt={reason.title}
-                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-                {reason.badge && (
-                  <span className="absolute left-3.5 top-3.5 z-10 rounded-full bg-slate-950/70 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur-md">
-                    {reason.badge}
-                  </span>
-                )}
-              </div>
-
-              {/* Body */}
-              <div className="flex flex-1 flex-col justify-between p-5 sm:p-6 text-left">
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-950 group-hover:text-pub-secondary transition-colors leading-snug">
-                    {reason.title}
-                  </h3>
-                  <p className="mt-2 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                    {reason.description}
-                  </p>
-                </div>
-              </div>
-            </article>
-          ))}
         </div>
       </div>
     </section>
