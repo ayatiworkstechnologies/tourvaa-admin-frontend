@@ -840,7 +840,10 @@ export default function DynamicTourBookingPage() {
           ...(isAgent ? {
             agent_markup: Number(agentMarkup) || 0,
             agent_reference: agentReference.trim() || undefined,
-            agent_payment_method: agentPaymentMethod,
+            // UI state uses "card" for the pay-in-full-today choice, but the
+            // backend's agent_payment_method enum has no "card" value - it
+            // expects "online" for that case (see BookingCreate validator).
+            agent_payment_method: agentPaymentMethod === "card" ? "online" : agentPaymentMethod,
           } : {}),
           agreed_terms: acceptTerms,
           agreed_cancellation_policy: acceptTerms,
