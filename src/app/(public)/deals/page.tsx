@@ -10,19 +10,13 @@ import {
   LuHeart as Heart,
   LuStar as Star,
   LuArrowRight as ArrowRight,
-  LuMapPin as MapPin,
-  LuSparkles as Sparkles,
   LuLightbulb as Lightbulb,
 } from "react-icons/lu";
 import { useCurrency } from "@/hooks/useCurrency";
-import { useTravelStore } from "@/providers/TravelStoreProvider";
-import {
-  fetchToursOnDeals,
-  fetchPublicTours,
-  fetchPublicCountries,
-} from "@/lib/api/publicClient";
+import { useTravelStore, type TravelItem } from "@/providers/TravelStoreProvider";
+import { fetchToursOnDeals } from "@/lib/api/publicClient";
 import HomeNewsletterBanner from "@/components/public/home/HomeNewsletterBanner";
-import { tourUrl, destinationUrl } from "@/lib/utils/tourUrl";
+import { destinationUrl } from "@/lib/utils/tourUrl";
 
 interface DealCardItem {
   id: string | number;
@@ -383,6 +377,31 @@ const TRAVEL_WAYS: TravelWayCategory[] = [
   },
 ];
 
+function toNumericId(id: string | number): number {
+  if (typeof id === "number") return id;
+  const parsed = parseInt(id.replace(/\D/g, ""), 10);
+  if (!Number.isNaN(parsed) && parsed > 0) return parsed;
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash << 5) - hash + id.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) || 1;
+}
+
+function toTravelItem(deal: DealCardItem): TravelItem {
+  return {
+    id: toNumericId(deal.id),
+    title: deal.title,
+    place: deal.country,
+    image: deal.image,
+    price: deal.dealPrice,
+    currency: "USD",
+    duration: "7 days",
+    href: deal.slug ? `/tours/${deal.slug}` : "/tours",
+  };
+}
+
 export default function DealsPage() {
   const { format } = useCurrency();
   const { isWishlisted, toggleWishlist } = useTravelStore();
@@ -410,18 +429,21 @@ export default function DealsPage() {
     fetchToursOnDeals()
       .then((items) => {
         if (!active || !items || !items.length) return;
-        const mapped: DealCardItem[] = items.map((item, idx) => ({
-          id: item.id || `api-deal-${idx}`,
-          title: item.title || "Special Deal Tour",
-          slug: item.slug || `tour-${item.id}`,
-          country: (item.destination_country || "Featured") as string,
-          image: item.featured_image || item.cover_image || TOURVAA_SPECIALS[idx % TOURVAA_SPECIALS.length].image,
-          originalPrice: Number(item.original_price || item.price || 1200),
-          dealPrice: Number(item.deal_price || Math.round(Number(item.price || 1200) * 0.8)),
-          discountPercent: Number(item.discount_percentage || 20),
-          rating: Number(item.rating || 4.9),
-          reviewCount: Number(item.review_count || 1200),
-        }));
+        const mapped: DealCardItem[] = items.map((item, idx) => {
+          const raw = item as unknown as Record<string, unknown>;
+          return {
+            id: item.id || `api-deal-${idx}`,
+            title: item.tour_title || (raw.title as string) || "Special Deal Tour",
+            slug: (raw.slug as string) || (item.tour_code ? `tour-${item.tour_code}` : `tour-${item.tour_id || item.id}`),
+            country: (raw.destination_country as string) || "Featured",
+            image: (raw.featured_image as string) || (raw.cover_image as string) || TOURVAA_SPECIALS[idx % TOURVAA_SPECIALS.length].image,
+            originalPrice: Number(raw.original_price || raw.price || 1200),
+            dealPrice: Number(raw.deal_price || Math.round(Number(raw.price || 1200) * 0.8)),
+            discountPercent: Number(item.discount_percentage || raw.discount_percentage || 20),
+            rating: Number(raw.rating || 4.9),
+            reviewCount: Number(raw.review_count || 1200),
+          };
+        });
         setSpecials(mapped.slice(0, 8));
       })
       .catch(() => {
@@ -528,8 +550,8 @@ export default function DealsPage() {
               key={deal.id}
               deal={deal}
               format={format}
-              isWishlisted={isWishlisted(String(deal.id))}
-              onToggleWishlist={() => toggleWishlist(String(deal.id))}
+              isWishlisted={isWishlisted(toNumericId(deal.id))}
+              onToggleWishlist={() => toggleWishlist(toTravelItem(deal))}
             />
           ))}
         </div>
@@ -571,8 +593,8 @@ export default function DealsPage() {
               key={deal.id}
               deal={deal}
               format={format}
-              isWishlisted={isWishlisted(String(deal.id))}
-              onToggleWishlist={() => toggleWishlist(String(deal.id))}
+              isWishlisted={isWishlisted(toNumericId(deal.id))}
+              onToggleWishlist={() => toggleWishlist(toTravelItem(deal))}
             />
           ))}
         </div>
@@ -614,8 +636,8 @@ export default function DealsPage() {
               key={deal.id}
               deal={deal}
               format={format}
-              isWishlisted={isWishlisted(String(deal.id))}
-              onToggleWishlist={() => toggleWishlist(String(deal.id))}
+              isWishlisted={isWishlisted(toNumericId(deal.id))}
+              onToggleWishlist={() => toggleWishlist(toTravelItem(deal))}
             />
           ))}
         </div>
@@ -701,8 +723,8 @@ export default function DealsPage() {
               key={deal.id}
               deal={deal}
               format={format}
-              isWishlisted={isWishlisted(String(deal.id))}
-              onToggleWishlist={() => toggleWishlist(String(deal.id))}
+              isWishlisted={isWishlisted(toNumericId(deal.id))}
+              onToggleWishlist={() => toggleWishlist(toTravelItem(deal))}
             />
           ))}
         </div>
