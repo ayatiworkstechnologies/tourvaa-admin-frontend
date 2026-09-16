@@ -1,6 +1,23 @@
 import { LuPlane as Plane } from "react-icons/lu";
 import PortalAuthPage, { type PortalAuthConfig } from "@/components/public/portal/PortalAuthPage";
 
+import { getDashboardPath } from "@/lib/utils/dashboardPath";
+
+export function redirectForRole(roleSlug: string, requested: string | null) {
+  const allowedPrefixes: Record<string, string> = {
+    customer: "/customer/",
+    supplier: "/supplier/",
+    "agent-reseller": "/agent/",
+    affiliate: "/affiliate/",
+  };
+  const prefix = allowedPrefixes[roleSlug.toLowerCase()];
+  const normalizedRole = roleSlug.toLowerCase();
+  const isSharedBooking = ["customer", "agent", "agent-reseller"].includes(normalizedRole) && requested?.startsWith("/booking/");
+  return requested && ((prefix && requested.startsWith(prefix)) || isSharedBooking) ? requested : getDashboardPath(roleSlug);
+}
+
+// Contract: redirectForRole(roleSlug, safeRedirect)
+
 // Traveller (customer) accounts. Registration keeps its own dedicated page
 // (/register, which also collects address details) via registerHref, while
 // sharing the same login shell/switcher as the agent/supplier/affiliate portals.
