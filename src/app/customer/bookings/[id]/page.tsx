@@ -299,8 +299,8 @@ function PayNowModal({
             {!gw?.paypal && <span className="ml-auto text-[10px] font-bold opacity-70">Not configured</span>}
           </button>
 
-          {/* Test mode */}
-          {false && gw?.test_mode_available && (
+          {/* Test mode -- backend only exposes test_mode_available outside production (see payments_gateway.py) */}
+          {gw?.test_mode_available && (
             <>
               <div className="flex items-center gap-2 py-1">
                 <div className="h-px flex-1 bg-amber-200" />

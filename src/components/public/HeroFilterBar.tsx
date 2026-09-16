@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LuCalendarDays as Calendar, LuCheck as Check, LuChevronDown as ChevronDown, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuCompass as Compass, LuMinus as Minus, LuPlus as Plus, LuSearch as Search, LuSparkles as Sparkles, LuSun as Sun, LuX as X, LuArrowRight as ArrowRight } from "react-icons/lu";
 import FlagIcon from "@/components/ui/FlagIcon";
-import { fetchViatorRedirectUrl } from "@/lib/api/publicClient";
+import { fetchExternalDayTrips, fetchViatorRedirectUrl } from "@/lib/api/publicClient";
 
 const MONTH_CODES: Record<string, string> = {
   Jan: "01",
@@ -824,6 +824,18 @@ function DurationPanel({
 }) {
   const [customOpen, setCustomOpen] = useState(false);
   const [sliderVal, setSliderVal] = useState(1);
+  // Admin-controlled (Settings -> API Settings -> Viator "Enabled" toggle),
+  // not a code flag - so it can be switched back on without a redeploy. The
+  // same /external-day-trips "configured" flag already reflects that toggle
+  // (see app/services/viator.py:is_configured), so no extra endpoint needed.
+  const [viatorEnabled, setViatorEnabled] = useState(false);
+  useEffect(() => {
+    let active = true;
+    fetchExternalDayTrips()
+      .then((res) => { if (active) setViatorEnabled(res.configured); })
+      .catch(() => { if (active) setViatorEnabled(false); });
+    return () => { active = false; };
+  }, []);
 
   return (
     <div className={`${basePanelClass} left-0 w-full min-w-[280px] sm:min-w-[300px] max-w-xs`}>
@@ -866,22 +878,27 @@ function DurationPanel({
       </div>
 
       {/* Viator -- separate from Tourvaa's own tours, hands off via the
-          confirmation popup rather than filtering local inventory. */}
-      <button
-        type="button"
-        onClick={() => onSelect("Viator")}
-        className={`mt-1.5 flex w-full items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition ${
-          selected === "Viator"
-            ? "border-[#00A698] bg-[#00A698]/5 text-[#0f2439] shadow-sm"
-            : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
-        }`}
-      >
-        <Compass size={13} className="text-[#00A698]" />
-        <span className="text-[11px] font-bold leading-tight">Viator Day Trips</span>
-        <span className="ml-auto rounded-full bg-[#00A698] px-1.5 py-[1px] text-[8px] font-black uppercase tracking-wide text-white">
-          Partner
-        </span>
-      </button>
+          confirmation popup rather than filtering local inventory. Hidden
+          whenever the admin's Viator "Enabled" toggle (Settings -> API
+          Settings) is off (see project review item 19: Viator is taken
+          forward separately later; Affiliate stays enabled). */}
+      {viatorEnabled && (
+        <button
+          type="button"
+          onClick={() => onSelect("Viator")}
+          className={`mt-1.5 flex w-full items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition ${
+            selected === "Viator"
+              ? "border-[#00A698] bg-[#00A698]/5 text-[#0f2439] shadow-sm"
+              : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
+          }`}
+        >
+          <Compass size={13} className="text-[#00A698]" />
+          <span className="text-[11px] font-bold leading-tight">Viator Day Trips</span>
+          <span className="ml-auto rounded-full bg-[#00A698] px-1.5 py-[1px] text-[8px] font-black uppercase tracking-wide text-white">
+            Partner
+          </span>
+        </button>
+      )}
 
       {/* Custom Range (collapsible) */}
       <div className="mt-2 border-t border-slate-100 pt-2">

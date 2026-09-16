@@ -344,19 +344,19 @@ export default function UsersPage() {
           <div className="rounded-2xl bg-dash-bg p-4">
             <p className="text-sm font-semibold text-dash-muted">Total users</p>
             <p className="mt-2 text-3xl font-bold text-dash-text">
-              {users.length}
+              {total}
             </p>
           </div>
           <div className="rounded-2xl bg-dash-bg p-4">
             <p className="text-sm font-semibold text-dash-muted">
-              Pending approval
+              Pending approval (this page)
             </p>
             <p className="mt-2 text-3xl font-bold text-amber-600">
               {pendingUsers.length}
             </p>
           </div>
           <div className="rounded-2xl bg-dash-bg p-4">
-            <p className="text-sm font-semibold text-dash-muted">Active users</p>
+            <p className="text-sm font-semibold text-dash-muted">Active users (this page)</p>
             <p className="mt-2 text-3xl font-bold text-emerald-600">
               {users.filter((user) => user.is_active).length}
             </p>

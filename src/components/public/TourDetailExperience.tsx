@@ -30,6 +30,7 @@ import {
   LuWallet as Wallet,
 } from "react-icons/lu";
 import { PublicTourDetail } from "@/lib/api/publicClient";
+import { destinationUrl } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 
@@ -370,7 +371,7 @@ export default function TourDetailExperience({
   const tourCurrency = tour.currency || "USD";
   const baseRow = pricingRows[0];
   const selectedRow = pricingRows[selectedGroupTier] ?? baseRow;
-  const unitPrice = Number(selectedRow?.price_per_person ?? tour.discounted_price_per_person ?? tour.price_start_per_person ?? 1182);
+  const unitPrice = Number(selectedRow?.price_per_person ?? tour.discounted_price_per_person ?? tour.price_start_per_person ?? 0);
   const childUnitPrice = Number(selectedRow?.child_price_per_person ?? Math.round(unitPrice * 0.8));
   const tourPrice = adults * unitPrice + children * childUnitPrice;
   // Total "you save" = the group-size saving (base 1-pax tier's original
@@ -580,7 +581,7 @@ export default function TourDetailExperience({
                 <span>&gt;</span>
                 <Link href="/tours" className="hover:text-white transition">Tours</Link>
                 <span>&gt;</span>
-                <Link href={`/tours?country=${encodeURIComponent(destination)}`} className="hover:text-white transition">{destination}</Link>
+                <Link href={destinationUrl(destination)} className="hover:text-white transition">{destination}</Link>
                 <span>&gt;</span>
                 <span className="text-amber-300 font-bold">{title}</span>
               </div>
@@ -1586,16 +1587,16 @@ export default function TourDetailExperience({
             {/* CTA Button */}
             {agentBooking ? (
               <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                <button type="button" onClick={() => handleBookNow("reserve")} disabled={!selectedDeparture} className="w-full rounded-xl border border-blue-200 bg-blue-50 py-3.5 text-xs sm:text-sm font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50">
+                <button type="button" onClick={() => handleBookNow("reserve")} disabled={!selectedDeparture || !unitPrice} className="w-full rounded-xl border border-blue-200 bg-blue-50 py-3.5 text-xs sm:text-sm font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50">
                   Reserve Now
                 </button>
-                <button type="button" onClick={() => handleBookNow("full")} disabled={!selectedDeparture} className="w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] disabled:cursor-not-allowed disabled:bg-slate-300">
+                <button type="button" onClick={() => handleBookNow("full")} disabled={!selectedDeparture || !unitPrice} className="w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] disabled:cursor-not-allowed disabled:bg-slate-300">
                   Pay in Full Today
                 </button>
               </div>
             ) : (
-              <button type="button" onClick={() => handleBookNow()} disabled={!selectedDeparture} className="mt-4 w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] active:scale-[0.99] text-center disabled:cursor-not-allowed disabled:bg-slate-300">
-                {selectedDeparture ? "Proceed to Payment" : "No Dates Available"}
+              <button type="button" onClick={() => handleBookNow()} disabled={!selectedDeparture || !unitPrice} className="mt-4 w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] active:scale-[0.99] text-center disabled:cursor-not-allowed disabled:bg-slate-300">
+                {!unitPrice ? "Price Unavailable" : selectedDeparture ? "Proceed to Payment" : "No Dates Available"}
               </button>
             )}
           </aside>

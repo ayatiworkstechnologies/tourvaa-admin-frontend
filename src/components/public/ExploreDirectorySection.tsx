@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { destinationUrl } from "@/lib/utils/tourUrl";
 import { useEffect, useState } from "react";
 import {
   fetchPublicCategories,
@@ -171,7 +172,7 @@ export default function ExploreDirectorySection({
 
   const getHref = (item: string) => {
     if (activeTab === "countries")
-      return `/tours?country=${encodeURIComponent(item)}`;
+      return destinationUrl(item);
     if (activeTab === "cities")
       return `/tours?search=${encodeURIComponent(item)}`;
     return `/tours?category=${encodeURIComponent(item)}`;

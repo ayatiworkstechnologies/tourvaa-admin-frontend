@@ -7,6 +7,7 @@ import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useToast } from "@/hooks/useToast";
 
 type LedgerEntry = {
   id: number;
@@ -78,6 +79,7 @@ const labelCls = "mb-1.5 block text-xs font-bold uppercase tracking-wide text-da
 
 export default function EarningsPage() {
   const { formatExact: money } = useCurrency();
+  const toast = useToast();
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,6 +146,7 @@ export default function EarningsPage() {
       await api.patch("/suppliers/me", { commission_percentage: value });
       await loadCommissionProfile();
       setCommissionInput("");
+      toast.success(`Commission rate updated to ${value}%.`);
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setCommissionError(typeof msg === "string" ? msg : "Failed to update commission.");
@@ -178,8 +181,13 @@ export default function EarningsPage() {
     setLoading(true);
     setError("");
     try {
+      // The "Available Payout" summary below sums every fetched ledger entry
+      // client-side, so this must cover the supplier's full ledger, not a
+      // paginated slice -- a supplier with more entries than the page size
+      // would otherwise see (and be capped at) an understated balance even
+      // though the backend's own payout validation checks the real total.
       const [ledgerRes, payoutRes] = await Promise.allSettled([
-        api.get("/supplier-ledgers", { params: { limit: 50 } }),
+        api.get("/supplier-ledgers", { params: { limit: 1000 } }),
         api.get("/supplier-payouts", { params: { limit: 20 } }),
       ]);
       if (ledgerRes.status === "fulfilled") setEntries(ledgerRes.value.data?.items ?? ledgerRes.value.data?.data ?? []);

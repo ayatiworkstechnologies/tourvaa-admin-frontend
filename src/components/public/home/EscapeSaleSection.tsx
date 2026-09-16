@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { LuArrowRight as ArrowRight } from "react-icons/lu";
@@ -11,7 +9,6 @@ import {
   fetchHomepageBanners,
   HeroExtrasBlock,
 } from "@/lib/api/publicClient";
-import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { Reveal } from "./HomeHelpers";
 
 export interface EscapeSaleSectionProps {
@@ -63,7 +60,7 @@ export default function EscapeSaleSection({
   const rawExtras = (heroExtras || {}) as Record<string, unknown>;
 
   const visualBannerBadge =
-    (rawExtras.deal_badge as string) || "OFFER ENDS SOON";
+    (rawExtras.deal_badge as string) || "Offer Ends Soon";
 
   const visualBannerTitle =
     promoBanner?.title ||
@@ -83,52 +80,34 @@ export default function EscapeSaleSection({
   const visualBannerCtaUrl =
     promoBanner?.cta_url ||
     (rawExtras.deal_cta_url as string) ||
-    "/tours?sort=price_asc";
-
-  const visualBannerImage = promoBanner?.image
-    ? mediaUrl(promoBanner.image)
-    : "/images/destination-alpine.jpg";
+    "/deals";
 
   return (
-    <div className="relative z-10 mx-auto max-w-[1400px] px-5 my-4 sm:my-6">
+    <div className="relative z-10 mx-auto max-w-[1400px] px-5 pt-6 pb-2 sm:pt-8 sm:pb-3">
       <Reveal variant="scale-up">
-        <section className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] border border-slate-200/80 shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
-          {/* Background panoramic mountain image with smooth zoom on hover */}
-          <div className="absolute inset-0 overflow-hidden">
-            <img
-              src={visualBannerImage}
-              alt={visualBannerTitle}
-              className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
-            />
-            {/* Gradient overlay for text contrast and depth */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/60 to-slate-950/20" />
+        <section className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] bg-[#E8E8E8] border border-slate-300/60 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xs transition-all">
+          <div className="max-w-2xl text-left">
+            {visualBannerBadge && (
+              <span className="inline-flex items-center rounded-full bg-[#DF6951] px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-2xs">
+                {visualBannerBadge}
+              </span>
+            )}
+            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[34px] font-bold text-slate-900 tracking-tight leading-tight">
+              {visualBannerTitle}
+            </h2>
+            <p className="mt-2 text-xs sm:text-sm md:text-[15px] text-slate-600 font-normal leading-relaxed max-w-xl">
+              {visualBannerSubtitle}
+            </p>
           </div>
 
-          {/* Banner content */}
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 sm:p-8 lg:p-10 min-h-[170px] sm:min-h-[190px]">
-            <div className="max-w-2xl text-left">
-              {visualBannerBadge && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E4572E] px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-xs">
-                  {visualBannerBadge}
-                </span>
-              )}
-              <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-white tracking-tight leading-tight">
-                {visualBannerTitle}
-              </h2>
-              <p className="mt-2.5 text-xs sm:text-sm md:text-[15px] text-white/90 font-medium leading-relaxed max-w-xl">
-                {visualBannerSubtitle}
-              </p>
-            </div>
-
-            <div className="shrink-0 flex items-center">
-              <Link
-                href={visualBannerCtaUrl}
-                className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-[#0B1527] px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-bold text-white shadow-lg transition-all duration-200 hover:bg-[#15233C] hover:shadow-xl hover:-translate-y-0.5 active:scale-95"
-              >
-                <span>{visualBannerCtaText}</span>
-                <ArrowRight size={16} className="text-[#E4572E] stroke-[2.5]" />
-              </Link>
-            </div>
+          <div className="shrink-0 flex items-center">
+            <Link
+              href={visualBannerCtaUrl}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-[#132c50] active:scale-95 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all cursor-pointer"
+            >
+              <span>{visualBannerCtaText}</span>
+              <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </div>
         </section>
       </Reveal>

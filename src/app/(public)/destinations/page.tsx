@@ -29,7 +29,7 @@ import {
   fetchPublicCountries,
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
-import { slugifyTourSegment } from "@/lib/utils/tourUrl";
+import { destinationUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 
 // Master Destination Country with region and snippet
 export interface CountryCardItem {
@@ -449,7 +449,7 @@ export default function DestinationsPage() {
               tourCount: liveCount !== undefined ? liveCount : item.tourCount,
               snippet: cmsSnippet || item.snippet,
               image: cmsImage || item.image,
-              href: `/tours?country=${encodeURIComponent(item.name)}`,
+              href: destinationUrl(item.name),
             };
           }),
         );
@@ -695,8 +695,7 @@ export default function DestinationsPage() {
         ) : filteredCountries.length > 0 ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
             {filteredCountries.map((country) => {
-              const toursUrl =
-                country.href || `/tours?country=${encodeURIComponent(country.name)}`;
+              const toursUrl = country.href || destinationUrl(country.name);
               const guideSlug = country.guideSlug || slugifyTourSegment(country.name);
 
               return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -66,7 +67,13 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [activeGroup, setActiveGroup] = useState("general");
+  // /admin/settings/api and /admin/settings/payment re-export this page
+  // (see their page.tsx) purely so those URLs exist as deep links -- read
+  // the sub-tab straight from the path so landing on either opens the
+  // matching tab instead of always defaulting to General.
+  const pathname = usePathname();
+  const initialGroup = pathname === "/admin/settings/api" ? "api" : pathname === "/admin/settings/payment" ? "payment" : "general";
+  const [activeGroup, setActiveGroup] = useState(initialGroup);
 
   const grouped = useMemo(() => {
     return settings

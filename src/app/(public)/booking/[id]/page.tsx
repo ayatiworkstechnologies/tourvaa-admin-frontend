@@ -2,6 +2,13 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+// MoM 2026-08-27, item 8: hide the accommodation/"hotel booking" step
+// (room-type choice, pre/post-tour nights, accommodation add-ons) from the
+// customer booking flow for now -- a proper redesign is planned, so the
+// sections stay in the code (untouched below) rather than being deleted;
+// flip this back to true once that's ready.
+const SHOW_ACCOMMODATION_BOOKING = false;
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -691,8 +698,12 @@ export default function DynamicTourBookingPage() {
 
   const handleContinueStep1 = async () => {
     setStepError(null);
-    if (availableCalendar.length > 0 && !selectedCalendar) {
-      setStepError("No available departure dates for this tour right now.");
+    if (!selectedCalendar) {
+      setStepError(
+        availableCalendar.length === 0
+          ? "No available departure dates for this tour right now."
+          : "Please select an available departure date to continue."
+      );
       return;
     }
     if (selectedCalendar && totalTravellers > selectedCalendar.slots) {
@@ -1069,13 +1080,13 @@ export default function DynamicTourBookingPage() {
                   <div className="pt-6">
                     <h3 className="text-sm font-bold text-slate-900">Passengers</h3>
                     <p className="mt-0.5 text-xs text-slate-500">
-                      {isAgent
+                      {availableCalendar.length > 0
                         ? "Select the departure date and number of adults for this booking."
                         : "Select the number of adults travelling with you."}
                     </p>
 
                     <div className="mt-4 flex flex-wrap gap-4">
-                      {isAgent && availableCalendar.length > 0 && (
+                      {availableCalendar.length > 0 && (
                         <div className="w-56">
                           <DatePicker
                             label="Departure date"
@@ -1119,6 +1130,7 @@ export default function DynamicTourBookingPage() {
                   </div>
 
                   {/* Accommodation */}
+                  {SHOW_ACCOMMODATION_BOOKING && (
                   <div className="mt-8 pt-6 border-t border-slate-100">
                     <h3 className="text-sm font-bold text-slate-900">Tour Accommodation</h3>
                     <p className="mt-0.5 text-xs text-slate-500">
@@ -1187,9 +1199,10 @@ export default function DynamicTourBookingPage() {
                       ))}
                     </div>
                   </div>
+                  )}
 
                   {/* Pre/Post Tour Add-ons -- only rendered when the tour actually has real add-ons configured */}
-                  {nightAddonExtensions.length > 0 && (
+                  {SHOW_ACCOMMODATION_BOOKING && nightAddonExtensions.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-slate-100">
                       <h3 className="text-sm font-bold text-slate-900">Pre and Post Tour Accommodation</h3>
                       <p className="mt-0.5 text-xs text-slate-500 leading-relaxed max-w-2xl">
@@ -1292,7 +1305,7 @@ export default function DynamicTourBookingPage() {
                   )}
 
                   {/* Accommodation Add-ons -- the tour's own accommodation-extras catalog, separate from the Shared/Upgrade room choice above */}
-                  {availableAccommodationExtras.length > 0 && (
+                  {SHOW_ACCOMMODATION_BOOKING && availableAccommodationExtras.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-slate-100">
                       <h3 className="text-sm font-bold text-slate-900">Accommodation Add-ons</h3>
                       <p className="mt-0.5 text-xs text-slate-500 leading-relaxed max-w-2xl">
@@ -1404,7 +1417,7 @@ export default function DynamicTourBookingPage() {
                         Apply
                       </button>
                     </div>
-                    {promoApplied && priceEstimate && Number(priceEstimate.discount_amount) > 0 && (
+                    {promoApplied && !priceLoading && priceEstimate && Number(priceEstimate.discount_amount) > 0 && (
                       <p className="mt-1.5 text-xs font-semibold text-emerald-600">
                         Promo code applied! Saved {format(Number(priceEstimate.discount_amount), priceEstimate.currency)}.
                       </p>
@@ -1999,6 +2012,15 @@ export default function DynamicTourBookingPage() {
                           </span>
                         </div>
                       )}
+
+                      {Number(priceEstimate.surcharge_amount) > 0 && (
+                        <div className="flex items-center justify-between text-slate-700 pt-1">
+                          <span className="text-slate-600">Surcharge</span>
+                          <span className="font-bold text-slate-900">
+                            {format(Number(priceEstimate.surcharge_amount), priceEstimate.currency)}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-4 rounded-xl bg-[#F0F4F8] p-3.5 flex items-center justify-between">
@@ -2010,6 +2032,19 @@ export default function DynamicTourBookingPage() {
                         {format(Number(priceEstimate.final_amount), priceEstimate.currency)}
                       </strong>
                     </div>
+
+                    {/* The figures above are converted for browsing convenience only --
+                        the booking itself, the payment gateway charge, and every
+                        downstream view (supplier, admin, invoice) always use the tour's
+                        real transaction currency (priceEstimate.currency), never the
+                        viewer's ambient display currency. Surfacing that explicitly here
+                        avoids the customer assuming they're being charged in whatever
+                        currency the amounts above happen to be converted to. */}
+                    {priceEstimate.currency.toUpperCase() !== displayCurrency.toUpperCase() && (
+                      <p className="mt-2 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                        You will be charged {formatExact(Number(priceEstimate.final_amount), priceEstimate.currency)} -- amounts above are shown in {displayCurrency} for reference only.
+                      </p>
+                    )}
                   </>
                 ) : (
                   <p className="py-3 text-xs text-slate-400">Price unavailable right now.</p>

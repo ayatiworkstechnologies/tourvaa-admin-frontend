@@ -25,6 +25,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/compare": { title: "Compare Tours", description: "Compare price, duration, inclusions, and ratings across your saved Tourvaa tours side by side.", index: false },
   "/cancellation-policy": { title: "Cancellation Policy", description: "Understand Tourvaa cancellation timelines, refund eligibility, supplier conditions, and booking change procedures." },
   "/contact": { title: "Contact Us", description: "Contact the Tourvaa team for booking assistance, tour questions, partnership enquiries, or platform support." },
+  "/deals": { title: "Travel Specials & Best Deals", description: "Discover limited-time discounts, exclusive tour packages, and special seasonal savings on Tourvaa." },
   "/cookie-policy": { title: "Cookie Policy", description: "Learn how Tourvaa uses cookies and similar technologies to operate, secure, and improve the website." },
   "/destinations": { title: "Travel Destinations", description: "Browse inspiring destinations and find curated Tourvaa experiences for city breaks, holidays, and memorable adventures." },
   "/destinations/[slug]": { title: "Destination Tours", description: "Discover available tours, travel highlights, and useful information for your selected destination." },

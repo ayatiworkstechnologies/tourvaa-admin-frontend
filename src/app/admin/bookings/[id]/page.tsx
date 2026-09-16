@@ -9,6 +9,7 @@ import BookingStatusBadge from "@/components/bookings/BookingStatusBadge";
 import SupplierPicker from "@/components/bookings/SupplierPicker";
 import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useAuthContext } from "@/providers/AuthProvider";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { LuCircleCheckBig as CheckCircle2, LuLink as LinkIcon, LuLoaderCircle as Loader2, LuMail as Mail, LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuTicket as Ticket, LuUserCheck as UserCheck, LuUsers as Users, LuCircleX as XCircle } from "react-icons/lu";
 
@@ -210,6 +211,9 @@ export default function BookingDetailPage() {
     }
   }
 
+  const { hasPermission } = useAuthContext();
+  const canViewSupplierFinancials = hasPermission("reports.view");
+
   const activityItems = booking?.optional_activities || [];
   const accommodationItems = booking?.accommodations || [];
   const extensionItems = booking?.extensions || [];
@@ -375,7 +379,7 @@ export default function BookingDetailPage() {
               </div>
             </DetailPanel>
 
-            {booking.supplier_breakdown && (
+            {booking.supplier_breakdown && canViewSupplierFinancials && (
               <DetailPanel title="Supplier">
                 <div className="grid gap-4">
                   <DetailField label="Supplier Gross Amount" value={formatExact(booking.supplier_breakdown.gross_amount, booking.supplier_breakdown.currency)} />

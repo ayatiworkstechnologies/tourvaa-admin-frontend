@@ -141,6 +141,8 @@ export default function AgentCustomersPage() {
       toast.success("Customer created successfully.");
       setShowModal(false);
       setForm(BLANK);
+      setPage(1);
+      setRetryKey((k) => k + 1);
     } catch {
       toast.error("Could not create customer");
     } finally {

@@ -9,6 +9,7 @@ import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { DiscountCardBadge, DiscountPriceLine, hasActiveDiscount } from "@/components/public/DiscountPrice";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 
 const FALLBACK = "/images/tour-card-fallback.jpg";
 
@@ -168,7 +169,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
 
         <div className="mt-auto flex items-end justify-between border-t border-slate-100 pt-4">
           <span className="text-sm font-bold">{discounted ? <>From {priceBlock}</> : <>From <b className="text-xl">{tour.price_start_per_person ? format(tour.price_start_per_person, tour.currency || "USD") : "On request"}</b><small>pp</small></>}</span>
-          <Link href={resolvedHref} className="flex items-center gap-2 rounded-md bg-[#E4572E] px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-orange-200 transition-all hover:bg-[#d95d2c] hover:shadow-md hover:shadow-orange-200">View tour <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" /></Link>
+          <PrimaryCtaButton href={resolvedHref} size="sm">View tour</PrimaryCtaButton>
         </div>
       </div>
     </article>

@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 import { AboutSectionBlock, fetchContentBlock } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { DEFAULT_ABOUT_BODY, DEFAULT_ABOUT_HEADING } from "./homeTypes";
@@ -78,12 +78,9 @@ export default function AboutTourvaaBanner({
           {body}
         </p>
         <div className="mt-6 sm:mt-8">
-          <Link
-            href={ctaUrl}
-            className="inline-flex items-center justify-center rounded-full bg-white px-6 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 shadow-md transition-all duration-300 hover:bg-pub-secondary hover:text-white hover:-translate-y-0.5"
-          >
+          <PrimaryCtaButton href={ctaUrl} size="sm">
             {ctaText}
-          </Link>
+          </PrimaryCtaButton>
         </div>
       </div>
     </section>

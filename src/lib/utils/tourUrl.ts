@@ -12,3 +12,10 @@ export function publicTourUrl(tour: { country_name?: string; place?: string; tit
   const tourSlug = slugifyTourSegment(tour.slug || tour.title) || "tour";
   return `/tours/${country}/${tourSlug}`;
 }
+
+// Country name -> the same slug fetchCountryDestinationInfo/getCountryDestinationDefault
+// normalize to server-side, so /destinations/{slug} always resolves (falling
+// back to a generic guide for any country not in the curated defaults).
+export function destinationUrl(countryName: string) {
+  return `/destinations/${slugifyTourSegment(countryName) || "worldwide"}`;
+}

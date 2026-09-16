@@ -19,6 +19,9 @@ import {
   LuSparkles as Sparkles,
   LuUser as User,
   LuBuilding2 as Building,
+  LuBriefcaseBusiness as Briefcase,
+  LuMegaphone as Megaphone,
+  LuPlane as Plane,
 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
@@ -96,6 +99,18 @@ const THEME: Record<PortalTheme, {
     heroBg: "bg-purple-950", checkboxAccent: "accent-purple-600",
   },
 };
+
+// Every login "portal" is one page pointed at a shared shell (this component);
+// this registry is the single unified entry point's role selector -- switching
+// tabs here is a real navigation to that portal's own route (so its config,
+// theme and redirect rules stay exactly as authored) rather than mutating
+// state in place, keeping each portal's page.tsx the single source of truth.
+const PORTAL_SWITCHER: { roleSlug: string; label: string; href: string; icon: ReactNode }[] = [
+  { roleSlug: "customer", label: "Traveller", href: "/login", icon: <Plane size={13} /> },
+  { roleSlug: "agent-reseller", label: "Agent", href: "/agent-portal/login", icon: <Briefcase size={13} /> },
+  { roleSlug: "supplier", label: "Supplier", href: "/supplier-portal/login", icon: <Building size={13} /> },
+  { roleSlug: "affiliate", label: "Affiliate", href: "/affiliate-portal/login", icon: <Megaphone size={13} /> },
+];
 
 type Tab = "login" | "register";
 type LoginFormValues = { identifier: string; password: string };
@@ -491,6 +506,28 @@ function PortalAuthContent({ config, heroIcon }: { config: PortalAuthConfig; her
 
           {/* ── Form panel (LEFT) ── */}
           <section className="flex flex-col justify-center px-6 py-10 sm:px-10">
+            {/* Portal switcher */}
+            <div role="tablist" aria-label="Choose account type" className="mb-6 grid grid-cols-4 gap-1 rounded-2xl bg-slate-100 p-1.5">
+              {PORTAL_SWITCHER.map((portal) => {
+                const active = portal.roleSlug === config.roleSlug;
+                const href = safeRedirect ? `${portal.href}?redirect=${encodeURIComponent(safeRedirect)}` : portal.href;
+                return (
+                  <Link
+                    key={portal.roleSlug}
+                    role="tab"
+                    aria-selected={active}
+                    href={href}
+                    className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[11px] font-bold transition-all duration-200 ${
+                      active ? `scale-[1.02] bg-white ${t.tabActive} shadow-sm` : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    {portal.icon}
+                    {portal.label}
+                  </Link>
+                );
+              })}
+            </div>
+
             {/* Heading */}
             <div className="mb-7">
               <span className={`inline-flex items-center gap-1.5 rounded-full ${t.accentLight} px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${t.accentText}`}>

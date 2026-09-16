@@ -56,7 +56,8 @@ export default function RefundsPage() {
   const [requests, setRequests] = useState<CancellationRequest[]>([]);
   const [reqLoading, setReqLoading] = useState(true);
   const [reqPage, setReqPage] = useState(1);
-  const [reqHasMore, setReqHasMore] = useState(false);
+  const [reqTotal, setReqTotal] = useState(0);
+  const [reqTotalPages, setReqTotalPages] = useState(1);
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [approveForm, setApproveForm] = useState<ApproveFormState>({ refund_percentage: "", refund_amount: "", admin_notes: "" });
@@ -81,7 +82,8 @@ export default function RefundsPage() {
       const data = res.data?.data ?? res.data ?? [];
       const items: CancellationRequest[] = Array.isArray(data) ? data : data.items ?? [];
       setRequests(items);
-      setReqHasMore(items.length === 10);
+      setReqTotal(Array.isArray(data) ? items.length : data.total ?? items.length);
+      setReqTotalPages(Array.isArray(data) ? 1 : data.total_pages ?? 1);
     } catch {
       toast.error("Could not load cancellation requests.");
     } finally {
@@ -314,8 +316,8 @@ export default function RefundsPage() {
                 loading={reqLoading}
                 page={reqPage}
                 pageSize={10}
-                total={reqHasMore ? reqPage * 10 + 1 : (reqPage - 1) * 10 + requests.length}
-                totalPages={reqHasMore ? reqPage + 1 : reqPage}
+                total={reqTotal}
+                totalPages={reqTotalPages}
                 onPageChange={(nextPage) => { setReqPage(nextPage); void fetchRequests(nextPage); }}
                 emptyTitle="No cancellation requests"
                 emptyDescription="All requests have been processed."
@@ -358,7 +360,7 @@ export default function RefundsPage() {
                   if (approvingId === req.id) {
                     return (
                       <tr key={`approve-${req.id}`} className="border-b border-dash-border bg-emerald-50">
-                        <td colSpan={6} className="px-6 py-4">
+                        <td colSpan={7} className="px-6 py-4">
                           <div className="space-y-3">
                             <p className="text-sm font-bold text-emerald-700">Approve with refund details (optional):</p>
                             <div className="grid gap-3 sm:grid-cols-3">
@@ -420,7 +422,7 @@ export default function RefundsPage() {
                   if (rejectingId === req.id) {
                     return (
                       <tr key={`reject-${req.id}`} className="border-b border-dash-border bg-red-50">
-                        <td colSpan={6} className="px-6 py-4">
+                        <td colSpan={7} className="px-6 py-4">
                           <div className="space-y-3">
                             <p className="text-sm font-bold text-red-700">Rejection notes (required):</p>
                             <textarea

@@ -20,6 +20,7 @@ import {
   DEFAULT_FAVOURITE_COUNTRIES,
   PLACEHOLDER_IMAGE,
 } from "./homeTypes";
+import { destinationUrl } from "@/lib/utils/tourUrl";
 
 const DEFAULT_TITLE = "Favourite Countries for Travellers";
 const DEFAULT_SUBTITLE = "Explore the destinations travellers love most, from sun-soaked coastlines to iconic cultural gems and unforgettable experiences.";
@@ -127,10 +128,7 @@ export default function FavouriteCountriesSection({
           {destinations.map((country) => (
             <Link
               key={country.name}
-              href={
-                country.href ||
-                `/tours?country=${encodeURIComponent(country.name)}`
-              }
+              href={country.href || destinationUrl(country.name)}
               className="group relative h-[420px] w-full overflow-hidden rounded-[20px] bg-white p-4 border border-slate-200/80 shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5 focus:outline-none flex flex-col"
             >
               {/* Inner Image Container with 16px radius */}

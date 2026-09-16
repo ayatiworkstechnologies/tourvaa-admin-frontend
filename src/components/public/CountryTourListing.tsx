@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 import MarketingImage from "@/components/public/MarketingImage";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -649,13 +650,9 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
 
               {hasSpecificCountry && (
                 <div className="mt-4 pt-3 border-t border-white/15">
-                  <Link
-                    href={`/destinations/${slugifyTourSegment(destinationTitle)}`}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#E4572E] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#c24118] transition-all hover:scale-[1.02]"
-                  >
-                    <span>Read {destinationTitle} Travel Guide, Climate & Best Places</span>
-                    <ArrowRight size={13} />
-                  </Link>
+                  <PrimaryCtaButton href={`/destinations/${slugifyTourSegment(destinationTitle)}`} size="sm">
+                    Read {destinationTitle} Travel Guide, Climate & Best Places
+                  </PrimaryCtaButton>
                 </div>
               )}
             </div>

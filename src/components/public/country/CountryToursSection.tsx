@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import Link from "next/link";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 import {
   LuCompass as Compass,
-  LuArrowRight as ArrowRight,
 } from "react-icons/lu";
 import { PublicTour, fetchPublicTours } from "@/lib/api/publicClient";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
@@ -369,13 +368,9 @@ export default function CountryToursSection({
             </span>
           </div>
 
-          <Link
-            href={`/tours/${info.country_slug}`}
-            className="text-xs font-bold text-slate-600 hover:text-slate-950 flex items-center gap-1 transition"
-          >
-            <span>View full catalog</span>
-            <ArrowRight size={13} />
-          </Link>
+          <PrimaryCtaButton href={`/tours/${info.country_slug}`} size="sm">
+            View full catalog
+          </PrimaryCtaButton>
         </div>
 
         {/* ── Category Filter Pills Row matching screenshot ── */}

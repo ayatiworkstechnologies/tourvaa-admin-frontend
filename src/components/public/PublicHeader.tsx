@@ -8,15 +8,19 @@ import {
   LuBuilding2 as Building,
   LuCalendarCheck as CalendarCheck,
   LuChevronDown as ChevronDown,
+  LuGlobe as Globe,
   LuHandshake as Handshake,
   LuHeadset as Headset,
   LuHeart as Heart,
+  LuHeartHandshake as HeartHandshake,
   LuLayoutDashboard as LayoutDashboard,
   LuLogOut as LogOut,
   LuMenu as Menu,
+  LuMessageSquare as MessageSquare,
   LuScale as Scale,
   LuShieldCheck as ShieldCheck,
   LuSparkles as Sparkles,
+  LuStar as Star,
   LuUserRound as User,
   LuX as X,
 } from "react-icons/lu";
@@ -124,6 +128,32 @@ export default function PublicHeader() {
           : "-translate-y-full opacity-0 pointer-events-none"
       }`}
     >
+      {/* Top Trust Bar -- full width edge-to-edge, matching footer #0B1F3A signature color */}
+      <div className="w-full bg-[#0B1F3A] text-white">
+        <div className="mx-auto flex h-8 sm:h-9 max-w-[1440px] items-center justify-center gap-4 sm:gap-6 md:gap-8 px-3 sm:px-6 lg:px-12 text-[10.5px] sm:text-[11px] font-semibold overflow-x-auto no-scrollbar whitespace-nowrap">
+          <span className="flex items-center gap-1.5 shrink-0">
+            <Globe size={13} className="text-sky-400" />
+            Shop 2,500+ handpicked operators
+          </span>
+          <span className="h-3 w-px bg-white/20 shrink-0" aria-hidden="true" />
+          <span className="flex items-center gap-1.5 shrink-0">
+            <Star size={13} className="fill-emerald-400 text-emerald-400" />
+            4.8 stars on <span className="font-black text-emerald-400">Trustpilot</span>
+            <span className="text-white/60">(15,000+ reviews)</span>
+          </span>
+          <span className="h-3 w-px bg-white/20 shrink-0" aria-hidden="true" />
+          <span className="flex items-center gap-1.5 shrink-0">
+            <MessageSquare size={13} className="text-[#DF6951]" />
+            24/7 customer support
+          </span>
+          <span className="h-3 w-px bg-white/20 shrink-0" aria-hidden="true" />
+          <span className="flex items-center gap-1.5 shrink-0">
+            <HeartHandshake size={13} className="text-sky-400" />
+            500k+ experiences shared by travelers
+          </span>
+        </div>
+      </div>
+
       <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:px-8 lg:px-12">
         <Link
           href="/"

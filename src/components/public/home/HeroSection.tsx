@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 import {
+  LuCircleX as CircleX,
   LuGlobe as Globe,
   LuSparkles as Sparkles,
   LuStar as Star,
-  LuX as X,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
@@ -107,7 +108,7 @@ export default function HeroSection({
     heroExtras.offer_text !== undefined
       ? heroExtras.offer_text
       : "Global Getaways 2026: Up To 50% Off – Limited Availability, Book Today!";
-  const heroOfferCtaUrl = heroExtras.offer_cta_url?.trim() || "";
+  const heroOfferCtaUrl = heroExtras.offer_cta_url?.trim() || "/deals";
   const heroOfferCtaText = heroExtras.offer_cta_text?.trim() || "";
 
   const subHeroText =
@@ -168,12 +169,9 @@ export default function HeroSection({
             )}
 
             {banner?.cta_text && banner?.cta_url && (
-              <Link
-                href={banner.cta_url}
-                className="animate-fade-up delay-100 mt-3 inline-flex items-center gap-2 rounded-full bg-pub-accent px-5 py-2 text-xs sm:text-sm font-bold text-white shadow-lg transition hover:brightness-110"
-              >
+              <PrimaryCtaButton href={banner.cta_url} size="sm" className="animate-fade-up delay-100 mt-3">
                 {banner.cta_text}
-              </Link>
+              </PrimaryCtaButton>
             )}
 
             {/* Filter Search Bar */}
@@ -233,10 +231,10 @@ export default function HeroSection({
                   : "opacity-100"
               }`}
             >
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-white/20 bg-slate-950/40 backdrop-blur-md px-4 sm:px-6 py-2 text-xs sm:text-sm text-white shadow-xl transition-all">
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-white/20 bg-[#0B1F3A]/75 backdrop-blur-md px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm text-white shadow-xl transition-all">
                 <div className="flex items-center gap-2 shrink-0">
-                  <Globe size={14} className="text-white/80 shrink-0" />
-                  <span className="rounded-md bg-pub-accent px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white">
+                  <Globe size={15} className="text-white/80 shrink-0" />
+                  <span className="rounded bg-white/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white">
                     OFFER
                   </span>
                 </div>
@@ -247,7 +245,7 @@ export default function HeroSection({
                   >
                     {heroOfferText}
                     {heroOfferCtaText && (
-                      <span className="ml-1.5 font-black text-pub-secondary">
+                      <span className="ml-1.5 font-bold text-white/90">
                         {heroOfferCtaText} →
                       </span>
                     )}
@@ -261,9 +259,9 @@ export default function HeroSection({
                   type="button"
                   onClick={() => setShowOfferBanner(false)}
                   aria-label="Dismiss offer"
-                  className="shrink-0 rounded-full p-1 text-white/70 transition-colors hover:bg-white/20 hover:text-white cursor-pointer"
+                  className="shrink-0 p-0.5 text-white/70 transition-colors hover:text-white cursor-pointer"
                 >
-                  <X size={15} />
+                  <CircleX size={16} />
                 </button>
               </div>
             </div>
@@ -272,11 +270,11 @@ export default function HeroSection({
       </div>
 
       {/* Sub-hero Trust Indicator */}
-      <div className="mx-auto max-w-[1400px] px-5 pt-1 pb-4 text-center">
+      <div className="mx-auto max-w-[1400px] px-5 pt-6 pb-8 text-center">
         <p className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
           <Sparkles
             size={16}
-            className="text-[#3B82F6] shrink-0 fill-[#3B82F6]/20"
+            className="text-[#3B82F6] shrink-0 fill-[#3B82F6]/20 animate-sparkle-glow"
           />
           <span>{subHeroText}</span>
         </p>

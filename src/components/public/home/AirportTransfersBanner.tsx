@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useState } from "react";
-import { LuArrowRight as ArrowRight, LuPlane as Plane } from "react-icons/lu";
+import { LuPlane as Plane } from "react-icons/lu";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import {
   AirportTransferBlock,
@@ -11,6 +11,7 @@ import {
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { DEFAULT_TRANSFER_FEATURES } from "./homeTypes";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 
 export interface AirportTransfersBannerProps {
   initialData?: Partial<AirportTransferBlock>;
@@ -118,19 +119,14 @@ export default function AirportTransfersBanner({
             </div>
 
             {/* CTA Button */}
-            <a
+            <PrimaryCtaButton
               href={brightlaneLink}
               target={isExternal ? "_blank" : undefined}
               rel={isExternal ? "noopener noreferrer" : undefined}
-              className="group/btn mt-7 inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#0B1527] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-200 hover:bg-[#15233C] hover:shadow-xl hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+              className="mt-7"
             >
-              <span>{ctaText}</span>
-              <ArrowRight
-                size={16}
-                className="text-[#E4572E] stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1"
-                aria-hidden="true"
-              />
-            </a>
+              {ctaText}
+            </PrimaryCtaButton>
           </div>
 
           {/* Right Image */}

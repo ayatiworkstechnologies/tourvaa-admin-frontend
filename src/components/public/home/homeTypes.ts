@@ -6,6 +6,7 @@ import {
   PublicTour,
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { destinationUrl } from "@/lib/utils/tourUrl";
 import {
   LuClock as Clock,
   LuMapPin as MapPin,
@@ -42,6 +43,8 @@ export type CountryWorthExploring = {
   badge?: string;
   price?: number | null;
   currency?: string;
+  snippet?: string;
+  href?: string;
 };
 
 export type CountryDestination = {
@@ -60,7 +63,7 @@ export const DEFAULT_FAVOURITE_COUNTRIES: CountryDestination[] = [
     image: "/images/destination-desert.jpg",
     snippet:
       "Trek the Sahara aboard a camel. Browse the vibrant souks of Marrakech. Uncover the imperial cities.",
-    href: "/tours?country=Morocco",
+    href: destinationUrl("Morocco"),
   },
   {
     name: "Egypt",
@@ -68,7 +71,7 @@ export const DEFAULT_FAVOURITE_COUNTRIES: CountryDestination[] = [
     image: "/images/destination-alpine.jpg",
     snippet:
       "Our best-selling destination! Cruise the Nile, marvel at the Pyramids, explore the tombs of Luxor.",
-    href: "/tours?country=Egypt",
+    href: destinationUrl("Egypt"),
   },
   {
     name: "Iceland",
@@ -76,7 +79,7 @@ export const DEFAULT_FAVOURITE_COUNTRIES: CountryDestination[] = [
     image: "/images/hero-1.jpg",
     snippet:
       "Iceland in winter is home to the Northern Lights, while in summer the waterfalls are breathtaking.",
-    href: "/tours?country=Iceland",
+    href: destinationUrl("Iceland"),
   },
   {
     name: "Sri Lanka",
@@ -84,7 +87,7 @@ export const DEFAULT_FAVOURITE_COUNTRIES: CountryDestination[] = [
     image: "/images/hero-2.jpg",
     snippet:
       "Sri Lanka's Cultural Triangle offers such attractions as the Sigiriya Fortress and Dambulla caves.",
-    href: "/tours?country=Sri+Lanka",
+    href: destinationUrl("Sri Lanka"),
   },
   {
     name: "Turkey",
@@ -92,7 +95,7 @@ export const DEFAULT_FAVOURITE_COUNTRIES: CountryDestination[] = [
     image: "/images/hero-3.jpg",
     snippet:
       "From the city in two continents, Istanbul, to the cave cities of Cappadocia, make Turkey your next trip.",
-    href: "/tours?country=Turkey",
+    href: destinationUrl("Turkey"),
   },
   {
     name: "India",
@@ -100,7 +103,7 @@ export const DEFAULT_FAVOURITE_COUNTRIES: CountryDestination[] = [
     image: "/images/destination-desert.jpg",
     snippet:
       "First timers to India will want to take in the Golden Triangle of Delhi, Jaipur and Agra.",
-    href: "/tours?country=India",
+    href: destinationUrl("India"),
   },
   {
     name: "Vietnam",
@@ -108,7 +111,7 @@ export const DEFAULT_FAVOURITE_COUNTRIES: CountryDestination[] = [
     image: "/images/destination-alpine.jpg",
     snippet:
       "Visitors to Vietnam can cruise Halong Bay. They can ride a rickshaw around Hanoi. And so much more.",
-    href: "/tours?country=Vietnam",
+    href: destinationUrl("Vietnam"),
   },
   {
     name: "China",
@@ -116,7 +119,7 @@ export const DEFAULT_FAVOURITE_COUNTRIES: CountryDestination[] = [
     image: "/images/hero-1.jpg",
     snippet:
       "Walk the Great Wall, stand before the Terracotta Army, and explore the Forbidden City.",
-    href: "/tours?country=China",
+    href: destinationUrl("China"),
   },
 ];
 
@@ -211,6 +214,8 @@ export function topDestinationsFromCountries(
           image: item.image ? mediaUrl(item.image) : PLACEHOLDER_IMAGE,
           price: null as number | null,
           currency: "USD",
+          snippet: item.description || undefined,
+          href: item.href || undefined,
         };
       });
   }
@@ -344,4 +349,4 @@ export const DEFAULT_ABOUT_HEADING = "About Tourvaa";
 export const DEFAULT_ABOUT_BODY =
   "Tourvaa is a premier travel platform dedicated to crafting extraordinary group travel experiences across the globe. We connect passionate travellers with expertly curated tours, handpicked destinations, and seamless end-to-end booking — from visa assistance to on-ground coordination. Whether it's the serene backwaters of Kerala, the alpine trails of Switzerland, or the vibrant streets of Tokyo, Tourvaa makes every journey effortless, memorable, and truly unforgettable.";
 
-export const DEFAULT_TRANSFER_FEATURES = ["RELIABLE", "CLEAN", "AFFORDABLE", "24/7", "SECURE"];
+export const DEFAULT_TRANSFER_FEATURES = ["China", "Australia", "United Kingdom", "UAE", "Singapore", "New Zealand"];

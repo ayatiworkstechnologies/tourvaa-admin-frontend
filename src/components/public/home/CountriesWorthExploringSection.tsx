@@ -23,6 +23,7 @@ import {
   stableHash,
   topDestinationsFromCountries,
 } from "./homeTypes";
+import { destinationUrl } from "@/lib/utils/tourUrl";
 import { EmptyCollection } from "./HomeHelpers";
 import { useAutoSlide } from "./useAutoSlide";
 import { smoothScrollTo } from "./smoothScrollTo";
@@ -35,7 +36,7 @@ export function CountryWorthExploringCard({
   const { isWishlisted, toggleWishlist } = useTravelStore();
   const itemId = stableHash(`country-${country.name}`);
   const wishlisted = isWishlisted(itemId);
-  const href = `/tours?country=${encodeURIComponent(country.name)}`;
+  const href = country.href || destinationUrl(country.name);
 
   const travelItem = {
     id: itemId,
@@ -121,6 +122,10 @@ export function CountryWorthExploringCard({
             <BookOpen size={13} className="text-sky-500 shrink-0 stroke-[2]" />
             <span>{country.count}</span>
           </p>
+
+          {country.snippet && (
+            <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{country.snippet}</p>
+          )}
         </div>
 
         {/* Bottom Explore action */}

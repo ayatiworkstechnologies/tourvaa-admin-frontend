@@ -7,7 +7,6 @@ import CustomerFilters, { CustomerFilterState } from "@/components/customers/Cus
 import CustomerTable from "@/components/customers/CustomerTable";
 import ActionModal from "@/components/operations/ActionModal";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
-import Loader from "@/components/ui/Loader";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { usePagination } from "@/hooks/usePagination";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -164,27 +163,22 @@ export default function CustomersPage() {
           <CustomerFilters filters={filters} onChange={updateFilter} />
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-dash-border bg-white">
-          {loading ? (
-            <Loader label="Loading customers..." />
-          ) : (
-            <CustomerTable
-              customers={customers}
-              page={page}
-              limit={limit}
-              total={total}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              savingId={savingId}
-              canBlock={canBlock}
-              canUnblock={canUnblock}
-              canReset={canReset}
-              onBlock={handleBlock}
-              onUnblock={handleUnblock}
-              onReset={handleResetPassword}
-            />
-          )}
-        </section>
+        <CustomerTable
+          customers={customers}
+          page={page}
+          limit={limit}
+          total={total}
+          totalPages={totalPages}
+          loading={loading}
+          onPageChange={setPage}
+          savingId={savingId}
+          canBlock={canBlock}
+          canUnblock={canUnblock}
+          canReset={canReset}
+          onBlock={handleBlock}
+          onUnblock={handleUnblock}
+          onReset={handleResetPassword}
+        />
       </div>
       <ActionModal
         open={Boolean(blockTarget)}

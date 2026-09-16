@@ -3,13 +3,12 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import {
-  LuArrowRight as ArrowRight,
   LuSparkles as Sparkles,
 } from "react-icons/lu";
 import { BlogTeaserBlock, fetchContentBlock } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 
 export interface BlogTeaserSectionProps {
   initialData?: Partial<BlogTeaserBlock>;
@@ -84,17 +83,9 @@ export default function BlogTeaserSection({
             <p className="mt-4 max-w-md text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 font-medium">
               {subtitle}
             </p>
-            <Link
-              href={ctaUrl}
-              className="group/btn mt-7 inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#0B1527] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-200 hover:bg-[#15233C] hover:shadow-xl hover:-translate-y-0.5 active:scale-95 cursor-pointer"
-            >
-              <span>{ctaText}</span>
-              <ArrowRight
-                size={16}
-                className="text-[#E4572E] stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1"
-                aria-hidden="true"
-              />
-            </Link>
+            <PrimaryCtaButton href={ctaUrl} className="mt-7">
+              {ctaText}
+            </PrimaryCtaButton>
           </div>
         </div>
       </div>

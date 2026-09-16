@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LuPlus as Plus, LuHistory as History, LuPencil as Pencil, LuSave as Save, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
-import { TourDiscount, DiscountHistoryEntry, getDiscounts, createDiscount, updateDiscount, deactivateDiscount, getDiscountHistory, getPricing } from "@/lib/api/services/tourDetailService";
+import { LuPlus as Plus, LuHistory as History, LuPencil as Pencil, LuSave as Save, LuTrash2 as Trash2, LuTrendingUp as TrendingUp, LuX as X } from "react-icons/lu";
+import { TourDiscount, DiscountHistoryEntry, getDiscounts, createDiscount, updateDiscount, amendDiscount, deactivateDiscount, getDiscountHistory, getPricing } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -102,6 +102,14 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourDiscount | null>(null);
   const [saving, setSaving] = useState(false);
+  // Suppliers never get the full free-form editor above -- only a
+  // restricted amend action (extend validity and/or raise the value),
+  // matching the backend's amend_discount restriction.
+  const [amending, setAmending] = useState<TourDiscount | null>(null);
+  const [amendEndDate, setAmendEndDate] = useState("");
+  const [amendValue, setAmendValue] = useState("");
+  const [amendReason, setAmendReason] = useState("");
+  const [amendSaving, setAmendSaving] = useState(false);
   // 1-pax tier prices the discount preview is computed from: the supplier's
   // own net adult/child price, and the markup-inclusive storefront/publishable
   // adult/child price -- both always read from that single slab (see the
@@ -208,6 +216,35 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     }
   };
 
+  const openAmend = (item: TourDiscount) => {
+    setAmending(item);
+    setAmendEndDate(item.end_date?.slice(0, 10) ?? "");
+    setAmendValue(String(item.discount_value));
+    setAmendReason("");
+  };
+
+  const saveAmend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amending?.id) return;
+    setAmendSaving(true);
+    try {
+      const newEndDate = amendEndDate ? amendEndDate : undefined;
+      const newValue = amendValue !== "" ? parseNumberInput(amendValue) : undefined;
+      const updated = await amendDiscount(tourId, amending.id, {
+        new_end_date: newEndDate,
+        new_discount_value: newValue,
+        reason: amendReason || undefined,
+      });
+      setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+      toast.success("Discount extended/updated.");
+      setAmending(null);
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setAmendSaving(false);
+    }
+  };
+
   const openHistory = async (item: TourDiscount) => {
     setHistoryFor(item);
     setHistoryLoading(true);
@@ -275,9 +312,17 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={() => openHistory(item)} className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F2F4F7]"><History size={14} /> History</button>
-                <button type="button" onClick={() => setEditing({ ...item })} className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white hover:bg-dash-brand-hover"><Pencil size={14} /> Edit</button>
-                {item.status !== "inactive" && (
-                  <button type="button" onClick={() => deactivate(item)} aria-label="Delete discount" title="Delete discount" className="inline-flex items-center justify-center rounded-lg border border-[#FFCDD2] p-2 text-red-500 hover:bg-[#FFF0F0]"><Trash2 size={14} /></button>
+                {isSupplier ? (
+                  item.status !== "inactive" && (
+                    <button type="button" onClick={() => openAmend(item)} className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white hover:bg-dash-brand-hover"><TrendingUp size={14} /> Extend / Increase</button>
+                  )
+                ) : (
+                  <>
+                    <button type="button" onClick={() => setEditing({ ...item })} className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white hover:bg-dash-brand-hover"><Pencil size={14} /> Edit</button>
+                    {item.status !== "inactive" && (
+                      <button type="button" onClick={() => deactivate(item)} aria-label="Delete discount" title="Delete discount" className="inline-flex items-center justify-center rounded-lg border border-[#FFCDD2] p-2 text-red-500 hover:bg-[#FFF0F0]"><Trash2 size={14} /></button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -385,6 +430,55 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
               <Save size={14} /> {saving ? "Saving..." : editing.id ? "Save Changes" : "Save Discount"}
             </button>
           </div>
+          </form>
+        </div>
+      )}
+
+      {amending && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true">
+          <form onSubmit={saveAmend} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-bold text-dash-text">Extend / Increase -- {amending.discount_name}</h3>
+              <button type="button" aria-label="Close editor" title="Close editor" onClick={() => setAmending(null)}><X size={18} /></button>
+            </div>
+            <p className="mb-4 text-xs text-dash-subtle">
+              You can only extend this discount&apos;s validity to a later date and/or raise its {amending.discount_type === "percentage" ? "percentage" : "value"} -- every change is recorded in the discount history below.
+            </p>
+            <div className="grid gap-4">
+              <DatePicker
+                label="New end date"
+                value={amendEndDate}
+                minDate={amending.end_date?.slice(0, 10) || todayLocalDateStr()}
+                onChange={(date) => setAmendEndDate(date || "")}
+              />
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">
+                  New value {amending.discount_type === "percentage" ? "(%)" : `(${currency})`}
+                </span>
+                <input
+                  type="number"
+                  min={amending.discount_value}
+                  value={amendValue}
+                  onChange={(e) => setAmendValue(e.target.value)}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Reason (optional)</span>
+                <input
+                  value={amendReason}
+                  onChange={(e) => setAmendReason(e.target.value)}
+                  placeholder="e.g. extending for peak season"
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex justify-end gap-3">
+              <button type="button" onClick={() => setAmending(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
+              <button type="submit" disabled={amendSaving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
+                <Save size={14} /> {amendSaving ? "Saving..." : "Save"}
+              </button>
+            </div>
           </form>
         </div>
       )}

@@ -83,6 +83,7 @@ export type BookingHistory = {
   tour_cost: number;
   amount_paid: number;
   amount_pending: number;
+  currency?: string;
 };
 
 export type PaymentHistory = {
@@ -99,6 +100,7 @@ export type PaymentHistory = {
   payment_status: string;
   transaction_id: string;
   payment_date: string;
+  currency?: string;
 };
 
 export type CustomerCommunication = {

@@ -3,12 +3,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  LuArrowRight as ArrowRight,
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
   LuHeart as Heart,
   LuMapPin as MapPin,
-  LuSparkles as Sparkles,
   LuStar as Star,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
@@ -31,6 +29,99 @@ import { EmptyCollection, TourCardSkeleton } from "./HomeHelpers";
 import { useAutoSlide } from "./useAutoSlide";
 import { smoothScrollTo } from "./smoothScrollTo";
 
+const FALLBACK_DEAL_TOURS: Tour[] = [
+  {
+    id: 101,
+    title: "Xi'an & Gobi",
+    place: "China",
+    image: "/images/destination-alpine.jpg",
+    days: "8 Days",
+    durationTag: "8D | 7N",
+    reviews: "1,842 reviews",
+    rating: 4.9,
+    rawPrice: 999,
+    originalPrice: 1299,
+    currency: "USD",
+    features: [],
+  },
+  {
+    id: 102,
+    title: "Beijing to Nanjing Trail",
+    place: "China",
+    image: "/images/destination-desert.jpg",
+    days: "10 Days",
+    durationTag: "10D | 9N",
+    reviews: "3,215 reviews",
+    rating: 4.9,
+    rawPrice: 1899,
+    originalPrice: 2499,
+    currency: "USD",
+    features: [],
+  },
+  {
+    id: 103,
+    title: "Istanbul & Cappadocia",
+    place: "Turkey",
+    image: "/images/hero-1.jpg",
+    days: "7 Days",
+    durationTag: "7D | 6N",
+    reviews: "2,756 reviews",
+    rating: 4.8,
+    rawPrice: 899,
+    originalPrice: 1199,
+    currency: "USD",
+    features: [],
+  },
+  {
+    id: 104,
+    title: "Ceylon Heritage Trail",
+    place: "Sri Lanka",
+    image: "/images/hero-2.jpg",
+    days: "9 Days",
+    durationTag: "9D | 8N",
+    reviews: "1,523 reviews",
+    rating: 4.7,
+    rawPrice: 1149,
+    originalPrice: 1450,
+    currency: "USD",
+    features: [],
+  },
+  {
+    id: 105,
+    title: "Rome & Amalfi Explorer",
+    place: "Italy",
+    image: "/images/hero-3.jpg",
+    days: "8 Days",
+    durationTag: "8D | 7N",
+    reviews: "1,940 reviews",
+    rating: 4.9,
+    rawPrice: 1299,
+    originalPrice: 1699,
+    currency: "USD",
+    features: [],
+  },
+];
+
+function getDestinationName(place?: string): string {
+  if (!place) return "Special";
+  const parts = place.split(",").map((s) => s.trim()).filter(Boolean);
+  return parts[parts.length - 1] || place;
+}
+
+function getDurationTag(tour: Tour): string {
+  if (tour.durationTag && tour.durationTag.includes("|")) {
+    return tour.durationTag;
+  }
+  if (!tour.days) return "8D | 7N";
+  const numMatch = tour.days.match(/\d+/);
+  if (numMatch) {
+    const d = parseInt(numMatch[0], 10);
+    const n = Math.max(1, d - 1);
+    return `${d}D | ${n}N`;
+  }
+  return tour.days;
+}
+
 export function TopDealCard({ tour }: { tour: Tour }) {
   const { isWishlisted, toggleWishlist } = useTravelStore();
   const { format } = useCurrency();
@@ -51,15 +142,19 @@ export function TopDealCard({ tour }: { tour: Tour }) {
   };
 
   const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.9";
-  const reviewCountStr = tour.reviews || "1,842 reviews";
+  const reviewCountStr = tour.reviews
+    ? tour.reviews.replace(/^\(|\)$/g, "")
+    : "1,842 reviews";
+  const destinationName = getDestinationName(tour.place);
+  const durationTag = getDurationTag(tour);
 
   return (
     <article
       data-deal-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-2xl bg-white p-2 sm:p-2.5 transition-all duration-300 hover:-translate-y-1 h-full"
     >
       {/* Image with Deal badge, Location badge & Wishlist button */}
-      <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
+      <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-xl bg-slate-100 shrink-0">
         <Link href={href} className="block h-full w-full">
           <MarketingImage
             fill
@@ -70,99 +165,77 @@ export function TopDealCard({ tour }: { tour: Tour }) {
           />
         </Link>
 
-        {/* Subtle vignette for badge contrast */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20 pointer-events-none" />
+        {/* Top-Left Destination Badge */}
+        <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#DF6951] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
+          <MapPin size={10} className="fill-white/30 text-white shrink-0" />
+          <span className="truncate max-w-[100px]">{destinationName}</span>
+        </span>
 
-        {/* Top-Left Badges */}
-        <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-950/70 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-white shadow-xs">
-            <MapPin size={11} className="text-orange-400 shrink-0" />
-            <span className="truncate max-w-[110px]">{tour.place}</span>
-          </span>
-        </div>
-
-        {/* Wishlist button (top-right) */}
+        {/* Wishlist Heart button (top-right) */}
         <button
           type="button"
-          onClick={() => toggleWishlist(travelItem)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(travelItem);
+          }}
           aria-label={
             wishlisted
               ? `Remove ${tour.title} from wishlist`
               : `Add ${tour.title} to wishlist`
           }
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-md text-slate-700 shadow-md transition-all duration-200 hover:scale-115 active:scale-90 hover:bg-white focus:outline-none cursor-pointer"
+          className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center transition-transform duration-200 hover:scale-120 active:scale-90 focus:outline-none cursor-pointer"
         >
           <Heart
-            size={16}
-            className={
-              wishlisted
-                ? "fill-red-500 text-red-500"
-                : "fill-slate-400/40 text-slate-700"
-            }
+            size={18}
+            className="fill-red-500 text-red-500 drop-shadow-xs"
           />
         </button>
       </div>
 
       {/* Tour details */}
-      <div className="pt-4 flex flex-1 flex-col justify-between">
+      <div className="pt-3 flex flex-1 flex-col justify-between">
         <div>
-          {/* Title and duration badge - fixed min-h so 1-line and 2-line titles match in height */}
-          <div className="flex items-start justify-between gap-2.5 min-h-[46px] sm:min-h-[48px]">
+          {/* Title and duration badge */}
+          <div className="flex items-center justify-between gap-2">
             <Link href={href} className="block flex-1 min-w-0">
-              <h3 className="line-clamp-2 text-base sm:text-[17px] font-bold text-slate-900 transition-colors group-hover:text-pub-secondary leading-snug">
+              <h3 className="truncate text-base font-bold text-slate-900 transition-colors group-hover:text-[#DF6951] leading-snug">
                 {tour.title}
               </h3>
             </Link>
-            <span className="shrink-0 rounded-lg border border-orange-200/80 bg-orange-50/70 px-2 py-0.5 text-[10px] font-extrabold text-[#E4572E] tracking-wide">
-              {tour.durationTag || "8D | 7N"}
+            <span className="shrink-0 rounded border border-blue-400 text-blue-600 bg-transparent px-1.5 py-0.5 text-[10px] font-semibold tracking-wide">
+              {durationTag}
             </span>
           </div>
 
           {/* 5 Yellow Stars + Rating + Review count */}
-          <div className="mt-2.5 flex items-center gap-1.5 text-xs">
+          <div className="mt-1.5 flex items-center gap-1 text-xs">
             <div className="flex items-center gap-0.5 text-amber-400">
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <Star size={11} className="fill-amber-400 text-amber-400" />
             </div>
-            <b className="font-extrabold text-slate-900">{ratingVal}</b>
-            <span className="text-slate-400 font-medium">
-              ({reviewCountStr})
-            </span>
+            <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
+            <span className="text-slate-600">{reviewCountStr}</span>
           </div>
         </div>
 
-        {/* Price Row: From $old $new pp + View Deal button */}
-        <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3.5">
-          <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xs font-semibold text-slate-400">From</span>
-              {tour.originalPrice != null && (
-                <span className="text-xs font-normal text-slate-400 line-through">
-                  {format(tour.originalPrice, tour.currency || "USD")}
-                </span>
-              )}
-              <strong className="text-xl sm:text-2xl font-black text-slate-950">
-                {tour.rawPrice != null
-                  ? format(tour.rawPrice, tour.currency || "USD")
-                  : format(999, "USD")}
-              </strong>
-              <span className="text-xs font-bold text-slate-500">pp</span>
-            </div>
-          </div>
-
-          <Link
-            href={href}
-            aria-label={`View deal: ${tour.title}`}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0B1527] text-white shadow-xs transition-all duration-300 group-hover:bg-[#E4572E] group-hover:scale-108 group-hover:shadow-md active:scale-95"
-          >
-            <ArrowRight
-              size={15}
-              className="stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5"
-            />
-          </Link>
+        {/* Price Row: From $old $new pp */}
+        <div className="mt-2.5 flex items-baseline gap-1.5 text-slate-900">
+          <span className="text-xs sm:text-sm font-bold">From</span>
+          {tour.originalPrice != null && (
+            <span className="text-xs font-normal text-slate-400 line-through">
+              {format(tour.originalPrice, tour.currency || "USD")}
+            </span>
+          )}
+          <strong className="text-sm sm:text-base font-bold text-slate-950">
+            {tour.rawPrice != null
+              ? format(tour.rawPrice, tour.currency || "USD")
+              : format(999, "USD")}
+          </strong>
+          <span className="text-xs text-slate-600 font-normal">pp</span>
         </div>
       </div>
     </article>
@@ -253,11 +326,19 @@ export default function TopDealsSection({
           const mapped = featured.map(mapPublicTour);
           const slice = mapped.slice(6, 12).length ? mapped.slice(6, 12) : mapped.slice(0, 6);
           setTours(slice);
+          setLoading(false);
+          return;
+        }
+
+        if (active) {
+          setTours(FALLBACK_DEAL_TOURS);
+          setLoading(false);
         }
       } catch {
-        // graceful failure
-      } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setTours(FALLBACK_DEAL_TOURS);
+          setLoading(false);
+        }
       }
     }
 
@@ -337,13 +418,16 @@ export default function TopDealsSection({
     smoothScrollTo(el, el.scrollLeft + direction * step);
   };
 
-  return (
-    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-16 bg-gradient-to-b from-white via-[#FAF7F2] to-[#F5F0E8] border-y border-slate-200/60 shadow-2xs">
-      {/* Ambient decorative gradient orbs */}
-      <div className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-br from-orange-200/20 via-amber-100/15 to-transparent blur-3xl animate-float-orb" />
-      <div className="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-tl from-amber-200/15 via-orange-100/10 to-transparent blur-3xl animate-float-orb-alt" />
+  const viewAllHref =
+    activeTab === "All deals" || activeTab === "Top deals"
+      ? "/deals"
+      : `/tours?sort=price_asc&search=${encodeURIComponent(
+          activeTab.replace(/\s+deals$/i, "").trim(),
+        )}`;
 
-      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+  return (
+    <section className="relative w-full overflow-hidden bg-white pt-2 pb-12 sm:pb-16">
+      <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Top Filter Pills + View all deals link */}
         <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto sm:flex-wrap sm:gap-2.5 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
@@ -354,10 +438,10 @@ export default function TopDealsSection({
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`shrink-0 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 active:scale-95 cursor-pointer ${
+                  className={`shrink-0 rounded-full px-5 py-2 text-xs sm:text-sm font-medium transition-all duration-200 active:scale-95 cursor-pointer ${
                     active
-                      ? "bg-[#E4572E] text-white shadow-md shadow-orange-500/25 scale-[1.02]"
-                      : "border border-slate-200/80 bg-white/90 text-slate-700 hover:bg-white hover:border-orange-300 hover:text-slate-900 hover:scale-[1.02] shadow-2xs"
+                      ? "bg-[#DF6951] text-white shadow-xs scale-[1.02]"
+                      : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-900 hover:scale-[1.02]"
                   }`}
                 >
                   {tab}
@@ -367,41 +451,18 @@ export default function TopDealsSection({
           </div>
 
           <Link
-            href={
-              activeTab === "All deals" || activeTab === "Top deals"
-                ? "/tours?sort=price_asc"
-                : `/tours?sort=price_asc&search=${encodeURIComponent(
-                    activeTab.replace(/\s+deals$/i, "").trim(),
-                  )}`
-            }
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#E4572E] hover:text-[#c4411b] transition-colors group"
+            href={viewAllHref}
+            className="text-[#DF6951] hover:text-[#c8441f] text-sm font-semibold hover:underline shrink-0"
           >
-            <span>View all deals</span>
-            <ArrowRight
-              size={14}
-              className="transition-transform duration-200 group-hover:translate-x-1"
-            />
+            View all deals
           </Link>
         </div>
 
         {/* Header Row: Title & Arrow Buttons */}
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#E4572E] mb-2">
-              <Sparkles
-                size={12}
-                className="fill-current animate-sparkle-glow"
-              />
-              <span>Limited Time Offers</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-950 tracking-tight">
-              Top Deals
-            </h2>
-            <p className="mt-1 text-xs sm:text-sm text-slate-600 font-medium">
-              Handpicked guided tours with verified discounts. Book early to
-              lock in the lowest rates.
-            </p>
-          </div>
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            Top Deals
+          </h2>
 
           {!loading && displayTours.length > 0 && (
             <div className="flex items-center gap-2 shrink-0">
@@ -409,17 +470,17 @@ export default function TopDealsSection({
                 type="button"
                 aria-label="Previous deals"
                 onClick={() => move(-1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E4572E] hover:text-[#E4572E] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-2xs transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95 cursor-pointer"
               >
-                <ChevronLeft size={18} className="stroke-[2.5]" />
+                <ChevronLeft size={16} />
               </button>
               <button
                 type="button"
                 aria-label="Next deals"
                 onClick={() => move(1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E4572E] hover:text-[#E4572E] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-2xs transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95 cursor-pointer"
               >
-                <ChevronRight size={18} className="stroke-[2.5]" />
+                <ChevronRight size={16} />
               </button>
             </div>
           )}
@@ -428,7 +489,7 @@ export default function TopDealsSection({
         {/* Carousel list */}
         <div
           ref={scrollRef}
-          className="no-scrollbar reveal-stagger flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
+          className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
         >
           {loading ? (
             Array.from({ length: 4 }).map((_, index) => (

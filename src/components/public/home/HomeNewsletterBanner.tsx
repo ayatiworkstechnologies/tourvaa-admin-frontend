@@ -44,12 +44,12 @@ export default function HomeNewsletterBanner({
     };
   }, [initialData]);
 
-  const badge = propBadge || data.badge || "Special Offers";
-  const heading = propHeading || data.heading || "Get Exclusive Deals & Travel Updates";
+  const badge = propBadge || data.badge || "Offer Ends Soon";
+  const heading = propHeading || data.heading || "24/7 Travel Support";
   const subtitle =
     propSubtitle ||
     data.subtitle ||
-    "Subscribe to Tourvaa's newsletter for secret sales, handpicked itineraries, and member-only discounts delivered straight to your inbox.";
+    "From booking questions to on-trip assistance, our travel support team is here to make your Tourvaa journey smooth, simple and stress-free.";
   const image =
     propImage || (data.image ? mediaUrl(data.image) : "/images/register.png");
 
@@ -87,32 +87,21 @@ export default function HomeNewsletterBanner({
   };
 
   return (
-    <section className="w-full my-3 sm:my-5">
+    <section className="w-full my-4 sm:my-6">
       <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8">
-        <div className="group relative w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-xl">
-          {/* Background image & gradient overlay */}
-          <div className="absolute inset-0 overflow-hidden">
-            <img
-              src={image}
-              alt={heading}
-              className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-106"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/75 to-slate-950/45" />
-          </div>
-
-          {/* Foreground content */}
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 p-5 sm:p-7 lg:p-9 min-h-[160px]">
+        <div className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] bg-[#E8E8E8] border border-slate-300/60 p-6 sm:p-8 lg:p-10 shadow-xs transition-all">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             {/* Left Content */}
             <div className="max-w-xl text-left">
               {badge && (
-                <span className="inline-flex items-center rounded-full bg-[#E4572E] px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-xs">
+                <span className="inline-flex items-center rounded-full bg-[#DF6951] px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-2xs">
                   {badge}
                 </span>
               )}
-              <h2 className="mt-2.5 text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+              <h2 className="mt-2.5 text-2xl sm:text-3xl lg:text-[32px] font-bold text-slate-900 tracking-tight leading-tight">
                 {heading}
               </h2>
-              <p className="mt-1.5 text-xs sm:text-sm md:text-[14px] text-white/90 font-medium leading-relaxed max-w-lg">
+              <p className="mt-2 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed max-w-lg">
                 {subtitle}
               </p>
             </div>
@@ -130,28 +119,28 @@ export default function HomeNewsletterBanner({
                     placeholder="Enter Your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-11 sm:h-12 w-full rounded-xl border border-white/30 bg-black/25 backdrop-blur-md px-4 text-sm text-white placeholder:text-white/70 focus:border-[#E4572E] focus:ring-2 focus:ring-[#E4572E]/40 focus:bg-black/50 focus:outline-none transition-all duration-200 shadow-inner"
+                    className="h-11 sm:h-12 w-full rounded-lg border border-slate-300 bg-[#E5E5E5] px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-slate-500 transition-colors"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={subscribing}
-                  className="group/btn h-11 sm:h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1527] px-6 sm:px-7 text-sm sm:text-base font-bold text-white shadow-lg transition-all duration-200 hover:bg-[#15233C] hover:shadow-xl hover:-translate-y-0.5 active:scale-95 whitespace-nowrap disabled:opacity-60 cursor-pointer"
+                  className="h-11 sm:h-12 inline-flex items-center justify-center gap-2 rounded-lg bg-[#0B1F3A] hover:bg-[#132c50] active:scale-95 px-6 sm:px-7 text-sm font-bold text-white shadow-sm transition-all whitespace-nowrap disabled:opacity-60 cursor-pointer"
                 >
                   <span>{subscribing ? "Registering..." : "Register"}</span>
                   <ArrowRight
                     size={16}
-                    className="text-[#E4572E] stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1"
+                    className="transition-transform group-hover:translate-x-0.5"
                   />
                 </button>
               </form>
 
               {message && (
                 <p
-                  className={`mt-2 text-xs font-bold ${
+                  className={`mt-2 text-xs font-semibold ${
                     message.type === "success"
-                      ? "text-emerald-400"
-                      : "text-rose-400"
+                      ? "text-emerald-600"
+                      : "text-rose-600"
                   }`}
                 >
                   {message.text}

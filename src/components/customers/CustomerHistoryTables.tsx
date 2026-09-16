@@ -9,13 +9,12 @@ import {
 } from "@/lib/api/services/customerService";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useAuthContext } from "@/providers/AuthProvider";
-
-function money(value: number) {
-  return `$${Number(value || 0).toLocaleString()}`;
-}
+import { useCurrency } from "@/hooks/useCurrency";
 
 export function CustomerBookingHistory({ rows }: { rows: BookingHistory[] }) {
   const { hasPermission } = useAuthContext();
+  const { formatExact } = useCurrency();
+  const money = (value: number, currency?: string) => formatExact(value, currency || "USD");
   const canViewTour = hasPermission("tours.view") || hasPermission("view-tours");
 
   const columns: DataTableColumn<BookingHistory>[] = [
@@ -41,9 +40,9 @@ export function CustomerBookingHistory({ rows }: { rows: BookingHistory[] }) {
     { key: "supplier_name", header: "Supplier", className: "text-dash-muted" },
     { key: "booking_status", header: "Booking", className: "text-dash-muted" },
     { key: "payment_status", header: "Payment", className: "text-dash-muted" },
-    { key: "tour_cost", header: "Total", className: "text-dash-muted", render: (row) => money(row.tour_cost) },
-    { key: "amount_paid", header: "Paid", className: "text-emerald-600", render: (row) => money(row.amount_paid) },
-    { key: "amount_pending", header: "Pending", className: "text-amber-700", render: (row) => money(row.amount_pending) },
+    { key: "tour_cost", header: "Total", className: "text-dash-muted", render: (row) => money(row.tour_cost, row.currency) },
+    { key: "amount_paid", header: "Paid", className: "text-emerald-600", render: (row) => money(row.amount_paid, row.currency) },
+    { key: "amount_pending", header: "Pending", className: "text-amber-700", render: (row) => money(row.amount_pending, row.currency) },
   ];
 
   return (
@@ -58,14 +57,16 @@ export function CustomerBookingHistory({ rows }: { rows: BookingHistory[] }) {
 }
 
 export function CustomerPaymentHistory({ rows }: { rows: PaymentHistory[] }) {
+  const { formatExact } = useCurrency();
+  const money = (value: number, currency?: string) => formatExact(value, currency || "USD");
   const columns: DataTableColumn<PaymentHistory>[] = [
     { key: "payment_code", header: "Payment ID", className: "font-bold text-dash-text" },
     { key: "booking_code", header: "Booking", className: "text-dash-muted" },
     { key: "payment_method", header: "Method", className: "text-dash-muted" },
     { key: "payment_type", header: "Type", className: "text-dash-muted" },
-    { key: "paid_amount", header: "Paid", className: "text-emerald-600", render: (row) => money(row.paid_amount) },
-    { key: "pending_amount", header: "Pending", className: "text-amber-700", render: (row) => money(row.pending_amount) },
-    { key: "gst_amount", header: "GST", className: "text-dash-muted", render: (row) => money(row.gst_amount) },
+    { key: "paid_amount", header: "Paid", className: "text-emerald-600", render: (row) => money(row.paid_amount, row.currency) },
+    { key: "pending_amount", header: "Pending", className: "text-amber-700", render: (row) => money(row.pending_amount, row.currency) },
+    { key: "gst_amount", header: "GST", className: "text-dash-muted", render: (row) => money(row.gst_amount, row.currency) },
     { key: "payment_status", header: "Status", className: "text-dash-muted" },
     { key: "payment_date", header: "Date", className: "text-dash-muted" },
   ];

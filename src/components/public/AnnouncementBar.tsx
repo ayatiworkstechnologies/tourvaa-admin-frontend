@@ -56,7 +56,7 @@ export default function AnnouncementBar() {
   );
 
   return (
-    <div className="relative z-[60] flex items-center justify-center gap-2 bg-pub-primary px-4 py-2 text-center text-xs sm:text-sm text-white">
+    <div className="relative z-[60] w-full flex items-center justify-center gap-2 bg-[#0B1F3A] px-4 py-2 text-center text-xs sm:text-sm text-white">
       {popup.cta_url ? (
         <Link href={popup.cta_url} className="flex flex-wrap items-center justify-center gap-1.5 hover:underline">
           {content}

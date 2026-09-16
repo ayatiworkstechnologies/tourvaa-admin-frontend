@@ -13,6 +13,7 @@ type Props = {
   limit: number;
   total?: number;
   totalPages?: number;
+  loading?: boolean;
   onPageChange?: (page: number) => void;
   savingId?: number | null;
   canBlock?: boolean;
@@ -29,6 +30,7 @@ export default function CustomerTable({
   limit,
   total,
   totalPages,
+  loading,
   onPageChange,
   savingId,
   canBlock,
@@ -113,6 +115,7 @@ export default function CustomerTable({
       ariaLabel="Customers table"
       columns={columns}
       rows={customers}
+      loading={loading}
       page={page}
       pageSize={limit}
       total={total}

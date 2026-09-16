@@ -4,6 +4,7 @@
 
 import React from "react";
 import Link from "next/link";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 import {
   LuArrowRight as ArrowRight,
   LuHouse as Home,
@@ -112,14 +113,9 @@ export default function CountryDestinationHero({
 
                 {/* Two Action Buttons matching screenshot */}
                 <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <a
-                    href="#section-tours"
-                    onClick={scrollToTours}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0A1128] hover:bg-slate-850 text-white text-xs font-bold px-6 py-2.5 shadow-xs transition cursor-pointer"
-                  >
-                    <span>Explore Tours</span>
-                    <ArrowRight size={13} />
-                  </a>
+                  <PrimaryCtaButton href="#section-tours" onClick={scrollToTours} size="sm">
+                    Explore Tours
+                  </PrimaryCtaButton>
                   <a
                     href="#section-when-to-go"
                     onClick={scrollToWhenToGo}
