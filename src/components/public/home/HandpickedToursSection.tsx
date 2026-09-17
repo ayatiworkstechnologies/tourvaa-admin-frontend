@@ -294,7 +294,7 @@ export default function HandpickedToursSection({
   };
 
   return (
-    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-14 bg-gradient-to-b from-white via-[#F3FAF6] to-[#EAF6EF] border-y border-emerald-100/70 shadow-2xs">
+    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-14 bg-gradient-to-b from-white via-[#F3FAF6] to-[#EAF6EF]">
       <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         {/* Section Header with Arrows on right */}
         <div className="mb-5 flex items-center justify-between">

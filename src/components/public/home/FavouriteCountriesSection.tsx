@@ -143,7 +143,7 @@ export default function FavouriteCountriesSection({
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-black/15" />
 
                 {/* Top-Left Location Badge */}
-                <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
+                <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E16B2D] px-3 py-1 text-[11px] font-bold text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
                   <MapPin size={11} className="shrink-0 text-white" />
                   <span>{country.badge || country.name}</span>
                 </span>
@@ -156,7 +156,7 @@ export default function FavouriteCountriesSection({
                   <div className="mt-2.5 flex items-start gap-2 text-xs text-white/90 leading-relaxed font-medium">
                     <SquareCheckBig
                       size={14}
-                      className="mt-0.5 shrink-0 text-orange-400 stroke-[2.2] transition-transform duration-300 group-hover:scale-110 group-hover:text-pub-secondary"
+                      className="mt-0.5 shrink-0 text-pub-accent stroke-[2.2] transition-transform duration-300 group-hover:scale-110 group-hover:text-pub-secondary"
                     />
                     <p className="line-clamp-3 text-white/90 drop-shadow">
                       {country.snippet}

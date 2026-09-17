@@ -48,7 +48,7 @@ export default function PrimaryCtaButton({
       {showArrow && (
         <ArrowRight
           size={ICON_SIZE[size]}
-          className="text-[#E4572E] stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1"
+          className="text-[#E16B2D] stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1"
           aria-hidden="true"
         />
       )}

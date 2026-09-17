@@ -167,7 +167,7 @@ export default function CountryExploreFaqSection({ info }: CountryExploreFaqSect
                       alt={country.name}
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-106"
                     />
-                    <span className="absolute top-2.5 left-2.5 rounded-full bg-[#E4572E] px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-xs">
+                    <span className="absolute top-2.5 left-2.5 rounded-full bg-[#E16B2D] px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-xs">
                       {country.region}
                     </span>
                   </div>
@@ -201,7 +201,7 @@ export default function CountryExploreFaqSection({ info }: CountryExploreFaqSect
                   <Link
                     key={item.slug}
                     href={`/destinations/${item.slug}`}
-                    className="block hover:text-[#E4572E] transition-colors"
+                    className="block hover:text-[#E16B2D] transition-colors"
                   >
                     {item.name}
                   </Link>
@@ -247,7 +247,7 @@ export default function CountryExploreFaqSection({ info }: CountryExploreFaqSect
                     </span>
                     <span
                       className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition ${
-                        isOpen ? "bg-[#E4572E] text-white" : "bg-slate-100 text-slate-500"
+                        isOpen ? "bg-[#E16B2D] text-white" : "bg-slate-100 text-slate-500"
                       }`}
                     >
                       {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}

@@ -620,7 +620,7 @@ export default function TourDetailExperience({
           </h2>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-3 text-xs">
-            <span className="rounded-full bg-[#E4572E] px-3 py-1 font-bold text-white shadow-2xs">
+            <span className="rounded-full bg-[#E16B2D] px-3 py-1 font-bold text-white shadow-2xs">
               Best Seller
             </span>
             <span className="flex items-center gap-1 font-bold text-slate-700">
@@ -1060,7 +1060,7 @@ export default function TourDetailExperience({
 
               {/* Alert Box */}
               <div className="mt-6 rounded-xl bg-orange-50/70 p-3.5 text-[11px] font-medium text-orange-900 flex items-center gap-2 border border-orange-200/60">
-                <Info size={15} className="shrink-0 text-[#E4572E]" />
+                <Info size={15} className="shrink-0 text-[#E16B2D]" />
                 <span>
                   Detailed itinerary schedule and inclusions/exclusions may vary depending on departure season and operational availability.
                 </span>

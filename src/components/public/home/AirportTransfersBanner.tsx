@@ -88,7 +88,7 @@ export default function AirportTransfersBanner({
         <div className="group grid gap-6 lg:gap-10 overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-6 sm:p-8 lg:p-10 md:grid-cols-2 md:items-center shadow-xs hover:border-slate-300 hover:shadow-lg transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]">
           <div className="flex flex-col items-start justify-center py-2 text-left">
             {/* Tag / Badge */}
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E4572E]">
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E16B2D]">
               <Plane size={14} className="rotate-45" />
               <span>{eyebrow}</span>
             </div>
@@ -111,7 +111,7 @@ export default function AirportTransfersBanner({
               ).map((feature) => (
                 <span
                   key={feature}
-                  className="rounded-full bg-[#E4572E] px-3.5 py-1 text-[11px] font-bold text-white shadow-xs transition-transform duration-200 hover:scale-105 select-none"
+                  className="rounded-full bg-[#E16B2D] px-3.5 py-1 text-[11px] font-bold text-white shadow-xs transition-transform duration-200 hover:scale-105 select-none"
                 >
                   {feature}
                 </span>

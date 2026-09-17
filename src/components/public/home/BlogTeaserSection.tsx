@@ -53,7 +53,7 @@ export default function BlogTeaserSection({
   return (
     <section className="relative w-full overflow-hidden my-8 sm:my-14 py-12 sm:py-20 bg-gradient-to-br from-[#FFF9EE] via-[#FDFAFB] to-[#F0F7FF] border-y border-slate-100 shadow-xs">
       {/* Top-left golden glow */}
-      <div className="pointer-events-none absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-amber-400/35 via-orange-300/20 to-transparent blur-3xl animate-float-orb" />
+      <div className="pointer-events-none absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-amber-400/35 via-pub-accent/20 to-transparent blur-3xl animate-float-orb" />
       {/* Bottom-right sky-blue glow */}
       <div className="pointer-events-none absolute -bottom-24 -right-24 h-[420px] w-[420px] rounded-full bg-gradient-to-tl from-sky-400/25 via-blue-300/15 to-transparent blur-3xl animate-float-orb-alt" />
 
@@ -70,10 +70,10 @@ export default function BlogTeaserSection({
 
           {/* Right Content */}
           <div className="flex flex-col items-start justify-center py-2 px-2 sm:px-4 lg:px-6 text-left">
-            <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E4572E]">
+            <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E16B2D]">
               <Sparkles
                 size={14}
-                className="text-[#E4572E] animate-sparkle-glow"
+                className="text-[#E16B2D] animate-sparkle-glow"
               />
               <span>{eyebrow}</span>
             </span>

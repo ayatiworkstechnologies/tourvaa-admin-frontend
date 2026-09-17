@@ -67,7 +67,7 @@ export default function CookieConsentBanner() {
         {/* Top Header Row */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E4572E] to-[#c7451e] text-white shadow-md shadow-[#E4572E]/25">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E16B2D] to-[#c7451e] text-white shadow-md shadow-[#E16B2D]/25">
               <CookieIcon size={22} className="stroke-[2.2]" />
             </div>
             <div>
@@ -101,7 +101,7 @@ export default function CookieConsentBanner() {
           Tourvaa uses cookies and similar technologies to ensure seamless navigation, remember your preferences, analyze website traffic, and deliver personalized tour deals. You can choose to accept all or customize your preferences anytime. See our{" "}
           <Link
             href="/cookie-policy"
-            className="font-bold text-[#E4572E] underline underline-offset-2 hover:text-[#0B1527] transition"
+            className="font-bold text-[#E16B2D] underline underline-offset-2 hover:text-[#0B1527] transition"
           >
             Cookie Policy
           </Link>{" "}
@@ -166,7 +166,7 @@ export default function CookieConsentBanner() {
             <div className="flex items-center justify-between gap-3 border-t border-slate-200/60 pt-2.5">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <Sparkles size={12} className="text-[#E4572E]" />
+                  <Sparkles size={12} className="text-[#E16B2D]" />
                   <span className="font-bold text-slate-900">Marketing & Personalization</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
@@ -179,7 +179,7 @@ export default function CookieConsentBanner() {
                 aria-checked={prefs.marketing}
                 onClick={() => setPrefs((p) => ({ ...p, marketing: !p.marketing }))}
                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  prefs.marketing ? "bg-[#E4572E]" : "bg-slate-300"
+                  prefs.marketing ? "bg-[#E16B2D]" : "bg-slate-300"
                 }`}
               >
                 <span
@@ -220,7 +220,7 @@ export default function CookieConsentBanner() {
               onClick={() => (showPreferences ? saveConsent("custom") : saveConsent("all"))}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0B1527] px-5 py-2.5 text-xs font-black text-white shadow-md shadow-[#0B1527]/20 hover:bg-[#15233C] hover:-translate-y-0.5 transition"
             >
-              <Check size={14} className="text-[#E4572E]" />
+              <Check size={14} className="text-[#E16B2D]" />
               <span>{showPreferences ? "Save Choices" : "Accept All"}</span>
             </button>
           </div>

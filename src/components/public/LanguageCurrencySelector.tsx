@@ -180,7 +180,7 @@ export default function LanguageCurrencySelector({
             size={10}
             className={`transition-transform duration-200 ${
               open
-                ? "rotate-180 text-[#E4572E]"
+                ? "rotate-180 text-[#E16B2D]"
                 : inverse
                   ? ""
                   : "text-pub-primary group-hover:text-pub-secondary"
@@ -199,7 +199,7 @@ export default function LanguageCurrencySelector({
               onClick={() => setTab("language")}
               className={`flex-1 py-3 text-xs font-bold transition-colors ${
                 tab === "language"
-                  ? "border-b-2 border-[#E4572E] text-[#E4572E]"
+                  ? "border-b-2 border-[#E16B2D] text-[#E16B2D]"
                   : "text-slate-500 hover:text-[#0f2439]"
               }`}
             >
@@ -210,7 +210,7 @@ export default function LanguageCurrencySelector({
               onClick={() => setTab("currency")}
               className={`flex-1 py-3 text-xs font-bold transition-colors ${
                 tab === "currency"
-                  ? "border-b-2 border-[#E4572E] text-[#E4572E]"
+                  ? "border-b-2 border-[#E16B2D] text-[#E16B2D]"
                   : "text-slate-500 hover:text-[#0f2439]"
               }`}
             >
@@ -221,7 +221,7 @@ export default function LanguageCurrencySelector({
               onClick={() => setTab("country")}
               className={`flex-1 py-3 text-xs font-bold transition-colors ${
                 tab === "country"
-                  ? "border-b-2 border-[#E4572E] text-[#E4572E]"
+                  ? "border-b-2 border-[#E16B2D] text-[#E16B2D]"
                   : "text-slate-500 hover:text-[#0f2439]"
               }`}
             >
@@ -287,7 +287,7 @@ export default function LanguageCurrencySelector({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search currency..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#E4572E] focus:bg-white focus:ring-2 focus:ring-orange-100"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#E16B2D] focus:bg-white focus:ring-2 focus:ring-pub-accent/15"
                   />
                   {search && (
                     <button
@@ -360,7 +360,7 @@ export default function LanguageCurrencySelector({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search country..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#E4572E] focus:bg-white focus:ring-2 focus:ring-orange-100"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#E16B2D] focus:bg-white focus:ring-2 focus:ring-pub-accent/15"
                   />
                   {search && (
                     <button

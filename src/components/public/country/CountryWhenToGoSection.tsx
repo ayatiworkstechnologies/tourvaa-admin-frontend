@@ -332,7 +332,7 @@ export default function CountryWhenToGoSection({
               onClick={() => setShowMonthlyMatrix(!showMonthlyMatrix)}
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition shadow-2xs"
             >
-              <Thermometer size={13} className="text-[#E4572E]" />
+              <Thermometer size={13} className="text-[#E16B2D]" />
               <span>{showMonthlyMatrix ? "Hide Month-by-Month Guide" : "View Complete Month-by-Month Weather Guide"}</span>
             </button>
 
@@ -375,7 +375,7 @@ export default function CountryWhenToGoSection({
                       {monthlyData.map((m) => (
                         <tr key={m.month} className="hover:bg-slate-50/60">
                           <td className="py-2.5 px-3 font-bold text-slate-900">{m.full_month}</td>
-                          <td className="py-2.5 px-3 font-bold text-[#E4572E]">
+                          <td className="py-2.5 px-3 font-bold text-[#E16B2D]">
                             {unit === "C" ? `${m.avg_high_c}°C` : `${m.avg_high_f}°F`}
                           </td>
                           <td className="py-2.5 px-3 text-slate-500">

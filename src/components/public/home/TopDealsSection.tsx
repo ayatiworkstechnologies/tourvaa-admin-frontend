@@ -7,11 +7,7 @@ import {
   LuChevronRight as ChevronRight,
   LuHeart as Heart,
   LuMapPin as MapPin,
-  LuNavigation as Navigation,
-  LuSlidersHorizontal as Sliders,
   LuStar as Star,
-  LuSun as Sun,
-  LuUsers as Users,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
@@ -235,26 +231,6 @@ export function TopDealCard({ tour }: { tour: Tour }) {
               </div>
               <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
               <span className="text-slate-500">{reviewCountStr}</span>
-            </div>
-
-            {/* 4 Feature specs with blue icons */}
-            <div className="mt-2.5 space-y-1 text-[11px] text-slate-600 font-medium">
-              <p className="flex items-center gap-1.5">
-                <Sun size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                <span>{tour.days || "7 Days"}</span>
-              </p>
-              <p className="flex items-center gap-1.5 truncate">
-                <Navigation size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                <span className="truncate">{tour.place || destinationName}</span>
-              </p>
-              <p className="flex items-center gap-1.5">
-                <Sliders size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                <span>Age Range: 12-70</span>
-              </p>
-              <p className="flex items-center gap-1.5">
-                <Users size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                <span>Max Group Size: 24</span>
-              </p>
             </div>
           </div>
         </div>

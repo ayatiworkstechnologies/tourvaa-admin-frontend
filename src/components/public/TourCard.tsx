@@ -100,7 +100,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
       <Link href={resolvedHref} className="group overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image src={imgSrc} alt={tour.title || "Tour"} fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" onError={() => setImgSrc(FALLBACK)} className="object-cover transition duration-700 group-hover:scale-110" />
-          <span className="absolute bottom-3 left-3 rounded-md bg-orange-500 px-2.5 py-1 text-[10px] font-black uppercase text-white shadow">{categoryLabel || tour.category_name || "Featured"}</span>
+          <span className="absolute bottom-3 left-3 rounded-md bg-pub-accent px-2.5 py-1 text-[10px] font-black uppercase text-white shadow">{categoryLabel || tour.category_name || "Featured"}</span>
           {discounted && <DiscountCardBadge percentage={tour.discount_percentage!} />}
         </div>
         <div className="p-4">

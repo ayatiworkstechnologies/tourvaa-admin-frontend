@@ -149,7 +149,7 @@ export function EmptyCollection({
       <p className="text-sm font-semibold text-slate-600">{message}</p>
       <Link
         href={href}
-        className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#E4572E] transition hover:text-pub-secondary"
+        className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#E16B2D] transition hover:text-pub-secondary"
       >
         <span>{linkLabel}</span>
         <ArrowRight size={13} aria-hidden="true" />

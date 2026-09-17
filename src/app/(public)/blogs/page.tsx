@@ -138,7 +138,7 @@ export default function BlogsPage() {
                   onClick={() => setActiveCategory(cat)}
                   className={`rounded-full px-5 py-2 text-xs font-bold transition-all duration-200 ${
                     active
-                      ? "bg-[#E4572E] text-white shadow-xs"
+                      ? "bg-[#E16B2D] text-white shadow-xs"
                       : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                   }`}
                 >
@@ -259,7 +259,7 @@ export default function BlogsPage() {
                         {article.excerpt}
                       </p>
                     )}
-                    <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#E4572E] group-hover:underline">
+                    <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#E16B2D] group-hover:underline">
                       <span>Read Article</span>
                       <ArrowRight size={13} aria-hidden="true" />
                     </span>

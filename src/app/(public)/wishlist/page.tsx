@@ -25,7 +25,7 @@ export default function PublicWishlistPage() {
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="flex items-center gap-2 text-3xl font-black"><Heart size={26} className="text-[#E4572E]" /> My Wishlist</h1>
+            <h1 className="flex items-center gap-2 text-3xl font-black"><Heart size={26} className="text-[#E16B2D]" /> My Wishlist</h1>
             <p className="mt-2 text-sm text-slate-500">Tours you have saved to come back to. Sign in to keep this list synced across your devices.</p>
           </div>
           <Link href="/tours" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:border-pub-secondary/40 hover:text-pub-secondary">
@@ -55,7 +55,7 @@ export default function PublicWishlistPage() {
                   </Link>
 
                   <div className="p-5">
-                    <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-[#E4572E]">
+                    <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-[#E16B2D]">
                       <MapPin size={12} />
                       {item.place || "Destination"}
                     </p>

@@ -137,7 +137,7 @@ export default function PublicHeader() {
           </span>
           <span className="h-3 w-px bg-white/20 shrink-0" aria-hidden="true" />
           <span className="flex items-center gap-1.5 shrink-0">
-            <Star size={13} className="fill-emerald-400 text-emerald-400" />
+            <Star size={13} className="text-emerald-400" />
             4.8 stars on <span className="font-black text-emerald-400">Trustpilot</span>
             <span className="text-white/60">(15,000+ reviews)</span>
           </span>
@@ -180,7 +180,7 @@ export default function PublicHeader() {
             />
             <span>Wishlist</span>
             {wishlistCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E4572E] px-1 text-[8px] font-black text-white shadow-xs">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E16B2D] px-1 text-[8px] font-black text-white shadow-xs">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}
@@ -195,7 +195,7 @@ export default function PublicHeader() {
             />
             <span>Compare</span>
             {compareCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E4572E] px-1 text-[8px] font-black text-white shadow-xs">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E16B2D] px-1 text-[8px] font-black text-white shadow-xs">
                 {compareCount}
               </span>
             )}
@@ -210,7 +210,7 @@ export default function PublicHeader() {
               className="group flex flex-col items-center gap-1 text-[10px] font-semibold text-pub-primary transition-colors hover:text-pub-secondary"
             >
               {isLoggedIn ? (
-                <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-gradient-to-br from-[#E4572E] to-amber-500 text-[10px] font-black text-white shadow-xs">
+                <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-gradient-to-br from-[#E16B2D] to-amber-500 text-[10px] font-black text-white shadow-xs">
                   {(user?.name || "T")[0]?.toUpperCase()}
                 </div>
               ) : (
@@ -227,7 +227,7 @@ export default function PublicHeader() {
                   size={9}
                   className={`transition-transform duration-200 ${
                     profileOpen
-                      ? "rotate-180 text-[#E4572E]"
+                      ? "rotate-180 text-[#E16B2D]"
                       : "text-pub-primary group-hover:text-pub-secondary"
                   }`}
                 />
@@ -290,7 +290,7 @@ export default function PublicHeader() {
             {isLoggedIn ? (
               <>
                 <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#E4572E] to-amber-500 text-white font-extrabold text-sm shadow-xs">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#E16B2D] to-amber-500 text-white font-extrabold text-sm shadow-xs">
                     {(user?.name || "T")[0]?.toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -358,9 +358,9 @@ export default function PublicHeader() {
               </>
             ) : (
               <>
-                <div className="rounded-xl border border-orange-200/70 bg-gradient-to-br from-slate-50 to-orange-50/40 p-3.5">
+                <div className="rounded-xl border border-pub-accent/25 bg-gradient-to-br from-slate-50 to-pub-accent/10 p-3.5">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E4572E] text-white">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E16B2D] text-white">
                       <User size={15} />
                     </div>
                     <div>
@@ -417,7 +417,7 @@ export default function PublicHeader() {
                         <Link
                           href={partner.registerHref}
                           onClick={() => setOpen(false)}
-                          className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-bold text-[#E4572E]"
+                          className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-bold text-[#E16B2D]"
                         >
                           {partner.registerLabel}
                         </Link>
@@ -472,7 +472,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
     >
       {/* Header Welcome */}
       <div className="flex items-center gap-2.5 px-3 pt-2 pb-3 border-b border-slate-100">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#E4572E]">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-pub-accent/10 text-pub-accent">
           <Sparkles size={18} />
         </div>
         <div className="min-w-0">
@@ -484,9 +484,9 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* Primary Traveller Card */}
-      <div className="mt-3 rounded-xl bg-gradient-to-br from-slate-50 to-orange-50/40 p-3 border border-slate-200/80">
+      <div className="mt-3 rounded-xl bg-gradient-to-br from-slate-50 to-pub-accent/10 p-3 border border-slate-200/80">
         <div className="flex items-center gap-2.5 mb-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E4572E] text-white shadow-xs">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E16B2D] text-white shadow-xs">
             <User size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -620,7 +620,7 @@ function AuthenticatedProfileMenu({
     >
       {/* User Header Profile Card */}
       <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-100">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#E4572E] to-amber-500 text-white font-black text-sm shadow-xs">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#E16B2D] to-amber-500 text-white font-black text-sm shadow-xs">
           {initials}
         </div>
         <div className="min-w-0 flex-1">
@@ -643,7 +643,7 @@ function AuthenticatedProfileMenu({
           className="flex items-center justify-between rounded-xl border border-slate-100 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-200"
         >
           <span className="flex items-center gap-1.5">
-            <Heart size={14} className="text-[#E4572E]" />
+            <Heart size={14} className="text-[#E16B2D]" />
             Wishlist
           </span>
           <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">

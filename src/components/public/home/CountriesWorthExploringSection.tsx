@@ -54,7 +54,7 @@ export function CountryWorthExploringCard({
   return (
     <div
       data-country-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5 flex flex-col justify-between h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start overflow-hidden rounded-[22px] border border-slate-200/80 bg-white p-2 sm:p-2.5 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:-translate-y-1.5 flex flex-col justify-between h-full"
     >
       {/* Top Image Container */}
       <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
@@ -68,12 +68,6 @@ export function CountryWorthExploringCard({
 
         {/* Subtle vignette for badge readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20 pointer-events-none" />
-
-        {/* Popular orange badge (top-left) */}
-        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-md shadow-orange-600/30">
-          <Sparkles size={11} className="fill-white animate-sparkle-glow" />
-          <span>{country.badge || "Popular"}</span>
-        </span>
 
         {/* Wishlist button (top-right) */}
         <button
@@ -122,10 +116,6 @@ export function CountryWorthExploringCard({
             <BookOpen size={13} className="text-sky-500 shrink-0 stroke-[2]" />
             <span>{country.count}</span>
           </p>
-
-          {country.snippet && (
-            <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{country.snippet}</p>
-          )}
         </div>
 
         {/* Bottom Explore action */}
@@ -136,7 +126,7 @@ export function CountryWorthExploringCard({
           <Link
             href={href}
             aria-label={`Explore ${country.name} tours`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0B1527] text-white shadow-xs transition-all duration-300 group-hover:bg-[#E4572E] group-hover:scale-110 active:scale-95"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0B1527] text-white shadow-xs transition-all duration-300 group-hover:bg-[#E16B2D] group-hover:scale-110 active:scale-95"
           >
             <ArrowRight
               size={14}
@@ -264,7 +254,7 @@ export default function CountriesWorthExploringSection({
                 type="button"
                 aria-label="Previous countries"
                 onClick={() => move(-1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E4572E] hover:text-[#E4572E] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E16B2D] hover:text-[#E16B2D] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
               >
                 <ChevronLeft size={18} className="stroke-[2.5]" />
               </button>
@@ -272,7 +262,7 @@ export default function CountriesWorthExploringSection({
                 type="button"
                 aria-label="Next countries"
                 onClick={() => move(1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E4572E] hover:text-[#E4572E] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E16B2D] hover:text-[#E16B2D] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
               >
                 <ChevronRight size={18} className="stroke-[2.5]" />
               </button>

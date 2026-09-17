@@ -9,7 +9,6 @@ import {
   LuMapPin as MapPin,
   LuNavigation as Navigation,
   LuSlidersHorizontal as Sliders,
-  LuSparkles as Sparkles,
   LuStar as Star,
   LuSun as Sun,
   LuUsers as Users,
@@ -109,8 +108,8 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
                 size={18}
                 className={
                   wishlisted
-                    ? "fill-red-500 text-red-500 drop-shadow-xs"
-                    : "fill-white/70 text-slate-700 drop-shadow-xs"
+                    ? "fill-red-500 text-red-500"
+                    : "fill-white/70 text-slate-700"
                 }
               />
             </button>
@@ -306,20 +305,9 @@ export default function TrendingToursSection({
         {/* Section Header with Arrows on right */}
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-sky-100/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-sky-800 mb-2">
-              <Sparkles
-                size={12}
-                className="fill-current text-sky-600 animate-sparkle-glow"
-              />
-              <span>Trending Worldwide</span>
-            </div>
             <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-950 tracking-tight">
               Trending Tour Packages
             </h2>
-            <p className="mt-1 text-xs sm:text-sm text-slate-600 font-medium max-w-xl">
-              Most-booked itineraries loved by our global travel community this
-              season.
-            </p>
           </div>
 
           {!loading && displayTours.length > 0 && (

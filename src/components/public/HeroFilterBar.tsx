@@ -162,7 +162,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "destination"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-semibold text-[#E4572E]">
+              <span className="block text-xs sm:text-sm font-semibold text-[#E16B2D]">
                 Where to?
               </span>
               <span className="inline-flex items-center gap-1">
@@ -172,7 +172,7 @@ export default function HeroFilterBar({
                 <ChevronDown
                   size={16}
                   className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                    open === "destination" ? "rotate-180 text-[#E4572E]" : ""
+                    open === "destination" ? "rotate-180 text-[#E16B2D]" : ""
                   }`}
                 />
               </span>
@@ -200,7 +200,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "date"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-semibold text-[#E4572E]">
+              <span className="block text-xs sm:text-sm font-semibold text-[#E16B2D]">
                 When?
               </span>
               <span className="inline-flex items-center gap-1">
@@ -210,7 +210,7 @@ export default function HeroFilterBar({
                 <ChevronDown
                   size={16}
                   className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                    open === "date" ? "rotate-180 text-[#E4572E]" : ""
+                    open === "date" ? "rotate-180 text-[#E16B2D]" : ""
                   }`}
                 />
               </span>
@@ -237,7 +237,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "duration"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-semibold text-[#E4572E]">
+              <span className="block text-xs sm:text-sm font-semibold text-[#E16B2D]">
                 How Many Days?
               </span>
               <span className="inline-flex items-center gap-1">
@@ -247,7 +247,7 @@ export default function HeroFilterBar({
                 <ChevronDown
                   size={16}
                   className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                    open === "duration" ? "rotate-180 text-[#E4572E]" : ""
+                    open === "duration" ? "rotate-180 text-[#E16B2D]" : ""
                   }`}
                 />
               </span>
@@ -274,7 +274,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "passengers"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-semibold text-[#E4572E]">
+              <span className="block text-xs sm:text-sm font-semibold text-[#E16B2D]">
                 Who&apos;s going?
               </span>
               <span className="inline-flex items-center gap-1">
@@ -284,7 +284,7 @@ export default function HeroFilterBar({
                 <ChevronDown
                   size={16}
                   className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                    open === "passengers" ? "rotate-180 text-[#E4572E]" : ""
+                    open === "passengers" ? "rotate-180 text-[#E16B2D]" : ""
                   }`}
                 />
               </span>
@@ -358,7 +358,7 @@ function ViatorRedirectModal({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={handleContinue}
           disabled={loading}
-          className="mt-5 w-full rounded-xl bg-[#E4572E] px-6 py-3.5 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#cf4b25] disabled:opacity-70"
+          className="mt-5 w-full rounded-xl bg-[#E16B2D] px-6 py-3.5 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#cf4b25] disabled:opacity-70"
         >
           {loading ? "Redirecting..." : "Continue"}
         </button>
@@ -531,7 +531,7 @@ function DatePanel({
                 : "text-slate-500 hover:text-slate-900"
             }`}
           >
-            <Sparkles size={13} className="text-[#E4572E]" />
+            <Sparkles size={13} className="text-[#E16B2D]" />
             <span>Calendar View</span>
           </button>
           <button
@@ -543,7 +543,7 @@ function DatePanel({
                 : "text-slate-500 hover:text-slate-900"
             }`}
           >
-            <Calendar size={13} className="text-[#E4572E]" />
+            <Calendar size={13} className="text-[#E16B2D]" />
             <span>Month Picker</span>
           </button>
         </div>
@@ -552,7 +552,7 @@ function DatePanel({
           <button
             type="button"
             onClick={onClear}
-            className="text-xs font-bold text-[#E4572E] hover:underline"
+            className="text-xs font-bold text-[#E16B2D] hover:underline"
           >
             Clear Selection
           </button>
@@ -674,7 +674,7 @@ function DatePanel({
               }}
               className={`rounded-xl border px-4 py-2 text-xs font-bold transition ${
                 anytime
-                  ? "border-[#E4572E] bg-[#E4572E]/10 text-[#E4572E]"
+                  ? "border-[#E16B2D] bg-[#E16B2D]/10 text-[#E16B2D]"
                   : "border-slate-200 hover:bg-slate-50 text-slate-700"
               }`}
             >
@@ -863,7 +863,7 @@ function DurationPanel({
               onClick={() => onSelect(label)}
               className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition ${
                 isSelected
-                  ? "border-[#E4572E] bg-white text-[#0f2439] shadow-sm"
+                  ? "border-[#E16B2D] bg-white text-[#0f2439] shadow-sm"
                   : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
               }`}
             >

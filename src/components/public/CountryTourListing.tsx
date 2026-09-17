@@ -672,17 +672,17 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             href="/"
             className="flex items-center gap-1 text-slate-600 hover:text-pub-secondary transition"
           >
-            <Home size={13} className="text-[#E4572E]" />
+            <Home size={13} className="text-[#E16B2D]" />
             Home
           </Link>
           <span className="text-slate-300">›</span>
           <Link
             href="/tours"
             className={`flex items-center gap-1 transition ${
-              hasSpecificCountry ? "text-slate-600 hover:text-pub-secondary" : "text-[#E4572E] font-bold"
+              hasSpecificCountry ? "text-slate-600 hover:text-pub-secondary" : "text-[#E16B2D] font-bold"
             }`}
           >
-            <MapIcon size={13} className="text-[#E4572E]" />
+            <MapIcon size={13} className="text-[#E16B2D]" />
             {hasSpecificCountry ? "Tour" : "All Tours"}
           </Link>
           {hasSpecificCountry && (
@@ -767,7 +767,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             onClick={() => {
               if (activeFiltersCount > 0) clearAllFilters();
             }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#E4572E] px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-[#d0461f]"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#E16B2D] px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-[#d0461f]"
           >
             <Sliders size={13} />
             Filter ({activeFiltersCount})
@@ -964,7 +964,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             onClick={handleAvailableOnlyToggle}
             className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition shadow-2xs ${
               availableOnly
-                ? "bg-[#E4572E] text-white hover:bg-[#d0461f]"
+                ? "bg-[#E16B2D] text-white hover:bg-[#d0461f]"
                 : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
             }`}
           >

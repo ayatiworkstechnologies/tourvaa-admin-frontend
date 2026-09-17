@@ -271,7 +271,7 @@ function AgentCustomerSelector({
             type="button"
             onClick={onCreateCustomer}
             disabled={newCustomerLoading}
-            className="rounded-lg bg-[#E4572E] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#cf4b24] disabled:opacity-50"
+            className="rounded-lg bg-[#E16B2D] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#cf4b24] disabled:opacity-50"
           >
             {newCustomerLoading ? "Creating..." : "Create Customer"}
           </button>
@@ -1137,7 +1137,7 @@ export default function DynamicTourBookingPage() {
               {step === 1 ? (
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs">
                   <div className="flex items-center gap-3 pb-5 border-b border-slate-100">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E4572E] text-xs font-black text-white shrink-0">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E16B2D] text-xs font-black text-white shrink-0">
                       1
                     </span>
                     <h2 className="text-base sm:text-lg font-bold text-slate-900">Passengers &amp; Accommodation</h2>
@@ -1457,7 +1457,7 @@ export default function DynamicTourBookingPage() {
                     <button
                       type="button"
                       onClick={handleContinueStep1}
-                      className="rounded-lg bg-[#E4572E] px-7 py-3 text-xs sm:text-sm font-bold text-white transition hover:bg-[#cf4b24] active:scale-[0.99] flex items-center justify-center gap-1.5"
+                      className="rounded-lg bg-[#E16B2D] px-7 py-3 text-xs sm:text-sm font-bold text-white transition hover:bg-[#cf4b24] active:scale-[0.99] flex items-center justify-center gap-1.5"
                     >
                       <span>Continue to passenger details</span>
                       <span>➜</span>
@@ -1483,7 +1483,7 @@ export default function DynamicTourBookingPage() {
               {step === 2 ? (
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs">
                   <div className="flex items-center gap-3 pb-5 border-b border-slate-100">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E4572E] text-xs font-black text-white shrink-0">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E16B2D] text-xs font-black text-white shrink-0">
                       2
                     </span>
                     <h2 className="text-base sm:text-lg font-bold text-slate-900">Passenger Details</h2>
@@ -1698,7 +1698,7 @@ export default function DynamicTourBookingPage() {
                     <button
                       type="button"
                       onClick={handleContinueStep2}
-                      className="rounded-lg bg-[#E4572E] px-7 py-3 text-xs sm:text-sm font-bold text-white transition hover:bg-[#cf4b24] active:scale-[0.99] flex items-center gap-1.5"
+                      className="rounded-lg bg-[#E16B2D] px-7 py-3 text-xs sm:text-sm font-bold text-white transition hover:bg-[#cf4b24] active:scale-[0.99] flex items-center gap-1.5"
                     >
                       <span>Continue to Payment details</span>
                       <span>➜</span>
@@ -1733,7 +1733,7 @@ export default function DynamicTourBookingPage() {
               {step === 3 ? (
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs space-y-6">
                   <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E4572E] text-xs font-black text-white shrink-0">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E16B2D] text-xs font-black text-white shrink-0">
                       3
                     </span>
                     <h2 className="text-base sm:text-lg font-bold text-slate-900">Payment</h2>
@@ -1949,7 +1949,7 @@ export default function DynamicTourBookingPage() {
                         type="checkbox"
                         checked={acceptTerms}
                         onChange={(e) => setAcceptTerms(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E4572E] focus:ring-[#E4572E] accent-[#E4572E]"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E16B2D] focus:ring-[#E16B2D] accent-[#E16B2D]"
                       />
                       <span className="leading-relaxed">
                         I accept Tourvaa{" "}
@@ -1965,7 +1965,7 @@ export default function DynamicTourBookingPage() {
                         type="checkbox"
                         checked={subscribeNewsletter}
                         onChange={(e) => setSubscribeNewsletter(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E4572E] focus:ring-[#E4572E] accent-[#E4572E]"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E16B2D] focus:ring-[#E16B2D] accent-[#E16B2D]"
                       />
                       <span className="leading-relaxed">Subscribe to our newsletter for the latest offers &amp; new trips</span>
                     </label>
@@ -1983,7 +1983,7 @@ export default function DynamicTourBookingPage() {
                       type="button"
                       onClick={handleConfirmAndPay}
                       disabled={!acceptTerms || paymentSubmitting}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E4572E] hover:bg-[#cf4b24] py-4 px-6 text-sm font-black text-white shadow-md shadow-orange-600/15 transition-all duration-150 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E16B2D] hover:bg-[#cf4b24] py-4 px-6 text-sm font-black text-white shadow-md shadow-orange-600/15 transition-all duration-150 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {paymentSubmitting ? (
                         <>
