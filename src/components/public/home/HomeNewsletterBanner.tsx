@@ -89,7 +89,7 @@ export default function HomeNewsletterBanner({
   return (
     <section className="w-full my-4 sm:my-6">
       <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8">
-        <div className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] bg-[#E8E8E8] border border-slate-300/60 p-6 sm:p-8 lg:p-10 shadow-xs transition-all">
+        <div className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] bg-[#FFF8F6] border border-[#FCDFD7] p-6 sm:p-8 lg:p-10 shadow-xs transition-all">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             {/* Left Content */}
             <div className="max-w-xl text-left">
@@ -98,7 +98,7 @@ export default function HomeNewsletterBanner({
                   {badge}
                 </span>
               )}
-              <h2 className="mt-2.5 text-2xl sm:text-3xl lg:text-[32px] font-bold text-slate-900 tracking-tight leading-tight">
+              <h2 className="mt-2.5 text-2xl sm:text-3xl lg:text-[32px] font-semibold text-slate-900 tracking-tight leading-tight">
                 {heading}
               </h2>
               <p className="mt-2 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed max-w-lg">
@@ -119,7 +119,7 @@ export default function HomeNewsletterBanner({
                     placeholder="Enter Your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-11 sm:h-12 w-full rounded-lg border border-slate-300 bg-[#E5E5E5] px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-slate-500 transition-colors"
+                    className="h-11 sm:h-12 w-full rounded-lg border border-[#FCDFD7] bg-white px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-[#DF6951] transition-colors"
                   />
                 </div>
                 <button

@@ -876,7 +876,8 @@ export default function DynamicTourBookingPage() {
   const startPayment = async (booking: { id: number; amount_pending: string; currency: string }, amountOverride?: string) => {
     setPendingBooking(booking);
     const base = `${window.location.origin}/${isAgent ? "agent" : "customer"}/bookings/${booking.id}`;
-    const common = { booking_id: booking.id, amount: amountOverride || booking.amount_pending, currency: booking.currency, test_only: true };
+    const testOnly = gateway === "stripe" ? Boolean(gateways?.stripe_test) : Boolean(gateways?.paypal_test);
+    const common = { booking_id: booking.id, amount: amountOverride || booking.amount_pending, currency: booking.currency, test_only: testOnly };
     if (gateway === "stripe") {
       const { data } = await api.post("/payments/stripe/create-session", {
         ...common, success_url: `${base}?payment=${isAgent ? "stripe_success" : "success"}&session_id={CHECKOUT_SESSION_ID}`,

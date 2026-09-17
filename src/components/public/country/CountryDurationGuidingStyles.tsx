@@ -46,137 +46,165 @@ export default function CountryDurationGuidingStyles({
       <section className="py-12 sm:py-16 border-b border-slate-100">
         <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
           <div className="text-left mb-8">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
               Find your perfect duration
             </h2>
             <p className="mt-1.5 text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
-              Tours curated by length to match your holiday time in {info.country_name}.
+              Expertly planned itineraries help you make the most of every day.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Card 1: 2-6 Days (Blue Gradient) */}
-            <div className="relative flex flex-col justify-between overflow-hidden rounded-[24px] bg-gradient-to-br from-blue-400 via-sky-400 to-sky-500 p-6 text-white shadow-xs transition hover:shadow-md hover:-translate-y-1">
-              <div>
+            {/* Card 1: 2-6 Days (Blue) */}
+            <div className="group flex flex-col justify-between overflow-hidden rounded-2xl shadow-2xs transition hover:-translate-y-1 hover:shadow-md">
+              <div className="rounded-t-2xl bg-[#4387F6] p-5 text-white flex flex-col justify-between h-[155px]">
                 <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white">
-                    Short break
+                  <span className="rounded-full bg-white/20 backdrop-blur-xs px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                    Quick Escape
                   </span>
-                  <Clock size={16} className="text-white/80" />
+                  <span className="rounded-full bg-white/20 backdrop-blur-xs px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                    100 trips
+                  </span>
                 </div>
 
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-                    2-6
-                  </span>
-                  <span className="text-sm font-bold text-white/90">Days</span>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <span className="block text-[11px] font-medium text-white/80">2-6 Days</span>
+                    <span className="text-3xl sm:text-4xl font-bold tracking-tight text-white">2-6</span>
+                  </div>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white">
+                    <Clock size={18} />
+                  </div>
                 </div>
-
-                <p className="mt-2 text-xs font-semibold text-white/90">
-                  Highlights &amp; city stopovers
-                </p>
               </div>
 
-              <a
-                href="#section-tours"
-                onClick={(e) => handleDurationClick(e, "short")}
-                className="mt-6 inline-flex items-center justify-center rounded-full bg-[#0A1128] hover:bg-slate-850 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-              >
-                <span>View tours</span>
-              </a>
+              <div className="rounded-b-2xl bg-white p-5 border border-t-0 border-slate-100 shadow-xs flex flex-col justify-between min-h-[115px]">
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  See the highlights of {info.country_name} in one week
+                </p>
+                <a
+                  href="#section-tours"
+                  onClick={(e) => handleDurationClick(e, "short")}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] hover:bg-[#132c50] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
+                >
+                  <span>Explore</span>
+                  <ArrowRight size={12} />
+                </a>
+              </div>
             </div>
 
-            {/* Card 2: 7-10 Days (Mint Green Gradient) */}
-            <div className="relative flex flex-col justify-between overflow-hidden rounded-[24px] bg-gradient-to-br from-emerald-200 via-teal-300 to-emerald-400 p-6 text-slate-950 shadow-xs transition hover:shadow-md hover:-translate-y-1">
-              <div>
+            {/* Card 2: 7-10 Days (Mint Green) */}
+            <div className="group flex flex-col justify-between overflow-hidden rounded-2xl shadow-2xs transition hover:-translate-y-1 hover:shadow-md">
+              <div className="rounded-t-2xl bg-[#7FE1C3] p-5 text-slate-900 flex flex-col justify-between h-[155px]">
                 <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-black/10 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-900">
-                    Popular
+                  <span className="rounded-full bg-black/10 backdrop-blur-xs px-2.5 py-0.5 text-[11px] font-semibold text-slate-900">
+                    Classic Journey
                   </span>
-                  <Compass size={16} className="text-slate-800" />
+                  <span className="rounded-full bg-black/10 backdrop-blur-xs px-2.5 py-0.5 text-[11px] font-semibold text-slate-900">
+                    167 trips
+                  </span>
                 </div>
 
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl sm:text-5xl font-black tracking-tight text-slate-950">
-                    7-10
-                  </span>
-                  <span className="text-sm font-bold text-slate-800">Days</span>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <span className="block text-[11px] font-medium text-slate-800/80">7-10 Days</span>
+                    <span className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-950">7-10</span>
+                  </div>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/10 text-slate-900">
+                    <Compass size={18} />
+                  </div>
                 </div>
-
-                <p className="mt-2 text-xs font-semibold text-slate-850">
-                  Classic country discovery
-                </p>
               </div>
 
-              <a
-                href="#section-tours"
-                onClick={(e) => handleDurationClick(e, "medium")}
-                className="mt-6 inline-flex items-center justify-center rounded-full bg-[#0A1128] hover:bg-slate-850 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-              >
-                <span>View tours</span>
-              </a>
+              <div className="rounded-b-2xl bg-white p-5 border border-t-0 border-slate-100 shadow-xs flex flex-col justify-between min-h-[115px]">
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Discover {info.country_name} in 7-10 days
+                </p>
+                <a
+                  href="#section-tours"
+                  onClick={(e) => handleDurationClick(e, "medium")}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] hover:bg-[#132c50] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
+                >
+                  <span>Explore</span>
+                  <ArrowRight size={12} />
+                </a>
+              </div>
             </div>
 
-            {/* Card 3: 11-14 Days (Amber/Yellow Gradient) */}
-            <div className="relative flex flex-col justify-between overflow-hidden rounded-[24px] bg-gradient-to-br from-amber-200 via-yellow-300 to-amber-400 p-6 text-slate-950 shadow-xs transition hover:shadow-md hover:-translate-y-1">
-              <div>
+            {/* Card 3: 11-14 Days (Yellow) */}
+            <div className="group flex flex-col justify-between overflow-hidden rounded-2xl shadow-2xs transition hover:-translate-y-1 hover:shadow-md">
+              <div className="rounded-t-2xl bg-[#FEE387] p-5 text-slate-900 flex flex-col justify-between h-[155px]">
                 <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-black/10 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-900">
-                    In-depth
+                  <span className="rounded-full bg-black/10 backdrop-blur-xs px-2.5 py-0.5 text-[11px] font-semibold text-slate-900">
+                    Grand Trips
                   </span>
-                  <Calendar size={16} className="text-slate-800" />
+                  <span className="rounded-full bg-black/10 backdrop-blur-xs px-2.5 py-0.5 text-[11px] font-semibold text-slate-900">
+                    61 trips
+                  </span>
                 </div>
 
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl sm:text-5xl font-black tracking-tight text-slate-950">
-                    11-14
-                  </span>
-                  <span className="text-sm font-bold text-slate-800">Days</span>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <span className="block text-[11px] font-medium text-slate-800/80">11-14 Days</span>
+                    <span className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-950">11-14</span>
+                  </div>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/10 text-slate-900">
+                    <Calendar size={18} />
+                  </div>
                 </div>
-
-                <p className="mt-2 text-xs font-semibold text-slate-850">
-                  Grand cultural expeditions
-                </p>
               </div>
 
-              <a
-                href="#section-tours"
-                onClick={(e) => handleDurationClick(e, "long")}
-                className="mt-6 inline-flex items-center justify-center rounded-full bg-[#0A1128] hover:bg-slate-850 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-              >
-                <span>View tours</span>
-              </a>
+              <div className="rounded-b-2xl bg-white p-5 border border-t-0 border-slate-100 shadow-xs flex flex-col justify-between min-h-[115px]">
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Do more and see more of {info.country_name}
+                </p>
+                <a
+                  href="#section-tours"
+                  onClick={(e) => handleDurationClick(e, "long")}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] hover:bg-[#132c50] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
+                >
+                  <span>Explore</span>
+                  <ArrowRight size={12} />
+                </a>
+              </div>
             </div>
 
-            {/* Card 4: 15+ Days (Peach/Coral Gradient) */}
-            <div className="relative flex flex-col justify-between overflow-hidden rounded-[24px] bg-gradient-to-br from-orange-300 via-rose-300 to-rose-400 p-6 text-white shadow-xs transition hover:shadow-md hover:-translate-y-1">
-              <div>
+            {/* Card 4: 15+ Days (Coral/Orange) */}
+            <div className="group flex flex-col justify-between overflow-hidden rounded-2xl shadow-2xs transition hover:-translate-y-1 hover:shadow-md">
+              <div className="rounded-t-2xl bg-[#FFA884] p-5 text-white flex flex-col justify-between h-[155px]">
                 <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white">
-                    Epic journey
+                  <span className="rounded-full bg-white/20 backdrop-blur-xs px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                    Epic Adventure
                   </span>
-                  <Globe size={16} className="text-white/80" />
+                  <span className="rounded-full bg-white/20 backdrop-blur-xs px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                    60 trips
+                  </span>
                 </div>
 
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-                    15+
-                  </span>
-                  <span className="text-sm font-bold text-white/90">Days</span>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <span className="block text-[11px] font-medium text-white/80">15+ Days</span>
+                    <span className="text-3xl sm:text-4xl font-bold tracking-tight text-white">15+</span>
+                  </div>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white">
+                    <Globe size={18} />
+                  </div>
                 </div>
-
-                <p className="mt-2 text-xs font-semibold text-white/90">
-                  Comprehensive grand tours
-                </p>
               </div>
 
-              <a
-                href="#section-tours"
-                onClick={(e) => handleDurationClick(e, "epic")}
-                className="mt-6 inline-flex items-center justify-center rounded-full bg-[#0A1128] hover:bg-slate-850 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-              >
-                <span>View tours</span>
-              </a>
+              <div className="rounded-b-2xl bg-white p-5 border border-t-0 border-slate-100 shadow-xs flex flex-col justify-between min-h-[115px]">
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Epic {info.country_name} adventures to remember
+                </p>
+                <a
+                  href="#section-tours"
+                  onClick={(e) => handleDurationClick(e, "epic")}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] hover:bg-[#132c50] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
+                >
+                  <span>Explore</span>
+                  <ArrowRight size={12} />
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -186,7 +214,7 @@ export default function CountryDurationGuidingStyles({
       <section className="py-12 sm:py-16 border-b border-slate-100">
         <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto mb-10">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
               Choose your guiding style
             </h2>
             <p className="mt-1.5 text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">

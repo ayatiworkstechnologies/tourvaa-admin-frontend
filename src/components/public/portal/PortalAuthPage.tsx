@@ -30,7 +30,7 @@ import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
 import { useAuthContext } from "@/providers/AuthProvider";
 import type { PortalTheme } from "@/components/public/portal/PortalPublicHeader";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
-import { dialCodeForIso } from "@/lib/utils/phoneCountries";
+import { dialCodeForIso, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 
 export type PortalAuthConfig = {
@@ -300,8 +300,8 @@ function maskEmail(email: string) {
 function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: PortalAuthConfig; safeRedirect: string | null; onSwitchToLogin: () => void }) {
   const t = THEME[config.theme];
   const key = PENDING_KEY(config.accountType);
-  const [form, setForm] = useState({ first_name: "", email: "", country_code: "+91", mobile_number: "", accepted_terms: false });
-  const [phoneIso, setPhoneIso] = useState<CountryCode>("IN");
+  const [form, setForm] = useState({ first_name: "", email: "", country_code: "", mobile_number: "", accepted_terms: false });
+  const [phoneIso, setPhoneIso] = useState<CountryCode | "">("");
   const [sentEmail, setSentEmail] = useState(() => readPending(key)?.email ?? "");
   const [changeToken, setChangeToken] = useState(() => readPending(key)?.changeToken ?? "");
   const [error, setError] = useState("");
@@ -324,6 +324,8 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setError("");
     if (!validateEmail(form.email)) return setError("Enter a valid email address.");
+    if (!phoneIso) return setError("Select your country before entering your mobile number.");
+    if (!validatePhoneForCountry(phoneIso, form.mobile_number)) return setError("Enter a valid mobile number for the selected country.");
     if (!form.accepted_terms) return setError("Accept the Terms and Privacy Policy to continue.");
     setLoading(true);
     try {
@@ -334,7 +336,7 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
       } else {
         const res = await api.post("/auth/register", {
           first_name: form.first_name, email,
-          country_code: form.country_code, mobile_number: form.mobile_number,
+          country_iso: phoneIso, country_code: form.country_code, mobile_number: form.mobile_number,
           accepted_terms: form.accepted_terms, account_type: config.accountType, redirect: safeRedirect,
         });
         startCooldown(email, res.data.data.registration_change_token || "");

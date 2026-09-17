@@ -28,6 +28,8 @@ import {
   LuGlobe as Globe,
   LuFlag as Flag,
   LuWallet as Wallet,
+  LuBox as Box,
+  LuMap as MapIcon,
 } from "react-icons/lu";
 import { PublicTourDetail } from "@/lib/api/publicClient";
 import { destinationUrl } from "@/lib/utils/tourUrl";
@@ -451,6 +453,22 @@ export default function TourDetailExperience({
     return generated;
   }, [tour.itineraries, galleryPhotos, dayCount, nightCount, startLocation, finishLocation, destination, title]);
 
+  const allDaysExpanded = useMemo(() => {
+    return itineraryList.length > 0 && itineraryList.every((d) => openDays[d.day]);
+  }, [itineraryList, openDays]);
+
+  const toggleAllDays = () => {
+    if (allDaysExpanded) {
+      setOpenDays({});
+    } else {
+      const next: Record<number, boolean> = {};
+      itineraryList.forEach((d) => {
+        next[d.day] = true;
+      });
+      setOpenDays(next);
+    }
+  };
+
   // Highlights
   const highlightsList = useMemo(() => {
     if (tour.highlights && tour.highlights.length > 0) {
@@ -552,9 +570,9 @@ export default function TourDetailExperience({
     <main className="min-h-screen bg-white pb-24 pt-4 text-slate-900 font-sans">
       {modal}
 
-      <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1400px] px-5">
         {/* ── 1. TOP DESTINATION HERO BANNER ── */}
-        <section className="relative h-[340px] sm:h-[380px] w-full overflow-hidden rounded-[20px] bg-slate-900 shadow-md">
+        <section className="relative h-[480px] min-h-[480px] w-full overflow-hidden rounded-[20px] bg-slate-900 shadow-md">
           <Image
             src={tour.banner_image ? mediaUrl(tour.banner_image) : (galleryPhotos[0] || "/images/compare-hero.jpg")}
             alt={`${destination} Tours`}
@@ -568,7 +586,7 @@ export default function TourDetailExperience({
           {/* Centered Glassmorphic Hero Card */}
           <div className="absolute inset-0 flex flex-col justify-center p-6 sm:p-10">
             <div className="max-w-3xl rounded-2xl bg-black/60 p-6 sm:p-8 backdrop-blur-md border border-white/15 text-white shadow-2xl">
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
                 {destination} Tours
               </h1>
               <p className="mt-2.5 text-xs sm:text-sm font-medium leading-relaxed text-white/90">
@@ -597,7 +615,7 @@ export default function TourDetailExperience({
 
         {/* ── 2. TOUR TITLE & BADGES ── */}
         <section className="mt-8">
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-950 tracking-tight">
             {title}
           </h2>
 
@@ -628,34 +646,34 @@ export default function TourDetailExperience({
           </div>
         </section>
 
-        {/* ── 3. PHOTO GALLERY GRID ── */}
+        {/* ── 3. PHOTO GALLERY GRID (3x2 Figma Layout) ── */}
         <section className="mt-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {galleryPhotos.map((photo, idx) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-4">
+            {galleryPhotos.slice(0, 6).map((photo, idx) => {
               const galleryItem = tour.gallery.find((item) => mediaUrl(item.image_url) === photo);
               const caption = galleryItem?.title || galleryItem?.caption;
               return (
                 <div
                   key={idx}
-                  className="group relative h-36 sm:h-44 overflow-hidden rounded-xl bg-slate-100 shadow-2xs"
+                  className="group relative h-48 sm:h-56 md:h-64 overflow-hidden rounded-2xl bg-slate-100 shadow-2xs"
                 >
                   <Image
                     src={photo}
                     alt={galleryItem?.alt_text || tour.image_alt_text || `${title} view ${idx + 1}`}
                     fill
-                    sizes="(min-width: 640px) 33vw, 50vw"
+                    sizes="(min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
                     className="object-cover transition duration-500 group-hover:scale-105"
                   />
                   {caption && (
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 to-transparent p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      <p className="line-clamp-2 text-[10px] font-semibold text-white">{caption}</p>
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <p className="line-clamp-2 text-xs font-semibold text-white">{caption}</p>
                     </div>
                   )}
                 </div>
               );
             })}
           </div>
-          <p className="mt-3 text-xs font-medium text-slate-500 leading-relaxed">
+          <p className="mt-3.5 text-xs sm:text-sm font-medium text-slate-600 leading-relaxed">
             {destination} tour starting in {startLocation}{finishLocation && finishLocation !== startLocation ? ` and concluding in ${finishLocation}` : ""} with tour accommodation, professional guide, transport and more.
           </p>
           {(tour.map_image || tour.tour_video_url || tour.brochure_pdf) && (
@@ -686,7 +704,7 @@ export default function TourDetailExperience({
             {/* A. OVERVIEW */}
             <div>
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
+                <h3 className="text-xl sm:text-2xl font-semibold text-slate-950 flex items-center gap-2">
                   <span>{title}</span>
                   {countryFlag && <span>{countryFlag}</span>}
                 </h3>
@@ -725,7 +743,7 @@ export default function TourDetailExperience({
 
             {/* B. 🧭 TRAVEL ESSENTIALS */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
-              <h3 className="flex items-center gap-2 text-base font-black text-slate-900">
+              <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
                 <Compass size={18} className="text-blue-600" />
                 <span>Travel Essentials</span>
               </h3>
@@ -899,7 +917,7 @@ export default function TourDetailExperience({
             {/* C. ⭐ TOUR HIGHLIGHTS */}
             <div>
               <div className="flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-base font-black text-slate-900">
+                <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
                   <Star size={18} className="fill-amber-400 text-amber-400" />
                   <span>TOUR HIGHLIGHTS</span>
                 </h3>
@@ -928,51 +946,63 @@ export default function TourDetailExperience({
 
             {/* D. 🛡️ YOUR TOUR PACKAGE DETAILS (INCLUDED / NOT INCLUDED) */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
-              <h3 className="flex items-center gap-2 text-base font-black text-slate-900">
-                <ShieldCheck size={18} className="text-blue-600" />
-                <span>Your Tour Package Details</span>
-              </h3>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <Box size={18} />
+                  </span>
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">
+                    Your Tour Package Details
+                  </h3>
+                </div>
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700 uppercase tracking-wider">
+                  {destination.toUpperCase()} REGION
+                </span>
+              </div>
 
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 divide-y sm:divide-y-0 sm:divide-x sm:divide-slate-100">
                 {/* WHAT'S INCLUDED */}
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
+                <div className="sm:pr-4">
+                  <div className="flex items-center gap-2 mb-4">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
                       ✓
                     </span>
                     <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider text-emerald-800">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-800">
                         What&apos;s Included
                       </h4>
                       <p className="text-[10px] text-slate-400 font-medium">Included in price</p>
                     </div>
                   </div>
 
-                  <ul className="space-y-2.5 text-xs text-slate-700">
+                  <ul className="divide-y divide-slate-100 text-xs text-slate-700">
                     {tour.inclusions && tour.inclusions.length > 0 ? (
                       tour.inclusions.map((inc, i) => (
-                        <li key={i} className="flex items-start gap-2">
+                        <li key={i} className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0">
                           {renderItemIcon(inc.icon, Check, "text-emerald-600")}
-                          <span>{inc.text}{inc.description ? <small className="mt-0.5 block text-[11px] text-slate-500">{inc.description}</small> : null}</span>
+                          <span>
+                            <span className="font-semibold text-slate-800">{inc.text}</span>
+                            {inc.description ? <small className="mt-0.5 block text-[11px] text-slate-500 font-normal">{inc.description}</small> : null}
+                          </span>
                         </li>
                       ))
                     ) : (
                       <>
-                        <li className="flex items-start gap-2">
+                        <li className="flex items-start gap-2.5 py-2.5 first:pt-0">
                           <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                          <span><b>Accommodation:</b> Selected hotels &amp; lodging as per itinerary</span>
+                          <span><span className="font-semibold text-slate-800">Accommodation:</span> Selected hotels &amp; lodging as per itinerary</span>
                         </li>
-                        <li className="flex items-start gap-2">
+                        <li className="flex items-start gap-2.5 py-2.5">
                           <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                          <span><b>Transport:</b> All scheduled sightseeing &amp; touring transportation</span>
+                          <span><span className="font-semibold text-slate-800">Transport:</span> All scheduled sightseeing &amp; touring transportation</span>
                         </li>
-                        <li className="flex items-start gap-2">
+                        <li className="flex items-start gap-2.5 py-2.5">
                           <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                          <span><b>Guide &amp; Leader:</b> Expert local tour leader services</span>
+                          <span><span className="font-semibold text-slate-800">Guide &amp; Leader:</span> Expert local tour leader services</span>
                         </li>
-                        <li className="flex items-start gap-2">
+                        <li className="flex items-start gap-2.5 py-2.5 last:pb-0">
                           <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                          <span><b>Support:</b> 24/7 dedicated customer assistance throughout the trip</span>
+                          <span><span className="font-semibold text-slate-800">Support:</span> 24/7 dedicated customer assistance throughout the trip</span>
                         </li>
                       </>
                     )}
@@ -980,44 +1010,47 @@ export default function TourDetailExperience({
                 </div>
 
                 {/* WHAT'S NOT INCLUDED */}
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
+                <div className="pt-6 sm:pt-0 sm:pl-8">
+                  <div className="flex items-center gap-2 mb-4">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-100 text-rose-600 text-xs font-bold">
                       ✕
                     </span>
                     <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider text-rose-700">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-rose-700">
                         What&apos;s Not Included
                       </h4>
                       <p className="text-[10px] text-slate-400 font-medium">Extra / Excluded</p>
                     </div>
                   </div>
 
-                  <ul className="space-y-2.5 text-xs text-slate-700">
+                  <ul className="divide-y divide-slate-100 text-xs text-slate-700">
                     {tour.exclusions && tour.exclusions.length > 0 ? (
                       tour.exclusions.map((exc, i) => (
-                        <li key={i} className="flex items-start gap-2">
+                        <li key={i} className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0">
                           {renderItemIcon(exc.icon, X, "text-rose-500")}
-                          <span>{exc.text}{exc.description ? <small className="mt-0.5 block text-[11px] text-slate-500">{exc.description}</small> : null}</span>
+                          <span>
+                            <span className="font-semibold text-slate-800">{exc.text}</span>
+                            {exc.description ? <small className="mt-0.5 block text-[11px] text-slate-500 font-normal">{exc.description}</small> : null}
+                          </span>
                         </li>
                       ))
                     ) : (
                       <>
-                        <li className="flex items-start gap-2">
+                        <li className="flex items-start gap-2.5 py-2.5 first:pt-0">
                           <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                          <span><b>Flights &amp; Visas:</b> International airfare and personal entry visas</span>
+                          <span><span className="font-semibold text-slate-800">Flights &amp; Visas:</span> International airfare and personal entry visas</span>
                         </li>
-                        <li className="flex items-start gap-2">
+                        <li className="flex items-start gap-2.5 py-2.5">
                           <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                          <span><b>Travel Insurance:</b> Comprehensive medical and travel coverage</span>
+                          <span><span className="font-semibold text-slate-800">Travel Insurance:</span> Comprehensive medical and travel coverage</span>
                         </li>
-                        <li className="flex items-start gap-2">
+                        <li className="flex items-start gap-2.5 py-2.5">
                           <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                          <span><b>Personal Expenses:</b> Optional activities, meals, and beverages not specified</span>
+                          <span><span className="font-semibold text-slate-800">Personal Expenses:</span> Optional activities, meals, and beverages not specified</span>
                         </li>
-                        <li className="flex items-start gap-2">
+                        <li className="flex items-start gap-2.5 py-2.5 last:pb-0">
                           <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                          <span><b>Gratuities:</b> Tips for drivers and guides</span>
+                          <span><span className="font-semibold text-slate-800">Gratuities:</span> Tips for drivers and guides</span>
                         </li>
                       </>
                     )}
@@ -1075,32 +1108,49 @@ export default function TourDetailExperience({
 
             {/* E. 📅 ITINERARY ACCORDION */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs">
-              <div className="flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-base font-black text-slate-900">
-                  <Calendar size={18} className="text-blue-600" />
-                  <span>Itinerary</span>
-                </h3>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <MapIcon size={18} />
+                  </span>
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">
+                    Itinerary
+                  </h3>
+                  <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                    {dayCount} DAYS
+                  </span>
+                </div>
 
-                {/* Detailed vs Overview Tabs */}
-                <div className="flex items-center rounded-lg border border-slate-200 p-0.5 text-xs font-bold">
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setItineraryMode("detailed")}
-                    className={`rounded-md px-3 py-1 transition ${
-                      itineraryMode === "detailed" ? "bg-[#0B1F3A] text-white" : "text-slate-600 hover:text-slate-900"
-                    }`}
+                    onClick={toggleAllDays}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline transition cursor-pointer"
                   >
-                    Detailed
+                    {allDaysExpanded ? "Collapse all" : "Expand all"}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setItineraryMode("overview")}
-                    className={`rounded-md px-3 py-1 transition ${
-                      itineraryMode === "overview" ? "bg-[#0B1F3A] text-white" : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Overview
-                  </button>
+
+                  {/* Detailed vs Overview Tabs */}
+                  <div className="flex items-center rounded-lg border border-slate-200 p-0.5 text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setItineraryMode("detailed")}
+                      className={`rounded-md px-3 py-1 transition ${
+                        itineraryMode === "detailed" ? "bg-[#0B1F3A] text-white" : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Detailed
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setItineraryMode("overview")}
+                      className={`rounded-md px-3 py-1 transition ${
+                        itineraryMode === "overview" ? "bg-[#0B1F3A] text-white" : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Overview
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1119,25 +1169,27 @@ export default function TourDetailExperience({
                         className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-slate-50/60"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+                          <span className="rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 uppercase tracking-wider">
                             DAY 0{day.day}
                           </span>
-                          <span className="text-xs sm:text-sm font-bold text-slate-900">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-900">
                             {day.title}
                           </span>
                         </div>
-                        {isOpen ? (
-                          <ChevronUp size={16} className="text-blue-600 shrink-0" />
-                        ) : (
-                          <ChevronDown size={16} className="text-slate-400 shrink-0" />
-                        )}
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition shrink-0">
+                          {isOpen ? (
+                            <ChevronUp size={15} />
+                          ) : (
+                            <ChevronDown size={15} />
+                          )}
+                        </span>
                       </button>
 
                       {isOpen && (
                         <div className="border-t border-slate-100 bg-[#FAFBFD] px-5 py-5 space-y-4">
                           {day.summary && (
                             <div className="rounded-xl bg-blue-50/80 border border-blue-100/90 px-4 py-3">
-                              <p className="text-xs sm:text-[13px] font-bold text-blue-950 flex items-center gap-2">
+                              <p className="text-xs sm:text-[13px] font-medium text-blue-950 flex items-center gap-2">
                                 <Sparkles size={15} className="text-blue-600 shrink-0 fill-blue-600/20" />
                                 <span>{day.summary}</span>
                               </p>
@@ -1149,77 +1201,67 @@ export default function TourDetailExperience({
                           )}
 
                           {itineraryMode === "overview" && !day.summary && day.detail && (
-                            <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 line-clamp-3">
+                            <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 line-clamp-3 font-normal">
                               {day.detail}
                             </p>
                           )}
 
-                          {/* Day facts */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                            {day.startPoint && (
-                              <div className="flex items-start gap-2">
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                  <MapPin size={13} />
-                                </span>
-                                <div>
-                                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Start Point</p>
-                                  <p className="text-slate-700 font-medium">{day.startPoint}</p>
-                                </div>
+                          {/* Day facts: 3 key items (Start Point, Meals, Accommodation) */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                            <div className="flex items-start gap-2.5 rounded-lg border border-slate-200/70 bg-white p-3">
+                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                                <MapPin size={14} />
+                              </span>
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Start Point</p>
+                                <p className="text-slate-700 font-medium truncate">{day.startPoint || `${startLocation} Meeting Point`}</p>
                               </div>
-                            )}
-                            {(day.startTime || day.endTime) && (
-                              <div className="flex items-start gap-2">
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                  <Calendar size={13} />
-                                </span>
-                                <div>
-                                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Timing</p>
-                                  <p className="text-slate-700 font-medium">{[day.startTime, day.endTime].filter(Boolean).join(" – ") || "—"}</p>
-                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-2.5 rounded-lg border border-slate-200/70 bg-white p-3">
+                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                                <Utensils size={14} />
+                              </span>
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Meals</p>
+                                <p className="text-slate-700 font-medium truncate">
+                                  {day.meals.length > 0 ? day.meals.join(", ") : "Included per plan"}
+                                </p>
                               </div>
-                            )}
-                            {(day.transport || day.travelTime) && (
-                              <div className="flex items-start gap-2">
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                  <Bus size={13} />
-                                </span>
-                                <div>
-                                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Transport</p>
-                                  <p className="text-slate-700 font-medium">{[day.transport, day.travelTime].filter(Boolean).join(" · ")}</p>
-                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-2.5 rounded-lg border border-slate-200/70 bg-white p-3">
+                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                                <Hotel size={14} />
+                              </span>
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Accommodation</p>
+                                <p className="text-slate-700 font-medium truncate">{day.accommodation || "Selected Hotel / Lodge"}</p>
                               </div>
-                            )}
-                            {day.accommodation && (
-                              <div className="flex items-start gap-2">
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                  <Hotel size={13} />
-                                </span>
-                                <div>
-                                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accommodation</p>
-                                  <p className="text-slate-700 font-medium">{day.accommodation}</p>
-                                </div>
-                              </div>
-                            )}
+                            </div>
                           </div>
 
-                          {day.meals.length > 0 && (
-                            <div className="flex items-start gap-2">
-                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                <Utensils size={13} />
-                              </span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {day.meals.map((meal, mIdx) => (
-                                  <span key={mIdx} className="rounded-full bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-700">
-                                    {meal}
-                                  </span>
-                                ))}
-                              </div>
+                          {/* Extra info row (timing, transport) if available */}
+                          {((day.startTime || day.endTime) || day.transport) && (
+                            <div className="flex flex-wrap gap-4 text-xs text-slate-600 px-1 font-medium">
+                              {(day.startTime || day.endTime) && (
+                                <span className="flex items-center gap-1.5">
+                                  <Calendar size={13} className="text-blue-500" />
+                                  <span>{[day.startTime, day.endTime].filter(Boolean).join(" – ")}</span>
+                                </span>
+                              )}
+                              {day.transport && (
+                                <span className="flex items-center gap-1.5">
+                                  <Bus size={13} className="text-blue-500" />
+                                  <span>{day.transport}</span>
+                                </span>
+                              )}
                             </div>
                           )}
 
                           {day.activities.length > 0 && (
                             <div>
-                              <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Included Activities</p>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Included Activities</p>
                               <ul className="space-y-1.5 text-xs">
                                 {day.activities.map((activity, aIdx) => (
                                   <li key={aIdx} className="flex items-start gap-2">
@@ -1231,19 +1273,41 @@ export default function TourDetailExperience({
                             </div>
                           )}
 
+                          {/* Optional Activities tinted box */}
                           {day.optionalActivities.length > 0 && (
-                            <div>
-                              <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Optional Activities</p>
+                            <div className="rounded-xl bg-violet-50/70 border border-violet-100/80 p-3.5">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-violet-700 mb-1.5">Optional Activities</p>
                               <ul className="space-y-1.5 text-xs">
                                 {day.optionalActivities.map((activity, oIdx) => (
                                   <li key={oIdx} className="flex items-start gap-2">
-                                    <Plus size={13} className="mt-0.5 shrink-0 text-blue-600 stroke-[3]" />
+                                    <Plus size={13} className="mt-0.5 shrink-0 text-violet-600 stroke-[3]" />
                                     <span className="text-slate-700 font-medium">{activity}</span>
                                   </li>
                                 ))}
                               </ul>
                             </div>
                           )}
+
+                          {/* 3 Preview photos side-by-side */}
+                          <div className="mt-3.5 grid grid-cols-3 gap-2 sm:gap-3">
+                            {(day.photos && day.photos.length >= 3
+                              ? day.photos.slice(0, 3)
+                              : galleryPhotos.slice(0, 3)
+                            ).map((imgUrl, pIdx) => (
+                              <div
+                                key={pIdx}
+                                className="relative h-20 sm:h-28 overflow-hidden rounded-xl bg-slate-100 shadow-2xs"
+                              >
+                                <Image
+                                  src={imgUrl}
+                                  alt={`${day.title} photo ${pIdx + 1}`}
+                                  fill
+                                  sizes="(max-width: 640px) 30vw, 150px"
+                                  className="object-cover transition duration-300 hover:scale-105"
+                                />
+                              </div>
+                            ))}
+                          </div>
 
                           {day.importantNotes && (
                             <p className="text-[11px] text-amber-700 font-medium bg-amber-50/60 p-2.5 rounded-lg border border-amber-200/50">
@@ -1321,10 +1385,10 @@ export default function TourDetailExperience({
 
           {/* ── RIGHT COLUMN: STICKY BOOKING WIDGET ── */}
           <aside id="booking-widget" className="sticky top-20 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-sm">
-            <h3 className="text-base font-bold text-slate-950">
+            <h3 className="text-base font-semibold text-slate-950">
               Book Your {destination} Adventure
             </h3>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 font-normal">
               Secure your preferred departure in just a few steps.
             </p>
 
@@ -1346,18 +1410,18 @@ export default function TourDetailExperience({
                 type="button"
                 disabled={safeMonthIndex <= 0}
                 onClick={() => setCurrentMonthIndex((prev) => Math.max(0, prev - 1))}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition disabled:opacity-30"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition disabled:opacity-30 cursor-pointer"
               >
                 <ChevronLeft size={16} />
               </button>
-              <span className="text-xs sm:text-sm font-bold text-slate-900">
+              <span className="text-xs sm:text-sm font-semibold text-slate-900">
                 {currentMonth.name}
               </span>
               <button
                 type="button"
                 disabled={safeMonthIndex >= monthGroups.length - 1}
                 onClick={() => setCurrentMonthIndex((prev) => Math.min(monthGroups.length - 1, prev + 1))}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition disabled:opacity-30"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition disabled:opacity-30 cursor-pointer"
               >
                 <ChevronRight size={16} />
               </button>
@@ -1372,18 +1436,18 @@ export default function TourDetailExperience({
                     key={dep.id}
                     type="button"
                     onClick={() => setSelectedDateId(dep.id)}
-                    className={`rounded-xl border p-2 text-center transition ${
+                    className={`rounded-xl border p-2.5 text-center transition cursor-pointer ${
                       isSelected
-                        ? "border-blue-400 bg-[#EEF5FF] ring-1 ring-blue-400"
+                        ? "border-blue-500 bg-[#EEF5FF] ring-1 ring-blue-500"
                         : "border-slate-200 bg-white hover:border-slate-300"
                     }`}
                   >
-                    <span className="block text-[11px] font-bold text-slate-900">
+                    <span className="block text-[11px] font-semibold text-slate-900">
                       {dep.date}
                     </span>
                     <span
                       className={`mt-0.5 block text-[10px] ${
-                        dep.urgent ? "font-semibold text-amber-600" : "text-slate-400"
+                        dep.urgent ? "font-medium text-amber-600" : "text-slate-400 font-normal"
                       }`}
                     >
                       {dep.seats}
@@ -1401,7 +1465,7 @@ export default function TourDetailExperience({
             {/* GROUP PRICING Section */}
             {pricingRows.length > 0 && (
             <div className="mt-5">
-              <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-900">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-900">
                 GROUP PRICING
               </h4>
               <div className="mt-2.5 space-y-2">
@@ -1414,33 +1478,29 @@ export default function TourDetailExperience({
                       key={`${row.persons_from}-${row.persons_to ?? "plus"}`}
                       type="button"
                       onClick={() => {
-                        // Move the traveller count into this tier's range
-                        // (clamped to actual seat availability) so the
-                        // highlighted tier and the WHO'S TRAVELLING? steppers
-                        // never disagree about what's being charged.
                         const target = Math.min(row.persons_from, maxTravellers);
                         setAdults(target);
                         setChildren(0);
                       }}
-                      className={`flex w-full items-center justify-between rounded-xl border p-3 transition ${
+                      className={`flex w-full items-center justify-between rounded-xl border p-3 transition cursor-pointer ${
                         selectedGroupTier === index
-                          ? "border-blue-400 bg-[#EEF5FF]"
+                          ? "border-blue-500 bg-[#EEF5FF] ring-1 ring-blue-500"
                           : "border-slate-200 bg-white hover:border-slate-300"
                       }`}
                     >
-                      <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
                         {groupTierLabel(row.persons_from, row.persons_to)}
                         {savePct > 0 && (
-                          <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black text-emerald-700">
+                          <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700">
                             Save {savePct}%
                           </span>
                         )}
                       </span>
                       <div className="text-right">
-                        <span className="text-xs sm:text-sm font-bold text-blue-600">
+                        <span className="text-xs sm:text-sm font-semibold text-blue-600">
                           {format(row.price_per_person, row.currency || tourCurrency)}
                         </span>
-                        <span className="block text-[9px] text-slate-400">Per person</span>
+                        <span className="block text-[9px] text-slate-400 font-normal">Per person</span>
                       </div>
                     </button>
                   );
@@ -1456,7 +1516,7 @@ export default function TourDetailExperience({
                   <button
                     type="button"
                     onClick={() => setCurrentMonthIndex(safeMonthIndex + 1)}
-                    className="text-[10px] font-medium text-blue-600 underline hover:text-blue-700"
+                    className="text-[10px] font-medium text-blue-600 underline hover:text-blue-700 cursor-pointer"
                   >
                     Find similar {destination} tours available in {monthGroups[safeMonthIndex + 1]?.name}
                   </button>
@@ -1470,34 +1530,34 @@ export default function TourDetailExperience({
             {/* WHO'S TRAVELLING? Section */}
             <div>
               <div className="flex items-center justify-between">
-                <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-900">
                   WHO&apos;S TRAVELLING?
                 </h4>
-                <span className="text-[10px] font-semibold text-slate-400">Max {maxTravellers} for this date</span>
+                <span className="text-[10px] font-medium text-slate-400">Max {maxTravellers} for this date</span>
               </div>
 
               <div className="mt-3 space-y-3 text-xs">
                 {/* Adults - capped by the selected departure's remaining seats */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-bold text-slate-900">Adults</p>
-                    <p className="text-[10px] text-slate-400">Ages 18 years and above</p>
+                    <p className="font-semibold text-slate-900">Adults</p>
+                    <p className="text-[10px] text-slate-400 font-normal">Ages 18 years and above</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       disabled={adults <= 1}
                       onClick={() => setAdults((a) => Math.max(1, a - 1))}
-                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                     >
                       <Minus size={11} />
                     </button>
-                    <span className="w-5 text-center font-bold text-slate-900">{adults}</span>
+                    <span className="w-5 text-center font-semibold text-slate-900">{adults}</span>
                     <button
                       type="button"
                       disabled={adults + children >= maxTravellers}
                       onClick={() => setAdults((a) => Math.min(maxTravellers - children, a + 1))}
-                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                     >
                       <Plus size={11} />
                     </button>
@@ -1507,24 +1567,24 @@ export default function TourDetailExperience({
                 {/* Children - shares the same per-departure cap as Adults */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-bold text-slate-900">Children</p>
-                    <p className="text-[10px] text-slate-400">Ages 3 – 17 years</p>
+                    <p className="font-semibold text-slate-900">Children</p>
+                    <p className="text-[10px] text-slate-400 font-normal">Ages 3 – 17 years</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       disabled={children <= 0}
                       onClick={() => setChildren((c) => Math.max(0, c - 1))}
-                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                     >
                       <Minus size={11} />
                     </button>
-                    <span className="w-5 text-center font-bold text-slate-900">{children}</span>
+                    <span className="w-5 text-center font-semibold text-slate-900">{children}</span>
                     <button
                       type="button"
                       disabled={adults + children >= maxTravellers}
                       onClick={() => setChildren((c) => Math.min(maxTravellers - adults, c + 1))}
-                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                      className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                     >
                       <Plus size={11} />
                     </button>
@@ -1537,35 +1597,35 @@ export default function TourDetailExperience({
 
             {/* BOOKING SUMMARY Section */}
             <div>
-              <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-900">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-900">
                 BOOKING SUMMARY
               </h4>
 
               <div className="mt-3 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-700">
+                <div className="flex justify-between text-slate-700 font-medium">
                   <span>Tour Price ({adults} Adult{adults > 1 ? "s" : ""})</span>
-                  <span className="font-bold text-slate-900">{format(originalTourPrice, tourCurrency)}</span>
+                  <span className="font-semibold text-slate-900">{format(originalTourPrice, tourCurrency)}</span>
                 </div>
-                <div className="flex justify-between text-slate-700">
+                <div className="flex justify-between text-slate-700 font-medium">
                   <span>
                     Discount
                     {promoActive && (
-                      <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black text-emerald-700">
+                      <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700">
                         {tour.discount_percentage}% coupon auto-applied
                       </span>
                     )}
                   </span>
-                  <span className="font-bold text-slate-900">- {format(groupDiscount, tourCurrency)}</span>
+                  <span className="font-semibold text-slate-900">- {format(groupDiscount, tourCurrency)}</span>
                 </div>
-                <div className="flex justify-between text-blue-600 font-semibold">
+                <div className="flex justify-between text-blue-600 font-medium">
                   <span>You Save</span>
-                  <span>{format(groupDiscount, tourCurrency)}</span>
+                  <span className="font-semibold">{format(groupDiscount, tourCurrency)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between font-medium">
                   <span className="text-slate-700">Taxes &amp; Service Fees</span>
                   <span className="font-semibold text-emerald-600">Included</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between font-medium">
                   <span className="text-slate-700">Booking Fee</span>
                   <span className="font-semibold text-emerald-600">Free</span>
                 </div>
@@ -1574,10 +1634,10 @@ export default function TourDetailExperience({
 
                 <div className="flex items-center justify-between pt-1">
                   <div>
-                    <p className="text-xs font-bold text-slate-900">Total Amount</p>
-                    <p className="text-[10px] text-slate-400">{format(perPersonPrice, tourCurrency)} per person</p>
+                    <p className="text-xs font-semibold text-slate-900">Total Amount</p>
+                    <p className="text-[10px] text-slate-400 font-normal">{format(perPersonPrice, tourCurrency)} per person</p>
                   </div>
-                  <strong className="text-lg font-black text-slate-950">
+                  <strong className="text-lg font-semibold text-slate-950">
                     {format(totalAmount, tourCurrency)}
                   </strong>
                 </div>
@@ -1605,7 +1665,7 @@ export default function TourDetailExperience({
         {/* ── 5. SIMILAR TOURS SECTION - only shown when there are real recommendations ── */}
         {similarToursList.length > 0 && (
         <section className="mt-16 border-t border-slate-100 pt-10">
-          <h3 className="flex items-center gap-2 text-lg font-black text-slate-900">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
             <Compass size={20} className="text-blue-600" />
             <span>Similar Tours</span>
           </h3>
@@ -1630,30 +1690,30 @@ export default function TourDetailExperience({
                     </span>
                     <button
                       type="button"
-                      className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-xs hover:scale-110 transition"
+                      className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-xs hover:scale-110 transition cursor-pointer"
                     >
                       <Heart size={14} className="fill-current" />
                     </button>
                   </div>
 
                   <div className="p-4">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-blue-600">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-600">
                       {sim.country}
                     </p>
                     <Link
                       href={sim.slug ? `/tours/${sim.slug}` : `/tours/${sim.id}`}
-                      className="mt-1 block text-xs font-bold text-slate-900 line-clamp-1 hover:text-blue-600 transition"
+                      className="mt-1 block text-xs font-semibold text-slate-900 line-clamp-1 hover:text-blue-600 transition"
                     >
                       {sim.title}
                     </Link>
 
                     <div className="mt-2 flex items-center gap-1 text-xs">
                       <Star size={12} className="fill-amber-400 text-amber-400" />
-                      <span className="font-bold text-slate-800">{sim.rating}</span>
+                      <span className="font-semibold text-slate-800">{sim.rating}</span>
                       <span className="text-[10px] text-slate-400">({sim.reviews})</span>
                     </div>
 
-                    <ul className="mt-2.5 space-y-1 text-[11px] text-slate-500">
+                    <ul className="mt-2.5 space-y-1 text-[11px] text-slate-500 font-medium">
                       <li className="flex items-center gap-1.5">
                         <Check size={12} className="text-emerald-600" />
                         <span>Transport &amp; Transfers</span>
@@ -1674,7 +1734,7 @@ export default function TourDetailExperience({
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3">
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase">From</span>
-                      <p className="text-xs font-black text-slate-950">{sim.price}</p>
+                      <p className="text-xs font-semibold text-slate-950">{sim.price}</p>
                     </div>
                     <Link
                       href={sim.slug ? `/tours/${sim.slug}` : `/tours/${sim.id}`}

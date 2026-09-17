@@ -7,7 +7,11 @@ import {
   LuChevronRight as ChevronRight,
   LuHeart as Heart,
   LuMapPin as MapPin,
+  LuNavigation as Navigation,
+  LuSlidersHorizontal as Sliders,
   LuStar as Star,
+  LuSun as Sun,
+  LuUsers as Users,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
@@ -47,104 +51,135 @@ export function HandpickedTourCard({ tour }: { tour: Tour }) {
     href,
   };
 
-  const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.9";
-  const reviewCountStr = tour.reviews || "1,842 reviews";
+  const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.8";
+  const reviewCountStr = tour.reviews || "2,486 reviews";
+
+  const calculatedPct =
+    tour.originalPrice && tour.rawPrice && tour.originalPrice > tour.rawPrice
+      ? Math.round(
+          ((tour.originalPrice - tour.rawPrice) / tour.originalPrice) * 100,
+        )
+      : null;
+  const discountLabel =
+    tour.discountBadge ||
+    (calculatedPct ? `Save ${calculatedPct}%` : "Save 25%");
 
   return (
     <article
       data-handpicked-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-2 sm:p-2.5 shadow-xs transition-all duration-300 hover:shadow-md hover:-translate-y-1 h-full"
     >
-      {/* Image with Location badge & Wishlist */}
-      <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-[16px] bg-slate-100 shrink-0">
-        <Link href={href} className="block h-full w-full">
-          <MarketingImage
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
-            src={tour.image}
-            alt={tour.title}
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
-          />
-        </Link>
-
-        {/* Subtle vignette overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-black/15 pointer-events-none" />
-
-        {/* Location pill badge (top-left) */}
-        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E4572E] px-3 py-1 text-[11px] font-bold text-white shadow-xs transition-transform duration-300 group-hover:scale-105">
-          <MapPin size={11} className="shrink-0" />
-          <span className="truncate max-w-[120px]">{tour.place}</span>
-        </span>
-
-        {/* Wishlist button (top-right) */}
-        <button
-          type="button"
-          onClick={() => toggleWishlist(travelItem)}
-          aria-label={
-            wishlisted
-              ? `Remove ${tour.title} from wishlist`
-              : `Add ${tour.title} to wishlist`
-          }
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-md text-slate-700 shadow-md transition-all duration-200 hover:scale-115 active:scale-90 hover:bg-white focus:outline-none cursor-pointer"
-        >
-          <Heart
-            size={16}
-            className={
-              wishlisted
-                ? "fill-red-500 text-red-500"
-                : "fill-slate-400/40 text-slate-700"
-            }
-          />
-        </button>
-      </div>
-
-      {/* Tour details */}
-      <div className="pt-4 flex flex-1 flex-col justify-between">
+      <Link href={href} className="flex flex-col h-full justify-between">
         <div>
-          {/* Title and duration tag */}
-          <div className="flex items-start justify-between gap-2 min-h-[46px] sm:min-h-[48px]">
-            <Link href={href} className="block flex-1 min-w-0">
-              <h3 className="line-clamp-2 text-base sm:text-[17px] font-semibold text-slate-900 transition-colors duration-200 group-hover:text-pub-secondary leading-snug">
-                {tour.title}
-              </h3>
-            </Link>
-            <span className="shrink-0 rounded-md border border-[#E4572E]/40 bg-orange-50/40 px-2.5 py-0.5 text-[10px] font-extrabold text-[#E4572E] tracking-wide transition-colors duration-200 group-hover:bg-orange-100/50">
-              {tour.durationTag || "8D | 7N"}
+          {/* Top Image Container */}
+          <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-xl bg-slate-100 shrink-0">
+            <MarketingImage
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+              src={tour.image}
+              alt={tour.title}
+              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
+            />
+
+            {/* Location pill badge (top-left) */}
+            <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#DF6951] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
+              <MapPin size={10} className="fill-white/30 text-white shrink-0" />
+              <span className="truncate max-w-[100px]">{tour.place || "Featured"}</span>
             </span>
+
+            {/* Wishlist button (top-right) */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleWishlist(travelItem);
+              }}
+              aria-label={
+                wishlisted
+                  ? `Remove ${tour.title} from wishlist`
+                  : `Add ${tour.title} to wishlist`
+              }
+              className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center transition-transform duration-200 hover:scale-120 active:scale-90 focus:outline-none cursor-pointer"
+            >
+              <Heart
+                size={18}
+                className={
+                  wishlisted
+                    ? "fill-red-500 text-red-500 drop-shadow-xs"
+                    : "fill-white/70 text-slate-700 drop-shadow-xs"
+                }
+              />
+            </button>
+
+            {/* Discount Pill (bottom-right of image) */}
+            {discountLabel && (
+              <span className="absolute bottom-2.5 right-2.5 z-10 rounded-md bg-[#E53935] px-2.5 py-1 text-xs font-bold text-white shadow-md">
+                {discountLabel}
+              </span>
+            )}
           </div>
 
-          {/* 5 Yellow Stars + Rating + Review count */}
-          <div className="mt-2 flex items-center gap-1.5 text-xs">
-            <div className="flex items-center gap-0.5 text-amber-400">
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
+          {/* Tour details */}
+          <div className="pt-3">
+            {/* Title */}
+            <h3 className="truncate text-base font-semibold text-slate-900 transition-colors group-hover:text-[#DF6951] leading-snug">
+              {tour.title}
+            </h3>
+
+            {/* 5 Yellow Stars + Rating + Review count */}
+            <div className="mt-1.5 flex items-center gap-1 text-xs">
+              <div className="flex items-center gap-0.5 text-amber-400">
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+              </div>
+              <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
+              <span className="text-slate-500 font-normal">
+                ({reviewCountStr})
+              </span>
             </div>
-            <b className="font-bold text-slate-900">{ratingVal}</b>
-            <span className="text-slate-400 font-normal">
-              ({reviewCountStr})
-            </span>
+
+            {/* 4 Feature specs with blue icons */}
+            <div className="mt-2.5 space-y-1 text-[11px] text-slate-600 font-medium">
+              <p className="flex items-center gap-1.5">
+                <Sun size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                <span>{tour.days || "7 Days"}</span>
+              </p>
+              <p className="flex items-center gap-1.5 truncate">
+                <Navigation size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                <span className="truncate">{tour.place || "Featured Destination"}</span>
+              </p>
+              <p className="flex items-center gap-1.5">
+                <Sliders size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                <span>Age Range: 12-70</span>
+              </p>
+              <p className="flex items-center gap-1.5">
+                <Users size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                <span>Max Group Size: 24</span>
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Price Row: From $old $new pp */}
-        <div className="mt-5 flex items-baseline gap-1.5 text-xs border-t border-slate-100 pt-3">
-          <span className="font-extrabold text-slate-900 text-sm">From</span>
+        {/* Price Row: From $old $new pp -- no button on the right */}
+        <div className="mt-3 flex items-baseline gap-1.5 text-slate-900 border-t border-slate-100 pt-2.5">
+          <span className="text-xs font-normal text-slate-500">From</span>
           {tour.originalPrice != null && (
             <span className="text-xs font-normal text-slate-400 line-through">
               {format(tour.originalPrice, tour.currency || "USD")}
             </span>
           )}
-          <strong className="text-xl font-black text-slate-950">
+          <strong className="text-sm sm:text-base font-bold text-slate-950">
             {tour.rawPrice != null
               ? format(tour.rawPrice, tour.currency || "USD")
-              : format(999, "USD")}
+              : format(1182, "USD")}
           </strong>
-          <span className="text-xs font-bold text-slate-900">pp</span>
+          <span className="text-xs text-slate-500 font-normal">pp</span>
         </div>
-      </div>
+      </Link>
     </article>
   );
 }

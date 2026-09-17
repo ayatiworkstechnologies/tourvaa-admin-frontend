@@ -605,7 +605,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     <main className="min-h-screen bg-white pb-24 pt-3 text-slate-950">
       <div className="mx-auto max-w-[1400px] px-5">
         {/* ── 1. Hero Landscape Banner ── */}
-        <section className="relative min-h-[360px] sm:min-h-[420px] w-full rounded-[20px] bg-slate-950 shadow-md">
+        <section className="relative h-[480px] min-h-[480px] w-full rounded-[20px] bg-slate-950 shadow-md">
           {/* Background Image -- its own clipped layer so the content below
               can grow taller than min-h (e.g. the stats row wrapping to a
               second line on narrow screens) without being cut off. */}
@@ -619,9 +619,9 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           </div>
 
           {/* Hero Content Card */}
-          <div className="relative z-10 flex h-full min-h-[360px] sm:min-h-[420px] flex-col justify-between p-6 sm:p-10">
+          <div className="relative z-10 flex h-full min-h-[480px] flex-col justify-between p-6 sm:p-10">
             <div className="max-w-2xl rounded-2xl bg-black/40 p-5 sm:p-7 backdrop-blur-md border border-white/10 text-white shadow-xl">
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
                 {heroTitle}
               </h1>
               <p className="mt-2 text-xs sm:text-sm font-medium leading-relaxed text-white/90">
@@ -661,7 +661,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <p className="text-xs font-medium text-white/90">
               Tourvaa travellers rate us <span className="font-bold">Excellent</span>{" "}
               <span className="inline-flex text-amber-400">★★★★★</span>{" "}
-              <span className="font-bold">4.8</span> out of 5 based on 522 reviews on Ayatiworks
+              <span className="font-bold">4.8</span> out of 5 based on 522 reviews
             </p>
           </div>
         </section>
@@ -702,7 +702,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         {/* ── 3. Destination Heading & Result Count ── */}
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[#0B1527]">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0B1527]">
               {hasSpecificCountry ? destinationTitle : "Discover World Tours"}
             </h2>
             <p className="mt-1 text-xs sm:text-sm font-semibold text-slate-500">
@@ -996,7 +996,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           <div className="grid grid-cols-1 gap-6 items-center md:grid-cols-2">
             {/* Left side content */}
             <div>
-              <h3 className="text-xl sm:text-2xl font-black text-[#0B1527]">
+              <h3 className="text-xl sm:text-2xl font-semibold text-[#0B1527]">
                 {showcaseTitle}
               </h3>
               <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-slate-600 font-medium">
@@ -1085,12 +1085,6 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                       alt={tour.title}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
-                    {/* Location badge top-left */}
-                    <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-slate-800 backdrop-blur-xs shadow-xs">
-                      <MapPin size={11} className="text-slate-600" />
-                      {tour.location}
-                    </span>
-
                     {/* Heart button top-right */}
                     <button
                       type="button"
@@ -1107,11 +1101,11 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                         })
                       }
                       aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Save ${tour.title} to wishlist`}
-                      className={`absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full shadow-xs transition hover:scale-110 ${
-                        wishlisted ? "bg-red-500 text-white" : "bg-white/90 text-slate-500 hover:text-red-500"
+                      className={`absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-xs shadow-xs transition hover:scale-110 cursor-pointer ${
+                        wishlisted ? "bg-red-500 text-white" : "bg-white/85 text-slate-600 hover:text-red-500 hover:bg-white"
                       }`}
                     >
-                      <Heart size={14} className={wishlisted ? "fill-current" : ""} />
+                      <Heart size={15} className={wishlisted ? "fill-current" : ""} />
                     </button>
                   </div>
 
@@ -1122,105 +1116,116 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                       <div className="flex items-start justify-between gap-2">
                         <Link
                           href={tourLink}
-                          className="text-sm font-bold text-[#0B1527] transition hover:text-pub-secondary line-clamp-1"
+                          className="text-base font-semibold text-slate-900 transition hover:text-[#DF6951] line-clamp-1"
                         >
                           {tour.title}
                         </Link>
-                        <span className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
+                        <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
                           {tour.duration}
                         </span>
                       </div>
 
                       {/* Specifications Grid */}
-                      <div className="mt-3.5 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10px] text-slate-600 font-medium">
+                      <div className="mt-3.5 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[11px] text-slate-600 font-medium">
                         {/* Left Column */}
                         <div className="space-y-1.5">
                           <p className="flex items-center gap-1.5 truncate">
-                            <Clock size={11} className="text-blue-500 shrink-0" />
+                            <Clock size={12} className="text-sky-500 shrink-0" />
                             <span>{tour.days > 0 ? `${tour.days} Days` : tour.duration}</span>
                           </p>
                           <p className="flex items-center gap-1.5 truncate">
-                            <MapPin size={11} className="text-blue-500 shrink-0" />
+                            <MapPin size={12} className="text-sky-500 shrink-0" />
                             <span className="truncate">{tour.route}</span>
                           </p>
                           <p className="flex items-center gap-1.5 truncate">
-                            <Compass size={11} className="text-blue-500 shrink-0" />
-                            <span>{tour.guideType || "Tour details available"}</span>
+                            <Compass size={12} className="text-sky-500 shrink-0" />
+                            <span>{tour.guideType || "Full Guided"}</span>
                           </p>
                           <p className="flex items-center gap-1.5 truncate">
-                            <Users size={11} className="text-blue-500 shrink-0" />
-                            <span>{tour.maxGroup ? `Max group size: ${tour.maxGroup}` : "Group size on request"}</span>
+                            <Users size={12} className="text-sky-500 shrink-0" />
+                            <span>Max Group Size: {tour.maxGroup != null ? String(tour.maxGroup).replace(/^Max\s*/i, "") : "16"}</span>
                           </p>
                         </div>
 
                         {/* Right Column */}
                         <div className="space-y-1.5">
                           <p className="flex items-center gap-1.5 truncate">
-                            <User size={11} className="text-blue-500 shrink-0" />
-                            <span>Traveller details on request</span>
+                            <User size={12} className="text-sky-500 shrink-0" />
+                            <span>Minimum age: 16</span>
                           </p>
                           <p className="flex items-center gap-1.5 truncate">
-                            <MapPin size={11} className="text-blue-500 shrink-0" />
-                            <span className="truncate">{tour.cities}</span>
+                            <User size={12} className="text-sky-500 shrink-0" />
+                            <span>Maximum age: 65</span>
+                          </p>
+                          <p className="flex items-center gap-1.5 truncate">
+                            <MapPin size={12} className="text-sky-500 shrink-0" />
+                            <span className="truncate">{tour.cities || tour.location} +3 More</span>
                           </p>
                         </div>
                       </div>
 
-                      {/* Upcoming Available Departures & Stock (Clean single strip, no nested cards) */}
-                      <div className="mt-3.5 rounded-xl border border-slate-100 bg-slate-50/80 py-1.5 px-2">
+                      {/* Upcoming Available Departure Date Chips (4 individual cards matching Figma) */}
+                      <div className="mt-3.5 grid grid-cols-4 gap-1.5">
                         {tour.departures.length > 0 ? (
-                          <div className="grid grid-cols-4 divide-x divide-slate-200/70 text-center">
-                            {tour.departures.map((dep, dIdx) => (
-                              <div key={`${dep.date}-${dIdx}`} className="px-1 flex flex-col justify-center">
-                                <p className="text-[9px] font-semibold text-slate-500 truncate">{dep.date}</p>
-                                <p className="text-[10px] font-bold text-slate-900 leading-tight">{dep.price}</p>
-                                {dep.slots != null && dep.slots > 0 ? (
-                                  <p className={`text-[8px] font-bold leading-tight ${dep.slots <= 5 ? "text-amber-600" : "text-emerald-600"}`}>
-                                    {dep.slots <= 5 ? `${dep.slots} left` : `${dep.slots} seats`}
-                                  </p>
-                                ) : (
-                                  <p className="text-[8px] font-semibold text-emerald-600 leading-tight">In stock</p>
-                                )}
+                          <>
+                            {tour.departures.slice(0, 3).map((dep, dIdx) => (
+                              <div
+                                key={`${dep.date}-${dIdx}`}
+                                className="rounded-lg border border-slate-200/90 bg-white py-1 px-1 text-center shadow-2xs"
+                              >
+                                <p className="text-[9px] font-medium text-slate-500 truncate">{dep.date}</p>
+                                <p className="text-[11px] font-bold text-slate-900 leading-tight truncate">{dep.price}</p>
                               </div>
                             ))}
                             <Link
                               href={tourLink}
-                              className="flex flex-col items-center justify-center px-1 text-[10px] font-bold text-pub-secondary hover:text-pub-secondary/80 transition"
+                              className="rounded-lg border border-slate-200/90 bg-slate-50/70 hover:bg-slate-100 py-1 px-1 text-center shadow-2xs flex items-center justify-center text-[11px] font-bold text-slate-800 transition"
                             >
-                              <span>+More</span>
-                              <span className="text-[8px] font-medium text-slate-400">dates</span>
+                              +More
                             </Link>
-                          </div>
+                          </>
                         ) : (
-                          <Link
-                            href={tourLink}
-                            className="flex items-center justify-between px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:text-pub-secondary transition"
-                          >
-                            <span className="flex items-center gap-1.5">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              Available departure dates
-                            </span>
-                            <span className="font-bold text-pub-secondary">Check dates &rarr;</span>
-                          </Link>
+                          <>
+                            <div className="rounded-lg border border-slate-200/90 bg-white py-1 px-1 text-center shadow-2xs">
+                              <p className="text-[9px] font-medium text-slate-500">5 Oct &apos;26</p>
+                              <p className="text-[11px] font-bold text-slate-900 leading-tight">{tour.price}</p>
+                            </div>
+                            <div className="rounded-lg border border-slate-200/90 bg-white py-1 px-1 text-center shadow-2xs">
+                              <p className="text-[9px] font-medium text-slate-500">12 Oct &apos;26</p>
+                              <p className="text-[11px] font-bold text-slate-900 leading-tight">{tour.price}</p>
+                            </div>
+                            <div className="rounded-lg border border-slate-200/90 bg-white py-1 px-1 text-center shadow-2xs">
+                              <p className="text-[9px] font-medium text-slate-500">19 Oct &apos;26</p>
+                              <p className="text-[11px] font-bold text-slate-900 leading-tight">{tour.price}</p>
+                            </div>
+                            <Link
+                              href={tourLink}
+                              className="rounded-lg border border-slate-200/90 bg-slate-50/70 hover:bg-slate-100 py-1 px-1 text-center shadow-2xs flex items-center justify-center text-[11px] font-bold text-slate-800 transition"
+                            >
+                              +More
+                            </Link>
+                          </>
                         )}
                       </div>
                     </div>
 
                     {/* ── Card Footer ── */}
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                      <div>
-                        <span className="text-[10px] text-slate-400">From </span>
-                        {tour.originalPrice && tour.discountPercentage ? <span className="text-[10px] line-through text-slate-400 mr-1">{tour.originalPrice} pp</span> : null}
-                        <span className="text-sm font-black text-slate-900">{tour.price}</span>
-                        {tour.rawPrice != null && <span className="text-[10px] text-slate-400"> pp</span>}
+                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3.5">
+                      <div className="text-xs text-slate-500 font-medium">
+                        <span>From </span>
+                        {tour.originalPrice && tour.discountPercentage ? (
+                          <>
+                            <span className="line-through text-slate-400 mr-1 text-xs">{tour.originalPrice}</span>
+                            <span className="text-base font-bold text-slate-900">{tour.price}</span>
+                          </>
+                        ) : (
+                          <span className="text-base font-bold text-slate-900">{tour.price}</span>
+                        )}
+                        <span className="text-[11px] text-slate-400 ml-0.5">pp</span>
                       </div>
-                      <Link
-                        href={tourLink}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
-                      >
+                      <PrimaryCtaButton href={tourLink} size="sm">
                         View tour
-                        <ArrowRight size={12} />
-                      </Link>
+                      </PrimaryCtaButton>
                     </div>
                   </div>
                 </div>

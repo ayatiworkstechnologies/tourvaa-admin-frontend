@@ -823,7 +823,7 @@ const CHINA_DEFAULT: CountryDestinationInfo = {
   },
   best_time_to_visit: {
     summary:
-      "Autumn (September to November) and Spring (March to May) offer the most pleasant weather nationwide, with clear skies and comfortable sightseeing temperatures across both northern and southern regions.",
+      "Spring and autumn are generally the best seasons to explore China, offering comfortable temperatures for sightseeing, cultural attractions, and outdoor experiences. Summer can be hot, humid, and rainy in many regions, while winter is cold across northern China but offers fewer crowds and excellent conditions for winter scenery and activities.",
     peak_season: {
       label: "Peak / Autumn & Spring",
       months: "September - November & April - May",
@@ -883,38 +883,43 @@ const CHINA_DEFAULT: CountryDestinationInfo = {
     ],
   },
   best_places_to_visit: {
-    headline: "Places to Visit in China",
-    subtitle: "Key highlights and iconic destinations you must see during your trip.",
+    headline: "What You'll See in China",
+    subtitle:
+      "Discover the iconic landmarks, ancient history, and breathtaking landscapes that make China a traveler's dream destination.",
     places: [
       {
         name: "The Great Wall of China",
         tag: "UNESCO World Wonder",
         image: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80",
-        description: "Winding over 13,000 miles across northern mountains, this ancient fortification is one of humanity's greatest architectural achievements.",
+        description:
+          "Walk along one of the world's most iconic landmarks and take in spectacular mountain views.",
         highlights: ["Mutianyu section", "Watchtower vistas", "Cable car ascent"],
         best_for: "History & Hiking",
       },
       {
-        name: "The Forbidden City, Beijing",
+        name: "The Forbidden City",
         tag: "Imperial Palace",
         image: "https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?auto=format&fit=crop&w=800&q=80",
-        description: "The world's largest imperial palace complex, home to 24 Ming and Qing emperors across 980 surviving ornate pavilions.",
+        description:
+          "Discover Beijing's vast imperial palace complex, filled with centuries of Chinese history.",
         highlights: ["Hall of Supreme Harmony", "Imperial Garden", "Tiananmen Square"],
         best_for: "Imperial Heritage",
       },
       {
-        name: "The Terracotta Army, Xi'an",
+        name: "Terracotta Warriors",
         tag: "Ancient Wonder",
         image: "https://images.unsplash.com/photo-1599839575945-a9e5af0c3fa5?auto=format&fit=crop&w=800&q=80",
-        description: "Thousands of life-sized terracotta soldiers, horses, and chariots buried for over 2,200 years to guard China's first emperor.",
+        description:
+          "See thousands of life-sized ancient warriors guarding the tomb of China's first emperor in Xi'an.",
         highlights: ["Pit 1 battle formation", "Bronze chariots", "Ancient city wall"],
         best_for: "Archaeology",
       },
       {
-        name: "The Bund & Skylines, Shanghai",
+        name: "Shanghai Skyline",
         tag: "Metropolitan Icon",
         image: "https://images.unsplash.com/photo-1538428494232-9c0d8a3ab403?auto=format&fit=crop&w=800&q=80",
-        description: "A striking waterfront promenade blending European colonial architecture with the gleaming futuristic skyscrapers of Pudong.",
+        description:
+          "Experience the striking contrast between historic waterfront architecture and futuristic skyscrapers.",
         highlights: ["Oriental Pearl Tower", "Huangpu River cruise", "Nanjing Road"],
         best_for: "City & Architecture",
       },

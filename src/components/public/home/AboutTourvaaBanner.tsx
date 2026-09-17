@@ -78,7 +78,7 @@ export default function AboutTourvaaBanner({
           {body}
         </p>
         <div className="mt-6 sm:mt-8">
-          <PrimaryCtaButton href={ctaUrl} size="sm">
+          <PrimaryCtaButton href={ctaUrl} size="md">
             {ctaText}
           </PrimaryCtaButton>
         </div>

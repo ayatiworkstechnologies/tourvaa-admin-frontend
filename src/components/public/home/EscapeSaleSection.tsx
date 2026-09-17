@@ -85,14 +85,14 @@ export default function EscapeSaleSection({
   return (
     <div className="relative z-10 mx-auto max-w-[1400px] px-5 pt-6 pb-2 sm:pt-8 sm:pb-3">
       <Reveal variant="scale-up">
-        <section className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] bg-[#E8E8E8] border border-slate-300/60 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xs transition-all">
+        <section className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] bg-[#FFF8F6] border border-[#FCDFD7] p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xs transition-all">
           <div className="max-w-2xl text-left">
             {visualBannerBadge && (
               <span className="inline-flex items-center rounded-full bg-[#DF6951] px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-2xs">
                 {visualBannerBadge}
               </span>
             )}
-            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[34px] font-bold text-slate-900 tracking-tight leading-tight">
+            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-900 tracking-tight leading-tight">
               {visualBannerTitle}
             </h2>
             <p className="mt-2 text-xs sm:text-sm md:text-[15px] text-slate-600 font-normal leading-relaxed max-w-xl">

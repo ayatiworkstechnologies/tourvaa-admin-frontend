@@ -17,7 +17,7 @@ import {
 import api from "@/lib/api/client";
 import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
-import { dialCodeForIso } from "@/lib/utils/phoneCountries";
+import { dialCodeForIso, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 
 // Traveller (customer) accounts only - agents and suppliers register through
@@ -27,7 +27,7 @@ const ACCOUNT_TYPE = "CUSTOMER";
 const initialForm = {
   first_name: "",
   email: "",
-  country_code: "+91",
+  country_code: "",
   mobile_number: "",
   accepted_terms: false,
 };
@@ -80,7 +80,7 @@ const PERKS = [
 
 export default function RegisterPage() {
   const [form, setForm] = useState(initialForm);
-  const [phoneIso, setPhoneIso] = useState<CountryCode>("IN");
+  const [phoneIso, setPhoneIso] = useState<CountryCode | "">("");
   const [sentEmail, setSentEmail] = useState(() => readPendingRegistration()?.email ?? "");
   const [changeToken, setChangeToken] = useState(() => readPendingRegistration()?.changeToken ?? "");
   const [redirect, setRedirect] = useState<string | null>(null);
@@ -122,6 +122,8 @@ export default function RegisterPage() {
     event.preventDefault();
     setError("");
     if (!validateEmail(form.email)) return setError("Enter a valid email address.");
+    if (!phoneIso) return setError("Select your country before entering your mobile number.");
+    if (!validatePhoneForCountry(phoneIso, form.mobile_number)) return setError("Enter a valid mobile number for the selected country.");
     if (!form.accepted_terms) return setError("Accept the Terms and Privacy Policy to continue.");
 
     setLoading(true);
@@ -138,6 +140,7 @@ export default function RegisterPage() {
         const base = {
           first_name: form.first_name,
           email,
+          country_iso: phoneIso,
           country_code: form.country_code,
           mobile_number: form.mobile_number,
           accepted_terms: form.accepted_terms,

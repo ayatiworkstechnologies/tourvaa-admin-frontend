@@ -10,6 +10,8 @@ import {
   LuSparkles as Sparkles,
   LuInfo as Info,
   LuThermometer as Thermometer,
+  LuChevronLeft,
+  LuChevronRight,
 } from "react-icons/lu";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 
@@ -92,109 +94,233 @@ export default function CountryWhenToGoSection({
   return (
     <section id="section-when-to-go" className="bg-white text-slate-900 py-10 sm:py-16">
       <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
-        {/* ── 8. Panoramic Feature Banner with Floating White Card ── */}
-        <div className="relative min-h-[380px] sm:min-h-[440px] w-full overflow-hidden rounded-[26px] bg-slate-950 p-6 sm:p-12 flex items-center justify-center shadow-lg mb-14 sm:mb-20">
+        {/* ── 8. Panoramic Feature Showcase Banner matching Dubai reference ── */}
+        <div className="relative min-h-[360px] sm:min-h-[440px] w-full overflow-hidden rounded-[28px] sm:rounded-[32px] bg-slate-950 p-6 sm:p-10 flex flex-col justify-between shadow-lg mb-14 sm:mb-20">
           {/* Panoramic Background Photo */}
           <img
-            src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1800&q=80"
-            alt="Futuristic Skyline and Landmark"
-            className="absolute inset-0 h-full w-full object-cover object-center opacity-70 scale-102 transition-transform duration-1000"
+            src={
+              info.why_visit?.reasons?.[0]?.image ||
+              info.hero_image ||
+              "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1800&q=80"
+            }
+            alt={`${info.country_name} Showcase`}
+            className="absolute inset-0 h-full w-full object-cover object-center opacity-85 scale-102 transition-transform duration-1000"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
 
-          {/* Centered Floating White Card matching screenshot */}
-          <div className="relative z-10 w-full max-w-2xl rounded-[24px] border border-white/40 bg-white/95 backdrop-blur-md p-6 sm:p-8 shadow-2xl text-center">
-            <h3 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-              When is the best time to visit {info.country_name}?
-            </h3>
-
-            <p className="mt-2.5 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed max-w-xl mx-auto">
-              {info.best_time_to_visit?.summary ||
-                `The best time to visit ${info.country_name} is during spring (April to May) and autumn (September to October) when pleasant temperatures and dry, clear skies prevail across most regions. Summer brings warmer days and lush landscapes, while winter offers crisp scenic beauty and fewer crowds.`}
-            </p>
-
-            {/* Inset Landmark Visual Framing inside Card */}
-            <div className="mt-5 overflow-hidden rounded-[18px] border border-slate-100 bg-slate-100 shadow-inner">
-              <img
-                src="https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1000&q=80"
-                alt="Iconic Landmark Architecture"
-                className="h-44 sm:h-52 w-full object-cover object-center transition-transform duration-700 hover:scale-105"
-              />
+          {/* Floating White Showcase Card in the Top Center */}
+          <div className="relative z-10 w-full max-w-3xl rounded-[20px] border border-white/60 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-4 sm:gap-6 text-left">
+              <h3 className="md:col-span-5 text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                {info.why_visit?.reasons?.[0]?.title || info.tagline || `Iconic Wonders of ${info.country_name}`}
+              </h3>
+              <p className="md:col-span-7 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
+                {info.why_visit?.reasons?.[0]?.description ||
+                  info.why_visit?.subtitle ||
+                  `Step inside one of the world's most iconic landscapes and architectural wonders. Explore immersive cultural heritage, breathtaking natural vistas, and timeless traditions across ${info.country_name}.`}
+              </p>
             </div>
+          </div>
+
+          {/* Carousel Left & Right Arrow Buttons */}
+          <div className="relative z-10 flex items-center justify-between pointer-events-none px-2">
+            <button
+              type="button"
+              aria-label="Previous showcase"
+              className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/80 backdrop-blur-xs text-slate-800 shadow-md hover:bg-white transition"
+            >
+              <LuChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              aria-label="Next showcase"
+              className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/80 backdrop-blur-xs text-slate-800 shadow-md hover:bg-white transition"
+            >
+              <LuChevronRight size={16} />
+            </button>
+          </div>
+
+          {/* Bottom Pagination Indicator Dashes */}
+          <div className="relative z-10 flex items-center justify-center gap-1.5">
+            <span className="h-1 w-8 rounded-full bg-white shadow-xs" />
+            <span className="h-1 w-2 rounded-full bg-white/40" />
+            <span className="h-1 w-2 rounded-full bg-white/40" />
           </div>
         </div>
 
-        {/* ── 9. "When to travel to {Country}" Section ── */}
+        {/* ── 9. "When is the best time to visit {Country}?" Section ── */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
           <div className="max-w-md">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-              When to travel to {info.country_name}
+            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+              When is the best time to visit {info.country_name}?
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed max-w-xl text-left lg:text-right">
-            From the golden hues of autumn to the blooming cherry blossoms of spring, {info.country_name}&apos;s vast landscapes offer distinct wonders throughout each season. Plan your adventure around these seasonal highlights.
+          <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed max-w-xl text-left lg:text-right">
+            {info.best_time_to_visit?.summary ||
+              `Spring and autumn are generally the best seasons to explore ${info.country_name}, offering comfortable temperatures for sightseeing, cultural attractions, and outdoor experiences. Summer can be warm and vibrant, while winter offers crisp scenic beauty and fewer crowds.`}
           </p>
         </div>
 
-        {/* 4 Quarterly Season Cards in 1 Row */}
+        {/* 4 Quarterly Season Cards matching Figma layout */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {seasonsData.map((s) => {
-            const Icon = s.icon;
-            return (
-              <div
-                key={s.id}
-                className="flex flex-col justify-between overflow-hidden rounded-[22px] border border-slate-200/90 bg-white p-4 shadow-2xs transition-all duration-300 hover:border-slate-300 hover:shadow-md hover:-translate-y-1"
-              >
-                <div>
-                  {/* Photo with rounded-[14px] */}
-                  <div className="relative h-36 w-full overflow-hidden rounded-[14px] bg-slate-100">
-                    <img
-                      src={s.image}
-                      alt={s.name}
-                      className="h-full w-full object-cover transition-transform duration-700 hover:scale-106"
-                    />
-                    <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-white/95 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-slate-900 shadow-2xs">
-                      <Icon size={11} className="text-[#E4572E]" />
-                      <span>{s.months}</span>
-                    </div>
-                  </div>
-
-                  {/* Season Name & Temperature Range */}
-                  <div className="mt-3.5 flex items-baseline justify-between">
-                    <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                      {s.name}
-                    </h3>
-                    <span className="text-xs font-black text-[#E4572E]">
-                      {unit === "C" ? s.tempC : s.tempF}
-                    </span>
-                  </div>
-
-                  {/* Season Description */}
-                  <p className="mt-1.5 text-xs text-slate-500 font-medium leading-relaxed">
-                    {s.description}
-                  </p>
-                </div>
-
-                {/* Pill Button matching screenshot */}
-                <a
-                  href="#section-tours"
-                  onClick={(e) => scrollToTours(e, s.name)}
-                  className="mt-5 inline-flex items-center justify-center rounded-full bg-[#0A1128] hover:bg-slate-850 px-4 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-                >
-                  <span>View tours</span>
-                </a>
+          {/* Spring */}
+          <div className="flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-2xs transition-all duration-300 hover:border-slate-200 hover:shadow-md">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-600">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  Spring
+                </span>
+                <Leaf size={15} className="text-emerald-500" />
               </div>
-            );
-          })}
+
+              <div className="mt-3 relative h-28 sm:h-32 w-full overflow-hidden rounded-xl bg-slate-100">
+                <img
+                  src="https://images.unsplash.com/photo-1528164344705-475426879c0d?auto=format&fit=crop&w=800&q=80"
+                  alt="Spring in destination"
+                  className="h-full w-full object-cover transition duration-700 hover:scale-105"
+                />
+              </div>
+
+              <div className="mt-3.5">
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Mar – May
+                </h3>
+                <p className="text-xs font-semibold text-emerald-600 mt-0.5">
+                  10°–24°C (50°–75°F)
+                </p>
+              </div>
+
+              <p className="mt-2 text-xs text-slate-500 font-normal leading-relaxed line-clamp-3">
+                Mild and pleasant, with blooming landscapes and comfortable sightseeing weather.
+              </p>
+            </div>
+
+            <span className="mt-4 rounded-md bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white inline-block w-fit">
+              Great time
+            </span>
+          </div>
+
+          {/* Summer */}
+          <div className="flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-2xs transition-all duration-300 hover:border-slate-200 hover:shadow-md">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#DF6951]">
+                  <span className="h-2 w-2 rounded-full bg-[#DF6951]" />
+                  Summer
+                </span>
+                <Sun size={15} className="text-[#DF6951]" />
+              </div>
+
+              <div className="mt-3 relative h-28 sm:h-32 w-full overflow-hidden rounded-xl bg-slate-100">
+                <img
+                  src="https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?auto=format&fit=crop&w=800&q=80"
+                  alt="Summer in destination"
+                  className="h-full w-full object-cover transition duration-700 hover:scale-105"
+                />
+              </div>
+
+              <div className="mt-3.5">
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Jun – Aug
+                </h3>
+                <p className="text-xs font-semibold text-[#DF6951] mt-0.5">
+                  22°–32°C (72°–90°F)
+                </p>
+              </div>
+
+              <p className="mt-2 text-xs text-slate-500 font-normal leading-relaxed line-clamp-3">
+                Hot and humid in many regions, with frequent rainfall and busy attractions.
+              </p>
+            </div>
+
+            <span className="mt-4 rounded-md bg-[#DF6951] px-3 py-1 text-[11px] font-semibold text-white inline-block w-fit">
+              Hot &amp; rainy
+            </span>
+          </div>
+
+          {/* Autumn */}
+          <div className="flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-2xs transition-all duration-300 hover:border-slate-200 hover:shadow-md">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-800">
+                  <span className="h-2 w-2 rounded-full bg-slate-800" />
+                  Autumn
+                </span>
+                <Sparkles size={15} className="text-slate-700" />
+              </div>
+
+              <div className="mt-3 relative h-28 sm:h-32 w-full overflow-hidden rounded-xl bg-slate-100">
+                <img
+                  src="https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80"
+                  alt="Autumn in destination"
+                  className="h-full w-full object-cover transition duration-700 hover:scale-105"
+                />
+              </div>
+
+              <div className="mt-3.5">
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Sep – Nov
+                </h3>
+                <p className="text-xs font-semibold text-slate-700 mt-0.5">
+                  10°–20°C (50°–68°F)
+                </p>
+              </div>
+
+              <p className="mt-2 text-xs text-slate-500 font-normal leading-relaxed line-clamp-3">
+                Pleasant temperatures, clearer skies, and colourful autumn scenery.
+              </p>
+            </div>
+
+            <span className="mt-4 rounded-md bg-[#0B1F3A] px-3 py-1 text-[11px] font-semibold text-white inline-block w-fit">
+              Best time
+            </span>
+          </div>
+
+          {/* Winter */}
+          <div className="flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-2xs transition-all duration-300 hover:border-slate-200 hover:shadow-md">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-600">
+                  <span className="h-2 w-2 rounded-full bg-blue-600" />
+                  Winter
+                </span>
+                <CloudSnow size={15} className="text-blue-500" />
+              </div>
+
+              <div className="mt-3 relative h-28 sm:h-32 w-full overflow-hidden rounded-xl bg-slate-100">
+                <img
+                  src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80"
+                  alt="Winter in destination"
+                  className="h-full w-full object-cover transition duration-700 hover:scale-105"
+                />
+              </div>
+
+              <div className="mt-3.5">
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Dec – Feb
+                </h3>
+                <p className="text-xs font-semibold text-blue-600 mt-0.5">
+                  -5°–10°C (23°–50°F)
+                </p>
+              </div>
+
+              <p className="mt-2 text-xs text-slate-500 font-normal leading-relaxed line-clamp-3">
+                Cold and dry in the north, with milder conditions across southern regions.
+              </p>
+            </div>
+
+            <span className="mt-4 rounded-md bg-blue-600 px-3 py-1 text-[11px] font-semibold text-white inline-block w-fit">
+              Cold season
+            </span>
+          </div>
         </div>
 
-        {/* Tip Callout Bar matching screenshot */}
-        <div className="mt-6 flex items-start sm:items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-5 py-3.5 text-slate-700">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[#E4572E]">
-            <Info size={15} />
-          </div>
-          <p className="text-xs sm:text-sm font-medium text-slate-700 leading-relaxed">
-            <strong className="text-slate-900 font-bold">Tip:</strong> For the best balance of comfortable weather and vibrant scenery, plan your visit during Spring (April–May) or Autumn (September–October).
+        {/* Disclaimer Note Box matching Figma screenshot */}
+        <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4 text-xs text-slate-500 font-normal leading-relaxed">
+          <Info size={16} className="text-slate-400 shrink-0 mt-0.5" />
+          <p>
+            Temperatures vary significantly across {info.country_name} because of its size. The ranges below are broad travel planning averages; northern cities are generally cooler, while southern destinations are warmer.
           </p>
         </div>
 

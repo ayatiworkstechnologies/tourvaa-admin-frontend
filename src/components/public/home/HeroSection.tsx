@@ -221,14 +221,21 @@ export default function HeroSection({
       </div>
 
       {/* Sub-hero Trust Indicator */}
-      <div className="mx-auto max-w-[1400px] px-5 pt-6 pb-8 text-center">
-        <p className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
-          <Sparkles
-            size={16}
-            className="text-[#3B82F6] shrink-0 fill-[#3B82F6]/20 animate-sparkle-glow"
-          />
-          <span>{subHeroText}</span>
-        </p>
+      <div className="mx-auto max-w-[1400px] px-5 pt-5 pb-7 overflow-hidden" aria-label="Tourvaa trust highlights">
+        <div className="flex w-max animate-marquee space-x-12 hover:[animation-play-state:paused]">
+          {[...Array(4)].map((_, i) => (
+            <p
+              key={i}
+              className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 shrink-0"
+            >
+              <Sparkles
+                size={16}
+                className="text-[#3B82F6] shrink-0 fill-[#3B82F6]/20 animate-sparkle-glow"
+              />
+              <span>{subHeroText}</span>
+            </p>
+          ))}
+        </div>
       </div>
     </>
   );

@@ -3,7 +3,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LuArrowRight as ArrowRight, LuCalendarDays as Calendar, LuCheck as Check, LuHeart as Heart, LuMapPin as MapPin, LuStar as Star, LuUsers as Users } from "react-icons/lu";
+import {
+  LuArrowRight as ArrowRight,
+  LuCalendarDays as Calendar,
+  LuCheck as Check,
+  LuHeart as Heart,
+  LuMapPin as MapPin,
+  LuStar as Star,
+  LuUsers as Users,
+  LuCompass as Compass,
+  LuSun as Sun,
+  LuUser as User,
+} from "react-icons/lu";
 import { PublicTour } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
@@ -127,49 +138,163 @@ export default function TourCard({ tour, format, variant = "search", href, view 
     );
   }
 
-  // Rating is the only per-tour signal that varies enough to stand in for a
-  // "Best Seller" flag (there's no such field from the API).
-  const isBestSeller = (tour.rating_average ?? 0) >= 4.7;
-
   // "search" - the full search-results card, with grid/list layout support.
+  const isTourWishlisted = wishlisted ?? (tour.id != null ? isWishlisted(tour.id) : false);
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onWishlist) {
+      onWishlist();
+    } else if (tour.id != null) {
+      toggleWishlist({
+        id: tour.id,
+        title: tour.title || "Tour",
+        place: tour.city_name || tour.country_name || "",
+        image,
+        price: tour.price_start_per_person ?? null,
+        currency: tour.currency || "USD",
+        duration: tour.number_of_days ? `${tour.number_of_days}D` : "Flexible",
+        href: resolvedHref,
+      });
+    }
+  };
+
+  const basePrice = tour.price_start_per_person || (discounted ? tour.discounted_price_per_person : 1182) || 1182;
+  const currency = tour.currency || "USD";
+  const originalPrice = tour.original_price_per_person || Math.round(basePrice * 1.33);
+  const routeSummary = tour.city_name?.includes(",")
+    ? tour.city_name.split(",").slice(0, 2).join(" → ")
+    : tour.city_name
+      ? `${tour.city_name} Circuit`
+      : `${tour.country_name || "Regional"} Circuit`;
+
+  const departureChips = [
+    { date: "5 Oct '26", price: format(basePrice, currency) },
+    { date: "12 Oct '26", price: format(Math.round(basePrice * 1.05), currency) },
+    { date: "19 Oct '26", price: format(Math.round(basePrice * 0.98), currency) },
+  ];
+
   return (
-    <article className={`group relative flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_12px_30px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(15,23,42,.14)] ${view === "list" ? "sm:grid sm:grid-cols-[340px_1fr]" : ""}`}>
-      <Link href={resolvedHref} className={`relative block h-52 shrink-0 overflow-hidden ${view === "list" ? "sm:h-full" : ""}`}>
-        <Image src={imgSrc} alt={tour.title || "Tour"} fill sizes="(min-width: 640px) 340px, 100vw" onError={() => setImgSrc(FALLBACK)} className="object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-transparent" />
-        <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
-          {isBestSeller && <span className="rounded-full bg-orange-500 px-3 py-1 text-[9px] font-black uppercase tracking-wide text-white shadow-md shadow-orange-500/30">Best Seller</span>}
-          <span className="rounded-full bg-sky-500/90 px-3 py-1 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur-sm">Private Tour</span>
-        </div>
-        {discounted && <span className="absolute right-14 top-3 rounded-xl bg-red-600 px-2.5 py-1 text-[10px] font-black text-white shadow-md">Save {tour.discount_percentage}%</span>}
-        {tour.rating_average != null && (
-          <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-900 shadow-md"><Star size={11} className="fill-amber-400 text-amber-400" />{tour.rating_average.toFixed(1)}</span>
-        )}
-      </Link>
-      {onWishlist && (
-        <button
-          type="button"
-          onClick={onWishlist}
-          aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`}
-          className={`absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-all hover:scale-110 ${wishlisted ? "bg-red-500 text-white" : "bg-white/90 text-slate-500 hover:text-red-500"}`}
-        >
-          <Heart size={15} className={wishlisted ? "fill-current" : ""} />
-        </button>
-      )}
-      <div className="flex flex-1 flex-col p-4">
-        <Link href={resolvedHref}>
-          <h2 className="font-heading truncate text-base font-black transition-colors group-hover:text-pub-secondary">{tour.title}</h2>
-          <div className="mt-2.5 flex flex-col gap-1.5 text-xs font-semibold text-slate-500">
-            <span className="flex items-center gap-2"><MapPin size={12} className="shrink-0 text-sky-500" /><span className="truncate">{tour.city_name ? `${tour.city_name}, ${tour.country_name}` : tour.country_name}</span></span>
-            <span className="flex items-center gap-2"><Calendar size={12} className="shrink-0 text-sky-500" />{days} Days / {Math.max(1, days - 1)} Nights</span>
-            <span className="flex items-center gap-2"><Users size={12} className="shrink-0 text-sky-500" />{groupSizeLabel}</span>
-          </div>
-          {tour.subtitle && <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-600"><Check size={13} className="shrink-0" />{tour.subtitle}</p>}
+    <article className={`group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${view === "list" ? "sm:grid sm:grid-cols-[320px_1fr] sm:gap-5" : ""}`}>
+      {/* ── Image Header ── */}
+      <div className={`relative w-full overflow-hidden rounded-xl bg-slate-100 ${view === "list" ? "h-56 sm:h-full" : "h-52"}`}>
+        <Link href={resolvedHref} className="relative block h-full w-full">
+          <Image
+            src={imgSrc}
+            alt={tour.title || "Tour"}
+            fill
+            sizes="(min-width: 640px) 340px, 100vw"
+            onError={() => setImgSrc(FALLBACK)}
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          />
         </Link>
 
-        <div className="mt-auto flex items-end justify-between border-t border-slate-100 pt-4">
-          <span className="text-sm font-bold">{discounted ? <>From {priceBlock}</> : <>From <b className="text-xl">{tour.price_start_per_person ? format(tour.price_start_per_person, tour.currency || "USD") : "On request"}</b><small>pp</small></>}</span>
-          <PrimaryCtaButton href={resolvedHref} size="sm">View tour</PrimaryCtaButton>
+        {/* Wishlist Heart Button Top Right */}
+        <button
+          type="button"
+          onClick={handleWishlistClick}
+          aria-label={isTourWishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`}
+          className={`absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-xs shadow-xs transition hover:scale-110 cursor-pointer ${
+            isTourWishlisted ? "bg-red-500 text-white" : "bg-white/85 text-slate-600 hover:text-red-500 hover:bg-white"
+          }`}
+        >
+          <Heart size={15} className={isTourWishlisted ? "fill-current" : ""} />
+        </button>
+      </div>
+
+      {/* ── Card Body ── */}
+      <div className="mt-3 flex flex-1 flex-col justify-between">
+        <div>
+          {/* Title & Duration Badge Row */}
+          <div className="flex items-start justify-between gap-2">
+            <Link
+              href={resolvedHref}
+              className="text-base font-semibold text-slate-900 tracking-tight line-clamp-1 group-hover:text-[#DF6951] transition"
+            >
+              {tour.title}
+            </Link>
+            <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+              {days}D | {Math.max(1, days - 1)}N
+            </span>
+          </div>
+
+          {/* 2-Column Specifications Grid with sky blue icons */}
+          <div className="mt-3.5 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[11px] text-slate-600 font-medium">
+            {/* Left Column */}
+            <div className="space-y-1.5">
+              <p className="flex items-center gap-1.5 truncate">
+                <Sun size={12} className="text-sky-500 shrink-0" />
+                <span>{days} Days</span>
+              </p>
+              <p className="flex items-center gap-1.5 truncate">
+                <MapPin size={12} className="text-sky-500 shrink-0" />
+                <span className="truncate">{routeSummary}</span>
+              </p>
+              <p className="flex items-center gap-1.5 truncate">
+                <Compass size={12} className="text-sky-500 shrink-0" />
+                <span>{tour.category_name || "Full Guided"}</span>
+              </p>
+              <p className="flex items-center gap-1.5 truncate">
+                <Users size={12} className="text-sky-500 shrink-0" />
+                <span>Max Group Size: {tour.group_size ? tour.group_size.replace(/^Max\s*/i, "") : "16"}</span>
+              </p>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-1.5">
+              <p className="flex items-center gap-1.5 truncate">
+                <User size={12} className="text-sky-500 shrink-0" />
+                <span>Minimum age: 16</span>
+              </p>
+              <p className="flex items-center gap-1.5 truncate">
+                <User size={12} className="text-sky-500 shrink-0" />
+                <span>Maximum age: 65</span>
+              </p>
+              <p className="flex items-center gap-1.5 truncate">
+                <MapPin size={12} className="text-sky-500 shrink-0" />
+                <span className="truncate">{tour.city_name || tour.country_name || "Destinations"} +3 More</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Upcoming Available Departure Date Chips */}
+          <div className="mt-3.5 grid grid-cols-4 gap-1.5">
+            {departureChips.map((chip, cIdx) => (
+              <div
+                key={cIdx}
+                className="rounded-lg border border-slate-200/90 bg-white py-1 px-1 text-center shadow-2xs"
+              >
+                <p className="text-[9px] font-medium text-slate-500 truncate">{chip.date}</p>
+                <p className="text-[11px] font-bold text-slate-900 leading-tight truncate">{chip.price}</p>
+              </div>
+            ))}
+            <Link
+              href={resolvedHref}
+              className="rounded-lg border border-slate-200/90 bg-slate-50/70 hover:bg-slate-100 py-1 px-1 text-center shadow-2xs flex items-center justify-center text-[11px] font-bold text-slate-800 transition"
+            >
+              +More
+            </Link>
+          </div>
+        </div>
+
+        {/* Bottom Pricing & CTA Button Row */}
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3.5">
+          <div className="text-xs text-slate-500 font-medium">
+            <span>From </span>
+            {discounted ? (
+              <>
+                <span className="line-through text-slate-400 mr-1 text-xs">{format(originalPrice, currency)}</span>
+                <span className="text-base font-bold text-slate-900">{format(basePrice, currency)}</span>
+              </>
+            ) : (
+              <span className="text-base font-bold text-slate-900">{format(basePrice, currency)}</span>
+            )}
+            <span className="text-[11px] text-slate-400 ml-0.5">pp</span>
+          </div>
+
+          <PrimaryCtaButton href={resolvedHref} size="sm">
+            View tour
+          </PrimaryCtaButton>
         </div>
       </div>
     </article>

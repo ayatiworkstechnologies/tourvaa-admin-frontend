@@ -7,7 +7,11 @@ import {
   LuChevronRight as ChevronRight,
   LuHeart as Heart,
   LuMapPin as MapPin,
+  LuNavigation as Navigation,
+  LuSlidersHorizontal as Sliders,
   LuStar as Star,
+  LuSun as Sun,
+  LuUsers as Users,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
@@ -141,94 +145,123 @@ export function TopDealCard({ tour }: { tour: Tour }) {
     href,
   };
 
-  const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.9";
+  const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.8";
   const reviewCountStr = tour.reviews
     ? tour.reviews.replace(/^\(|\)$/g, "")
-    : "1,842 reviews";
+    : "2,486 reviews";
   const destinationName = getDestinationName(tour.place);
-  const durationTag = getDurationTag(tour);
+
+  const calculatedPct =
+    tour.originalPrice && tour.rawPrice && tour.originalPrice > tour.rawPrice
+      ? Math.round(
+          ((tour.originalPrice - tour.rawPrice) / tour.originalPrice) * 100,
+        )
+      : null;
+  const discountLabel =
+    tour.discountBadge ||
+    (calculatedPct ? `Save ${calculatedPct}%` : "Save 25%");
 
   return (
     <article
       data-deal-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-2xl bg-white p-2 sm:p-2.5 transition-all duration-300 hover:-translate-y-1 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-slate-200/80 p-2 sm:p-2.5 shadow-xs transition-all duration-300 hover:shadow-md hover:-translate-y-1 h-full"
     >
-      {/* Image with Deal badge, Location badge & Wishlist button */}
-      <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-xl bg-slate-100 shrink-0">
-        <Link href={href} className="block h-full w-full">
-          <MarketingImage
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
-            src={tour.image}
-            alt={tour.title}
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
-          />
-        </Link>
-
-        {/* Top-Left Destination Badge */}
-        <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#DF6951] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
-          <MapPin size={10} className="fill-white/30 text-white shrink-0" />
-          <span className="truncate max-w-[100px]">{destinationName}</span>
-        </span>
-
-        {/* Wishlist Heart button (top-right) */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleWishlist(travelItem);
-          }}
-          aria-label={
-            wishlisted
-              ? `Remove ${tour.title} from wishlist`
-              : `Add ${tour.title} to wishlist`
-          }
-          className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center transition-transform duration-200 hover:scale-120 active:scale-90 focus:outline-none cursor-pointer"
-        >
-          <Heart
-            size={18}
-            className={
-              wishlisted
-                ? "fill-red-500 text-red-500 drop-shadow-xs"
-                : "fill-white/70 text-slate-700 drop-shadow-xs"
-            }
-          />
-        </button>
-      </div>
-
-      {/* Tour details */}
-      <div className="pt-3 flex flex-1 flex-col justify-between">
+      <Link href={href} className="flex flex-col h-full justify-between">
         <div>
-          {/* Title and duration badge */}
-          <div className="flex items-center justify-between gap-2">
-            <Link href={href} className="block flex-1 min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 transition-colors group-hover:text-[#DF6951] leading-snug">
-                {tour.title}
-              </h3>
-            </Link>
-            <span className="shrink-0 rounded border border-blue-400 text-blue-600 bg-transparent px-1.5 py-0.5 text-[10px] font-semibold tracking-wide">
-              {durationTag}
+          {/* Image with Location badge, Wishlist button & Save badge */}
+          <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-xl bg-slate-100 shrink-0">
+            <MarketingImage
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+              src={tour.image}
+              alt={tour.title}
+              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
+            />
+
+            {/* Top-Left Destination Badge */}
+            <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#DF6951] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
+              <MapPin size={10} className="fill-white/30 text-white shrink-0" />
+              <span className="truncate max-w-[100px]">{destinationName}</span>
             </span>
+
+            {/* Wishlist Heart button (top-right) */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleWishlist(travelItem);
+              }}
+              aria-label={
+                wishlisted
+                  ? `Remove ${tour.title} from wishlist`
+                  : `Add ${tour.title} to wishlist`
+              }
+              className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center transition-transform duration-200 hover:scale-120 active:scale-90 focus:outline-none cursor-pointer"
+            >
+              <Heart
+                size={18}
+                className={
+                  wishlisted
+                    ? "fill-red-500 text-red-500 drop-shadow-xs"
+                    : "fill-white/70 text-slate-700 drop-shadow-xs"
+                }
+              />
+            </button>
+
+            {/* Discount Badge bottom-right */}
+            {discountLabel && (
+              <span className="absolute bottom-2.5 right-2.5 z-10 rounded-md bg-[#E53935] px-2.5 py-1 text-xs font-bold text-white shadow-md">
+                {discountLabel}
+              </span>
+            )}
           </div>
 
-          {/* 5 Yellow Stars + Rating + Review count */}
-          <div className="mt-1.5 flex items-center gap-1 text-xs">
-            <div className="flex items-center gap-0.5 text-amber-400">
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              <Star size={11} className="fill-amber-400 text-amber-400" />
+          {/* Tour details */}
+          <div className="pt-3">
+            {/* Title */}
+            <h3 className="truncate text-base font-semibold text-slate-900 transition-colors group-hover:text-[#DF6951] leading-snug">
+              {tour.title}
+            </h3>
+
+            {/* 5 Yellow Stars + Rating + Review count */}
+            <div className="mt-1.5 flex items-center gap-1 text-xs">
+              <div className="flex items-center gap-0.5 text-amber-400">
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+              </div>
+              <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
+              <span className="text-slate-500">{reviewCountStr}</span>
             </div>
-            <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
-            <span className="text-slate-600">{reviewCountStr}</span>
+
+            {/* 4 Feature specs with blue icons */}
+            <div className="mt-2.5 space-y-1 text-[11px] text-slate-600 font-medium">
+              <p className="flex items-center gap-1.5">
+                <Sun size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                <span>{tour.days || "7 Days"}</span>
+              </p>
+              <p className="flex items-center gap-1.5 truncate">
+                <Navigation size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                <span className="truncate">{tour.place || destinationName}</span>
+              </p>
+              <p className="flex items-center gap-1.5">
+                <Sliders size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                <span>Age Range: 12-70</span>
+              </p>
+              <p className="flex items-center gap-1.5">
+                <Users size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                <span>Max Group Size: 24</span>
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Price Row: From $old $new pp */}
-        <div className="mt-2.5 flex items-baseline gap-1.5 text-slate-900">
-          <span className="text-xs sm:text-sm font-bold">From</span>
+        {/* Price Row: From $old $new pp -- no button on the right */}
+        <div className="mt-3 flex items-baseline gap-1.5 text-slate-900 border-t border-slate-100 pt-2.5">
+          <span className="text-xs font-normal text-slate-500">From</span>
           {tour.originalPrice != null && (
             <span className="text-xs font-normal text-slate-400 line-through">
               {format(tour.originalPrice, tour.currency || "USD")}
@@ -237,11 +270,11 @@ export function TopDealCard({ tour }: { tour: Tour }) {
           <strong className="text-sm sm:text-base font-bold text-slate-950">
             {tour.rawPrice != null
               ? format(tour.rawPrice, tour.currency || "USD")
-              : format(999, "USD")}
+              : format(1182, "USD")}
           </strong>
-          <span className="text-xs text-slate-600 font-normal">pp</span>
+          <span className="text-xs text-slate-500 font-normal">pp</span>
         </div>
-      </div>
+      </Link>
     </article>
   );
 }

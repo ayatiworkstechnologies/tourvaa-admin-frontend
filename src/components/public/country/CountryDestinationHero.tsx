@@ -35,9 +35,9 @@ export default function CountryDestinationHero({
 
   return (
     <section className="bg-white text-slate-900 pt-4 pb-8">
-      <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
+      <div className="mx-auto max-w-[1400px] px-5">
         {/* ── 1. Panoramic Scenic Hero Banner ── */}
-        <div className="relative h-[320px] sm:h-[380px] w-full overflow-hidden rounded-[26px] bg-slate-950 shadow-md">
+        <div className="relative h-[480px] min-h-[480px] w-full overflow-hidden rounded-[26px] bg-slate-950 shadow-md">
           <img
             src={
               info.hero_image ||
@@ -50,7 +50,7 @@ export default function CountryDestinationHero({
 
           {/* Floating Dark Card in the Center/Left */}
           <div className="absolute inset-x-5 bottom-6 sm:bottom-10 sm:left-10 sm:right-auto max-w-lg rounded-[22px] border border-white/20 bg-black/60 p-6 sm:p-7 text-white backdrop-blur-md shadow-2xl">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
               {info.country_name} Tours
             </h1>
             <p className="mt-2.5 text-xs sm:text-sm text-white/90 leading-relaxed font-medium">
@@ -96,7 +96,7 @@ export default function CountryDestinationHero({
 
         {/* ── 3. Country Title & Split Overview Card ── */}
         <div className="mt-6">
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mb-4">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-950 tracking-tight mb-4">
             {info.country_name}
           </h2>
 

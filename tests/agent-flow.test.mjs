@@ -65,7 +65,7 @@ check("commission requests are managed from the agent dashboard", dashboard.incl
 
 const detail = read("src/app/agent/bookings/[id]/page.tsx");
 check("detail uses serialized traveller counts", detail.includes("booking.no_of_adults") && detail.includes("booking.no_of_children"));
-check("detail exposes supplier decision", detail.includes("Supplier Acceptance"));
+check("detail exposes supplier decision", detail.includes("Supplier decision") && detail.includes("supplier_acceptance_status"));
 check("detail explains payment to confirmation execution", detail.includes("Booking Execution Flow") && detail.includes("Supplier decision") && detail.includes("Confirmed"));
 check("detail renders price breakdown and status timeline", detail.includes("Price Breakdown") && detail.includes("Status Timeline"));
 check("agent can reopen payment for an unpaid booking", detail.includes("BookingPaymentModal") && detail.includes("Pay Now"));

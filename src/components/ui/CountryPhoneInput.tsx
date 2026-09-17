@@ -8,7 +8,7 @@ import { PHONE_COUNTRIES, dialCodeForIso, formatAsYouType, validatePhoneForCount
 import { digitsOnly } from "@/lib/utils/validators";
 
 type CountryPhoneInputProps = {
-  countryIso: CountryCode;
+  countryIso: CountryCode | "";
   number: string;
   onCountryChange: (iso: CountryCode) => void;
   onNumberChange: (digits: string) => void;
@@ -41,7 +41,7 @@ export default function CountryPhoneInput({
   const searchRef = useRef<HTMLInputElement>(null);
 
   const selected = useMemo(
-    () => PHONE_COUNTRIES.find((c) => c.iso === countryIso) ?? PHONE_COUNTRIES.find((c) => c.iso === "IN"),
+    () => PHONE_COUNTRIES.find((c) => c.iso === countryIso),
     [countryIso]
   );
 
@@ -71,8 +71,8 @@ export default function CountryPhoneInput({
     };
   }, [open]);
 
-  const isValid = number.length >= 4 ? validatePhoneForCountry(countryIso, number) : null;
-  const formatted = formatAsYouType(countryIso, number);
+  const isValid = countryIso && number.length >= 4 ? validatePhoneForCountry(countryIso, number) : null;
+  const formatted = countryIso ? formatAsYouType(countryIso, number) : number;
 
   return (
     <label className={`block ${className}`}>
@@ -90,12 +90,15 @@ export default function CountryPhoneInput({
           onClick={() => setOpen((v) => !v)}
           aria-haspopup="listbox"
           aria-expanded={open}
+          aria-required={required}
           className="flex shrink-0 items-center gap-1.5 rounded-l-xl border-r border-dash-border bg-dash-bg px-2.5 py-2.5 text-sm font-semibold text-dash-text outline-none transition hover:bg-slate-100"
         >
-          <span className="h-3.5 w-5 overflow-hidden rounded-[2px]">
-            <FlagIcon countryCode={selected?.iso} />
-          </span>
-          <span>{selected?.dialCode}</span>
+          {selected ? (
+            <span className="h-3.5 w-5 overflow-hidden rounded-[2px]">
+              <FlagIcon countryCode={selected.iso} />
+            </span>
+          ) : null}
+          <span>{selected ? `${selected.name} (${selected.dialCode})` : "Select country"}</span>
           <ChevronDown size={13} className={`text-dash-subtle transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
 
@@ -105,8 +108,10 @@ export default function CountryPhoneInput({
           value={formatted}
           onChange={(event) => onNumberChange(digitsOnly(event.target.value))}
           placeholder="9876543210"
-          className="min-w-0 flex-1 rounded-r-xl px-3 py-2.5 text-sm text-dash-text outline-none placeholder:text-dash-subtle"
+          className="min-w-0 flex-1 rounded-r-xl px-3 py-2.5 text-sm text-dash-text outline-none placeholder:text-dash-subtle disabled:cursor-not-allowed disabled:bg-slate-50"
           required={required}
+          disabled={!selected}
+          autoComplete="tel-national"
           aria-invalid={Boolean(errorMessage)}
           aria-describedby={errorMessage ? "phone-error" : undefined}
         />
