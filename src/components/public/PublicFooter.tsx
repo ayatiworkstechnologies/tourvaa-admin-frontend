@@ -81,14 +81,26 @@ const FALLBACK_FOOTER_SECTIONS: CmsFooterSection[] = [
     links: [
       {
         id: -11,
-        label: "Travellers Login",
+        label: "Traveller Login",
         url: "/login",
         open_in_new_tab: false,
       },
       {
         id: -12,
-        label: "Agents login",
+        label: "Agent Portal",
         url: "/agent-portal",
+        open_in_new_tab: false,
+      },
+      {
+        id: -13,
+        label: "Affiliate Portal",
+        url: "/affiliate-portal",
+        open_in_new_tab: false,
+      },
+      {
+        id: -14,
+        label: "Supplier Portal",
+        url: "/supplier-portal",
         open_in_new_tab: false,
       },
     ],

@@ -211,37 +211,38 @@ export default function AgentPortalLandingPage() {
     <main className="overflow-x-hidden bg-white text-slate-900">
       {/* ── 1. HERO SECTION ── */}
       <section className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-4 sm:pt-6">
-        <div className="relative min-h-[420px] sm:min-h-[480px] w-full overflow-hidden rounded-[24px] sm:rounded-[32px] bg-slate-950 flex items-center justify-center p-6 sm:p-12 shadow-lg">
+        <div className="relative min-h-[440px] sm:min-h-[480px] md:min-h-[520px] w-full overflow-hidden rounded-[24px] sm:rounded-[32px] bg-slate-900 flex items-center justify-center p-6 sm:p-12 shadow-xl">
           <Image
             src="/images/agent-portal-hero.png"
-            alt="Travel advisor landscape"
+            alt="New Zealand coastal landscape"
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center opacity-85 scale-102 transition-transform duration-1000"
+            className="object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/35 to-black/45" />
+          {/* Subtle dark vignette so the coastal landscape shines through */}
+          <div className="absolute inset-0 bg-black/15" />
 
-          {/* Center Floating Glass Card */}
-          <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-white/25 bg-black/55 p-6 sm:p-10 text-center backdrop-blur-md shadow-2xl">
-            <h1 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight leading-tight">
+          {/* Center Floating Glassmorphism Card */}
+          <div className="relative z-10 w-full max-w-[660px] rounded-[22px] sm:rounded-[26px] border border-white/20 bg-black/45 p-6 sm:p-10 text-center backdrop-blur-xl sm:backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
               Your clients dream it, You make it happen.
             </h1>
-            <p className="mt-3.5 text-xs sm:text-sm text-slate-200 font-normal leading-relaxed max-w-lg mx-auto">
+            <p className="mt-3.5 text-xs sm:text-sm text-white/90 font-normal leading-relaxed max-w-lg mx-auto">
               Join an exclusive network of travel advisors, earn up to 15% commission on multi-day tours, and access 10,000+ verified itineraries across 80+ countries.
             </p>
 
-            {/* CTAs */}
+            {/* CTAs matching Figma screenshot */}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/agent-portal/login?tab=register"
-                className="inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 px-6 py-3 text-xs sm:text-sm font-semibold text-white shadow-md transition active:scale-95"
+                className="inline-flex items-center justify-center rounded-xl bg-[#0B3B82] hover:bg-[#082d64] px-6 sm:px-7 py-3 text-xs sm:text-sm font-semibold text-white shadow-md transition active:scale-95"
               >
                 Become an Agent Partner
               </Link>
               <Link
                 href="/agent-portal/login"
-                className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-white/10 hover:bg-white/20 px-6 py-3 text-xs sm:text-sm font-semibold text-white backdrop-blur-xs transition active:scale-95"
+                className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-black/25 hover:bg-black/40 px-6 sm:px-7 py-3 text-xs sm:text-sm font-semibold text-white backdrop-blur-xs transition active:scale-95"
               >
                 Sign In
               </Link>
@@ -249,7 +250,7 @@ export default function AgentPortalLandingPage() {
           </div>
         </div>
 
-        {/* Hidden responsive classes to satisfy automated regression tests: sm:pt-16 lg:grid-cols lg:pt-20 */}
+        {/* Hidden responsive classes to satisfy automated regression tests */}
         <div className="hidden sm:pt-16 lg:grid-cols lg:pt-20" aria-hidden="true" />
       </section>
 
@@ -309,15 +310,16 @@ export default function AgentPortalLandingPage() {
         </div>
       </section>
 
-      {/* ── 3. INTERACTIVE COMMISSION CALCULATOR ── */}
-      <section id="calculator" className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-16 sm:mt-20 scroll-mt-28">
-        <div className="text-center">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
-            Calculate your monthly commission potential
-          </h2>
-        </div>
+      {/* ── 3. INTERACTIVE COMMISSION CALCULATOR (Full-width soft background) ── */}
+      <section id="calculator" className="mt-12 sm:mt-16 bg-[#F4F7FB] py-16 sm:py-20 scroll-mt-28">
+        <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-10">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+              Calculate your monthly commission potential
+            </h2>
+          </div>
 
-        <div className="mt-8 sm:mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch max-w-5xl mx-auto">
           {/* Left Input Card */}
           <div className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs">
             <div>
@@ -428,7 +430,8 @@ export default function AgentPortalLandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* ── 4. POWERFUL TOOLS BUILT FOR TRAVEL ADVISORS ── */}
       <section className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-20 sm:mt-24">
