@@ -21,8 +21,11 @@ function timeAgo(value?: string | null) {
   return date.toLocaleDateString();
 }
 
-/** Direct chat between whoever booked a tour (customer, or the agent who
- * booked it for them) and the supplier fulfilling it. Mount on a booking
+/** Chat between whoever booked a tour (customer, or the agent who booked it
+ * for them) and the supplier fulfilling it - presented to that viewer as a
+ * generic Tourvaa support channel rather than the supplier's real identity
+ * (see services.messaging's hide_supplier_identity: the API never sends
+ * this viewer the supplier's name in the first place). Mount on a booking
  * detail page once the booking has a supplier assigned. */
 export default function BookingMessageThread({ bookingId }: { bookingId: number }) {
   const [thread, setThread] = useState<BookingConversationThread | null>(null);
@@ -40,7 +43,7 @@ export default function BookingMessageThread({ bookingId }: { bookingId: number 
       setThread(data);
       setError("");
     } catch {
-      setError("Could not load messages with the supplier for this booking.");
+      setError("Could not load messages for this booking.");
     } finally {
       setLoading(false);
     }
@@ -101,7 +104,7 @@ export default function BookingMessageThread({ bookingId }: { bookingId: number 
   return (
     <div className="flex h-[480px] flex-col rounded-2xl border border-dash-border-soft bg-white">
       <div className="border-b border-dash-border-soft px-5 py-3">
-        <p className="font-bold text-dash-text">Message the supplier{thread?.supplier_name ? ` — ${thread.supplier_name}` : ""}</p>
+        <p className="font-bold text-dash-text">Message Tourvaa Support</p>
         <p className="mt-0.5 text-xs text-dash-subtle">Ask about this booking directly.</p>
       </div>
 

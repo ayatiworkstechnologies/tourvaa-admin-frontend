@@ -7,7 +7,6 @@ import {
   LuCircleX as CircleX,
   LuGlobe as Globe,
   LuSparkles as Sparkles,
-  LuStar as Star,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
@@ -94,16 +93,6 @@ export default function HeroSection({
 
   const heroTitle = banner?.title || "Endless destinations. One easy search.";
 
-  const heroRating =
-    heroExtras.rating !== undefined ? Number(heroExtras.rating) : 4.5;
-  const heroReviewCount =
-    heroExtras.review_count !== undefined
-      ? Number(heroExtras.review_count)
-      : 522;
-  const heroReviewSource =
-    heroExtras.review_source !== undefined
-      ? heroExtras.review_source
-      : "Ayatiworks";
   const heroOfferText =
     heroExtras.offer_text !== undefined
       ? heroExtras.offer_text
@@ -182,44 +171,6 @@ export default function HeroSection({
               />
             </div>
 
-            {/* Social Proof / Traveller Rating */}
-            <div
-              className={`mt-3 sm:mt-4 flex flex-wrap items-center justify-center gap-1.5 text-xs sm:text-sm text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)] relative z-10 transition-all duration-200 ${
-                searchPanelOpen
-                  ? "opacity-0 pointer-events-none invisible"
-                  : "opacity-100"
-              }`}
-            >
-              <span className="font-normal text-white/95">
-                Tourvaa travellers rate us
-              </span>
-              <span className="font-semibold text-white">Excellent</span>
-              <span className="inline-flex items-center gap-0.5 mx-1">
-                <Star
-                  size={14}
-                  className="fill-pub-secondary text-pub-secondary"
-                />
-                <Star
-                  size={14}
-                  className="fill-pub-secondary text-pub-secondary"
-                />
-                <Star
-                  size={14}
-                  className="fill-pub-secondary text-pub-secondary"
-                />
-                <Star
-                  size={14}
-                  className="fill-pub-secondary text-pub-secondary"
-                />
-                <Star size={14} className="fill-white/40 text-white/60" />
-              </span>
-              <span className="font-bold text-white">
-                {heroRating.toFixed(1)}
-              </span>
-              <span className="text-white/90">
-                {`out of 5 based on ${heroReviewCount.toLocaleString()} reviews on ${heroReviewSource}`}
-              </span>
-            </div>
           </div>
 
           {/* Bottom Offer Capsule */}

@@ -35,7 +35,11 @@ type Booking = {
   booking_status: string;
   payment_status: string;
   supplier_acceptance_status?: string;
-  supplier?: { id: number; supplier_name?: string };
+  // Never sent to the agent portal (see services.bookings.serialize_booking's
+  // hide_supplier_identity) - suppliers are a Tourvaa back-office
+  // relationship. supplier_id is still sent, purely as an unrendered "has a
+  // supplier been assigned" signal.
+  supplier_id?: number | null;
   final_amount?: string | number;
   amount_paid?: string | number;
   amount_pending?: string | number;
@@ -353,8 +357,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             <InfoRow label="Adults" value={booking.no_of_adults} />
             <InfoRow label="Children" value={booking.no_of_children ?? 0} />
             <InfoRow label="Total Travellers" value={booking.total_travellers ?? ((booking.no_of_adults ?? 0) + (booking.no_of_children ?? 0))} />
-            <InfoRow label="Supplier" value={booking.supplier?.supplier_name} />
-            <InfoRow label="Supplier Acceptance" value={(booking.supplier_acceptance_status ?? "-").replaceAll("_", " ")} />
+            <InfoRow label="Booking Confirmation" value={(booking.supplier_acceptance_status ?? "-").replaceAll("_", " ")} />
             <InfoRow label="Source" value={booking.booking_source?.replaceAll("_", " ") ?? "-"} />
             <InfoRow label="Created" value={dateText(booking.created_at)} />
             {(booking.customer_notes || booking.notes) && <InfoRow label="Notes" value={booking.customer_notes ?? booking.notes} />}
@@ -387,7 +390,14 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
               />
               <InfoRow label="Payment Status" value={<Pill status={booking.payment_status}>{booking.payment_status.replaceAll("_", " ")}</Pill>} />
               <InfoRow label="Payment Method" value={booking.agent_payment_method?.replaceAll("_", " ") ?? "Online"} />
-              <InfoRow label="Payment Plan" value={booking.payment_type === "partial" ? "30% deposit" : "Full payment"} />
+              <InfoRow
+                label="Payment Plan"
+                value={
+                  booking.payment_type === "partial"
+                    ? `${Math.round((Number(booking.amount_paid) / Number(booking.final_amount || 1)) * 100)}% deposit`
+                    : "Full payment"
+                }
+              />
             </div>
           </div>
 
@@ -409,8 +419,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         </div>
       </div>
 
-      {/* Message the supplier */}
-      {booking.supplier?.supplier_name && (
+      {/* Message Tourvaa support about this booking */}
+      {booking.supplier_id && (
         <div className="mt-6">
           <BookingMessageThread bookingId={booking.id} />
         </div>

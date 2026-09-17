@@ -12,6 +12,7 @@ import { todayLocalDateStr } from "@/lib/utils/date";
 import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useAuthContext } from "@/providers/AuthProvider";
 import {
   createGlobalDiscount,
   updateGlobalDiscount,
@@ -69,6 +70,8 @@ export default function DiscountsPage() {
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const { countries } = useGeoCountries();
+  const { hasPermission } = useAuthContext();
+  const canEdit = hasPermission("tours.edit");
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [items, setItems] = useState<GlobalDiscount[]>([]);
   const [scopeFilter, setScopeFilter] = useState("");
@@ -181,6 +184,7 @@ export default function DiscountsPage() {
               Manage promo codes scoped to a specific tour, a category, a country, or all tours at once.
             </p>
           </div>
+          {canEdit && (
           <button
             type="button"
             onClick={() => setEditing(empty())}
@@ -189,6 +193,7 @@ export default function DiscountsPage() {
             <Plus size={18} strokeWidth={2.5} />
             Add Discount
           </button>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-1 rounded-xl border border-dash-border bg-white p-1.5">
@@ -261,10 +266,12 @@ export default function DiscountsPage() {
                     <button type="button" onClick={() => void openHistory(item)} title="History" className="rounded-lg border border-dash-border p-1.5 hover:bg-[#F2F4F7]">
                       <History size={13} />
                     </button>
-                    <button type="button" onClick={() => setEditing({ ...item })} title="Edit" className="inline-flex items-center gap-1 rounded-lg bg-dash-brand px-2.5 py-1.5 text-xs font-bold text-white hover:bg-dash-brand-hover">
-                      <Pencil size={13} /> Edit
-                    </button>
-                    {item.status !== "inactive" && (
+                    {canEdit && (
+                      <button type="button" onClick={() => setEditing({ ...item })} title="Edit" className="inline-flex items-center gap-1 rounded-lg bg-dash-brand px-2.5 py-1.5 text-xs font-bold text-white hover:bg-dash-brand-hover">
+                        <Pencil size={13} /> Edit
+                      </button>
+                    )}
+                    {canEdit && item.status !== "inactive" && (
                       <button type="button" onClick={() => deactivate(item)} title="Delete" className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500 hover:bg-[#FFF0F0]">
                         <Trash2 size={13} />
                       </button>

@@ -37,7 +37,11 @@ type Booking = {
   tour_name?: string;
   tour_date?: string;
   country?: string;
-  supplier_name?: string;
+  // Never sent to the customer portal (see services.bookings.serialize_booking's
+  // hide_supplier_identity) - suppliers are a Tourvaa back-office
+  // relationship, not something a customer sees. supplier_id is still sent,
+  // purely as an unrendered "has a supplier been assigned" signal.
+  supplier_id?: number | null;
   booking_status: string;
   supplier_acceptance_status?: string;
   payment_status?: string;
@@ -648,7 +652,6 @@ export default function CustomerBookingDetailPage() {
                 <Field label="Tour" value={<span className="flex items-center gap-1"><MapPinned size={14} className="text-dash-brand" />{booking.tour_name}</span>} />
                 <Field label="Travel Date" value={<span className="flex items-center gap-1"><CalendarCheck size={14} className="text-dash-brand" />{booking.tour_date || "-"}</span>} />
                 <Field label="Country" value={booking.country} />
-                <Field label="Supplier" value={booking.supplier_name} />
                 <a href={`/api/customer/bookings/${booking.id}/itinerary`} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-dash-border px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC]">
                   <FileText size={13} /> Download Itinerary
                 </a>
@@ -689,8 +692,11 @@ export default function CustomerBookingDetailPage() {
             </Panel>
           </div>
 
-          {/* Message the supplier */}
-          {booking.supplier_name && (
+          {/* Message Tourvaa support about this booking (the thread is
+              still delivered to the assigned supplier operationally, but is
+              never presented to the customer as coming from/going to the
+              supplier by name) */}
+          {booking.supplier_id && (
             <div className="mt-4">
               <BookingMessageThread bookingId={booking.id} />
             </div>

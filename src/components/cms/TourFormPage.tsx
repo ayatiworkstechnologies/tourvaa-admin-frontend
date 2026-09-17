@@ -23,10 +23,17 @@ import CurrencySelect from "@/components/ui/CurrencySelect";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { TourWorkspaceHeader } from "@/components/tours/TourWorkspace";
 import { createCms, getCms, listCms, updateCms } from "@/lib/api/services/cmsService";
+import { getPricing, PricingSlab } from "@/lib/api/services/tourDetailService";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import api from "@/lib/api/client";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
+
+type ActiveDiscount = {
+  discount_percentage: number;
+  original_price_per_person: number;
+  discounted_price_per_person: number;
+};
 
 type Section = "basic-core" | "settings" | "location" | "media" | "seo";
 
@@ -807,6 +814,15 @@ export default function TourFormPage({
   const [loading, setLoading] = useState(Boolean(tourId && !initialData));
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState<{ message: string; current_updated_by?: number } | null>(null);
+  // Storefront Price preview (Basic Information step) - only ever shown when
+  // the tour has an active discount (services/cms.py _active_discount), and
+  // sourced from the 1-pax pricing slab so it matches Pricing & Discounts
+  // exactly: storefront_adult_price (admin, markup-inclusive) is stripped
+  // from a supplier's own API response server-side, so the same
+  // `storefront_adult_price ?? adult_price` fallback used there naturally
+  // shows the supplier their own net price instead.
+  const [activeDiscount, setActiveDiscount] = useState<ActiveDiscount | null>(null);
+  const [onePaxSlab, setOnePaxSlab] = useState<PricingSlab | null>(null);
 
   const [selectedStateId, setSelectedStateId] = useState("");
   const { countries } = useGeoCountries();
@@ -885,6 +901,7 @@ export default function TourFormPage({
     try {
       const data = await getCms("/tours", tourId);
       setForm(normalizeTourForm(data));
+      setActiveDiscount((data as { active_discount?: ActiveDiscount }).active_discount ?? null);
     } catch {
       toast.error("Could not load tour.");
     } finally {
@@ -899,8 +916,22 @@ export default function TourFormPage({
   useEffect(() => {
     if (initialData) {
       setForm(normalizeTourForm(initialData));
+      setActiveDiscount((initialData as { active_discount?: ActiveDiscount }).active_discount ?? null);
     }
   }, [initialData]);
+
+  useEffect(() => {
+    if (!tourId) return;
+    let active = true;
+    getPricing(tourId).then((slabs) => {
+      if (!active) return;
+      const slab = slabs.find((s) => s.passenger_from <= 1 && (s.passenger_to ?? 1) >= 1) ?? slabs[0] ?? null;
+      setOnePaxSlab(slab);
+    }).catch(() => {
+      // Non-fatal -- the Storefront Price preview simply stays hidden.
+    });
+    return () => { active = false; };
+  }, [tourId]);
 
   useEffect(() => {
     if (form.state_id && !selectedStateId) setSelectedStateId(form.state_id);
@@ -1152,6 +1183,29 @@ export default function TourFormPage({
                 <p className="mt-1 text-[11px] text-dash-subtle">Set per-passenger prices in the Pricing step -- this updates automatically once approved.</p>
               </label>
             )}
+            {tourId && activeDiscount && onePaxSlab && (() => {
+              const original = onePaxSlab.storefront_adult_price ?? onePaxSlab.adult_price ?? 0;
+              const discounted = original * (1 - activeDiscount.discount_percentage / 100);
+              return (
+                <div className="sm:col-span-2">
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Storefront price</span>
+                  <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dash-border bg-[#F7F9FC] px-4 py-3">
+                    <span className="text-sm font-medium text-dash-subtle line-through decoration-red-400 decoration-2">
+                      {original.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {onePaxSlab.currency}
+                    </span>
+                    <span className="text-lg font-black text-dash-text">
+                      {discounted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {onePaxSlab.currency}
+                    </span>
+                    <span className="rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-red-700">
+                      {activeDiscount.discount_percentage}% OFF
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-dash-subtle">
+                    Live from an active discount on the Discounts tab -- this is what customers see on the storefront right now.
+                  </p>
+                </div>
+              );
+            })()}
             {textFields.map(([key, label]) => (
               <label key={key}>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>

@@ -5,6 +5,7 @@ import { LuCircleCheck as CircleCheck, LuPencil as Pencil, LuPercent as Percent,
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
+import { useAuthContext } from "@/providers/AuthProvider";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 
@@ -24,6 +25,8 @@ const USER_TYPES: { value: UserType; label: string; key: string; dot: string; ch
 
 export default function DefaultCommissionsPage() {
   const { dashboard, loading: dashboardLoading } = useDashboard();
+  const { hasPermission } = useAuthContext();
+  const canEdit = hasPermission("update-settings");
   const [values, setValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -111,13 +114,15 @@ export default function DefaultCommissionsPage() {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => openRule("supplier")}
-                className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-xs font-black text-white shadow-md shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-dash-brand-hover"
-              >
-                <Plus size={15} /> New Rule
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => openRule("supplier")}
+                  className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-xs font-black text-white shadow-md shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-dash-brand-hover"
+                >
+                  <Plus size={15} /> New Rule
+                </button>
+              )}
             </div>
 
             {message && (
@@ -153,13 +158,15 @@ export default function DefaultCommissionsPage() {
                       </td>
                       <td className="px-4 py-3.5 text-base font-black text-dash-text">{values[type.key] || "0"}%</td>
                       <td className="px-4 py-3.5 text-right">
-                        <button
-                          type="button"
-                          onClick={() => openRule(type.value)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-body transition-colors hover:bg-dash-bg"
-                        >
-                          <Pencil size={12} /> Edit
-                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => openRule(type.value)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-body transition-colors hover:bg-dash-bg"
+                          >
+                            <Pencil size={12} /> Edit
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

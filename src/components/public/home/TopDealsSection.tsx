@@ -188,7 +188,11 @@ export function TopDealCard({ tour }: { tour: Tour }) {
         >
           <Heart
             size={18}
-            className="fill-red-500 text-red-500 drop-shadow-xs"
+            className={
+              wishlisted
+                ? "fill-red-500 text-red-500 drop-shadow-xs"
+                : "fill-white/70 text-slate-700 drop-shadow-xs"
+            }
           />
         </button>
       </div>

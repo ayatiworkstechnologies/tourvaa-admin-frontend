@@ -11,6 +11,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { invalidateGeoStates, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import { invalidateCurrencyList } from "@/lib/utils/currency";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import api from "@/lib/api/client";
 
 function singular(word: string): string {
@@ -62,10 +63,12 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
       setRows(res.data?.items ?? res.data?.data ?? []);
       setTotal(res.data?.total ?? 0);
       setTotalPages(res.data?.total_pages ?? 1);
+    } catch (e) {
+      toast.error(getApiErrorMessage(e) || `Could not load ${title.toLowerCase()}.`);
     } finally {
       setLoading(false);
     }
-  }, [endpoint, extraParams, page, search]);
+  }, [endpoint, extraParams, page, search, title, toast]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -102,8 +105,8 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
       if (endpoint === "/currencies") invalidateCurrencyList();
       setOpen(false);
       await load();
-    } catch {
-      toast.error("Save failed");
+    } catch (e) {
+      toast.error(getApiErrorMessage(e) || "Save failed");
     } finally {
       setSaving(false);
     }

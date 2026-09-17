@@ -11,6 +11,7 @@ type ApiSummary = {
   brightlane_external_link: string;
   viator_api_key: string; // masked, display-only
   viator_affiliate_pid: string; // not a secret - shown in full
+  viator_enabled: boolean;
 };
 
 const inputClass = "w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand";
@@ -29,6 +30,7 @@ export default function ApiSettingsSection() {
   const [brightlaneLink, setBrightlaneLink] = useState("");
   const [viatorApiKey, setViatorApiKey] = useState("");
   const [viatorAffiliatePid, setViatorAffiliatePid] = useState("");
+  const [viatorEnabled, setViatorEnabled] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -42,6 +44,7 @@ export default function ApiSettingsSection() {
       setBrightlaneLink(data.brightlane_external_link || "");
       setViatorApiKey("");
       setViatorAffiliatePid(data.viator_affiliate_pid || "");
+      setViatorEnabled(Boolean(data.viator_enabled));
     } finally {
       setLoading(false);
     }
@@ -57,6 +60,7 @@ export default function ApiSettingsSection() {
       const payload: Record<string, unknown> = {
         brightlane_external_link: brightlaneLink,
         viator_affiliate_pid: viatorAffiliatePid,
+        viator_enabled: viatorEnabled,
       };
       if (googleMapsKey.trim()) payload.google_map_api_key = googleMapsKey.trim();
       if (emailApiKey.trim()) payload.email_api_key = emailApiKey.trim();
@@ -105,6 +109,15 @@ export default function ApiSettingsSection() {
           <input value={viatorAffiliatePid} onChange={(e) => setViatorAffiliatePid(e.target.value)} placeholder="P00000000" className={inputClass} />
         </label>
       </div>
+      <label className="flex items-center gap-3 rounded-xl border border-dash-border px-4 py-3">
+        <input type="checkbox" checked={viatorEnabled} onChange={(e) => setViatorEnabled(e.target.checked)} className="h-4 w-4 rounded border-dash-border" />
+        <span>
+          <span className="block text-sm font-bold text-dash-text">Enable Viator</span>
+          <span className="block text-xs text-dash-muted">
+            Shows the &quot;Viator Day Trips&quot; option on the homepage and activates the /external-day-trips page. Off by default while the Viator integration is taken forward separately.
+          </span>
+        </span>
+      </label>
       <div className="flex justify-end">
         <button disabled={saving} className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60">
           {saving ? "Saving..." : "Save API Settings"}

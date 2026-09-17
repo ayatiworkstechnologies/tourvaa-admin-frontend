@@ -8,6 +8,7 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 
 type LedgerEntry = {
   id: number;
@@ -80,6 +81,7 @@ const labelCls = "mb-1.5 block text-xs font-bold uppercase tracking-wide text-da
 export default function EarningsPage() {
   const { formatExact: money } = useCurrency();
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,9 +138,24 @@ export default function EarningsPage() {
       setCommissionError("Enter a valid commission percentage.");
       return;
     }
+    if (value > 100) {
+      setCommissionError("Commission cannot exceed 100%.");
+      return;
+    }
     if (minCommissionRate !== null && value < minCommissionRate) {
       setCommissionError(`Commission cannot be lower than the platform minimum of ${minCommissionRate}%.`);
       return;
+    }
+    // Raising your own commission percentage directly reduces your net
+    // earnings on every future booking - a confirmation step catches a
+    // typo (e.g. entering "50" meaning $50, not 50%) before it takes effect.
+    if (minCommissionRate !== null && value > minCommissionRate) {
+      const ok = await confirm({
+        title: "Raise your commission rate?",
+        message: `You're about to set your commission to ${value}%, up from the platform minimum of ${minCommissionRate}%. This reduces your net payout on every future booking. Continue?`,
+        confirmLabel: "Yes, update",
+      });
+      if (!ok) return;
     }
     setCommissionSaving(true);
     setCommissionError("");
@@ -474,6 +491,7 @@ export default function EarningsPage() {
         emptyTitle="No ledger entries yet"
         emptyDescription="Earnings from confirmed bookings will appear here."
       /></div>}
+      {dialog}
     </SupplierPageShell>
   );
 }

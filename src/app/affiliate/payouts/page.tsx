@@ -69,6 +69,10 @@ export default function AffiliatePayoutsPage() {
     e.preventDefault();
     if (submitLock.current) return;
     if (!methodId) { toast.error("Select a payout method."); return; }
+    const requested = Number(amount);
+    const available = Number(summary?.available_balance ?? 0);
+    if (!Number.isFinite(requested) || requested <= 0) { toast.error("Enter a valid amount."); return; }
+    if (requested > available) { toast.error(`Requested amount exceeds your available balance (${money(available)}).`); return; }
     submitLock.current = true;
     setSaving(true);
     try {
@@ -95,7 +99,18 @@ export default function AffiliatePayoutsPage() {
     { key: "payout_code", header: "Payout Code", className: "font-mono text-xs text-dash-body", render: (p) => p.payout_code },
     { key: "amount", header: "Amount", className: "font-bold text-purple-700", render: (p) => money(p.total_amount, p.currency) },
     { key: "payment_method", header: "Method", className: "text-xs capitalize text-dash-muted", render: (p) => (p.payment_method || "").replaceAll("_", " ") },
-    { key: "status", header: "Status", render: (p) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusCls(p.status)}`}>{p.status}</span> },
+    {
+      key: "status",
+      header: "Status",
+      render: (p) => (
+        <div>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusCls(p.status)}`}>{p.status}</span>
+          {p.status === "rejected" && p.rejection_reason && (
+            <p className="mt-1 max-w-50 text-[11px] text-red-600" title={p.rejection_reason}>{p.rejection_reason}</p>
+          )}
+        </div>
+      ),
+    },
     { key: "date", header: "Date", className: "text-xs text-dash-muted", render: (p) => (p.paid_at || p.created_at) ? new Date(p.paid_at || p.created_at).toLocaleDateString() : "-" },
   ];
 

@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil, LuCheck as Check, LuRefreshCw as RefreshCw, LuChevronDown as ChevronDown } from "react-icons/lu";
+import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil, LuCheck as Check, LuRefreshCw as RefreshCw, LuChevronDown as ChevronDown, LuPercent as Percent } from "react-icons/lu";
 import api from "@/lib/api/client";
 import ActionModal from "@/components/operations/ActionModal";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
@@ -61,8 +62,8 @@ export type ContentBlockTabConfig = {
 export const TAB_DESCRIPTIONS: Record<string, string> = {
   banners: "The homepage hero: background banners/video, the trust-rating badge, and the promotional offer strip.",
   "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order. Toggle the whole section on/off below.",
-  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Only tours with an active discount can be picked. Toggle the whole section on/off below.",
-  "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section - a separate curated list from Trending Tour Packages.",
+  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Only tours with an active discount can be picked here - discounts themselves are set up in Discounts (Admin > Discounts), not on this screen. Toggle the whole section on/off below.",
+  "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section - a separate curated list from Trending Tour Packages. Only tours with an active discount can be picked here - set discounts up in Discounts (Admin > Discounts).",
   "popular-destinations": "Countries shown in Countries Worth Exploring - title, image, description, destination link, order and enable/disable, per country. Countries without a row here fall back to being calculated automatically from real tour counts.",
   "favourite-countries": "The editorial country list and snippet copy shown in the homepage Favourite Countries section.",
   "country-pages": "Override the hero banner, showcase panel, and SEO title/description for each country's dynamic /tours/{country} landing page. Countries without a row here use auto-generated content.",
@@ -1125,6 +1126,10 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
   };
 
   const isTourPickerTab = tab.endpoint === "/cms/popular-tours" || tab.endpoint === "/cms/handpicked-tours" || tab.endpoint === "/cms/tours-on-deals";
+  // Only these two require an existing discount to even show up as pickable
+  // (see the tourOptions filter above) - "Top Deals" has its own
+  // deal_label/discount fields and isn't discount-gated the same way.
+  const requiresExistingDiscount = tab.endpoint === "/cms/popular-tours" || tab.endpoint === "/cms/handpicked-tours";
 
   const columns: DataTableColumn<CmsItem>[] = [
     {
@@ -1219,6 +1224,15 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {requiresExistingDiscount && (
+              <Link
+                href="/admin/discounts"
+                className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg"
+                title="Discounts are created and edited in the Discounts module, not here"
+              >
+                <Percent size={15} /> Manage Discounts
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => void fetchItems()}
@@ -1273,12 +1287,23 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
                     className="w-full resize-none rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
                   />
                 ) : f.type === "select" && f.key === "tour_id" ? (
-                  <TourPickerSelect
-                    options={tourOptions}
-                    images={tourImages}
-                    value={formValues[f.key] ?? ""}
-                    onChange={(value) => setFormValues(v => ({ ...v, [f.key]: value }))}
-                  />
+                  <>
+                    <TourPickerSelect
+                      options={tourOptions}
+                      images={tourImages}
+                      value={formValues[f.key] ?? ""}
+                      onChange={(value) => setFormValues(v => ({ ...v, [f.key]: value }))}
+                    />
+                    {requiresExistingDiscount && tourOptions.length === 0 && (
+                      <p className="mt-1.5 text-xs text-amber-700">
+                        No tours currently have an active discount, so none are pickable here.{" "}
+                        <Link href="/admin/discounts" className="font-bold underline">
+                          Add a discount in Discounts
+                        </Link>{" "}
+                        first, then come back.
+                      </p>
+                    )}
+                  </>
                 ) : f.key === "country_id" && (isDestinationTab || isCountryPageTab || isFavouriteCountriesTab) ? (
                   <select
                     value={formValues[f.key] ?? ""}

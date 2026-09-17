@@ -128,6 +128,7 @@ export type AffiliatePayout = {
   reference_number: string | null;
   status: "requested" | "approved" | "processing" | "paid" | "rejected" | "cancelled" | "pending" | string;
   notes: string | null;
+  rejection_reason: string | null;
   paid_at: string | null;
   created_at: string;
 };
