@@ -18,6 +18,7 @@ import api from "@/lib/api/client";
 import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import { dialCodeForIso, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { CountryCode } from "libphonenumber-js/min";
 
 // Traveller (customer) accounts only - agents and suppliers register through
@@ -81,6 +82,7 @@ const PERKS = [
 export default function RegisterPage() {
   const [form, setForm] = useState(initialForm);
   const [phoneIso, setPhoneIso] = useState<CountryCode | "">("");
+  const { setCountry } = useCurrency();
   const [sentEmail, setSentEmail] = useState(() => readPendingRegistration()?.email ?? "");
   const [changeToken, setChangeToken] = useState(() => readPendingRegistration()?.changeToken ?? "");
   const [redirect, setRedirect] = useState<string | null>(null);
@@ -265,6 +267,12 @@ export default function RegisterPage() {
                   onCountryChange={(iso) => {
                     setPhoneIso(iso);
                     setForm((f) => ({ ...f, country_code: dialCodeForIso(iso) }));
+                    // Also default the site's browsing currency to match the
+                    // country the traveller just told us they're in - the
+                    // same "currency follows country" behavior the header's
+                    // currency selector uses, just triggered earlier in the
+                    // journey instead of waiting on IP geolocation.
+                    void setCountry(iso);
                   }}
                   onNumberChange={(digits) => setForm((f) => ({ ...f, mobile_number: digits }))}
                 />

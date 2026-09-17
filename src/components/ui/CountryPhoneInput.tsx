@@ -12,24 +12,32 @@ type CountryPhoneInputProps = {
   number: string;
   onCountryChange: (iso: CountryCode) => void;
   onNumberChange: (digits: string) => void;
+  /** Label for the mobile number field. */
   label?: string;
+  /** Label for the country field. */
+  countryLabel?: string;
   required?: boolean;
   helpText?: string;
   errorMessage?: string;
   className?: string;
 };
 
-/** The one country-code + phone number input used everywhere a phone number
- * is collected (login/registration/profile forms) - a searchable dropdown of
- * every country (flag + name + dial code, via libphonenumber-js + the
- * existing FlagIcon component), live as-you-type formatting, and an inline
- * valid/invalid indicator once enough digits are entered. */
+/** The one country + phone number pair of fields used everywhere a phone
+ * number is collected (login/registration/profile forms) - rendered as two
+ * separate, separately-labeled fields (Country, then Mobile Number) rather
+ * than one fused control, so each reads as its own form field. Selecting a
+ * country from the searchable dropdown (flag + name + dial code, via
+ * libphonenumber-js + the existing FlagIcon component) fills the dial-code
+ * prefix shown on the Mobile Number field below it, which also gets live
+ * as-you-type formatting and an inline valid/invalid indicator once enough
+ * digits are entered. */
 export default function CountryPhoneInput({
   countryIso,
   number,
   onCountryChange,
   onNumberChange,
   label = "Mobile Number",
+  countryLabel = "Country",
   required = false,
   helpText,
   errorMessage,
@@ -75,106 +83,124 @@ export default function CountryPhoneInput({
   const formatted = countryIso ? formatAsYouType(countryIso, number) : number;
 
   return (
-    <label className={`block ${className}`}>
-      <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
-      <div
-        ref={containerRef}
-        className={`relative flex overflow-visible rounded-xl border bg-white transition-shadow focus-within:ring-4 ${
-          errorMessage
-            ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-100"
-            : "border-dash-border focus-within:border-dash-brand focus-within:ring-sky-100"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          aria-required={required}
-          className="flex shrink-0 items-center gap-1.5 rounded-l-xl border-r border-dash-border bg-dash-bg px-2.5 py-2.5 text-sm font-semibold text-dash-text outline-none transition hover:bg-slate-100"
-        >
-          {selected ? (
-            <span className="h-3.5 w-5 overflow-hidden rounded-[2px]">
-              <FlagIcon countryCode={selected.iso} />
-            </span>
-          ) : null}
-          <span>{selected ? `${selected.name} (${selected.dialCode})` : "Select country"}</span>
-          <ChevronDown size={13} className={`text-dash-subtle transition-transform ${open ? "rotate-180" : ""}`} />
-        </button>
-
-        <input
-          type="tel"
-          inputMode="numeric"
-          value={formatted}
-          onChange={(event) => onNumberChange(digitsOnly(event.target.value))}
-          placeholder="9876543210"
-          className="min-w-0 flex-1 rounded-r-xl px-3 py-2.5 text-sm text-dash-text outline-none placeholder:text-dash-subtle disabled:cursor-not-allowed disabled:bg-slate-50"
-          required={required}
-          disabled={!selected}
-          autoComplete="tel-national"
-          aria-invalid={Boolean(errorMessage)}
-          aria-describedby={errorMessage ? "phone-error" : undefined}
-        />
-
-        {isValid !== null && (
-          <span className={`flex items-center pr-3 ${isValid ? "text-emerald-500" : "text-red-400"}`} title={isValid ? "Valid number" : "Doesn't look like a valid number for this country"}>
-            <CircleCheck size={16} />
-          </span>
-        )}
-
-        {open && (
-          <div
-            role="listbox"
-            className="absolute left-0 top-[calc(100%+6px)] z-50 max-h-72 w-full min-w-[280px] origin-top overflow-hidden rounded-xl border border-dash-border bg-white shadow-xl transition duration-150 ease-out"
+    <div className={className}>
+      {/* Field 1: Country */}
+      <div className="mb-4">
+        <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{countryLabel}</span>
+        <div ref={containerRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            aria-required={required}
+            className={`flex w-full items-center gap-2 rounded-xl border bg-white px-3.5 py-2.5 text-left text-sm font-semibold text-dash-text outline-none transition focus:ring-4 ${
+              errorMessage && !selected
+                ? "border-red-400 focus:border-red-400 focus:ring-red-100"
+                : "border-dash-border focus:border-dash-brand focus:ring-sky-100"
+            }`}
           >
-            <div className="flex items-center gap-2 border-b border-dash-border px-3 py-2">
-              <Search size={14} className="shrink-0 text-dash-subtle" />
-              <input
-                ref={searchRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search country or code..."
-                className="w-full text-sm outline-none placeholder:text-dash-subtle"
-              />
+            {selected ? (
+              <span className="h-3.5 w-5 shrink-0 overflow-hidden rounded-[2px]">
+                <FlagIcon countryCode={selected.iso} />
+              </span>
+            ) : null}
+            <span className={`flex-1 truncate ${selected ? "" : "font-normal text-dash-subtle"}`}>
+              {selected ? `${selected.name} (${selected.dialCode})` : "Select country"}
+            </span>
+            <ChevronDown size={14} className={`shrink-0 text-dash-subtle transition-transform ${open ? "rotate-180" : ""}`} />
+          </button>
+
+          {open && (
+            <div
+              role="listbox"
+              className="absolute left-0 top-[calc(100%+6px)] z-50 max-h-72 w-full min-w-[280px] origin-top overflow-hidden rounded-xl border border-dash-border bg-white shadow-xl transition duration-150 ease-out"
+            >
+              <div className="flex items-center gap-2 border-b border-dash-border px-3 py-2">
+                <Search size={14} className="shrink-0 text-dash-subtle" />
+                <input
+                  ref={searchRef}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search country or code..."
+                  className="w-full text-sm outline-none placeholder:text-dash-subtle"
+                />
+              </div>
+              <ul className="max-h-56 overflow-y-auto py-1">
+                {filtered.length === 0 ? (
+                  <li className="px-3 py-2.5 text-sm text-dash-subtle">No matches</li>
+                ) : (
+                  filtered.map((c) => (
+                    <li key={c.iso}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={c.iso === countryIso}
+                        onClick={() => {
+                          onCountryChange(c.iso);
+                          setOpen(false);
+                          setQuery("");
+                        }}
+                        className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition hover:bg-dash-bg ${
+                          c.iso === countryIso ? "bg-sky-50 font-semibold text-dash-brand" : "text-dash-text"
+                        }`}
+                      >
+                        <span className="h-3.5 w-5 shrink-0 overflow-hidden rounded-[2px]">
+                          <FlagIcon countryCode={c.iso} />
+                        </span>
+                        <span className="flex-1 truncate">{c.name}</span>
+                        <span className="shrink-0 text-dash-subtle">{c.dialCode}</span>
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
             </div>
-            <ul className="max-h-56 overflow-y-auto py-1">
-              {filtered.length === 0 ? (
-                <li className="px-3 py-2.5 text-sm text-dash-subtle">No matches</li>
-              ) : (
-                filtered.map((c) => (
-                  <li key={c.iso}>
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={c.iso === countryIso}
-                      onClick={() => {
-                        onCountryChange(c.iso);
-                        setOpen(false);
-                        setQuery("");
-                      }}
-                      className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition hover:bg-dash-bg ${
-                        c.iso === countryIso ? "bg-sky-50 font-semibold text-dash-brand" : "text-dash-text"
-                      }`}
-                    >
-                      <span className="h-3.5 w-5 shrink-0 overflow-hidden rounded-[2px]">
-                        <FlagIcon countryCode={c.iso} />
-                      </span>
-                      <span className="flex-1 truncate">{c.name}</span>
-                      <span className="shrink-0 text-dash-subtle">{c.dialCode}</span>
-                    </button>
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-      {errorMessage ? (
-        <p id="phone-error" className="mt-1 text-xs text-red-600">{errorMessage}</p>
-      ) : (
-        helpText && <p className="mt-1 text-xs text-dash-subtle">{helpText}</p>
-      )}
-    </label>
+
+      {/* Field 2: Mobile Number */}
+      <label className="block">
+        <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
+        <div
+          className={`relative flex overflow-hidden rounded-xl border bg-white transition-shadow focus-within:ring-4 ${
+            errorMessage
+              ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-100"
+              : "border-dash-border focus-within:border-dash-brand focus-within:ring-sky-100"
+          }`}
+        >
+          <span className="flex shrink-0 items-center border-r border-dash-border bg-dash-bg px-3 py-2.5 text-sm font-semibold text-dash-text">
+            {selected ? selected.dialCode : "+--"}
+          </span>
+
+          <input
+            type="tel"
+            inputMode="numeric"
+            value={formatted}
+            onChange={(event) => onNumberChange(digitsOnly(event.target.value))}
+            placeholder="9876543210"
+            className="min-w-0 flex-1 rounded-r-xl px-3 py-2.5 text-sm text-dash-text outline-none placeholder:text-dash-subtle disabled:cursor-not-allowed disabled:bg-slate-50"
+            required={required}
+            disabled={!selected}
+            autoComplete="tel-national"
+            aria-invalid={Boolean(errorMessage)}
+            aria-describedby={errorMessage ? "phone-error" : undefined}
+          />
+
+          {isValid !== null && (
+            <span className={`flex items-center pr-3 ${isValid ? "text-emerald-500" : "text-red-400"}`} title={isValid ? "Valid number" : "Doesn't look like a valid number for this country"}>
+              <CircleCheck size={16} />
+            </span>
+          )}
+        </div>
+        {errorMessage ? (
+          <p id="phone-error" className="mt-1 text-xs text-red-600">{errorMessage}</p>
+        ) : (
+          helpText && <p className="mt-1 text-xs text-dash-subtle">{helpText}</p>
+        )}
+      </label>
+    </div>
   );
 }
 

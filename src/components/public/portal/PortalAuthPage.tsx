@@ -31,6 +31,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import type { PortalTheme } from "@/components/public/portal/PortalPublicHeader";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import { dialCodeForIso, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { CountryCode } from "libphonenumber-js/min";
 
 export type PortalAuthConfig = {
@@ -302,6 +303,7 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
   const key = PENDING_KEY(config.accountType);
   const [form, setForm] = useState({ first_name: "", email: "", country_code: "", mobile_number: "", accepted_terms: false });
   const [phoneIso, setPhoneIso] = useState<CountryCode | "">("");
+  const { setCountry } = useCurrency();
   const [sentEmail, setSentEmail] = useState(() => readPending(key)?.email ?? "");
   const [changeToken, setChangeToken] = useState(() => readPending(key)?.changeToken ?? "");
   const [error, setError] = useState("");
@@ -421,14 +423,17 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
 
       {/* Phone */}
       <div>
-        <FieldLabel>Mobile number</FieldLabel>
         <CountryPhoneInput
+          label="Mobile number"
           required
           countryIso={phoneIso}
           number={form.mobile_number}
           onCountryChange={(iso) => {
             setPhoneIso(iso);
             setForm({ ...form, country_code: dialCodeForIso(iso) });
+            // Same "currency follows country" default as the customer
+            // registration form - see the matching comment there.
+            void setCountry(iso);
           }}
           onNumberChange={(digits) => setForm({ ...form, mobile_number: digits })}
         />
