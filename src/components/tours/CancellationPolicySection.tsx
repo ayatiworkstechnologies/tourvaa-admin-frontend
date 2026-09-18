@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
@@ -72,8 +73,8 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
       }
       toast.success("Platform default policy copied -- customize it as needed.");
       await load();
-    } catch {
-      toast.error("Could not copy the default policy.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setCopyingDefaults(false);
     }
@@ -116,8 +117,8 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
       setForm(emptyForm);
       setEditingId(null);
       setShowForm(false);
-    } catch {
-      toast.error(editingId ? "Could not update cancellation rule." : "Could not add cancellation rule.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -128,8 +129,8 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
     try {
       await api.delete(`/refund-rules/${id}`);
       await load();
-    } catch {
-      toast.error("Could not delete cancellation rule.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 

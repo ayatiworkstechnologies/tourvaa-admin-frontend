@@ -112,6 +112,16 @@ function normalizeFooterSections(sections: CmsFooterSection[]): CmsFooterSection
   return sections;
 }
 
+const UNSAFE_SETTING_MARKERS = /<\/?script|javascript:|document\.|window\.|innerhtml|on(?:error|load)\s*=/i;
+
+function safePublicText(value: string | undefined, fallback: string, maxLength: number) {
+  const normalized = (value || "").trim();
+  if (!normalized || normalized.length > maxLength || UNSAFE_SETTING_MARKERS.test(normalized)) {
+    return fallback;
+  }
+  return normalized;
+}
+
 export default function PublicFooter() {
   const router = useRouter();
   const { settings } = usePublicSettings();
@@ -226,11 +236,16 @@ export default function PublicFooter() {
     countryCode ||
     "INDIA";
 
-  const siteName = settings.site_name || settings.app_name || "Tourvaa";
-  const tagline =
-    settings.site_tagline ||
-    settings.footer_description ||
-    "Explore more, travel better, and create memories with Tourvaa.";
+  const siteName = safePublicText(
+    settings.site_name || settings.app_name,
+    "Tourvaa",
+    80,
+  );
+  const tagline = safePublicText(
+    settings.site_tagline || settings.footer_description,
+    "Explore more, travel better, and create memories with Tourvaa.",
+    500,
+  );
 
   return (
     <footer className="w-full bg-[#0B1F3A] text-white pt-12 sm:pt-16 pb-8 sm:pb-10 mt-8 sm:mt-12 transition-colors">

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getOverview, saveOverview, TourOverview } from "@/lib/api/services/tourDetailService";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 
 const RATINGS = ["easy", "moderate", "hard"] as const;
@@ -40,8 +41,8 @@ export default function PhysicalRatingField({ tourId }: { tourId: string }) {
     try {
       await saveOverview(tourId, next);
       toast.success("Physical rating saved.");
-    } catch {
-      toast.error("Failed to save physical rating.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }

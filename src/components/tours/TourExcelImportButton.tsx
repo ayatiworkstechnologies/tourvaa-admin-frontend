@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { LuDownload as Download, LuLoaderCircle as Loader2, LuUpload as UploadIcon } from "react-icons/lu";
 import { downloadTourImportTemplate, importToursExcel } from "@/lib/api/services/tourImportExportService";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 
 const THEME_BUTTON = {
@@ -48,8 +49,8 @@ export default function TourExcelImportButton({
         );
       }
       if (result.created > 0) onImported?.();
-    } catch {
-      toast.error("Could not import the file. Make sure it matches the downloaded template.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

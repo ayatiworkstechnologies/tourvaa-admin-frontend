@@ -11,6 +11,7 @@ import {
   LuRotateCcw as RotateCcw,
 } from "react-icons/lu";
 import { CalendarEntry, getCalendar, createCalendarEntry, updateCalendarEntry, deleteCalendarEntry, UnavailableDate, getUnavailableDates, createUnavailableDate, deleteUnavailableDate, AvailabilityConfig, getAvailabilityConfig, saveAvailabilityConfig } from "@/lib/api/services/tourDetailService";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
@@ -225,8 +226,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       await load();
       toast.success(`Schedule saved. Calendar dates updated with ${targetSeats} available seats.`);
     } catch (error: unknown) {
-      const message = (error as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
-      toast.error(message?.detail || message?.message || "Failed to save schedule.");
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSavingSchedule(false);
     }
@@ -270,8 +270,8 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       }
       await load();
       toast.success(`Updated all unbooked dates to ${targetSeats} available seats.`);
-    } catch {
-      toast.error("Failed to update seats for all dates.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSyncingSeats(false);
     }
@@ -295,8 +295,8 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch {
-      toast.error("Failed.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -308,8 +308,8 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       await deleteCalendarEntry(tourId, id);
       setEntries((previousEntries) => previousEntries.filter((entry) => entry.id !== id));
     }
-    catch {
-      toast.error("Failed.");
+    catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -346,8 +346,8 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       setNewBlockEnd("");
       setNewBlockReason("");
       toast.success(created.length > 1 ? `${created.length} dates blocked.` : "Date blocked.");
-    } catch {
-      toast.error("Failed.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setBlocking(false);
     }
@@ -358,8 +358,8 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       await deleteUnavailableDate(tourId, id);
       setBlocked((previousDates) => previousDates.filter((date) => date.id !== id));
     }
-    catch {
-      toast.error("Failed.");
+    catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 

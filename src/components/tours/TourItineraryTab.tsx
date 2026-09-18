@@ -18,6 +18,7 @@ import {
 import {
   getItineraries, createItinerary, updateItinerary, deleteItinerary, reorderItineraries, ItineraryDay,
 } from "@/lib/api/services/tourDetailService";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
@@ -321,8 +322,8 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
       }
       setEditing(null);
       void load();
-    } catch {
-      toast.error("Failed to save.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -334,8 +335,8 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
       await deleteItinerary(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
       toast.success("Deleted.");
-    } catch {
-      toast.error("Failed to delete.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -347,8 +348,8 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
     setItems(reordered);
     try {
       await reorderItineraries(tourId, reordered.map((item) => item.id!));
-    } catch {
-      toast.error("Failed to reorder.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
       void load();
     }
   };

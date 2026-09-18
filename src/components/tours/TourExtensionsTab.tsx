@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourExtension, getExtensions, createExtension, updateExtension, deleteExtension } from "@/lib/api/services/tourDetailService";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
@@ -67,8 +68,8 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch {
-      toast.error("Failed to save.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -80,8 +81,8 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
       await deleteExtension(tourId, id);
       setItems((previousItems) => previousItems.filter((item) => item.id !== id));
     }
-    catch {
-      toast.error("Failed.");
+    catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 

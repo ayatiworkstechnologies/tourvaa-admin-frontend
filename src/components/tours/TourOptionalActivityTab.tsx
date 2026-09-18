@@ -9,6 +9,7 @@ import {
   updateOptionalActivity,
   deleteOptionalActivity,
 } from "@/lib/api/services/tourDetailService";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
@@ -71,8 +72,8 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch {
-      toast.error("Failed to save.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -83,8 +84,8 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
     try {
       await deleteOptionalActivity(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
-    } catch {
-      toast.error("Failed to delete.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 

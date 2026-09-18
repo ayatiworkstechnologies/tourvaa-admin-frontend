@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LuSave as Save } from "react-icons/lu";
 import { getOverview, saveOverview, TourOverview } from "@/lib/api/services/tourDetailService";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/ui/Loader";
 
@@ -48,8 +49,8 @@ export default function TourOverviewTab({ tourId }: { tourId: string }) {
     try {
       await saveOverview(tourId, form);
       toast.success("Overview saved.");
-    } catch {
-      toast.error("Failed to save overview.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }

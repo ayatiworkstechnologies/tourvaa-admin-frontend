@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourHighlight, getHighlights, createHighlight, updateHighlight, deleteHighlight } from "@/lib/api/services/tourDetailService";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
@@ -52,8 +53,8 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch {
-      toast.error("Failed to save.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -64,8 +65,8 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
     try {
       await deleteHighlight(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
-    } catch {
-      toast.error("Failed to delete.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 

@@ -234,6 +234,13 @@ export default function TourDetailExperience({
   const title = tour.title || "Tour Experience";
   const dayCount = tour.number_of_days || (tour.itineraries?.length || 1);
   const nightCount = tour.number_of_nights ?? Math.max(0, dayCount - 1);
+  // Keep the basic tour duration supplied by the API visible.  Hours are a
+  // separate field from days in the tour editor and must not be discarded
+  // when a tour is a short/half-day experience.
+  const durationLabel = [
+    tour.number_of_days != null ? `${tour.number_of_days} Days` : "",
+    tour.number_of_hours != null ? `${tour.number_of_hours} Hours` : "",
+  ].filter(Boolean).join(" / ") || tour.overview?.duration_text || "";
   const countryFlag = getCountryFlag(destination);
 
   const startLocation = tour.start_location || tour.city_name || destination;
@@ -709,16 +716,20 @@ export default function TourDetailExperience({
                   {countryFlag && <span>{countryFlag}</span>}
                 </h3>
                 <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600">
-                  {dayCount} Days / {nightCount} Nights
+                  {durationLabel || `${dayCount} Days / ${nightCount} Nights`}
                 </span>
               </div>
 
-              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600">
-                {tour.long_description ||
-                  tour.short_description ||
-                  tour.subtitle ||
-                  `A classic ${dayCount}-day journey exploring the rich culture, scenic landscapes, and iconic highlights of ${destination}. Stay in comfortable accommodations, travel seamlessly, and discover authentic local experiences with our knowledgeable guides.`}
-              </p>
+              {tour.short_description && (
+                <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-700">
+                  {tour.short_description}
+                </p>
+              )}
+              {tour.long_description && (
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-600">
+                  {tour.long_description}
+                </p>
+              )}
 
               {/* 4 Feature Badges */}
               <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-bold text-slate-700">
@@ -779,7 +790,9 @@ export default function TourDetailExperience({
                     </span>
                     <div>
                       <p className="font-bold text-slate-900">Duration</p>
-                      <p className="text-slate-500 font-medium">{dayCount} Days / {nightCount} Nights</p>
+                        <p className="text-slate-500 font-medium">
+                          {durationLabel || `${dayCount} Days / ${nightCount} Nights`}
+                        </p>
                     </div>
                   </div>
 
@@ -1117,7 +1130,7 @@ export default function TourDetailExperience({
                     Itinerary
                   </h3>
                   <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
-                    {dayCount} DAYS
+                    {durationLabel || `${dayCount} DAYS`}
                   </span>
                 </div>
 

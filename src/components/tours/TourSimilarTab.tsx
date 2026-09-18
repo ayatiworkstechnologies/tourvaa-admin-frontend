@@ -54,8 +54,8 @@ export default function TourSimilarTab({ tourId }: { tourId: string }) {
     try {
       await deleteSimilarTour(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
-    } catch {
-      toast.error("Failed to remove.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LuBadgeDollarSign as BadgeDollarSign, LuInfo as Info, LuPencil as Pencil, LuPercent as Percent, LuPlus as Plus, LuSave as Save, LuSparkles as Sparkles, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } from "@/lib/api/services/tourDetailService";
 import api from "@/lib/api/client";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
@@ -215,8 +216,7 @@ export default function TourPricingTab({
       setEditing(null);
       toast.success("Pricing slab saved.");
     } catch (error: unknown) {
-      const message = (error as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
-      toast.error(message?.detail || message?.message || "Failed to save pricing slab.");
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -227,8 +227,8 @@ export default function TourPricingTab({
     try {
       await deletePricing(tourId, id);
       setSlabs((prev) => prev.filter((s) => s.id !== id));
-    } catch {
-      toast.error("Failed to delete.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -241,8 +241,8 @@ export default function TourPricingTab({
       setSlabs((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
       setMarkupEditing(null);
       toast.success("Publishable price updated.");
-    } catch {
-      toast.error("Failed to save.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }

@@ -7,6 +7,7 @@ import {
   getInclusions, createInclusion, updateInclusion, deleteInclusion,
   getExclusions, createExclusion, updateExclusion, deleteExclusion,
 } from "@/lib/api/services/tourDetailService";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
@@ -64,8 +65,8 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
       }
       setEditing(null);
       toast.success("Saved.");
-    } catch {
-      toast.error("Failed to save.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -77,8 +78,8 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
       await api.delete(tourId, id);
       setItems((prev) => prev.filter((i) => i.id !== id));
       toast.success("Deleted.");
-    } catch {
-      toast.error("Failed to delete.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 
