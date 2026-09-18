@@ -42,11 +42,11 @@ export default function BlogTeaserSection({
 
   const eyebrow = data.eyebrow ?? "BLOG";
   const heading =
-    data.heading ?? "Travel stories, guides and inspiration for every journey";
+    data.heading ?? "Tips, destination guides and practical advice for every journey";
   const subtitle =
     data.subtitle ??
-    "Explore travel guides, insider tips and inspiring stories from destinations around the world.";
-  const ctaText = data.cta_text ?? "Read Stories";
+    "Read our expert guides, packing tips, and local secrets to get the most out of your next adventure.";
+  const ctaText = data.cta_text ?? "Read Full Article";
   const ctaUrl = data.cta_url || "/blogs";
   const image = data.image ? mediaUrl(data.image) : "/images/img-1.png";
 

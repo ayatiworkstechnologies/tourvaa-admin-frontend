@@ -18,6 +18,7 @@ import {
   TravelSupportBanner,
   TrendingToursSection,
 } from "@/components/public/home";
+import ExploreDirectorySection from "@/components/public/ExploreDirectorySection";
 
 export default function Home() {
   return (
@@ -68,7 +69,14 @@ export default function Home() {
         <HomeTestimonialsSection />
       </Reveal>
 
-      {/* 11. Airport Transfers Partner Banner */}
+      {/* 11. Directory / Popular Destination Searches Tabs Grid */}
+      <div className="relative z-10 mx-auto max-w-[1400px] px-5 my-8 sm:my-12">
+        <Reveal variant="fade-up">
+          <ExploreDirectorySection />
+        </Reveal>
+      </div>
+
+      {/* 12. Airport Transfers Partner Banner */}
       <Reveal variant="scale-up">
         <AirportTransfersBanner />
       </Reveal>

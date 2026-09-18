@@ -110,6 +110,36 @@ export default function EscapeSaleSection({
             </Link>
           </div>
         </section>
+
+        {/* Category Filter Pills Row (as shown in design reference) */}
+        <div className="mt-5 flex items-center justify-between gap-4 overflow-x-auto no-scrollbar pb-1">
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            {["All Deals", "Wild Safari", "Cruise Tours", "Weekend Gateway", "Family Holidays"].map((category, index) => {
+              const isActive = index === 0;
+              return (
+                <Link
+                  key={category}
+                  href={isActive ? "/deals" : `/deals?search=${encodeURIComponent(category)}`}
+                  className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer shrink-0 ${
+                    isActive
+                      ? "bg-pub-accent text-white shadow-2xs"
+                      : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-2xs"
+                  }`}
+                >
+                  {category}
+                </Link>
+              );
+            })}
+          </div>
+
+          <Link
+            href="/deals"
+            className="shrink-0 text-xs sm:text-sm font-semibold text-pub-accent hover:underline flex items-center gap-1.5 whitespace-nowrap ml-auto"
+          >
+            <span>View all deals</span>
+            <ArrowRight size={14} className="stroke-[2.5]" />
+          </Link>
+        </div>
       </Reveal>
     </div>
   );

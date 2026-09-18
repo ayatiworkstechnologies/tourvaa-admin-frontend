@@ -60,8 +60,8 @@ export default function AirportTransfersBanner({
     };
   }, [initialData]);
 
-  const eyebrow = propEyebrow || data.eyebrow || "PREMIUM TRANSFER PARTNER";
-  const heading = propHeading || data.heading || "Book Your Airport Transfers";
+  const eyebrow = propEyebrow || data.eyebrow || "AIRPORT TRANSFERS & TAXIS";
+  const heading = propHeading || data.heading || "Save on your airport connection";
   const subtitle =
     propSubtitle ||
     data.subtitle ||

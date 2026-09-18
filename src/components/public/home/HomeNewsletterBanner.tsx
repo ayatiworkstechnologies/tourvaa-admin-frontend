@@ -44,12 +44,12 @@ export default function HomeNewsletterBanner({
     };
   }, [initialData]);
 
-  const badge = propBadge || data.badge || "Offer Ends Soon";
-  const heading = propHeading || data.heading || "24/7 Travel Support";
+  const badge = propBadge || data.badge || "Special Offer";
+  const heading = propHeading || data.heading || "Get $50 Off Your Next Trip!";
   const subtitle =
     propSubtitle ||
     data.subtitle ||
-    "From booking questions to on-trip assistance, our travel support team is here to make your Tourvaa journey smooth, simple and stress-free.";
+    "Subscribe to our newsletter for exclusive deals, insider tips, and travel inspiration.";
   const image =
     propImage || (data.image ? mediaUrl(data.image) : "/images/register.png");
 

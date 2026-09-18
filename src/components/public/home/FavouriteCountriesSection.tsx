@@ -112,10 +112,10 @@ export default function FavouriteCountriesSection({
 
   return (
     <section className="relative w-full overflow-hidden bg-white my-8 sm:my-12 py-10 sm:py-14">
-      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+      <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Header */}
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-slate-950 tracking-tight">
             {title}
           </h2>
           <p className="mt-2.5 text-xs sm:text-sm text-slate-500 leading-relaxed max-w-3xl mx-auto">
@@ -129,7 +129,7 @@ export default function FavouriteCountriesSection({
             <Link
               key={country.name}
               href={country.href || destinationUrl(country.name)}
-              className="group relative h-[380px] sm:h-[400px] lg:h-[420px] w-full overflow-hidden rounded-[20px] bg-slate-900 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-xl hover:-translate-y-1.5 focus:outline-none block"
+              className="group relative h-[370px] sm:h-[390px] lg:h-[410px] w-full overflow-hidden rounded-[20px] bg-slate-900 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-xl hover:-translate-y-1.5 focus:outline-none block"
             >
               {/* Full-bleed image */}
               <img
@@ -138,8 +138,8 @@ export default function FavouriteCountriesSection({
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
               />
 
-              {/* Gradient overlays for crisp contrast */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-black/15" />
+              {/* Gradient overlay for bottom readability while keeping top bright */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none rounded-[20px]" />
 
               {/* Top-Left Location Badge */}
               <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-pub-accent px-3 py-1 text-[11px] font-bold text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
@@ -150,15 +150,15 @@ export default function FavouriteCountriesSection({
               {/* Bottom Content Overlay */}
               <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5 text-left">
                 <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight drop-shadow-sm transition-colors duration-200 group-hover:text-pub-secondary">
-                  {`${country.name} tours`}
+                  {country.name.toLowerCase().endsWith("tours") ? country.name : `${country.name} tours`}
                 </h3>
-                <div className="mt-2 flex items-start gap-2 text-[11px] text-white/80 leading-relaxed">
+                <div className="mt-1.5 flex items-start gap-1.5 text-[11px] text-white/85 leading-relaxed">
                   <SquareCheckBig
-                    size={13}
-                    className="mt-0.5 shrink-0 text-pub-accent stroke-[2.2] transition-transform duration-300 group-hover:scale-110 group-hover:text-pub-secondary"
+                    size={12}
+                    className="mt-0.5 shrink-0 text-white/70"
                   />
                   <p className="line-clamp-2 drop-shadow">
-                    {country.snippet}
+                    {country.snippet || "Explore historic landmarks, scenic landscapes and vibrant local culture."}
                   </p>
                 </div>
               </div>

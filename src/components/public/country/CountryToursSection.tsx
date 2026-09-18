@@ -286,20 +286,14 @@ export default function CountryToursSection({
       .then((res) => {
         if (isMounted) {
           const fetched = res.items || [];
-          if (fetched.length >= 4) {
-            setTours(fetched);
-          } else {
-            // Merge with fallback so we always have at least 6 rich tours
-            const combined = [...fetched, ...fallbackCountryTours.slice(fetched.length)];
-            setTours(combined);
-          }
+          setTours(fetched);
           setLoading(false);
         }
       })
       .catch((err) => {
-        console.error("Failed to load country tours, using fallback catalog:", err);
+        console.error("Failed to load country tours:", err);
         if (isMounted) {
-          setTours(fallbackCountryTours);
+          setTours([]);
           setLoading(false);
         }
       });
@@ -307,7 +301,7 @@ export default function CountryToursSection({
     return () => {
       isMounted = false;
     };
-  }, [info.country_name, initialTours, fallbackCountryTours]);
+  }, [info.country_name, initialTours]);
 
   // Filter Categories matching screenshot
   const categoryPills = [
@@ -322,7 +316,7 @@ export default function CountryToursSection({
 
   // Filter and sort tours
   const displayTours = useMemo(() => {
-    const list = tours.length > 0 ? tours : fallbackCountryTours;
+    const list = tours;
     let result = [...list];
 
     // Category filter
@@ -352,7 +346,7 @@ export default function CountryToursSection({
     }
 
     return result.slice(0, 6);
-  }, [tours, fallbackCountryTours, activeCategory, searchTerm]);
+  }, [tours, activeCategory, searchTerm]);
 
   return (
     <section id="section-tours" className="py-12 sm:py-16 bg-white border-b border-slate-100">

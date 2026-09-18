@@ -161,11 +161,11 @@ export function TopDealCard({ tour }: { tour: Tour }) {
   return (
     <article
       data-deal-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col overflow-hidden rounded-2xl bg-white shadow-xs transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-2xl bg-white p-2.5 sm:p-3 shadow-xs border border-slate-200/80 transition-all duration-300 hover:shadow-md hover:-translate-y-1 h-full"
     >
-      <Link href={href} className="flex flex-col h-full">
-        {/* Full-bleed image with overlaid badges */}
-        <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-xl bg-slate-100 shrink-0">
+      <Link href={href} className="flex flex-col h-full justify-between">
+        {/* Full image with overlaid badges inside rounded card */}
+        <div className="relative h-44 sm:h-48 w-full overflow-hidden rounded-xl bg-slate-100 shrink-0">
           <MarketingImage
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
@@ -193,34 +193,34 @@ export function TopDealCard({ tour }: { tour: Tour }) {
                 ? `Remove ${tour.title} from wishlist`
                 : `Add ${tour.title} to wishlist`
             }
-            className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/85 backdrop-blur-sm transition-transform duration-200 hover:scale-110 active:scale-90 focus:outline-none cursor-pointer shadow-xs"
+            className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs transition-transform duration-200 hover:scale-110 active:scale-90 focus:outline-none cursor-pointer shadow-xs"
           >
             <Heart
-              size={16}
+              size={15}
               className={
                 wishlisted
                   ? "fill-red-500 text-red-500"
-                  : "fill-transparent text-red-400"
+                  : "fill-red-500 text-red-500 hover:scale-110"
               }
             />
           </button>
         </div>
 
         {/* Card content below image */}
-        <div className="flex flex-col flex-1 px-2.5 pt-3 pb-3">
+        <div className="flex flex-col flex-1 pt-2.5 pb-0.5">
           {/* Title row with duration tag */}
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-semibold text-slate-900 transition-colors group-hover:text-pub-accent leading-snug line-clamp-2 flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-slate-900 transition-colors group-hover:text-pub-accent leading-snug line-clamp-1 flex-1 min-w-0">
               {tour.title}
             </h3>
-            <span className="shrink-0 rounded border border-pub-secondary text-pub-secondary bg-transparent px-1.5 py-0.5 text-[10px] font-semibold tracking-wide whitespace-nowrap mt-0.5">
+            <span className="shrink-0 rounded border border-pub-secondary/70 text-pub-secondary bg-transparent px-1.5 py-0.5 text-[10px] font-bold tracking-wide whitespace-nowrap">
               {durationTag}
             </span>
           </div>
 
           {/* 5 Yellow Stars + Rating + Review count */}
-          <div className="mt-2 flex items-center gap-1 text-xs">
-            <div className="flex items-center gap-0.5">
+          <div className="mt-1.5 flex items-center gap-1 text-xs">
+            <div className="flex items-center gap-0.5 text-amber-400">
               <Star size={11} className="fill-amber-400 text-amber-400" />
               <Star size={11} className="fill-amber-400 text-amber-400" />
               <Star size={11} className="fill-amber-400 text-amber-400" />
@@ -228,11 +228,11 @@ export function TopDealCard({ tour }: { tour: Tour }) {
               <Star size={11} className="fill-amber-400 text-amber-400" />
             </div>
             <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
-            <span className="text-slate-500">{reviewCountStr}</span>
+            <span className="text-slate-500 font-normal">{reviewCountStr}</span>
           </div>
 
           {/* Price Row: From $old $new pp */}
-          <div className="mt-auto pt-3 flex items-baseline gap-1.5">
+          <div className="mt-auto pt-2.5 flex items-baseline gap-1.5">
             <span className="text-xs font-normal text-slate-500">From</span>
             {tour.originalPrice != null && (
               <span className="text-xs font-normal text-slate-400 line-through">
@@ -330,7 +330,7 @@ export default function TopDealsSection({
           }
         }
 
-        // Fallback: load featured tours slice
+        // No fabricated deals: an empty API result stays empty.
         const featured = await fetchFeaturedTours(12);
         if (active && featured?.length) {
           const mapped = featured.map(mapPublicTour);
@@ -341,12 +341,12 @@ export default function TopDealsSection({
         }
 
         if (active) {
-          setTours(FALLBACK_DEAL_TOURS);
+          setTours([]);
           setLoading(false);
         }
       } catch {
         if (active) {
-          setTours(FALLBACK_DEAL_TOURS);
+          setTours([]);
           setLoading(false);
         }
       }
@@ -436,7 +436,7 @@ export default function TopDealsSection({
         )}`;
 
   return (
-    <section className="relative w-full overflow-hidden bg-white pt-2 pb-12 sm:pb-16">
+    <section className="relative w-full overflow-hidden bg-pub-bg py-10 sm:py-14 my-4 sm:my-6 border-y border-pub-border/60">
       <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Header Row: Title & Arrow Buttons */}
         <div className="mb-6 flex items-center justify-between gap-4">

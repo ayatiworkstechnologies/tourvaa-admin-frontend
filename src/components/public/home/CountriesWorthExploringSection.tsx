@@ -10,6 +10,7 @@ import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
   LuHeart as Heart,
+  LuMapPin as MapPin,
   LuSparkles as Sparkles,
   LuStar as Star,
 } from "react-icons/lu";
@@ -66,8 +67,11 @@ export function CountryWorthExploringCard({
           />
         </Link>
 
-        {/* Subtle vignette for badge readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20 pointer-events-none" />
+        {/* Top-Left Destination Badge */}
+        <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-pub-accent px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
+          <MapPin size={10} className="fill-white/30 text-white shrink-0" />
+          <span className="truncate max-w-[100px]">{country.name}</span>
+        </span>
 
         {/* Wishlist button (top-right) */}
         <button
@@ -82,14 +86,14 @@ export function CountryWorthExploringCard({
               ? `Remove ${country.name} from wishlist`
               : `Add ${country.name} to wishlist`
           }
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-md text-slate-700 shadow-md transition-all duration-200 hover:scale-115 active:scale-90 hover:bg-white focus:outline-none cursor-pointer"
+          className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs text-slate-700 shadow-xs transition-all duration-200 hover:scale-115 active:scale-90 hover:bg-white focus:outline-none cursor-pointer"
         >
           <Heart
-            size={16}
+            size={15}
             className={
               wishlisted
                 ? "fill-red-500 text-red-500"
-                : "fill-slate-400/40 text-slate-700"
+                : "fill-red-500 text-red-500"
             }
           />
         </button>
