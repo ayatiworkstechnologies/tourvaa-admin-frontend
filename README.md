@@ -159,6 +159,17 @@ src/
 - Sky-blue / orange design system, distinct from the dashboard palette, scoped entirely to the `(public)` route group via CSS variables - no bleed into admin/portal styling.
 - Homepage hero includes a 4-field filter bar (`components/public/HeroFilterBar.tsx`): destination (flag-icon country list, wired to `/tours?country=`), flexible/specific date range picker, duration presets + custom slider (wired to `/tours?min_days=&max_days=`), and traveller count.
 - `/tours` reads all filters from URL search params on load (shareable/bookmarkable filtered URLs).
+- Country flags come from the database (`countries.flag_emoji`, seeded from each country's ISO-2 code) and are served on the public tour payload as `country_flag` - they are not derived in the browser, so all ~250 countries render a flag rather than the couple of dozen a hard-coded lookup used to cover.
+
+---
+
+## Translation
+
+The public site and the customer portal are translated by the **Elfsight Website Translator** (`components/public/ElfsightTranslator.tsx`), mounted in `app/(public)/layout.tsx` and `app/customer/layout.tsx`. It loads `platform.js` from Elfsight's CDN and renders its own floating language selector into a shadow DOM appended to `<body>` - it is not driven by the site's own header dropdown.
+
+Its domains must stay allowed by the Content-Security-Policy in `next.config.ts` (`elfsightHosts`): the widget boots from `elfsightcdn.com`, fetches its code from `universe-static.elfsightcdn.com`, and calls `core.service.elfsight.com` at runtime. If any of those is blocked the script still returns 200 and the widget silently renders nothing, with no console error to point at the cause - so check the CSP first when translation appears to do nothing.
+
+A previous Google Translate integration (`components/public/GoogleTranslateLoader.tsx`, plus the `googtrans` cookie logic in `LanguageCurrencySelector`/`LanguageSwitcher` and the `.goog-te-*` rules in `globals.css`) is still present but no longer mounted.
 
 ---
 

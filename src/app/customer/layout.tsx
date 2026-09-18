@@ -7,7 +7,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerPortalHeader from "@/components/customer/CustomerPortalHeader";
-import GoogleTranslateLoader from "@/components/public/GoogleTranslateLoader";
+import ElfsightTranslator from "@/components/public/ElfsightTranslator";
 import PublicFooter from "@/components/public/PublicFooter";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
@@ -55,7 +55,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     <PublicSettingsProvider>
       <TravelStoreProvider>
         <div className="customer-public-portal min-h-screen bg-[#F8FAFC]">
-        <GoogleTranslateLoader />
+        <ElfsightTranslator />
         <CustomerPortalHeader />
 
         <div className="pt-20 sm:pt-[84px]">

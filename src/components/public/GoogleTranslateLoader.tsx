@@ -22,6 +22,32 @@ export default function GoogleTranslateLoader() {
           for Google's script to attach to, but is never shown. */}
       <div id="google_translate_element" aria-hidden="true" />
 
+      {/* Must run before the widget does. Google Translate rewrites text
+          nodes into <font> wrappers directly in the DOM; React then tries to
+          remove/insert around nodes that are no longer where its fiber tree
+          expects, and throws NotFoundError ("insertBefore ... not a child of
+          this node"), which takes the whole page down. Making these two DOM
+          methods no-op instead of throwing when the parent no longer matches
+          is the standard mitigation - React recovers on its next render. */}
+      <Script id="google-translate-react-guard" strategy="beforeInteractive">
+        {`
+          (function () {
+            if (typeof Node !== "function" || !Node.prototype || Node.prototype.__tvTranslateGuard) return;
+            Node.prototype.__tvTranslateGuard = true;
+            var removeChild = Node.prototype.removeChild;
+            Node.prototype.removeChild = function (child) {
+              if (child.parentNode !== this) return child;
+              return removeChild.apply(this, arguments);
+            };
+            var insertBefore = Node.prototype.insertBefore;
+            Node.prototype.insertBefore = function (newNode, referenceNode) {
+              if (referenceNode && referenceNode.parentNode !== this) return newNode;
+              return insertBefore.apply(this, arguments);
+            };
+          })();
+        `}
+      </Script>
+
       <Script id="google-translate-init" strategy="afterInteractive">
         {`
           window.googleTranslateElementInit = function () {

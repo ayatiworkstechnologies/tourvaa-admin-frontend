@@ -233,19 +233,13 @@ export default function CountriesWorthExploringSection({
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-100/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-amber-800 mb-2">
-              <Sparkles
-                size={12}
-                className="fill-current text-amber-600 animate-sparkle-glow"
-              />
-              <span>Global Destinations</span>
+             
+              
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-950 tracking-tight">
               Countries Worth Exploring
             </h2>
-            <p className="mt-1 text-xs sm:text-sm text-slate-600 font-medium max-w-xl">
-              Iconic landscapes, rich cultures, and unforgettable adventures
-              across the world&apos;s most sought-after countries.
-            </p>
+          
           </div>
 
           {!loading && displayCountries.length > 0 && (
