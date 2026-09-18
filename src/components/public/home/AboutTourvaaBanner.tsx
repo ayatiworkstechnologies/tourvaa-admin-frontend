@@ -62,12 +62,12 @@ export default function AboutTourvaaBanner({
   const ctaUrl = propCtaUrl || data.cta_url || DEFAULT_ABOUT_CTA_URL;
 
   return (
-    <section className="relative w-full overflow-hidden py-14 sm:py-20 lg:py-24 shadow-sm">
+    <section className="relative w-full overflow-hidden py-14 sm:py-20 lg:py-24 shadow-sm bg-[#1e2a22]">
       {/* High-res Panoramic Mountain Background */}
       <img
         src={image}
         alt="About Tourvaa - Alpine mountain landscape"
-        className="absolute inset-0 h-full w-full object-full object-center"
+        className="absolute inset-0 h-full w-full object-cover object-center"
       />
       {/* Dark gradient overlay for readability */}
       <div className="absolute inset-0 bg-black/10 backdrop-brightness-90" />

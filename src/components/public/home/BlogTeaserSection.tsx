@@ -50,7 +50,7 @@ export default function BlogTeaserSection({
   const image = data.image ? mediaUrl(data.image) : "/images/img-1.png";
 
   return (
-    <section className="relative w-full overflow-hidden py-10 sm:py-16 bg-gradient-to-br from-[#FFF9EE] via-[#FDFAFB] to-[#F0F7FF] border-y border-slate-100 shadow-xs">
+    <section className="relative w-full overflow-hidden py-10 sm:py-16 bg-gradient-to-br from-[#FFF9EE] via-[#FDFAFB] to-[#F0F7FF] border-b border-slate-100 shadow-xs">
       {/* Top-left golden glow */}
       <div className="pointer-events-none absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-amber-400/35 via-pub-accent/20 to-transparent blur-3xl animate-float-orb" />
       {/* Bottom-right sky-blue glow */}

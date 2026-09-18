@@ -29,7 +29,7 @@ import {
   stableHash,
   Tour,
 } from "./homeTypes";
-import { EmptyCollection, TourCardSkeleton } from "./HomeHelpers";
+import { EmptyCollection, Reveal, TourCardSkeleton } from "./HomeHelpers";
 import { useAutoSlide } from "./useAutoSlide";
 import { smoothScrollTo } from "./smoothScrollTo";
 
@@ -296,70 +296,72 @@ export default function TrendingToursSection({
   };
 
   return (
-    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-16 bg-gradient-to-b from-white via-[#F8FAFC] to-[#F1F5F9] border-y border-slate-200/70 shadow-2xs">
-      {/* Ambient decorative glowing blobs */}
-      <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-bl from-sky-200/20 via-blue-100/15 to-transparent blur-3xl animate-float-orb" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-sky-200/15 via-slate-100/20 to-transparent blur-3xl animate-float-orb-alt" />
+    <Reveal variant="fade-up">
+      <section className="relative w-full overflow-hidden py-10 sm:py-16 bg-gradient-to-b from-white via-[#F8FAFC] to-[#F1F5F9] border-y border-slate-200/70 shadow-2xs">
+        {/* Ambient decorative glowing blobs */}
+        <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-bl from-sky-200/20 via-blue-100/15 to-transparent blur-3xl animate-float-orb" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-sky-200/15 via-slate-100/20 to-transparent blur-3xl animate-float-orb-alt" />
 
-      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
-        {/* Section Header with Arrows on right */}
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-950 tracking-tight">
-              Trending Tour Packages
-            </h2>
+        <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+          {/* Section Header with Arrows on right */}
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-950 tracking-tight">
+                Trending Tour Packages
+              </h2>
+            </div>
+
+            {!loading && displayTours.length > 0 && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  aria-label="Previous tours"
+                  onClick={() => move(-1)}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-sky-500 hover:text-sky-600 hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+                >
+                  <ChevronLeft size={18} className="stroke-[2.5]" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next tours"
+                  onClick={() => move(1)}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-sky-500 hover:text-sky-600 hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+                >
+                  <ChevronRight size={18} className="stroke-[2.5]" />
+                </button>
+              </div>
+            )}
           </div>
 
-          {!loading && displayTours.length > 0 && (
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                aria-label="Previous tours"
-                onClick={() => move(-1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-sky-500 hover:text-sky-600 hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
-              >
-                <ChevronLeft size={18} className="stroke-[2.5]" />
-              </button>
-              <button
-                type="button"
-                aria-label="Next tours"
-                onClick={() => move(1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-sky-500 hover:text-sky-600 hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
-              >
-                <ChevronRight size={18} className="stroke-[2.5]" />
-              </button>
-            </div>
-          )}
+          {/* Carousel list */}
+          <div
+            ref={scrollRef}
+            className="no-scrollbar reveal-stagger flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
+          >
+            {loading ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start"
+                >
+                  <TourCardSkeleton />
+                </div>
+              ))
+            ) : displayTours.length > 0 ? (
+              displayTours.map((tour, index) => (
+                <TrendingTourCard key={`${tour.title}-${index}`} tour={tour} />
+              ))
+            ) : (
+              <EmptyCollection
+                message="No featured tours are available yet."
+                href="/tours"
+                linkLabel="Browse all tours"
+              />
+            )}
+          </div>
         </div>
-
-        {/* Carousel list */}
-        <div
-          ref={scrollRef}
-          className="no-scrollbar reveal-stagger flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth"
-        >
-          {loading ? (
-            Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={index}
-                className="w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start"
-              >
-                <TourCardSkeleton />
-              </div>
-            ))
-          ) : displayTours.length > 0 ? (
-            displayTours.map((tour, index) => (
-              <TrendingTourCard key={`${tour.title}-${index}`} tour={tour} />
-            ))
-          ) : (
-            <EmptyCollection
-              message="No featured tours are available yet."
-              href="/tours"
-              linkLabel="Browse all tours"
-            />
-          )}
-        </div>
-      </div>
-    </section>
+      </section>
+    </Reveal>
   );
 }
 

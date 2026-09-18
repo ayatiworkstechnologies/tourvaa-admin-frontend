@@ -38,17 +38,15 @@ export default function Home() {
       </Reveal>
 
       {/* 5. About Tourvaa Panoramic Banner */}
-      <Reveal variant="scale-up">
+      <Reveal variant="fade">
         <AboutTourvaaBanner />
       </Reveal>
 
       {/* 6. Trending Tour Packages Carousel */}
-      <Reveal variant="fade-up">
-        <TrendingToursSection />
-      </Reveal>
+      <TrendingToursSection />
 
       {/* 7. Blog Teaser Banner */}
-      <Reveal variant="fade-up">
+      <Reveal variant="fade">
         <BlogTeaserSection />
       </Reveal>
 
