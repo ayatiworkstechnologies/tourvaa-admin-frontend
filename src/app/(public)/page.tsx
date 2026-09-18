@@ -30,9 +30,7 @@ export default function Home() {
       <EscapeSaleSection />
 
       {/* 3. Top Deals Section with Dynamic Destination Tabs */}
-      <Reveal variant="fade-up">
-        <TopDealsSection />
-      </Reveal>
+      <TopDealsSection />
 
       {/* 4. Favourite Countries Section */}
       <Reveal variant="fade-up">

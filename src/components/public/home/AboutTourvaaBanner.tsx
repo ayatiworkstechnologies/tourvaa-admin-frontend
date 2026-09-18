@@ -28,7 +28,9 @@ export default function AboutTourvaaBanner({
   ctaText: propCtaText,
   ctaUrl: propCtaUrl,
 }: AboutTourvaaBannerProps) {
-  const [data, setData] = useState<Partial<AboutSectionBlock>>(initialData || {});
+  const [data, setData] = useState<Partial<AboutSectionBlock>>(
+    initialData || {},
+  );
 
   // Fast independent data loading
   useEffect(() => {
@@ -54,12 +56,13 @@ export default function AboutTourvaaBanner({
   const heading = propHeading || data.heading || DEFAULT_ABOUT_HEADING;
   const body = propBody || data.body || DEFAULT_ABOUT_BODY;
   const image =
-    propImage || (data.image ? mediaUrl(data.image) : "/images/about-mountain.png");
+    propImage ||
+    (data.image ? mediaUrl(data.image) : "/images/about-mountain.png");
   const ctaText = propCtaText || data.cta_text || DEFAULT_ABOUT_CTA_TEXT;
   const ctaUrl = propCtaUrl || data.cta_url || DEFAULT_ABOUT_CTA_URL;
 
   return (
-    <section className="relative w-full overflow-hidden my-6 sm:my-10 py-14 sm:py-20 lg:py-24 shadow-sm">
+    <section className="relative w-full overflow-hidden py-14 sm:py-20 lg:py-24 shadow-sm">
       {/* High-res Panoramic Mountain Background */}
       <img
         src={image}

@@ -161,11 +161,11 @@ export function TopDealCard({ tour }: { tour: Tour }) {
   return (
     <article
       data-deal-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-2xl bg-white p-2.5 sm:p-3 shadow-xs border border-slate-200/80 transition-all duration-300 hover:shadow-md hover:-translate-y-1 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 h-full"
     >
       <Link href={href} className="flex flex-col h-full justify-between">
-        {/* Full image with overlaid badges inside rounded card */}
-        <div className="relative h-44 sm:h-48 w-full overflow-hidden rounded-xl bg-slate-100 shrink-0">
+        {/* Rounded Image with overlaid badges (no surrounding white card box) */}
+        <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-2xl bg-slate-200 shrink-0 shadow-2xs">
           <MarketingImage
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
@@ -175,12 +175,12 @@ export function TopDealCard({ tour }: { tour: Tour }) {
           />
 
           {/* Top-Left Destination Badge */}
-          <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-pub-accent px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
-            <MapPin size={10} className="fill-white/30 text-white shrink-0" />
-            <span className="truncate max-w-[100px]">{destinationName}</span>
+          <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-pub-accent px-2.5 py-1 text-[11.5px] font-semibold text-white shadow-xs pointer-events-none">
+            <MapPin size={11} className="shrink-0 text-white" />
+            <span className="truncate max-w-[110px]">{destinationName}</span>
           </span>
 
-          {/* Wishlist Heart button (top-right) */}
+          {/* Wishlist Heart button (top-right, directly on image: white by default, red when added) */}
           <button
             type="button"
             onClick={(e) => {
@@ -193,58 +193,58 @@ export function TopDealCard({ tour }: { tour: Tour }) {
                 ? `Remove ${tour.title} from wishlist`
                 : `Add ${tour.title} to wishlist`
             }
-            className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs transition-transform duration-200 hover:scale-110 active:scale-90 focus:outline-none cursor-pointer shadow-xs"
+            className="absolute right-3.5 top-3.5 z-10 flex items-center justify-center transition-transform duration-200 hover:scale-125 active:scale-90 focus:outline-none cursor-pointer drop-shadow-md"
           >
             <Heart
-              size={15}
-              className={
+              size={20}
+              className={`transition-colors duration-200 ${
                 wishlisted
                   ? "fill-red-500 text-red-500"
-                  : "fill-red-500 text-red-500 hover:scale-110"
-              }
+                  : "fill-white text-white drop-shadow-md hover:fill-red-400 hover:text-red-400"
+              }`}
             />
           </button>
         </div>
 
-        {/* Card content below image */}
-        <div className="flex flex-col flex-1 pt-2.5 pb-0.5">
+        {/* Card content below image on the page background */}
+        <div className="flex flex-col flex-1 pt-3 pb-1">
           {/* Title row with duration tag */}
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-bold text-slate-900 transition-colors group-hover:text-pub-accent leading-snug line-clamp-1 flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-pub-accent leading-snug line-clamp-1 flex-1 min-w-0">
               {tour.title}
             </h3>
-            <span className="shrink-0 rounded border border-pub-secondary/70 text-pub-secondary bg-transparent px-1.5 py-0.5 text-[10px] font-bold tracking-wide whitespace-nowrap">
+            <span className="shrink-0 rounded border border-pub-secondary/70 text-pub-secondary bg-transparent px-2 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap">
               {durationTag}
             </span>
           </div>
 
           {/* 5 Yellow Stars + Rating + Review count */}
-          <div className="mt-1.5 flex items-center gap-1 text-xs">
+          <div className="mt-2 flex items-center gap-1.5 text-xs">
             <div className="flex items-center gap-0.5 text-amber-400">
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <Star size={12} className="fill-amber-400 text-amber-400" />
             </div>
             <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
-            <span className="text-slate-500 font-normal">{reviewCountStr}</span>
+            <span className="text-slate-600 font-medium">{reviewCountStr}</span>
           </div>
 
           {/* Price Row: From $old $new pp */}
-          <div className="mt-auto pt-2.5 flex items-baseline gap-1.5">
-            <span className="text-xs font-normal text-slate-500">From</span>
+          <div className="mt-2.5 flex items-baseline gap-2">
+            <span className="text-sm font-bold text-slate-900">From</span>
             {tour.originalPrice != null && (
               <span className="text-xs font-normal text-slate-400 line-through">
                 {format(tour.originalPrice, tour.currency || "USD")}
               </span>
             )}
-            <strong className="text-sm sm:text-base font-bold text-slate-950">
+            <strong className="text-base font-extrabold text-slate-950">
               {tour.rawPrice != null
                 ? format(tour.rawPrice, tour.currency || "USD")
                 : format(1182, "USD")}
             </strong>
-            <span className="text-xs text-slate-500 font-normal">pp</span>
+            <span className="text-sm font-medium text-slate-900">pp</span>
           </div>
         </div>
       </Link>
@@ -416,7 +416,7 @@ export default function TopDealsSection({
     enabled: !loading && displayTours.length > 1,
   });
 
-  if (!sectionEnabled) return null;
+  if (!sectionEnabled || (!loading && displayTours.length === 0)) return null;
 
   const move = (direction: number) => {
     notifyInteraction();
@@ -436,11 +436,11 @@ export default function TopDealsSection({
         )}`;
 
   return (
-    <section className="relative w-full overflow-hidden bg-pub-bg py-10 sm:py-14 my-4 sm:my-6 border-y border-pub-border/60">
+    <section className="relative w-full overflow-hidden bg-pub-bg py-12 sm:py-16 my-4 sm:my-6 border-y border-pub-border/50">
       <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Header Row: Title & Arrow Buttons */}
         <div className="mb-6 flex items-center justify-between gap-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
             Top Deals
           </h2>
 
@@ -450,7 +450,7 @@ export default function TopDealsSection({
                 type="button"
                 aria-label="Previous deals"
                 onClick={() => move(-1)}
-                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-2xs transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95 cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-300/90 bg-white text-slate-700 shadow-2xs transition-all duration-200 hover:bg-slate-50 hover:text-slate-950 active:scale-95 cursor-pointer"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -458,7 +458,7 @@ export default function TopDealsSection({
                 type="button"
                 aria-label="Next deals"
                 onClick={() => move(1)}
-                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-2xs transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95 cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-300/90 bg-white text-slate-700 shadow-2xs transition-all duration-200 hover:bg-slate-50 hover:text-slate-950 active:scale-95 cursor-pointer"
               >
                 <ChevronRight size={16} />
               </button>

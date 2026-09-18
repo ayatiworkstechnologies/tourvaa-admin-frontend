@@ -89,12 +89,12 @@ export function CountryWorthExploringCard({
           className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs text-slate-700 shadow-xs transition-all duration-200 hover:scale-115 active:scale-90 hover:bg-white focus:outline-none cursor-pointer"
         >
           <Heart
-            size={15}
-            className={
+            size={16}
+            className={`transition-colors duration-200 ${
               wishlisted
                 ? "fill-red-500 text-red-500"
-                : "fill-red-500 text-red-500"
-            }
+                : "fill-white text-white drop-shadow-md hover:fill-red-400 hover:text-red-400"
+            }`}
           />
         </button>
       </div>
@@ -179,7 +179,10 @@ export default function CountriesWorthExploringSection({
 
         if (!active) return;
 
-        if (countryResult.status === "fulfilled" && countryResult.value.length) {
+        if (
+          countryResult.status === "fulfilled" &&
+          countryResult.value.length
+        ) {
           const cmsDestinations =
             destinationResult.status === "fulfilled"
               ? destinationResult.value
@@ -236,14 +239,9 @@ export default function CountriesWorthExploringSection({
         {/* Header */}
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-100/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-amber-800 mb-2">
-             
-              
-            </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-950 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-semibold text-slate-950 tracking-tight">
               Countries Worth Exploring
             </h2>
-          
           </div>
 
           {!loading && displayCountries.length > 0 && (
@@ -299,4 +297,3 @@ export default function CountriesWorthExploringSection({
     </section>
   );
 }
-

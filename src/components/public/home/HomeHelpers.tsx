@@ -82,6 +82,8 @@ export function Reveal({
   }, [delay, threshold, rootMargin, once]);
 
   const variantClass = `reveal-${variant}`;
+  if (!children) return null;
+
   const customStyles: React.CSSProperties & Record<string, string> = {};
   if (delay) customStyles["--reveal-delay"] = `${delay}ms`;
   if (duration) customStyles["--reveal-duration"] = `${duration}ms`;

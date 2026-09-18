@@ -6,7 +6,10 @@ import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 import {
   LuCircleX as CircleX,
   LuGlobe as Globe,
+  LuHeartHandshake as HeartHandshake,
+  LuMessageSquare as MessageSquare,
   LuSparkles as Sparkles,
+  LuStar as Star,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
@@ -41,6 +44,66 @@ export default function HeroSection({
   );
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [showOfferBanner, setShowOfferBanner] = useState(true);
+
+  const TRUST_ITEMS = [
+    {
+      id: "operators",
+      Icon: Globe,
+      iconColor: "text-sky-500",
+      content: (
+        <span>
+          Shop <strong className="font-extrabold text-slate-950">2,500+</strong> handpicked operators
+        </span>
+      ),
+    },
+    {
+      id: "trustpilot",
+      Icon: Star,
+      iconColor: "text-emerald-500 fill-emerald-500",
+      content: (
+        <span>
+          <strong className="font-extrabold text-slate-950">4.8 stars</strong> on{" "}
+          <span className="font-black text-emerald-600">Trustpilot</span>{" "}
+          <span className="text-slate-500 font-normal">(15,000+ reviews)</span>
+        </span>
+      ),
+    },
+    {
+      id: "support",
+      Icon: MessageSquare,
+      iconColor: "text-pub-accent",
+      content: (
+        <span>
+          <strong className="font-extrabold text-slate-950">24/7</strong> customer support
+        </span>
+      ),
+    },
+    {
+      id: "experiences",
+      Icon: HeartHandshake,
+      iconColor: "text-sky-500",
+      content: (
+        <span>
+          <strong className="font-extrabold text-slate-950">500k+</strong> experiences shared by travelers
+        </span>
+      ),
+    },
+  ];
+
+  const [trustIndex, setTrustIndex] = useState(0);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIsFadingOut(true);
+      setTimeout(() => {
+        setTrustIndex((prev) => (prev + 1) % TRUST_ITEMS.length);
+        setIsFadingOut(false);
+      }, 400);
+    }, 3200);
+
+    return () => clearInterval(timer);
+  }, [TRUST_ITEMS.length]);
 
   // Fast independent data loading if not preloaded
   useEffect(() => {
@@ -220,20 +283,55 @@ export default function HeroSection({
         </section>
       </div>
 
-      {/* Sub-hero Trust Indicator */}
-      <div className="mx-auto max-w-[1400px] px-5 pt-5 pb-7 overflow-hidden" aria-label="Tourvaa trust highlights">
-        <div className="flex w-max animate-marquee space-x-12 hover:[animation-play-state:paused]">
-          {[...Array(4)].map((_, i) => (
-            <p
-              key={i}
-              className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 shrink-0"
-            >
-              <Sparkles
-                size={16}
-                className="text-[#3B82F6] shrink-0 fill-[#3B82F6]/20 animate-sparkle-glow"
-              />
-              <span>{subHeroText}</span>
-            </p>
+      {/* Sub-hero Trust Indicator with Disappear/Appear Animation */}
+      <div
+        className="mx-auto max-w-[1400px] px-5 pt-6 pb-7 overflow-hidden flex flex-col items-center justify-center min-h-[72px]"
+        aria-label="Tourvaa trust highlights"
+      >
+        <div className="relative flex items-center justify-center min-h-[44px] w-full max-w-3xl mx-auto">
+          {(() => {
+            const currentItem = TRUST_ITEMS[trustIndex];
+            const Icon = currentItem.Icon;
+            return (
+              <div
+                className={`inline-flex items-center justify-center gap-3 text-base sm:text-lg md:text-[19px] font-semibold text-slate-800 tracking-tight transition-all duration-400 ease-in-out select-none ${
+                  isFadingOut
+                    ? "opacity-0 -translate-y-2.5 scale-95 pointer-events-none"
+                    : "opacity-100 translate-y-0 scale-100"
+                }`}
+              >
+                <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-slate-100/90 shadow-2xs shrink-0">
+                  <Icon
+                    size={20}
+                    className={`${currentItem.iconColor} shrink-0 transition-transform duration-300`}
+                  />
+                </span>
+                {currentItem.content}
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Indicator dots to visualize rotating items */}
+        <div className="mt-2.5 flex items-center gap-1.5">
+          {TRUST_ITEMS.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                setIsFadingOut(true);
+                setTimeout(() => {
+                  setTrustIndex(idx);
+                  setIsFadingOut(false);
+                }, 300);
+              }}
+              aria-label={`Go to highlight ${idx + 1}`}
+              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                idx === trustIndex
+                  ? "w-6 bg-pub-primary"
+                  : "w-1.5 bg-slate-200 hover:bg-slate-300"
+              }`}
+            />
           ))}
         </div>
       </div>

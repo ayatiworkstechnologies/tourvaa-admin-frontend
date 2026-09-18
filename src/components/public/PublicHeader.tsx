@@ -129,26 +129,26 @@ export default function PublicHeader() {
       }`}
     >
       {/* Top Trust Bar -- full width edge-to-edge, matching footer pub-primary signature color */}
-      <div className="w-full bg-pub-primary text-white">
-        <div className="mx-auto flex h-8 sm:h-9 max-w-[1440px] items-center justify-center gap-4 sm:gap-6 md:gap-8 px-3 sm:px-6 lg:px-12 text-[10.5px] sm:text-[11px] font-semibold overflow-x-auto no-scrollbar whitespace-nowrap">
-          <span className="flex items-center gap-1.5 shrink-0">
-            <Globe size={13} className="text-sky-400" />
+      <div className="w-full bg-pub-primary text-white border-b border-white/10">
+        <div className="mx-auto flex h-11 sm:h-12 max-w-[1440px] items-center justify-center gap-4 sm:gap-6 md:gap-8 px-4 sm:px-8 lg:px-12 text-xs sm:text-[12.5px] font-semibold overflow-x-auto no-scrollbar whitespace-nowrap py-2 sm:py-2.5">
+          <span className="flex items-center gap-2 shrink-0">
+            <Globe size={15} className="text-sky-400" />
             Shop 2,500+ handpicked operators
           </span>
-          <span className="h-3 w-px bg-white/20 shrink-0" aria-hidden="true" />
-          <span className="flex items-center gap-1.5 shrink-0">
-            <Star size={13} className="text-emerald-400" />
+          <span className="h-4 w-px bg-white/25 shrink-0" aria-hidden="true" />
+          <span className="flex items-center gap-2 shrink-0">
+            <Star size={15} className="text-emerald-400" />
             4.8 stars on <span className="font-black text-emerald-400">Trustpilot</span>
-            <span className="text-white/60">(15,000+ reviews)</span>
+            <span className="text-white/70">(15,000+ reviews)</span>
           </span>
-          <span className="h-3 w-px bg-white/20 shrink-0" aria-hidden="true" />
-          <span className="flex items-center gap-1.5 shrink-0">
-            <MessageSquare size={13} className="text-pub-accent" />
+          <span className="h-4 w-px bg-white/25 shrink-0" aria-hidden="true" />
+          <span className="flex items-center gap-2 shrink-0">
+            <MessageSquare size={15} className="text-pub-accent" />
             24/7 customer support
           </span>
-          <span className="h-3 w-px bg-white/20 shrink-0" aria-hidden="true" />
-          <span className="flex items-center gap-1.5 shrink-0">
-            <HeartHandshake size={13} className="text-sky-400" />
+          <span className="h-4 w-px bg-white/25 shrink-0" aria-hidden="true" />
+          <span className="flex items-center gap-2 shrink-0">
+            <HeartHandshake size={15} className="text-sky-400" />
             500k+ experiences shared by travelers
           </span>
         </div>

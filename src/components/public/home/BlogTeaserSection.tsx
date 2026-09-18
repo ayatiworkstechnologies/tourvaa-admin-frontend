@@ -3,9 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useState } from "react";
-import {
-  LuSparkles as Sparkles,
-} from "react-icons/lu";
+import { LuSparkles as Sparkles } from "react-icons/lu";
 import { BlogTeaserBlock, fetchContentBlock } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
@@ -42,7 +40,8 @@ export default function BlogTeaserSection({
 
   const eyebrow = data.eyebrow ?? "BLOG";
   const heading =
-    data.heading ?? "Tips, destination guides and practical advice for every journey";
+    data.heading ??
+    "Tips, destination guides and practical advice for every journey";
   const subtitle =
     data.subtitle ??
     "Read our expert guides, packing tips, and local secrets to get the most out of your next adventure.";
@@ -51,7 +50,7 @@ export default function BlogTeaserSection({
   const image = data.image ? mediaUrl(data.image) : "/images/img-1.png";
 
   return (
-    <section className="relative w-full overflow-hidden my-8 sm:my-14 py-12 sm:py-20 bg-gradient-to-br from-[#FFF9EE] via-[#FDFAFB] to-[#F0F7FF] border-y border-slate-100 shadow-xs">
+    <section className="relative w-full overflow-hidden py-10 sm:py-16 bg-gradient-to-br from-[#FFF9EE] via-[#FDFAFB] to-[#F0F7FF] border-y border-slate-100 shadow-xs">
       {/* Top-left golden glow */}
       <div className="pointer-events-none absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-amber-400/35 via-pub-accent/20 to-transparent blur-3xl animate-float-orb" />
       {/* Bottom-right sky-blue glow */}
@@ -92,4 +91,3 @@ export default function BlogTeaserSection({
     </section>
   );
 }
-
