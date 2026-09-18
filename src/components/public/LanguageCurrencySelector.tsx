@@ -18,7 +18,9 @@ import FlagIcon from "@/components/ui/FlagIcon";
 // own picker (see components/public/ElfsightTranslator.tsx), so this selector
 // only covers currency and country.
 
-type Tab = "currency" | "country";
+// Country leads: picking one sets the currency automatically, so it is the
+// more useful entry point of the two.
+type Tab = "country" | "currency";
 
 export default function LanguageCurrencySelector({
   inverse = false,
@@ -28,7 +30,7 @@ export default function LanguageCurrencySelector({
 }) {
   const { code: currCode, symbol, currencies, setCode, isStale, countryCode, setCountry } = useCurrency();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>("currency");
+  const [tab, setTab] = useState<Tab>("country");
   const [search, setSearch] = useState("");
   const [countries, setCountries] = useState<PublicCountry[]>([]);
   const ref = useRef<HTMLDivElement>(null);
@@ -147,17 +149,6 @@ export default function LanguageCurrencySelector({
           <div className="flex border-b border-slate-100">
             <button
               type="button"
-              onClick={() => setTab("currency")}
-              className={`flex-1 py-3 text-xs font-bold transition-colors ${
-                tab === "currency"
-                  ? "border-b-2 border-pub-accent text-pub-accent"
-                  : "text-slate-500 hover:text-pub-primary"
-              }`}
-            >
-              💱 Currency
-            </button>
-            <button
-              type="button"
               onClick={() => setTab("country")}
               className={`flex-1 py-3 text-xs font-bold transition-colors ${
                 tab === "country"
@@ -167,9 +158,83 @@ export default function LanguageCurrencySelector({
             >
               🌍 Country
             </button>
+            <button
+              type="button"
+              onClick={() => setTab("currency")}
+              className={`flex-1 py-3 text-xs font-bold transition-colors ${
+                tab === "currency"
+                  ? "border-b-2 border-pub-accent text-pub-accent"
+                  : "text-slate-500 hover:text-pub-primary"
+              }`}
+            >
+              💱 Currency
+            </button>
           </div>
 
           <div className="p-3">
+            {/* ── Country Tab ── */}
+            {tab === "country" && (
+              <>
+                <div className="relative mb-2">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search country..."
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-accent focus:bg-white focus:ring-2 focus:ring-pub-accent/15"
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => setSearch("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:text-slate-700"
+                    >
+                      <X size={11} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-h-56 overflow-y-auto space-y-0.5 pr-0.5 no-scrollbar">
+                  {countryList.length ? (
+                    countryList.map((item) => {
+                      const selected = item.country_code === countryCode;
+                      return (
+                        <button
+                          key={item.country_code}
+                          type="button"
+                          onClick={() => {
+                            // Hand over the country's own currency so the
+                            // switch is immediate rather than waiting on the
+                            // /currency/context lookup.
+                            void setCountry(item.country_code, item.currency_code);
+                            setOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition ${
+                            selected ? "bg-pub-primary text-white shadow-sm" : "text-slate-800 hover:bg-slate-100"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="h-3 w-5 shrink-0 overflow-hidden rounded-[2px]">
+                              <FlagIcon countryCode={item.country_code} />
+                            </span>
+                            <span className="truncate">{item.country_name}</span>
+                          </div>
+                          {selected && <Check size={13} className="shrink-0 text-[#d95d2c]" />}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="py-6 text-center text-xs text-slate-400">Loading countries...</p>
+                  )}
+                </div>
+
+                <div className="mt-2 border-t border-slate-100 px-1 pt-1.5 text-[9px] font-semibold text-slate-400">
+                  {activeCountry ? `Detected/selected: ${activeCountry.country_name}` : "Choosing a country updates the suggested currency too."}
+                </div>
+              </>
+            )}
+
             {/* ── Currency Tab ── */}
             {tab === "currency" && (
               <>
@@ -244,69 +309,6 @@ export default function LanguageCurrencySelector({
                     <span>Cached exchange rates</span>
                   </div>
                 )}
-              </>
-            )}
-
-            {/* ── Country Tab ── */}
-            {tab === "country" && (
-              <>
-                <div className="relative mb-2">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search country..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-accent focus:bg-white focus:ring-2 focus:ring-pub-accent/15"
-                  />
-                  {search && (
-                    <button
-                      type="button"
-                      onClick={() => setSearch("")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:text-slate-700"
-                    >
-                      <X size={11} />
-                    </button>
-                  )}
-                </div>
-
-                <div className="max-h-56 overflow-y-auto space-y-0.5 pr-0.5 no-scrollbar">
-                  {countryList.length ? (
-                    countryList.map((item) => {
-                      const selected = item.country_code === countryCode;
-                      return (
-                        <button
-                          key={item.country_code}
-                          type="button"
-                          onClick={() => {
-                            // Hand over the country's own currency so the
-                            // switch is immediate rather than waiting on the
-                            // /currency/context lookup.
-                            void setCountry(item.country_code, item.currency_code);
-                            setOpen(false);
-                          }}
-                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition ${
-                            selected ? "bg-pub-primary text-white shadow-sm" : "text-slate-800 hover:bg-slate-100"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span className="h-3 w-5 shrink-0 overflow-hidden rounded-[2px]">
-                              <FlagIcon countryCode={item.country_code} />
-                            </span>
-                            <span className="truncate">{item.country_name}</span>
-                          </div>
-                          {selected && <Check size={13} className="shrink-0 text-[#d95d2c]" />}
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <p className="py-6 text-center text-xs text-slate-400">Loading countries...</p>
-                  )}
-                </div>
-
-                <div className="mt-2 border-t border-slate-100 px-1 pt-1.5 text-[9px] font-semibold text-slate-400">
-                  {activeCountry ? `Detected/selected: ${activeCountry.country_name}` : "Choosing a country updates the suggested currency too."}
-                </div>
               </>
             )}
           </div>
