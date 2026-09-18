@@ -121,7 +121,7 @@ export default function LanguageSwitcher({
                   }}
                   className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition ${
                     selected
-                      ? "bg-[#0f2439] text-white shadow-sm"
+                      ? "bg-pub-primary text-white shadow-sm"
                       : "text-slate-800 hover:bg-slate-100"
                   }`}
                 >

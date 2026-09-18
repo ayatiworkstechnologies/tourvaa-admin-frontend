@@ -42,16 +42,17 @@ export default function PrimaryCtaButton({
       onClick={onClick}
       target={target}
       rel={rel}
-      className={`group/btn inline-flex items-center justify-center ${SIZE_CLASSES[size]} bg-[#0B1F3A] font-bold text-white shadow-md transition-all duration-200 hover:bg-[#132c50] hover:shadow-xl hover:-translate-y-0.5 active:scale-95 cursor-pointer ${className}`}
+      className={`group/btn inline-flex items-center justify-center ${SIZE_CLASSES[size]} bg-pub-primary font-bold text-white shadow-md transition-all duration-200 hover:bg-pub-primary-dark hover:shadow-xl hover:-translate-y-0.5 active:scale-95 cursor-pointer ${className}`}
     >
       <span>{children}</span>
       {showArrow && (
         <ArrowRight
           size={ICON_SIZE[size]}
-          className="text-[#E16B2D] stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1"
+          className="text-pub-accent stroke-[2.5] transition-transform duration-200 group-hover/btn:translate-x-1"
           aria-hidden="true"
         />
       )}
     </Link>
   );
 }
+

@@ -220,7 +220,7 @@ function AgentCustomerSelector({
           type="button"
           onClick={onLink}
           disabled={linkLoading || !linkEmail.trim()}
-          className="rounded-lg bg-[#0B1F3A] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#132d50] disabled:opacity-50"
+          className="rounded-lg bg-pub-primary px-4 py-2 text-xs font-bold text-white transition hover:bg-pub-primary-dark disabled:opacity-50"
         >
           {linkLoading ? "Linking..." : "Link Customer"}
         </button>
@@ -271,7 +271,7 @@ function AgentCustomerSelector({
             type="button"
             onClick={onCreateCustomer}
             disabled={newCustomerLoading}
-            className="rounded-lg bg-[#E16B2D] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#cf4b24] disabled:opacity-50"
+            className="rounded-lg bg-pub-accent px-4 py-2 text-xs font-bold text-white transition hover:bg-[#cf4b24] disabled:opacity-50"
           >
             {newCustomerLoading ? "Creating..." : "Create Customer"}
           </button>
@@ -1019,7 +1019,7 @@ export default function DynamicTourBookingPage() {
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F8FAFC] text-center">
         <CircleAlert size={40} className="text-rose-400" />
         <p className="text-lg font-bold text-slate-900">This tour could not be loaded.</p>
-        <Link href="/tours" className="rounded-lg bg-[#0B1F3A] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#132d50]">
+        <Link href="/tours" className="rounded-lg bg-pub-primary px-5 py-2.5 text-xs font-bold text-white hover:bg-pub-primary-dark">
           Browse All Tours
         </Link>
       </main>
@@ -1099,7 +1099,7 @@ export default function DynamicTourBookingPage() {
 
             <div className="mt-6 inline-block rounded-xl border border-slate-200 bg-slate-50 px-6 py-3">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Booking Reference</p>
-              <p className="mt-1 text-2xl font-black tracking-wider text-[#0B1F3A]">{bookingResult?.code}</p>
+              <p className="mt-1 text-2xl font-black tracking-wider text-pub-primary">{bookingResult?.code}</p>
               {bookingResult && (
                 <p className="mt-1 text-sm font-bold text-slate-700">
                   Total: {formatExact(Number(bookingResult.amount), bookingResult.currency)}
@@ -1110,7 +1110,7 @@ export default function DynamicTourBookingPage() {
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
                 href="/tours"
-                className="rounded-lg bg-[#0B1F3A] px-6 py-3 text-xs font-bold text-white transition hover:bg-[#132d50]"
+                className="rounded-lg bg-pub-primary px-6 py-3 text-xs font-bold text-white transition hover:bg-pub-primary-dark"
               >
                 Explore More Tours
               </Link>
@@ -1137,7 +1137,7 @@ export default function DynamicTourBookingPage() {
               {step === 1 ? (
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs">
                   <div className="flex items-center gap-3 pb-5 border-b border-slate-100">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E16B2D] text-xs font-black text-white shrink-0">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-pub-accent text-xs font-black text-white shrink-0">
                       1
                     </span>
                     <h2 className="text-base sm:text-lg font-bold text-slate-900">Passengers &amp; Accommodation</h2>
@@ -1457,7 +1457,7 @@ export default function DynamicTourBookingPage() {
                     <button
                       type="button"
                       onClick={handleContinueStep1}
-                      className="rounded-lg bg-[#E16B2D] px-7 py-3 text-xs sm:text-sm font-bold text-white transition hover:bg-[#cf4b24] active:scale-[0.99] flex items-center justify-center gap-1.5"
+                      className="rounded-lg bg-pub-accent px-7 py-3 text-xs sm:text-sm font-bold text-white transition hover:bg-[#cf4b24] active:scale-[0.99] flex items-center justify-center gap-1.5"
                     >
                       <span>Continue to passenger details</span>
                       <span>➜</span>
@@ -1483,7 +1483,7 @@ export default function DynamicTourBookingPage() {
               {step === 2 ? (
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs">
                   <div className="flex items-center gap-3 pb-5 border-b border-slate-100">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E16B2D] text-xs font-black text-white shrink-0">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-pub-accent text-xs font-black text-white shrink-0">
                       2
                     </span>
                     <h2 className="text-base sm:text-lg font-bold text-slate-900">Passenger Details</h2>
@@ -1505,7 +1505,7 @@ export default function DynamicTourBookingPage() {
                       <button
                         type="button"
                         onClick={handleApplyPromo}
-                        className="rounded-lg bg-[#0B1F3A] px-5 py-2 text-xs font-bold text-white transition hover:bg-[#132d50]"
+                        className="rounded-lg bg-pub-primary px-5 py-2 text-xs font-bold text-white transition hover:bg-pub-primary-dark"
                       >
                         Apply
                       </button>
@@ -1698,7 +1698,7 @@ export default function DynamicTourBookingPage() {
                     <button
                       type="button"
                       onClick={handleContinueStep2}
-                      className="rounded-lg bg-[#E16B2D] px-7 py-3 text-xs sm:text-sm font-bold text-white transition hover:bg-[#cf4b24] active:scale-[0.99] flex items-center gap-1.5"
+                      className="rounded-lg bg-pub-accent px-7 py-3 text-xs sm:text-sm font-bold text-white transition hover:bg-[#cf4b24] active:scale-[0.99] flex items-center gap-1.5"
                     >
                       <span>Continue to Payment details</span>
                       <span>➜</span>
@@ -1733,7 +1733,7 @@ export default function DynamicTourBookingPage() {
               {step === 3 ? (
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs space-y-6">
                   <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E16B2D] text-xs font-black text-white shrink-0">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-pub-accent text-xs font-black text-white shrink-0">
                       3
                     </span>
                     <h2 className="text-base sm:text-lg font-bold text-slate-900">Payment</h2>
@@ -1949,7 +1949,7 @@ export default function DynamicTourBookingPage() {
                         type="checkbox"
                         checked={acceptTerms}
                         onChange={(e) => setAcceptTerms(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E16B2D] focus:ring-[#E16B2D] accent-[#E16B2D]"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-pub-accent focus:ring-pub-accent accent-pub-accent"
                       />
                       <span className="leading-relaxed">
                         I accept Tourvaa{" "}
@@ -1965,7 +1965,7 @@ export default function DynamicTourBookingPage() {
                         type="checkbox"
                         checked={subscribeNewsletter}
                         onChange={(e) => setSubscribeNewsletter(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E16B2D] focus:ring-[#E16B2D] accent-[#E16B2D]"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-pub-accent focus:ring-pub-accent accent-pub-accent"
                       />
                       <span className="leading-relaxed">Subscribe to our newsletter for the latest offers &amp; new trips</span>
                     </label>
@@ -1983,7 +1983,7 @@ export default function DynamicTourBookingPage() {
                       type="button"
                       onClick={handleConfirmAndPay}
                       disabled={!acceptTerms || paymentSubmitting}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E16B2D] hover:bg-[#cf4b24] py-4 px-6 text-sm font-black text-white shadow-md shadow-orange-600/15 transition-all duration-150 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-4 px-6 text-sm font-black text-white shadow-md shadow-orange-600/15 transition-all duration-150 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {paymentSubmitting ? (
                         <>
@@ -2175,7 +2175,7 @@ export default function DynamicTourBookingPage() {
                   <button
                     type="button"
                     onClick={step === 1 ? handleContinueStep1 : handleContinueStep2}
-                    className="mt-4 w-full rounded-lg bg-[#0B1F3A] hover:bg-[#132d50] py-3 text-xs sm:text-sm font-bold text-white shadow-xs transition active:scale-[0.99]"
+                    className="mt-4 w-full rounded-lg bg-pub-primary hover:bg-pub-primary-dark py-3 text-xs sm:text-sm font-bold text-white shadow-xs transition active:scale-[0.99]"
                   >
                     Proceed to Payment
                   </button>

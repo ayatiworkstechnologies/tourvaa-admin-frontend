@@ -22,8 +22,8 @@ import {
 } from "./homeTypes";
 import { destinationUrl } from "@/lib/utils/tourUrl";
 
-const DEFAULT_TITLE = "Favourite Countries for Travellers";
-const DEFAULT_SUBTITLE = "Explore the destinations travellers love most, from sun-soaked coastlines to iconic cultural gems and unforgettable experiences.";
+const DEFAULT_TITLE = "Favourite Countries for Travellers from UK";
+const DEFAULT_SUBTITLE = "Explore the destinations our UK travellers love most from sun-soaked coastlines to iconic cultural gems.";
 
 export interface FavouriteCountriesSectionProps {
   initialDestinations?: CountryDestination[];
@@ -111,7 +111,7 @@ export default function FavouriteCountriesSection({
   }, [initialDestinations]);
 
   return (
-    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-14 bg-gradient-to-b from-white via-[#F4F6FA] to-[#EDF1F7] border-y border-slate-200/60 shadow-2xs">
+    <section className="relative w-full overflow-hidden bg-white my-8 sm:my-12 py-10 sm:py-14">
       <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         {/* Header */}
         <div className="mx-auto max-w-3xl text-center">
@@ -129,39 +129,37 @@ export default function FavouriteCountriesSection({
             <Link
               key={country.name}
               href={country.href || destinationUrl(country.name)}
-              className="group relative h-[420px] w-full overflow-hidden rounded-[20px] bg-white p-4 border border-slate-200/80 shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5 focus:outline-none flex flex-col"
+              className="group relative h-[380px] sm:h-[400px] lg:h-[420px] w-full overflow-hidden rounded-[20px] bg-slate-900 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-xl hover:-translate-y-1.5 focus:outline-none block"
             >
-              {/* Inner Image Container with 16px radius */}
-              <div className="relative h-full w-full overflow-hidden rounded-[16px] bg-slate-900">
-                <img
-                  src={country.image}
-                  alt={country.name}
-                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
-                />
+              {/* Full-bleed image */}
+              <img
+                src={country.image}
+                alt={country.name}
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+              />
 
-                {/* Gradient overlays for crisp contrast */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-black/15" />
+              {/* Gradient overlays for crisp contrast */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-black/15" />
 
-                {/* Top-Left Location Badge */}
-                <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[#E16B2D] px-3 py-1 text-[11px] font-bold text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
-                  <MapPin size={11} className="shrink-0 text-white" />
-                  <span>{country.badge || country.name}</span>
-                </span>
+              {/* Top-Left Location Badge */}
+              <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-pub-accent px-3 py-1 text-[11px] font-bold text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
+                <MapPin size={11} className="shrink-0 text-white" />
+                <span>{country.badge || country.name}</span>
+              </span>
 
-                {/* Bottom Content Overlay */}
-                <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5 text-left">
-                  <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-tight drop-shadow-sm transition-colors duration-200 group-hover:text-pub-secondary">
-                    {`${country.name} tours`}
-                  </h3>
-                  <div className="mt-2.5 flex items-start gap-2 text-xs text-white/90 leading-relaxed font-medium">
-                    <SquareCheckBig
-                      size={14}
-                      className="mt-0.5 shrink-0 text-pub-accent stroke-[2.2] transition-transform duration-300 group-hover:scale-110 group-hover:text-pub-secondary"
-                    />
-                    <p className="line-clamp-3 text-white/90 drop-shadow">
-                      {country.snippet}
-                    </p>
-                  </div>
+              {/* Bottom Content Overlay */}
+              <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5 text-left">
+                <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight drop-shadow-sm transition-colors duration-200 group-hover:text-pub-secondary">
+                  {`${country.name} tours`}
+                </h3>
+                <div className="mt-2 flex items-start gap-2 text-[11px] text-white/80 leading-relaxed">
+                  <SquareCheckBig
+                    size={13}
+                    className="mt-0.5 shrink-0 text-pub-accent stroke-[2.2] transition-transform duration-300 group-hover:scale-110 group-hover:text-pub-secondary"
+                  />
+                  <p className="line-clamp-2 drop-shadow">
+                    {country.snippet}
+                  </p>
                 </div>
               </div>
             </Link>

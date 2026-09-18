@@ -29,7 +29,7 @@ export default function PublicLayout({
       <TravelStoreProvider>
         <div
           style={fontVars}
-          className="public-site min-h-screen bg-white font-[family-name:var(--font-body)] text-slate-950"
+          className="public-site min-h-screen font-[family-name:var(--font-body)]"
         >
           <DynamicFavicon />
           <div className="print:hidden"><AnnouncementBar /></div>

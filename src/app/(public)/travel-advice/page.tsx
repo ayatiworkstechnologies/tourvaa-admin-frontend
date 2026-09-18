@@ -183,7 +183,7 @@ export default function TravelAdvicePage() {
                   <div className="absolute inset-x-0 bottom-0 p-5 text-white">
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="text-lg sm:text-xl font-black">{category.title}</h3>
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0B1527] text-white transition group-hover:translate-x-1 group-hover:bg-[#E16B2D]">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0B1527] text-white transition group-hover:translate-x-1 group-hover:bg-pub-accent">
                         <ArrowRight size={15} />
                       </span>
                     </div>
@@ -230,7 +230,7 @@ export default function TravelAdvicePage() {
                     <p className="mt-2 text-xs text-slate-500 line-clamp-3 leading-relaxed flex-1">
                       {article.text}
                     </p>
-                    <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#E16B2D] group-hover:underline">
+                    <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-pub-accent group-hover:underline">
                       <span>Read Article</span>
                       <ArrowRight size={13} aria-hidden="true" />
                     </span>
@@ -317,3 +317,4 @@ export default function TravelAdvicePage() {
     </AboutReveal>
   );
 }
+

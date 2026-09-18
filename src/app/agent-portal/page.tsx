@@ -10,7 +10,6 @@ import {
   LuClock as Clock,
   LuFileText as FileText,
   LuHeadset as Headset,
-  LuChevronDown as ChevronDown,
   LuChevronRight as ChevronRight,
   LuCircleMinus as MinusCircle,
 } from "react-icons/lu";
@@ -94,42 +93,42 @@ const STEPS = [
 const VERIFICATION_DOCUMENTS = [
   {
     badge: "MANDATORY",
-    badgeColor: "bg-orange-50 text-[#DF6951] border-orange-100",
+    badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
     title: "Agency Registration Certificate",
     description:
       "Proof of business registration (LLC, Pvt Ltd, Partnership, or Sole Proprietorship certificate).",
   },
   {
     badge: "MANDATORY",
-    badgeColor: "bg-orange-50 text-[#DF6951] border-orange-100",
+    badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
     title: "Tax Identification (GST / VAT / TIN)",
     description:
       "Valid company tax registration certificate corresponding to your registered operational jurisdiction.",
   },
   {
     badge: "MANDATORY",
-    badgeColor: "bg-orange-50 text-[#DF6951] border-orange-100",
+    badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
     title: "Authorized Signatory Identification",
     description:
       "Government-issued passport or national photo ID of the principal agency director or authorized consultant.",
   },
   {
     badge: "MANDATORY",
-    badgeColor: "bg-orange-50 text-[#DF6951] border-orange-100",
+    badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
     title: "Bank Account Proof / Cheque",
     description:
       "Bank statement header or cancelled business cheque for wire/ACH payout of earned commissions.",
   },
   {
     badge: "OPTIONAL",
-    badgeColor: "bg-blue-50 text-blue-600 border-blue-100",
+    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
     title: "Travel License / IATA Accreditation",
     description:
       "If applicable (IATA, ASTA, TAAI, ABTA, or regional tourism ministry authorization).",
   },
   {
     badge: "OPTIONAL",
-    badgeColor: "bg-blue-50 text-blue-600 border-blue-100",
+    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
     title: "Commercial Address Verification",
     description:
       "Utility bill or lease agreement showing the operating address of your physical agency branch.",
@@ -208,10 +207,10 @@ export default function AgentPortalLandingPage() {
       : "Standard Agent Tier";
 
   return (
-    <main className="overflow-x-hidden bg-white text-slate-900">
+    <main className="overflow-x-hidden bg-white text-pub-fg">
       {/* ── 1. HERO SECTION ── */}
       <section className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-4 sm:pt-6">
-        <div className="relative min-h-[440px] sm:min-h-[480px] md:min-h-[520px] w-full overflow-hidden rounded-[24px] sm:rounded-[32px] bg-slate-900 flex items-center justify-center p-6 sm:p-12 shadow-xl">
+        <div className="relative min-h-[440px] sm:min-h-[480px] md:min-h-[520px] w-full overflow-hidden rounded-[24px] sm:rounded-[32px] bg-pub-primary flex items-center justify-center p-6 sm:p-12 shadow-xl">
           <Image
             src="/images/agent-portal-hero.png"
             alt="New Zealand coastal landscape"
@@ -236,7 +235,7 @@ export default function AgentPortalLandingPage() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/agent-portal/login?tab=register"
-                className="inline-flex items-center justify-center rounded-xl bg-[#0B3B82] hover:bg-[#082d64] px-6 sm:px-7 py-3 text-xs sm:text-sm font-semibold text-white shadow-md transition active:scale-95"
+                className="inline-flex items-center justify-center rounded-xl bg-pub-secondary hover:bg-pub-secondary/90 px-6 sm:px-7 py-3 text-xs sm:text-sm font-semibold text-white shadow-md transition active:scale-95"
               >
                 Become an Agent Partner
               </Link>
@@ -256,13 +255,13 @@ export default function AgentPortalLandingPage() {
 
       {/* ── 2. METRICS STRIP ── */}
       <section className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-6 sm:mt-8">
-        <div className="rounded-2xl bg-[#0B1F3A] p-6 sm:p-8 text-white shadow-md">
+        <div className="rounded-2xl bg-pub-primary p-6 sm:p-8 text-white shadow-md">
           <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/15 text-center">
             <div className="px-4 py-3 sm:py-0">
               <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
                 10,000+
               </div>
-              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-[#DF6951]">
+              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
                 Multi-Day Tours
               </div>
               <div className="mt-0.5 text-xs text-slate-400 font-normal">
@@ -274,7 +273,7 @@ export default function AgentPortalLandingPage() {
               <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
                 Up to 15%
               </div>
-              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-[#DF6951]">
+              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
                 Tiered Commission
               </div>
               <div className="mt-0.5 text-xs text-slate-400 font-normal">
@@ -286,7 +285,7 @@ export default function AgentPortalLandingPage() {
               <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
                 100%
               </div>
-              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-[#DF6951]">
+              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
                 Verified Operators
               </div>
               <div className="mt-0.5 text-xs text-slate-400 font-normal">
@@ -298,12 +297,12 @@ export default function AgentPortalLandingPage() {
 
         {/* Sub-bar: Trust Note & Link */}
         <div className="mt-3.5 flex flex-col sm:flex-row items-center justify-between gap-2 px-2 text-xs">
-          <span className="text-slate-500 font-medium">
+          <span className="text-pub-muted font-medium">
             Trusted by 2,000+ travel advisors worldwide
           </span>
           <Link
             href="#calculator"
-            className="font-semibold text-blue-600 hover:text-blue-700 transition hover:underline"
+            className="font-semibold text-pub-secondary hover:underline transition"
           >
             View all Partner Perks &rarr;
           </Link>
@@ -311,132 +310,132 @@ export default function AgentPortalLandingPage() {
       </section>
 
       {/* ── 3. INTERACTIVE COMMISSION CALCULATOR (Full-width soft background) ── */}
-      <section id="calculator" className="mt-12 sm:mt-16 bg-[#F4F7FB] py-16 sm:py-20 scroll-mt-28">
+      <section id="calculator" className="mt-12 sm:mt-16 bg-pub-bg py-16 sm:py-20 border-y border-pub-border scroll-mt-28">
         <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
           <div className="text-center mb-8 sm:mb-10">
-            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
               Calculate your monthly commission potential
             </h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch max-w-5xl mx-auto">
-          {/* Left Input Card */}
-          <div className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs">
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                Calculate your monthly commission potential
-              </h3>
+            {/* Left Input Card */}
+            <div className="flex flex-col justify-between rounded-2xl border border-pub-border bg-white p-6 sm:p-8 shadow-xs">
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-pub-fg tracking-tight">
+                  Calculate your monthly commission potential
+                </h3>
 
-              {/* Slider 1: Monthly Client Bookings */}
-              <div className="mt-6 space-y-2">
-                <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-700">
-                  <span>Monthly Client Bookings</span>
-                  <span className="rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
-                    {monthlyBookings} bookings
-                  </span>
+                {/* Slider 1: Monthly Client Bookings */}
+                <div className="mt-6 space-y-2">
+                  <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-pub-fg">
+                    <span>Monthly Client Bookings</span>
+                    <span className="rounded-lg bg-pub-secondary/10 border border-pub-secondary/20 px-2.5 py-1 text-xs font-bold text-pub-secondary">
+                      {monthlyBookings} bookings
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="120"
+                    step="5"
+                    value={monthlyBookings}
+                    onChange={(e) => setMonthlyBookings(Number(e.target.value))}
+                    className="w-full accent-pub-secondary cursor-pointer h-2 bg-slate-100 rounded-lg"
+                  />
+                  <div className="flex justify-between text-[11px] text-pub-muted font-medium">
+                    <span>5 bookings</span>
+                    <span>60 bookings</span>
+                    <span>120+</span>
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="120"
-                  step="5"
-                  value={monthlyBookings}
-                  onChange={(e) => setMonthlyBookings(Number(e.target.value))}
-                  className="w-full accent-blue-600 cursor-pointer h-2 bg-slate-100 rounded-lg"
-                />
-                <div className="flex justify-between text-[11px] text-slate-400 font-medium">
-                  <span>5 bookings</span>
-                  <span>60 bookings</span>
-                  <span>120+</span>
+
+                {/* Slider 2: Average Booking Value */}
+                <div className="mt-6 space-y-2">
+                  <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-pub-fg">
+                    <span>Average Booking Value (USD)</span>
+                    <span className="rounded-lg bg-pub-secondary/10 border border-pub-secondary/20 px-2.5 py-1 text-xs font-bold text-pub-secondary">
+                      ${avgBookingValue}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="100"
+                    max="3000"
+                    step="50"
+                    value={avgBookingValue}
+                    onChange={(e) => setAvgBookingValue(Number(e.target.value))}
+                    className="w-full accent-pub-secondary cursor-pointer h-2 bg-slate-100 rounded-lg"
+                  />
+                  <div className="flex justify-between text-[11px] text-pub-muted font-medium">
+                    <span>$100</span>
+                    <span>$1,500</span>
+                    <span>$3,000+</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Slider 2: Average Booking Value */}
-              <div className="mt-6 space-y-2">
-                <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-700">
-                  <span>Average Booking Value (USD)</span>
-                  <span className="rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
-                    ${avgBookingValue}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="100"
-                  max="3000"
-                  step="50"
-                  value={avgBookingValue}
-                  onChange={(e) => setAvgBookingValue(Number(e.target.value))}
-                  className="w-full accent-blue-600 cursor-pointer h-2 bg-slate-100 rounded-lg"
-                />
-                <div className="flex justify-between text-[11px] text-slate-400 font-medium">
-                  <span>$100</span>
-                  <span>$1,500</span>
-                  <span>$3,000+</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Tier Pill */}
-            <div className="mt-6 rounded-xl bg-blue-50/80 border border-blue-100 p-3 text-center text-xs font-semibold text-blue-800">
-              Applied Tier: {commissionRate * 100}% Commission ({tierName})
-            </div>
-          </div>
-
-          {/* Right Result Card (Dark Navy) */}
-          <div className="flex flex-col justify-between rounded-2xl bg-[#0B1F3A] p-6 sm:p-8 text-white shadow-xl">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">
-                Estimated Monthly Commission
-              </p>
-              <div className="mt-2 text-4xl sm:text-5xl font-bold text-white tracking-tight text-center">
-                ${Math.round(estimatedCommission).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-slate-400 text-center font-normal">
-                *Estimated based on the values selected on the left
-              </p>
-
-              {/* Two Mini Metrics */}
-              <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/10 pt-6 text-center">
-                <div>
-                  <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                    Annual Revenue
-                  </span>
-                  <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
-                    ${Math.round(estimatedCommission * 12).toLocaleString()}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                    Total Sales Booked
-                  </span>
-                  <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
-                    ${totalGrossBookingVolume.toLocaleString()}
-                  </span>
-                </div>
+              {/* Bottom Tier Pill */}
+              <div className="mt-6 rounded-xl bg-pub-secondary/10 border border-pub-secondary/20 p-3 text-center text-xs font-semibold text-pub-secondary">
+                Applied Tier: {commissionRate * 100}% Commission ({tierName})
               </div>
             </div>
 
-            {/* CTA Button */}
-            <div className="mt-8">
-              <Link
-                href="/agent-portal/login?tab=register"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-[#DF6951] hover:bg-[#d05840] py-3.5 px-6 text-xs sm:text-sm font-bold text-white shadow-md transition"
-              >
-                Start Earning Commission Today &rarr;
-              </Link>
-              <p className="mt-2 text-[11px] text-slate-400 text-center font-normal">
-                Instant registration. No membership fees or booking quotas required.
-              </p>
+            {/* Right Result Card (Dark Navy) */}
+            <div className="flex flex-col justify-between rounded-2xl bg-pub-primary p-6 sm:p-8 text-white shadow-xl">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">
+                  Estimated Monthly Commission
+                </p>
+                <div className="mt-2 text-4xl sm:text-5xl font-bold text-white tracking-tight text-center">
+                  ${Math.round(estimatedCommission).toLocaleString()}
+                </div>
+                <p className="mt-1 text-[11px] text-slate-400 text-center font-normal">
+                  *Estimated based on the values selected on the left
+                </p>
+
+                {/* Two Mini Metrics */}
+                <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/10 pt-6 text-center">
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                      Annual Revenue
+                    </span>
+                    <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
+                      ${Math.round(estimatedCommission * 12).toLocaleString()}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                      Total Sales Booked
+                    </span>
+                    <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
+                      ${totalGrossBookingVolume.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <div className="mt-8">
+                <Link
+                  href="/agent-portal/login?tab=register"
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-pub-accent hover:bg-pub-accent/90 py-3.5 px-6 text-xs sm:text-sm font-bold text-white shadow-md transition"
+                >
+                  Start Earning Commission Today &rarr;
+                </Link>
+                <p className="mt-2 text-[11px] text-slate-400 text-center font-normal">
+                  Instant registration. No membership fees or booking quotas required.
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
       {/* ── 4. POWERFUL TOOLS BUILT FOR TRAVEL ADVISORS ── */}
       <section className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-20 sm:mt-24">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
             Powerful tools built for travel advisors
           </h2>
         </div>
@@ -445,22 +444,22 @@ export default function AgentPortalLandingPage() {
           {TOOLS.map(({ icon: Icon, badge, title, description }) => (
             <div
               key={title}
-              className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs transition-all duration-300 hover:border-slate-300 hover:shadow-md"
+              className="flex flex-col justify-between rounded-2xl border border-pub-border bg-white p-6 shadow-2xs transition-all duration-300 hover:border-slate-300 hover:shadow-md"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pub-secondary/10 text-pub-secondary">
                     <Icon size={18} />
                   </span>
-                  <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#DF6951]">
+                  <span className="rounded-full bg-pub-accent/10 text-pub-accent border border-pub-accent/20 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
                     {badge}
                   </span>
                 </div>
 
-                <h3 className="mt-4 text-base font-bold text-slate-900 tracking-tight">
+                <h3 className="mt-4 text-base font-bold text-pub-fg tracking-tight">
                   {title}
                 </h3>
-                <p className="mt-2 text-xs sm:text-sm text-slate-500 font-normal leading-relaxed">
+                <p className="mt-2 text-xs sm:text-sm text-pub-muted font-normal leading-relaxed">
                   {description}
                 </p>
               </div>
@@ -470,10 +469,10 @@ export default function AgentPortalLandingPage() {
       </section>
 
       {/* ── 5. FROM REGISTRATION TO CONFIDENT CLIENT BOOKINGS ── */}
-      <section className="mt-20 sm:mt-24 bg-[#F8FAFC] py-16 sm:py-20 border-y border-slate-100">
+      <section className="mt-20 sm:mt-24 bg-pub-bg/60 py-16 sm:py-20 border-y border-pub-border">
         <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
           <div className="text-center mb-10 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
               From registration to confident client bookings
             </h2>
           </div>
@@ -486,15 +485,15 @@ export default function AgentPortalLandingPage() {
                   key={step}
                   className={`flex flex-col justify-between rounded-2xl p-6 transition-all duration-300 ${
                     isDark
-                      ? "bg-[#0B1F3A] text-white shadow-md"
-                      : "border border-slate-200/90 bg-white shadow-2xs hover:shadow-md"
+                      ? "bg-pub-primary text-white shadow-md"
+                      : "border border-pub-border bg-white shadow-2xs hover:shadow-md"
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between">
                       <span
                         className={`text-2xl sm:text-3xl font-bold tracking-tight ${
-                          isDark ? "text-white" : "text-blue-600"
+                          isDark ? "text-white" : "text-pub-secondary"
                         }`}
                       >
                         {step}
@@ -503,7 +502,7 @@ export default function AgentPortalLandingPage() {
                         className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
                           isDark
                             ? "bg-white/10 text-white/90"
-                            : "bg-orange-50 text-[#DF6951]"
+                            : "bg-pub-accent/10 text-pub-accent border border-pub-accent/20"
                         }`}
                       >
                         {badge}
@@ -512,14 +511,14 @@ export default function AgentPortalLandingPage() {
 
                     <h3
                       className={`mt-4 text-base font-bold tracking-tight ${
-                        isDark ? "text-white" : "text-slate-900"
+                        isDark ? "text-white" : "text-pub-fg"
                       }`}
                     >
                       {title}
                     </h3>
                     <p
                       className={`mt-2 text-xs font-normal leading-relaxed ${
-                        isDark ? "text-slate-300" : "text-slate-500"
+                        isDark ? "text-slate-300" : "text-pub-muted"
                       }`}
                     >
                       {description}
@@ -535,7 +534,7 @@ export default function AgentPortalLandingPage() {
       {/* ── 6. WHAT YOU NEED TO GET VERIFIED ── */}
       <section className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-20 sm:mt-24">
         <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
             What you need to get verified
           </h2>
         </div>
@@ -544,7 +543,7 @@ export default function AgentPortalLandingPage() {
           {VERIFICATION_DOCUMENTS.map(({ badge, badgeColor, title, description }) => (
             <div
               key={title}
-              className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-2xs hover:shadow-md transition"
+              className="flex flex-col justify-between rounded-2xl border border-pub-border bg-white p-5 sm:p-6 shadow-2xs hover:shadow-md transition"
             >
               <div>
                 <span
@@ -553,15 +552,15 @@ export default function AgentPortalLandingPage() {
                   {badge}
                 </span>
 
-                <h3 className="mt-3.5 text-sm font-bold text-slate-900 tracking-tight">
+                <h3 className="mt-3.5 text-sm font-bold text-pub-fg tracking-tight">
                   {title}
                 </h3>
-                <p className="mt-2 text-xs text-slate-500 font-normal leading-relaxed">
+                <p className="mt-2 text-xs text-pub-muted font-normal leading-relaxed">
                   {description}
                 </p>
               </div>
 
-              <div className="mt-4 border-t border-slate-100 pt-3 text-[11px] font-medium text-slate-400">
+              <div className="mt-4 border-t border-pub-border pt-3 text-[11px] font-medium text-pub-muted">
                 Accepted: PDF, JPG, PNG
               </div>
             </div>
@@ -569,16 +568,16 @@ export default function AgentPortalLandingPage() {
         </div>
 
         {/* Bottom Support Banner */}
-        <div className="mt-8 rounded-2xl border border-blue-100 bg-[#F0F6FF] p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="mt-8 rounded-2xl border border-pub-secondary/20 bg-pub-secondary/5 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Dedicated Agency Desk</h3>
-            <p className="mt-0.5 text-xs text-slate-600 font-normal">
+            <h3 className="text-sm font-bold text-pub-fg">Dedicated Agency Desk</h3>
+            <p className="mt-0.5 text-xs text-pub-muted font-normal">
               Have specific B2B integration questions or volume partnership queries? Our agency onboarding desk is ready to help.
             </p>
           </div>
           <Link
             href="/contact"
-            className="inline-flex items-center justify-center shrink-0 rounded-xl bg-[#0B1F3A] hover:bg-[#162D4D] text-white text-xs font-bold px-6 py-3 transition whitespace-nowrap"
+            className="inline-flex items-center justify-center shrink-0 rounded-xl bg-pub-primary hover:bg-pub-primary/90 text-white text-xs font-bold px-6 py-3 transition whitespace-nowrap"
           >
             Contact Agency Desk &rarr;
           </Link>
@@ -586,10 +585,10 @@ export default function AgentPortalLandingPage() {
       </section>
 
       {/* ── 7. WHAT WE EXPECT FROM PARTNER TRAVEL AGENTS ── */}
-      <section className="mt-20 sm:mt-24 bg-[#F8FAFC] py-16 sm:py-20 border-y border-slate-100">
+      <section className="mt-20 sm:mt-24 bg-pub-bg/60 py-16 sm:py-20 border-y border-pub-border">
         <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
           <div className="text-center mb-10 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
               What we expect from partner travel agents
             </h2>
           </div>
@@ -598,12 +597,12 @@ export default function AgentPortalLandingPage() {
             {EXPECTATIONS.map(({ title, description }) => (
               <div
                 key={title}
-                className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs hover:shadow-md transition"
+                className="rounded-2xl border border-pub-border bg-white p-6 shadow-2xs hover:shadow-md transition"
               >
-                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                <h3 className="text-sm font-bold text-pub-fg tracking-tight">
                   {title}
                 </h3>
-                <p className="mt-2 text-xs text-slate-500 font-normal leading-relaxed">
+                <p className="mt-2 text-xs text-pub-muted font-normal leading-relaxed">
                   {description}
                 </p>
               </div>
@@ -615,7 +614,7 @@ export default function AgentPortalLandingPage() {
       {/* ── 8. FREQUENTLY ASKED QUESTIONS ── */}
       <section className="mx-auto max-w-4xl px-4 sm:px-6 mt-20 sm:mt-24">
         <div className="text-center mb-10 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
             Frequently Asked Questions
           </h2>
         </div>
@@ -628,27 +627,27 @@ export default function AgentPortalLandingPage() {
                 key={faq.q}
                 className={`rounded-2xl transition-all duration-200 overflow-hidden ${
                   isOpen
-                    ? "border border-blue-300 bg-blue-50/40 shadow-xs"
-                    : "border border-slate-200/90 bg-white hover:border-slate-300"
+                    ? "border border-pub-secondary/30 bg-pub-secondary/5 shadow-xs"
+                    : "border border-pub-border bg-white hover:border-pub-secondary/40"
                 }`}
               >
                 <button
                   type="button"
                   onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                  className="flex w-full items-center justify-between p-4 sm:p-5 text-left text-xs sm:text-sm font-bold text-slate-900 transition cursor-pointer"
+                  className="flex w-full items-center justify-between p-4 sm:p-5 text-left text-xs sm:text-sm font-bold text-pub-fg transition cursor-pointer"
                 >
                   <span className="pr-4">{faq.q}</span>
                   {isOpen ? (
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#DF6951] text-white">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-pub-accent text-white">
                       <MinusCircle size={15} />
                     </span>
                   ) : (
-                    <ChevronRight size={16} className="shrink-0 text-[#DF6951]" />
+                    <ChevronRight size={16} className="shrink-0 text-pub-accent" />
                   )}
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-blue-100/70 p-4 sm:p-5 pt-3 text-xs sm:text-sm font-normal leading-relaxed text-slate-600">
+                  <div className="border-t border-pub-secondary/15 p-4 sm:p-5 pt-3 text-xs sm:text-sm font-normal leading-relaxed text-pub-muted">
                     {faq.a}
                   </div>
                 )}
@@ -659,7 +658,7 @@ export default function AgentPortalLandingPage() {
       </section>
 
       {/* ── 9. READY TO EMPOWER YOUR TRAVEL AGENCY? ── */}
-      <section className="bg-[#0B1F3A] py-16 sm:py-20 text-white text-center mt-20 sm:mt-24">
+      <section className="bg-pub-primary py-16 sm:py-20 text-white text-center mt-20 sm:mt-24">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <h2 className="text-2xl sm:text-4xl font-bold text-white tracking-tight">
             Ready to empower your travel agency?
@@ -671,7 +670,7 @@ export default function AgentPortalLandingPage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/agent-portal/login?tab=register"
-              className="inline-flex items-center justify-center rounded-xl bg-[#DF6951] hover:bg-[#d05840] px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center rounded-xl bg-pub-accent hover:bg-pub-accent/90 px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5"
             >
               Become an Agent Partner
             </Link>
@@ -693,3 +692,4 @@ export default function AgentPortalLandingPage() {
     </main>
   );
 }
+

@@ -248,7 +248,7 @@ export default function PublicFooter() {
   );
 
   return (
-    <footer className="w-full bg-[#0B1F3A] text-white pt-12 sm:pt-16 pb-8 sm:pb-10 mt-8 sm:mt-12 transition-colors">
+    <footer className="w-full bg-pub-primary text-white pt-12 sm:pt-16 pb-8 sm:pb-10 mt-8 sm:mt-12 transition-colors">
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-[1.1fr_1.1fr_0.9fr_1.6fr] gap-8 sm:gap-10">
           {/* Columns 1-3: CMS-managed footer sections (Support / Our Company / Login by default - see Admin > CMS > Footer) */}
@@ -303,7 +303,7 @@ export default function PublicFooter() {
                     </span>
                     <ChevronDown
                       size={15}
-                      className={`text-[#DF6951] font-black shrink-0 transition-transform ${
+                      className={`text-pub-accent font-black shrink-0 transition-transform ${
                         currencyOpen ? "rotate-180" : ""
                       }`}
                     />
@@ -360,7 +360,7 @@ export default function PublicFooter() {
                     <span className="truncate">{countryName}</span>
                     <ChevronDown
                       size={15}
-                      className={`text-[#DF6951] font-black shrink-0 transition-transform ${
+                      className={`text-pub-accent font-black shrink-0 transition-transform ${
                         countryOpen ? "rotate-180" : ""
                       }`}
                     />
@@ -467,3 +467,4 @@ export default function PublicFooter() {
     </footer>
   );
 }
+

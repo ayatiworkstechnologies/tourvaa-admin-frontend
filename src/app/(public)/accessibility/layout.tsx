@@ -6,3 +6,4 @@ export default function MetadataLayout({ children }: Readonly<{ children: React.
   return children;
 }
 
+

@@ -146,6 +146,7 @@ export function TopDealCard({ tour }: { tour: Tour }) {
     ? tour.reviews.replace(/^\(|\)$/g, "")
     : "2,486 reviews";
   const destinationName = getDestinationName(tour.place);
+  const durationTag = getDurationTag(tour);
 
   const calculatedPct =
     tour.originalPrice && tour.rawPrice && tour.originalPrice > tour.rawPrice
@@ -160,95 +161,91 @@ export function TopDealCard({ tour }: { tour: Tour }) {
   return (
     <article
       data-deal-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-slate-200/80 p-2 sm:p-2.5 shadow-xs transition-all duration-300 hover:shadow-md hover:-translate-y-1 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col overflow-hidden rounded-2xl bg-white shadow-xs transition-all duration-300 hover:shadow-md hover:-translate-y-1"
     >
-      <Link href={href} className="flex flex-col h-full justify-between">
-        <div>
-          {/* Image with Location badge, Wishlist button & Save badge */}
-          <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-xl bg-slate-100 shrink-0">
-            <MarketingImage
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
-              src={tour.image}
-              alt={tour.title}
-              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
-            />
+      <Link href={href} className="flex flex-col h-full">
+        {/* Full-bleed image with overlaid badges */}
+        <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-xl bg-slate-100 shrink-0">
+          <MarketingImage
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+            src={tour.image}
+            alt={tour.title}
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
+          />
 
-            {/* Top-Left Destination Badge */}
-            <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#DF6951] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
-              <MapPin size={10} className="fill-white/30 text-white shrink-0" />
-              <span className="truncate max-w-[100px]">{destinationName}</span>
-            </span>
+          {/* Top-Left Destination Badge */}
+          <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-pub-accent px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
+            <MapPin size={10} className="fill-white/30 text-white shrink-0" />
+            <span className="truncate max-w-[100px]">{destinationName}</span>
+          </span>
 
-            {/* Wishlist Heart button (top-right) */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleWishlist(travelItem);
-              }}
-              aria-label={
+          {/* Wishlist Heart button (top-right) */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleWishlist(travelItem);
+            }}
+            aria-label={
+              wishlisted
+                ? `Remove ${tour.title} from wishlist`
+                : `Add ${tour.title} to wishlist`
+            }
+            className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/85 backdrop-blur-sm transition-transform duration-200 hover:scale-110 active:scale-90 focus:outline-none cursor-pointer shadow-xs"
+          >
+            <Heart
+              size={16}
+              className={
                 wishlisted
-                  ? `Remove ${tour.title} from wishlist`
-                  : `Add ${tour.title} to wishlist`
+                  ? "fill-red-500 text-red-500"
+                  : "fill-transparent text-red-400"
               }
-              className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center transition-transform duration-200 hover:scale-120 active:scale-90 focus:outline-none cursor-pointer"
-            >
-              <Heart
-                size={18}
-                className={
-                  wishlisted
-                    ? "fill-red-500 text-red-500 drop-shadow-xs"
-                    : "fill-white/70 text-slate-700 drop-shadow-xs"
-                }
-              />
-            </button>
-
-            {/* Discount Badge bottom-right */}
-            {discountLabel && (
-              <span className="absolute bottom-2.5 right-2.5 z-10 rounded-md bg-[#E53935] px-2.5 py-1 text-xs font-bold text-white shadow-md">
-                {discountLabel}
-              </span>
-            )}
-          </div>
-
-          {/* Tour details */}
-          <div className="pt-3">
-            {/* Title */}
-            <h3 className="truncate text-base font-semibold text-slate-900 transition-colors group-hover:text-[#DF6951] leading-snug">
-              {tour.title}
-            </h3>
-
-            {/* 5 Yellow Stars + Rating + Review count */}
-            <div className="mt-1.5 flex items-center gap-1 text-xs">
-              <div className="flex items-center gap-0.5 text-amber-400">
-                <Star size={11} className="fill-amber-400 text-amber-400" />
-                <Star size={11} className="fill-amber-400 text-amber-400" />
-                <Star size={11} className="fill-amber-400 text-amber-400" />
-                <Star size={11} className="fill-amber-400 text-amber-400" />
-                <Star size={11} className="fill-amber-400 text-amber-400" />
-              </div>
-              <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
-              <span className="text-slate-500">{reviewCountStr}</span>
-            </div>
-          </div>
+            />
+          </button>
         </div>
 
-        {/* Price Row: From $old $new pp -- no button on the right */}
-        <div className="mt-3 flex items-baseline gap-1.5 text-slate-900 border-t border-slate-100 pt-2.5">
-          <span className="text-xs font-normal text-slate-500">From</span>
-          {tour.originalPrice != null && (
-            <span className="text-xs font-normal text-slate-400 line-through">
-              {format(tour.originalPrice, tour.currency || "USD")}
+        {/* Card content below image */}
+        <div className="flex flex-col flex-1 px-2.5 pt-3 pb-3">
+          {/* Title row with duration tag */}
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-sm font-semibold text-slate-900 transition-colors group-hover:text-pub-accent leading-snug line-clamp-2 flex-1 min-w-0">
+              {tour.title}
+            </h3>
+            <span className="shrink-0 rounded border border-pub-secondary text-pub-secondary bg-transparent px-1.5 py-0.5 text-[10px] font-semibold tracking-wide whitespace-nowrap mt-0.5">
+              {durationTag}
             </span>
-          )}
-          <strong className="text-sm sm:text-base font-bold text-slate-950">
-            {tour.rawPrice != null
-              ? format(tour.rawPrice, tour.currency || "USD")
-              : format(1182, "USD")}
-          </strong>
-          <span className="text-xs text-slate-500 font-normal">pp</span>
+          </div>
+
+          {/* 5 Yellow Stars + Rating + Review count */}
+          <div className="mt-2 flex items-center gap-1 text-xs">
+            <div className="flex items-center gap-0.5">
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+            </div>
+            <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
+            <span className="text-slate-500">{reviewCountStr}</span>
+          </div>
+
+          {/* Price Row: From $old $new pp */}
+          <div className="mt-auto pt-3 flex items-baseline gap-1.5">
+            <span className="text-xs font-normal text-slate-500">From</span>
+            {tour.originalPrice != null && (
+              <span className="text-xs font-normal text-slate-400 line-through">
+                {format(tour.originalPrice, tour.currency || "USD")}
+              </span>
+            )}
+            <strong className="text-sm sm:text-base font-bold text-slate-950">
+              {tour.rawPrice != null
+                ? format(tour.rawPrice, tour.currency || "USD")
+                : format(1182, "USD")}
+            </strong>
+            <span className="text-xs text-slate-500 font-normal">pp</span>
+          </div>
         </div>
       </Link>
     </article>
@@ -441,36 +438,6 @@ export default function TopDealsSection({
   return (
     <section className="relative w-full overflow-hidden bg-white pt-2 pb-12 sm:pb-16">
       <div className="relative z-10 mx-auto max-w-[1400px] px-5">
-        {/* Top Filter Pills + View all deals link */}
-        <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto sm:flex-wrap sm:gap-2.5 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
-            {tabs.map((tab) => {
-              const active = activeTab === tab;
-              return (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`shrink-0 rounded-full px-5 py-2 text-xs sm:text-sm font-medium transition-all duration-200 active:scale-95 cursor-pointer ${
-                    active
-                      ? "bg-[#DF6951] text-white shadow-xs scale-[1.02]"
-                      : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-900 hover:scale-[1.02]"
-                  }`}
-                >
-                  {tab}
-                </button>
-              );
-            })}
-          </div>
-
-          <Link
-            href={viewAllHref}
-            className="text-[#DF6951] hover:text-[#c8441f] text-sm font-semibold hover:underline shrink-0"
-          >
-            View all deals
-          </Link>
-        </div>
-
         {/* Header Row: Title & Arrow Buttons */}
         <div className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">

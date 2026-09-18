@@ -70,10 +70,10 @@ export default function BlogTeaserSection({
 
           {/* Right Content */}
           <div className="flex flex-col items-start justify-center py-2 px-2 sm:px-4 lg:px-6 text-left">
-            <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#E16B2D]">
+            <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-pub-accent">
               <Sparkles
                 size={14}
-                className="text-[#E16B2D] animate-sparkle-glow"
+                className="text-pub-accent animate-sparkle-glow"
               />
               <span>{eyebrow}</span>
             </span>
@@ -92,3 +92,4 @@ export default function BlogTeaserSection({
     </section>
   );
 }
+

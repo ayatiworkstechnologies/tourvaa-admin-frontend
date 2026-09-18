@@ -205,11 +205,11 @@ export default function CountryWhenToGoSection({
           <div className="flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-2xs transition-all duration-300 hover:border-slate-200 hover:shadow-md">
             <div>
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#DF6951]">
-                  <span className="h-2 w-2 rounded-full bg-[#DF6951]" />
+                <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
+                  <span className="h-2 w-2 rounded-full bg-pub-accent" />
                   Summer
                 </span>
-                <Sun size={15} className="text-[#DF6951]" />
+                <Sun size={15} className="text-pub-accent" />
               </div>
 
               <div className="mt-3 relative h-28 sm:h-32 w-full overflow-hidden rounded-xl bg-slate-100">
@@ -224,7 +224,7 @@ export default function CountryWhenToGoSection({
                 <h3 className="text-base font-bold text-slate-900 tracking-tight">
                   Jun – Aug
                 </h3>
-                <p className="text-xs font-semibold text-[#DF6951] mt-0.5">
+                <p className="text-xs font-semibold text-pub-accent mt-0.5">
                   22°–32°C (72°–90°F)
                 </p>
               </div>
@@ -234,7 +234,7 @@ export default function CountryWhenToGoSection({
               </p>
             </div>
 
-            <span className="mt-4 rounded-md bg-[#DF6951] px-3 py-1 text-[11px] font-semibold text-white inline-block w-fit">
+            <span className="mt-4 rounded-md bg-pub-accent px-3 py-1 text-[11px] font-semibold text-white inline-block w-fit">
               Hot &amp; rainy
             </span>
           </div>
@@ -272,7 +272,7 @@ export default function CountryWhenToGoSection({
               </p>
             </div>
 
-            <span className="mt-4 rounded-md bg-[#0B1F3A] px-3 py-1 text-[11px] font-semibold text-white inline-block w-fit">
+            <span className="mt-4 rounded-md bg-pub-primary px-3 py-1 text-[11px] font-semibold text-white inline-block w-fit">
               Best time
             </span>
           </div>
@@ -332,7 +332,7 @@ export default function CountryWhenToGoSection({
               onClick={() => setShowMonthlyMatrix(!showMonthlyMatrix)}
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition shadow-2xs"
             >
-              <Thermometer size={13} className="text-[#E16B2D]" />
+              <Thermometer size={13} className="text-pub-accent" />
               <span>{showMonthlyMatrix ? "Hide Month-by-Month Guide" : "View Complete Month-by-Month Weather Guide"}</span>
             </button>
 
@@ -375,7 +375,7 @@ export default function CountryWhenToGoSection({
                       {monthlyData.map((m) => (
                         <tr key={m.month} className="hover:bg-slate-50/60">
                           <td className="py-2.5 px-3 font-bold text-slate-900">{m.full_month}</td>
-                          <td className="py-2.5 px-3 font-bold text-[#E16B2D]">
+                          <td className="py-2.5 px-3 font-bold text-pub-accent">
                             {unit === "C" ? `${m.avg_high_c}°C` : `${m.avg_high_f}°F`}
                           </td>
                           <td className="py-2.5 px-3 text-slate-500">
@@ -396,3 +396,4 @@ export default function CountryWhenToGoSection({
     </section>
   );
 }
+

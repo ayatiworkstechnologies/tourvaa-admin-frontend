@@ -94,7 +94,7 @@ export default function CountryPlacesToVisitSection({
                   </div>
 
                   {/* Title & Description below photo */}
-                  <h3 className="mt-3.5 text-base font-semibold text-slate-900 tracking-tight group-hover:text-[#DF6951] transition">
+                  <h3 className="mt-3.5 text-base font-semibold text-slate-900 tracking-tight group-hover:text-pub-accent transition">
                     {place.name}
                   </h3>
                   <p className="mt-1.5 text-xs text-slate-500 font-normal leading-relaxed line-clamp-3">
@@ -109,3 +109,4 @@ export default function CountryPlacesToVisitSection({
     </section>
   );
 }
+

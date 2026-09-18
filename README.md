@@ -77,12 +77,7 @@ For the complete frontend/backend/MySQL/Redis stack, use `compose.yaml` and `DOC
 - Forced logout clears all sessions server-side
 - Authenticated file downloads (e.g. invoice PDFs) use a blob-fetch through the authenticated client rather than a plain `<a href>`, since Bearer tokens can't ride on raw browser navigation
 
-Login with the default super admin:
-
-```text
-Email:    admin@tourvaa.com
-Password: Admin@123
-```
+Log in at `/login` with the super-admin account configured on the backend (see the backend README's `SUPER_ADMIN_EMAIL`/`SUPER_ADMIN_PASSWORD` setup).
 
 ---
 

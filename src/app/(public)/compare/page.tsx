@@ -403,7 +403,7 @@ export default function ComparePage() {
 
         {/* Header: Eyebrow + Title + Subtitle */}
         <div className="mb-6">
-          <span className="inline-block rounded-full bg-[#EBF3FE] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#146EF5]">
+          <span className="inline-block rounded-full bg-[#EBF3FE] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-pub-secondary">
             TRIP PLANNER
           </span>
           <h1 className="mt-2 text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
@@ -437,7 +437,7 @@ export default function ComparePage() {
               type="button"
               onClick={runComparison}
               disabled={isSearching}
-              className="rounded-lg bg-[#0B1F3A] px-6 py-2.5 text-xs sm:text-sm font-bold text-white transition hover:bg-[#132d50] active:scale-[0.98] disabled:opacity-60"
+              className="rounded-lg bg-pub-primary px-6 py-2.5 text-xs sm:text-sm font-bold text-white transition hover:bg-pub-primary-dark active:scale-[0.98] disabled:opacity-60"
             >
               Search
             </button>
@@ -521,7 +521,7 @@ export default function ComparePage() {
               type="button"
               onClick={runComparison}
               disabled={isSearching}
-              className="rounded-lg bg-[#0B1F3A] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#132d50] disabled:opacity-60"
+              className="rounded-lg bg-pub-primary px-4 py-2 text-xs font-bold text-white transition hover:bg-pub-primary-dark disabled:opacity-60"
             >
               Apply Filters
             </button>
@@ -554,7 +554,7 @@ export default function ComparePage() {
               type="button"
               onClick={runComparison}
               disabled={isSearching}
-              className="ml-auto rounded-lg bg-[#0B1F3A] px-4 py-1.5 text-xs font-bold text-white transition hover:bg-[#132d50] disabled:opacity-60"
+              className="ml-auto rounded-lg bg-pub-primary px-4 py-1.5 text-xs font-bold text-white transition hover:bg-pub-primary-dark disabled:opacity-60"
             >
               Compare Now
             </button>
@@ -585,7 +585,7 @@ export default function ComparePage() {
               <button
                 type="button"
                 onClick={resetToDefaults}
-                className="rounded-lg bg-[#0B1F3A] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-[#132d50]"
+                className="rounded-lg bg-pub-primary px-5 py-2.5 text-xs font-bold text-white transition hover:bg-pub-primary-dark"
               >
                 Reset Comparison
               </button>
@@ -1110,7 +1110,7 @@ export default function ComparePage() {
                     <Link
                       key={tour.id}
                       href={tour.slug ? `/tours/${tour.slug}` : `/tours`}
-                      className="inline-flex w-full items-center justify-center rounded-lg bg-[#0B1F3A] py-3 px-4 text-center text-xs sm:text-sm font-bold text-white shadow-xs transition duration-200 hover:bg-[#132d50] active:scale-[0.99]"
+                      className="inline-flex w-full items-center justify-center rounded-lg bg-pub-primary py-3 px-4 text-center text-xs sm:text-sm font-bold text-white shadow-xs transition duration-200 hover:bg-pub-primary-dark active:scale-[0.99]"
                     >
                       Book {tour.title}
                     </Link>
@@ -1135,3 +1135,4 @@ export default function ComparePage() {
     </main>
   );
 }
+

@@ -270,11 +270,11 @@ export default function ContactPage() {
                   </span>
 
                   {isOpen ? (
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E16B2D] text-white shadow-xs">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pub-accent text-white shadow-xs">
                       <ChevronUp size={16} />
                     </span>
                   ) : (
-                    <span className="text-[#E16B2D] hover:text-[#c24118] shrink-0">
+                    <span className="text-pub-accent hover:text-[#c24118] shrink-0">
                       <ChevronDown size={18} />
                     </span>
                   )}
@@ -652,3 +652,4 @@ export default function ContactPage() {
     </main>
   );
 }
+

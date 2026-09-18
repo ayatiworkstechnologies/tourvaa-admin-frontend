@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuCalendarDays as CalendarDays, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuDownload as Download, LuSquarePen as Edit, LuFilePen as FileEdit, LuImageOff as ImageOff, LuMapPin as MapPin, LuPlus as Plus, LuPowerOff as PowerOff, LuSearch as Search, LuTag as Tag, LuTrash2 as Trash2 } from "react-icons/lu";
+import { LuCalendarDays as CalendarDays, LuCircleCheckBig as CheckCircle2, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuDownload as Download, LuSquarePen as Edit, LuExternalLink as ExternalLink, LuFilePen as FileEdit, LuImageOff as ImageOff, LuMapPin as MapPin, LuPlus as Plus, LuPowerOff as PowerOff, LuSearch as Search, LuTag as Tag, LuTrash2 as Trash2 } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import EmptyState from "@/components/common/EmptyState";
@@ -45,8 +45,11 @@ export default function ToursPage() {
   const canEdit = hasPermission("tours.edit");
   const canToggle = hasPermission("tours.disable");
   // Admin-only (this page itself is admin-only - suppliers manage their own
-  // tours at /supplier/tours, which has no delete action at all).
-  const canDelete = hasPermission("tours.delete") || canEdit;
+  // tours at /supplier/tours, which has no delete action at all). Requires
+  // the actual delete permission -- the backend's remove_tour only accepts
+  // tours.delete/update-tours, so showing this to tours.edit-only users just
+  // set them up for a 403.
+  const canDelete = hasPermission("tours.delete");
 
   const downloadTour = async (row: CmsRecord) => {
     setExportingId(row.id);
@@ -78,11 +81,13 @@ export default function ToursPage() {
 
   const fetchStats = useCallback(async () => {
     try {
+      const base: Record<string, string | number> = { page: 1, limit: 1 };
+      if (supplierId) base.supplier_id = supplierId;
       const [allRes, publishedRes, draftRes, disabledRes] = await Promise.all([
-        listCms("/tours", { page: 1, limit: 1 }),
-        listCms("/tours", { page: 1, limit: 1, status: "published" }),
-        listCms("/tours", { page: 1, limit: 1, status: "draft" }),
-        listCms("/tours", { page: 1, limit: 1, status: "disabled" }),
+        listCms("/tours", base),
+        listCms("/tours", { ...base, status: "published" }),
+        listCms("/tours", { ...base, status: "draft" }),
+        listCms("/tours", { ...base, status: "disabled" }),
       ]);
       setStats({
         total: allRes.total || 0,
@@ -93,7 +98,7 @@ export default function ToursPage() {
     } catch {
       // Non-critical - stat cards just stay at zero.
     }
-  }, []);
+  }, [supplierId]);
 
   useEffect(() => {
     void fetchRows();
@@ -312,6 +317,18 @@ export default function ToursPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        {(row.status === "published" || row.status === "active") && row.slug && (
+                          <a
+                            href={`/tours/${row.id}/${row.slug}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`View ${row.title || "tour"} live`}
+                            title="View live"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-muted hover:bg-dash-bg"
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        )}
                         <button
                           type="button"
                           disabled={exportingId === row.id}

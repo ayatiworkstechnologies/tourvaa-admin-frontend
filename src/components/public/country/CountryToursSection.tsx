@@ -384,7 +384,7 @@ export default function CountryToursSection({
                 onClick={() => setActiveCategory(pill.id)}
                 className={`rounded-full px-4 py-2 text-xs font-bold transition-all shrink-0 cursor-pointer ${
                   isActive
-                    ? "bg-[#E16B2D] text-white shadow-sm"
+                    ? "bg-pub-accent text-white shadow-sm"
                     : "bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
@@ -398,7 +398,7 @@ export default function CountryToursSection({
         {searchTerm && (
           <div className="mt-4 flex items-center gap-2 text-xs text-slate-600">
             <span>Filtered by:</span>
-            <span className="font-bold text-[#E16B2D] bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-200">
+            <span className="font-bold text-pub-accent bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-200">
               {searchTerm}
             </span>
             <button
@@ -437,7 +437,7 @@ export default function CountryToursSection({
           </div>
         ) : (
           <div className="mt-10 rounded-[22px] border border-dashed border-slate-300 bg-slate-50/50 p-10 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-[#E16B2D]">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-pub-accent">
               <Compass size={24} />
             </div>
             <h3 className="mt-3 text-base font-bold text-slate-900">
@@ -463,3 +463,4 @@ export default function CountryToursSection({
     </section>
   );
 }
+

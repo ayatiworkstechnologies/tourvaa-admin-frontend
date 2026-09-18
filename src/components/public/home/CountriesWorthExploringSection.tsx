@@ -126,7 +126,7 @@ export function CountryWorthExploringCard({
           <Link
             href={href}
             aria-label={`Explore ${country.name} tours`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0B1527] text-white shadow-xs transition-all duration-300 group-hover:bg-[#E16B2D] group-hover:scale-110 active:scale-95"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-pub-primary text-white shadow-xs transition-all duration-300 group-hover:bg-pub-accent group-hover:scale-110 active:scale-95"
           >
             <ArrowRight
               size={14}
@@ -254,7 +254,7 @@ export default function CountriesWorthExploringSection({
                 type="button"
                 aria-label="Previous countries"
                 onClick={() => move(-1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E16B2D] hover:text-[#E16B2D] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-pub-accent hover:text-pub-accent hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
               >
                 <ChevronLeft size={18} className="stroke-[2.5]" />
               </button>
@@ -262,7 +262,7 @@ export default function CountriesWorthExploringSection({
                 type="button"
                 aria-label="Next countries"
                 onClick={() => move(1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-[#E16B2D] hover:text-[#E16B2D] hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-pub-accent hover:text-pub-accent hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
               >
                 <ChevronRight size={18} className="stroke-[2.5]" />
               </button>
@@ -301,3 +301,4 @@ export default function CountriesWorthExploringSection({
     </section>
   );
 }
+

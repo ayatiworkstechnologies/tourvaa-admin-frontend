@@ -655,3 +655,4 @@ export default function PortalAuthPage({ config, heroIcon }: { config: PortalAut
     </Suspense>
   );
 }
+

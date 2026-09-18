@@ -115,3 +115,4 @@ function ErrorState({ text }: { text: string }) {
 export default function VerifyEmailPage() {
   return <Suspense fallback={<main className="min-h-screen bg-slate-50" />}><VerifyEmailContent /></Suspense>;
 }
+

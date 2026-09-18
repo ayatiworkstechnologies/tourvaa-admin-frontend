@@ -47,3 +47,4 @@ export default function AccountStatusPage() {
     {supportEmail ? <a href={`mailto:${supportEmail}`} className="mt-6 inline-block text-sm font-bold text-blue-600">Contact support</a> : <Link href="/contact" className="mt-6 inline-block text-sm font-bold text-blue-600">Contact support</Link>}
   </section></main>;
 }
+

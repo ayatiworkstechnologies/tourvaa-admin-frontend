@@ -655,7 +655,7 @@ export default function DealsPage() {
 
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 w-full">
             <div className="max-w-2xl text-left">
-              <span className="inline-flex items-center rounded-full bg-[#DF6951] px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-xs">
+              <span className="inline-flex items-center rounded-full bg-pub-accent px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-xs">
                 EXCLUSIVE ACCESS
               </span>
               <h2 className="mt-2.5 text-2xl sm:text-3xl font-bold text-white tracking-tight leading-tight">
@@ -670,7 +670,7 @@ export default function DealsPage() {
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-[#132c50] active:scale-95 px-6 py-3 text-sm font-bold text-white border border-white/10 shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl bg-pub-primary hover:bg-pub-primary-dark active:scale-95 px-6 py-3 text-sm font-bold text-white border border-white/10 shadow-sm transition-all cursor-pointer"
               >
                 <span>Sign up now</span>
                 <ArrowRight size={15} />
@@ -774,7 +774,7 @@ export default function DealsPage() {
                   alt={item.country}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <span className="absolute top-3 left-3 rounded-full bg-[#DF6951] px-3 py-0.5 text-[11px] font-bold text-white shadow-xs">
+                <span className="absolute top-3 left-3 rounded-full bg-pub-accent px-3 py-0.5 text-[11px] font-bold text-white shadow-xs">
                   📍 {item.country}
                 </span>
               </div>
@@ -818,7 +818,7 @@ export default function DealsPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
                   {/* Badge top-right */}
-                  <span className="absolute top-3 right-3 rounded-full bg-[#DF6951] px-3 py-0.5 text-[11px] font-bold text-white shadow-xs">
+                  <span className="absolute top-3 right-3 rounded-full bg-pub-accent px-3 py-0.5 text-[11px] font-bold text-white shadow-xs">
                     {cat.discountBadge}
                   </span>
 
@@ -861,7 +861,7 @@ export default function DealsPage() {
 
                 <Link
                   href={cat.ctaUrl}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1F3A] hover:bg-[#132c50] active:scale-95 px-4 py-2 text-xs font-bold text-white shadow-xs transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-pub-primary hover:bg-pub-primary-dark active:scale-95 px-4 py-2 text-xs font-bold text-white shadow-xs transition-all cursor-pointer"
                 >
                   <span>Explore Deals</span>
                   <ArrowRight size={13} />
@@ -924,7 +924,7 @@ function DealCard({
         />
 
         {/* Location Pill Top Left */}
-        <span className="absolute top-3 left-3 rounded-full bg-[#DF6951] px-3 py-0.5 text-[11px] font-bold text-white shadow-xs">
+        <span className="absolute top-3 left-3 rounded-full bg-pub-accent px-3 py-0.5 text-[11px] font-bold text-white shadow-xs">
           📍 {deal.country}
         </span>
 
@@ -991,3 +991,4 @@ function DealCard({
     </div>
   );
 }
+

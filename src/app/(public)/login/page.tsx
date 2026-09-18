@@ -51,3 +51,4 @@ const config: PortalAuthConfig = {
 export default function CustomerLoginPage() {
   return <PortalAuthPage config={config} heroIcon={<Plane size={13} />} />;
 }
+

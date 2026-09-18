@@ -71,3 +71,4 @@ export default function CancellationPolicyPage() {
     </main>
   );
 }
+

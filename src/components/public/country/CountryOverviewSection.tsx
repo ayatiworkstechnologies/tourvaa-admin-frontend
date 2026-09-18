@@ -22,8 +22,8 @@ export default function CountryOverviewSection({ info }: CountryOverviewSectionP
         <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           {/* Left: Narrative & Highlights */}
           <div className="text-left">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#E16B2D]">
-              <Sparkles size={12} className="fill-[#E16B2D]" />
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-pub-accent">
+              <Sparkles size={12} className="fill-pub-accent" />
               <span>Destination Overview</span>
             </div>
 
@@ -38,7 +38,7 @@ export default function CountryOverviewSection({ info }: CountryOverviewSectionP
             {/* Travel Value Highlights */}
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all hover:bg-white hover:shadow-md">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-[#E16B2D] mb-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-pub-accent mb-3">
                   <Globe size={18} />
                 </span>
                 <h3 className="text-sm font-bold text-slate-900">Curated Itineraries</h3>
@@ -80,7 +80,7 @@ export default function CountryOverviewSection({ info }: CountryOverviewSectionP
             </div>
             {/* Overlay Badge */}
             <div className="absolute -bottom-5 right-6 rounded-2xl border border-white/80 bg-white/95 p-4 shadow-xl backdrop-blur-md max-w-xs text-left">
-              <p className="text-[11px] font-black uppercase tracking-wider text-[#E16B2D]">Best Way to Travel</p>
+              <p className="text-[11px] font-black uppercase tracking-wider text-pub-accent">Best Way to Travel</p>
               <p className="mt-1 text-xs font-semibold text-slate-700 leading-snug">
                 Join our small group tours or book private tailor-made itineraries across {info.country_name}.
               </p>
@@ -91,3 +91,4 @@ export default function CountryOverviewSection({ info }: CountryOverviewSectionP
     </section>
   );
 }
+

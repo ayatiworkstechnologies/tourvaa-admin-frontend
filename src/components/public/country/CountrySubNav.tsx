@@ -69,16 +69,16 @@ export default function CountrySubNav({ tourCount }: CountrySubNavProps) {
                 onClick={() => scrollToSection(item.id)}
                 className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   isActive
-                    ? "bg-[#E16B2D] text-white shadow-xs"
+                    ? "bg-pub-accent text-white shadow-xs"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
-                <Icon size={14} className={isActive ? "text-white" : "text-[#E16B2D]"} />
+                <Icon size={14} className={isActive ? "text-white" : "text-pub-accent"} />
                 <span>{item.label}</span>
                 {item.id === "section-tours" && tourCount !== undefined && tourCount > 0 && (
                   <span
                     className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
-                      isActive ? "bg-white/20 text-white" : "bg-orange-100 text-[#E16B2D]"
+                      isActive ? "bg-white/20 text-white" : "bg-orange-100 text-pub-accent"
                     }`}
                   >
                     {tourCount}
@@ -92,3 +92,4 @@ export default function CountrySubNav({ tourCount }: CountrySubNavProps) {
     </div>
   );
 }
+

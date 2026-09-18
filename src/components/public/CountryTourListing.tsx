@@ -672,17 +672,17 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             href="/"
             className="flex items-center gap-1 text-slate-600 hover:text-pub-secondary transition"
           >
-            <Home size={13} className="text-[#E16B2D]" />
+            <Home size={13} className="text-pub-accent" />
             Home
           </Link>
           <span className="text-slate-300">›</span>
           <Link
             href="/tours"
             className={`flex items-center gap-1 transition ${
-              hasSpecificCountry ? "text-slate-600 hover:text-pub-secondary" : "text-[#E16B2D] font-bold"
+              hasSpecificCountry ? "text-slate-600 hover:text-pub-secondary" : "text-pub-accent font-bold"
             }`}
           >
-            <MapIcon size={13} className="text-[#E16B2D]" />
+            <MapIcon size={13} className="text-pub-accent" />
             {hasSpecificCountry ? "Tour" : "All Tours"}
           </Link>
           {hasSpecificCountry && (
@@ -702,7 +702,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         {/* ── 3. Destination Heading & Result Count ── */}
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0B1527]">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-pub-primary">
               {hasSpecificCountry ? destinationTitle : "Discover World Tours"}
             </h2>
             <p className="mt-1 text-xs sm:text-sm font-semibold text-slate-500">
@@ -767,7 +767,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             onClick={() => {
               if (activeFiltersCount > 0) clearAllFilters();
             }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#E16B2D] px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-[#d0461f]"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-pub-accent px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-pub-accent/85"
           >
             <Sliders size={13} />
             Filter ({activeFiltersCount})
@@ -964,7 +964,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             onClick={handleAvailableOnlyToggle}
             className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition shadow-2xs ${
               availableOnly
-                ? "bg-[#E16B2D] text-white hover:bg-[#d0461f]"
+                ? "bg-pub-accent text-white hover:bg-pub-accent/85"
                 : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
             }`}
           >
@@ -996,7 +996,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           <div className="grid grid-cols-1 gap-6 items-center md:grid-cols-2">
             {/* Left side content */}
             <div>
-              <h3 className="text-xl sm:text-2xl font-semibold text-[#0B1527]">
+              <h3 className="text-xl sm:text-2xl font-semibold text-pub-primary">
                 {showcaseTitle}
               </h3>
               <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-slate-600 font-medium">
@@ -1019,7 +1019,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         {/* ── 6. 3-Column Tour Card Grid or Empty State ── */}
         {loading ? (
           <div className="mt-12 flex flex-col items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-12 text-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-[#0B1527]" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-pub-primary" />
             <p className="text-xs font-bold text-slate-500">Loading tours...</p>
           </div>
         ) : loadError ? (
@@ -1032,7 +1032,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <button
               type="button"
               onClick={() => setRetryKey((value) => value + 1)}
-              className="mt-5 rounded-xl bg-[#0B1527] px-5 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
+              className="mt-5 rounded-xl bg-pub-primary px-5 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-pub-primary-dark"
             >
               Retry
             </button>
@@ -1047,7 +1047,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <button
               type="button"
               onClick={clearAllFilters}
-              className="mt-5 rounded-xl bg-[#0B1527] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#15233C] transition"
+              className="mt-5 rounded-xl bg-pub-primary px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-pub-primary-dark transition"
             >
               Clear All Filters
             </button>
@@ -1116,7 +1116,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                       <div className="flex items-start justify-between gap-2">
                         <Link
                           href={tourLink}
-                          className="text-base font-semibold text-slate-900 transition hover:text-[#DF6951] line-clamp-1"
+                          className="text-base font-semibold text-slate-900 transition hover:text-pub-accent line-clamp-1"
                         >
                           {tour.title}
                         </Link>
@@ -1260,3 +1260,4 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     </main>
   );
 }
+

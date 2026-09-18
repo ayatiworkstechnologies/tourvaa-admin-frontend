@@ -19,6 +19,9 @@ export type PublicTour = {
   discounted_price_per_person?: number | null;
   country_name: string;
   country_slug?: string;
+  /** Flag stored on the country record (countries.flag_emoji), seeded from
+   * its ISO-2 code - not derived client-side. */
+  country_flag?: string;
   city_name: string;
   category_name: string;
   number_of_days: number | null;
@@ -140,7 +143,7 @@ export type PublicTourDetail = PublicTour & {
 
 export type PublicCategory = { id: number; category_name: string; slug: string; description: string; image: string | null; tour_count?: number };
 export type PublicSubcategory = { id: number; subcategory_name: string; slug: string; category_name: string };
-export type PublicCountry = { id: number; country_name: string; country_code: string; tour_count?: number };
+export type PublicCountry = { id: number; country_name: string; country_code: string; flag_emoji?: string; tour_count?: number };
 export type PublicCity = { id: number; city_name: string; country_id: number; tour_count?: number };
 export type CmsBanner = { id: number; title: string; subtitle: string | null; image: string | null; video: string | null; cta_text: string | null; cta_url: string | null; sort_order: number; is_active: boolean };
 export type CmsDestination = { id: number; title: string; image: string | null; description: string | null; href: string | null; sort_order: number; is_active: boolean; country_id?: number | null; city_id?: number | null };

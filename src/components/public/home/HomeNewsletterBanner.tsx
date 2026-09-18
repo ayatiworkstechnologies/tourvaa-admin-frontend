@@ -89,12 +89,12 @@ export default function HomeNewsletterBanner({
   return (
     <section className="w-full my-4 sm:my-6">
       <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8">
-        <div className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] bg-[#FFF8F6] border border-[#FCDFD7] p-6 sm:p-8 lg:p-10 shadow-xs transition-all">
+        <div className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] bg-[#FFF8F6] border border-pub-accent/25 p-6 sm:p-8 lg:p-10 shadow-xs transition-all">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             {/* Left Content */}
             <div className="max-w-xl text-left">
               {badge && (
-                <span className="inline-flex items-center rounded-full bg-[#DF6951] px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-2xs">
+                <span className="inline-flex items-center rounded-full bg-pub-accent px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-2xs">
                   {badge}
                 </span>
               )}
@@ -119,13 +119,13 @@ export default function HomeNewsletterBanner({
                     placeholder="Enter Your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-11 sm:h-12 w-full rounded-lg border border-[#FCDFD7] bg-white px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-[#DF6951] transition-colors"
+                    className="h-11 sm:h-12 w-full rounded-lg border border-pub-accent/25 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-pub-accent transition-colors"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={subscribing}
-                  className="h-11 sm:h-12 inline-flex items-center justify-center gap-2 rounded-lg bg-[#0B1F3A] hover:bg-[#132c50] active:scale-95 px-6 sm:px-7 text-sm font-bold text-white shadow-sm transition-all whitespace-nowrap disabled:opacity-60 cursor-pointer"
+                  className="h-11 sm:h-12 inline-flex items-center justify-center gap-2 rounded-lg bg-pub-primary hover:bg-pub-primary-dark active:scale-95 px-6 sm:px-7 text-sm font-bold text-white shadow-sm transition-all whitespace-nowrap disabled:opacity-60 cursor-pointer"
                 >
                   <span>{subscribing ? "Registering..." : "Register"}</span>
                   <ArrowRight
@@ -153,3 +153,4 @@ export default function HomeNewsletterBanner({
     </section>
   );
 }
+

@@ -45,8 +45,17 @@ function applyLanguage(langCode: string) {
   const val = langCode === "en" ? "" : `/en/${langCode}`;
   const host = window.location.hostname;
   const apex = host.split(".").slice(-2).join(".");
-  document.cookie = `googtrans=${val}; path=/; domain=${host}`;
-  document.cookie = `googtrans=${val}; path=/; domain=.${apex}`;
+  // Host-only cookie first (no domain attribute): browsers reject
+  // `domain=localhost`, and `.vercel.app` is on the public suffix list, so
+  // on both local dev and the vercel.app preview every domain-scoped write
+  // below silently fails and the selection would never stick. The scoped
+  // writes still run so the choice carries across subdomains on a real
+  // custom domain.
+  document.cookie = `googtrans=${val}; path=/`;
+  if (host !== "localhost" && !/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+    document.cookie = `googtrans=${val}; path=/; domain=${host}`;
+    document.cookie = `googtrans=${val}; path=/; domain=.${apex}`;
+  }
   const gt = (window as unknown as { google?: { translate?: { TranslateElement?: { getInstance?: () => { setLanguage?: (code: string) => void } } } } }).google?.translate?.TranslateElement?.getInstance?.();
   if (gt?.setLanguage) {
     gt.setLanguage(langCode);
@@ -180,7 +189,7 @@ export default function LanguageCurrencySelector({
             size={10}
             className={`transition-transform duration-200 ${
               open
-                ? "rotate-180 text-[#E16B2D]"
+                ? "rotate-180 text-pub-accent"
                 : inverse
                   ? ""
                   : "text-pub-primary group-hover:text-pub-secondary"
@@ -199,8 +208,8 @@ export default function LanguageCurrencySelector({
               onClick={() => setTab("language")}
               className={`flex-1 py-3 text-xs font-bold transition-colors ${
                 tab === "language"
-                  ? "border-b-2 border-[#E16B2D] text-[#E16B2D]"
-                  : "text-slate-500 hover:text-[#0f2439]"
+                  ? "border-b-2 border-pub-accent text-pub-accent"
+                  : "text-slate-500 hover:text-pub-primary"
               }`}
             >
               🌐 Language
@@ -210,8 +219,8 @@ export default function LanguageCurrencySelector({
               onClick={() => setTab("currency")}
               className={`flex-1 py-3 text-xs font-bold transition-colors ${
                 tab === "currency"
-                  ? "border-b-2 border-[#E16B2D] text-[#E16B2D]"
-                  : "text-slate-500 hover:text-[#0f2439]"
+                  ? "border-b-2 border-pub-accent text-pub-accent"
+                  : "text-slate-500 hover:text-pub-primary"
               }`}
             >
               💱 Currency
@@ -221,8 +230,8 @@ export default function LanguageCurrencySelector({
               onClick={() => setTab("country")}
               className={`flex-1 py-3 text-xs font-bold transition-colors ${
                 tab === "country"
-                  ? "border-b-2 border-[#E16B2D] text-[#E16B2D]"
-                  : "text-slate-500 hover:text-[#0f2439]"
+                  ? "border-b-2 border-pub-accent text-pub-accent"
+                  : "text-slate-500 hover:text-pub-primary"
               }`}
             >
               🌍 Country
@@ -246,7 +255,7 @@ export default function LanguageCurrencySelector({
                       }}
                       className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition ${
                         selected
-                          ? "bg-[#0f2439] text-white shadow-sm"
+                          ? "bg-pub-primary text-white shadow-sm"
                           : "text-slate-800 hover:bg-slate-100"
                       }`}
                     >
@@ -287,7 +296,7 @@ export default function LanguageCurrencySelector({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search currency..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#E16B2D] focus:bg-white focus:ring-2 focus:ring-pub-accent/15"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-accent focus:bg-white focus:ring-2 focus:ring-pub-accent/15"
                   />
                   {search && (
                     <button
@@ -314,7 +323,7 @@ export default function LanguageCurrencySelector({
                           }}
                           className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition ${
                             selected
-                              ? "bg-[#0f2439] text-white shadow-sm"
+                              ? "bg-pub-primary text-white shadow-sm"
                               : "text-slate-800 hover:bg-slate-100"
                           }`}
                         >
@@ -360,7 +369,7 @@ export default function LanguageCurrencySelector({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search country..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#E16B2D] focus:bg-white focus:ring-2 focus:ring-pub-accent/15"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-accent focus:bg-white focus:ring-2 focus:ring-pub-accent/15"
                   />
                   {search && (
                     <button
@@ -386,7 +395,7 @@ export default function LanguageCurrencySelector({
                             setOpen(false);
                           }}
                           className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition ${
-                            selected ? "bg-[#0f2439] text-white shadow-sm" : "text-slate-800 hover:bg-slate-100"
+                            selected ? "bg-pub-primary text-white shadow-sm" : "text-slate-800 hover:bg-slate-100"
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
@@ -415,3 +424,4 @@ export default function LanguageCurrencySelector({
     </div>
   );
 }
+

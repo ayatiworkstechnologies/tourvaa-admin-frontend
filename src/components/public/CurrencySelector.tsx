@@ -133,7 +133,7 @@ export default function CurrencySelector({
                       setOpen(false);
                     }}
                     className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition ${
-                      isSelected ? "bg-[#0f2439] text-white shadow-sm" : "text-slate-800 hover:bg-slate-100"
+                      isSelected ? "bg-pub-primary text-white shadow-sm" : "text-slate-800 hover:bg-slate-100"
                     }`}
                   >
                     <div className="flex items-center gap-2">

@@ -128,8 +128,8 @@ export default function PublicHeader() {
           : "-translate-y-full opacity-0 pointer-events-none"
       }`}
     >
-      {/* Top Trust Bar -- full width edge-to-edge, matching footer #0B1F3A signature color */}
-      <div className="w-full bg-[#0B1F3A] text-white">
+      {/* Top Trust Bar -- full width edge-to-edge, matching footer pub-primary signature color */}
+      <div className="w-full bg-pub-primary text-white">
         <div className="mx-auto flex h-8 sm:h-9 max-w-[1440px] items-center justify-center gap-4 sm:gap-6 md:gap-8 px-3 sm:px-6 lg:px-12 text-[10.5px] sm:text-[11px] font-semibold overflow-x-auto no-scrollbar whitespace-nowrap">
           <span className="flex items-center gap-1.5 shrink-0">
             <Globe size={13} className="text-sky-400" />
@@ -143,7 +143,7 @@ export default function PublicHeader() {
           </span>
           <span className="h-3 w-px bg-white/20 shrink-0" aria-hidden="true" />
           <span className="flex items-center gap-1.5 shrink-0">
-            <MessageSquare size={13} className="text-[#DF6951]" />
+            <MessageSquare size={13} className="text-pub-accent" />
             24/7 customer support
           </span>
           <span className="h-3 w-px bg-white/20 shrink-0" aria-hidden="true" />
@@ -180,7 +180,7 @@ export default function PublicHeader() {
             />
             <span>Wishlist</span>
             {wishlistCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E16B2D] px-1 text-[8px] font-black text-white shadow-xs">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-pub-accent px-1 text-[8px] font-black text-white shadow-xs">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}
@@ -195,7 +195,7 @@ export default function PublicHeader() {
             />
             <span>Compare</span>
             {compareCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E16B2D] px-1 text-[8px] font-black text-white shadow-xs">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-pub-accent px-1 text-[8px] font-black text-white shadow-xs">
                 {compareCount}
               </span>
             )}
@@ -210,7 +210,7 @@ export default function PublicHeader() {
               className="group flex flex-col items-center gap-1 text-[10px] font-semibold text-pub-primary transition-colors hover:text-pub-secondary"
             >
               {isLoggedIn ? (
-                <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-gradient-to-br from-[#E16B2D] to-amber-500 text-[10px] font-black text-white shadow-xs">
+                <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-gradient-to-br from-pub-accent to-amber-500 text-[10px] font-black text-white shadow-xs">
                   {(user?.name || "T")[0]?.toUpperCase()}
                 </div>
               ) : (
@@ -227,7 +227,7 @@ export default function PublicHeader() {
                   size={9}
                   className={`transition-transform duration-200 ${
                     profileOpen
-                      ? "rotate-180 text-[#E16B2D]"
+                      ? "rotate-180 text-pub-accent"
                       : "text-pub-primary group-hover:text-pub-secondary"
                   }`}
                 />
@@ -290,7 +290,7 @@ export default function PublicHeader() {
             {isLoggedIn ? (
               <>
                 <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#E16B2D] to-amber-500 text-white font-extrabold text-sm shadow-xs">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pub-accent to-amber-500 text-white font-extrabold text-sm shadow-xs">
                     {(user?.name || "T")[0]?.toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -360,7 +360,7 @@ export default function PublicHeader() {
               <>
                 <div className="rounded-xl border border-pub-accent/25 bg-gradient-to-br from-slate-50 to-pub-accent/10 p-3.5">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E16B2D] text-white">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-pub-accent text-white">
                       <User size={15} />
                     </div>
                     <div>
@@ -376,7 +376,7 @@ export default function PublicHeader() {
                     <Link
                       href="/login?role=traveller"
                       onClick={() => setOpen(false)}
-                      className="flex items-center justify-center gap-1 rounded-lg bg-[#0B1527] py-2 text-xs font-bold text-white shadow-xs"
+                      className="flex items-center justify-center gap-1 rounded-lg bg-pub-primary py-2 text-xs font-bold text-white shadow-xs"
                     >
                       <span>Sign In</span>
                       <ArrowRight size={12} />
@@ -417,7 +417,7 @@ export default function PublicHeader() {
                         <Link
                           href={partner.registerHref}
                           onClick={() => setOpen(false)}
-                          className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-bold text-[#E16B2D]"
+                          className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-bold text-pub-accent"
                         >
                           {partner.registerLabel}
                         </Link>
@@ -486,7 +486,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
       {/* Primary Traveller Card */}
       <div className="mt-3 rounded-xl bg-gradient-to-br from-slate-50 to-pub-accent/10 p-3 border border-slate-200/80">
         <div className="flex items-center gap-2.5 mb-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E16B2D] text-white shadow-xs">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pub-accent text-white shadow-xs">
             <User size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -500,7 +500,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
             role="menuitem"
             href="/login?role=traveller"
             onClick={onClose}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-[#0B1527] py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C] active:scale-95"
+            className="flex items-center justify-center gap-1.5 rounded-lg bg-pub-primary py-2 text-xs font-bold text-white shadow-xs transition hover:bg-pub-primary-dark active:scale-95"
           >
             <span>Sign In</span>
             <ArrowRight size={12} />
@@ -620,7 +620,7 @@ function AuthenticatedProfileMenu({
     >
       {/* User Header Profile Card */}
       <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-100">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#E16B2D] to-amber-500 text-white font-black text-sm shadow-xs">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pub-accent to-amber-500 text-white font-black text-sm shadow-xs">
           {initials}
         </div>
         <div className="min-w-0 flex-1">
@@ -643,7 +643,7 @@ function AuthenticatedProfileMenu({
           className="flex items-center justify-between rounded-xl border border-slate-100 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-200"
         >
           <span className="flex items-center gap-1.5">
-            <Heart size={14} className="text-[#E16B2D]" />
+            <Heart size={14} className="text-pub-accent" />
             Wishlist
           </span>
           <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
@@ -763,3 +763,4 @@ function AuthenticatedProfileMenu({
     </div>
   );
 }
+

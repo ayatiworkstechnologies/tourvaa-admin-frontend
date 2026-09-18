@@ -5,3 +5,4 @@ export const metadata = metadataFor("/privacy-policy");
 export default function MetadataLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return children;
 }
+

@@ -162,7 +162,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "destination"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-semibold text-[#E16B2D]">
+              <span className="block text-xs sm:text-sm font-semibold text-pub-accent">
                 Where to?
               </span>
               <span className="inline-flex items-center gap-1">
@@ -172,7 +172,7 @@ export default function HeroFilterBar({
                 <ChevronDown
                   size={16}
                   className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                    open === "destination" ? "rotate-180 text-[#E16B2D]" : ""
+                    open === "destination" ? "rotate-180 text-pub-accent" : ""
                   }`}
                 />
               </span>
@@ -200,7 +200,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "date"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-semibold text-[#E16B2D]">
+              <span className="block text-xs sm:text-sm font-semibold text-pub-accent">
                 When?
               </span>
               <span className="inline-flex items-center gap-1">
@@ -210,7 +210,7 @@ export default function HeroFilterBar({
                 <ChevronDown
                   size={16}
                   className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                    open === "date" ? "rotate-180 text-[#E16B2D]" : ""
+                    open === "date" ? "rotate-180 text-pub-accent" : ""
                   }`}
                 />
               </span>
@@ -237,7 +237,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "duration"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-semibold text-[#E16B2D]">
+              <span className="block text-xs sm:text-sm font-semibold text-pub-accent">
                 How Many Days?
               </span>
               <span className="inline-flex items-center gap-1">
@@ -247,7 +247,7 @@ export default function HeroFilterBar({
                 <ChevronDown
                   size={16}
                   className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                    open === "duration" ? "rotate-180 text-[#E16B2D]" : ""
+                    open === "duration" ? "rotate-180 text-pub-accent" : ""
                   }`}
                 />
               </span>
@@ -274,7 +274,7 @@ export default function HeroFilterBar({
             aria-expanded={open === "passengers"}
           >
             <div className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-semibold text-[#E16B2D]">
+              <span className="block text-xs sm:text-sm font-semibold text-pub-accent">
                 Who&apos;s going?
               </span>
               <span className="inline-flex items-center gap-1">
@@ -284,7 +284,7 @@ export default function HeroFilterBar({
                 <ChevronDown
                   size={16}
                   className={`text-slate-400 shrink-0 transition-transform duration-200 group-hover:text-slate-700 ${
-                    open === "passengers" ? "rotate-180 text-[#E16B2D]" : ""
+                    open === "passengers" ? "rotate-180 text-pub-accent" : ""
                   }`}
                 />
               </span>
@@ -305,7 +305,7 @@ export default function HeroFilterBar({
         <div className="p-1">
           <button
             type="submit"
-            className="hero-search-button relative overflow-hidden flex h-12 w-full md:w-auto min-w-[130px] items-center justify-center gap-2 rounded-xl bg-[#0B1527] px-7 text-sm font-bold text-white shadow-md transition duration-200 hover:bg-[#15233C] hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+            className="hero-search-button relative overflow-hidden flex h-12 w-full md:w-auto min-w-[130px] items-center justify-center gap-2 rounded-xl bg-pub-primary px-7 text-sm font-bold text-white shadow-md transition duration-200 hover:bg-pub-primary-dark hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
           >
             <Search size={16} className="stroke-[2.5]" />
             <span>Search</span>
@@ -347,18 +347,18 @@ function ViatorRedirectModal({ onClose }: { onClose: () => void }) {
         >
           <X size={18} />
         </button>
-        <h3 className="text-lg font-black text-[#0B1527]">You are being redirected</h3>
+        <h3 className="text-lg font-black text-pub-primary">You are being redirected</h3>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           Click <b>Continue</b> to visit Viator.com in a new tab, our day tours partner.
         </p>
         <p className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-400">
-          powered by <span className="text-[#00A698]">viator</span>
+          powered by <span className="text-pub-secondary">viator</span>
         </p>
         <button
           type="button"
           onClick={handleContinue}
           disabled={loading}
-          className="mt-5 w-full rounded-xl bg-[#E16B2D] px-6 py-3.5 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#cf4b25] disabled:opacity-70"
+          className="mt-5 w-full rounded-xl bg-pub-accent px-6 py-3.5 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#cf4b25] disabled:opacity-70"
         >
           {loading ? "Redirecting..." : "Continue"}
         </button>
@@ -443,7 +443,7 @@ function DestinationPanel({
                 onClick={() => onSelect(country.country_name)}
                 className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold transition ${
                   isSelected
-                    ? "bg-[#0f2439] text-white shadow-sm"
+                    ? "bg-pub-primary text-white shadow-sm"
                     : "text-slate-800 hover:bg-slate-100/80"
                 }`}
               >
@@ -531,7 +531,7 @@ function DatePanel({
                 : "text-slate-500 hover:text-slate-900"
             }`}
           >
-            <Sparkles size={13} className="text-[#E16B2D]" />
+            <Sparkles size={13} className="text-pub-accent" />
             <span>Calendar View</span>
           </button>
           <button
@@ -543,7 +543,7 @@ function DatePanel({
                 : "text-slate-500 hover:text-slate-900"
             }`}
           >
-            <Calendar size={13} className="text-[#E16B2D]" />
+            <Calendar size={13} className="text-pub-accent" />
             <span>Month Picker</span>
           </button>
         </div>
@@ -552,7 +552,7 @@ function DatePanel({
           <button
             type="button"
             onClick={onClear}
-            className="text-xs font-bold text-[#E16B2D] hover:underline"
+            className="text-xs font-bold text-pub-accent hover:underline"
           >
             Clear Selection
           </button>
@@ -586,7 +586,7 @@ function DatePanel({
             <button
               type="button"
               onClick={() => onApply("Anytime")}
-              className="inline-flex items-center gap-1 font-bold text-[#0B1527] hover:text-pub-secondary transition"
+              className="inline-flex items-center gap-1 font-bold text-pub-primary hover:text-pub-secondary transition"
             >
               <span>I&apos;m flexible anytime</span>
               <ArrowRight size={13} aria-hidden="true" />
@@ -647,7 +647,7 @@ function DatePanel({
                     isPastMonth
                       ? "opacity-30 cursor-not-allowed bg-slate-50 border-slate-100 text-slate-300 pointer-events-none line-through"
                       : isPicked
-                      ? "border-[#0B1527] bg-[#0B1527] text-white shadow-md"
+                      ? "border-pub-primary bg-pub-primary text-white shadow-md"
                       : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
                   }`}
                 >
@@ -674,7 +674,7 @@ function DatePanel({
               }}
               className={`rounded-xl border px-4 py-2 text-xs font-bold transition ${
                 anytime
-                  ? "border-[#E16B2D] bg-[#E16B2D]/10 text-[#E16B2D]"
+                  ? "border-pub-accent bg-pub-accent/10 text-pub-accent"
                   : "border-slate-200 hover:bg-slate-50 text-slate-700"
               }`}
             >
@@ -684,7 +684,7 @@ function DatePanel({
             <button
               type="button"
               onClick={() => onApply(anytime ? "Anytime" : `${month} ${year}`)}
-              className="rounded-xl bg-[#0B1527] px-6 py-2 text-xs font-bold text-white shadow-md transition hover:bg-[#15233C]"
+              className="rounded-xl bg-pub-primary px-6 py-2 text-xs font-bold text-white shadow-md transition hover:bg-pub-primary-dark"
             >
               Apply Date
             </button>
@@ -788,7 +788,7 @@ function CalendarMonth({
                 isPast
                   ? "opacity-25 cursor-not-allowed text-slate-400 hover:bg-transparent pointer-events-none line-through"
                   : isSelected
-                  ? "bg-[#0B1527] text-white shadow-md scale-105"
+                  ? "bg-pub-primary text-white shadow-md scale-105"
                   : "text-slate-800 hover:bg-slate-100 hover:text-slate-950"
               }`}
             >
@@ -863,7 +863,7 @@ function DurationPanel({
               onClick={() => onSelect(label)}
               className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition ${
                 isSelected
-                  ? "border-[#E16B2D] bg-white text-[#0f2439] shadow-sm"
+                  ? "border-pub-accent bg-white text-pub-primary shadow-sm"
                   : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
               }`}
             >
@@ -888,13 +888,13 @@ function DurationPanel({
           onClick={() => onSelect("Viator")}
           className={`mt-1.5 flex w-full items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition ${
             selected === "Viator"
-              ? "border-[#00A698] bg-[#00A698]/5 text-[#0f2439] shadow-sm"
+              ? "border-pub-secondary bg-pub-secondary/5 text-pub-primary shadow-sm"
               : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
           }`}
         >
-          <Compass size={13} className="text-[#00A698]" />
+          <Compass size={13} className="text-pub-secondary" />
           <span className="text-[11px] font-bold leading-tight">Viator Day Trips</span>
-          <span className="ml-auto rounded-full bg-[#00A698] px-1.5 py-[1px] text-[8px] font-black uppercase tracking-wide text-white">
+          <span className="ml-auto rounded-full bg-pub-secondary px-1.5 py-[1px] text-[8px] font-black uppercase tracking-wide text-white">
             Partner
           </span>
         </button>
@@ -924,7 +924,7 @@ function DurationPanel({
               onChange={(e) => setSliderVal(Number(e.target.value))}
               onMouseUp={() => onSelect(`Up to ${sliderVal} Days`)}
               onTouchEnd={() => onSelect(`Up to ${sliderVal} Days`)}
-              className="w-full accent-[#0f2439] cursor-pointer"
+              className="w-full accent-pub-primary cursor-pointer"
             />
             <div className="mt-1 flex justify-between text-[11px] font-bold text-slate-700">
               <span>0 days</span>
@@ -986,7 +986,7 @@ function PassengerPanel({
         <button
           type="button"
           onClick={onApply}
-          className="w-full rounded-xl bg-[#0f2439] py-3 text-xs font-bold text-white shadow-md transition hover:bg-[#18395c] hover:shadow-lg"
+          className="w-full rounded-xl bg-pub-primary py-3 text-xs font-bold text-white shadow-md transition hover:bg-pub-primary-dark hover:shadow-lg"
         >
           Confirm Travellers
         </button>
@@ -1053,4 +1053,5 @@ function PassengerRow({
     </div>
   );
 }
+
 

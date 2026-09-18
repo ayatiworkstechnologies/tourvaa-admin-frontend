@@ -85,7 +85,7 @@ export default function CountryDurationGuidingStyles({
                 <a
                   href="#section-tours"
                   onClick={(e) => handleDurationClick(e, "short")}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] hover:bg-[#132c50] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-pub-primary hover:bg-pub-primary-dark px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
                 >
                   <span>Explore</span>
                   <ArrowRight size={12} />
@@ -123,7 +123,7 @@ export default function CountryDurationGuidingStyles({
                 <a
                   href="#section-tours"
                   onClick={(e) => handleDurationClick(e, "medium")}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] hover:bg-[#132c50] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-pub-primary hover:bg-pub-primary-dark px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
                 >
                   <span>Explore</span>
                   <ArrowRight size={12} />
@@ -161,7 +161,7 @@ export default function CountryDurationGuidingStyles({
                 <a
                   href="#section-tours"
                   onClick={(e) => handleDurationClick(e, "long")}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] hover:bg-[#132c50] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-pub-primary hover:bg-pub-primary-dark px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
                 >
                   <span>Explore</span>
                   <ArrowRight size={12} />
@@ -199,7 +199,7 @@ export default function CountryDurationGuidingStyles({
                 <a
                   href="#section-tours"
                   onClick={(e) => handleDurationClick(e, "epic")}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] hover:bg-[#132c50] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-pub-primary hover:bg-pub-primary-dark px-4 py-2 text-xs font-semibold text-white shadow-2xs transition w-fit cursor-pointer"
                 >
                   <span>Explore</span>
                   <ArrowRight size={12} />
@@ -343,7 +343,7 @@ export default function CountryDurationGuidingStyles({
             {/* Style 4: Tailor-Made Holidays */}
             <div className="flex flex-col justify-between rounded-[22px] border border-slate-200/90 bg-white p-6 shadow-2xs transition hover:border-slate-300 hover:shadow-md">
               <div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-[#E16B2D]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-pub-accent">
                   <HeartHandshake size={20} />
                 </div>
                 <h3 className="mt-4 text-base font-bold text-slate-950">
@@ -355,15 +355,15 @@ export default function CountryDurationGuidingStyles({
 
                 <ul className="mt-4 space-y-2 text-xs text-slate-700 font-medium">
                   <li className="flex items-center gap-2">
-                    <Check size={13} className="text-[#E16B2D] shrink-0" />
+                    <Check size={13} className="text-pub-accent shrink-0" />
                     <span>100% bespoke to your schedule</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check size={13} className="text-[#E16B2D] shrink-0" />
+                    <Check size={13} className="text-pub-accent shrink-0" />
                     <span>Choose your boutique hotels</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check size={13} className="text-[#E16B2D] shrink-0" />
+                    <Check size={13} className="text-pub-accent shrink-0" />
                     <span>Dedicated trip designer</span>
                   </li>
                 </ul>
@@ -383,3 +383,4 @@ export default function CountryDurationGuidingStyles({
     </div>
   );
 }
+

@@ -105,8 +105,8 @@ export default function CountryTravelInfoSection({ info }: CountryTravelInfoSect
       <div className="mx-auto max-w-[1380px] px-5">
         {/* Section Header */}
         <div className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#E16B2D]">
-            <BookOpen size={12} className="text-[#E16B2D]" />
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-pub-accent">
+            <BookOpen size={12} className="text-pub-accent" />
             <span>Essential Practical Guide</span>
           </div>
 
@@ -138,7 +138,7 @@ export default function CountryTravelInfoSection({ info }: CountryTravelInfoSect
                 >
                   <TabIcon
                     size={16}
-                    className={isActive ? "text-[#E16B2D]" : "text-slate-400"}
+                    className={isActive ? "text-pub-accent" : "text-slate-400"}
                   />
                   <span>{tab.label}</span>
                 </button>
@@ -152,7 +152,7 @@ export default function CountryTravelInfoSection({ info }: CountryTravelInfoSect
           <div className="rounded-[24px] border border-slate-200/90 bg-slate-50/50 p-6 sm:p-10 shadow-xs transition-all">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100/80 text-[#E16B2D]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100/80 text-pub-accent">
                   <IconComponent size={24} />
                 </div>
                 <div>
@@ -185,11 +185,11 @@ export default function CountryTravelInfoSection({ info }: CountryTravelInfoSect
             {/* Tourvaa Insider Tip Callout */}
             {activeTab.tip && (
               <div className="mt-8 flex items-start gap-3 rounded-2xl border border-orange-200/70 bg-orange-50/70 p-4 text-slate-900">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#E16B2D] text-white">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-pub-accent text-white">
                   <Info size={16} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-black uppercase tracking-wider text-[#E16B2D]">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-pub-accent">
                     Tourvaa Expert Tip
                   </h4>
                   <p className="mt-0.5 text-xs sm:text-sm font-semibold text-slate-800">
@@ -204,17 +204,17 @@ export default function CountryTravelInfoSection({ info }: CountryTravelInfoSect
         {/* Peace of Mind Grid */}
         <div className="mt-12 mx-auto max-w-4xl grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-2xs">
-            <span className="text-xl font-black text-[#E16B2D]">24/7</span>
+            <span className="text-xl font-black text-pub-accent">24/7</span>
             <p className="mt-1 text-xs font-bold text-slate-900">Ground Assistance</p>
             <p className="mt-0.5 text-[11px] text-slate-500">Dedicated Tour Leader & Operations</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-2xs">
-            <span className="text-xl font-black text-[#E16B2D]">100%</span>
+            <span className="text-xl font-black text-pub-accent">100%</span>
             <p className="mt-1 text-xs font-bold text-slate-900">Financial Protection</p>
             <p className="mt-0.5 text-[11px] text-slate-500">ABTA & ATOL bonded partner coverage</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-2xs">
-            <span className="text-xl font-black text-[#E16B2D]">Local</span>
+            <span className="text-xl font-black text-pub-accent">Local</span>
             <p className="mt-1 text-xs font-bold text-slate-900">Vetted Guides</p>
             <p className="mt-0.5 text-[11px] text-slate-500">Passionate, native licensed storytelling</p>
           </div>
@@ -223,3 +223,4 @@ export default function CountryTravelInfoSection({ info }: CountryTravelInfoSect
     </section>
   );
 }
+

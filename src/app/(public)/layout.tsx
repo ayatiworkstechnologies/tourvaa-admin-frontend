@@ -1,6 +1,7 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import PublicLayout from "@/components/public/PublicLayout";
 import AffiliateReferralTracker from "@/components/public/AffiliateReferralTracker";
+import GoogleTranslateLoader from "@/components/public/GoogleTranslateLoader";
 import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL, metadataFor } from "@/lib/seo/pageMetadata";
 
 export const metadata: Metadata = metadataFor("/");
@@ -36,7 +37,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <AffiliateReferralTracker />
+      <GoogleTranslateLoader />
       {children}
     </PublicLayout>
   );
 }
+

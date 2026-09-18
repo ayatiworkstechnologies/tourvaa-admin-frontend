@@ -76,7 +76,7 @@ export default function TravelSupportBanner({
       <div className="relative z-10 mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex flex-col items-start justify-center ml-auto max-w-lg lg:max-w-xl text-left py-1">
           {/* Eyebrow / Offer Ends Soon Badge */}
-          <span className="inline-flex items-center rounded-full bg-[#DF6951] px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-2xs">
+          <span className="inline-flex items-center rounded-full bg-pub-accent px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-2xs">
             {eyebrow}
           </span>
 
@@ -93,7 +93,7 @@ export default function TravelSupportBanner({
           {/* Action Button */}
           <Link
             href={ctaUrl}
-            className="mt-4 sm:mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-[#132c50] active:scale-95 px-6 py-3 text-sm font-bold text-white shadow-sm transition-all cursor-pointer"
+            className="mt-4 sm:mt-5 inline-flex items-center gap-2 rounded-xl bg-pub-primary hover:bg-pub-primary-dark active:scale-95 px-6 py-3 text-sm font-bold text-white shadow-sm transition-all cursor-pointer"
           >
             <span>{ctaText}</span>
             <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
@@ -103,3 +103,4 @@ export default function TravelSupportBanner({
     </section>
   );
 }
+

@@ -182,7 +182,7 @@ export default function HeroSection({
                   : "opacity-100"
               }`}
             >
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-white/20 bg-[#0B1F3A]/75 backdrop-blur-md px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm text-white shadow-xl transition-all">
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-white/20 bg-pub-primary/75 backdrop-blur-md px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm text-white shadow-xl transition-all">
                 <div className="flex items-center gap-2 shrink-0">
                   <Globe size={15} className="text-white/80 shrink-0" />
                   <span className="rounded bg-white/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white">
@@ -240,3 +240,4 @@ export default function HeroSection({
     </>
   );
 }
+

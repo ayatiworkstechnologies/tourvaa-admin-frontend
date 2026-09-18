@@ -49,37 +49,6 @@ type Props = {
   modal?: React.ReactNode;
 };
 
-// Helper to return appropriate flag emoji by country name
-function getCountryFlag(country?: string | null): string {
-  if (!country) return "";
-  const c = country.toLowerCase().trim();
-  if (c.includes("india")) return "🇮🇳";
-  if (c.includes("new zealand") || c === "nz") return "🇳🇿";
-  if (c.includes("indonesia") || c.includes("bali")) return "🇮🇩";
-  if (c.includes("japan")) return "🇯🇵";
-  if (c.includes("switzerland")) return "🇨🇭";
-  if (c.includes("greece")) return "🇬🇷";
-  if (c.includes("peru")) return "🇵🇪";
-  if (c.includes("iceland")) return "🇮🇸";
-  if (c.includes("morocco")) return "🇲🇦";
-  if (c.includes("tanzania")) return "🇹🇿";
-  if (c.includes("vietnam")) return "🇻🇳";
-  if (c.includes("maldives")) return "🇲🇻";
-  if (c.includes("france")) return "🇫🇷";
-  if (c.includes("italy")) return "🇮🇹";
-  if (c.includes("spain")) return "🇪🇸";
-  if (c.includes("united kingdom") || c === "uk" || c.includes("britain")) return "🇬🇧";
-  if (c.includes("united states") || c === "usa" || c.includes("america")) return "🇺🇸";
-  if (c.includes("australia")) return "🇦🇺";
-  if (c.includes("thailand")) return "🇹🇭";
-  if (c.includes("singapore")) return "🇸🇬";
-  if (c.includes("malaysia")) return "🇲🇾";
-  if (c.includes("nepal")) return "🇳🇵";
-  if (c.includes("sri lanka")) return "🇱🇰";
-  if (c.includes("uae") || c.includes("dubai")) return "🇦🇪";
-  return "";
-}
-
 // Renders an inclusion/exclusion's admin-set icon (an emoji or an image URL,
 // same format as the admin's TourItemsTab), falling back to the given
 // Lucide icon when none is set.
@@ -231,7 +200,7 @@ export default function TourDetailExperience({
     tour.number_of_days != null ? `${tour.number_of_days} Days` : "",
     tour.number_of_hours != null ? `${tour.number_of_hours} Hours` : "",
   ].filter(Boolean).join(" / ") || tour.overview?.duration_text || "";
-  const countryFlag = getCountryFlag(destination);
+  const countryFlag = tour.country_flag || "";
 
   const startLocation = tour.start_location || tour.city_name || destination;
   const finishLocation = tour.finish_location || tour.overview?.end_location || tour.city_name || destination;
@@ -619,6 +588,28 @@ export default function TourDetailExperience({
                   {tour.long_description}
                 </p>
               )}
+
+              {/* Additional basic fields returned by the public tour payload. */}
+              {[
+                ["Category", tour.category_name],
+                ["Language", tour.tour_language],
+                ["Best season", tour.overview?.best_season],
+                ["Tour pace", tour.overview?.tour_pace],
+              ].some(([, value]) => Boolean(value)) && (
+                <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    ["Category", tour.category_name],
+                    ["Language", tour.tour_language],
+                    ["Best season", tour.overview?.best_season],
+                    ["Tour pace", tour.overview?.tour_pace],
+                  ].map(([label, value]) => value ? (
+                    <div key={label} className="rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-2">
+                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</dt>
+                      <dd className="mt-1 text-xs font-semibold text-slate-700">{value}</dd>
+                    </div>
+                  ) : null)}
+                </dl>
+              )}
             </div>
 
             {/* B. 🧭 TRAVEL ESSENTIALS */}
@@ -908,7 +899,7 @@ export default function TourDetailExperience({
 
               {/* Alert Box */}
               <div className="mt-6 rounded-xl bg-orange-50/70 p-3.5 text-[11px] font-medium text-orange-900 flex items-center gap-2 border border-orange-200/60">
-                <Info size={15} className="shrink-0 text-[#E16B2D]" />
+                <Info size={15} className="shrink-0 text-pub-accent" />
                 <span>
                   Detailed itinerary schedule and inclusions/exclusions may vary depending on departure season and operational availability.
                 </span>
@@ -984,7 +975,7 @@ export default function TourDetailExperience({
                       type="button"
                       onClick={() => setItineraryMode("detailed")}
                       className={`rounded-md px-3 py-1 transition ${
-                        itineraryMode === "detailed" ? "bg-[#0B1F3A] text-white" : "text-slate-600 hover:text-slate-900"
+                        itineraryMode === "detailed" ? "bg-pub-primary text-white" : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       Detailed
@@ -993,7 +984,7 @@ export default function TourDetailExperience({
                       type="button"
                       onClick={() => setItineraryMode("overview")}
                       className={`rounded-md px-3 py-1 transition ${
-                        itineraryMode === "overview" ? "bg-[#0B1F3A] text-white" : "text-slate-600 hover:text-slate-900"
+                        itineraryMode === "overview" ? "bg-pub-primary text-white" : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       Overview
@@ -1003,12 +994,12 @@ export default function TourDetailExperience({
               </div>
 
               <div className="mt-6 space-y-3">
-                {itineraryList.map((day) => {
+                {itineraryList.map((day, dayIdx) => {
                   const isOpen = Boolean(openDays[day.day]);
 
                   return (
                     <div
-                      key={day.day}
+                      key={`${day.day}-${dayIdx}`}
                       className="overflow-hidden rounded-xl border border-slate-200/80 bg-white transition"
                     >
                       <button
@@ -1498,12 +1489,12 @@ export default function TourDetailExperience({
                 <button type="button" onClick={() => handleBookNow("reserve")} disabled={!selectedDeparture || !unitPrice} className="w-full rounded-xl border border-blue-200 bg-blue-50 py-3.5 text-xs sm:text-sm font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50">
                   Reserve Now
                 </button>
-                <button type="button" onClick={() => handleBookNow("full")} disabled={!selectedDeparture || !unitPrice} className="w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] disabled:cursor-not-allowed disabled:bg-slate-300">
+                <button type="button" onClick={() => handleBookNow("full")} disabled={!selectedDeparture || !unitPrice} className="w-full rounded-xl bg-pub-primary py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-pub-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300">
                   Pay in Full Today
                 </button>
               </div>
             ) : (
-              <button type="button" onClick={() => handleBookNow()} disabled={!selectedDeparture || !unitPrice} className="mt-4 w-full rounded-xl bg-[#0B1F3A] py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-[#132d50] active:scale-[0.99] text-center disabled:cursor-not-allowed disabled:bg-slate-300">
+              <button type="button" onClick={() => handleBookNow()} disabled={!selectedDeparture || !unitPrice} className="mt-4 w-full rounded-xl bg-pub-primary py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-pub-primary-dark active:scale-[0.99] text-center disabled:cursor-not-allowed disabled:bg-slate-300">
                 {!unitPrice ? "Price Unavailable" : selectedDeparture ? "Proceed to Payment" : "No Dates Available"}
               </button>
             )}
@@ -1579,7 +1570,7 @@ export default function TourDetailExperience({
                     </div>
                     <Link
                       href={sim.slug ? `/tours/${sim.slug}` : `/tours/${sim.id}`}
-                      className="rounded-lg bg-[#0B1F3A] px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-[#132d50]"
+                      className="rounded-lg bg-pub-primary px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-pub-primary-dark"
                     >
                       View Tour
                     </Link>
@@ -1594,3 +1585,4 @@ export default function TourDetailExperience({
     </main>
   );
 }
+

@@ -26,7 +26,7 @@ export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionP
 
           {/* Centered Content */}
           <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#E16B2D] px-3.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-pub-accent px-3.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
               <Sparkles size={11} className="fill-white" />
               <span>Must-See Highlight</span>
             </span>
@@ -45,3 +45,4 @@ export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionP
     </section>
   );
 }
+

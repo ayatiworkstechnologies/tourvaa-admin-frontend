@@ -598,11 +598,11 @@ button {
 
 /* Shared public theme: keeps every marketing route visually connected to the homepage. */
 .public-site {
-  --public-primary: #1478f2;
-  --public-primary-hover: #0b63ce;
-  --public-primary-soft: #eff6ff;
-  --public-ink: #0f172a;
-  background: #fff;
+  --public-primary: var(--color-pub-secondary);
+  --public-primary-hover: var(--color-pub-secondary);
+  --public-primary-soft: color-mix(in srgb, var(--color-pub-secondary) 10%, white);
+  --public-ink: var(--color-pub-fg);
+  background: var(--color-pub-bg);
   color: var(--public-ink);
 }
 .public-site h1, .public-site h2, .public-site h3, .public-site h4 {
@@ -636,15 +636,15 @@ button {
 .public-site .hover\:text-teal-700:hover { color: var(--public-primary); }
 .public-site .field:focus {
   border-color: var(--public-primary);
-  box-shadow: 0 0 0 4px rgb(20 120 242 / .1);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-pub-secondary) 10%, transparent);
 }
 .public-site .nav-primary {
   background: var(--public-primary);
-  box-shadow: 0 8px 22px rgb(20 120 242 / .18);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--color-pub-secondary) 18%, transparent);
 }
 .public-site .nav-primary:hover { background: var(--public-primary-hover); }
 .public-site :where(button, a):focus-visible {
-  outline: 3px solid rgb(20 120 242 / .3);
+  outline: 3px solid color-mix(in srgb, var(--color-pub-secondary) 30%, transparent);
   outline-offset: 2px;
 }
 .hero-filter-field,

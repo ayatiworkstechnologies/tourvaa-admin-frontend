@@ -84,7 +84,7 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
             />
 
             {/* Location pill badge (top-left) */}
-            <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-[#DF6951] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
+            <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-pub-accent px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
               <MapPin size={10} className="fill-white/30 text-white shrink-0" />
               <span className="truncate max-w-[100px]">{tour.place || "Featured"}</span>
             </span>
@@ -116,7 +116,7 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
 
             {/* Discount Pill (bottom-right of image) */}
             {discountLabel && (
-              <span className="absolute bottom-2.5 right-2.5 z-10 rounded-md bg-[#E53935] px-2.5 py-1 text-xs font-bold text-white shadow-md">
+              <span className="absolute bottom-2.5 right-2.5 z-10 rounded-md bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-md">
                 {discountLabel}
               </span>
             )}
@@ -125,7 +125,7 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
           {/* Tour details */}
           <div className="pt-3">
             {/* Title */}
-            <h3 className="truncate text-base font-semibold text-slate-900 transition-colors group-hover:text-[#DF6951] leading-snug">
+            <h3 className="truncate text-base font-semibold text-slate-900 transition-colors group-hover:text-pub-accent leading-snug">
               {tour.title}
             </h3>
 
@@ -362,3 +362,4 @@ export default function TrendingToursSection({
     </section>
   );
 }
+

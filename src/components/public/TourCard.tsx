@@ -209,7 +209,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
           <div className="flex items-start justify-between gap-2">
             <Link
               href={resolvedHref}
-              className="text-base font-semibold text-slate-900 tracking-tight line-clamp-1 group-hover:text-[#DF6951] transition"
+              className="text-base font-semibold text-slate-900 tracking-tight line-clamp-1 group-hover:text-pub-accent transition"
             >
               {tour.title}
             </Link>

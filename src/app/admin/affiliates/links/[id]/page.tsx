@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { LuCircleAlert as AlertCircle, LuCirclePause as PauseCircle, LuCirclePlay as PlayCircle, LuCopy as Copy } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuCircleAlert as AlertCircle, LuCirclePause as PauseCircle, LuCirclePlay as PlayCircle, LuCopy as Copy } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import { useToast } from "@/hooks/useToast";
 import {
@@ -136,6 +137,10 @@ export default function AdminAffiliateLinkDetailPage() {
         )}
         {link && (
           <>
+            <Link href="/admin/affiliates/links" className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-dash-brand-hover">
+              <ArrowLeft size={16} />
+              Back to affiliate links
+            </Link>
             <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">

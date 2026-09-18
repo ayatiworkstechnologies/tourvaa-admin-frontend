@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
@@ -11,7 +12,7 @@ import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
-import { LuCircleCheckBig as CheckCircle2, LuLink as LinkIcon, LuLoaderCircle as Loader2, LuMail as Mail, LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuTicket as Ticket, LuUserCheck as UserCheck, LuUsers as Users, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuCircleCheckBig as CheckCircle2, LuLink as LinkIcon, LuLoaderCircle as Loader2, LuMail as Mail, LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuTicket as Ticket, LuUserCheck as UserCheck, LuUsers as Users, LuCircleX as XCircle } from "react-icons/lu";
 
 type DetailPanelProps = { title: string; children: React.ReactNode };
 type DetailFieldProps = { label: string; value?: React.ReactNode };
@@ -230,6 +231,10 @@ export default function BookingDetailPage() {
 
       {!isLoading && booking ? (
         <div className="space-y-6">
+          <Link href="/admin/bookings" className="inline-flex items-center gap-2 text-sm font-bold text-dash-brand-hover">
+            <ArrowLeft size={16} />
+            Back to bookings
+          </Link>
           <section className="overflow-hidden rounded-2xl border border-dash-border-soft bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
             <div className="h-2 bg-gradient-to-r from-dash-brand to-dash-brand-hover" />
             <div className="p-6">
