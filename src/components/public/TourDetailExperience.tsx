@@ -49,16 +49,6 @@ type Props = {
   modal?: React.ReactNode;
 };
 
-// Fallback high-res photos if tour gallery is empty
-const CURATED_GALLERY = [
-  "/images/compare-hero.jpg",
-  "/images/destination-alpine.jpg",
-  "/images/destination-desert.jpg",
-  "/images/hero-1.jpg",
-  "/images/hero-2.jpg",
-  "/images/tour-card-fallback.jpg",
-];
-
 // Helper to return appropriate flag emoji by country name
 function getCountryFlag(country?: string | null): string {
   if (!country) return "";
@@ -124,7 +114,7 @@ type DepartureDateItem = {
   date: string;
   seats: string;
   urgent: boolean;
-  slotsRemaining: number;
+  slotsRemaining: number | null;
 };
 
 type MonthGroup = {
@@ -256,8 +246,7 @@ export default function TourDetailExperience({
     const fromTour = (tour.gallery || []).map((g) => mediaUrl(g.image_url)).filter(Boolean);
     const banner = tour.banner_image ? [mediaUrl(tour.banner_image)] : [];
     const combined = Array.from(new Set([...banner, ...fromTour, ...supplied]));
-    if (combined.length >= 6) return combined.slice(0, 6);
-    return [...combined, ...CURATED_GALLERY].slice(0, 6);
+    return combined.slice(0, 6);
   }, [images, tour.gallery, tour.banner_image]);
 
   // Dynamic Departure Dates from Backend Calendar / Departures
@@ -292,8 +281,8 @@ export default function TourDetailExperience({
       const monthKey = `${year}-${String(monthNum).padStart(2, "0")}`;
       const monthName = dObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
       const cardDate = dObj.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-      const slots = rd.slots ?? 10;
-      const seats = slots > 0 ? `${slots} Seats Left` : "Available";
+      const slots = rd.slots ?? null;
+      const seats = slots == null ? "Available" : slots > 0 ? `${slots} Seats Left` : "Available";
 
       if (!groupMap.has(monthKey)) {
         groupMap.set(monthKey, []);
@@ -303,7 +292,7 @@ export default function TourDetailExperience({
         id: String(rd.id || rd.date),
         date: cardDate,
         seats,
-        urgent: slots > 0 && slots <= 5,
+        urgent: slots != null && slots > 0 && slots <= 5,
         slotsRemaining: slots,
       });
     });
@@ -340,9 +329,11 @@ export default function TourDetailExperience({
 
   // Travellers State - capped to the selected departure's remaining seats
   // rather than unbounded, so the +/- steppers can't run past what's
-  // actually available for that date.
+  // actually available for that date. When the backend has no seat count
+  // for this departure, leave the stepper effectively uncapped instead of
+  // making up a limit.
   const selectedDeparture = currentMonth.dates.find((d) => d.id === selectedDateId);
-  const maxTravellers = Math.max(1, selectedDeparture?.slotsRemaining ?? 10);
+  const maxTravellers = Math.max(1, selectedDeparture?.slotsRemaining ?? Number.MAX_SAFE_INTEGER);
   const [adults, setAdults] = useState(Math.min(initialAdults || 2, maxTravellers));
   const [children, setChildren] = useState(initialChildren || 0);
 
@@ -413,51 +404,19 @@ export default function TourDetailExperience({
         summary: it.short_description || it.description || "",
         detail: it.long_description || (!it.short_description ? it.description : "") || it.short_description || "",
         startPoint: it.location ? `${it.location} Meeting Point` : (startLocation ? `${startLocation} Meeting Point` : ""),
-        transport: it.transport || "Air-conditioned coach / transfer",
+        transport: it.transport || "",
         travelTime: [it.travel_duration, it.travel_distance].filter(Boolean).join(" · "),
         startTime: it.start_time || "",
         endTime: it.end_time || "",
         meals: splitList(it.meals),
-        accommodation: it.accommodation || (nightCount > 0 ? "Selected Hotel Accommodations" : ""),
+        accommodation: it.accommodation || "",
         activities: splitList(it.activities),
         optionalActivities: splitList(it.optional_activities),
         importantNotes: it.important_notes || "",
         photos: it.images && it.images.length > 0 ? it.images.map(mediaUrl) : galleryPhotos.slice(idx % 3, (idx % 3) + 3),
       }));
     }
-    const generated = [];
-    for (let d = 1; d <= dayCount; d++) {
-      const isFirst = d === 1;
-      const isLast = d === dayCount;
-      const dayTitle = isFirst
-        ? `Day 1: Welcome & Arrival in ${startLocation}`
-        : isLast
-          ? `Day ${d}: Concluding Highlights in ${finishLocation}`
-          : `Day ${d}: Guided Sights of ${title}`;
-      const daySummary = isFirst
-        ? `Arrive in ${startLocation}, connect with your tour leader, and settle in for the journey ahead.`
-        : isLast
-          ? `Enjoy final morning sightseeing and leisure time before onward transfers.`
-          : `Explore iconic landmarks, scenic viewpoints, and authentic experiences across ${destination}.`;
-      generated.push({
-        day: d,
-        title: dayTitle,
-        summary: daySummary,
-        detail: `${daySummary} Seamless local arrangements and professional guidance included throughout.`,
-        startPoint: `${startLocation} Meeting Point`,
-        transport: "Private touring vehicle / transfer",
-        travelTime: "",
-        startTime: "09:00 AM",
-        endTime: "05:00 PM",
-        meals: isFirst ? ["Welcome Dinner"] : isLast ? ["Breakfast"] : ["Breakfast", "Local Lunch"],
-        accommodation: isLast ? "" : "Selected 4-Star Hotel Accommodation",
-        activities: [`Highlights tour of ${destination}`],
-        optionalActivities: [],
-        importantNotes: "",
-        photos: galleryPhotos.slice((d - 1) % 3, ((d - 1) % 3) + 3),
-      });
-    }
-    return generated;
+    return [];
   }, [tour.itineraries, galleryPhotos, dayCount, nightCount, startLocation, finishLocation, destination, title]);
 
   const allDaysExpanded = useMemo(() => {
@@ -485,28 +444,7 @@ export default function TourDetailExperience({
         img: h.image ? mediaUrl(h.image) : galleryPhotos[idx % galleryPhotos.length],
       }));
     }
-    return [
-      {
-        title: `Iconic Sights of ${title}`,
-        desc: `Experience top landmark attractions and guided highlights across ${destination}.`,
-        img: galleryPhotos[0] || "/images/hero-1.jpg",
-      },
-      {
-        title: `Cultural & Local Heritage`,
-        desc: `Immerse in authentic regional traditions, historic architecture, and local flavors.`,
-        img: galleryPhotos[1 % galleryPhotos.length] || "/images/destination-alpine.jpg",
-      },
-      {
-        title: `Scenic Highlights & Relaxation`,
-        desc: `Enjoy comfortable journeys, picturesque vistas, and memorable stops along the route.`,
-        img: galleryPhotos[2 % galleryPhotos.length] || "/images/compare-hero.jpg",
-      },
-      {
-        title: `Expert Guided Experience`,
-        desc: `Gain insider knowledge and memorable stories from our professional tour leaders.`,
-        img: galleryPhotos[3 % galleryPhotos.length] || "/images/destination-desert.jpg",
-      },
-    ];
+    return [];
   }, [tour.highlights, galleryPhotos, title, destination]);
 
   // Similar Tours
@@ -516,50 +454,16 @@ export default function TourDetailExperience({
         id: String(st.id),
         title: st.title || "Scenic Tour",
         country: st.country_name || destination,
-        duration: st.number_of_days ? `${st.number_of_days} Days` : "7 Days",
-        price: st.price_start_per_person != null ? format(st.price_start_per_person, st.currency || "USD") : format(unitPrice, tourCurrency),
-        rating: st.rating_average || 4.8,
-        reviews: `${st.rating_count || 120} reviews`,
-        image: st.banner_image ? mediaUrl(st.banner_image) : "/images/compare-hero.jpg",
+        duration: st.number_of_days ? `${st.number_of_days} Days` : "",
+        price: st.price_start_per_person != null ? format(st.price_start_per_person, st.currency || "USD") : "",
+        rating: st.rating_average ?? null,
+        reviews: st.rating_count ? `${st.rating_count} reviews` : "",
+        image: st.banner_image ? mediaUrl(st.banner_image) : "",
         slug: st.slug || "",
       }));
     }
-    return [
-      {
-        id: "1",
-        title: `${destination} Heritage & Cultural Discovery`,
-        country: destination,
-        duration: `${dayCount} Days`,
-        price: format(unitPrice, tourCurrency),
-        rating: 4.9,
-        reviews: "340 reviews",
-        image: galleryPhotos[0] || "/images/hero-1.jpg",
-        slug: "",
-      },
-      {
-        id: "2",
-        title: `${destination} Scenic Highlights & Landscapes`,
-        country: destination,
-        duration: `${dayCount + 1} Days`,
-        price: format(Math.round(unitPrice * 1.15), tourCurrency),
-        rating: 4.8,
-        reviews: "280 reviews",
-        image: galleryPhotos[1 % galleryPhotos.length] || "/images/destination-alpine.jpg",
-        slug: "",
-      },
-      {
-        id: "3",
-        title: `${destination} Explorer Journey`,
-        country: destination,
-        duration: `${Math.max(3, dayCount - 1)} Days`,
-        price: format(Math.round(unitPrice * 0.9), tourCurrency),
-        rating: 4.8,
-        reviews: "190 reviews",
-        image: galleryPhotos[2 % galleryPhotos.length] || "/images/compare-hero.jpg",
-        slug: "",
-      },
-    ];
-  }, [tour.similar_tours, destination, format, dayCount, unitPrice, tourCurrency, galleryPhotos]);
+    return [];
+  }, [tour.similar_tours, destination, format]);
 
   const handleBookNow = (agentAction?: "reserve" | "full") => {
     const chosen = currentMonth.dates.find((d) => d.id === selectedDateId);
@@ -597,7 +501,7 @@ export default function TourDetailExperience({
                 {destination} Tours
               </h1>
               <p className="mt-2.5 text-xs sm:text-sm font-medium leading-relaxed text-white/90">
-                Discover the ultimate adventure through {destination}. Explore iconic cultural landmarks, breathtaking landscapes, and unforgettable regional sights crafted with expert planning and seamless local itineraries.
+                {tour.short_description || tour.subtitle || tour.long_description || ""}
               </p>
 
               {/* Breadcrumbs inside Hero Card */}
@@ -611,12 +515,6 @@ export default function TourDetailExperience({
                 <span className="text-amber-300 font-bold">{title}</span>
               </div>
             </div>
-
-            {/* Trust Line Below Card */}
-            <p className="mt-4 text-xs font-medium text-white/95 drop-shadow-sm">
-              The world&apos;s most trusted tour operator{" "}
-              <span className="text-amber-400 font-bold">★★★★★ 4.8/5</span> based on 2,400+ reviews
-            </p>
           </div>
         </section>
 
@@ -627,15 +525,6 @@ export default function TourDetailExperience({
           </h2>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-3 text-xs">
-            <span className="rounded-full bg-[#E16B2D] px-3 py-1 font-bold text-white shadow-2xs">
-              Best Seller
-            </span>
-            <span className="flex items-center gap-1 font-bold text-slate-700">
-              <Star size={13} className="fill-amber-400 text-amber-400" />
-              <span>4.8</span>
-              <span className="font-normal text-slate-500">(1,240 Reviews)</span>
-            </span>
-            <span className="text-slate-300">•</span>
             <span className="font-semibold text-slate-600">
               {destination}
             </span>
@@ -730,26 +619,6 @@ export default function TourDetailExperience({
                   {tour.long_description}
                 </p>
               )}
-
-              {/* 4 Feature Badges */}
-              <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-bold text-slate-700">
-                <span className="flex items-center gap-1.5 text-slate-800">
-                  <Check size={14} className="stroke-[3] text-blue-600" />
-                  100% Carbon Neutral
-                </span>
-                <span className="flex items-center gap-1.5 text-slate-800">
-                  <Check size={14} className="stroke-[3] text-blue-600" />
-                  Small Group Tours
-                </span>
-                <span className="flex items-center gap-1.5 text-slate-800">
-                  <Check size={14} className="stroke-[3] text-blue-600" />
-                  Solo &amp; Family Friendly
-                </span>
-                <span className="flex items-center gap-1.5 text-slate-800">
-                  <Check size={14} className="stroke-[3] text-blue-600" />
-                  Expert Local Guides
-                </span>
-              </div>
             </div>
 
             {/* B. 🧭 TRAVEL ESSENTIALS */}
@@ -1000,24 +869,7 @@ export default function TourDetailExperience({
                         </li>
                       ))
                     ) : (
-                      <>
-                        <li className="flex items-start gap-2.5 py-2.5 first:pt-0">
-                          <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                          <span><span className="font-semibold text-slate-800">Accommodation:</span> Selected hotels &amp; lodging as per itinerary</span>
-                        </li>
-                        <li className="flex items-start gap-2.5 py-2.5">
-                          <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                          <span><span className="font-semibold text-slate-800">Transport:</span> All scheduled sightseeing &amp; touring transportation</span>
-                        </li>
-                        <li className="flex items-start gap-2.5 py-2.5">
-                          <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                          <span><span className="font-semibold text-slate-800">Guide &amp; Leader:</span> Expert local tour leader services</span>
-                        </li>
-                        <li className="flex items-start gap-2.5 py-2.5 last:pb-0">
-                          <Check size={14} className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]" />
-                          <span><span className="font-semibold text-slate-800">Support:</span> 24/7 dedicated customer assistance throughout the trip</span>
-                        </li>
-                      </>
+                      <li className="py-2.5 text-slate-400">Inclusions for this tour have not been added yet.</li>
                     )}
                   </ul>
                 </div>
@@ -1048,24 +900,7 @@ export default function TourDetailExperience({
                         </li>
                       ))
                     ) : (
-                      <>
-                        <li className="flex items-start gap-2.5 py-2.5 first:pt-0">
-                          <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                          <span><span className="font-semibold text-slate-800">Flights &amp; Visas:</span> International airfare and personal entry visas</span>
-                        </li>
-                        <li className="flex items-start gap-2.5 py-2.5">
-                          <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                          <span><span className="font-semibold text-slate-800">Travel Insurance:</span> Comprehensive medical and travel coverage</span>
-                        </li>
-                        <li className="flex items-start gap-2.5 py-2.5">
-                          <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                          <span><span className="font-semibold text-slate-800">Personal Expenses:</span> Optional activities, meals, and beverages not specified</span>
-                        </li>
-                        <li className="flex items-start gap-2.5 py-2.5 last:pb-0">
-                          <X size={14} className="mt-0.5 shrink-0 text-rose-500 stroke-[3]" />
-                          <span><span className="font-semibold text-slate-800">Gratuities:</span> Tips for drivers and guides</span>
-                        </li>
-                      </>
+                      <li className="py-2.5 text-slate-400">Exclusions for this tour have not been added yet.</li>
                     )}
                   </ul>
                 </div>
@@ -1698,9 +1533,11 @@ export default function TourDetailExperience({
                       sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover transition duration-500 group-hover:scale-105"
                     />
-                    <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-xs">
-                      {sim.duration}
-                    </span>
+                    {sim.duration && (
+                      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-xs">
+                        {sim.duration}
+                      </span>
+                    )}
                     <button
                       type="button"
                       className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-xs hover:scale-110 transition cursor-pointer"
@@ -1720,34 +1557,25 @@ export default function TourDetailExperience({
                       {sim.title}
                     </Link>
 
-                    <div className="mt-2 flex items-center gap-1 text-xs">
-                      <Star size={12} className="fill-amber-400 text-amber-400" />
-                      <span className="font-semibold text-slate-800">{sim.rating}</span>
-                      <span className="text-[10px] text-slate-400">({sim.reviews})</span>
-                    </div>
-
-                    <ul className="mt-2.5 space-y-1 text-[11px] text-slate-500 font-medium">
-                      <li className="flex items-center gap-1.5">
-                        <Check size={12} className="text-emerald-600" />
-                        <span>Transport &amp; Transfers</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Check size={12} className="text-emerald-600" />
-                        <span>Guided Sightseeing</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Check size={12} className="text-emerald-600" />
-                        <span>Included Experiences</span>
-                      </li>
-                    </ul>
+                    {sim.rating != null && (
+                      <div className="mt-2 flex items-center gap-1 text-xs">
+                        <Star size={12} className="fill-amber-400 text-amber-400" />
+                        <span className="font-semibold text-slate-800">{sim.rating}</span>
+                        {sim.reviews && <span className="text-[10px] text-slate-400">({sim.reviews})</span>}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="p-4 pt-0">
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3">
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase">From</span>
-                      <p className="text-xs font-semibold text-slate-950">{sim.price}</p>
+                      {sim.price && (
+                        <>
+                          <span className="text-[10px] text-slate-400 uppercase">From</span>
+                          <p className="text-xs font-semibold text-slate-950">{sim.price}</p>
+                        </>
+                      )}
                     </div>
                     <Link
                       href={sim.slug ? `/tours/${sim.slug}` : `/tours/${sim.id}`}
