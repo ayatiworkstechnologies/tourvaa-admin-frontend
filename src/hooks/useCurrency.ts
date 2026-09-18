@@ -148,11 +148,21 @@ export function setDisplayCurrency(code: string) {
  * same "currency follows country" auto-detection logic used on first
  * load. A visitor who then picks a different currency via setDisplayCurrency
  * still wins - this only sets the country-implied suggestion. */
-export async function setDisplayCountry(code: string) {
+export async function setDisplayCountry(code: string, preferredCurrency?: string) {
   const normalized = code.toUpperCase();
   if (typeof window !== "undefined") localStorage.setItem(COUNTRY_STORAGE_KEY, normalized);
   emit({ countryCode: normalized });
   if (state.forced) return;
+  // The country record already carries its own currency (countries.currency_code,
+  // populated by the geo seed), so switch immediately off that instead of making
+  // the user wait on - or silently lose the change to - the /currency/context
+  // round-trip below. The request still runs as the authoritative fallback.
+  const preferred = (preferredCurrency || "").toUpperCase();
+  if (preferred && state.rates[preferred]) {
+    if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, preferred);
+    emit({ code: preferred });
+    return;
+  }
   try {
     const res = await api.get("/currency/context", { params: { country: normalized } });
     const nextCurrency = String(res.data?.data?.currency || "").toUpperCase();

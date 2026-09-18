@@ -13,60 +13,12 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { fetchPublicCountries, PublicCountry } from "@/lib/api/publicClient";
 import FlagIcon from "@/components/ui/FlagIcon";
 
-// ─── Languages ───────────────────────────────────────────────────────────────
-
-const LANGUAGES = [
-  { code: "en",    label: "English",        short: "EN" },
-  { code: "ta",    label: "தமிழ்",           short: "TA" },
-  { code: "hi",    label: "हिंदी",           short: "HI" },
-  { code: "ar",    label: "العربية",          short: "AR" },
-  { code: "fr",    label: "Français",         short: "FR" },
-  { code: "de",    label: "Deutsch",          short: "DE" },
-  { code: "es",    label: "Español",          short: "ES" },
-  { code: "zh-CN", label: "中文 (简体)",       short: "ZH" },
-  { code: "ja",    label: "日本語",            short: "JA" },
-  { code: "ko",    label: "한국어",            short: "KO" },
-  { code: "ru",    label: "Русский",           short: "RU" },
-  { code: "pt",    label: "Português",         short: "PT" },
-  { code: "it",    label: "Italiano",          short: "IT" },
-  { code: "ms",    label: "Melayu",            short: "MS" },
-  { code: "th",    label: "ไทย",               short: "TH" },
-];
-
-function getActiveLanguageCode(): string {
-  if (typeof document === "undefined") return "en";
-  const match = document.cookie.match(/googtrans=(?:\/en\/)?([a-zA-Z-]+)/);
-  if (!match) return "en";
-  const code = match[1];
-  return code === "en" || !code ? "en" : code;
-}
-
-function applyLanguage(langCode: string) {
-  const val = langCode === "en" ? "" : `/en/${langCode}`;
-  const host = window.location.hostname;
-  const apex = host.split(".").slice(-2).join(".");
-  // Host-only cookie first (no domain attribute): browsers reject
-  // `domain=localhost`, and `.vercel.app` is on the public suffix list, so
-  // on both local dev and the vercel.app preview every domain-scoped write
-  // below silently fails and the selection would never stick. The scoped
-  // writes still run so the choice carries across subdomains on a real
-  // custom domain.
-  document.cookie = `googtrans=${val}; path=/`;
-  if (host !== "localhost" && !/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
-    document.cookie = `googtrans=${val}; path=/; domain=${host}`;
-    document.cookie = `googtrans=${val}; path=/; domain=.${apex}`;
-  }
-  const gt = (window as unknown as { google?: { translate?: { TranslateElement?: { getInstance?: () => { setLanguage?: (code: string) => void } } } } }).google?.translate?.TranslateElement?.getInstance?.();
-  if (gt?.setLanguage) {
-    gt.setLanguage(langCode);
-  } else {
-    window.location.reload();
-  }
-}
-
 // ─── Unified Component ────────────────────────────────────────────────────────
+// Language is handled by the Elfsight Website Translator, which renders its
+// own picker (see components/public/ElfsightTranslator.tsx), so this selector
+// only covers currency and country.
 
-type Tab = "language" | "currency" | "country";
+type Tab = "currency" | "country";
 
 export default function LanguageCurrencySelector({
   inverse = false,
@@ -76,16 +28,10 @@ export default function LanguageCurrencySelector({
 }) {
   const { code: currCode, symbol, currencies, setCode, isStale, countryCode, setCountry } = useCurrency();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>("language");
-  const [langCode, setLangCode] = useState("en");
+  const [tab, setTab] = useState<Tab>("currency");
   const [search, setSearch] = useState("");
   const [countries, setCountries] = useState<PublicCountry[]>([]);
   const ref = useRef<HTMLDivElement>(null);
-
-  // Read language from cookie on mount
-  useEffect(() => {
-    setLangCode(getActiveLanguageCode());
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -109,8 +55,6 @@ export default function LanguageCurrencySelector({
 
   // Reset search when tab changes
   useEffect(() => { setSearch(""); }, [tab]);
-
-  const activeLang = LANGUAGES.find((l) => l.code === langCode) ?? LANGUAGES[0];
 
   // Currency list
   const currencyList = useMemo(() => {
@@ -163,7 +107,7 @@ export default function LanguageCurrencySelector({
         onClick={() => setOpen((p) => !p)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        title="Language & Currency"
+        title="Currency & Country"
         className={`group flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors focus:outline-none ${
           inverse ? "text-white hover:text-white/80" : "text-pub-primary hover:text-pub-secondary"
         }`}
@@ -176,8 +120,6 @@ export default function LanguageCurrencySelector({
         />
         <span className="flex items-center gap-0.5">
           <span className="flex items-center font-semibold">
-            {activeLang.short}
-            <span className={`mx-0.5 ${inverse ? "text-white/40" : "text-slate-300"}`}>|</span>
             {countryCode && (
               <span className="mr-1 h-2.5 w-4 overflow-hidden rounded-[2px]">
                 <FlagIcon countryCode={countryCode} />
@@ -205,17 +147,6 @@ export default function LanguageCurrencySelector({
           <div className="flex border-b border-slate-100">
             <button
               type="button"
-              onClick={() => setTab("language")}
-              className={`flex-1 py-3 text-xs font-bold transition-colors ${
-                tab === "language"
-                  ? "border-b-2 border-pub-accent text-pub-accent"
-                  : "text-slate-500 hover:text-pub-primary"
-              }`}
-            >
-              🌐 Language
-            </button>
-            <button
-              type="button"
               onClick={() => setTab("currency")}
               className={`flex-1 py-3 text-xs font-bold transition-colors ${
                 tab === "currency"
@@ -239,49 +170,6 @@ export default function LanguageCurrencySelector({
           </div>
 
           <div className="p-3">
-            {/* ── Language Tab ── */}
-            {tab === "language" && (
-              <div className="max-h-64 overflow-y-auto space-y-0.5 pr-0.5 no-scrollbar">
-                {LANGUAGES.map((lang) => {
-                  const selected = lang.code === langCode;
-                  return (
-                    <button
-                      key={lang.code}
-                      type="button"
-                      onClick={() => {
-                        setLangCode(lang.code);
-                        setOpen(false);
-                        applyLanguage(lang.code);
-                      }}
-                      className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition ${
-                        selected
-                          ? "bg-pub-primary text-white shadow-sm"
-                          : "text-slate-800 hover:bg-slate-100"
-                      }`}
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <span
-                          className={`w-7 shrink-0 text-left font-black ${
-                            selected ? "text-white" : "text-slate-500"
-                          }`}
-                        >
-                          {lang.short}
-                        </span>
-                        <span
-                          className={`${selected ? "text-slate-300" : "text-slate-600"}`}
-                        >
-                          {lang.label}
-                        </span>
-                      </span>
-                      {selected && (
-                        <Check size={13} className="shrink-0 text-[#d95d2c]" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
             {/* ── Currency Tab ── */}
             {tab === "currency" && (
               <>
@@ -391,7 +279,10 @@ export default function LanguageCurrencySelector({
                           key={item.country_code}
                           type="button"
                           onClick={() => {
-                            void setCountry(item.country_code);
+                            // Hand over the country's own currency so the
+                            // switch is immediate rather than waiting on the
+                            // /currency/context lookup.
+                            void setCountry(item.country_code, item.currency_code);
                             setOpen(false);
                           }}
                           className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition ${
