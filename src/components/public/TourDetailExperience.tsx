@@ -387,7 +387,7 @@ export default function TourDetailExperience({
       }));
     }
     return [];
-  }, [tour.itineraries, galleryPhotos, dayCount, nightCount, startLocation, finishLocation, destination, title]);
+  }, [tour.itineraries, galleryPhotos, startLocation, destination]);
 
   const allDaysExpanded = useMemo(() => {
     return itineraryList.length > 0 && itineraryList.every((d) => openDays[d.day]);
@@ -415,7 +415,7 @@ export default function TourDetailExperience({
       }));
     }
     return [];
-  }, [tour.highlights, galleryPhotos, title, destination]);
+  }, [tour.highlights, galleryPhotos, destination]);
 
   // Similar Tours
   const similarToursList = useMemo(() => {

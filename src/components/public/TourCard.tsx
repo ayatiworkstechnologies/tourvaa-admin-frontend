@@ -5,8 +5,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   LuArrowRight as ArrowRight,
-  LuCalendarDays as Calendar,
-  LuCheck as Check,
   LuMapPin as MapPin,
   LuStar as Star,
   LuUsers as Users,
@@ -64,9 +62,6 @@ export default function TourCard({ tour, format, variant = "search", href, view 
   // group_size sometimes comes through as a bare number ("16") rather than a
   // range/label - shown as-is that reads as a broken/truncated line, so a
   // purely numeric value gets a "Up to N people" wrapper instead.
-  const groupSizeLabel = tour.group_size?.trim()
-    ? (/^\d+$/.test(tour.group_size.trim()) ? `Up to ${tour.group_size.trim()} people` : tour.group_size)
-    : "2–8 people";
 
   // "compact" manages its own wishlist state via the shared travel store;
   // "search" is controlled externally so the parent can dedupe/limit across

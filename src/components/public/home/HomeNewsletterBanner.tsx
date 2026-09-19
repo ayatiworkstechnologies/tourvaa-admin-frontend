@@ -1,11 +1,8 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import React, { useEffect, useState } from "react";
 import { LuArrowRight as ArrowRight } from "react-icons/lu";
 import { NewsletterBannerBlock, fetchContentBlock, subscribeNewsletter } from "@/lib/api/publicClient";
-import { mediaUrl } from "@/lib/utils/mediaUrl";
 
 export interface HomeNewsletterBannerProps {
   initialData?: Partial<NewsletterBannerBlock>;
@@ -20,7 +17,6 @@ export default function HomeNewsletterBanner({
   badge: propBadge,
   heading: propHeading,
   subtitle: propSubtitle,
-  image: propImage,
 }: HomeNewsletterBannerProps) {
   const [data, setData] = useState<Partial<NewsletterBannerBlock>>(initialData || {});
 
@@ -50,8 +46,6 @@ export default function HomeNewsletterBanner({
     propSubtitle ||
     data.subtitle ||
     "Subscribe to our newsletter for exclusive deals, insider tips, and travel inspiration.";
-  const image =
-    propImage || (data.image ? mediaUrl(data.image) : "/images/register.png");
 
   const [email, setEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);

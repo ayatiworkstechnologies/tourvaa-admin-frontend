@@ -27,13 +27,13 @@ export default function CmsIndexPage() {
           </div>
         </section>
 
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid items-start gap-5 lg:grid-cols-2">
           {CMS_DASHBOARD_GROUPS.map((group) => (
-            <section key={group.key} className="flex flex-col rounded-xl border border-dash-border bg-white p-5">
+            <section key={group.key} className={`flex flex-col rounded-xl border border-dash-border bg-white p-5 ${group.tabs.length > 6 ? "lg:col-span-2" : ""}`}>
               <h3 className="text-base font-bold text-dash-text">{group.label}</h3>
               <p className="mt-1 text-sm text-dash-muted">{group.description}</p>
 
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className={`mt-4 grid gap-3 sm:grid-cols-2 ${group.tabs.length > 6 ? "xl:grid-cols-3" : ""}`}>
                 {group.tabs.map((key) => (
                   <Link
                     key={key}

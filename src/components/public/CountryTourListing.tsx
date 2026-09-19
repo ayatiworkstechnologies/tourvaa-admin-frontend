@@ -6,7 +6,6 @@ import MarketingImage from "@/components/public/MarketingImage";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  LuArrowRight as ArrowRight,
   LuChevronDown as ChevronDown,
   LuClock as Clock,
   LuCompass as Compass,

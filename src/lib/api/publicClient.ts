@@ -3,6 +3,35 @@ import axios from "axios";
 const publicApi = axios.create({ baseURL: "/api/public", timeout: 30_000 });
 const cmsApi = axios.create({ baseURL: "/api/cms", timeout: 30_000 });
 
+// Ensure CMS GET responses are never served from the browser or proxy cache.
+// Without this, changes saved in the admin CMS panel are not visible on the
+// public site until the browser cache expires (which can take minutes or
+// hours depending on the backend's Cache-Control headers).
+cmsApi.interceptors.request.use((config) => {
+  if (!config.method || config.method.toLowerCase() === "get") {
+    // Tell the browser and any intermediate proxies not to cache this response
+    config.headers = config.headers ?? {};
+    config.headers["Cache-Control"] = "no-store";
+    config.headers["Pragma"] = "no-cache";
+    // Append a unique timestamp param so the URL is always different,
+    // bypassing any aggressive opaque caching (e.g. service workers, CDNs)
+    config.params = { ...config.params, _t: Date.now() };
+  }
+  return config;
+});
+
+// Same cache-busting for public tour/category data — ensures admin changes
+// to tour prices, availability and descriptions show immediately.
+publicApi.interceptors.request.use((config) => {
+  if (!config.method || config.method.toLowerCase() === "get") {
+    config.headers = config.headers ?? {};
+    config.headers["Cache-Control"] = "no-store";
+    config.headers["Pragma"] = "no-cache";
+    config.params = { ...config.params, _t: Date.now() };
+  }
+  return config;
+});
+
 export default publicApi;
 
 export type PublicTour = {

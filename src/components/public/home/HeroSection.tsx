@@ -8,7 +8,6 @@ import {
   LuGlobe as Globe,
   LuHeartHandshake as HeartHandshake,
   LuMessageSquare as MessageSquare,
-  LuSparkles as Sparkles,
   LuStar as Star,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
@@ -177,10 +176,6 @@ export default function HeroSection({
       : "Global Getaways 2026: Up To 50% Off – Limited Availability, Book Today!";
   const heroOfferCtaUrl = heroExtras.offer_cta_url?.trim() || "/deals";
   const heroOfferCtaText = heroExtras.offer_cta_text?.trim() || "";
-
-  const subHeroText =
-    ((heroExtras as Record<string, unknown>).sub_hero_text as string) ||
-    "Explore handpicked tours from trusted travel partners and book your next adventure with confidence.";
 
   return (
     <>

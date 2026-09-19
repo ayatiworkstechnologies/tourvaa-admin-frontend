@@ -93,7 +93,6 @@ export default function CountryPhoneInput({
             onClick={() => setOpen((v) => !v)}
             aria-haspopup="listbox"
             aria-expanded={open}
-            aria-required={required}
             className={`flex w-full items-center gap-2 rounded-xl border bg-white px-3.5 py-2.5 text-left text-sm font-semibold text-dash-text outline-none transition focus:ring-4 ${
               errorMessage && !selected
                 ? "border-red-400 focus:border-red-400 focus:ring-red-100"

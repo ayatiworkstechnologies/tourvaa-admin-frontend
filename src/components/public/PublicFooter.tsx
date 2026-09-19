@@ -22,7 +22,6 @@ import {
   fetchPublicCountries,
 } from "@/lib/api/publicClient";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
-import ExploreDirectorySection from "@/components/public/ExploreDirectorySection";
 import { destinationUrl } from "@/lib/utils/tourUrl";
 
 // Used only if the CMS-managed /cms/footer fetch fails or returns nothing,

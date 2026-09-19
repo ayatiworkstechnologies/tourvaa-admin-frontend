@@ -4,7 +4,7 @@ import Link from "next/link";
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCalendarCheck as CalendarCheck, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileCheck2 as FileText, LuLayoutDashboard as LayoutDashboard, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuUsers as Users, LuWallet as Wallet, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuBan as Ban, LuBriefcase as Briefcase, LuCalendarCheck as CalendarCheck, LuCalendarDays as CalendarDays, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuFileCheck2 as FileText, LuLayoutDashboard as LayoutDashboard, LuMapPin as MapPin, LuPercent as Percent, LuReceipt as Receipt, LuShieldHalf as ShieldHalf, LuUsers as Users, LuWallet as Wallet, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
 
 import api from "@/lib/api/client";
 import ActionModal from "@/components/operations/ActionModal";
@@ -37,6 +37,37 @@ function valueText(value: DetailValue) {
 
 function titleize(value: string) {
   return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatDocDate(iso?: DetailValue) {
+  if (!iso || typeof iso !== "string") return null;
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return String(iso);
+  }
+}
+
+function getFileFormat(filename?: DetailValue, mime?: DetailValue) {
+  if (typeof filename === "string") {
+    const ext = filename.split(".").pop()?.toUpperCase();
+    if (ext && ext.length <= 5 && !ext.includes("/")) return ext;
+  }
+  if (typeof mime === "string") {
+    if (mime.includes("pdf")) return "PDF";
+    if (mime.includes("webp")) return "WEBP";
+    if (mime.includes("png")) return "PNG";
+    if (mime.includes("jpeg") || mime.includes("jpg")) return "JPG";
+  }
+  return null;
 }
 
 function InfoGrid({ rows }: { rows: [string, DetailValue][] }) {
@@ -383,37 +414,118 @@ export default function AgentDetailPage() {
                 (documents.length === 0 ? (
                   <p className="rounded-lg bg-dash-bg p-4 text-sm font-semibold text-dash-muted">No agent documents uploaded yet.</p>
                 ) : (
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {documents.map((doc, index) => (
-                      <div key={doc.id ?? index} className="rounded-xl border border-dash-border p-4">
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <FileText size={16} className="text-dash-brand" />
-                            <p className="text-sm font-bold text-dash-text">{valueText(doc.document_name || doc.document_type)}</p>
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {documents.map((doc, index) => {
+                      const typeTitle = titleize(String(doc.document_type || "Document"));
+                      const fileName = String(doc.document_name || "");
+                      const fileFormat = getFileFormat(fileName, doc.mime_type);
+                      const formattedDate = formatDocDate(doc.uploaded_at);
+                      const hasRejection = Boolean(doc.rejection_reason && String(doc.rejection_reason).trim() && String(doc.rejection_reason).trim() !== "-");
+
+                      return (
+                        <div
+                          key={doc.id ?? index}
+                          className="group flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-slate-300 hover:shadow-md"
+                        >
+                          <div>
+                            {/* Card Top: Icon + Doc Type Title + Status Badge */}
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex min-w-0 flex-1 items-start gap-3">
+                                <div
+                                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${
+                                    fileFormat === "PDF"
+                                      ? "bg-rose-50 text-rose-600 ring-rose-100"
+                                      : "bg-sky-50 text-sky-600 ring-sky-100"
+                                  }`}
+                                >
+                                  <FileText size={18} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="truncate text-sm font-bold text-dash-text" title={typeTitle}>
+                                    {typeTitle}
+                                  </h4>
+                                  {fileName ? (
+                                    <p className="mt-0.5 truncate text-xs font-medium text-dash-muted" title={fileName}>
+                                      {fileName}
+                                    </p>
+                                  ) : (
+                                    <p className="mt-0.5 text-xs italic text-dash-subtle">No file name</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="shrink-0">
+                                <StatusBadge value={String(doc.status || "pending")} />
+                              </div>
+                            </div>
+
+                            {/* Clean Metadata Line: File format pill & formatted upload date */}
+                            <div className="mt-3.5 flex flex-wrap items-center gap-2">
+                              {fileFormat && (
+                                <span
+                                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase ${
+                                    fileFormat === "PDF"
+                                      ? "border border-rose-200 bg-rose-50 text-rose-700"
+                                      : "border border-slate-200 bg-slate-100 text-slate-700"
+                                  }`}
+                                >
+                                  {fileFormat}
+                                </span>
+                              )}
+                              {formattedDate && (
+                                <span className="inline-flex items-center gap-1.5 text-xs text-dash-muted">
+                                  <CalendarDays size={13} className="text-dash-subtle" />
+                                  {formattedDate}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Rejection Reason (only shown when rejected or reason exists) */}
+                            {hasRejection && (
+                              <div className="mt-3.5 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50/90 p-2.5 text-xs text-rose-800">
+                                <XCircle size={14} className="mt-0.5 shrink-0 text-rose-500" />
+                                <div className="min-w-0 flex-1">
+                                  <span className="font-bold">Rejection reason:</span> {String(doc.rejection_reason)}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <StatusBadge value={String(doc.status || "pending")} />
+
+                          {/* Card Footer Actions */}
+                          <div className="mt-4.5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3.5">
+                            {(doc.file_url || doc.file_path) && doc.id !== undefined && (
+                              <button
+                                type="button"
+                                onClick={() => void viewDocument(doc.id!)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3 py-1.5 text-xs font-bold text-dash-brand-hover shadow-xs transition hover:border-dash-brand hover:bg-[#E7F5FF]"
+                              >
+                                <Eye size={14} /> View document
+                              </button>
+                            )}
+                            {canReviewDocuments && doc.status !== "approved" && doc.id !== undefined && (
+                              <button
+                                type="button"
+                                onClick={() => approveDocument(doc.id!)}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700"
+                              >
+                                <Check size={14} /> Accept
+                              </button>
+                            )}
+                            {canReviewDocuments && doc.status !== "rejected" && doc.id !== undefined && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReviewDocumentId(doc.id!);
+                                  setModal("reject-document");
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-1.5 text-xs font-bold text-rose-600 shadow-xs transition hover:bg-rose-50"
+                              >
+                                <X size={14} /> Reject
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <InfoGrid rows={[
-                          ["Type", doc.document_type],
-                          ["Mime", doc.mime_type],
-                          ["Uploaded", doc.uploaded_at],
-                          ["Reason", doc.rejection_reason],
-                        ]} />
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                          {(doc.file_url || doc.file_path) && doc.id !== undefined && (
-                            <button type="button" onClick={() => void viewDocument(doc.id!)} className="inline-flex items-center gap-2 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]">
-                              <Eye size={14} /> View document
-                            </button>
-                          )}
-                          {canReviewDocuments && doc.status !== "approved" && doc.id !== undefined && (
-                            <button type="button" onClick={() => approveDocument(doc.id!)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"><Check size={14} />Accept</button>
-                          )}
-                          {canReviewDocuments && doc.status !== "rejected" && doc.id !== undefined && (
-                            <button type="button" onClick={() => { setReviewDocumentId(doc.id!); setModal("reject-document"); }} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50"><X size={14} />Reject</button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ))}
             </div>

@@ -42,7 +42,6 @@ const PORTALS = [
 export default function PortalPublicHeader({
   portalPath,
   roleLabel,
-  icon,
 }: {
   portalPath: string;
   roleLabel: string;

@@ -407,7 +407,7 @@ export default function DealsPage() {
   const { isWishlisted, toggleWishlist } = useTravelStore();
 
   const [specials, setSpecials] = useState<DealCardItem[]>(TOURVAA_SPECIALS);
-  const [bestOffers, setBestOffers] = useState<DealCardItem[]>(BEST_OFFERS);
+  const [bestOffers] = useState<DealCardItem[]>(BEST_OFFERS);
 
   // Carousel refs for smooth horizontal navigation
   const specialsRef = useRef<HTMLDivElement>(null);

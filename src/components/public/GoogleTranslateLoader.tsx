@@ -29,6 +29,7 @@ export default function GoogleTranslateLoader() {
           this node"), which takes the whole page down. Making these two DOM
           methods no-op instead of throwing when the parent no longer matches
           is the standard mitigation - React recovers on its next render. */}
+      {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document -- must run before React hydrates */}
       <Script id="google-translate-react-guard" strategy="beforeInteractive">
         {`
           (function () {

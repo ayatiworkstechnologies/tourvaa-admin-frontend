@@ -22,72 +22,9 @@ export interface CountryWhenToGoSectionProps {
 
 export default function CountryWhenToGoSection({
   info,
-  onSelectSeason,
 }: CountryWhenToGoSectionProps) {
   const [unit, setUnit] = useState<"C" | "F">("C");
   const [showMonthlyMatrix, setShowMonthlyMatrix] = useState<boolean>(false);
-
-  const scrollToTours = (e: React.MouseEvent, seasonName: string) => {
-    e.preventDefault();
-    onSelectSeason?.(seasonName);
-    const el = document.getElementById("section-tours");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const seasonsData = [
-    {
-      id: "spring",
-      name: "Spring",
-      months: "Mar - May",
-      tempC: "12°C - 22°C",
-      tempF: "54°F - 72°F",
-      badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      icon: Leaf,
-      image:
-        "https://images.unsplash.com/photo-1528164344705-475426879c0d?auto=format&fit=crop&w=800&q=80",
-      description:
-        "Pleasant temperatures, blooming flora, and ideal conditions for walking ancient pathways, river cruises, and garden tours.",
-    },
-    {
-      id: "summer",
-      name: "Summer",
-      months: "Jun - Aug",
-      tempC: "24°C - 33°C",
-      tempF: "75°F - 91°F",
-      badgeColor: "bg-amber-50 text-amber-700 border-amber-200",
-      icon: Sun,
-      image:
-        "https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?auto=format&fit=crop&w=800&q=80",
-      description:
-        "Warm, vibrant, and lush. Perfect for highland plateaus and western regions, though lowland city days can be warm and humid.",
-    },
-    {
-      id: "autumn",
-      name: "Autumn",
-      months: "Sep - Nov",
-      tempC: "14°C - 24°C",
-      tempF: "57°F - 75°F",
-      badgeColor: "bg-blue-50 text-blue-700 border-blue-200",
-      icon: Sparkles,
-      image:
-        "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80",
-      description:
-        "Widely considered the golden travel season with clear crisp skies, comfortable weather, and spectacular autumn foliage across valleys.",
-    },
-    {
-      id: "winter",
-      name: "Winter",
-      months: "Dec - Feb",
-      tempC: "-5°C - 8°C",
-      tempF: "23°F - 46°F",
-      badgeColor: "bg-indigo-50 text-indigo-700 border-indigo-200",
-      icon: CloudSnow,
-      image:
-        "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80",
-      description:
-        "Crisp days in the north featuring magical ice festivals, while the south stays comfortably mild. Fewest tourist crowds and superior value.",
-    },
-  ];
 
   const monthlyData = info.temperature_info?.monthly_weather || [];
 

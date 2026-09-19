@@ -741,7 +741,6 @@ export default function TourFormPage({
   onSaved,
   initialData,
   sections = ALL_SECTIONS,
-  onGoToPricing,
   formId,
 }: Props) {
   const toast = useToast();

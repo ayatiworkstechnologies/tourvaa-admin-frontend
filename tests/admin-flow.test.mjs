@@ -101,9 +101,9 @@ check("supplier commission banner omits the misleading approve request action", 
 check("supplier document review uses private document service", suppliers.includes('openPrivateDocument("supplier"'));
 check(
   "supplier document and vehicle filenames stay within their cards",
-  suppliers.includes('className="mt-1 break-all text-sm font-semibold text-dash-text"') &&
-    suppliers.includes('title={valueText(doc.document_name || doc.document_type)}') &&
-    suppliers.match(/className="min-w-0 rounded-xl border border-dash-border p-4"/g)?.length === 2,
+  suppliers.includes('className="mt-0.5 truncate text-xs font-medium text-dash-muted" title={fileName}') &&
+    suppliers.includes('className="min-w-0 flex-1"') &&
+    suppliers.includes('className="min-w-0 rounded-xl border border-dash-border p-4"'),
 );
 check("agent document review uses private document service", agents.includes('openPrivateDocument("agent"'));
 check("admin can approve and reject individual agent documents", agents.includes("reviewAgentDocument") && agents.includes("Reject agent document"));
@@ -158,7 +158,7 @@ const wizardSteps = read("src/components/tours/wizard/steps.ts");
 check(
   "admin tour creation shows guided completion stages",
   wizardSteps.includes('label: "Basic Information"') &&
-    wizardSteps.includes('label: "Location & Category"') &&
+    wizardSteps.includes('label: "Overview, Location & Category"') &&
     wizardSteps.includes('label: "Review & Submit"'),
 );
 check(

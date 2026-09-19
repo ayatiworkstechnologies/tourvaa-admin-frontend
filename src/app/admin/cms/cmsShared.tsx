@@ -62,8 +62,8 @@ export type ContentBlockTabConfig = {
 export const TAB_DESCRIPTIONS: Record<string, string> = {
   banners: "The homepage hero: background banners/video, the trust-rating badge, and the promotional offer strip.",
   "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order. Toggle the whole section on/off below.",
-  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Only tours with an active discount can be picked here - discounts themselves are set up in Discounts (Admin > Discounts), not on this screen. Toggle the whole section on/off below.",
-  "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section - a separate curated list from Trending Tour Packages. Only tours with an active discount can be picked here - set discounts up in Discounts (Admin > Discounts).",
+  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Toggle the whole section on/off below.",
+  "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section - a curated list of tours for the homepage.",
   "popular-destinations": "Countries shown in Countries Worth Exploring - title, image, description, destination link, order and enable/disable, per country. Countries without a row here fall back to being calculated automatically from real tour counts.",
   "favourite-countries": "The editorial country list and snippet copy shown in the homepage Favourite Countries section.",
   "country-pages": "Override the hero banner, showcase panel, and SEO title/description for each country's dynamic /tours/{country} landing page. Countries without a row here use auto-generated content.",
@@ -106,14 +106,14 @@ export const TABS: TabConfig[] = [
     key: "popular-tours",
     label: "Trending Tour Packages",
     endpoint: "/cms/popular-tours",
-    canEdit: false,
     columns: [
       { key: "tour_title", header: "Tour" },
       { key: "tour_code", header: "Code" },
       { key: "sort_order", header: "Sort" },
+      { key: "is_active", header: "Active" },
     ],
     formFields: [
-      { key: "tour_id", label: "Tour (discounted only)", type: "select", required: true },
+      { key: "tour_id", label: "Tour", type: "select", required: true },
       { key: "sort_order", label: "Sort Order", type: "number" },
     ],
   },
@@ -121,14 +121,14 @@ export const TABS: TabConfig[] = [
     key: "handpicked-tours",
     label: "Handpicked",
     endpoint: "/cms/handpicked-tours",
-    canEdit: false,
     columns: [
       { key: "tour_title", header: "Tour" },
       { key: "tour_code", header: "Code" },
       { key: "sort_order", header: "Sort" },
+      { key: "is_active", header: "Active" },
     ],
     formFields: [
-      { key: "tour_id", label: "Tour (discounted only)", type: "select", required: true },
+      { key: "tour_id", label: "Tour", type: "select", required: true },
       { key: "sort_order", label: "Sort Order", type: "number" },
     ],
   },
@@ -871,6 +871,7 @@ function TourPickerSelect({
   onChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -882,10 +883,17 @@ function TourPickerSelect({
   }, []);
 
   const selected = options.find((opt) => (typeof opt === "string" ? opt : opt.value) === value);
-  const selectedLabel = selected ? (typeof selected === "string" ? selected : selected.label) : "Select...";
+  const selectedLabel = selected ? (typeof selected === "string" ? selected : selected.label) : "Select a tour...";
+
+  const filteredOptions = searchTerm.trim()
+    ? options.filter((opt) => {
+        const label = typeof opt === "string" ? opt : opt.label;
+        return label.toLowerCase().includes(searchTerm.trim().toLowerCase());
+      })
+    : options;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -896,37 +904,57 @@ function TourPickerSelect({
       </button>
 
       {open && (
-        <div className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-dash-border bg-white p-1.5 shadow-lg">
-          {options.length === 0 && <p className="px-3 py-2 text-xs text-dash-muted">No tours available.</p>}
-          {options.map((opt) => {
-            const optValue = typeof opt === "string" ? opt : opt.value;
-            const optLabel = typeof opt === "string" ? opt : opt.label;
-            const src = images[optValue];
-            return (
-              <button
-                key={optValue}
-                type="button"
-                onClick={() => {
-                  onChange(optValue);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm transition ${
-                  optValue === value ? "bg-[#EDF5FF] font-bold text-[#0369A1]" : "text-dash-body hover:bg-dash-bg"
-                }`}
-              >
-                {src ? (
-                  <span className="relative h-10 w-14 shrink-0 overflow-hidden rounded-md border border-dash-border bg-dash-bg">
-                    <Image src={src} alt="" fill unoptimized className="object-cover" sizes="56px" />
-                  </span>
-                ) : (
-                  <span className="flex h-10 w-14 shrink-0 items-center justify-center rounded-md border border-dash-border bg-dash-bg text-[9px] font-semibold text-dash-subtle">
-                    No img
-                  </span>
-                )}
-                <span className="line-clamp-2">{optLabel}</span>
-              </button>
-            );
-          })}
+        <div className="mt-2 flex max-h-72 w-full flex-col overflow-hidden rounded-xl border border-dash-border bg-white shadow-sm">
+          {options.length > 5 && (
+            <div className="border-b border-dash-border p-2 bg-dash-bg">
+              <input
+                type="text"
+                placeholder="Search tour..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+                className="w-full rounded-lg border border-dash-border bg-white px-2.5 py-1.5 text-xs outline-none focus:border-[#0284C7]"
+                autoFocus
+              />
+            </div>
+          )}
+          <div className="overflow-y-auto p-1.5 flex-1 max-h-60">
+            {filteredOptions.length === 0 && (
+              <p className="px-3 py-2 text-xs text-dash-muted">
+                {options.length === 0 ? "No tours available." : "No matching tours found."}
+              </p>
+            )}
+            {filteredOptions.map((opt) => {
+              const optValue = typeof opt === "string" ? opt : opt.value;
+              const optLabel = typeof opt === "string" ? opt : opt.label;
+              const src = images[optValue];
+              return (
+                <button
+                  key={optValue}
+                  type="button"
+                  onClick={() => {
+                    onChange(optValue);
+                    setOpen(false);
+                    setSearchTerm("");
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm transition ${
+                    optValue === value ? "bg-[#EDF5FF] font-bold text-[#0369A1]" : "text-dash-body hover:bg-dash-bg"
+                  }`}
+                >
+                  {src ? (
+                    <span className="relative h-10 w-14 shrink-0 overflow-hidden rounded-md border border-dash-border bg-dash-bg">
+                      <Image src={src} alt="" fill unoptimized className="object-cover" sizes="56px" />
+                    </span>
+                  ) : (
+                    <span className="flex h-10 w-14 shrink-0 items-center justify-center rounded-md border border-dash-border bg-dash-bg text-[9px] font-semibold text-dash-subtle">
+                      No img
+                    </span>
+                  )}
+                  <span className="line-clamp-2">{optLabel}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
@@ -977,21 +1005,24 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
     if (tab.endpoint !== "/cms/popular-tours" && tab.endpoint !== "/cms/handpicked-tours" && tab.endpoint !== "/cms/tours-on-deals") return;
 
     let cancelled = false;
-    api.get("/tours", { params: { page: 1, limit: 200 } })
+    api.get("/tours", { params: { page: 1, limit: 1000, status: "published" } })
       .then((res) => {
         if (cancelled) return;
         const data = res.data?.data ?? res.data?.items ?? res.data ?? [];
         const rows: CmsItem[] = Array.isArray(data) ? data : data.items ?? [];
-        // "Trending Tour Packages" and "Handpicked" are both only ever filled
-        // with discounted tours (each has its own separate pinned list).
-        const filteredRows = tab.endpoint === "/cms/popular-tours" || tab.endpoint === "/cms/handpicked-tours"
-          ? rows.filter((tour) => typeof tour.discount_percentage === "number" && tour.discount_percentage > 0)
-          : rows;
-        setTourOptions(filteredRows.map((tour: CmsItem) => {
+        // Show all tours in the dropdown, adding the discount badge if one is active
+        setTourOptions(rows.map((tour: CmsItem) => {
           const id = String(tour.id ?? "");
           const title = typeof tour.title === "string" ? tour.title : `Tour #${id}`;
           const code = typeof tour.tour_code === "string" && tour.tour_code ? `${tour.tour_code} - ` : "";
-          const discount = typeof tour.discount_percentage === "number" && tour.discount_percentage > 0 ? ` (-${tour.discount_percentage}%)` : "";
+          const activeDisc = tour.active_discount as { discount_percentage?: number } | undefined;
+          const discountPct =
+            typeof tour.discount_percentage === "number"
+              ? tour.discount_percentage
+              : activeDisc?.discount_percentage != null
+              ? Number(activeDisc.discount_percentage)
+              : 0;
+          const discount = discountPct > 0 ? ` (-${discountPct}%)` : "";
           return { value: id, label: `${code}${title}${discount}` };
         }).filter((option: { value: string }) => option.value));
         setTourImages(Object.fromEntries(
@@ -1004,10 +1035,12 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
         if (!cancelled) {
           setTourOptions([]);
           setTourImages({});
+          toast.error("Could not load tours for the dropdown. Check that you have the Tours view permission.");
         }
       });
 
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab.endpoint]);
 
   useEffect(() => {
@@ -1126,10 +1159,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
   };
 
   const isTourPickerTab = tab.endpoint === "/cms/popular-tours" || tab.endpoint === "/cms/handpicked-tours" || tab.endpoint === "/cms/tours-on-deals";
-  // Only these two require an existing discount to even show up as pickable
-  // (see the tourOptions filter above) - "Top Deals" has its own
-  // deal_label/discount fields and isn't discount-gated the same way.
-  const requiresExistingDiscount = tab.endpoint === "/cms/popular-tours" || tab.endpoint === "/cms/handpicked-tours";
+  const requiresExistingDiscount = false;
 
   const columns: DataTableColumn<CmsItem>[] = [
     {
@@ -1289,7 +1319,10 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
                 ) : f.type === "select" && f.key === "tour_id" ? (
                   <>
                     <TourPickerSelect
-                      options={tourOptions}
+                      options={tourOptions.filter((opt) => {
+                        const id = typeof opt === "string" ? opt : opt.value;
+                        return id === (formValues[f.key] ?? "") || !items.some((it) => String(it.tour_id) === id && it.id !== editingItem?.id);
+                      })}
                       images={tourImages}
                       value={formValues[f.key] ?? ""}
                       onChange={(value) => setFormValues(v => ({ ...v, [f.key]: value }))}

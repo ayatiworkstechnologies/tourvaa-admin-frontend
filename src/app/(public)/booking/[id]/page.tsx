@@ -23,10 +23,8 @@ import {
   LuCircleAlert as CircleAlert,
   LuCircleCheckBig as CheckCircle,
   LuClock as Clock,
-  LuCreditCard as CreditCard,
   LuGlobe as Globe,
   LuHeadphones as Headphones,
-  LuInfo as Info,
   LuLoaderCircle as LoaderCircle,
   LuLockKeyhole as Lock,
   LuMail as Mail,
@@ -38,7 +36,6 @@ import {
   LuShield as Shield,
   LuShieldCheck as ShieldCheck,
   LuSparkles as Sparkles,
-  LuStar as Star,
   LuTag as Tag,
   LuUserRound as User,
   LuUsers as Users,
@@ -47,13 +44,13 @@ import api from "@/lib/api/client";
 import { StripeBadge, PayPalLogo, VisaBadge, MastercardBadge, AmexBadge } from "@/components/common/PaymentLogos";
 import DatePicker from "@/components/ui/DatePicker";
 import { fetchPublicTourDetail, PublicTourDetail } from "@/lib/api/publicClient";
+import publicApi from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { combinePhone } from "@/lib/utils/validators";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
 
-const FALLBACK_HERO_BG = "/images/compare-hero.jpg";
 const FALLBACK_THUMB = "/images/compare-nz.jpg";
 // "agent-reseller" is the real seeded role slug; "agent" is kept for
 // backward compatibility with any older-seeded accounts still using it.
@@ -124,6 +121,8 @@ function calcAge(day: string, month: string, year: string): number | null {
   if (!day || !month || !year) return null;
   const dob = new Date(Number(year), Number(month) - 1, Number(day));
   if (Number.isNaN(dob.getTime())) return null;
+  // Date() silently rolls impossible dates over (31 Feb -> 3 Mar); reject them.
+  if (dob.getDate() !== Number(day) || dob.getMonth() !== Number(month) - 1) return null;
   const today = new Date();
   let age = today.getFullYear() - dob.getFullYear();
   const monthDiff = today.getMonth() - dob.getMonth();
@@ -445,9 +444,11 @@ export default function DynamicTourBookingPage() {
   const [depositEligibility, setDepositEligibility] = useState<DepositOptions | null>(null);
   const [customerPaymentMethod, setCustomerPaymentMethod] = useState<CustomerPaymentMethod>("full");
 
-  const roleSlug = user?.role?.slug || "";
-  const isAgent = AGENT_ROLE_SLUGS.includes(roleSlug);
-  const canBook = isLoggedIn && (roleSlug === "customer" || isAgent);
+  const roleSlug = (user?.role?.slug || "").toLowerCase();
+  const userType = (user?.user_type || "").toLowerCase();
+  const isAgent = AGENT_ROLE_SLUGS.includes(roleSlug) || userType === "agent";
+  const isCustomer = roleSlug === "customer" || userType === "customer";
+  const canBook = isLoggedIn && (isCustomer || isAgent);
 
   // Auth guard: this checkout requires a logged-in customer, or an agent
   // booking on a customer's behalf. Send anyone else back to login
@@ -460,10 +461,10 @@ export default function DynamicTourBookingPage() {
       router.replace(`/login?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
-    if (roleSlug && roleSlug !== "customer" && !AGENT_ROLE_SLUGS.includes(roleSlug)) {
+    if ((roleSlug || userType) && !isCustomer && !isAgent) {
       router.replace("/tours");
     }
-  }, [authLoading, isLoggedIn, roleSlug, router, params?.id, searchParams]);
+  }, [authLoading, isLoggedIn, roleSlug, userType, isCustomer, isAgent, router, params?.id, searchParams]);
 
   // Fetch real tour data
   useEffect(() => {
@@ -520,7 +521,7 @@ export default function DynamicTourBookingPage() {
       return;
     }
     let active = true;
-    api.get(`/tours/${tour.id}/deposit-options`, { params: { travel_date: selectedCalendar.date } })
+    publicApi.get(`/tours/${tour.id}/deposit-options`, { params: { travel_date: selectedCalendar.date } })
       .then((res) => { if (active) setDepositEligibility(res.data?.data ?? null); })
       .catch(() => { if (active) setDepositEligibility(null); });
     return () => { active = false; };
@@ -614,9 +615,8 @@ export default function DynamicTourBookingPage() {
     return () => {
       active = false;
     };
-  }, [tour, canBook, selectedCalendar, sessionKey, isAgent]);
+  }, [tour, canBook, selectedCalendar, sessionKey, isAgent, travelDate]);
 
-  const isCustomer = roleSlug === "customer";
   // A customer booking for themselves can prefill their own name; an agent
   // must never prefill their own name as the traveller -- only the
   // customer they've explicitly linked or created below.
@@ -752,17 +752,28 @@ export default function DynamicTourBookingPage() {
   };
 
   const handleCreateCustomer = async () => {
-    if (!newCustomer.fullName.trim() || !newCustomer.email.trim()) {
-      setNewCustomerError("Enter the customer's name and email.");
+    const fullName = newCustomer.fullName.trim();
+    const email = newCustomer.email.trim().toLowerCase();
+    const phone = newCustomer.phone.trim();
+    if (fullName.length < 2) {
+      setNewCustomerError("Enter the customer's full name.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setNewCustomerError("Enter a valid customer email address.");
+      return;
+    }
+    if (phone && !/^\d[\d\s().-]{6,14}\d$/.test(phone)) {
+      setNewCustomerError("Enter a valid customer phone number.");
       return;
     }
     setNewCustomerLoading(true);
     setNewCustomerError(null);
     try {
       const res = await api.post("/customers/", {
-        full_name: newCustomer.fullName.trim(),
-        email: newCustomer.email.trim(),
-        phone: newCustomer.phone ? combinePhone(newCustomer.phoneCountry || "+91", newCustomer.phone) : "",
+        full_name: fullName,
+        email,
+        phone: phone ? combinePhone(newCustomer.phoneCountry || "+91", phone) : "",
       });
       const c = res.data?.data;
       setAgentCustomerId(c?.id ?? null);
@@ -807,6 +818,8 @@ export default function DynamicTourBookingPage() {
         await api.patch(`/checkout/session/${sessionKey}`, {
           step: "accommodation",
           data: {
+            travel_date: travelDate || null,
+            tour_calendar_id: selectedCalendar?.id ?? null,
             adults: adultCount,
             children: childCount,
             extensions: extensionsPayload,
