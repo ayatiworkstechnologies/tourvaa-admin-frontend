@@ -84,7 +84,7 @@ export default function HomeTestimonialsSection({
   const displayReviews = reviews.length > 0 ? reviews : CURATED_REVIEWS;
 
   return (
-    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-12 sm:py-16 bg-gradient-to-b from-white via-[#FFF8EF] to-[#FDF3E4] border-y border-amber-100/70 shadow-2xs">
+    <section className="relative w-full overflow-hidden py-14 sm:py-18 bg-gradient-to-b from-white via-[#FFF8EF] to-[#FDF3E4]">
       <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">

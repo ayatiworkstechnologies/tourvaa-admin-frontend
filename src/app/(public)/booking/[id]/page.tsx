@@ -13,17 +13,33 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
+  LuArrowLeft as ArrowLeft,
+  LuArrowRight as ArrowRight,
+  LuBadgeCheck as BadgeCheck,
   LuBed as Bed,
   LuCalendar as Calendar,
+  LuCheck as Check,
   LuChevronDown as ChevronDown,
   LuCircleAlert as CircleAlert,
   LuCircleCheckBig as CheckCircle,
+  LuClock as Clock,
+  LuCreditCard as CreditCard,
   LuGlobe as Globe,
+  LuHeadphones as Headphones,
+  LuInfo as Info,
   LuLoaderCircle as LoaderCircle,
   LuLockKeyhole as Lock,
+  LuMail as Mail,
   LuMapPin as MapPin,
+  LuMinus as Minus,
+  LuPhone as Phone,
   LuPlane as Plane,
+  LuPlus as Plus,
+  LuShield as Shield,
   LuShieldCheck as ShieldCheck,
+  LuSparkles as Sparkles,
+  LuStar as Star,
+  LuTag as Tag,
   LuUserRound as User,
   LuUsers as Users,
 } from "react-icons/lu";
@@ -641,6 +657,7 @@ export default function DynamicTourBookingPage() {
     tour?.start_location && tour?.end_location ? `${tour.start_location} → ${tour.end_location}` : "";
   const tourThumbnail = tour?.banner_image ? mediaUrl(tour.banner_image) : FALLBACK_THUMB;
   const totalTravellers = adultCount + childCount;
+  const maxAdults = Math.max(1, Math.min(10, (selectedCalendar?.slots ?? 10) - childCount));
 
   const pricingSlab = useMemo(
     () =>
@@ -1029,54 +1046,166 @@ export default function DynamicTourBookingPage() {
   return (
     <main className="min-h-screen bg-[#F8FAFC] pb-24 pt-4 text-slate-900">
       <div className="mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-8">
-        {/* TOP TOUR SUMMARY BANNER CARD */}
-        <div className="relative mb-6 w-full overflow-hidden rounded-2xl bg-slate-900 shadow-sm">
-          <div className="absolute inset-0 z-0">
-            <img src={FALLBACK_HERO_BG} alt="Destination scenery" className="h-full w-full object-cover opacity-45" />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/60 to-slate-950/80" />
-          </div>
+        {/* TOP NAVIGATION & CONFIDENCE HEADER */}
+        <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
+          <Link
+            href={tour.slug ? `/tours/${tour.slug}` : `/tours`}
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-pub-primary transition group"
+          >
+            <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
+            <span>Back to Tour Details</span>
+          </Link>
 
-          <div className="relative z-10 p-3.5 sm:p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl bg-white p-3 sm:p-3.5 shadow-md">
-              <div className="flex items-center gap-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-1 text-[11px] font-bold text-emerald-800 shadow-2xs">
+              <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+              <span>256-Bit SSL Secure Checkout</span>
+            </div>
+            <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200/70 px-3 py-1 text-[11px] font-bold text-pub-secondary">
+              <BadgeCheck size={14} className="text-pub-secondary shrink-0" />
+              <span>Official Tour Operator Booking</span>
+            </div>
+          </div>
+        </div>
+
+        {/* INTERACTIVE 3-STEP PROGRESS STEPPER */}
+        <div className="mb-6 rounded-2xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs">
+          <div className="flex items-center justify-between max-w-2xl mx-auto relative">
+            {/* Connecting Line Background */}
+            <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-100 -z-0" />
+            <div
+              className="absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-emerald-500 via-pub-primary to-pub-accent transition-all duration-500 -z-0"
+              style={{
+                width: step === 1 ? "0%" : step === 2 ? "50%" : "100%",
+                right: step === 3 ? "24px" : "auto",
+              }}
+            />
+
+            {/* Step 1 Pill */}
+            <button
+              type="button"
+              onClick={() => step > 1 && setStep(1)}
+              disabled={step === 1}
+              className={`relative z-10 flex items-center gap-2 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold transition-all ${
+                step === 1
+                  ? "bg-pub-primary text-white shadow-md ring-4 ring-pub-primary/15"
+                  : step > 1
+                  ? "bg-emerald-600 text-white shadow-xs cursor-pointer hover:bg-emerald-700"
+                  : "bg-slate-100 text-slate-400"
+              }`}
+            >
+              <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-white/20 text-xs font-black">
+                {step > 1 ? <Check size={13} className="stroke-[3]" /> : "1"}
+              </span>
+              <span className="hidden sm:inline">Dates &amp; Guests</span>
+              <span className="sm:hidden">Guests</span>
+            </button>
+
+            {/* Step 2 Pill */}
+            <button
+              type="button"
+              onClick={() => step > 2 && setStep(2)}
+              disabled={step <= 2}
+              className={`relative z-10 flex items-center gap-2 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold transition-all ${
+                step === 2
+                  ? "bg-pub-primary text-white shadow-md ring-4 ring-pub-primary/15"
+                  : step > 2
+                  ? "bg-emerald-600 text-white shadow-xs cursor-pointer hover:bg-emerald-700"
+                  : "bg-white border border-slate-200 text-slate-400"
+              }`}
+            >
+              <span
+                className={`flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full text-xs font-black ${
+                  step === 2
+                    ? "bg-white/20 text-white"
+                    : step > 2
+                    ? "bg-white/20 text-white"
+                    : "bg-slate-100 text-slate-400"
+                }`}
+              >
+                {step > 2 ? <Check size={13} className="stroke-[3]" /> : "2"}
+              </span>
+              <span className="hidden sm:inline">Passenger Details</span>
+              <span className="sm:hidden">Details</span>
+            </button>
+
+            {/* Step 3 Pill */}
+            <div
+              className={`relative z-10 flex items-center gap-2 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold transition-all ${
+                step === 3
+                  ? "bg-pub-primary text-white shadow-md ring-4 ring-pub-primary/15"
+                  : "bg-white border border-slate-200 text-slate-400"
+              }`}
+            >
+              <span
+                className={`flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full text-xs font-black ${
+                  step === 3 ? "bg-white/20 text-white" : "bg-slate-100 text-slate-400"
+                }`}
+              >
+                3
+              </span>
+              <span className="hidden sm:inline">Payment &amp; Review</span>
+              <span className="sm:hidden">Payment</span>
+            </div>
+          </div>
+        </div>
+
+        {/* TOUR SNAPSHOT CARD */}
+        <div className="mb-6 rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs transition hover:shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="relative h-20 w-28 sm:h-22 sm:w-32 rounded-xl overflow-hidden shadow-2xs shrink-0 bg-slate-100">
                 <img
                   src={tourThumbnail}
                   alt={tourTitle}
-                  className="h-16 w-24 sm:h-18 sm:w-28 rounded-lg object-cover shadow-2xs shrink-0"
+                  className="h-full w-full object-cover"
                 />
-                <div>
-                  <h2 className="text-base sm:text-lg font-bold text-slate-950 tracking-tight">{tourTitle}</h2>
-                  <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-600 font-medium">
-                    {tourPlace && (
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin size={12} className="text-blue-500" />
-                        {tourPlace}
-                      </span>
-                    )}
-                    {tourDays > 0 && (
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar size={12} className="text-blue-500" />
-                        {`${tourDays} days`}
-                      </span>
-                    )}
-                    {tourRoute && (
-                      <span className="inline-flex items-center gap-1">
-                        <Plane size={12} className="text-blue-500" />
-                        {tourRoute}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                {tourPlace && (
+                  <span className="absolute left-1.5 top-1.5 rounded-full bg-slate-950/80 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                    {tourPlace}
+                  </span>
+                )}
               </div>
 
-              <Link
-                href={tour.slug ? `/tours/${tour.slug}` : `/tours`}
-                className="inline-flex items-center gap-1 text-xs font-bold text-slate-900 hover:text-blue-600 transition shrink-0 self-end sm:self-center pr-2"
-              >
-                <span>View tour</span>
-                <span>→</span>
-              </Link>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-pub-secondary/10 px-2 py-0.5 text-[11px] font-bold text-pub-secondary">
+                    <Clock size={11} />
+                    {tourDays > 0 ? `${tourDays} Days Tour` : "Tour Package"}
+                  </span>
+                  {tourRoute && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                      <Plane size={11} className="text-sky-500" />
+                      {tourRoute}
+                    </span>
+                  )}
+                </div>
+
+                <h1 className="mt-1 text-base sm:text-lg lg:text-xl font-black text-slate-950 tracking-tight leading-snug">
+                  {tourTitle}
+                </h1>
+
+                <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                  <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                    <CheckCircle size={13} className="text-emerald-600" />
+                    Instant Confirmation
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="inline-flex items-center gap-1 text-slate-600 font-medium">
+                    <ShieldCheck size={13} className="text-pub-secondary" />
+                    100% Guaranteed Departure
+                  </span>
+                </div>
+              </div>
             </div>
+
+            <Link
+              href={tour.slug ? `/tours/${tour.slug}` : `/tours`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-800 transition shrink-0 self-start sm:self-center cursor-pointer"
+            >
+              <span>View Tour</span>
+              <ArrowRight size={13} />
+            </Link>
           </div>
         </div>
 
@@ -1166,58 +1295,103 @@ export default function DynamicTourBookingPage() {
                     </div>
                   )}
 
-                  {/* Passengers */}
+                  {/* Departure & Passengers Card */}
                   <div className="pt-6">
-                    <h3 className="text-sm font-bold text-slate-900">Passengers</h3>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {availableCalendar.length > 0
-                        ? "Select the departure date and number of adults for this booking."
-                        : "Select the number of adults travelling with you."}
-                    </p>
+                    <div className="rounded-2xl border border-slate-200/90 bg-slate-50/50 p-5 sm:p-6 space-y-5">
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                          <Calendar size={16} className="text-pub-primary" />
+                          <span>Select Departure &amp; Guests</span>
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {availableCalendar.length > 0
+                            ? "Choose your departure date and configure the number of travellers joining this tour."
+                            : "Confirm the number of travellers joining this tour."}
+                        </p>
+                      </div>
 
-                    <div className="mt-4 flex flex-wrap gap-4">
-                      {availableCalendar.length > 0 && (
-                        <div className="w-56">
-                          <DatePicker
-                            label="Departure date"
-                            value={travelDate}
-                            onChange={setTravelDate}
-                            availableDates={availableCalendar.map((c) => c.date)}
-                            restrictToAvailableDates
-                            required
-                          />
-                        </div>
-                      )}
-                      <div className="max-w-xs">
-                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Number of Adults (12+)</label>
-                        <div className="relative">
-                          <select
-                            value={adultCount}
-                            onChange={(e) => setAdultCount(Number(e.target.value))}
-                            className="w-full appearance-none rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500"
-                          >
-                            {Array.from(
-                              { length: Math.max(1, Math.min(10, (selectedCalendar?.slots ?? 10) - childCount)) },
-                              (_, i) => i + 1
-                            ).map((num) => (
-                              <option key={num} value={num}>
-                                {num}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown
-                            size={14}
-                            className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                          />
-                        </div>
-                        {selectedCalendar && (
-                          <p className="mt-1.5 text-[11px] text-slate-400">{selectedCalendar.slots} seats left on this date</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                        {/* Departure Date Picker */}
+                        {availableCalendar.length > 0 ? (
+                          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+                            <span className="block text-xs font-bold text-slate-800 mb-2">Departure Date</span>
+                            <DatePicker
+                              label=""
+                              value={travelDate}
+                              onChange={setTravelDate}
+                              availableDates={availableCalendar.map((c) => c.date)}
+                              restrictToAvailableDates
+                              required
+                            />
+                            {selectedCalendar ? (
+                              <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span>{selectedCalendar.slots} spots available on this departure</span>
+                              </div>
+                            ) : (
+                              <p className="mt-2 text-[11px] text-amber-600 font-medium">Please select an available departure date</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="rounded-xl border border-slate-200 bg-white p-4">
+                            <span className="block text-xs font-bold text-slate-800 mb-1">Departure Date</span>
+                            <p className="text-xs text-slate-500">Flexible departure &mdash; to be finalized upon booking confirmation.</p>
+                          </div>
                         )}
-                        {childCount > 0 && (
-                          <p className="mt-1.5 text-[11px] text-slate-500">
-                            + {childCount} {childCount === 1 ? "child" : "children"} (selected on the tour page)
-                          </p>
-                        )}
+
+                        {/* Adults Quantity Stepper */}
+                        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="block text-xs font-bold text-slate-900">Adults (12+ yrs)</span>
+                              <span className="text-[11px] text-slate-400">Standard traveller fare</span>
+                            </div>
+
+                            {/* Tactile Counter */}
+                            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100/70 p-1">
+                              <button
+                                type="button"
+                                disabled={adultCount <= 1}
+                                onClick={() => setAdultCount(Math.max(1, adultCount - 1))}
+                                aria-label="Decrease adult count"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-white font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed"
+                              >
+                                <Minus size={14} />
+                              </button>
+                              <span className="w-8 text-center text-sm font-black text-slate-900">
+                                {adultCount}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={adultCount >= maxAdults}
+                                onClick={() => setAdultCount(Math.min(maxAdults, adultCount + 1))}
+                                aria-label="Increase adult count"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-white font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed"
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {childCount > 0 && (
+                            <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+                              <div>
+                                <span className="font-semibold text-slate-700">Children (3-11 yrs)</span>
+                                <span className="block text-[10px] text-slate-400">From tour selection</span>
+                              </div>
+                              <span className="font-bold text-slate-900 px-2.5 py-1 bg-slate-100 rounded-md text-xs">
+                                {childCount} {childCount === 1 ? "child" : "children"}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                            <span className="font-medium">Total travellers</span>
+                            <span className="font-bold text-slate-900">
+                              {totalTravellers} {totalTravellers === 1 ? "guest" : "guests"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1348,12 +1522,15 @@ export default function DynamicTourBookingPage() {
                     </div>
                   )}
 
-                  {/* Optional Activities -- only rendered when the tour actually has real activities configured */}
+                  {/* Optional Activities */}
                   {availableActivities.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-slate-100">
-                      <h3 className="text-sm font-bold text-slate-900">Optional Activities</h3>
-                      <p className="mt-0.5 text-xs text-slate-500 leading-relaxed max-w-2xl">
-                        Add extra experiences to your tour. Priced per adult traveller.
+                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <Sparkles size={16} className="text-pub-primary" />
+                        <span>Optional Activities</span>
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-500 leading-relaxed max-w-2xl">
+                        Add curated extra experiences to your itinerary. Priced per adult traveller.
                       </p>
 
                       <div className="mt-4 space-y-3">
@@ -1363,8 +1540,10 @@ export default function DynamicTourBookingPage() {
                             <div
                               key={activity.id}
                               onClick={() => toggleActivity(activity.id)}
-                              className={`flex items-center justify-between gap-3.5 rounded-xl border p-4 cursor-pointer transition ${
-                                checked ? "border-blue-500 bg-blue-50/10 shadow-2xs" : "border-slate-200 hover:border-slate-300"
+                              className={`flex items-center justify-between gap-3.5 rounded-xl border-2 p-4 cursor-pointer transition ${
+                                checked
+                                  ? "border-pub-primary bg-blue-50/20 shadow-2xs ring-2 ring-pub-primary/10"
+                                  : "border-slate-200 bg-white hover:border-slate-300"
                               }`}
                             >
                               <div className="flex items-start gap-3.5">
@@ -1373,7 +1552,7 @@ export default function DynamicTourBookingPage() {
                                   checked={checked}
                                   onChange={() => toggleActivity(activity.id)}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="mt-1 rounded text-blue-600 focus:ring-blue-500"
+                                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-pub-primary focus:ring-pub-primary accent-pub-primary"
                                 />
                                 <div>
                                   <p className="text-xs sm:text-sm font-bold text-slate-900">{activity.name}</p>
@@ -1397,7 +1576,7 @@ export default function DynamicTourBookingPage() {
                     </div>
                   )}
 
-                  {/* Accommodation Add-ons -- the tour's own accommodation-extras catalog, separate from the Shared/Upgrade room choice above */}
+                  {/* Accommodation Add-ons */}
                   {SHOW_ACCOMMODATION_BOOKING && availableAccommodationExtras.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-slate-100">
                       <h3 className="text-sm font-bold text-slate-900">Accommodation Add-ons</h3>
@@ -1413,7 +1592,7 @@ export default function DynamicTourBookingPage() {
                               key={extra.id}
                               onClick={() => toggleAccommodationExtra(extra.id)}
                               className={`flex items-center justify-between gap-3.5 rounded-xl border p-4 cursor-pointer transition ${
-                                checked ? "border-blue-500 bg-blue-50/10 shadow-2xs" : "border-slate-200 hover:border-slate-300"
+                                checked ? "border-pub-primary bg-blue-50/10 shadow-2xs" : "border-slate-200 hover:border-slate-300"
                               }`}
                             >
                               <div className="flex items-start gap-3.5">
@@ -1422,7 +1601,7 @@ export default function DynamicTourBookingPage() {
                                   checked={checked}
                                   onChange={() => toggleAccommodationExtra(extra.id)}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="mt-1 rounded text-blue-600 focus:ring-blue-500"
+                                  className="mt-1 rounded text-pub-primary focus:ring-pub-primary"
                                 />
                                 <div>
                                   <p className="text-xs sm:text-sm font-bold text-slate-900">{extra.name}</p>
@@ -1447,35 +1626,46 @@ export default function DynamicTourBookingPage() {
                   )}
 
                   {stepError && (
-                    <p className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-rose-600">
-                      <CircleAlert size={13} />
+                    <p className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">
+                      <CircleAlert size={14} className="shrink-0" />
                       {stepError}
                     </p>
                   )}
 
-                  <div className="mt-8 pt-4">
+                  <div className="mt-8 pt-4 border-t border-slate-100 flex justify-end">
                     <button
                       type="button"
                       onClick={handleContinueStep1}
-                      className="rounded-lg bg-pub-accent px-7 py-3 text-xs sm:text-sm font-bold text-white transition hover:bg-[#cf4b24] active:scale-[0.99] flex items-center justify-center gap-1.5"
+                      className="w-full sm:w-auto rounded-xl bg-pub-accent hover:bg-[#cf4b24] px-8 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-500/15 transition-all active:scale-[0.99] flex items-center justify-center gap-2"
                     >
-                      <span>Continue to passenger details</span>
-                      <span>➜</span>
+                      <span>Continue to Passenger Details</span>
+                      <ArrowRight size={15} />
                     </button>
                   </div>
                 </div>
               ) : (
                 <div
                   onClick={() => setStep(1)}
-                  className="flex items-center justify-between rounded-xl border border-[#D1F0DC] bg-[#EDF8F1] px-5 py-3.5 cursor-pointer transition hover:bg-[#e4f4e9]"
+                  className="group flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50/90 px-5 sm:px-6 py-4 cursor-pointer transition shadow-xs"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[11px] font-bold">
-                      ✓
+                  <div className="flex items-center gap-3.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-black shadow-2xs">
+                      <Check size={14} className="stroke-[3]" />
                     </span>
-                    <span className="text-xs sm:text-sm font-bold text-emerald-900">Passengers &amp; Accommodation</span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">Completed</span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-xs sm:text-sm font-black text-slate-900">Dates &amp; Guests</span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        {selectedCalendar ? formatDate(selectedCalendar.date) : travelDate || "Selected date"} &bull; {adultCount} {adultCount === 1 ? "Adult" : "Adults"}{childCount > 0 ? `, ${childCount} ${childCount === 1 ? "Child" : "Children"}` : ""}
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-xs font-bold text-emerald-700 hover:underline">Edit ⌄</span>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 group-hover:text-emerald-950 bg-white/90 border border-emerald-200 px-3 py-1.5 rounded-lg transition shadow-2xs">
+                    Edit Step
+                  </span>
                 </div>
               )}
 
@@ -1483,99 +1673,141 @@ export default function DynamicTourBookingPage() {
               {step === 2 ? (
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs">
                   <div className="flex items-center gap-3 pb-5 border-b border-slate-100">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-pub-accent text-xs font-black text-white shrink-0">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-pub-accent text-xs font-black text-white shrink-0 shadow-2xs">
                       2
                     </span>
-                    <h2 className="text-base sm:text-lg font-bold text-slate-900">Passenger Details</h2>
-                  </div>
-
-                  <div className="pt-6">
-                    <label className="block text-xs font-bold text-slate-800 mb-1.5">Discount Code</label>
-                    <div className="flex max-w-md items-center gap-2">
-                      <input
-                        type="text"
-                        value={promoCode}
-                        onChange={(e) => {
-                          setPromoCode(e.target.value);
-                          setPromoApplied(false);
-                        }}
-                        placeholder="Enter promo code"
-                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleApplyPromo}
-                        className="rounded-lg bg-pub-primary px-5 py-2 text-xs font-bold text-white transition hover:bg-pub-primary-dark"
-                      >
-                        Apply
-                      </button>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-slate-900">Passenger Details</h2>
+                      <p className="text-xs text-slate-500 mt-0.5">Please provide passenger details as they appear on official travel IDs / passports.</p>
                     </div>
-                    {promoApplied && !priceLoading && priceEstimate && Number(priceEstimate.discount_amount) > 0 && (
-                      <p className="mt-1.5 text-xs font-semibold text-emerald-600">
-                        Promo code applied! Saved {format(Number(priceEstimate.discount_amount), priceEstimate.currency)}.
-                      </p>
-                    )}
-                    {promoError && <p className="mt-1.5 text-xs font-semibold text-rose-600">{promoError}</p>}
                   </div>
 
+                  {/* Promo Voucher */}
+                  <div className="pt-6">
+                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5">
+                      <label className="block text-xs font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <Tag size={15} className="text-pub-primary" />
+                        <span>Have a Promo or Gift Voucher?</span>
+                      </label>
+                      <div className="flex max-w-md items-center gap-2">
+                        <input
+                          type="text"
+                          value={promoCode}
+                          onChange={(e) => {
+                            setPromoCode(e.target.value);
+                            setPromoApplied(false);
+                          }}
+                          placeholder="Enter promo code"
+                          className="flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyPromo}
+                          className="rounded-xl bg-pub-primary px-5 py-2.5 text-xs font-bold text-white transition hover:bg-pub-primary-dark active:scale-95 shrink-0 shadow-2xs"
+                        >
+                          Apply Code
+                        </button>
+                      </div>
+                      {promoApplied && !priceLoading && priceEstimate && Number(priceEstimate.discount_amount) > 0 && (
+                        <div className="mt-2.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 rounded-lg px-3 py-1.5 max-w-md">
+                          <BadgeCheck size={15} className="text-emerald-600 shrink-0" />
+                          <span>Promo code applied! You saved {format(Number(priceEstimate.discount_amount), priceEstimate.currency)}.</span>
+                        </div>
+                      )}
+                      {promoError && (
+                        <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-rose-600">
+                          <CircleAlert size={14} className="shrink-0" />
+                          <span>{promoError}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Passengers Inputs */}
                   {passengers.map((passenger, idx) => {
                     const isLead = idx === 0;
                     const ordinal = idx + 1 === 2 ? "2nd" : idx + 1 === 3 ? "3rd" : `${idx + 1}th`;
                     const labelTitle = isLead
-                      ? "Lead Passenger details"
-                      : `${ordinal} Passenger details${passenger.type === "child" ? " (Child)" : ""}`;
+                      ? "Lead Passenger (Primary Contact)"
+                      : `${ordinal} Passenger${passenger.type === "child" ? " (Child)" : ""}`;
 
                     return (
-                      <div key={idx} className="mt-8 pt-6 border-t border-slate-100">
-                        <h3 className="text-sm font-bold text-slate-900">{labelTitle}</h3>
-                        <p className="mt-0.5 text-xs text-slate-500">
-                          {passenger.type === "child" ? "Traveller must be 3-11 years old." : "Traveller must be 12 years or older."}
-                        </p>
-
-                        <div className="mt-4 space-y-3.5">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">First name *</label>
-                            <input
-                              type="text"
-                              value={passenger.firstName}
-                              onChange={(e) => handlePassengerChange(idx, "firstName", e.target.value)}
-                              placeholder="e.g. Srinath"
-                              className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
-                            />
+                      <div key={idx} className="mt-6 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-2xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-100">
+                          <div className="flex items-center gap-2.5">
+                            <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black shrink-0 ${isLead ? "bg-pub-primary text-white" : "bg-slate-100 text-slate-700"}`}>
+                              {idx + 1}
+                            </span>
+                            <div>
+                              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <span>{labelTitle}</span>
+                                {isLead && (
+                                  <span className="rounded-full bg-blue-50 border border-blue-200/80 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                                    Lead Guest
+                                  </span>
+                                )}
+                              </h3>
+                              <p className="text-[11px] text-slate-500">
+                                {passenger.type === "child" ? "Traveller must be 3-11 years old." : "Traveller must be 12 years or older."}
+                              </p>
+                            </div>
                           </div>
+                          {isLead && (
+                            <span className="text-[11px] font-medium text-slate-400">
+                              Trip confirmation will be emailed here
+                            </span>
+                          )}
+                        </div>
 
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Middle name</label>
-                            <input
-                              type="text"
-                              value={passenger.middleName}
-                              onChange={(e) => handlePassengerChange(idx, "middleName", e.target.value)}
-                              placeholder="e.g. Reddy"
-                              className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
-                            />
-                          </div>
+                        <div className="mt-5 space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-700 mb-1.5">First name *</label>
+                              <input
+                                type="text"
+                                value={passenger.firstName}
+                                onChange={(e) => handlePassengerChange(idx, "firstName", e.target.value)}
+                                placeholder="e.g. Srinath"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
+                              />
+                            </div>
 
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Last name *</label>
-                            <input
-                              type="text"
-                              value={passenger.lastName}
-                              onChange={(e) => handlePassengerChange(idx, "lastName", e.target.value)}
-                              placeholder="e.g. Garu"
-                              className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
-                            />
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Middle name</label>
+                              <input
+                                type="text"
+                                value={passenger.middleName}
+                                onChange={(e) => handlePassengerChange(idx, "middleName", e.target.value)}
+                                placeholder="Optional"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Last name *</label>
+                              <input
+                                type="text"
+                                value={passenger.lastName}
+                                onChange={(e) => handlePassengerChange(idx, "lastName", e.target.value)}
+                                placeholder="e.g. Garu"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
+                              />
+                            </div>
                           </div>
 
                           {isLead && (
-                            <>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-slate-100">
                               <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">Phone number *</label>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                                  <Phone size={13} className="text-slate-400" />
+                                  <span>Phone number *</span>
+                                </label>
                                 <div className="flex gap-2">
-                                  <div className="relative w-44 shrink-0">
+                                  <div className="relative w-36 sm:w-40 shrink-0">
                                     <select
                                       value={passenger.phoneCountry}
                                       onChange={(e) => handlePassengerChange(idx, "phoneCountry", e.target.value)}
-                                      className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none"
+                                      className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
                                     >
                                       {COUNTRIES_LIST.map((c) => (
                                         <option key={c.label} value={c.code}>
@@ -1592,35 +1824,41 @@ export default function DynamicTourBookingPage() {
                                     type="tel"
                                     value={passenger.phone}
                                     onChange={(e) => handlePassengerChange(idx, "phone", e.target.value)}
-                                    placeholder="Enter phone number"
-                                    className="flex-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+                                    placeholder="Mobile number"
+                                    className="flex-1 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
                                   />
                                 </div>
                               </div>
 
                               <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">Email address *</label>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                                  <Mail size={13} className="text-slate-400" />
+                                  <span>Email address *</span>
+                                </label>
                                 <input
                                   type="email"
                                   value={passenger.email}
                                   onChange={(e) => handlePassengerChange(idx, "email", e.target.value)}
                                   placeholder="e.g. srinath@example.com"
-                                  className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+                                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
                                 />
                               </div>
-                            </>
+                            </div>
                           )}
 
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Date of Birth *</label>
-                            <div className="grid grid-cols-3 gap-2">
+                          <div className="pt-2 border-t border-slate-100">
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                              <Calendar size={13} className="text-slate-400" />
+                              <span>Date of Birth *</span>
+                            </label>
+                            <div className="grid grid-cols-3 gap-2.5 max-w-md">
                               <div className="relative">
                                 <select
                                   value={passenger.birthDay}
                                   onChange={(e) => handlePassengerChange(idx, "birthDay", e.target.value)}
-                                  className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none"
+                                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
                                 >
-                                  <option value="">DD</option>
+                                  <option value="">Day</option>
                                   {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                                     <option key={d} value={String(d).padStart(2, "0")}>
                                       {String(d).padStart(2, "0")}
@@ -1637,12 +1875,12 @@ export default function DynamicTourBookingPage() {
                                 <select
                                   value={passenger.birthMonth}
                                   onChange={(e) => handlePassengerChange(idx, "birthMonth", e.target.value)}
-                                  className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none"
+                                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
                                 >
                                   <option value="">Month</option>
                                   {[
-                                    "January", "February", "March", "April", "May", "June",
-                                    "July", "August", "September", "October", "November", "December",
+                                    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
                                   ].map((m, mIdx) => (
                                     <option key={m} value={String(mIdx + 1).padStart(2, "0")}>
                                       {m}
@@ -1659,9 +1897,9 @@ export default function DynamicTourBookingPage() {
                                 <select
                                   value={passenger.birthYear}
                                   onChange={(e) => handlePassengerChange(idx, "birthYear", e.target.value)}
-                                  className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none"
+                                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
                                 >
-                                  <option value="">YYYY</option>
+                                  <option value="">Year</option>
                                   {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((y) => (
                                     <option key={y} value={String(y)}>
                                       {y}
@@ -1681,8 +1919,8 @@ export default function DynamicTourBookingPage() {
                   })}
 
                   {stepError && (
-                    <p className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-rose-600">
-                      <CircleAlert size={13} />
+                    <p className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">
+                      <CircleAlert size={14} className="shrink-0" />
                       {stepError}
                     </p>
                   )}
@@ -1691,40 +1929,55 @@ export default function DynamicTourBookingPage() {
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      className="rounded-lg border border-slate-200 px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition active:scale-[0.99]"
                     >
-                      ← Back
+                      <ArrowLeft size={14} />
+                      <span>Back</span>
                     </button>
                     <button
                       type="button"
                       onClick={handleContinueStep2}
-                      className="rounded-lg bg-pub-accent px-7 py-3 text-xs sm:text-sm font-bold text-white transition hover:bg-[#cf4b24] active:scale-[0.99] flex items-center gap-1.5"
+                      className="rounded-xl bg-pub-accent hover:bg-[#cf4b24] px-8 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-500/15 transition-all active:scale-[0.99] flex items-center gap-2"
                     >
-                      <span>Continue to Payment details</span>
-                      <span>➜</span>
+                      <span>Continue to Payment</span>
+                      <ArrowRight size={15} />
                     </button>
                   </div>
                 </div>
               ) : step > 2 ? (
                 <div
                   onClick={() => setStep(2)}
-                  className="flex items-center justify-between rounded-xl border border-[#D1F0DC] bg-[#EDF8F1] px-5 py-3.5 cursor-pointer transition hover:bg-[#e4f4e9]"
+                  className="group flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50/90 px-5 sm:px-6 py-4 cursor-pointer transition shadow-xs"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[11px] font-bold">
-                      ✓
+                  <div className="flex items-center gap-3.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-black shadow-2xs">
+                      <Check size={14} className="stroke-[3]" />
                     </span>
-                    <span className="text-xs sm:text-sm font-bold text-emerald-900">Passenger Details</span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">Completed</span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-xs sm:text-sm font-black text-slate-900">Passenger Details</span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Lead: {passengers[0]?.firstName || ""} {passengers[0]?.lastName || ""} &bull; {passengers.length} {passengers.length === 1 ? "passenger" : "passengers"} configured
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-xs font-bold text-emerald-700 hover:underline">Edit ⌄</span>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 group-hover:text-emerald-950 bg-white/90 border border-emerald-200 px-3 py-1.5 rounded-lg transition shadow-2xs">
+                    Edit Step
+                  </span>
                 </div>
               ) : (
-                <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-2xs">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400 text-xs font-bold">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 sm:px-6 py-4 shadow-2xs">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-slate-500 text-xs font-bold shrink-0">
                       2
                     </span>
-                    <span className="text-xs sm:text-sm font-bold text-slate-500">2. Passenger Details</span>
+                    <div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-600">2. Passenger Details</span>
+                      <p className="text-[11px] text-slate-400">Add passenger names, contact information and date of birth</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1732,21 +1985,30 @@ export default function DynamicTourBookingPage() {
               {/* STEP 3: PAYMENT */}
               {step === 3 ? (
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs space-y-6">
-                  <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-pub-accent text-xs font-black text-white shrink-0">
+                  <div className="flex items-center gap-3 pb-5 border-b border-slate-100">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-pub-accent text-xs font-black text-white shrink-0 shadow-2xs">
                       3
                     </span>
-                    <h2 className="text-base sm:text-lg font-bold text-slate-900">Payment</h2>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-slate-900">Payment &amp; Final Review</h2>
+                      <p className="text-xs text-slate-500 mt-0.5">Select your preferred payment method and confirm your reservation.</p>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-emerald-200/70 bg-emerald-50/70 px-4 py-2.5 text-xs text-emerald-800">
-                    <div className="flex items-center gap-1.5 font-medium">
-                      <Lock size={13} className="text-emerald-700" />
-                      <span>This is a secure SSL encrypted payment</span>
+                  {/* Trust Banner */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50/90 to-teal-50/50 p-4 text-xs text-emerald-900">
+                    <div className="flex items-center gap-2.5 font-medium">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white shrink-0 shadow-2xs">
+                        <Lock size={15} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">Bank-Grade 256-Bit SSL Encryption</p>
+                        <p className="text-[11px] text-emerald-700">Your sensitive payment details are strictly encrypted and never stored.</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-slate-600">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-white/80 border border-emerald-200/80 px-2.5 py-1 rounded-lg shrink-0 shadow-2xs">
                       <ShieldCheck size={14} className="text-emerald-600" />
-                      <span>Secure Payments by Tourvaa</span>
+                      <span>Verified by Tourvaa</span>
                     </div>
                   </div>
 
@@ -1764,37 +2026,66 @@ export default function DynamicTourBookingPage() {
                   )}
 
                   {!isAgent && depositEligibility?.customer.eligible && (
-                    <div className="rounded-xl border border-slate-200 p-4 sm:p-5 space-y-3">
-                      <label className="block text-xs font-semibold text-slate-700">Payment option</label>
-                      <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-slate-200/90 bg-slate-50/50 p-5 space-y-3.5">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Payment Schedule</p>
+                        <p className="text-sm font-black text-slate-900">Choose your payment flexibility</p>
+                      </div>
+
+                      <div className="grid gap-3.5 sm:grid-cols-2">
                         <button
                           type="button"
                           onClick={() => setCustomerPaymentMethod("deposit")}
-                          className={`rounded-xl border p-4 text-left transition ${customerPaymentMethod === "deposit" ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}
+                          className={`relative rounded-2xl border-2 p-4 text-left transition-all duration-150 ${
+                            customerPaymentMethod === "deposit"
+                              ? "border-pub-primary bg-white shadow-sm ring-4 ring-pub-primary/10"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          }`}
                         >
-                          <span className="block text-sm font-black text-slate-900">Secure with a Deposit</span>
-                          <span className="mt-1 block text-xs leading-5 text-slate-500">
-                            Pay {depositEligibility.customer.deposit_type === "percentage" ? `${depositEligibility.customer.deposit_percentage}%` : formatExact(Number(depositEligibility.customer.booking_deposit ?? 0), tourCurrency)} today to secure your booking.
-                            {depositEligibility.customer.due_date && ` Your remaining balance is due by ${formatDate(depositEligibility.customer.due_date)}.`}
-                          </span>
+                          <div className="flex items-center justify-between">
+                            <span className="block text-sm font-black text-slate-900">Secure with a Deposit</span>
+                            <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-bold text-pub-primary">
+                              Flexible
+                            </span>
+                          </div>
+                          <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                            Pay <strong className="text-slate-900 font-bold">{depositEligibility.customer.deposit_type === "percentage" ? `${depositEligibility.customer.deposit_percentage}%` : formatExact(Number(depositEligibility.customer.booking_deposit ?? 0), tourCurrency)}</strong> today to secure your booking.
+                            {depositEligibility.customer.due_date && (
+                              <span className="block mt-1 text-[11px] text-slate-500 font-medium">
+                                Remaining balance is due by {formatDate(depositEligibility.customer.due_date)}.
+                              </span>
+                            )}
+                          </p>
                         </button>
+
                         <button
                           type="button"
                           onClick={() => setCustomerPaymentMethod("full")}
-                          className={`rounded-xl border p-4 text-left transition ${customerPaymentMethod === "full" ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}
+                          className={`relative rounded-2xl border-2 p-4 text-left transition-all duration-150 ${
+                            customerPaymentMethod === "full"
+                              ? "border-pub-primary bg-white shadow-sm ring-4 ring-pub-primary/10"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          }`}
                         >
-                          <span className="block text-sm font-black text-slate-900">Pay in Full Today</span>
-                          <span className="mt-1 block text-xs leading-5 text-slate-500">Pay in full today and confirm your booking.</span>
+                          <div className="flex items-center justify-between">
+                            <span className="block text-sm font-black text-slate-900">Pay in Full Today</span>
+                            <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                              Instant Confirmation
+                            </span>
+                          </div>
+                          <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                            Pay in full today and receive complete booking confirmation immediately.
+                          </p>
                         </button>
                       </div>
                     </div>
                   )}
 
                   {(!isAgent || agentPaymentMethod === "card") && (
-                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/40 p-4 sm:p-5 space-y-3.5">
+                    <div className="rounded-2xl border border-slate-200/90 bg-slate-50/50 p-5 space-y-4">
                       <div className="flex items-center justify-between gap-2 pb-1">
                         <div>
-                          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Payment method</p>
+                          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Payment Gateway</p>
                           <p className="text-sm font-black text-slate-900">Choose how you want to pay</p>
                         </div>
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 border border-amber-200/80 shadow-2xs">
@@ -1926,10 +2217,10 @@ export default function DynamicTourBookingPage() {
                       </div>
 
                       {/* Helper notice */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-xs text-slate-500">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-xs text-slate-500">
                         <p className="flex items-center gap-1.5">
                           <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
-                          Continue to secure test checkout. No real money will be charged.
+                          <span>Test mode gateway &bull; No real charge will be applied to your card.</span>
                         </p>
                         {pendingBooking && (
                           <Link
@@ -1956,7 +2247,7 @@ export default function DynamicTourBookingPage() {
                         <Link href="/terms" className="text-blue-600 underline font-semibold hover:text-blue-700">
                           Terms &amp; Conditions
                         </Link>{" "}
-                        and cancellation policy
+                        and tour cancellation policies
                       </span>
                     </label>
 
@@ -1967,7 +2258,7 @@ export default function DynamicTourBookingPage() {
                         onChange={(e) => setSubscribeNewsletter(e.target.checked)}
                         className="mt-0.5 h-4 w-4 rounded border-slate-300 text-pub-accent focus:ring-pub-accent accent-pub-accent"
                       />
-                      <span className="leading-relaxed">Subscribe to our newsletter for the latest offers &amp; new trips</span>
+                      <span className="leading-relaxed">Subscribe to newsletter for exclusive deals, travel guides &amp; new trips</span>
                     </label>
                   </div>
 
@@ -1978,12 +2269,20 @@ export default function DynamicTourBookingPage() {
                     </div>
                   )}
 
-                  <div className="pt-2">
+                  <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-5 py-4 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition active:scale-[0.99]"
+                    >
+                      <ArrowLeft size={14} />
+                      <span>Back to Passengers</span>
+                    </button>
                     <button
                       type="button"
                       onClick={handleConfirmAndPay}
                       disabled={!acceptTerms || paymentSubmitting}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-4 px-6 text-sm font-black text-white shadow-md shadow-orange-600/15 transition-all duration-150 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex flex-1 w-full items-center justify-center gap-2 rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-4 px-6 text-sm font-black text-white shadow-md shadow-orange-600/15 transition-all duration-150 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {paymentSubmitting ? (
                         <>
@@ -1993,92 +2292,129 @@ export default function DynamicTourBookingPage() {
                       ) : (
                         <>
                           <Lock size={16} />
-                          <span>{isAgent && agentPaymentMethod === "pay_later" ? "Pay Deposit & Reserve" : isAgent ? "Pay in Full Today" : customerPaymentMethod === "deposit" ? "Pay Deposit & Secure Booking" : "Confirm and pay"}</span>
+                          <span>{isAgent && agentPaymentMethod === "pay_later" ? "Pay Deposit & Reserve" : isAgent ? "Pay in Full Today" : customerPaymentMethod === "deposit" ? "Pay Deposit & Secure Booking" : "Confirm and Pay Now"}</span>
                         </>
                       )}
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-2xs">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400 text-xs font-bold">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 sm:px-6 py-4 shadow-2xs">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-slate-500 text-xs font-bold shrink-0">
                       3
                     </span>
-                    <span className="text-xs sm:text-sm font-bold text-slate-500">3. Payment</span>
+                    <div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-600">3. Payment &amp; Confirmation</span>
+                      <p className="text-[11px] text-slate-400">Choose payment method and confirm your reservation</p>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
             {/* RIGHT COLUMN: STICKY TRIP SUMMARY */}
-            <aside className="sticky top-24 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">TRIP SUMMARY</h3>
-
-              <div className="mt-4 pt-3 border-t border-slate-100">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">YOUR TOUR</p>
-                <p className="mt-0.5 text-xs font-bold text-slate-900 line-clamp-1">{tourTitle}</p>
-                {tourDays > 0 && <p className="text-[11px] text-slate-500">{`${tourDays} days`}</p>}
+            <aside className="sticky top-24 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-5">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                  <Sparkles size={14} className="text-pub-primary" />
+                  <span>Trip Summary</span>
+                </h3>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  <BadgeCheck size={12} />
+                  Instant Confirmation
+                </span>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">DATES</p>
-                  <p className="mt-0.5 text-xs font-bold text-slate-900">
-                    {selectedCalendar ? formatDate(selectedCalendar.date) : "No dates currently available"}
-                  </p>
+              {/* Tour Brief */}
+              <div className="flex items-center gap-3">
+                <img
+                  src={tourThumbnail}
+                  alt={tourTitle}
+                  className="h-14 w-14 rounded-xl object-cover border border-slate-100 shrink-0 shadow-2xs"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-900 line-clamp-1 leading-snug">{tourTitle}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                    {tourDays > 0 && (
+                      <span className="inline-flex items-center gap-1">
+                        <Clock size={11} className="text-slate-400" />
+                        <span>{tourDays} Days</span>
+                      </span>
+                    )}
+                    {tourPlace && (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin size={11} className="text-slate-400" />
+                        <span>{tourPlace}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="text-xs font-bold text-blue-600 hover:underline inline-flex items-center gap-1"
-                >
-                  Edit
-                </button>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">ACCOMMODATION</p>
-                  <p className="mt-0.5 text-xs font-bold text-slate-900">
-                    {selectedRoomUpgradeId
-                      ? roomUpgradeExtensions.find((e) => e.id === selectedRoomUpgradeId)?.title || "Upgraded room"
-                      : "Shared"}
-                  </p>
-                  <p className="text-[11px] text-slate-500">
-                    {adultCount} {adultCount === 1 ? "adult" : "adults"}
-                    {childCount > 0 ? `, ${childCount} ${childCount === 1 ? "child" : "children"}` : ""}
-                  </p>
+              {/* Snapshot: Date & Guests */}
+              <div className="rounded-xl bg-slate-50/70 border border-slate-200/70 p-3.5 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <Calendar size={14} className="text-pub-primary shrink-0" />
+                    <div>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Date</span>
+                      <span className="font-bold text-slate-900">
+                        {selectedCalendar ? formatDate(selectedCalendar.date) : "Departure not selected"}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="text-xs font-bold text-pub-primary hover:underline"
+                  >
+                    Edit
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="text-xs font-bold text-blue-600 hover:underline inline-flex items-center gap-1"
-                >
-                  Edit
-                </button>
+
+                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <Users size={14} className="text-pub-primary shrink-0" />
+                    <div>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Travellers</span>
+                      <span className="font-bold text-slate-900">
+                        {adultCount} {adultCount === 1 ? "Adult" : "Adults"}{childCount > 0 ? `, ${childCount} Child` : ""}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="text-xs font-bold text-pub-primary hover:underline"
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-900">PRICE BREAKDOWN</span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600">
+              {/* Price Breakdown */}
+              <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-900">Price Breakdown</span>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-pub-primary">
                     <Globe size={12} />
                     {`Shown in ${displayCurrency}`}
                   </span>
                 </div>
 
                 {priceLoading && !priceEstimate ? (
-                  <div className="flex items-center gap-2 py-3 text-xs text-slate-400">
-                    <LoaderCircle size={14} className="animate-spin" />
-                    Calculating price...
+                  <div className="flex items-center justify-center gap-2 py-6 text-xs text-slate-500 bg-slate-50 rounded-xl">
+                    <LoaderCircle size={15} className="animate-spin text-pub-primary" />
+                    <span>Calculating real-time rates...</span>
                   </div>
                 ) : priceEstimate ? (
                   <>
-                    <div className="space-y-1.5 text-xs">
+                    <div className="space-y-2 text-xs">
                       <div className="flex items-center justify-between text-slate-700">
                         <div>
-                          <p className="font-semibold text-slate-900">Base fare</p>
+                          <p className="font-semibold text-slate-900">Base Fare</p>
                           <p className="text-[10px] text-slate-400">
                             {adultCount} {adultCount === 1 ? "adult" : "adults"}
                             {childCount > 0 ? `, ${childCount} ${childCount === 1 ? "child" : "children"}` : ""}
@@ -2090,8 +2426,8 @@ export default function DynamicTourBookingPage() {
                       </div>
 
                       {Number(priceEstimate.extension_amount) > 0 && (
-                        <div className="flex items-center justify-between text-slate-700 pt-1">
-                          <span className="text-slate-600">Add-ons</span>
+                        <div className="flex items-center justify-between text-slate-700 pt-1.5 border-t border-slate-100">
+                          <span className="text-slate-600">Extensions &amp; Nights</span>
                           <span className="font-bold text-slate-900">
                             {format(Number(priceEstimate.extension_amount), priceEstimate.currency)}
                           </span>
@@ -2099,8 +2435,8 @@ export default function DynamicTourBookingPage() {
                       )}
 
                       {Number(priceEstimate.optional_activity_amount) > 0 && (
-                        <div className="flex items-center justify-between text-slate-700 pt-1">
-                          <span className="text-slate-600">Optional activities</span>
+                        <div className="flex items-center justify-between text-slate-700 pt-1.5 border-t border-slate-100">
+                          <span className="text-slate-600">Optional Experiences</span>
                           <span className="font-bold text-slate-900">
                             {format(Number(priceEstimate.optional_activity_amount), priceEstimate.currency)}
                           </span>
@@ -2108,8 +2444,8 @@ export default function DynamicTourBookingPage() {
                       )}
 
                       {Number(priceEstimate.accommodation_amount) > 0 && (
-                        <div className="flex items-center justify-between text-slate-700 pt-1">
-                          <span className="text-slate-600">Accommodation add-ons</span>
+                        <div className="flex items-center justify-between text-slate-700 pt-1.5 border-t border-slate-100">
+                          <span className="text-slate-600">Accommodation Add-ons</span>
                           <span className="font-bold text-slate-900">
                             {format(Number(priceEstimate.accommodation_amount), priceEstimate.currency)}
                           </span>
@@ -2117,8 +2453,11 @@ export default function DynamicTourBookingPage() {
                       )}
 
                       {Number(priceEstimate.discount_amount) > 0 && (
-                        <div className="flex items-center justify-between text-emerald-600 pt-1">
-                          <span>Discount</span>
+                        <div className="flex items-center justify-between text-emerald-600 pt-1.5 border-t border-slate-100">
+                          <span className="font-medium flex items-center gap-1">
+                            <Tag size={12} />
+                            <span>Voucher Discount</span>
+                          </span>
                           <span className="font-bold">
                             - {format(Number(priceEstimate.discount_amount), priceEstimate.currency)}
                           </span>
@@ -2126,8 +2465,8 @@ export default function DynamicTourBookingPage() {
                       )}
 
                       {Number(priceEstimate.tax_amount) > 0 && (
-                        <div className="flex items-center justify-between text-slate-700 pt-1">
-                          <span className="text-slate-600">Taxes</span>
+                        <div className="flex items-center justify-between text-slate-700 pt-1.5 border-t border-slate-100">
+                          <span className="text-slate-600">Estimated Taxes</span>
                           <span className="font-bold text-slate-900">
                             {format(Number(priceEstimate.tax_amount), priceEstimate.currency)}
                           </span>
@@ -2135,7 +2474,7 @@ export default function DynamicTourBookingPage() {
                       )}
 
                       {Number(priceEstimate.surcharge_amount) > 0 && (
-                        <div className="flex items-center justify-between text-slate-700 pt-1">
+                        <div className="flex items-center justify-between text-slate-700 pt-1.5 border-t border-slate-100">
                           <span className="text-slate-600">Surcharge</span>
                           <span className="font-bold text-slate-900">
                             {format(Number(priceEstimate.surcharge_amount), priceEstimate.currency)}
@@ -2144,44 +2483,84 @@ export default function DynamicTourBookingPage() {
                       )}
                     </div>
 
-                    <div className="mt-4 rounded-xl bg-[#F0F4F8] p-3.5 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-bold text-slate-900">Total</p>
-                        <p className="text-[10px] text-slate-500">Taxes &amp; fees included</p>
-                      </div>
-                      <strong className="text-base sm:text-lg font-black text-slate-950">
-                        {format(Number(priceEstimate.final_amount), priceEstimate.currency)}
-                      </strong>
+                    {/* Total Card */}
+                    <div className="mt-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-4 text-white">
+                      {!isAgent && customerPaymentMethod === "deposit" && depositEligibility?.customer.eligible ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-bold text-emerald-400">Due Today (Deposit)</p>
+                              <p className="text-[10px] text-slate-400">Secures your travel reservation</p>
+                            </div>
+                            <span className="text-xl font-black text-white">
+                              {depositEligibility.customer.deposit_type === "percentage"
+                                ? format(Number(priceEstimate.final_amount) * ((depositEligibility.customer.deposit_percentage ?? 30) / 100), priceEstimate.currency)
+                                : format(Number(depositEligibility.customer.booking_deposit ?? priceEstimate.final_amount), priceEstimate.currency)}
+                            </span>
+                          </div>
+                          <div className="pt-2 border-t border-slate-700/80 flex items-center justify-between text-xs text-slate-400">
+                            <span>Total Trip Value:</span>
+                            <span className="font-bold text-slate-200">{format(Number(priceEstimate.final_amount), priceEstimate.currency)}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-bold text-slate-200">Total Payable</p>
+                            <p className="text-[10px] text-slate-400">Taxes &amp; fees included</p>
+                          </div>
+                          <strong className="text-xl font-black text-white">
+                            {format(Number(priceEstimate.final_amount), priceEstimate.currency)}
+                          </strong>
+                        </div>
+                      )}
                     </div>
 
-                    {/* The figures above are converted for browsing convenience only --
-                        the booking itself, the payment gateway charge, and every
-                        downstream view (supplier, admin, invoice) always use the tour's
-                        real transaction currency (priceEstimate.currency), never the
-                        viewer's ambient display currency. Surfacing that explicitly here
-                        avoids the customer assuming they're being charged in whatever
-                        currency the amounts above happen to be converted to. */}
                     {priceEstimate.currency.toUpperCase() !== displayCurrency.toUpperCase() && (
-                      <p className="mt-2 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                        You will be charged {formatExact(Number(priceEstimate.final_amount), priceEstimate.currency)} -- amounts above are shown in {displayCurrency} for reference only.
+                      <p className="mt-2 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                        You will be charged in {formatExact(Number(priceEstimate.final_amount), priceEstimate.currency)} &mdash; converted to {displayCurrency} for viewing convenience.
                       </p>
                     )}
                   </>
                 ) : (
-                  <p className="py-3 text-xs text-slate-400">Price unavailable right now.</p>
+                  <p className="py-3 text-xs text-slate-400">Pricing currently unavailable.</p>
                 )}
 
                 {step < 3 && (
                   <button
                     type="button"
                     onClick={step === 1 ? handleContinueStep1 : handleContinueStep2}
-                    className="mt-4 w-full rounded-lg bg-pub-primary hover:bg-pub-primary-dark py-3 text-xs sm:text-sm font-bold text-white shadow-xs transition active:scale-[0.99]"
+                    className="mt-4 w-full rounded-xl bg-pub-primary hover:bg-pub-primary-dark py-3.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-pub-primary/15 transition active:scale-[0.99] flex items-center justify-center gap-2"
                   >
-                    Proceed to Payment
+                    <span>{step === 1 ? "Continue to Passenger Details" : "Proceed to Payment"}</span>
+                    <ArrowRight size={14} />
                   </button>
                 )}
               </div>
+
+              {/* Confidence & Buyer Protection Pillars */}
+              <div className="pt-4 border-t border-slate-100 space-y-2.5">
+                <div className="flex items-center gap-2.5 text-xs text-slate-600">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shrink-0">
+                    <Shield size={13} />
+                  </div>
+                  <span>Best Price &amp; Genuine Operator Guarantee</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs text-slate-600">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-600 shrink-0">
+                    <Lock size={13} />
+                  </div>
+                  <span>256-Bit SSL Encrypted &bull; No Hidden Fees</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs text-slate-600">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-50 text-orange-600 shrink-0">
+                    <Headphones size={13} />
+                  </div>
+                  <span>24/7 Global Traveler Support</span>
+                </div>
+              </div>
             </aside>
+
           </div>
         )}
       </div>

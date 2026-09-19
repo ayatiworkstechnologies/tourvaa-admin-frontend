@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import api from "@/lib/api/client";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import { clearSession } from "@/lib/api/session";
+import { setPortalCurrency } from "@/hooks/useCurrency";
 import { AuthUser, DashboardStats, MenuItem, PendingApproval, Permission } from "@/types/auth";
 
 type DashboardData = {
@@ -163,6 +164,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [dashboard, setDashboard] = useState<DashboardData | null>(() => docsInitialDashboard);
   const [loading, setLoading] = useState(() => DOCS_CAPTURE_MODE ? false : !docsInitialDashboard);
   const [error, setError] = useState("");
+
+  // Pin the portal's display currency to the logged-in user's own currency
+  // (e.g. Supplier.currency) whenever it's known - covers every path that
+  // can populate `dashboard` (fresh /dashboard/me fetch, restored from
+  // storage) with one effect instead of repeating this at each call site.
+  const portalCurrency = dashboard?.user?.portal_currency;
+  useEffect(() => {
+    if (portalCurrency) setPortalCurrency(portalCurrency);
+  }, [portalCurrency]);
 
   const refreshSession = useCallback(async () => {
     try {

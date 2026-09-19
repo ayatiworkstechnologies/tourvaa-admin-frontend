@@ -49,7 +49,7 @@ export default function HomeFaqSection({ initialFaqs }: HomeFaqSectionProps) {
   };
 
   return (
-    <section className="relative w-full overflow-hidden my-6 sm:my-10 pt-10 sm:pt-12 pb-8 sm:pb-10 bg-gradient-to-b from-white via-[#FDF5F5] to-[#FBECEA] border-y border-rose-100/70">
+    <section className="relative w-full overflow-hidden py-14 sm:py-18 bg-gradient-to-b from-white via-[#FDF5F5] to-[#FBECEA]">
       <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 text-center tracking-tight mb-5 sm:mb-7">

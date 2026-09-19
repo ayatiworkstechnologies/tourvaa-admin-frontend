@@ -9,19 +9,15 @@ import {
   LuBookOpen as BookOpen,
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
-  LuHeart as Heart,
   LuMapPin as MapPin,
-  LuSparkles as Sparkles,
   LuStar as Star,
 } from "react-icons/lu";
-import { useTravelStore } from "@/providers/TravelStoreProvider";
 import {
   fetchPopularDestinations,
   fetchPublicCountries,
 } from "@/lib/api/publicClient";
 import {
   CountryWorthExploring,
-  stableHash,
   topDestinationsFromCountries,
 } from "./homeTypes";
 import { destinationUrl } from "@/lib/utils/tourUrl";
@@ -34,21 +30,7 @@ export function CountryWorthExploringCard({
 }: {
   country: CountryWorthExploring;
 }) {
-  const { isWishlisted, toggleWishlist } = useTravelStore();
-  const itemId = stableHash(`country-${country.name}`);
-  const wishlisted = isWishlisted(itemId);
   const href = country.href || destinationUrl(country.name);
-
-  const travelItem = {
-    id: itemId,
-    title: `${country.name} Tours`,
-    place: country.name,
-    image: country.image,
-    price: null,
-    currency: "USD",
-    duration: country.count,
-    href,
-  };
 
   const ratingVal = (country.rating ?? 4.9).toFixed(1);
 
@@ -73,30 +55,6 @@ export function CountryWorthExploringCard({
           <span className="truncate max-w-[100px]">{country.name}</span>
         </span>
 
-        {/* Wishlist button (top-right) */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleWishlist(travelItem);
-          }}
-          aria-label={
-            wishlisted
-              ? `Remove ${country.name} from wishlist`
-              : `Add ${country.name} to wishlist`
-          }
-          className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs text-slate-700 shadow-xs transition-all duration-200 hover:scale-115 active:scale-90 hover:bg-white focus:outline-none cursor-pointer"
-        >
-          <Heart
-            size={16}
-            className={`transition-colors duration-200 ${
-              wishlisted
-                ? "fill-red-500 text-red-500"
-                : "fill-white text-white drop-shadow-md hover:fill-red-400 hover:text-red-400"
-            }`}
-          />
-        </button>
       </div>
 
       {/* Card Body */}
@@ -230,7 +188,7 @@ export default function CountriesWorthExploringSection({
   };
 
   return (
-    <section className="relative w-full overflow-hidden my-8 sm:my-14 py-12 sm:py-20 bg-gradient-to-b from-white via-[#F7F5FC] to-[#F0ECFA] border-y border-violet-100/70 shadow-2xs">
+    <section className="relative w-full overflow-hidden py-14 sm:py-18 bg-gradient-to-b from-white via-[#F7F5FC] to-[#F0ECFA]">
       {/* Ambient decorative glowing blobs */}
       <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-bl from-violet-200/20 via-purple-100/15 to-transparent blur-3xl animate-float-orb" />
       <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-indigo-100/20 via-slate-100/20 to-transparent blur-3xl animate-float-orb-alt" />

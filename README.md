@@ -167,7 +167,15 @@ src/
 
 The public site and the customer portal are translated by the **Elfsight Website Translator** (`components/public/ElfsightTranslator.tsx`), mounted in `app/(public)/layout.tsx` and `app/customer/layout.tsx`. It loads `platform.js` from Elfsight's CDN and renders its own floating language selector into a shadow DOM appended to `<body>` - it is not driven by the site's own header dropdown.
 
-Its domains must stay allowed by the Content-Security-Policy in `next.config.ts` (`elfsightHosts`): the widget boots from `elfsightcdn.com`, fetches its code from `universe-static.elfsightcdn.com`, and calls `core.service.elfsight.com` at runtime. If any of those is blocked the script still returns 200 and the widget silently renders nothing, with no console error to point at the cause - so check the CSP first when translation appears to do nothing.
+Its domains must stay allowed by the Content-Security-Policy in `next.config.ts` (`elfsightHosts`), and they span **two different apexes**:
+
+| Domain | Used for |
+| --- | --- |
+| `elfsightcdn.com`, `universe-static.elfsightcdn.com` | `platform.js` and the widget bundle |
+| `static.elfsight.com`, `core.service.elfsight.com` | widget assets and the boot/config call |
+| `*.elfsightcompute.com` | **the translation API itself** (`phrase-translator.<region>.elfsightcompute.com`) |
+
+That last one is the easy one to miss - it is `elfsightcompute.com`, not `elfsight.com`. Allowing only the CDN domains produces a widget that loads, renders its language picker and accepts a selection while every translate request is blocked, so the page just stays in English. Check the CSP first whenever translation appears to do nothing; the browser console will name the blocked domain.
 
 A previous Google Translate integration (`components/public/GoogleTranslateLoader.tsx`, plus the `googtrans` cookie logic in `LanguageCurrencySelector`/`LanguageSwitcher` and the `.goog-te-*` rules in `globals.css`) is still present but no longer mounted.
 

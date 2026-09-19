@@ -29,6 +29,10 @@ export type AuthUser = {
   supplier_id?: number | null;
   agent_id?: number | null;
   affiliate_id?: number | null;
+  /** The portal user's own operating currency (suppliers: Supplier.currency),
+   * used as the portal's display currency. Display only - amounts actually
+   * owed/paid keep their transacted currency. */
+  portal_currency?: string | null;
   role: {
     id: number;
     name: string;

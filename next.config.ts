@@ -37,8 +37,14 @@ const googleFontHosts =
 // which then pulls widget code/assets from static.elfsight.com and
 // universe-static.elfsightcdn.com and calls core.service.elfsight.com at
 // runtime. Miss any of these and the widget loads but renders nothing.
+//
+// The translation itself goes to a DIFFERENT apex entirely -
+// phrase-translator.<region>.elfsightcompute.com (note "elfsightcompute",
+// not "elfsight"). Without it the widget boots, renders its language picker
+// and accepts a selection, but every translate request is blocked and the
+// page silently stays in English.
 const elfsightHosts =
-  "https://elfsightcdn.com https://*.elfsightcdn.com https://static.elfsight.com https://*.elfsight.com https://core.service.elfsight.com";
+  "https://elfsightcdn.com https://*.elfsightcdn.com https://static.elfsight.com https://*.elfsight.com https://core.service.elfsight.com https://*.elfsightcompute.com";
 const scriptSrc =
   process.env.NODE_ENV === "production"
     ? `script-src 'self' 'unsafe-inline' ${googleTranslateHosts} ${elfsightHosts};`

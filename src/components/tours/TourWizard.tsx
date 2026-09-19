@@ -229,10 +229,10 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   if (!tourId) {
     return (
       <>
-        <TourWorkspaceHeader
+          <TourWorkspaceHeader
           role={role}
           title="Create New Tour"
-          description="Start with the essentials below. Saving creates the tour and unlocks the full 12-step editor for itinerary, pricing, media, and more."
+          description="Start with the essentials below. Saving creates the tour and unlocks the full 10-step editor for itinerary, pricing, media, and more."
           icon={MapPinned}
           eyebrow={isSupplier ? "Tour Builder" : "Admin Tour Builder"}
           actions={[{ label: isSupplier ? "Back to My Tours" : "Back to Tours", href: basePath, icon: ArrowLeft, variant: "secondary" }]}
@@ -337,7 +337,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
       <TourWorkspaceHeader
         role={role}
         title={tour?.title ?? "Edit Tour"}
-        description="Complete the 12-step editor below. Each step saves independently, so you can leave and come back anytime."
+          description="Complete the 10-step editor below. Each step saves independently, so you can leave and come back anytime."
         icon={MapPinned}
         eyebrow={tour?.tour_code ? `Tour Editor · ${tour.tour_code}` : "Tour Editor"}
         actions={[
@@ -424,15 +424,11 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 onGoToPricing={() => selectStep(WIZARD_STEPS.findIndex((s) => s.id === "pricing"))}
               />
             )}
-            {activeKey === "overview" && (
-              <div className="space-y-6">
-                <TourOverviewTab tourId={tourId} />
-                <TourHighlightsTab tourId={tourId} />
-              </div>
-            )}
             {activeKey === "location" && (
               <div className="space-y-6">
                 <TourFormPage tourId={tourId} embedded role={role} sections={["location"]} formId="wizard-form-location" initialData={tour ?? undefined} onSaved={afterFormSaved} />
+                <TourOverviewTab tourId={tourId} />
+                <TourHighlightsTab tourId={tourId} />
                 <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
                   <h2 className="text-xl font-black text-dash-text">Physical Rating</h2>
                   <p className="mt-1 text-sm text-dash-subtle">How physically demanding this tour is for travellers.</p>
@@ -456,10 +452,6 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
               <div className="space-y-6">
                 <TourAccommodationExtraTab tourId={tourId} />
                 <TourOptionalActivityTab tourId={tourId} />
-              </div>
-            )}
-            {activeKey === "extensions" && (
-              <div className="space-y-6">
                 <TourExtensionsTab tourId={tourId} />
                 <TourSimilarTab tourId={tourId} />
               </div>

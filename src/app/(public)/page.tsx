@@ -51,22 +51,22 @@ export default function Home() {
       </Reveal>
 
       {/* 8. Handpicked Tours for You */}
-      <Reveal variant="fade-up">
+      <Reveal variant="fade">
         <HandpickedToursSection />
       </Reveal>
 
       {/* 9. Countries Worth Exploring Carousel */}
-      <Reveal variant="fade-up">
+      <Reveal variant="fade">
         <CountriesWorthExploringSection />
       </Reveal>
 
       {/* 10. Travellers' Testimonials Carousel */}
-      <Reveal variant="scale-up">
+      <Reveal variant="fade">
         <HomeTestimonialsSection />
       </Reveal>
 
       {/* 11. Directory / Popular Destination Searches Tabs Grid */}
-      <div className="relative z-10 mx-auto max-w-[1400px] px-5 my-8 sm:my-12">
+      <div className="relative z-10 mx-auto max-w-[1400px] px-5 py-10 sm:py-14">
         <Reveal variant="fade-up">
           <ExploreDirectorySection />
         </Reveal>
@@ -78,12 +78,12 @@ export default function Home() {
       </Reveal>
 
       {/* 12. Frequently Asked Questions Accordion */}
-      <Reveal variant="fade-up">
+      <Reveal variant="fade">
         <HomeFaqSection />
       </Reveal>
 
       {/* 13. 24/7 Travel Support Banner */}
-      <Reveal variant="scale-up">
+      <Reveal variant="fade">
         <TravelSupportBanner />
       </Reveal>
 

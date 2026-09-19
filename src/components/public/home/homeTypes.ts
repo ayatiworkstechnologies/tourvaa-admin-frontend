@@ -31,6 +31,10 @@ export type Tour = {
   discountBadge?: string;
   currency?: string;
   slug?: string;
+  /** Real per-tour specs from the API; undefined when the tour has none set,
+   * so cards can omit the row instead of inventing a value. */
+  ageRange?: string;
+  maxGroupSize?: number;
 };
 
 export const PLACEHOLDER_IMAGE = "/images/tour-card-fallback.jpg";
@@ -186,6 +190,8 @@ export function mapPublicTour(tour: PublicTour): Tour {
     discountBadge,
     currency: tour.currency || "USD",
     slug: tour.slug,
+    ageRange: tour.suitable_age_range || undefined,
+    maxGroupSize: tour.max_group_size ?? undefined,
   };
 }
 

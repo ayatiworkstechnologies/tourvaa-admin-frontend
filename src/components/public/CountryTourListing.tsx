@@ -10,7 +10,6 @@ import {
   LuChevronDown as ChevronDown,
   LuClock as Clock,
   LuCompass as Compass,
-  LuHeart as Heart,
   LuHouse as Home,
   LuLayoutGrid as LayoutGrid,
   LuList as List,
@@ -28,7 +27,7 @@ import { CmsCountryPage, fetchCountryPages, fetchPublicCategories, fetchPublicCo
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
-import { useTravelStore } from "@/providers/TravelStoreProvider";
+import WishlistButton from "@/components/public/WishlistButton";
 
 type TourItem = {
   id: number | string;
@@ -127,7 +126,6 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const queryAvailableOnly = searchParams.get("available_only") === "true";
   const querySort = (searchParams.get("sort") as "newest" | "price_asc" | "price_desc" | "duration_asc") || "newest";
   const { format } = useCurrency();
-  const { isWishlisted, toggleWishlist } = useTravelStore();
 
   const [searchTerm, setSearchTerm] = useState(querySearch);
   useEffect(() => {
@@ -1065,7 +1063,6 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                 ? publicTourUrl({ country_name: tour.country_name || tour.location, title: tour.title, slug: tour.slug })
                 : `/tours/${tour.id}`;
               const wishlistId = typeof tour.id === "number" ? tour.id : Number(tour.id) || 1;
-              const wishlisted = isWishlisted(wishlistId);
 
               return (
                 <div
@@ -1085,28 +1082,21 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                       alt={tour.title}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
-                    {/* Heart button top-right */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        toggleWishlist({
-                          id: wishlistId,
-                          title: tour.title,
-                          place: tour.location,
-                          duration: tour.duration,
-                          image: tour.image,
-                          price: tour.rawPrice,
-                          currency: tour.currency || "USD",
-                          href: tourLink,
-                        })
-                      }
-                      aria-label={wishlisted ? `Remove ${tour.title} from wishlist` : `Save ${tour.title} to wishlist`}
-                      className={`absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-xs shadow-xs transition hover:scale-110 cursor-pointer ${
-                        wishlisted ? "bg-red-500 text-white" : "bg-white/85 text-slate-600 hover:text-red-500 hover:bg-white"
-                      }`}
-                    >
-                      <Heart size={15} className={wishlisted ? "fill-current" : ""} />
-                    </button>
+                    {/* Wishlist button (top-right) */}
+                    <WishlistButton
+                      variant="badge"
+                      className="absolute right-2.5 top-2.5"
+                      item={{
+                        id: wishlistId,
+                        title: tour.title,
+                        place: tour.location,
+                        duration: tour.duration,
+                        image: tour.image,
+                        price: tour.rawPrice,
+                        currency: tour.currency || "USD",
+                        href: tourLink,
+                      }}
+                    />
                   </div>
 
                   {/* ── Card Body ── */}

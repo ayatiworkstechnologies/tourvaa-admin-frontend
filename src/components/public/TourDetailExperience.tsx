@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
+  LuArrowRight as ArrowRight,
   LuCalendar as Calendar,
   LuCheck as Check,
   LuChevronDown as ChevronDown,
@@ -1489,13 +1490,25 @@ export default function TourDetailExperience({
                 <button type="button" onClick={() => handleBookNow("reserve")} disabled={!selectedDeparture || !unitPrice} className="w-full rounded-xl border border-blue-200 bg-blue-50 py-3.5 text-xs sm:text-sm font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50">
                   Reserve Now
                 </button>
-                <button type="button" onClick={() => handleBookNow("full")} disabled={!selectedDeparture || !unitPrice} className="w-full rounded-xl bg-pub-primary py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-pub-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300">
+                <button type="button" onClick={() => handleBookNow("full")} disabled={!selectedDeparture || !unitPrice} className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-500/15 transition disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none">
                   Pay in Full Today
                 </button>
               </div>
             ) : (
-              <button type="button" onClick={() => handleBookNow()} disabled={!selectedDeparture || !unitPrice} className="mt-4 w-full rounded-xl bg-pub-primary py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-pub-primary-dark active:scale-[0.99] text-center disabled:cursor-not-allowed disabled:bg-slate-300">
-                {!unitPrice ? "Price Unavailable" : selectedDeparture ? "Proceed to Payment" : "No Dates Available"}
+              <button
+                type="button"
+                onClick={() => handleBookNow()}
+                disabled={!selectedDeparture || !unitPrice}
+                className="mt-4 w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-500/15 transition active:scale-[0.99] text-center flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+              >
+                {!unitPrice ? "Price Unavailable" : selectedDeparture ? (
+                  <>
+                    <span>Book This Tour</span>
+                    <ArrowRight size={15} />
+                  </>
+                ) : (
+                  "No Dates Available"
+                )}
               </button>
             )}
           </aside>

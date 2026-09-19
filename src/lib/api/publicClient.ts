@@ -22,6 +22,9 @@ export type PublicTour = {
   /** Flag stored on the country record (countries.flag_emoji), seeded from
    * its ISO-2 code - not derived client-side. */
   country_flag?: string;
+  /** Tour's own limits, used by the listing cards. Null/absent when unset. */
+  suitable_age_range?: string | null;
+  max_group_size?: number | null;
   city_name: string;
   category_name: string;
   number_of_days: number | null;

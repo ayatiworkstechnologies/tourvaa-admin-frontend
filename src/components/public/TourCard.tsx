@@ -7,7 +7,6 @@ import {
   LuArrowRight as ArrowRight,
   LuCalendarDays as Calendar,
   LuCheck as Check,
-  LuHeart as Heart,
   LuMapPin as MapPin,
   LuStar as Star,
   LuUsers as Users,
@@ -18,6 +17,7 @@ import {
 import { PublicTour } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
+import WishlistButton from "@/components/public/WishlistButton";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { DiscountCardBadge, DiscountPriceLine, hasActiveDiscount } from "@/components/public/DiscountPrice";
 import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
@@ -73,9 +73,19 @@ export default function TourCard({ tour, format, variant = "search", href, view 
   // the whole results grid.
   const isCompact = variant === "compact";
   const compactWishlisted = isCompact && tour.id != null ? isWishlisted(tour.id) : false;
+  const compactWishlistItem = {
+    id: tour.id ?? 0,
+    title: tour.title || "Tour",
+    place: tour.city_name || tour.country_name || "",
+    image,
+    price: tour.price_start_per_person ?? null,
+    currency: tour.currency || "USD",
+    duration: tour.number_of_days ? `${tour.number_of_days}D` : "Flexible",
+    href: resolvedHref,
+  };
   const compactToggleWishlist = () => {
     if (!isCompact || tour.id == null) return;
-    toggleWishlist({ id: tour.id, title: tour.title || "Tour", place: tour.city_name || tour.country_name || "", image, price: tour.price_start_per_person ?? null, currency: tour.currency || "USD", duration: tour.number_of_days ? `${tour.number_of_days}D` : "Flexible", href: resolvedHref });
+    toggleWishlist(compactWishlistItem);
   };
 
   const priceBlock = discounted ? (
@@ -121,7 +131,13 @@ export default function TourCard({ tour, format, variant = "search", href, view 
   if (isCompact) {
     return (
       <div className="group relative overflow-hidden rounded-2xl border border-slate-100 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-        <button type="button" onClick={compactToggleWishlist} aria-label={compactWishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`} className={`absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur transition hover:scale-110 ${compactWishlisted ? "bg-red-500 text-white" : "bg-black/20 text-white hover:bg-white hover:text-red-500"}`}><Heart size={15} className={compactWishlisted ? "fill-current" : ""} /></button>
+        <WishlistButton
+          item={compactWishlistItem}
+          variant="badge"
+          className="absolute right-3 top-3"
+          wishlisted={compactWishlisted}
+          onToggle={compactToggleWishlist}
+        />
         <a href={resolvedHref} className="block">
           <div className="relative h-48 overflow-hidden">
             <Image src={imgSrc} alt={tour.title || "Tour"} fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" onError={() => setImgSrc(FALLBACK)} className="object-cover transition duration-700 group-hover:scale-105" />
@@ -140,9 +156,8 @@ export default function TourCard({ tour, format, variant = "search", href, view 
 
   // "search" - the full search-results card, with grid/list layout support.
   const isTourWishlisted = wishlisted ?? (tour.id != null ? isWishlisted(tour.id) : false);
-  const handleWishlistClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // WishlistButton already suppresses the click's default/propagation.
+  const handleWishlistClick = () => {
     if (onWishlist) {
       onWishlist();
     } else if (tour.id != null) {
@@ -189,17 +204,14 @@ export default function TourCard({ tour, format, variant = "search", href, view 
           />
         </Link>
 
-        {/* Wishlist Heart Button Top Right */}
-        <button
-          type="button"
-          onClick={handleWishlistClick}
-          aria-label={isTourWishlisted ? `Remove ${tour.title} from wishlist` : `Add ${tour.title} to wishlist`}
-          className={`absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-xs shadow-xs transition hover:scale-110 cursor-pointer ${
-            isTourWishlisted ? "bg-red-500 text-white" : "bg-white/85 text-slate-600 hover:text-red-500 hover:bg-white"
-          }`}
-        >
-          <Heart size={15} className={isTourWishlisted ? "fill-current" : ""} />
-        </button>
+        {/* Wishlist button (top-right) */}
+        <WishlistButton
+          item={compactWishlistItem}
+          variant="badge"
+          className="absolute right-2.5 top-2.5"
+          wishlisted={isTourWishlisted}
+          onToggle={() => handleWishlistClick()}
+        />
       </div>
 
       {/* ── Card Body ── */}

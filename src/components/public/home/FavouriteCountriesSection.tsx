@@ -111,7 +111,7 @@ export default function FavouriteCountriesSection({
   }, [initialDestinations]);
 
   return (
-    <section className="relative w-full overflow-hidden bg-white my-8 sm:my-12 py-10 sm:py-14">
+    <section className="relative w-full overflow-hidden bg-white py-14 sm:py-18">
       <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Header */}
         <div className="mx-auto max-w-3xl text-center">

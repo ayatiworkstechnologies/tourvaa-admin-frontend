@@ -131,6 +131,29 @@ export function invalidateCurrencyCache() {
   if (typeof window !== "undefined") void loadCurrency();
 }
 
+/**
+ * Pins the display currency to a logged-in portal user's own currency
+ * (Supplier.currency, delivered as `portal_currency` on /dashboard/me).
+ *
+ * This is a DISPLAY preference only. Money the platform actually owes or
+ * pays - ledger entries, payouts, invoices - keeps the currency it was
+ * transacted in, because converting it would state a figure that does not
+ * match the real payout and drifts with the FX rate. See
+ * services/supplier_ledger.py, which groups totals per currency for the
+ * same reason.
+ *
+ * An admin's site-wide forced currency still wins over this.
+ */
+export function setPortalCurrency(code: string | null | undefined) {
+  if (state.forced) return;
+  const normalized = (code || "").toUpperCase();
+  if (!normalized) return;
+  if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, normalized);
+  // Rates may still be loading on first paint; the load completes by reading
+  // STORAGE_KEY back, so the value set above is picked up either way.
+  if (state.rates[normalized]) emit({ code: normalized });
+}
+
 export function setDisplayCurrency(code: string) {
   if (state.forced) return;
   const normalized = code.toUpperCase();

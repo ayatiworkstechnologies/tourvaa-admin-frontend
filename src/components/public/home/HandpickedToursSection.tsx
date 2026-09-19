@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
-  LuHeart as Heart,
   LuMapPin as MapPin,
   LuNavigation as Navigation,
   LuSlidersHorizontal as Sliders,
@@ -14,7 +13,7 @@ import {
   LuUsers as Users,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
-import { useTravelStore } from "@/providers/TravelStoreProvider";
+import WishlistButton from "@/components/public/WishlistButton";
 import { useCurrency } from "@/hooks/useCurrency";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import {
@@ -33,10 +32,8 @@ import { useAutoSlide } from "./useAutoSlide";
 import { smoothScrollTo } from "./smoothScrollTo";
 
 export function HandpickedTourCard({ tour }: { tour: Tour }) {
-  const { isWishlisted, toggleWishlist } = useTravelStore();
   const { format } = useCurrency();
   const itemId = tour.id ?? stableHash(tour.slug || tour.title);
-  const wishlisted = isWishlisted(itemId);
   const href = tour.id
     ? publicTourUrl(tour)
     : `/tours?search=${encodeURIComponent(tour.title)}`;
@@ -51,8 +48,11 @@ export function HandpickedTourCard({ tour }: { tour: Tour }) {
     href,
   };
 
-  const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.8";
-  const reviewCountStr = tour.reviews || "2,486 reviews";
+  // Only show a rating when the tour actually has reviews - the previous
+  // "4.8" / "2,486 reviews" fallbacks displayed invented social proof on
+  // every tour that had none.
+  const ratingVal = tour.rating != null ? tour.rating.toFixed(1) : null;
+  const reviewCountStr = tour.reviews || "";
 
   const calculatedPct =
     tour.originalPrice && tour.rawPrice && tour.originalPrice > tour.rawPrice
@@ -60,9 +60,9 @@ export function HandpickedTourCard({ tour }: { tour: Tour }) {
           ((tour.originalPrice - tour.rawPrice) / tour.originalPrice) * 100,
         )
       : null;
+  // No badge at all unless there is a real discount to show.
   const discountLabel =
-    tour.discountBadge ||
-    (calculatedPct ? `Save ${calculatedPct}%` : "Save 25%");
+    tour.discountBadge || (calculatedPct ? `Save ${calculatedPct}%` : null);
 
   return (
     <article
@@ -88,29 +88,10 @@ export function HandpickedTourCard({ tour }: { tour: Tour }) {
             </span>
 
             {/* Wishlist button (top-right) */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleWishlist(travelItem);
-              }}
-              aria-label={
-                wishlisted
-                  ? `Remove ${tour.title} from wishlist`
-                  : `Add ${tour.title} to wishlist`
-              }
-              className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center transition-transform duration-200 hover:scale-120 active:scale-90 focus:outline-none cursor-pointer"
-            >
-              <Heart
-                size={18}
-                className={
-                  wishlisted
-                    ? "fill-red-500 text-red-500 drop-shadow-xs"
-                    : "fill-white/70 text-slate-700 drop-shadow-xs"
-                }
-              />
-            </button>
+            <WishlistButton
+              item={travelItem}
+              className="absolute right-2.5 top-2.5"
+            />
 
             {/* Discount Pill (bottom-right of image) */}
             {discountLabel && (
@@ -127,39 +108,55 @@ export function HandpickedTourCard({ tour }: { tour: Tour }) {
               {tour.title}
             </h3>
 
-            {/* 5 Yellow Stars + Rating + Review count */}
-            <div className="mt-1.5 flex items-center gap-1 text-xs">
-              <div className="flex items-center gap-0.5 text-amber-400">
-                <Star size={11} className="fill-amber-400 text-amber-400" />
-                <Star size={11} className="fill-amber-400 text-amber-400" />
-                <Star size={11} className="fill-amber-400 text-amber-400" />
-                <Star size={11} className="fill-amber-400 text-amber-400" />
-                <Star size={11} className="fill-amber-400 text-amber-400" />
+            {/* Rating + review count - only when the tour has real reviews */}
+            {ratingVal && (
+              <div className="mt-1.5 flex items-center gap-1 text-xs">
+                <div className="flex items-center gap-0.5 text-amber-400">
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <Star
+                      key={i}
+                      size={11}
+                      className={
+                        i < Math.round(Number(ratingVal))
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-slate-300"
+                      }
+                    />
+                  ))}
+                </div>
+                <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
+                {reviewCountStr && (
+                  <span className="text-slate-500 font-normal">({reviewCountStr})</span>
+                )}
               </div>
-              <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
-              <span className="text-slate-500 font-normal">
-                ({reviewCountStr})
-              </span>
-            </div>
+            )}
 
             {/* 4 Feature specs with blue icons */}
             <div className="mt-2.5 space-y-1 text-[11px] text-slate-600 font-medium">
-              <p className="flex items-center gap-1.5">
-                <Sun size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                <span>{tour.days || "7 Days"}</span>
-              </p>
-              <p className="flex items-center gap-1.5 truncate">
-                <Navigation size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                <span className="truncate">{tour.place || "Featured Destination"}</span>
-              </p>
-              <p className="flex items-center gap-1.5">
-                <Sliders size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                <span>Age Range: 12-70</span>
-              </p>
-              <p className="flex items-center gap-1.5">
-                <Users size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                <span>Max Group Size: 24</span>
-              </p>
+              {tour.days && (
+                <p className="flex items-center gap-1.5">
+                  <Sun size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                  <span>{tour.days}</span>
+                </p>
+              )}
+              {tour.place && (
+                <p className="flex items-center gap-1.5 truncate">
+                  <Navigation size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                  <span className="truncate">{tour.place}</span>
+                </p>
+              )}
+              {tour.ageRange && (
+                <p className="flex items-center gap-1.5">
+                  <Sliders size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                  <span>Age Range: {tour.ageRange}</span>
+                </p>
+              )}
+              {tour.maxGroupSize != null && (
+                <p className="flex items-center gap-1.5">
+                  <Users size={12} className="shrink-0 text-sky-500 stroke-[2]" />
+                  <span>Max Group Size: {tour.maxGroupSize}</span>
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -175,7 +172,7 @@ export function HandpickedTourCard({ tour }: { tour: Tour }) {
           <strong className="text-sm sm:text-base font-bold text-slate-950">
             {tour.rawPrice != null
               ? format(tour.rawPrice, tour.currency || "USD")
-              : format(1182, "USD")}
+              : "On request"}
           </strong>
           <span className="text-xs text-slate-500 font-normal">pp</span>
         </div>
@@ -294,7 +291,7 @@ export default function HandpickedToursSection({
   };
 
   return (
-    <section className="relative w-full overflow-hidden my-8 sm:my-12 py-10 sm:py-14 bg-gradient-to-b from-white via-[#F3FAF6] to-[#EAF6EF]">
+    <section className="relative w-full overflow-hidden py-14 sm:py-18 bg-gradient-to-b from-white via-[#F3FAF6] to-[#EAF6EF]">
       <div className="relative z-10 mx-auto max-w-[1380px] px-5">
         {/* Section Header with Arrows on right */}
         <div className="mb-5 flex items-center justify-between">

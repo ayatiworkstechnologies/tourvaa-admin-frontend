@@ -5,12 +5,11 @@ import Link from "next/link";
 import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
-  LuHeart as Heart,
   LuMapPin as MapPin,
   LuStar as Star,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
-import { useTravelStore } from "@/providers/TravelStoreProvider";
+import WishlistButton from "@/components/public/WishlistButton";
 import { useCurrency } from "@/hooks/useCurrency";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import {
@@ -29,79 +28,6 @@ import { EmptyCollection, TourCardSkeleton } from "./HomeHelpers";
 import { useAutoSlide } from "./useAutoSlide";
 import { smoothScrollTo } from "./smoothScrollTo";
 
-const FALLBACK_DEAL_TOURS: Tour[] = [
-  {
-    id: 101,
-    title: "Xi'an & Gobi",
-    place: "China",
-    image: "/images/destination-alpine.jpg",
-    days: "8 Days",
-    durationTag: "8D | 7N",
-    reviews: "1,842 reviews",
-    rating: 4.9,
-    rawPrice: 999,
-    originalPrice: 1299,
-    currency: "USD",
-    features: [],
-  },
-  {
-    id: 102,
-    title: "Beijing to Nanjing Trail",
-    place: "China",
-    image: "/images/destination-desert.jpg",
-    days: "10 Days",
-    durationTag: "10D | 9N",
-    reviews: "3,215 reviews",
-    rating: 4.9,
-    rawPrice: 1899,
-    originalPrice: 2499,
-    currency: "USD",
-    features: [],
-  },
-  {
-    id: 103,
-    title: "Istanbul & Cappadocia",
-    place: "Turkey",
-    image: "/images/hero-1.jpg",
-    days: "7 Days",
-    durationTag: "7D | 6N",
-    reviews: "2,756 reviews",
-    rating: 4.8,
-    rawPrice: 899,
-    originalPrice: 1199,
-    currency: "USD",
-    features: [],
-  },
-  {
-    id: 104,
-    title: "Ceylon Heritage Trail",
-    place: "Sri Lanka",
-    image: "/images/hero-2.jpg",
-    days: "9 Days",
-    durationTag: "9D | 8N",
-    reviews: "1,523 reviews",
-    rating: 4.7,
-    rawPrice: 1149,
-    originalPrice: 1450,
-    currency: "USD",
-    features: [],
-  },
-  {
-    id: 105,
-    title: "Rome & Amalfi Explorer",
-    place: "Italy",
-    image: "/images/hero-3.jpg",
-    days: "8 Days",
-    durationTag: "8D | 7N",
-    reviews: "1,940 reviews",
-    rating: 4.9,
-    rawPrice: 1299,
-    originalPrice: 1699,
-    currency: "USD",
-    features: [],
-  },
-];
-
 function getDestinationName(place?: string): string {
   if (!place) return "Special";
   const parts = place.split(",").map((s) => s.trim()).filter(Boolean);
@@ -112,7 +38,8 @@ function getDurationTag(tour: Tour): string {
   if (tour.durationTag && tour.durationTag.includes("|")) {
     return tour.durationTag;
   }
-  if (!tour.days) return "8D | 7N";
+  // No invented duration - the caller omits the tag when this is empty.
+  if (!tour.days) return "";
   const numMatch = tour.days.match(/\d+/);
   if (numMatch) {
     const d = parseInt(numMatch[0], 10);
@@ -123,10 +50,8 @@ function getDurationTag(tour: Tour): string {
 }
 
 export function TopDealCard({ tour }: { tour: Tour }) {
-  const { isWishlisted, toggleWishlist } = useTravelStore();
   const { format } = useCurrency();
   const itemId = tour.id ?? stableHash(tour.slug || tour.title);
-  const wishlisted = isWishlisted(itemId);
   const href = tour.id
     ? publicTourUrl(tour)
     : `/tours?search=${encodeURIComponent(tour.title)}`;
@@ -141,10 +66,11 @@ export function TopDealCard({ tour }: { tour: Tour }) {
     href,
   };
 
-  const ratingVal = tour.rating ? tour.rating.toFixed(1) : "4.8";
-  const reviewCountStr = tour.reviews
-    ? tour.reviews.replace(/^\(|\)$/g, "")
-    : "2,486 reviews";
+  // Only show a rating when the tour actually has reviews - the previous
+  // "4.8" / "2,486 reviews" fallbacks displayed invented social proof on
+  // every tour that had none.
+  const ratingVal = tour.rating != null ? tour.rating.toFixed(1) : null;
+  const reviewCountStr = tour.reviews ? tour.reviews.replace(/^\(|\)$/g, "") : "";
   const destinationName = getDestinationName(tour.place);
   const durationTag = getDurationTag(tour);
 
@@ -154,9 +80,9 @@ export function TopDealCard({ tour }: { tour: Tour }) {
           ((tour.originalPrice - tour.rawPrice) / tour.originalPrice) * 100,
         )
       : null;
+  // No badge at all unless there is a real discount to show.
   const discountLabel =
-    tour.discountBadge ||
-    (calculatedPct ? `Save ${calculatedPct}%` : "Save 25%");
+    tour.discountBadge || (calculatedPct ? `Save ${calculatedPct}%` : null);
 
   return (
     <article
@@ -180,30 +106,8 @@ export function TopDealCard({ tour }: { tour: Tour }) {
             <span className="truncate max-w-[110px]">{destinationName}</span>
           </span>
 
-          {/* Wishlist Heart button (top-right, directly on image: white by default, red when added) */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleWishlist(travelItem);
-            }}
-            aria-label={
-              wishlisted
-                ? `Remove ${tour.title} from wishlist`
-                : `Add ${tour.title} to wishlist`
-            }
-            className="absolute right-3.5 top-3.5 z-10 flex items-center justify-center transition-transform duration-200 hover:scale-125 active:scale-90 focus:outline-none cursor-pointer drop-shadow-md"
-          >
-            <Heart
-              size={20}
-              className={`transition-colors duration-200 ${
-                wishlisted
-                  ? "fill-red-500 text-red-500"
-                  : "fill-white text-white drop-shadow-md hover:fill-red-400 hover:text-red-400"
-              }`}
-            />
-          </button>
+          {/* Wishlist button (top-right) */}
+          <WishlistButton item={travelItem} className="absolute right-3 top-3" />
         </div>
 
         {/* Card content below image on the page background */}
@@ -213,23 +117,35 @@ export function TopDealCard({ tour }: { tour: Tour }) {
             <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-pub-accent leading-snug line-clamp-1 flex-1 min-w-0">
               {tour.title}
             </h3>
-            <span className="shrink-0 rounded border border-pub-secondary/70 text-pub-secondary bg-transparent px-2 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap">
-              {durationTag}
-            </span>
+            {durationTag && (
+              <span className="shrink-0 rounded border border-pub-secondary/70 text-pub-secondary bg-transparent px-2 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap">
+                {durationTag}
+              </span>
+            )}
           </div>
 
-          {/* 5 Yellow Stars + Rating + Review count */}
-          <div className="mt-2 flex items-center gap-1.5 text-xs">
-            <div className="flex items-center gap-0.5 text-amber-400">
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <Star size={12} className="fill-amber-400 text-amber-400" />
+          {/* Rating + review count - only when the tour has real reviews */}
+          {ratingVal && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs">
+              <div className="flex items-center gap-0.5 text-amber-400">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <Star
+                    key={i}
+                    size={12}
+                    className={
+                      i < Math.round(Number(ratingVal))
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-slate-300"
+                    }
+                  />
+                ))}
+              </div>
+              <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
+              {reviewCountStr && (
+                <span className="text-slate-600 font-medium">{reviewCountStr}</span>
+              )}
             </div>
-            <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
-            <span className="text-slate-600 font-medium">{reviewCountStr}</span>
-          </div>
+          )}
 
           {/* Price Row: From $old $new pp */}
           <div className="mt-2.5 flex items-baseline gap-2">
@@ -242,9 +158,11 @@ export function TopDealCard({ tour }: { tour: Tour }) {
             <strong className="text-base font-extrabold text-slate-950">
               {tour.rawPrice != null
                 ? format(tour.rawPrice, tour.currency || "USD")
-                : format(1182, "USD")}
+                : "On request"}
             </strong>
-            <span className="text-sm font-medium text-slate-900">pp</span>
+            {tour.rawPrice != null && (
+              <span className="text-sm font-medium text-slate-900">pp</span>
+            )}
           </div>
         </div>
       </Link>
@@ -436,7 +354,7 @@ export default function TopDealsSection({
         )}`;
 
   return (
-    <section className="relative w-full overflow-hidden bg-pub-bg py-12 sm:py-16 my-4 sm:my-6 border-y border-pub-border/50">
+    <section className="relative w-full overflow-hidden bg-pub-bg py-14 sm:py-18">
       <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Header Row: Title & Arrow Buttons */}
         <div className="mb-6 flex items-center justify-between gap-4">

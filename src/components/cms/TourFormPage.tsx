@@ -798,13 +798,15 @@ export default function TourFormPage({
   // than always defaulting to blank country / USD. The supplier can still
   // change either field manually afterward.
   useEffect(() => {
-    if (initialData || tourId || !isSupplier) return;
+    if (!isSupplier) return;
     api.get("/suppliers/me").then((res) => {
       const supplier = res.data?.data ?? {};
+      const profileCurrency = String(supplier.currency || "").trim().toUpperCase();
+      if (profileCurrency) setSupplierCurrency(profileCurrency);
       setForm((prev) => ({
         ...prev,
         country_id: prev.country_id || (supplier.country_id ? String(supplier.country_id) : prev.country_id),
-        currency: prev.currency === "USD" && supplier.currency ? supplier.currency : prev.currency,
+        currency: profileCurrency || prev.currency,
       }));
     }).catch(() => {
       // Non-fatal -- the form just keeps its blank/USD defaults.
@@ -825,6 +827,7 @@ export default function TourFormPage({
   const [onePaxSlab, setOnePaxSlab] = useState<PricingSlab | null>(null);
 
   const [selectedStateId, setSelectedStateId] = useState("");
+  const [supplierCurrency, setSupplierCurrency] = useState("");
   const { countries } = useGeoCountries();
   const { states } = useGeoStates(form.country_id ? Number(form.country_id) : null);
   const { cities } = useGeoCities(
@@ -927,11 +930,32 @@ export default function TourFormPage({
       if (!active) return;
       const slab = slabs.find((s) => s.passenger_from <= 1 && (s.passenger_to ?? 1) >= 1) ?? slabs[0] ?? null;
       setOnePaxSlab(slab);
+
+      // Back-fill an existing tour's currency to the supplier's own profile
+      // currency the same way a brand-new tour already is (see the
+      // "New tours created by a supplier" effect above) - but ONLY when the
+      // tour has zero pricing slabs saved. Every priced slab is a real,
+      // already-transacted number; relabeling the tour's currency without
+      // converting those numbers would misstate them (e.g. 82.42 USD would
+      // instantly read as 82.42 QAR, a completely different real value), so
+      // any tour that has been priced at all is left exactly as it is.
+      if (isSupplier && slabs.length === 0 && (initialData as { currency?: string } | null)?.currency === "USD") {
+        api.get("/suppliers/me").then((res) => {
+          if (!active) return;
+          const supplierCurrency = res.data?.data?.currency;
+          if (supplierCurrency && supplierCurrency !== "USD") {
+            setForm((prev) => (prev.currency === "USD" ? { ...prev, currency: supplierCurrency } : prev));
+          }
+        }).catch(() => {
+          // Non-fatal -- the tour just keeps its existing USD currency.
+        });
+      }
     }).catch(() => {
       // Non-fatal -- the Storefront Price preview simply stays hidden.
     });
     return () => { active = false; };
-  }, [tourId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourId, isSupplier]);
 
   useEffect(() => {
     if (form.state_id && !selectedStateId) setSelectedStateId(form.state_id);
@@ -1160,29 +1184,6 @@ export default function TourFormPage({
                 <input value={form.tour_code ?? "Assigned on save"} disabled className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-500`} />
               </label>
             )}
-            {tourId && (
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Price from</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    value={form.price_start_per_person ? `${form.currency ?? "USD"} ${form.price_start_per_person}` : "No approved pricing yet"}
-                    disabled
-                    title="Calculated automatically from the lowest approved Supplier Pricing slab -- set Supplier Pricing, then get it approved, to set this."
-                    className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-500`}
-                  />
-                  {onGoToPricing && (
-                    <button
-                      type="button"
-                      onClick={onGoToPricing}
-                      className="shrink-0 whitespace-nowrap rounded-xl border border-dash-border px-3 py-2.5 text-xs font-bold text-dash-brand hover:bg-dash-bg"
-                    >
-                      Set in Pricing tab
-                    </button>
-                  )}
-                </div>
-                <p className="mt-1 text-[11px] text-dash-subtle">Set per-passenger prices in the Pricing step -- this updates automatically once approved.</p>
-              </label>
-            )}
             {tourId && activeDiscount && onePaxSlab && (() => {
               const original = onePaxSlab.storefront_adult_price ?? onePaxSlab.adult_price ?? 0;
               const discounted = original * (1 - activeDiscount.discount_percentage / 100);
@@ -1215,7 +1216,17 @@ export default function TourFormPage({
 
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
-              <CurrencySelect value={form.currency ?? "USD"} onChange={(code) => update("currency", code)} className={inputClass} />
+              {isSupplier ? (
+                <input
+                  value={supplierCurrency || form.currency || "Not configured"}
+                  readOnly
+                  disabled
+                  title="Currency is taken from your supplier profile."
+                  className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-600 disabled:opacity-100`}
+                />
+              ) : (
+                <CurrencySelect value={form.currency ?? "USD"} onChange={(code) => update("currency", code)} className={inputClass} />
+              )}
             </label>
 
             <FormDropdownField

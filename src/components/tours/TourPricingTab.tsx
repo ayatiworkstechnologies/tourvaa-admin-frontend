@@ -144,6 +144,11 @@ export default function TourPricingTab({
       const tourRes = await api.get(`/tours/${tourId}`);
       const activeDiscount = tourRes.data?.data?.active_discount;
       setDiscountPercent(activeDiscount?.discount_percentage ?? null);
+      // Pricing is always entered in the tour's own currency (see the
+      // per-slab currency field on TourItinerary/tours.currency) -- suppliers
+      // never chose this from the CurrencySelect below, it just fell through
+      // to the initial "USD" state because this branch never set it.
+      if (tourRes.data?.data?.currency) setDefaultCurrency(String(tourRes.data.data.currency));
 
       if (isSupplier) {
         const res = await api.get("/suppliers/me");
@@ -151,7 +156,6 @@ export default function TourPricingTab({
         if (own != null) { setCommissionFloor(Number(own)); return; }
       } else {
         const supplierId = tourRes.data?.data?.supplier_id;
-        if (tourRes.data?.data?.currency) setDefaultCurrency(String(tourRes.data.data.currency));
         if (supplierId) {
           const supplierRes = await api.get(`/suppliers/${supplierId}`);
           const own = supplierRes.data?.data?.commission_percentage;
@@ -478,10 +482,20 @@ export default function TourPricingTab({
                 <input type="number" value={numberInputValue(editing.child_price)} onChange={(e) => setEditing((p) => p ? { ...p, child_price: parseNumberInput(e.target.value) } : p)}
                   className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
               </label>
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
-                <CurrencySelect value={editing.currency} onChange={(code) => setEditing((p) => p ? { ...p, currency: code } : p)} />
-              </label>
+              {isSupplier ? (
+                <div>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
+                  <p className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">
+                    {editing.currency}
+                  </p>
+                  <span className="mt-1 block text-[11px] text-dash-subtle">Read-only -- set from your profile currency. Contact admin to change it.</span>
+                </div>
+              ) : (
+                <label>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
+                  <CurrencySelect value={editing.currency} onChange={(code) => setEditing((p) => p ? { ...p, currency: code } : p)} />
+                </label>
+              )}
             </div>
 
             <div className="mt-4 grid gap-3 rounded-xl bg-dash-bg p-4 sm:grid-cols-2">
