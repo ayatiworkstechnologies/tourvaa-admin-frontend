@@ -91,18 +91,33 @@ export default function HeroSection({
   ];
 
   const [trustIndex, setTrustIndex] = useState(0);
-  const [isFadingOut, setIsFadingOut] = useState(false);
+  const [animState, setAnimState] = useState<"visible" | "exit" | "enter">("visible");
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setIsFadingOut(true);
-      setTimeout(() => {
-        setTrustIndex((prev) => (prev + 1) % TRUST_ITEMS.length);
-        setIsFadingOut(false);
-      }, 400);
-    }, 3200);
+    let enterTimer: NodeJS.Timeout | null = null;
+    let visibleTimer: NodeJS.Timeout | null = null;
 
-    return () => clearInterval(timer);
+    const timer = setInterval(() => {
+      // 1. Slide up and fade out current item
+      setAnimState("exit");
+
+      enterTimer = setTimeout(() => {
+        // 2. Switch to next item and position it below baseline
+        setTrustIndex((prev) => (prev + 1) % TRUST_ITEMS.length);
+        setAnimState("enter");
+
+        // 3. Smoothly animate new item into place
+        visibleTimer = setTimeout(() => {
+          setAnimState("visible");
+        }, 40);
+      }, 350);
+    }, 3500);
+
+    return () => {
+      clearInterval(timer);
+      if (enterTimer) clearTimeout(enterTimer);
+      if (visibleTimer) clearTimeout(visibleTimer);
+    };
   }, [TRUST_ITEMS.length]);
 
   // Fast independent data loading if not preloaded
@@ -283,56 +298,34 @@ export default function HeroSection({
         </section>
       </div>
 
-      {/* Sub-hero Trust Indicator with Disappear/Appear Animation */}
+      {/* Sub-hero Trust Indicator with Dynamic Auto Animation */}
       <div
-        className="mx-auto max-w-[1400px] px-5 pt-6 pb-7 overflow-hidden flex flex-col items-center justify-center min-h-[72px]"
+        className="mx-auto max-w-[1400px] px-5 py-5 sm:py-6 overflow-hidden flex items-center justify-center min-h-[52px]"
         aria-label="Tourvaa trust highlights"
       >
-        <div className="relative flex items-center justify-center min-h-[44px] w-full max-w-3xl mx-auto">
+        <div className="relative flex items-center justify-center min-h-[36px] w-full max-w-3xl mx-auto overflow-hidden">
           {(() => {
             const currentItem = TRUST_ITEMS[trustIndex];
             const Icon = currentItem.Icon;
             return (
               <div
-                className={`inline-flex items-center justify-center gap-3 text-base sm:text-lg md:text-[19px] font-semibold text-slate-800 tracking-tight transition-all duration-400 ease-in-out select-none ${
-                  isFadingOut
-                    ? "opacity-0 -translate-y-2.5 scale-95 pointer-events-none"
-                    : "opacity-100 translate-y-0 scale-100"
+                key={trustIndex}
+                className={`inline-flex items-center justify-center gap-2.5 sm:gap-3 text-base sm:text-lg md:text-[19px] font-semibold text-slate-800 tracking-tight select-none ${
+                  animState === "visible"
+                    ? "opacity-100 translate-y-0 transition-all duration-500 ease-out"
+                    : animState === "exit"
+                    ? "opacity-0 -translate-y-3.5 transition-all duration-350 ease-in pointer-events-none"
+                    : "opacity-0 translate-y-3.5 transition-none pointer-events-none"
                 }`}
               >
-                <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-slate-100/90 shadow-2xs shrink-0">
-                  <Icon
-                    size={20}
-                    className={`${currentItem.iconColor} shrink-0 transition-transform duration-300`}
-                  />
-                </span>
+                <Icon
+                  size={22}
+                  className={`${currentItem.iconColor} shrink-0`}
+                />
                 {currentItem.content}
               </div>
             );
           })()}
-        </div>
-
-        {/* Indicator dots to visualize rotating items */}
-        <div className="mt-2.5 flex items-center gap-1.5">
-          {TRUST_ITEMS.map((_, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                setIsFadingOut(true);
-                setTimeout(() => {
-                  setTrustIndex(idx);
-                  setIsFadingOut(false);
-                }, 300);
-              }}
-              aria-label={`Go to highlight ${idx + 1}`}
-              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                idx === trustIndex
-                  ? "w-6 bg-pub-primary"
-                  : "w-1.5 bg-slate-200 hover:bg-slate-300"
-              }`}
-            />
-          ))}
         </div>
       </div>
     </>

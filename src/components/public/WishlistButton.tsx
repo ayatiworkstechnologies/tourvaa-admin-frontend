@@ -60,8 +60,8 @@ export default function WishlistButton({
         size={18}
         className={`transition-colors duration-200 ${
           wishlisted
-            ? "fill-red-500 text-red-500 drop-shadow-xs"
-            : "fill-white/70 text-slate-700 drop-shadow-xs hover:fill-red-400 hover:text-red-400"
+            ? "fill-red-500 text-red-500 drop-shadow-md"
+            : "fill-white text-white drop-shadow-md hover:fill-red-400 hover:text-red-400"
         }`}
       />
     </button>

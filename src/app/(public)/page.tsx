@@ -6,7 +6,6 @@ import {
   AirportTransfersBanner,
   BlogTeaserSection,
   CountriesWorthExploringSection,
-  EscapeSaleSection,
   FavouriteCountriesSection,
   HandpickedToursSection,
   HeroSection,
@@ -26,10 +25,7 @@ export default function Home() {
       {/* 1. Hero Banner with Image/Video Carousel, Filter Bar & Trust Rating */}
       <HeroSection />
 
-      {/* 2. Escape Sale: urgency banner + auto-sliding deal carousel */}
-      <EscapeSaleSection />
-
-      {/* 3. Top Deals Section with Dynamic Destination Tabs */}
+      {/* 2. Top Deals Section with Dynamic Destination Tabs */}
       <TopDealsSection />
 
       {/* 4. Favourite Countries Section */}
