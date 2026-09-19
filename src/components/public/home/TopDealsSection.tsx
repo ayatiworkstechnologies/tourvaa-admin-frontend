@@ -82,6 +82,15 @@ export function TopDealCard({ tour }: { tour: Tour }) {
       ? Math.round(tour.rawPrice * 1.3)
       : null;
 
+  const calculatedPct =
+    originalPriceVal != null && tour.rawPrice != null && originalPriceVal > tour.rawPrice
+      ? Math.round(((originalPriceVal - tour.rawPrice) / originalPriceVal) * 100)
+      : null;
+
+  const discountLabel =
+    tour.discountBadge ||
+    (calculatedPct && calculatedPct > 0 ? `Save ${calculatedPct}%` : null);
+
   return (
     <article
       data-deal-card
@@ -106,6 +115,13 @@ export function TopDealCard({ tour }: { tour: Tour }) {
 
           {/* Wishlist button (top-right) */}
           <WishlistButton item={travelItem} className="absolute right-3 top-3" />
+
+          {/* Discount Badge (bottom-right of image) */}
+          {discountLabel && (
+            <span className="absolute bottom-3 right-3 z-10 inline-flex items-center rounded-lg bg-[#E53935] px-2.5 py-1 text-xs font-bold text-white shadow-md pointer-events-none">
+              {discountLabel}
+            </span>
+          )}
         </div>
 
         {/* Card content below image on the page background */}
@@ -143,8 +159,8 @@ export function TopDealCard({ tour }: { tour: Tour }) {
             </span>
           </div>
 
-          {/* Price Row: From $old $new pp */}
-          <div className="mt-2.5 flex items-baseline gap-1.5">
+          {/* Price Row: From $old $new pp with discount savings pill */}
+          <div className="mt-2.5 flex items-baseline gap-1.5 flex-wrap">
             <span className="text-xs sm:text-sm font-semibold text-slate-800">From</span>
             {originalPriceVal != null && (
               <span className="text-xs font-normal text-slate-400 line-through mr-1">
@@ -158,6 +174,11 @@ export function TopDealCard({ tour }: { tour: Tour }) {
             </strong>
             {tour.rawPrice != null && (
               <span className="text-xs sm:text-sm font-medium text-slate-800 ml-0.5">pp</span>
+            )}
+            {discountLabel && (
+              <span className="ml-auto inline-flex items-center rounded-md bg-red-50 border border-red-200/80 px-1.5 py-0.5 text-[11px] font-bold text-red-600">
+                {discountLabel}
+              </span>
             )}
           </div>
         </div>

@@ -766,9 +766,10 @@ export default function TourFormPage({
       : {
           currency: "USD",
           status: "draft",
-          number_of_days: "1",
-        }
+           number_of_days: "1",
+         }
   );
+  const [supplierCurrency, setSupplierCurrency] = useState("");
 
   // New tours start with the platform's default deposit terms already
   // filled in (rather than a blank field that reads as "no deposit"),
@@ -827,7 +828,6 @@ export default function TourFormPage({
   const [onePaxSlab, setOnePaxSlab] = useState<PricingSlab | null>(null);
 
   const [selectedStateId, setSelectedStateId] = useState("");
-  const [supplierCurrency, setSupplierCurrency] = useState("");
   const { countries } = useGeoCountries();
   const { states } = useGeoStates(form.country_id ? Number(form.country_id) : null);
   const { cities } = useGeoCities(
