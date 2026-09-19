@@ -175,11 +175,6 @@ export function TopDealCard({ tour }: { tour: Tour }) {
             {tour.rawPrice != null && (
               <span className="text-xs sm:text-sm font-medium text-slate-800 ml-0.5">pp</span>
             )}
-            {discountLabel && (
-              <span className="ml-auto inline-flex items-center rounded-md bg-red-50 border border-red-200/80 px-1.5 py-0.5 text-[11px] font-bold text-red-600">
-                {discountLabel}
-              </span>
-            )}
           </div>
         </div>
       </Link>

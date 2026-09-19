@@ -398,6 +398,8 @@ export default function DynamicTourBookingPage() {
   const [selectedAccommodationExtraIds, setSelectedAccommodationExtraIds] = useState<number[]>([]);
 
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
+  // Per-passenger, per-field inline validation errors shown beneath each input
+  const [passengerErrors, setPassengerErrors] = useState<Record<number, Partial<Record<keyof PassengerData, string>>>>({});
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
@@ -820,21 +822,80 @@ export default function DynamicTourBookingPage() {
     setStep(2);
   };
 
+  /**
+   * Validates all passengers and populates per-field inline errors.
+   * Returns a human-readable summary string on failure, or null on success.
+   */
   const validatePassengers = (): string | null => {
+    const newErrors: Record<number, Partial<Record<keyof PassengerData, string>>> = {};
+    let firstError: string | null = null;
+
     for (let i = 0; i < passengers.length; i++) {
       const p = passengers[i];
       const label = p.type === "child" ? `Passenger ${i + 1} (child)` : `Passenger ${i + 1}`;
-      if (!p.firstName.trim() || !p.lastName.trim()) return `Enter the full name for ${label}.`;
+      newErrors[i] = {};
+
+      // --- Name validation ---
+      if (!p.firstName.trim()) {
+        newErrors[i].firstName = "First name is required.";
+        if (!firstError) firstError = `Enter the first name for ${label}.`;
+      } else if (p.firstName.trim().length < 2) {
+        newErrors[i].firstName = "Must be at least 2 characters.";
+        if (!firstError) firstError = `First name for ${label} is too short.`;
+      }
+      if (!p.lastName.trim()) {
+        newErrors[i].lastName = "Last name is required.";
+        if (!firstError) firstError = `Enter the last name for ${label}.`;
+      } else if (p.lastName.trim().length < 2) {
+        newErrors[i].lastName = "Must be at least 2 characters.";
+        if (!firstError) firstError = `Last name for ${label} is too short.`;
+      }
+
+      // --- Date of birth validation ---
       const age = calcAge(p.birthDay, p.birthMonth, p.birthYear);
-      if (age === null) return `Enter a valid date of birth for ${label}.`;
-      if (p.type === "adult" && (age < 12 || age > 120)) return `${label} must be 12 years or older.`;
-      if (p.type === "child" && (age < 3 || age > 11)) return `${label} must be between 3 and 11 years old.`;
+      if (age === null) {
+        newErrors[i].birthDay = "Enter a valid date of birth.";
+        if (!firstError) firstError = `Enter a valid date of birth for ${label}.`;
+      } else if (p.type === "adult" && (age < 12 || age > 120)) {
+        newErrors[i].birthDay = "Adult must be 12 years or older.";
+        if (!firstError) firstError = `${label} must be 12 years or older.`;
+      } else if (p.type === "child" && (age < 3 || age > 11)) {
+        newErrors[i].birthDay = "Child must be between 3 and 11 years old.";
+        if (!firstError) firstError = `${label} must be between 3 and 11 years old.`;
+      }
+
+      // --- Lead passenger contact fields (mandatory) ---
       if (i === 0) {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim())) return "Enter a valid email address for the lead passenger.";
-        if (!p.phone.trim()) return "Enter a phone number for the lead passenger.";
+        const emailVal = p.email.trim();
+        if (!emailVal) {
+          newErrors[i].email = "Email address is required.";
+          if (!firstError) firstError = "Enter an email address for the lead passenger.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailVal)) {
+          newErrors[i].email = "Enter a valid email address (e.g. name@example.com).";
+          if (!firstError) firstError = "Enter a valid email address for the lead passenger.";
+        }
+
+        const phoneDigits = p.phone.trim().replace(/[\s()\-]/g, "");
+        if (!phoneDigits) {
+          newErrors[i].phone = "Mobile number is required.";
+          if (!firstError) firstError = "Enter a mobile number for the lead passenger.";
+        } else if (!/^\d{7,15}$/.test(phoneDigits)) {
+          newErrors[i].phone = "Enter a valid mobile number (7–15 digits).";
+          if (!firstError) firstError = "Enter a valid mobile number for the lead passenger.";
+        }
       }
     }
-    return null;
+
+    setPassengerErrors(newErrors);
+    return firstError;
+  };
+
+  /** Clears a specific field's inline error as the user types to correct it. */
+  const clearPassengerFieldError = (idx: number, field: keyof PassengerData) => {
+    setPassengerErrors((prev) => {
+      if (!prev[idx]?.[field]) return prev;
+      return { ...prev, [idx]: { ...prev[idx], [field]: undefined } };
+    });
   };
 
   const buildTravellersPayload = () =>
@@ -857,6 +918,7 @@ export default function DynamicTourBookingPage() {
       return;
     }
     setStepError(null);
+    setPassengerErrors({});
     if (sessionKey && !isAgent) {
       try {
         await api.patch(`/checkout/session/${sessionKey}`, {
@@ -870,6 +932,7 @@ export default function DynamicTourBookingPage() {
     }
     setStep(3);
   };
+
 
   // Mirrors the backend's own computation (payments_gateway._minimum_deposit_amount's
   // customer branch) so the amount charged at the gateway matches what the
@@ -1761,19 +1824,39 @@ export default function DynamicTourBookingPage() {
 
                         <div className="mt-5 space-y-4">
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                            {/* First Name */}
                             <div>
-                              <label className="block text-xs font-semibold text-slate-700 mb-1.5">First name *</label>
+                              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                First name <span className="text-rose-500">*</span>
+                              </label>
                               <input
                                 type="text"
+                                required
                                 value={passenger.firstName}
-                                onChange={(e) => handlePassengerChange(idx, "firstName", e.target.value)}
+                                onChange={(e) => {
+                                  handlePassengerChange(idx, "firstName", e.target.value);
+                                  clearPassengerFieldError(idx, "firstName");
+                                }}
                                 placeholder="e.g. Srinath"
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
+                                className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
+                                  passengerErrors[idx]?.firstName
+                                    ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100"
+                                    : "border-slate-200 focus:border-pub-primary focus:ring-pub-primary/10"
+                                }`}
                               />
+                              {passengerErrors[idx]?.firstName && (
+                                <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-rose-600">
+                                  <CircleAlert size={11} className="shrink-0" />
+                                  {passengerErrors[idx].firstName}
+                                </p>
+                              )}
                             </div>
 
+                            {/* Middle Name (optional) */}
                             <div>
-                              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Middle name</label>
+                              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Middle name <span className="text-slate-400 font-normal text-[10px]">(optional)</span>
+                              </label>
                               <input
                                 type="text"
                                 value={passenger.middleName}
@@ -1783,24 +1866,42 @@ export default function DynamicTourBookingPage() {
                               />
                             </div>
 
+                            {/* Last Name */}
                             <div>
-                              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Last name *</label>
+                              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Last name <span className="text-rose-500">*</span>
+                              </label>
                               <input
                                 type="text"
+                                required
                                 value={passenger.lastName}
-                                onChange={(e) => handlePassengerChange(idx, "lastName", e.target.value)}
+                                onChange={(e) => {
+                                  handlePassengerChange(idx, "lastName", e.target.value);
+                                  clearPassengerFieldError(idx, "lastName");
+                                }}
                                 placeholder="e.g. Garu"
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
+                                className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
+                                  passengerErrors[idx]?.lastName
+                                    ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100"
+                                    : "border-slate-200 focus:border-pub-primary focus:ring-pub-primary/10"
+                                }`}
                               />
+                              {passengerErrors[idx]?.lastName && (
+                                <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-rose-600">
+                                  <CircleAlert size={11} className="shrink-0" />
+                                  {passengerErrors[idx].lastName}
+                                </p>
+                              )}
                             </div>
                           </div>
 
                           {isLead && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-slate-100">
+                              {/* Mobile Number */}
                               <div>
                                 <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                   <Phone size={13} className="text-slate-400" />
-                                  <span>Phone number *</span>
+                                  <span>Mobile number <span className="text-rose-500">*</span></span>
                                 </label>
                                 <div className="flex gap-2">
                                   <div className="relative w-36 sm:w-40 shrink-0">
@@ -1822,26 +1923,60 @@ export default function DynamicTourBookingPage() {
                                   </div>
                                   <input
                                     type="tel"
+                                    required
                                     value={passenger.phone}
-                                    onChange={(e) => handlePassengerChange(idx, "phone", e.target.value)}
-                                    placeholder="Mobile number"
-                                    className="flex-1 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
+                                    onChange={(e) => {
+                                      handlePassengerChange(idx, "phone", e.target.value);
+                                      clearPassengerFieldError(idx, "phone");
+                                    }}
+                                    placeholder="e.g. 9876543210"
+                                    maxLength={15}
+                                    className={`flex-1 rounded-xl border bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
+                                      passengerErrors[idx]?.phone
+                                        ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100"
+                                        : "border-slate-200 focus:border-pub-primary focus:ring-pub-primary/10"
+                                    }`}
                                   />
                                 </div>
+                                {passengerErrors[idx]?.phone ? (
+                                  <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-rose-600">
+                                    <CircleAlert size={11} className="shrink-0" />
+                                    {passengerErrors[idx].phone}
+                                  </p>
+                                ) : (
+                                  <p className="mt-1 text-[10px] text-slate-400">Digits only, 7–15 characters (country code selected above)</p>
+                                )}
                               </div>
 
+                              {/* Email Address */}
                               <div>
                                 <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                   <Mail size={13} className="text-slate-400" />
-                                  <span>Email address *</span>
+                                  <span>Email address <span className="text-rose-500">*</span></span>
                                 </label>
                                 <input
                                   type="email"
+                                  required
                                   value={passenger.email}
-                                  onChange={(e) => handlePassengerChange(idx, "email", e.target.value)}
+                                  onChange={(e) => {
+                                    handlePassengerChange(idx, "email", e.target.value);
+                                    clearPassengerFieldError(idx, "email");
+                                  }}
                                   placeholder="e.g. srinath@example.com"
-                                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
+                                  className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
+                                    passengerErrors[idx]?.email
+                                      ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100"
+                                      : "border-slate-200 focus:border-pub-primary focus:ring-pub-primary/10"
+                                  }`}
                                 />
+                                {passengerErrors[idx]?.email ? (
+                                  <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-rose-600">
+                                    <CircleAlert size={11} className="shrink-0" />
+                                    {passengerErrors[idx].email}
+                                  </p>
+                                ) : (
+                                  <p className="mt-1 text-[10px] text-slate-400">Booking confirmation sent to this address</p>
+                                )}
                               </div>
                             </div>
                           )}
@@ -1849,14 +1984,22 @@ export default function DynamicTourBookingPage() {
                           <div className="pt-2 border-t border-slate-100">
                             <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
                               <Calendar size={13} className="text-slate-400" />
-                              <span>Date of Birth *</span>
+                              <span>Date of Birth <span className="text-rose-500">*</span></span>
                             </label>
                             <div className="grid grid-cols-3 gap-2.5 max-w-md">
                               <div className="relative">
                                 <select
+                                  required
                                   value={passenger.birthDay}
-                                  onChange={(e) => handlePassengerChange(idx, "birthDay", e.target.value)}
-                                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
+                                  onChange={(e) => {
+                                    handlePassengerChange(idx, "birthDay", e.target.value);
+                                    clearPassengerFieldError(idx, "birthDay");
+                                  }}
+                                  className={`w-full appearance-none rounded-xl border bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:bg-white ${
+                                    passengerErrors[idx]?.birthDay
+                                      ? "border-rose-400 focus:border-rose-500"
+                                      : "border-slate-200 focus:border-pub-primary"
+                                  }`}
                                 >
                                   <option value="">Day</option>
                                   {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
@@ -1873,9 +2016,17 @@ export default function DynamicTourBookingPage() {
 
                               <div className="relative">
                                 <select
+                                  required
                                   value={passenger.birthMonth}
-                                  onChange={(e) => handlePassengerChange(idx, "birthMonth", e.target.value)}
-                                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
+                                  onChange={(e) => {
+                                    handlePassengerChange(idx, "birthMonth", e.target.value);
+                                    clearPassengerFieldError(idx, "birthDay");
+                                  }}
+                                  className={`w-full appearance-none rounded-xl border bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:bg-white ${
+                                    passengerErrors[idx]?.birthDay
+                                      ? "border-rose-400 focus:border-rose-500"
+                                      : "border-slate-200 focus:border-pub-primary"
+                                  }`}
                                 >
                                   <option value="">Month</option>
                                   {[
@@ -1895,9 +2046,17 @@ export default function DynamicTourBookingPage() {
 
                               <div className="relative">
                                 <select
+                                  required
                                   value={passenger.birthYear}
-                                  onChange={(e) => handlePassengerChange(idx, "birthYear", e.target.value)}
-                                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
+                                  onChange={(e) => {
+                                    handlePassengerChange(idx, "birthYear", e.target.value);
+                                    clearPassengerFieldError(idx, "birthDay");
+                                  }}
+                                  className={`w-full appearance-none rounded-xl border bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:bg-white ${
+                                    passengerErrors[idx]?.birthDay
+                                      ? "border-rose-400 focus:border-rose-500"
+                                      : "border-slate-200 focus:border-pub-primary"
+                                  }`}
                                 >
                                   <option value="">Year</option>
                                   {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((y) => (
@@ -1912,8 +2071,15 @@ export default function DynamicTourBookingPage() {
                                 />
                               </div>
                             </div>
+                            {passengerErrors[idx]?.birthDay && (
+                              <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-rose-600">
+                                <CircleAlert size={11} className="shrink-0" />
+                                {passengerErrors[idx].birthDay}
+                              </p>
+                            )}
                           </div>
                         </div>
+                      
                       </div>
                     );
                   })}
@@ -1939,7 +2105,7 @@ export default function DynamicTourBookingPage() {
                       onClick={handleContinueStep2}
                       className="rounded-xl bg-pub-accent hover:bg-[#cf4b24] px-8 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-500/15 transition-all active:scale-[0.99] flex items-center gap-2"
                     >
-                      <span>Continue to Payment</span>
+                      <span>Check &amp; Continue to Payment</span>
                       <ArrowRight size={15} />
                     </button>
                   </div>
