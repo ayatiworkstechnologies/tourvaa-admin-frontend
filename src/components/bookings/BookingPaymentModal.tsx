@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { LuCircleAlert as AlertCircle, LuCreditCard as CreditCard, LuLoaderCircle as Loader2, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
@@ -50,7 +50,18 @@ export default function BookingPaymentModal({
   const [gatewayLoading, setGatewayLoading] = useState(true);
   const [loading, setLoading] = useState<"stripe" | "paypal" | "test" | null>(null);
   const [error, setError] = useState("");
+  const idempotencyKeys = useRef<Record<string, string>>({});
   const paymentAmount = paymentType === "partial" ? depositDue : outstandingAmount;
+
+  function paymentIdempotencyKey(gateway: "stripe" | "paypal") {
+    const key = `${gateway}:${bookingId}:${paymentAmount.toFixed(2)}:${paymentType}`;
+    if (!idempotencyKeys.current[key]) {
+      idempotencyKeys.current[key] = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+    return idempotencyKeys.current[key];
+  }
 
   useEffect(() => {
     api.get("/payments/gateways/status")
@@ -71,6 +82,7 @@ export default function BookingPaymentModal({
       const origin = window.location.origin;
       const response = await api.post("/payments/stripe/create-session", {
         booking_id: bookingId, amount: paymentAmount, currency,
+        idempotency_key: paymentIdempotencyKey("stripe"),
         success_url: `${origin}${returnPath}?payment=stripe_success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}${returnPath}?payment=cancelled`,
       });
@@ -89,6 +101,7 @@ export default function BookingPaymentModal({
       const origin = window.location.origin;
       const response = await api.post("/payments/paypal/create-order", {
         booking_id: bookingId, amount: paymentAmount, currency,
+        idempotency_key: paymentIdempotencyKey("paypal"),
         return_url: `${origin}${returnPath}?payment=paypal_approved`,
         cancel_url: `${origin}${returnPath}?payment=cancelled`,
       });

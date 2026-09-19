@@ -341,14 +341,14 @@ export default function RefundsPage() {
                         </button>
                       </>
                     )}
-                    {req.status === "approved" && (
+                    {(req.status === "approved" || req.status === "refund_processing") && (
                       <button
                         type="button"
                         disabled={processingId === req.id}
                         onClick={() => void processRefund(req)}
                         className="inline-flex items-center gap-1 rounded-lg bg-[#0284C7] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0369A1] disabled:opacity-60"
                       >
-                        <RefreshCcw size={13} /> Process Refund
+                        <RefreshCcw size={13} /> {req.status === "refund_processing" ? "Retry Refund" : "Process Refund"}
                       </button>
                     )}
                     {req.gateway_refund_id && (

@@ -9,7 +9,7 @@
 // flip this back to true once that's ready.
 const SHOW_ACCOMMODATION_BOOKING = false;
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -966,21 +966,30 @@ export default function DynamicTourBookingPage() {
     return undefined;
   }
 
+  const paymentIdempotencyKeys = useRef<Record<string, string>>({});
   const startPayment = async (booking: { id: number; amount_pending: string; currency: string }, amountOverride?: string) => {
     setPendingBooking(booking);
     const base = `${window.location.origin}/${isAgent ? "agent" : "customer"}/bookings/${booking.id}`;
     const testOnly = gateway === "stripe" ? Boolean(gateways?.stripe_test) : Boolean(gateways?.paypal_test);
-    const common = { booking_id: booking.id, amount: amountOverride || booking.amount_pending, currency: booking.currency, test_only: testOnly };
+    const amount = amountOverride || booking.amount_pending;
+    // Stable per booking/gateway/amount so a retry or double-click reuses the same
+    // gateway session instead of creating a second charge.
+    const common = { booking_id: booking.id, amount, currency: booking.currency, test_only: testOnly, idempotency_key: `checkout-${booking.id}-${gateway}-${amount}` };
+    const paymentKey = `${gateway}:${booking.id}:${common.amount}:${common.currency}`;
+    paymentIdempotencyKeys.current[paymentKey] ??= typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const idempotency_key = paymentIdempotencyKeys.current[paymentKey];
     if (gateway === "stripe") {
       const { data } = await api.post("/payments/stripe/create-session", {
-        ...common, success_url: `${base}?payment=${isAgent ? "stripe_success" : "success"}&session_id={CHECKOUT_SESSION_ID}`,
+        ...common, idempotency_key, success_url: `${base}?payment=${isAgent ? "stripe_success" : "success"}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${base}?payment=cancelled`,
       });
       if (!data.data?.checkout_url) throw new Error("Stripe checkout URL is missing.");
       window.location.assign(data.data.checkout_url);
     } else {
       const { data } = await api.post("/payments/paypal/create-order", {
-        ...common, return_url: `${base}?payment=paypal_approved`, cancel_url: `${base}?payment=cancelled`,
+        ...common, idempotency_key, return_url: `${base}?payment=paypal_approved`, cancel_url: `${base}?payment=cancelled`,
       });
       if (!data.data?.approve_url) throw new Error("PayPal approval URL is missing.");
       sessionStorage.setItem(`paypal_pid_${booking.id}`, String(data.data.payment_id));
