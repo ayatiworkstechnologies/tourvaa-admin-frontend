@@ -86,18 +86,6 @@ export default function TourOverviewTab({ tourId }: { tourId: string }) {
   return (
     <form onSubmit={submit} className="space-y-6">
       <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
-        <h2 className="text-xl font-black text-dash-text">Tour Overview</h2>
-        <p className="mt-1 text-sm text-dash-subtle">Quick tour details shown on the listing page.</p>
-        <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {field("group_size", "Group size", "e.g. 2–15 people")}
-        </div>
-        <p className="mt-3 text-xs text-dash-subtle">
-          Duration, start/end location, and tour type are set in the Basic Details and Location &amp; Category
-          steps. Physical rating has moved to Location &amp; Category.
-        </p>
-      </div>
-
-      <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
         <h2 className="text-xl font-black text-dash-text">Trip Planning Details</h2>
         <p className="mt-1 text-sm text-dash-subtle">Helps travellers decide if this tour fits them.</p>
         <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
