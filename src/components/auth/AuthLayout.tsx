@@ -1,4 +1,9 @@
-import { LuBadgeCheck as BadgeCheck, LuCompass as Compass, LuShieldCheck as ShieldCheck, LuUsersRound as UsersRound } from "react-icons/lu";
+import {
+  LuBadgeCheck as BadgeCheck,
+  LuCompass as Compass,
+  LuShieldCheck as ShieldCheck,
+  LuUsersRound as UsersRound,
+} from "react-icons/lu";
 
 type AuthLayoutProps = {
   title: string;
@@ -42,7 +47,12 @@ export default function AuthLayout({
           </div>
 
           <div className="relative z-10 space-y-4">
-            <li className="flex items-center gap-4 text-sm font-semibold text-emerald-100/90"><div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 shadow-inner backdrop-blur-md"><Compass size={18} className="text-emerald-300" /></div> Manage inventory across 100+ destinations</li>
+            <li className="flex items-center gap-4 text-sm font-semibold text-emerald-100/90">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 shadow-inner backdrop-blur-md">
+                <Compass size={18} className="text-emerald-300" />
+              </div>{" "}
+              Manage inventory across 100+ destinations
+            </li>
             <div className="max-w-sm rounded-2xl border border-white/20 bg-white/15 p-4 shadow-2xl backdrop-blur-md">
               <div className="flex items-center justify-between">
                 <div>
@@ -61,7 +71,10 @@ export default function AuthLayout({
                   ["Roles", BadgeCheck],
                   ["Secure", ShieldCheck],
                 ].map(([item, Icon]) => (
-                  <div key={item as string} className="rounded-xl bg-white/12 py-3">
+                  <div
+                    key={item as string}
+                    className="rounded-xl bg-white/12 py-3"
+                  >
                     <Icon size={16} className="mx-auto mb-1" />
                     <span className="font-bold">{item as string}</span>
                   </div>
@@ -78,7 +91,7 @@ export default function AuthLayout({
                 <ShieldCheck size={13} />
                 {badge}
               </p>
-              <h2 className="text-4xl font-extrabold tracking-tight text-zinc-950">
+              <h2 className="text-4xl font-semibold tracking-tight text-zinc-950">
                 {title}
               </h2>
               <p className="mt-2 text-sm leading-6 text-gray-500">{subtitle}</p>

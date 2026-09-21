@@ -190,7 +190,7 @@ export type CmsCountryPage = { id: number; country_id: number; country_name: str
 export type CmsContentBlock<T extends Record<string, unknown> = Record<string, unknown>> = { key: string; data: Partial<T>; updated_at: string | null };
 export type HeroExtrasBlock = {
   rating: number; review_count: number; review_source: string;
-  offer_text: string; offer_cta_text: string; offer_cta_url: string;
+  offer_label?: string; offer_text: string; offer_cta_text: string; offer_cta_url: string;
   sub_hero_text?: string;
   deal_badge?: string; deal_title?: string; deal_subtitle?: string; deal_cta_text?: string; deal_cta_url?: string;
 };

@@ -1,6 +1,9 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
+import RichText from "@/components/public/home/RichText";
+import { list, useSectionCopy } from "@/components/public/home/useSectionCopy";
 import { useEffect, useRef, useState } from "react";
 import {
   LuArrowRight as ArrowRight,
@@ -31,7 +34,16 @@ import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelect
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import type { AuthUser } from "@/types/auth";
 
+const TRUST_ICONS = [
+  { Icon: Globe, color: "text-sky-400" },
+  { Icon: Star, color: "text-emerald-400" },
+  { Icon: MessageSquare, color: "text-pub-accent" },
+  { Icon: HeartHandshake, color: "text-sky-400" },
+];
+
 export default function PublicHeader() {
+  // CMS > Home Page > Top Bar replaces the default highlights when set.
+  const customTrust = list(useSectionCopy("trust_bar").items);
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [visible, setVisible] = useState(true);
@@ -131,26 +143,58 @@ export default function PublicHeader() {
       {/* Top Trust Bar -- full width edge-to-edge, matching footer pub-primary signature color */}
       <div className="w-full bg-pub-primary text-white border-b border-white/10">
         <div className="mx-auto flex h-11 sm:h-12 max-w-[1440px] items-center justify-center gap-4 sm:gap-6 md:gap-8 px-4 sm:px-8 lg:px-12 text-xs sm:text-[12.5px] font-semibold overflow-x-auto no-scrollbar whitespace-nowrap py-2 sm:py-2.5">
-          <span className="flex items-center gap-2 shrink-0">
-            <Globe size={15} className="text-sky-400" />
-            Shop 2,500+ handpicked operators
-          </span>
-          <span className="h-4 w-px bg-white/25 shrink-0" aria-hidden="true" />
-          <span className="flex items-center gap-2 shrink-0">
-            <Star size={15} className="text-emerald-400" />
-            4.8 stars on <span className="font-black text-emerald-400">Trustpilot</span>
-            <span className="text-white/70">(15,000+ reviews)</span>
-          </span>
-          <span className="h-4 w-px bg-white/25 shrink-0" aria-hidden="true" />
-          <span className="flex items-center gap-2 shrink-0">
-            <MessageSquare size={15} className="text-pub-accent" />
-            24/7 customer support
-          </span>
-          <span className="h-4 w-px bg-white/25 shrink-0" aria-hidden="true" />
-          <span className="flex items-center gap-2 shrink-0">
-            <HeartHandshake size={15} className="text-sky-400" />
-            500k+ experiences shared by travelers
-          </span>
+          {customTrust.length ? (
+            customTrust.map((t, i) => {
+              const { Icon, color } = TRUST_ICONS[i % TRUST_ICONS.length];
+              return (
+                <React.Fragment key={i}>
+                  {i > 0 && (
+                    <span
+                      className="h-4 w-px bg-white/25 shrink-0"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className="flex items-center gap-2 shrink-0">
+                    <Icon size={15} className={color} />
+                    <RichText value={t} strongClassName="font-black" />
+                  </span>
+                </React.Fragment>
+              );
+            })
+          ) : (
+            <>
+              <span className="flex items-center gap-2 shrink-0">
+                <Globe size={15} className="text-sky-400" />
+                Shop 2,500+ handpicked operators
+              </span>
+              <span
+                className="h-4 w-px bg-white/25 shrink-0"
+                aria-hidden="true"
+              />
+              <span className="flex items-center gap-2 shrink-0">
+                <Star size={15} className="text-emerald-400" />
+                4.8 stars on{" "}
+                <span className="font-black text-emerald-400">Trustpilot</span>
+                <span className="text-white/70">(15,000+ reviews)</span>
+              </span>
+              <span
+                className="h-4 w-px bg-white/25 shrink-0"
+                aria-hidden="true"
+              />
+              <span className="flex items-center gap-2 shrink-0">
+                <MessageSquare size={15} className="text-pub-accent" />
+                24/7 customer support
+              </span>
+              <span
+                className="h-4 w-px bg-white/25 shrink-0"
+                aria-hidden="true"
+              />
+              <span className="flex items-center gap-2 shrink-0">
+                <HeartHandshake size={15} className="text-sky-400" />
+                500k+ experiences shared by travelers
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -161,7 +205,11 @@ export default function PublicHeader() {
         >
           {logoUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element -- logo comes from an admin-uploaded external URL, not a local/optimizable asset */
-            <img src={logoUrl} alt="Tourvaa" className="h-9 w-auto object-contain sm:h-10" />
+            <img
+              src={logoUrl}
+              alt="Tourvaa"
+              className="h-9 w-auto object-contain sm:h-10"
+            />
           ) : (
             "Tourvaa"
           )}
@@ -258,9 +306,15 @@ export default function PublicHeader() {
             className="group p-1.5 rounded-lg text-pub-primary transition-colors hover:text-pub-secondary hover:bg-blue-50"
           >
             {open ? (
-              <X size={22} className="text-pub-primary group-hover:text-pub-secondary" />
+              <X
+                size={22}
+                className="text-pub-primary group-hover:text-pub-secondary"
+              />
             ) : (
-              <Menu size={22} className="text-pub-primary group-hover:text-pub-secondary" />
+              <Menu
+                size={22}
+                className="text-pub-primary group-hover:text-pub-secondary"
+              />
             )}
           </button>
         </div>
@@ -290,11 +344,11 @@ export default function PublicHeader() {
             {isLoggedIn ? (
               <>
                 <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pub-accent to-amber-500 text-white font-extrabold text-sm shadow-xs">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pub-accent to-amber-500 text-white font-semibold text-sm shadow-xs">
                     {(user?.name || "T")[0]?.toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-extrabold text-slate-900">
+                    <p className="truncate text-xs font-semibold text-slate-900">
                       {user?.name || "Traveller"}
                     </p>
                     {user?.email && (
@@ -476,7 +530,9 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
           <Sparkles size={18} />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-black text-slate-900">Welcome to Tourvaa</p>
+          <p className="text-sm font-black text-slate-900">
+            Welcome to Tourvaa
+          </p>
           <p className="truncate text-[11px] text-slate-500 font-medium">
             Sign in to unlock exclusive travel perks
           </p>
@@ -490,8 +546,12 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
             <User size={16} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-black text-slate-900">Traveller Account</p>
-            <p className="text-[10px] text-slate-500">Plan trips, view bookings & wishlist</p>
+            <p className="text-xs font-black text-slate-900">
+              Traveller Account
+            </p>
+            <p className="text-[10px] text-slate-500">
+              Plan trips, view bookings & wishlist
+            </p>
           </div>
         </div>
 
@@ -518,7 +578,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
 
       {/* Partner Portals Section */}
       <div className="mt-3">
-        <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+        <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
           Partner & Business Portals
         </p>
         <div className="mt-1 space-y-1">
@@ -624,9 +684,13 @@ function AuthenticatedProfileMenu({
           {initials}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-extrabold text-slate-900">{name}</p>
+          <p className="truncate text-sm font-semibold text-slate-900">
+            {name}
+          </p>
           {email && (
-            <p className="truncate text-[11px] text-slate-500 font-medium">{email}</p>
+            <p className="truncate text-[11px] text-slate-500 font-medium">
+              {email}
+            </p>
           )}
           <span className="mt-1 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700 border border-emerald-200/60">
             {roleName}
@@ -679,11 +743,18 @@ function AuthenticatedProfileMenu({
               <LayoutDashboard size={16} />
             </span>
             <span>
-              <b className="block text-xs font-bold text-slate-900">My Dashboard</b>
-              <span className="block text-[10px] text-slate-400 font-normal">Overview & activity</span>
+              <b className="block text-xs font-bold text-slate-900">
+                My Dashboard
+              </b>
+              <span className="block text-[10px] text-slate-400 font-normal">
+                Overview & activity
+              </span>
             </span>
           </span>
-          <ArrowRight size={14} className="text-slate-300 group-hover:text-slate-600 transition" />
+          <ArrowRight
+            size={14}
+            className="text-slate-300 group-hover:text-slate-600 transition"
+          />
         </Link>
 
         {bookingsPath && (
@@ -698,11 +769,18 @@ function AuthenticatedProfileMenu({
                 <CalendarCheck size={16} />
               </span>
               <span>
-                <b className="block text-xs font-bold text-slate-900">My Bookings</b>
-                <span className="block text-[10px] text-slate-400 font-normal">Tours & departure dates</span>
+                <b className="block text-xs font-bold text-slate-900">
+                  My Bookings
+                </b>
+                <span className="block text-[10px] text-slate-400 font-normal">
+                  Tours & departure dates
+                </span>
               </span>
             </span>
-            <ArrowRight size={14} className="text-slate-300 group-hover:text-slate-600 transition" />
+            <ArrowRight
+              size={14}
+              className="text-slate-300 group-hover:text-slate-600 transition"
+            />
           </Link>
         )}
 
@@ -717,11 +795,18 @@ function AuthenticatedProfileMenu({
               <User size={16} />
             </span>
             <span>
-              <b className="block text-xs font-bold text-slate-900">Account Settings</b>
-              <span className="block text-[10px] text-slate-400 font-normal">Profile & preferences</span>
+              <b className="block text-xs font-bold text-slate-900">
+                Account Settings
+              </b>
+              <span className="block text-[10px] text-slate-400 font-normal">
+                Profile & preferences
+              </span>
             </span>
           </span>
-          <ArrowRight size={14} className="text-slate-300 group-hover:text-slate-600 transition" />
+          <ArrowRight
+            size={14}
+            className="text-slate-300 group-hover:text-slate-600 transition"
+          />
         </Link>
 
         <Link
@@ -735,11 +820,18 @@ function AuthenticatedProfileMenu({
               <Headset size={16} />
             </span>
             <span>
-              <b className="block text-xs font-bold text-slate-900">Help Centre</b>
-              <span className="block text-[10px] text-slate-400 font-normal">FAQs & customer support</span>
+              <b className="block text-xs font-bold text-slate-900">
+                Help Centre
+              </b>
+              <span className="block text-[10px] text-slate-400 font-normal">
+                FAQs & customer support
+              </span>
             </span>
           </span>
-          <ArrowRight size={14} className="text-slate-300 group-hover:text-slate-600 transition" />
+          <ArrowRight
+            size={14}
+            className="text-slate-300 group-hover:text-slate-600 transition"
+          />
         </Link>
       </div>
 
@@ -763,4 +855,3 @@ function AuthenticatedProfileMenu({
     </div>
   );
 }
-

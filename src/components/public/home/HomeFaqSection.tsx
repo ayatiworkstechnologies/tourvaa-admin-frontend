@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSectionCopy, text } from "./useSectionCopy";
 import { LuChevronDown as ChevronDown } from "react-icons/lu";
 import { fetchHelpCentre } from "@/lib/api/publicClient";
 import { FAQS } from "./homeTypes";
@@ -15,6 +16,7 @@ export interface HomeFaqSectionProps {
 }
 
 export default function HomeFaqSection({ initialFaqs }: HomeFaqSectionProps) {
+  const copy = useSectionCopy("faq_section");
   const [faqs, setFaqs] = useState<FaqItem[]>(initialFaqs || FAQS);
   const [openIndex, setOpenIndex] = useState<number | null>(1); // Question 2 open by default as shown in mockup
 
@@ -50,10 +52,10 @@ export default function HomeFaqSection({ initialFaqs }: HomeFaqSectionProps) {
 
   return (
     <section className="relative w-full overflow-hidden py-14 sm:py-18 bg-gradient-to-b from-white via-[#FDF5F5] to-[#FBECEA]">
-      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+      <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 text-center tracking-tight mb-5 sm:mb-7">
-            Frequently Asked Questions
+            {text(copy.title, "Frequently Asked Questions")}
           </h2>
 
           <div className="space-y-3.5">

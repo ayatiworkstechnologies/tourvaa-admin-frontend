@@ -5,6 +5,8 @@ import { LuSquarePen as Edit, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } fro
 import api from "@/lib/api/client";
 import DataTable from "@/components/ui/DataTable";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type Field = {
   name: string;
@@ -65,6 +67,7 @@ export default function DynamicModulePage({
   fields,
 }: DynamicModulePageProps) {
   const { confirm, dialog } = useConfirm();
+  const toast = useToast();
   const [items, setItems] = useState<DynamicItem[]>([]);
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DynamicItem | null>(null);
@@ -140,8 +143,8 @@ export default function DynamicModulePage({
 
       await fetchItems();
       closeModal();
-    } catch {
-      alert("Something went wrong");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -154,8 +157,8 @@ export default function DynamicModulePage({
     try {
       await api.delete(`${endpoint}${id}`);
       await fetchItems();
-    } catch {
-      alert("Delete failed");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 

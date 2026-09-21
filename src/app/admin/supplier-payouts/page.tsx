@@ -25,7 +25,7 @@ type Payout = {
   approver_name?: string | null;
   paid_at?: string | null;
   created_at?: string | null;
-  items?: { ledger_id: number; amount: string }[];
+  items?: { ledger_id: number; amount: string; booking_code?: string | null; booking_status?: string | null; notes?: string | null }[];
 };
 
 const FILTERS = ["all", "pending", "approved", "paid", "rejected"];
@@ -183,6 +183,18 @@ export default function SupplierPayoutsAdminPage() {
     { key: "amount", header: "Amount", className: "font-bold", render: (p) => money(p.total_amount, p.currency) },
     { key: "method", header: "Method", className: "text-xs capitalize text-dash-muted", render: (p) => p.payment_method.replaceAll("_", " ") },
     { key: "items", header: "Ledger Items", className: "text-xs text-dash-muted", render: (p) => `${p.items?.length ?? 0} entries` },
+    {
+      key: "reconciliation",
+      header: "Reconciliation",
+      className: "max-w-sm text-xs",
+      render: (p) => {
+        const notes = (p.items ?? []).map((item) => item.notes).filter(Boolean) as string[];
+        const flagged = notes.filter((note) => note.toLowerCase().includes("manual reconciliation"));
+        return flagged.length > 0
+          ? <span className="font-semibold text-amber-700" title={flagged.join("\n")}>Manual review required ({flagged.length})</span>
+          : <span className="text-dash-subtle">Clear</span>;
+      },
+    },
     {
       key: "status",
       header: "Status",

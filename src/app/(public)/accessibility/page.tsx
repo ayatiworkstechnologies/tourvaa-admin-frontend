@@ -1,69 +1,99 @@
 import Link from "next/link";
+import ConfiguredSupportEmail from "@/components/public/ConfiguredSupportEmail";
+import LegalPageLayout, { LegalBullets, type LegalSection } from "@/components/public/LegalPageLayout";
 
 const features = [
-  ["Keyboard navigation", "All interactive elements - menus, forms, buttons, and links - are fully operable using a keyboard alone. Focus states are visible at all times."],
-  ["Screen reader support", "We use semantic HTML5 elements and ARIA labels where necessary to ensure compatibility with assistive technologies such as NVDA, VoiceOver, and JAWS."],
-  ["Text contrast", "All text meets WCAG 2.1 AA contrast requirements, with a minimum contrast ratio of 4.5:1 for body text and 3:1 for large text and interface components."],
-  ["Resizable text", "The platform remains usable when text is scaled up to 200% using browser zoom without loss of functionality or content."],
-  ["Image descriptions", "All meaningful images include descriptive alt text. Decorative images have null alt attributes so screen readers skip them."],
-  ["Form accessibility", "All form fields are labelled explicitly. Error messages are associated with their respective inputs and announced to assistive technologies."],
-  ["No seizure-inducing content", "We do not use animations that flash more than three times per second. Motion is kept minimal and purposeful."],
+  { title: "Keyboard Navigation", desc: "All interactive elements, forms, modal dialogs, and navigation menus are fully operable via keyboard with clear outline focus indicators." },
+  { title: "Screen Reader Support", desc: "Semantic HTML5, ARIA roles, and accessible names are structured for screen readers including NVDA, JAWS, and Apple VoiceOver." },
+  { title: "Optimal Color Contrast", desc: "All textual and graphic user interface elements strictly adhere to WCAG 2.1 AA contrast ratios (minimum 4.5:1 for body copy)." },
+  { title: "Responsive Fluid Scaling", desc: "The platform dynamically responds up to 200% zoom without truncation, horizontal clipping, or loss of booking functionality." },
+  { title: "Descriptive Media Alt Text", desc: "Tour photography and destination imagery incorporate contextually meaningful alt descriptions for visually impaired guests." },
+  { title: "Form Field Clarity & Errors", desc: "All form inputs provide unambiguous labels, error validation banners, and helper hints with explicit screen reader announcements." },
+];
+
+const sections: LegalSection[] = [
+  {
+    id: "our-commitment",
+    number: 1,
+    label: "Our Commitment to Accessible Travel",
+    body: (
+      <>
+        <p>
+          At Tourvaa, we believe exploring the world should be inclusive and accessible to everyone. We continually enhance our platform design and digital experience to ensure guests of all abilities can search, compare, book, and communicate with local tour operators with total ease.
+        </p>
+        <p>
+          We conform our platform to the <strong>Web Content Accessibility Guidelines (WCAG) 2.1 Level AA</strong> standards developed by the World Wide Web Consortium (W3C).
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "digital-features",
+    number: 2,
+    label: "Implemented Digital Accessibility Features",
+    body: (
+      <div className="grid gap-4 sm:grid-cols-2 mt-2">
+        {features.map((f) => (
+          <div key={f.title} className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-4">
+            <h3 className="text-sm font-bold text-slate-950">{f.title}</h3>
+            <p className="mt-1 text-xs text-slate-600 leading-relaxed font-normal">{f.desc}</p>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  {
+    id: "known-limitations",
+    number: 3,
+    label: "Third-Party Content & Known Limitations",
+    body: (
+      <>
+        <p>
+          While we strive for comprehensive accessibility across all touchpoints, some third-party embeds (such as dynamic map widgets, external bank authentication gateways, or operator video trailers) may have technical limitations outside our direct development control.
+        </p>
+        <p>
+          We actively work alongside our technology partners and suppliers to encourage accessible standards across external booking components.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "feedback-and-support",
+    number: 4,
+    label: "Accessibility Feedback & Assistance Desk",
+    body: (
+      <>
+        <p>
+          If you encounter any accessibility barrier on Tourvaa, require assistance completing a reservation, or wish to request special dietary or mobility accommodations for an upcoming tour, our specialized accessibility desk is ready to support you:
+        </p>
+        <LegalBullets
+          items={[
+            "Direct Accessibility Email: accessibility@tourvaa.com",
+            "General Support Desk: Available 24/7 through the Tourvaa Contact Hub",
+            "Target Response Time: Within 24 hours on all accessibility inquiries",
+          ]}
+        />
+        <p className="mt-3">
+          You can also reach our general support team via{" "}
+          <Link href="/contact" className="font-bold text-pub-secondary hover:underline">
+            Contact Us
+          </Link>{" "}
+          or email <ConfiguredSupportEmail className="font-bold text-pub-secondary hover:underline" />.
+        </p>
+      </>
+    ),
+  },
 ];
 
 export default function AccessibilityPage() {
   return (
-    <main className="min-h-screen bg-slate-50 pb-20">
-      <section className="bg-[#063c42] pb-14 pt-32 text-white">
-        <div className="mx-auto max-w-4xl px-5 md:px-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-teal-400">Accessibility</p>
-          <h1 className="mt-2 text-4xl font-bold">Accessibility Statement</h1>
-          <p className="mt-3 text-sm text-white/60">Last updated: June 2026</p>
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-4xl px-5 py-12 md:px-8">
-        <div className="space-y-6">
-          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
-            <h2 className="mb-3 font-bold text-slate-950">Our commitment</h2>
-            <p className="text-sm leading-7 text-slate-500">
-              Tourvaa is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply relevant accessibility standards.
-            </p>
-            <p className="mt-3 text-sm leading-7 text-slate-500">
-              We aim to conform to the Web Content Accessibility Guidelines (WCAG) 2.1 at Level AA. These guidelines explain how to make web content more accessible to people with disabilities.
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
-            <h2 className="mb-5 font-bold text-slate-950">Accessibility features</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {features.map(([title, desc]) => (
-                <div key={title} className="rounded-xl border border-slate-200 p-4">
-                  <p className="font-bold text-slate-950">{title}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">{desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {[
-            ["Known limitations", "While we strive for full accessibility, some third-party content embedded in the platform (such as map iframes or external video players) may not fully meet WCAG 2.1 AA standards. We work to identify and address these issues as they are reported."],
-            ["Feedback and contact", "We welcome your feedback on the accessibility of the Tourvaa platform. If you experience accessibility barriers, please contact us so we can address the issue promptly:\n\n• Email: accessibility@tourvaa.com\n• Contact form: tourvaa.com/contact\n\nWe aim to respond to accessibility feedback within 2 business days."],
-            ["Technical specifications", "Tourvaa uses the following technologies: HTML5, CSS3, JavaScript (React / Next.js). Accessibility has been tested with NVDA on Windows and VoiceOver on macOS and iOS."],
-          ].map(([title, text]) => (
-            <div key={String(title)} className="rounded-2xl bg-white p-7 shadow-sm ring-1 border border-slate-100 shadow-sm ring-0">
-              <h2 className="mb-3 font-bold text-slate-950">{String(title)}</h2>
-              <p className="whitespace-pre-line text-sm leading-7 text-slate-500">{String(text)}</p>
-            </div>
-          ))}
-
-          <div className="rounded-xl bg-blue-50 p-5 text-sm text-slate-600">
-            Need help accessing any part of our platform?{" "}
-            <Link href="/contact" className="font-bold text-pub-secondary hover:underline">Contact our team</Link>{" "}
-            and we will assist you directly.
-          </div>
-        </div>
-      </div>
-    </main>
+    <LegalPageLayout
+      eyebrow="Universal Inclusion"
+      title="Accessibility Statement"
+      subtitle="Tourvaa is dedicated to providing an inclusive, barrier-free digital booking platform for travelers of all abilities worldwide."
+      intro="This statement reflects our ongoing dedication to WCAG 2.1 Level AA compliance and accessible adventure travel."
+      sections={sections}
+      lastUpdated="September 2026"
+    />
   );
 }
-

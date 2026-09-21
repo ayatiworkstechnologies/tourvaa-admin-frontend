@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LuCheck as Check, LuChevronDown as ChevronDown, LuCookie as CookieIcon, LuLock as Lock, LuShieldCheck as ShieldCheck, LuSlidersHorizontal as Sliders, LuSparkles as Sparkles, LuX as X } from "react-icons/lu";
+import {
+  LuCheck as Check,
+  LuChevronDown as ChevronDown,
+  LuCookie as CookieIcon,
+  LuLock as Lock,
+  LuShieldCheck as ShieldCheck,
+  LuSlidersHorizontal as Sliders,
+  LuSparkles as Sparkles,
+  LuX as X,
+} from "react-icons/lu";
 
 const CONSENT_KEY = "tourvaa_cookie_consent";
 
@@ -42,10 +51,20 @@ export default function CookieConsentBanner() {
         type,
         preferences:
           type === "all"
-            ? { necessary: true, analytics: true, marketing: true, preferences: true }
+            ? {
+                necessary: true,
+                analytics: true,
+                marketing: true,
+                preferences: true,
+              }
             : type === "essential"
-            ? { necessary: true, analytics: false, marketing: false, preferences: false }
-            : prefs,
+              ? {
+                  necessary: true,
+                  analytics: false,
+                  marketing: false,
+                  preferences: false,
+                }
+              : prefs,
         timestamp: new Date().toISOString(),
       };
       localStorage.setItem(CONSENT_KEY, JSON.stringify(consentData));
@@ -75,7 +94,7 @@ export default function CookieConsentBanner() {
                 <h3 className="text-base font-black tracking-tight text-pub-primary">
                   We Value Your Privacy
                 </h3>
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold text-amber-700 border border-amber-200/60">
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200/60">
                   <Sparkles size={10} className="text-amber-500" />
                   Cookie Policy
                 </span>
@@ -98,7 +117,10 @@ export default function CookieConsentBanner() {
 
         {/* Main Explanatory Copy */}
         <p className="mt-3.5 text-xs sm:text-[13px] leading-relaxed text-slate-600 font-medium">
-          Tourvaa uses cookies and similar technologies to ensure seamless navigation, remember your preferences, analyze website traffic, and deliver personalized tour deals. You can choose to accept all or customize your preferences anytime. See our{" "}
+          Tourvaa uses cookies and similar technologies to ensure seamless
+          navigation, remember your preferences, analyze website traffic, and
+          deliver personalized tour deals. You can choose to accept all or
+          customize your preferences anytime. See our{" "}
           <Link
             href="/cookie-policy"
             className="font-bold text-pub-accent underline underline-offset-2 hover:text-pub-primary transition"
@@ -123,10 +145,13 @@ export default function CookieConsentBanner() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <Lock size={12} className="text-slate-700" />
-                  <span className="font-bold text-slate-900">Strictly Necessary</span>
+                  <span className="font-bold text-slate-900">
+                    Strictly Necessary
+                  </span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
-                  Essential for logins, shopping cart, currency selection, and secure checkout.
+                  Essential for logins, shopping cart, currency selection, and
+                  secure checkout.
                 </p>
               </div>
               <span className="shrink-0 rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-bold text-slate-700">
@@ -139,17 +164,22 @@ export default function CookieConsentBanner() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck size={12} className="text-blue-600" />
-                  <span className="font-bold text-slate-900">Analytics & Performance</span>
+                  <span className="font-bold text-slate-900">
+                    Analytics & Performance
+                  </span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
-                  Helps us understand how travellers search, discover tours, and improve site speed.
+                  Helps us understand how travellers search, discover tours, and
+                  improve site speed.
                 </p>
               </div>
               <button
                 type="button"
                 role="switch"
                 aria-checked={prefs.analytics}
-                onClick={() => setPrefs((p) => ({ ...p, analytics: !p.analytics }))}
+                onClick={() =>
+                  setPrefs((p) => ({ ...p, analytics: !p.analytics }))
+                }
                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                   prefs.analytics ? "bg-pub-primary" : "bg-slate-300"
                 }`}
@@ -167,17 +197,22 @@ export default function CookieConsentBanner() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <Sparkles size={12} className="text-pub-accent" />
-                  <span className="font-bold text-slate-900">Marketing & Personalization</span>
+                  <span className="font-bold text-slate-900">
+                    Marketing & Personalization
+                  </span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
-                  Delivers relevant getaway deals, seasonal discounts, and curated destination offers.
+                  Delivers relevant getaway deals, seasonal discounts, and
+                  curated destination offers.
                 </p>
               </div>
               <button
                 type="button"
                 role="switch"
                 aria-checked={prefs.marketing}
-                onClick={() => setPrefs((p) => ({ ...p, marketing: !p.marketing }))}
+                onClick={() =>
+                  setPrefs((p) => ({ ...p, marketing: !p.marketing }))
+                }
                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                   prefs.marketing ? "bg-pub-accent" : "bg-slate-300"
                 }`}
@@ -200,7 +235,9 @@ export default function CookieConsentBanner() {
             className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
           >
             <Sliders size={13} className="text-slate-500" />
-            <span>{showPreferences ? "Hide Preferences" : "Customize Preferences"}</span>
+            <span>
+              {showPreferences ? "Hide Preferences" : "Customize Preferences"}
+            </span>
             <ChevronDown
               size={13}
               className={`text-slate-400 transition-transform ${showPreferences ? "rotate-180" : ""}`}
@@ -217,7 +254,9 @@ export default function CookieConsentBanner() {
             </button>
             <button
               type="button"
-              onClick={() => (showPreferences ? saveConsent("custom") : saveConsent("all"))}
+              onClick={() =>
+                showPreferences ? saveConsent("custom") : saveConsent("all")
+              }
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl bg-pub-primary px-5 py-2.5 text-xs font-black text-white shadow-md shadow-pub-primary/20 hover:bg-pub-primary-dark hover:-translate-y-0.5 transition"
             >
               <Check size={14} className="text-pub-accent" />
@@ -229,4 +268,3 @@ export default function CookieConsentBanner() {
     </div>
   );
 }
-

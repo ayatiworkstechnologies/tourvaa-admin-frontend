@@ -25,6 +25,7 @@ import {
 } from "react-icons/lu";
 import {
   fetchFavouriteCountries,
+  fetchContentBlock,
   fetchPopularDestinations,
   fetchPublicCountries,
 } from "@/lib/api/publicClient";
@@ -35,7 +36,7 @@ import { destinationUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 export interface CountryCardItem {
   name: string;
   badge?: string;
-  region: "Asia" | "Europe" | "Americas" | "Africa & Middle East" | "Oceania";
+  region: "Asia" | "Europe" | "Americas" | "Africa & Middle East" | "Oceania" | "Other";
   image: string;
   snippet: string;
   href?: string;
@@ -49,224 +50,280 @@ const MASTER_DESTINATION_COUNTRIES: CountryCardItem[] = [
     name: "Morocco",
     badge: "Morocco",
     region: "Africa & Middle East",
-    image: "https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?auto=format&fit=crop&w=900&q=80",
-    snippet: "Trek the Sahara aboard a camel. Browse the vibrant souks of Marrakech. Uncover the imperial cities.",
+    image:
+      "https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Trek the Sahara aboard a camel. Browse the vibrant souks of Marrakech. Uncover the imperial cities.",
     guideSlug: "morocco",
   },
   {
     name: "Egypt",
     badge: "Egypt",
     region: "Africa & Middle East",
-    image: "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=900&q=80",
-    snippet: "Our best-selling destination! Cruise the Nile, marvel at the Pyramids, explore the tombs of Luxor.",
+    image:
+      "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Our best-selling destination! Cruise the Nile, marvel at the Pyramids, explore the tombs of Luxor.",
     guideSlug: "egypt",
   },
   {
     name: "Iceland",
     badge: "Iceland",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?auto=format&fit=crop&w=900&q=80",
-    snippet: "Iceland in winter is home to the Northern Lights, while in summer the waterfalls are breathtaking.",
+    image:
+      "https://images.unsplash.com/photo-1504893524553-b855bce32c67?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Iceland in winter is home to the Northern Lights, while in summer the waterfalls are breathtaking.",
     guideSlug: "iceland",
   },
   {
     name: "Sri Lanka",
     badge: "Sri Lanka",
     region: "Asia",
-    image: "https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=900&q=80",
-    snippet: "Sri Lanka's Cultural Triangle offers such attractions as the Sigiriya Fortress and Dambulla caves.",
+    image:
+      "https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Sri Lanka's Cultural Triangle offers such attractions as the Sigiriya Fortress and Dambulla caves.",
     guideSlug: "sri-lanka",
   },
   {
     name: "Turkey",
     badge: "Turkey",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=900&q=80",
-    snippet: "From the city in two continents, Istanbul, to the cave cities of Cappadocia, make Turkey your next trip.",
+    image:
+      "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "From the city in two continents, Istanbul, to the cave cities of Cappadocia, make Turkey your next trip.",
     guideSlug: "turkey",
   },
   {
     name: "India",
     badge: "India",
     region: "Asia",
-    image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=900&q=80",
-    snippet: "First timers to India will want to take in the Golden Triangle of Delhi, Jaipur and Agra.",
+    image:
+      "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "First timers to India will want to take in the Golden Triangle of Delhi, Jaipur and Agra.",
     guideSlug: "india",
   },
   {
     name: "Vietnam",
     badge: "Vietnam",
     region: "Asia",
-    image: "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=900&q=80",
-    snippet: "Visitors to Vietnam can cruise Halong Bay. They can ride a rickshaw around Hanoi. And so much more.",
+    image:
+      "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Visitors to Vietnam can cruise Halong Bay. They can ride a rickshaw around Hanoi. And so much more.",
     guideSlug: "vietnam",
   },
   {
     name: "China",
     badge: "China",
     region: "Asia",
-    image: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=900&q=80",
-    snippet: "Walk the Great Wall, stand before the Terracotta Army, and explore the Forbidden City.",
+    image:
+      "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Walk the Great Wall, stand before the Terracotta Army, and explore the Forbidden City.",
     guideSlug: "china",
   },
   {
     name: "New Zealand",
     badge: "New Zealand",
     region: "Oceania",
-    image: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=900&q=80",
-    snippet: "Explore dramatic alpine fjords, pristine glaciers, geothermal geysers, and rich Maori culture.",
+    image:
+      "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Explore dramatic alpine fjords, pristine glaciers, geothermal geysers, and rich Maori culture.",
     guideSlug: "new-zealand",
   },
   {
     name: "Thailand",
     badge: "Thailand",
     region: "Asia",
-    image: "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=900&q=80",
-    snippet: "Tropical islands, gilded Buddhist temples, vibrant floating night bazaars, and world-class street food.",
+    image:
+      "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Tropical islands, gilded Buddhist temples, vibrant floating night bazaars, and world-class street food.",
     guideSlug: "thailand",
   },
   {
     name: "Italy",
     badge: "Italy",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=900&q=80",
-    snippet: "Renaissance art masterpieces, sun-drenched Amalfi cliffs, Tuscan vineyards, and ancient Roman ruins.",
+    image:
+      "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Renaissance art masterpieces, sun-drenched Amalfi cliffs, Tuscan vineyards, and ancient Roman ruins.",
     guideSlug: "italy",
   },
   {
     name: "Spain",
     badge: "Spain",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1543783207-ec64e4d95325?auto=format&fit=crop&w=900&q=80",
-    snippet: "Sun-soaked Mediterranean plazas, Moorish palace courtyards, tapas culture, and passionate flamenco.",
+    image:
+      "https://images.unsplash.com/photo-1543783207-ec64e4d95325?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Sun-soaked Mediterranean plazas, Moorish palace courtyards, tapas culture, and passionate flamenco.",
     guideSlug: "spain",
   },
   {
     name: "Japan",
     badge: "Japan",
     region: "Asia",
-    image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=900&q=80",
-    snippet: "Sleek bullet trains, ancient Kyoto shrines, Mount Fuji vistas, and serene cherry blossom gardens.",
+    image:
+      "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Sleek bullet trains, ancient Kyoto shrines, Mount Fuji vistas, and serene cherry blossom gardens.",
     guideSlug: "japan",
   },
   {
     name: "Switzerland",
     badge: "Switzerland",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=900&q=80",
-    snippet: "Glide across emerald lakes, ride alpine scenic railways, and hike beneath the iconic Matterhorn peak.",
+    image:
+      "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Glide across emerald lakes, ride alpine scenic railways, and hike beneath the iconic Matterhorn peak.",
     guideSlug: "switzerland",
   },
   {
     name: "Australia",
     badge: "Australia",
     region: "Oceania",
-    image: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=900&q=80",
-    snippet: "Snorkel the Great Barrier Reef, explore the Red Centre Outback, and cruise beneath Sydney Harbour Bridge.",
+    image:
+      "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Snorkel the Great Barrier Reef, explore the Red Centre Outback, and cruise beneath Sydney Harbour Bridge.",
     guideSlug: "australia",
   },
   {
     name: "Canada",
     badge: "Canada",
     region: "Americas",
-    image: "https://images.unsplash.com/photo-1503614472-8c93d56e92ce?auto=format&fit=crop&w=900&q=80",
-    snippet: "Marvel at turquoise glacial lakes, towering Rocky Mountain peaks, and vast untamed boreal wilderness.",
+    image:
+      "https://images.unsplash.com/photo-1503614472-8c93d56e92ce?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Marvel at turquoise glacial lakes, towering Rocky Mountain peaks, and vast untamed boreal wilderness.",
     guideSlug: "canada",
   },
   {
     name: "United States",
     badge: "United States",
     region: "Americas",
-    image: "https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=900&q=80",
-    snippet: "Epic cross-country road trips, world-famous national parks, dramatic canyons, and legendary skylines.",
+    image:
+      "https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Epic cross-country road trips, world-famous national parks, dramatic canyons, and legendary skylines.",
     guideSlug: "united-states",
   },
   {
     name: "Greece",
     badge: "Greece",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=900&q=80",
-    snippet: "Iconic whitewashed Aegean villages, cobalt-blue domes, ancient Classical ruins, and azure island waters.",
+    image:
+      "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Iconic whitewashed Aegean villages, cobalt-blue domes, ancient Classical ruins, and azure island waters.",
     guideSlug: "greece",
   },
   {
     name: "France",
     badge: "France",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=80",
-    snippet: "Fairytale Loire châteaux, fragrant Provence lavender fields, world-class gastronomy, and romantic Paris.",
+    image:
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Fairytale Loire châteaux, fragrant Provence lavender fields, world-class gastronomy, and romantic Paris.",
     guideSlug: "france",
   },
   {
     name: "United Arab Emirates",
     badge: "United Arab Emirates",
     region: "Africa & Middle East",
-    image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=900&q=80",
-    snippet: "Futuristic skyscrapers, golden desert dunes, luxury dhow cruises, and grand marble mosques.",
+    image:
+      "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Futuristic skyscrapers, golden desert dunes, luxury dhow cruises, and grand marble mosques.",
     guideSlug: "united-arab-emirates",
   },
   {
     name: "Singapore",
     badge: "Singapore",
     region: "Asia",
-    image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=900&q=80",
-    snippet: "Gardens by the Bay supertrees, multicultural heritage quarters, and legendary street food hawker markets.",
+    image:
+      "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Gardens by the Bay supertrees, multicultural heritage quarters, and legendary street food hawker markets.",
     guideSlug: "singapore",
   },
   {
     name: "United Kingdom",
     badge: "United Kingdom",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=900&q=80",
-    snippet: "Historic royal castles, sweeping Scottish Highlands, mystery stone circles, and cozy village taverns.",
+    image:
+      "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Historic royal castles, sweeping Scottish Highlands, mystery stone circles, and cozy village taverns.",
     guideSlug: "united-kingdom",
   },
   {
     name: "Portugal",
     badge: "Portugal",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=900&q=80",
-    snippet: "Sunlit coastal cliffs, vintage Lisbon trams, Douro wine valleys, and golden Algarve sea caves.",
+    image:
+      "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Sunlit coastal cliffs, vintage Lisbon trams, Douro wine valleys, and golden Algarve sea caves.",
     guideSlug: "portugal",
   },
   {
     name: "Ireland",
     badge: "Ireland",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1590089415225-401ed6f9db8e?auto=format&fit=crop&w=900&q=80",
-    snippet: "Dramatic Atlantic sea cliffs, emerald rolling hills, ancient Celtic castles, and lively folk music.",
+    image:
+      "https://images.unsplash.com/photo-1590089415225-401ed6f9db8e?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Dramatic Atlantic sea cliffs, emerald rolling hills, ancient Celtic castles, and lively folk music.",
     guideSlug: "ireland",
   },
   {
     name: "Croatia",
     badge: "Croatia",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=900&q=80",
-    snippet: "Medieval Adriatic walled citadels, sapphire blue island bays, and thousand-island sailing cruises.",
+    image:
+      "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Medieval Adriatic walled citadels, sapphire blue island bays, and thousand-island sailing cruises.",
     guideSlug: "croatia",
   },
   {
     name: "Norway",
     badge: "Norway",
     region: "Europe",
-    image: "https://images.unsplash.com/photo-1507272931001-fc06c17e4f43?auto=format&fit=crop&w=900&q=80",
-    snippet: "Deep Norwegian fjords, Arctic wildlife, the Midnight Sun, and magical winter Northern Lights.",
+    image:
+      "https://images.unsplash.com/photo-1507272931001-fc06c17e4f43?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Deep Norwegian fjords, Arctic wildlife, the Midnight Sun, and magical winter Northern Lights.",
     guideSlug: "norway",
   },
   {
     name: "Indonesia",
     badge: "Indonesia",
     region: "Asia",
-    image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=80",
-    snippet: "Lush Ubud rice terraces, sacred volcanic water temples, and pristine Komodo island waters.",
+    image:
+      "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Lush Ubud rice terraces, sacred volcanic water temples, and pristine Komodo island waters.",
     guideSlug: "indonesia",
   },
   {
     name: "Qatar",
     badge: "Qatar",
     region: "Africa & Middle East",
-    image: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=900&q=80",
-    snippet: "Museum of Islamic Art, vibrant Souq Waqif alleys, Arabian Gulf boat tours, and desert dune safaris.",
+    image:
+      "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=900&q=80",
+    snippet:
+      "Museum of Islamic Art, vibrant Souq Waqif alleys, Arabian Gulf boat tours, and desert dune safaris.",
     guideSlug: "qatar",
   },
 ];
@@ -291,7 +348,8 @@ const TRAVEL_STYLES = [
     countries: "New Zealand • Switzerland • Canada",
     icon: Mountain,
     badge: "Epic Nature",
-    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
+    image:
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
     href: "/tours?tag=Alpine",
   },
   {
@@ -300,7 +358,8 @@ const TRAVEL_STYLES = [
     countries: "Thailand • Indonesia • Greece • Spain",
     icon: TreePalm,
     badge: "Sun & Sea",
-    image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
+    image:
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
     href: "/tours?tag=Beach",
   },
   {
@@ -309,7 +368,8 @@ const TRAVEL_STYLES = [
     countries: "India • Egypt • Italy • Greece",
     icon: Landmark,
     badge: "Heritage",
-    image: "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&w=800&q=80",
+    image:
+      "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&w=800&q=80",
     href: "/tours?tag=Cultural",
   },
   {
@@ -318,7 +378,8 @@ const TRAVEL_STYLES = [
     countries: "India • Kenya • Australia • Canada",
     icon: Binoculars,
     badge: "Wildlife",
-    image: "https://images.unsplash.com/photo-1534177616072-ef7dc120449d?auto=format&fit=crop&w=800&q=80",
+    image:
+      "https://images.unsplash.com/photo-1534177616072-ef7dc120449d?auto=format&fit=crop&w=800&q=80",
     href: "/tours?tag=Safari",
   },
   {
@@ -327,7 +388,8 @@ const TRAVEL_STYLES = [
     countries: "Japan • Italy • France • Spain",
     icon: Utensils,
     badge: "Food & Wine",
-    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+    image:
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
     href: "/tours?tag=Food",
   },
   {
@@ -336,7 +398,8 @@ const TRAVEL_STYLES = [
     countries: "New Zealand • Switzerland • United Kingdom",
     icon: TrainFront,
     badge: "Grand Journeys",
-    image: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=800&q=80",
+    image:
+      "https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=800&q=80",
     href: "/tours?tag=Rail",
   },
 ];
@@ -346,40 +409,100 @@ const SEASONS = [
   {
     season: "Spring (March - May)",
     tagline: "Blooming landscapes, mild temperatures & vibrant city life",
-    topPicks: ["Japan (Cherry Blossoms)", "Italy (Spring In Tuscany)", "Spain & Portugal", "Himalayan Foothills"],
+    topPicks: [
+      "Japan (Cherry Blossoms)",
+      "Italy (Spring In Tuscany)",
+      "Spain & Portugal",
+      "Himalayan Foothills",
+    ],
     icon: "🌸",
     color: "from-rose-50 to-pink-50 border-rose-200/80 text-rose-900",
   },
   {
     season: "Summer (June - August)",
     tagline: "Alpine hiking, Midnight Sun & coastal exploration",
-    topPicks: ["Switzerland (Matterhorn Trails)", "Canadian Rockies", "Norway (Fjords)", "United Kingdom & Ireland"],
+    topPicks: [
+      "Switzerland (Matterhorn Trails)",
+      "Canadian Rockies",
+      "Norway (Fjords)",
+      "United Kingdom & Ireland",
+    ],
     icon: "☀️",
     color: "from-amber-50 to-orange-50 border-amber-200/80 text-amber-900",
   },
   {
     season: "Autumn (September - November)",
     tagline: "Golden foliage, pleasant weather & harvesting festivals",
-    topPicks: ["India (Golden Triangle & Festivals)", "Morocco (Sahara Treks)", "Greece & Mediterranean", "Japan (Autumn Leaves)"],
+    topPicks: [
+      "India (Golden Triangle & Festivals)",
+      "Morocco (Sahara Treks)",
+      "Greece & Mediterranean",
+      "Japan (Autumn Leaves)",
+    ],
     icon: "🍂",
     color: "from-orange-50 to-red-50 border-orange-200/80 text-orange-900",
   },
   {
     season: "Winter (December - February)",
     tagline: "Southern hemisphere warmth, ski wonderlands & desert escapes",
-    topPicks: ["New Zealand (Summer Adventures)", "Thailand & Southeast Asia", "UAE & Qatar (Desert Glamping)", "Australia (Coastal Tours)"],
+    topPicks: [
+      "New Zealand (Summer Adventures)",
+      "Thailand & Southeast Asia",
+      "UAE & Qatar (Desert Glamping)",
+      "Australia (Coastal Tours)",
+    ],
     icon: "❄️",
     color: "from-sky-50 to-blue-50 border-sky-200/80 text-sky-900",
   },
 ];
 
+type StyleBlockItem = { title?: string; subtitle?: string; countries?: string; badge?: string; image?: string; href?: string };
+type SeasonBlockItem = { season?: string; tagline?: string; topPicks?: string[]; icon?: string };
+
+// Cards can be edited in CMS > Country Pages > Destinations Page Extras; the
+// built-in TRAVEL_STYLES / SEASONS are used while that block is empty. The icon
+// component / gradient aren't editable, so they cycle by position.
+const STYLE_ICONS = TRAVEL_STYLES.map((s) => s.icon);
+const SEASON_COLORS = SEASONS.map((s) => s.color);
+
 export default function DestinationsPage() {
+  const [styleItems, setStyleItems] = useState<StyleBlockItem[]>([]);
+  const [seasonItems, setSeasonItems] = useState<SeasonBlockItem[]>([]);
+  useEffect(() => {
+    fetchContentBlock<{ items: StyleBlockItem[] }>("destination_styles")
+      .then((res) => setStyleItems(Array.isArray(res?.data?.items) ? res.data.items : []))
+      .catch(() => {});
+    fetchContentBlock<{ items: SeasonBlockItem[] }>("destination_seasons")
+      .then((res) => setSeasonItems(Array.isArray(res?.data?.items) ? res.data.items : []))
+      .catch(() => {});
+  }, []);
+  const travelStyles = styleItems.length
+    ? styleItems.map((it, i) => ({
+        title: it.title || "",
+        subtitle: it.subtitle || "",
+        countries: it.countries || "",
+        badge: it.badge || "",
+        image: it.image || "",
+        href: it.href || "/tours",
+        icon: STYLE_ICONS[i % STYLE_ICONS.length],
+      }))
+    : TRAVEL_STYLES;
+  const seasons = seasonItems.length
+    ? seasonItems.map((it, i) => ({
+        season: it.season || "",
+        tagline: it.tagline || "",
+        topPicks: it.topPicks || [],
+        icon: it.icon || "🌍",
+        color: SEASON_COLORS[i % SEASON_COLORS.length],
+      }))
+    : SEASONS;
   const [countriesList, setCountriesList] = useState<CountryCardItem[]>(
     MASTER_DESTINATION_COUNTRIES,
   );
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [selectedRegion, setSelectedRegion] = useState<RegionTab>("All Destinations");
+  const [selectedRegion, setSelectedRegion] =
+    useState<RegionTab>("All Destinations");
 
   useEffect(() => {
     let active = true;
@@ -393,7 +516,8 @@ export default function DestinationsPage() {
         if (!active) return;
 
         const publicCountries =
-          publicCountriesRes.status === "fulfilled" && Array.isArray(publicCountriesRes.value)
+          publicCountriesRes.status === "fulfilled" &&
+          Array.isArray(publicCountriesRes.value)
             ? publicCountriesRes.value
             : [];
 
@@ -410,7 +534,10 @@ export default function DestinationsPage() {
         // Build quick lookup maps
         const tourCountByName = new Map<string, number>();
         publicCountries.forEach((c) => {
-          tourCountByName.set(c.country_name.toLowerCase().trim(), c.tour_count || 0);
+          tourCountByName.set(
+            c.country_name.toLowerCase().trim(),
+            c.tour_count || 0,
+          );
         });
 
         const cmsSnippetByName = new Map<string, string>();
@@ -438,20 +565,44 @@ export default function DestinationsPage() {
 
         // Update default master list with CMS / API data
         setCountriesList((prev) =>
-          prev.map((item) => {
+          // Once the live countries list has loaded, only show countries the
+          // platform actually has; the built-in list only supplies the
+          // region/blurb/image for those (and is the fallback if the API fails).
+          (publicCountries.length > 0
+            ? prev.filter((item) => tourCountByName.has(item.name.toLowerCase().trim()))
+            : prev
+          ).map((item): CountryCardItem => {
             const key = item.name.toLowerCase().trim();
             const liveCount = tourCountByName.get(key);
             const cmsSnippet = cmsSnippetByName.get(key);
             const cmsImage = cmsImageByName.get(key);
 
-            return {
+            const updated: CountryCardItem = {
               ...item,
               tourCount: liveCount !== undefined ? liveCount : item.tourCount,
               snippet: cmsSnippet || item.snippet,
               image: cmsImage || item.image,
               href: destinationUrl(item.name),
             };
-          }),
+            return updated;
+          })
+          .concat(
+            // Live countries the built-in list doesn't know: shown under
+            // "All Destinations" with whatever the CMS has for them.
+            publicCountries
+              .filter((c) => !prev.some((item) => item.name.toLowerCase().trim() === c.country_name.toLowerCase().trim()))
+              .map((c): CountryCardItem => {
+                const key = c.country_name.toLowerCase().trim();
+                return {
+                  name: c.country_name,
+                  region: "Other",
+                  image: cmsImageByName.get(key) || "",
+                  snippet: cmsSnippetByName.get(key) || "",
+                  href: destinationUrl(c.country_name),
+                  tourCount: c.tour_count || 0,
+                };
+              }),
+          ),
         );
       })
       .finally(() => {
@@ -528,7 +679,9 @@ export default function DestinationsPage() {
 
             {/* Subtitle */}
             <p className="mt-4 text-sm sm:text-base font-normal leading-relaxed text-slate-300 max-w-2xl">
-              Explore the destinations travellers love most, from sun-soaked coastlines and Sahara dunes to iconic cultural gems, ancient temples, and unforgettable alpine tours.
+              Explore the destinations travellers love most, from sun-soaked
+              coastlines and Sahara dunes to iconic cultural gems, ancient
+              temples, and unforgettable alpine tours.
             </p>
           </div>
 
@@ -560,22 +713,31 @@ export default function DestinationsPage() {
 
             {/* Trending Quick Chips */}
             <div className="mt-3.5 flex flex-wrap items-center gap-1.5 text-xs text-white/75 font-medium">
-              <span className="text-slate-400 font-semibold text-[11px] mr-1">Trending:</span>
-              {["Morocco", "Egypt", "Iceland", "Sri Lanka", "Turkey", "India", "New Zealand", "Thailand"].map(
-                (chip) => (
-                  <button
-                    key={chip}
-                    type="button"
-                    onClick={() => {
-                      setSearch(chip);
-                      setSelectedRegion("All Destinations");
-                    }}
-                    className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-xs transition hover:bg-white/25 hover:text-white cursor-pointer"
-                  >
-                    {chip}
-                  </button>
-                ),
-              )}
+              <span className="text-slate-400 font-semibold text-[11px] mr-1">
+                Trending:
+              </span>
+              {[
+                "Morocco",
+                "Egypt",
+                "Iceland",
+                "Sri Lanka",
+                "Turkey",
+                "India",
+                "New Zealand",
+                "Thailand",
+              ].map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => {
+                    setSearch(chip);
+                    setSelectedRegion("All Destinations");
+                  }}
+                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-xs transition hover:bg-white/25 hover:text-white cursor-pointer"
+                >
+                  {chip}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -586,8 +748,12 @@ export default function DestinationsPage() {
                 <Globe size={20} />
               </div>
               <div>
-                <p className="text-base sm:text-lg font-black text-white">70+ Countries</p>
-                <p className="text-[11px] text-slate-300 font-medium">Worldwide Destinations</p>
+                <p className="text-base sm:text-lg font-black text-white">
+                  70+ Countries
+                </p>
+                <p className="text-[11px] text-slate-300 font-medium">
+                  Worldwide Destinations
+                </p>
               </div>
             </div>
 
@@ -596,8 +762,12 @@ export default function DestinationsPage() {
                 <Compass size={20} />
               </div>
               <div>
-                <p className="text-base sm:text-lg font-black text-white">2,500+ Tours</p>
-                <p className="text-[11px] text-slate-300 font-medium">Multi-Day Packages</p>
+                <p className="text-base sm:text-lg font-black text-white">
+                  2,500+ Tours
+                </p>
+                <p className="text-[11px] text-slate-300 font-medium">
+                  Multi-Day Packages
+                </p>
               </div>
             </div>
 
@@ -606,8 +776,12 @@ export default function DestinationsPage() {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <p className="text-base sm:text-lg font-black text-white">100% Protected</p>
-                <p className="text-[11px] text-slate-300 font-medium">Escrow Milestone Payments</p>
+                <p className="text-base sm:text-lg font-black text-white">
+                  100% Protected
+                </p>
+                <p className="text-[11px] text-slate-300 font-medium">
+                  Escrow Milestone Payments
+                </p>
               </div>
             </div>
 
@@ -616,8 +790,12 @@ export default function DestinationsPage() {
                 <Sparkles size={20} />
               </div>
               <div>
-                <p className="text-base sm:text-lg font-black text-white">Verified Guides</p>
-                <p className="text-[11px] text-slate-300 font-medium">Vetted Local Operators</p>
+                <p className="text-base sm:text-lg font-black text-white">
+                  Verified Guides
+                </p>
+                <p className="text-[11px] text-slate-300 font-medium">
+                  Vetted Local Operators
+                </p>
               </div>
             </div>
           </div>
@@ -646,7 +824,7 @@ export default function DestinationsPage() {
                   >
                     <span>{region}</span>
                     <span
-                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
+                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
                         isActive
                           ? "bg-white/20 text-white"
                           : "bg-slate-200 text-slate-700"
@@ -660,7 +838,11 @@ export default function DestinationsPage() {
             </div>
 
             <p className="hidden md:block text-xs font-semibold text-slate-500 shrink-0">
-              Showing <strong className="text-slate-900 font-black">{filteredCountries.length}</strong> countries
+              Showing{" "}
+              <strong className="text-slate-900 font-black">
+                {filteredCountries.length}
+              </strong>{" "}
+              countries
             </p>
           </div>
         </div>
@@ -674,11 +856,12 @@ export default function DestinationsPage() {
             {search
               ? `Countries matching "${search}"`
               : selectedRegion === "All Destinations"
-              ? "Favourite Countries for Travellers"
-              : `Top Countries in ${selectedRegion}`}
+                ? "Favourite Countries for Travellers"
+                : `Top Countries in ${selectedRegion}`}
           </h2>
           <p className="mt-2.5 text-xs sm:text-sm text-slate-500 leading-relaxed max-w-3xl mx-auto">
-            Explore the destinations travellers love most, from sun-soaked coastlines to iconic cultural gems and unforgettable experiences.
+            Explore the destinations travellers love most, from sun-soaked
+            coastlines to iconic cultural gems and unforgettable experiences.
           </p>
         </div>
 
@@ -696,7 +879,8 @@ export default function DestinationsPage() {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
             {filteredCountries.map((country) => {
               const toursUrl = country.href || destinationUrl(country.name);
-              const guideSlug = country.guideSlug || slugifyTourSegment(country.name);
+              const guideSlug =
+                country.guideSlug || slugifyTourSegment(country.name);
 
               return (
                 <div
@@ -709,11 +893,13 @@ export default function DestinationsPage() {
                     className="relative h-full w-full overflow-hidden rounded-[16px] bg-slate-900 block focus:outline-none"
                   >
                     {/* Inner Image with 16px radius */}
-                    <img
-                      src={country.image}
-                      alt={country.name}
-                      className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
-                    />
+                    {country.image && (
+                      <img
+                        src={country.image}
+                        alt={country.name}
+                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+                      />
+                    )}
 
                     {/* Gradient overlays for contrast */}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-black/15 pointer-events-none" />
@@ -755,7 +941,10 @@ export default function DestinationsPage() {
                       {/* Bottom view tours micro link */}
                       <div className="mt-3 flex items-center justify-between border-t border-white/15 pt-2.5 text-[11px] font-bold text-white/80 group-hover:text-white transition">
                         <span>Explore {country.name} Packages</span>
-                        <ArrowRight size={12} className="transition group-hover:translate-x-1" />
+                        <ArrowRight
+                          size={12}
+                          className="transition group-hover:translate-x-1"
+                        />
                       </div>
                     </div>
                   </Link>
@@ -772,7 +961,9 @@ export default function DestinationsPage() {
               No destinations found for &ldquo;{search}&rdquo;
             </h3>
             <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">
-              We couldn&apos;t find any country matching your search. Try another query or reset the filters to view all favourite countries.
+              We couldn&apos;t find any country matching your search. Try
+              another query or reset the filters to view all favourite
+              countries.
             </p>
             <button
               type="button"
@@ -791,7 +982,7 @@ export default function DestinationsPage() {
       {/* ── 4. Explore Destinations by Travel Style ── */}
       <section className="mx-auto max-w-[1380px] px-5 sm:px-8 pt-16 sm:pt-20">
         <div className="mb-8">
-          <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-orange-600">
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-orange-600">
             <Compass size={14} />
             <span>Curated Experiences</span>
           </div>
@@ -799,12 +990,13 @@ export default function DestinationsPage() {
             Explore Destinations by Travel Style
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-slate-500 font-medium">
-            Whether you crave rugged alpine summits, pristine tropical beaches, or ancient temple wonders.
+            Whether you crave rugged alpine summits, pristine tropical beaches,
+            or ancient temple wonders.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {TRAVEL_STYLES.map((style) => {
+          {travelStyles.map((style) => {
             const Icon = style.icon;
             return (
               <Link
@@ -821,7 +1013,7 @@ export default function DestinationsPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/25 to-transparent" />
 
-                  <span className="absolute left-3.5 top-3.5 inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-900 shadow-sm">
+                  <span className="absolute left-3.5 top-3.5 inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-md px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-900 shadow-sm">
                     <Icon size={12} className="text-orange-500" />
                     <span>{style.badge}</span>
                   </span>
@@ -846,7 +1038,10 @@ export default function DestinationsPage() {
 
                   <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-800 group-hover:text-sky-700">
                     <span>Browse Style Tours</span>
-                    <ArrowRight size={13} className="transition group-hover:translate-x-1" />
+                    <ArrowRight
+                      size={13}
+                      className="transition group-hover:translate-x-1"
+                    />
                   </div>
                 </div>
               </Link>
@@ -858,7 +1053,7 @@ export default function DestinationsPage() {
       {/* ── 5. Seasonal Travel Calendar ── */}
       <section className="mx-auto max-w-[1380px] px-5 sm:px-8 pt-16 sm:pt-20">
         <div className="mb-8">
-          <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-sky-700">
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-sky-700">
             <Calendar size={14} />
             <span>Seasonal Travel Calendar</span>
           </div>
@@ -866,12 +1061,13 @@ export default function DestinationsPage() {
             When is the Best Time to Travel?
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-slate-500 font-medium">
-            Plan your holidays around optimal weather windows, wildlife migrations, and cultural festivals.
+            Plan your holidays around optimal weather windows, wildlife
+            migrations, and cultural festivals.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {SEASONS.map((season) => (
+          {seasons.map((season) => (
             <div
               key={season.season}
               className={`rounded-[22px] border p-6 bg-gradient-to-b ${season.color} shadow-xs transition hover:shadow-md`}
@@ -906,14 +1102,15 @@ export default function DestinationsPage() {
       <section className="mx-auto max-w-[1380px] px-5 sm:px-8 pt-16 sm:pt-20">
         <div className="rounded-[26px] border border-slate-200/90 bg-white p-8 sm:p-12 shadow-xs">
           <div className="max-w-2xl">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
+            <span className="text-xs font-semibold uppercase tracking-wider text-orange-600">
               The Tourvaa Standard
             </span>
             <h2 className="mt-1.5 text-2xl sm:text-3xl font-black tracking-tight text-slate-950">
               Why Explore Destinations with Tourvaa?
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-slate-500 font-medium">
-              We take the uncertainty out of global travel so you can immerse yourself fully in every country.
+              We take the uncertainty out of global travel so you can immerse
+              yourself fully in every country.
             </p>
           </div>
 
@@ -927,7 +1124,8 @@ export default function DestinationsPage() {
                   2,500+ Handpicked Tours
                 </h3>
                 <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">
-                  Compare multi-day group and private itineraries across 70+ destinations from the world&apos;s leading licensed operators.
+                  Compare multi-day group and private itineraries across 70+
+                  destinations from the world&apos;s leading licensed operators.
                 </p>
               </div>
             </div>
@@ -941,7 +1139,9 @@ export default function DestinationsPage() {
                   100% Financial Protection
                 </h3>
                 <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">
-                  Bank-grade encryption, escrow payment protection, and transparent cancellation policies ensure complete peace of mind.
+                  Bank-grade encryption, escrow payment protection, and
+                  transparent cancellation policies ensure complete peace of
+                  mind.
                 </p>
               </div>
             </div>
@@ -955,7 +1155,8 @@ export default function DestinationsPage() {
                   Vetted Local Guides
                 </h3>
                 <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">
-                  Travel with licensed local leaders who bring authentic culture, history, and secret vantage points to life.
+                  Travel with licensed local leaders who bring authentic
+                  culture, history, and secret vantage points to life.
                 </p>
               </div>
             </div>
@@ -969,7 +1170,8 @@ export default function DestinationsPage() {
                   24/7 Global On-Trip Care
                 </h3>
                 <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">
-                  Our emergency travel specialists and virtual assistant Scout are on standby 24/7 before, during, and after your adventure.
+                  Our emergency travel specialists and virtual assistant Scout
+                  are on standby 24/7 before, during, and after your adventure.
                 </p>
               </div>
             </div>
@@ -989,14 +1191,16 @@ export default function DestinationsPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#0A1128] via-[#0A1128]/95 to-transparent" />
 
           <div className="relative max-w-xl">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-orange-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-orange-400">
               Bespoke Trip Planning
             </span>
             <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
               Can&apos;t decide which destination fits your dream vacation?
             </h2>
             <p className="mt-3 text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
-              Our travel specialists know these countries inside out. We can help you tailor an itinerary, choose the right departure season, and match you with the best licensed local operator.
+              Our travel specialists know these countries inside out. We can
+              help you tailor an itinerary, choose the right departure season,
+              and match you with the best licensed local operator.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -1020,4 +1224,3 @@ export default function DestinationsPage() {
     </main>
   );
 }
-

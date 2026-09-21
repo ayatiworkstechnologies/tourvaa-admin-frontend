@@ -12,6 +12,11 @@ const copy: Record<string, { title: string; text: string }> = {
   PENDING_ADMIN_VERIFICATION: { title: "Verification in progress", text: "Your email is verified and your account is waiting for administrator activation." },
   INACTIVE: { title: "Account inactive", text: "This account is currently inactive. Contact Tourvaa support if you need help." },
   SUSPENDED: { title: "Account suspended", text: "Access to this account has been suspended. Contact Tourvaa support for details." },
+  PENDING_EMAIL_VERIFICATION: { title: "Verify your email", text: "Please open the verification link we emailed you to activate your account. Check your spam folder if you can't find it." },
+  PENDING_OTP_VERIFICATION: { title: "Verification code needed", text: "Enter the one-time code we sent you to finish verifying your account." },
+  PENDING_PASSWORD_CREATION: { title: "Set your password", text: "Your account was created for you. Use the link in your invitation email to choose a password." },
+  BLOCKED: { title: "Account blocked", text: "This account has been blocked. Contact Tourvaa support for details." },
+  DELETED: { title: "Account closed", text: "This account has been closed. Contact Tourvaa support if you think this is a mistake." },
   LOCKED: { title: "Account locked", text: "This account is locked. Contact Tourvaa support to restore access." },
 };
 

@@ -115,9 +115,9 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${googleTranslateHosts} ${googleFontHosts} ${elfsightHosts}; img-src 'self' data: blob: https: http://translate.google.com ${apiProxyOrigin}; media-src 'self' blob: https: ${apiProxyOrigin}; ${connectSrc} font-src 'self' data: ${googleFontHosts} ${googleTranslateHosts} ${elfsightHosts}; frame-src 'self' ${elfsightHosts}; frame-ancestors 'none';`,
+              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${googleTranslateHosts} ${googleFontHosts} ${elfsightHosts}; img-src 'self' data: blob: https: http://translate.google.com ${apiProxyOrigin}; media-src 'self' blob: https: ${apiProxyOrigin}; ${connectSrc} font-src 'self' data: ${googleFontHosts} ${googleTranslateHosts} ${elfsightHosts}; frame-src 'self' ${elfsightHosts}; frame-ancestors 'self';`,
           },
-          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },

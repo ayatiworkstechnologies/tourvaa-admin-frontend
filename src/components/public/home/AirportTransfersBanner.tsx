@@ -61,7 +61,8 @@ export default function AirportTransfersBanner({
   }, [initialData]);
 
   const eyebrow = propEyebrow || data.eyebrow || "AIRPORT TRANSFERS & TAXIS";
-  const heading = propHeading || data.heading || "Save on your airport connection";
+  const heading =
+    propHeading || data.heading || "Save on your airport connection";
   const subtitle =
     propSubtitle ||
     data.subtitle ||
@@ -71,8 +72,7 @@ export default function AirportTransfersBanner({
     (data.features?.length ? data.features : DEFAULT_TRANSFER_FEATURES);
   const ctaText = propCtaText || data.cta_text || "Book Airport Pickup";
   const image =
-    propImage ||
-    (data.image ? mediaUrl(data.image) : "/images/img-2.png");
+    propImage || (data.image ? mediaUrl(data.image) : "/images/img-2.png");
 
   const brightlaneLink =
     propCtaUrl?.trim() ||
@@ -83,18 +83,18 @@ export default function AirportTransfersBanner({
   const isExternal = brightlaneLink.startsWith("http");
 
   return (
-    <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+    <div className="relative z-10 mx-auto max-w-[1400px] px-5">
       <section className="py-6 sm:py-10">
         <div className="group grid gap-6 lg:gap-10 overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-6 sm:p-8 lg:p-10 md:grid-cols-2 md:items-center shadow-xs hover:border-slate-300 hover:shadow-lg transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]">
           <div className="flex flex-col items-start justify-center py-2 text-left">
             {/* Tag / Badge */}
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-pub-accent">
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold uppercase tracking-wider text-pub-accent">
               <Plane size={14} className="rotate-45" />
               <span>{eyebrow}</span>
             </div>
 
             {/* Heading */}
-            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-extrabold leading-tight text-slate-950 tracking-tight">
+            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-semibold leading-tight text-slate-950 tracking-tight">
               {heading}
             </h2>
 
@@ -148,4 +148,3 @@ export default function AirportTransfersBanner({
     </div>
   );
 }
-

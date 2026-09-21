@@ -56,7 +56,7 @@ export default function BlogTeaserSection({
       {/* Bottom-right sky-blue glow */}
       <div className="pointer-events-none absolute -bottom-24 -right-24 h-[420px] w-[420px] rounded-full bg-gradient-to-tl from-sky-400/25 via-blue-300/15 to-transparent blur-3xl animate-float-orb-alt" />
 
-      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+      <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         <div className="group grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-5 sm:p-6 lg:p-7 shadow-xs hover:border-slate-300 hover:shadow-lg transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]">
           {/* Left Image: rounded-[18px] with smooth hover zoom */}
           <div className="relative h-[280px] sm:h-[340px] lg:h-[400px] w-full overflow-hidden rounded-[18px] bg-slate-100 shadow-sm">
@@ -69,14 +69,10 @@ export default function BlogTeaserSection({
 
           {/* Right Content */}
           <div className="flex flex-col items-start justify-center py-2 px-2 sm:px-4 lg:px-6 text-left">
-            <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-pub-accent">
-              <Sparkles
-                size={14}
-                className="text-pub-accent animate-sparkle-glow"
-              />
+            <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold uppercase tracking-wider text-pub-accent">
               <span>{eyebrow}</span>
             </span>
-            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-extrabold leading-tight text-slate-950 tracking-tight">
+            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-[36px] font-semibold leading-tight text-slate-950 tracking-tight">
               {heading}
             </h2>
             <p className="mt-4 max-w-md text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 font-medium">

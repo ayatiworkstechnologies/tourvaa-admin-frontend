@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSectionCopy, text } from "./useSectionCopy";
 import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
@@ -190,6 +191,7 @@ export default function HandpickedToursSection({
   initialTours,
   loading: initialLoading,
 }: HandpickedToursSectionProps) {
+  const copy = useSectionCopy("handpicked_section");
   const [tours, setTours] = useState<Tour[]>(initialTours || []);
   const [loading, setLoading] = useState<boolean>(
     initialLoading !== undefined ? initialLoading : !initialTours?.length,
@@ -292,11 +294,11 @@ export default function HandpickedToursSection({
 
   return (
     <section className="relative w-full overflow-hidden py-14 sm:py-18 bg-gradient-to-b from-white via-[#F3FAF6] to-[#EAF6EF]">
-      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+      <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Section Header with Arrows on right */}
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
-            Handpicked Tours for You
+            {text(copy.title, "Handpicked Tours for You")}
           </h2>
 
           {!loading && displayTours.length > 0 && (

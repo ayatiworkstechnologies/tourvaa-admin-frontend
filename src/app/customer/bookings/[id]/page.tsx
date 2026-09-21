@@ -33,6 +33,7 @@ type StatusHistory = {
 
 type Booking = {
   id: number;
+  has_review?: boolean;
   booking_code: string;
   tour_name?: string;
   tour_date?: string;
@@ -450,7 +451,7 @@ export default function CustomerBookingDetailPage() {
   const canCancel = booking && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
   const pendingAmount = Number(booking?.amount_pending ?? 0);
   const canPay = booking && pendingAmount > 0 && !["cancelled", "declined", "completed", "cancellation_requested", "postponed"].includes(booking.booking_status);
-  const canReview = booking && booking.booking_status === "completed" && !reviewSubmitted;
+  const canReview = booking && booking.booking_status === "completed" && !booking.has_review && !reviewSubmitted;
 
   useEffect(() => {
     if (searchParams.get("action") === "pay" && canPay) setShowPayModal(true);

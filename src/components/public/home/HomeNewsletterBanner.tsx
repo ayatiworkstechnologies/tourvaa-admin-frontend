@@ -81,8 +81,8 @@ export default function HomeNewsletterBanner({
   };
 
   return (
-    <section className="w-full py-10 sm:py-14">
-      <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8">
+    <section className="w-full py-14 sm:py-18">
+      <div className="mx-auto max-w-[1400px] px-5">
         <div className="group relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px] bg-[#FFF8F6] border border-pub-accent/25 p-6 sm:p-8 lg:p-10 shadow-xs transition-all">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             {/* Left Content */}

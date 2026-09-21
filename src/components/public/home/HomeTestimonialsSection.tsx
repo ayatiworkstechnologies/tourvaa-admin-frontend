@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useRef, useState } from "react";
+import { useSectionCopy, text } from "./useSectionCopy";
 import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
@@ -21,6 +22,7 @@ export default function HomeTestimonialsSection({
   initialReviews,
   loading: initialLoading,
 }: HomeTestimonialsSectionProps) {
+  const copy = useSectionCopy("testimonials_section");
   const [reviews, setReviews] = useState<ReviewItem[]>(
     initialReviews || CURATED_REVIEWS,
   );
@@ -85,15 +87,14 @@ export default function HomeTestimonialsSection({
 
   return (
     <section className="relative w-full overflow-hidden py-14 sm:py-18 bg-gradient-to-b from-white via-[#FFF8EF] to-[#FDF3E4]">
-      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+      <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold text-slate-950 tracking-tight">
-            What Tourvaa travellers are saying
+            {text(copy.title, "What Tourvaa travellers are saying")}
           </h2>
           <p className="mt-2 text-xs sm:text-sm md:text-base text-slate-500">
-            Real stories and honest reviews from travellers who explored the
-            world with Tourvaa.
+            {text(copy.subtitle, "Real stories and honest reviews from travellers who explored the world with Tourvaa.")}
           </p>
         </div>
 

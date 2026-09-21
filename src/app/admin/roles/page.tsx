@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuSquarePen as Edit, LuKeyRound as KeyRound, LuPlus as Plus, LuSave as Save, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 
@@ -178,8 +179,8 @@ export default function RolesPage() {
 
       await fetchRoles();
       closeForm();
-    } catch {
-      alert("Role save failed");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -192,8 +193,8 @@ export default function RolesPage() {
     try {
       await api.delete(`/roles/${role.id}`);
       await fetchRoles();
-    } catch {
-      alert("Role delete failed");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -205,8 +206,10 @@ export default function RolesPage() {
       const response = await api.get(`/roles/${role.id}/permissions`);
       const assigned: Permission[] = response.data.data || [];
       setSelectedPermissionIds(assigned.map((permission) => permission.id));
-    } catch {
-      setSelectedPermissionIds([]);
+    } catch (error) {
+      // Don't open an empty editor: saving it would wipe the role's permissions.
+      toast.error(getApiErrorMessage(error));
+      setPermissionOpen(false);
     }
   };
 
@@ -251,8 +254,8 @@ export default function RolesPage() {
       });
 
       closePermissions();
-    } catch {
-      alert("Permission assignment failed");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }

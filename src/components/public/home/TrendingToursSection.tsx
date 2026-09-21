@@ -2,14 +2,18 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSectionCopy, text } from "./useSectionCopy";
 import {
+  LuArrowRight as ArrowRight,
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
+  LuClock as Clock,
+  LuFlame as Flame,
   LuMapPin as MapPin,
-  LuNavigation as Navigation,
+  LuShieldCheck as ShieldCheck,
   LuSlidersHorizontal as Sliders,
+  LuSparkles as Sparkles,
   LuStar as Star,
-  LuSun as Sun,
   LuUsers as Users,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
@@ -23,16 +27,18 @@ import {
   fetchPublicTourDetail,
   SectionVisibilityBlock,
 } from "@/lib/api/publicClient";
-import {
-  mapPublicTour,
-  stableHash,
-  Tour,
-} from "./homeTypes";
+import { mapPublicTour, stableHash, Tour } from "./homeTypes";
 import { EmptyCollection, Reveal, TourCardSkeleton } from "./HomeHelpers";
 import { useAutoSlide } from "./useAutoSlide";
 import { smoothScrollTo } from "./smoothScrollTo";
 
-export function TrendingTourCard({ tour }: { tour: Tour }) {
+export function TrendingTourCard({
+  tour,
+  index = 0,
+}: {
+  tour: Tour;
+  index?: number;
+}) {
   const { format } = useCurrency();
   const itemId = tour.id ?? stableHash(tour.slug || tour.title);
   const href = tour.id
@@ -49,9 +55,7 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
     href,
   };
 
-  // Only show a rating when the tour actually has reviews - the previous
-  // "4.8" / "2,486 reviews" fallbacks displayed invented social proof on
-  // every tour that had none.
+  // Only show a rating when the tour actually has reviews
   const ratingVal = tour.rating != null ? tour.rating.toFixed(1) : null;
   const reviewCountStr = tour.reviews || "";
 
@@ -62,121 +66,168 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
           ((tour.originalPrice - tour.rawPrice) / tour.originalPrice) * 100,
         )
       : null;
-  // No badge at all unless there is a real discount to show.
   const discountLabel =
     tour.discountBadge || (calculatedPct ? `Save ${calculatedPct}%` : null);
+
+  const rankNumber = String(index + 1).padStart(2, "0");
 
   return (
     <article
       data-trending-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-2 sm:p-2.5 shadow-xs transition-all duration-300 hover:shadow-md hover:-translate-y-1 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[26px] border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:shadow-xl hover:border-pub-secondary/40 hover:-translate-y-2 h-full"
     >
       <Link href={href} className="flex flex-col h-full justify-between">
         <div>
-          {/* Top Image Container */}
-          <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-xl bg-slate-100 shrink-0">
+          {/* Top Image: Edge-to-edge with seamless top rounded corners */}
+          <div className="relative h-56 sm:h-60 w-full overflow-hidden rounded-t-[25px] bg-slate-100 shrink-0">
             <MarketingImage
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
               src={tour.image}
               alt={tour.title}
-              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
+              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
             />
 
-            {/* Location pill badge (top-left) */}
-            <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-pub-accent px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-xs pointer-events-none">
-              <MapPin size={10} className="fill-white/30 text-white shrink-0" />
-              <span className="truncate max-w-[100px]">{tour.place || "Featured"}</span>
-            </span>
-
-            {/* Wishlist button (top-right) */}
-            <WishlistButton
-              item={travelItem}
-              className="absolute right-2.5 top-2.5"
-            />
-
-            {/* Discount Pill (bottom-right of image) */}
-            {discountLabel && (
-              <span className="absolute bottom-2.5 right-2.5 z-10 rounded-md bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-md">
-                {discountLabel}
+            {/* Top-left Badges: Prominent Ranking Pill + Destination */}
+            <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5 pointer-events-none">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 px-3 py-1 text-[11px] font-black text-white shadow-md tracking-wider">
+                <Flame
+                  size={13}
+                  className="fill-white text-white shrink-0 animate-pulse"
+                />
+                <span>#{rankNumber} TRENDING</span>
               </span>
-            )}
+              {tour.place && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white border border-white/20 shadow-xs">
+                  <MapPin size={10} className="text-amber-400 shrink-0" />
+                  <span className="truncate max-w-[90px]">{tour.place}</span>
+                </span>
+              )}
+            </div>
+
+            {/* Wishlist Button (top-right) with frosted backdrop */}
+            <div className="absolute right-3 top-3 z-10">
+              <WishlistButton
+                item={travelItem}
+                className="bg-white/85 backdrop-blur-md rounded-full shadow-md hover:bg-white transition"
+              />
+            </div>
+
+            {/* Ambient dark gradient overlay on bottom of photo */}
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent pointer-events-none" />
+
+            {/* Bottom pills directly on photo */}
+            <div className="absolute inset-x-3 bottom-3 z-10 flex items-center justify-between pointer-events-none">
+              {tour.days ? (
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/60 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-white border border-white/15">
+                  <Clock size={12} className="text-sky-300" />
+                  <span>{tour.days}</span>
+                </span>
+              ) : (
+                <span />
+              )}
+
+              {discountLabel && (
+                <span className="rounded-md bg-rose-600 px-2.5 py-1 text-[10px] font-black text-white shadow-md tracking-wide uppercase">
+                  {discountLabel}
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Tour details */}
-          <div className="pt-3">
-            {/* Title */}
-            <h3 className="truncate text-base font-semibold text-slate-900 transition-colors group-hover:text-pub-accent leading-snug">
+          {/* Card Body with comfortable padding */}
+          <div className="p-4 sm:p-5">
+            {/* Meta row: Location & Social Proof Rating */}
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="font-bold text-pub-accent uppercase tracking-wider text-[11px] truncate flex items-center gap-1">
+                <span>{tour.place || "Curated Adventure"}</span>
+              </span>
+
+              {ratingVal ? (
+                <div className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 border border-amber-200/60 text-amber-900 font-bold text-[11px] shrink-0">
+                  <Star size={11} className="fill-amber-400 text-amber-400" />
+                  <span>{ratingVal}</span>
+                  {reviewCountStr && (
+                    <span className="text-slate-400 font-normal">
+                      ({reviewCountStr})
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                  <ShieldCheck size={11} />
+                  <span>Verified Operator</span>
+                </span>
+              )}
+            </div>
+
+            {/* Title: 2 lines with proper line clamp and font heading */}
+            <h3 className="mt-2.5 line-clamp-2 text-base font-bold text-slate-950 transition-colors group-hover:text-pub-secondary leading-snug font-heading min-h-[46px]">
               {tour.title}
             </h3>
 
-            {/* Rating + review count - only when the tour has real reviews */}
-            {ratingVal && (
-              <div className="mt-1.5 flex items-center gap-1 text-xs">
-                <div className="flex items-center gap-0.5 text-amber-400">
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <Star
-                      key={i}
-                      size={11}
-                      className={
-                        i < Math.round(Number(ratingVal))
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-slate-300"
-                      }
-                    />
-                  ))}
+            {/* Modern Spec Chips (Distinct from standard blue bullets) */}
+            <div className="mt-3.5 grid grid-cols-2 gap-2 text-[11px]">
+              {tour.maxGroupSize != null ? (
+                <div className="flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-100 px-2.5 py-1.5 text-slate-600 font-medium truncate">
+                  <Users size={13} className="text-pub-secondary shrink-0" />
+                  <span className="truncate">
+                    Max {tour.maxGroupSize} guests
+                  </span>
                 </div>
-                <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
-                {reviewCountStr && (
-                  <span className="text-slate-500 font-normal">({reviewCountStr})</span>
-                )}
-              </div>
-            )}
+              ) : (
+                <div className="flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-100 px-2.5 py-1.5 text-slate-600 font-medium truncate">
+                  <Sparkles size={13} className="text-pub-secondary shrink-0" />
+                  <span className="truncate">Small Group</span>
+                </div>
+              )}
 
-            {/* 4 Feature specs with blue icons */}
-            <div className="mt-2.5 space-y-1 text-[11px] text-slate-600 font-medium">
-              {tour.days && (
-                <p className="flex items-center gap-1.5">
-                  <Sun size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                  <span>{tour.days}</span>
-                </p>
-              )}
-              {tour.place && (
-                <p className="flex items-center gap-1.5 truncate">
-                  <Navigation size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                  <span className="truncate">{tour.place}</span>
-                </p>
-              )}
-              {tour.ageRange && (
-                <p className="flex items-center gap-1.5">
-                  <Sliders size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                  <span>Age Range: {tour.ageRange}</span>
-                </p>
-              )}
-              {tour.maxGroupSize != null && (
-                <p className="flex items-center gap-1.5">
-                  <Users size={12} className="shrink-0 text-sky-500 stroke-[2]" />
-                  <span>Max Group Size: {tour.maxGroupSize}</span>
-                </p>
+              {tour.ageRange ? (
+                <div className="flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-100 px-2.5 py-1.5 text-slate-600 font-medium truncate">
+                  <Sliders size={13} className="text-pub-secondary shrink-0" />
+                  <span className="truncate">Age: {tour.ageRange}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-100 px-2.5 py-1.5 text-slate-600 font-medium truncate">
+                  <Clock size={13} className="text-pub-secondary shrink-0" />
+                  <span className="truncate">{tour.days || "Flexible"}</span>
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Pricing Row: From $old $new pp -- no button on the right */}
-        <div className="mt-3 flex items-baseline gap-1.5 text-slate-900 border-t border-slate-100 pt-2.5">
-          <span className="text-xs font-normal text-slate-500">From</span>
-          {tour.originalPrice != null && (
-            <span className="text-xs font-normal text-slate-400 line-through">
-              {format(tour.originalPrice, tour.currency || "USD")}
+        {/* Pricing Row + Interactive Action Button */}
+        <div className="border-t border-slate-100 bg-slate-50/50 p-4 sm:px-5 sm:py-3.5 flex items-center justify-between rounded-b-[25px]">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              Starting From
             </span>
-          )}
-          <strong className="text-sm sm:text-base font-bold text-slate-950">
-            {tour.rawPrice != null
-              ? format(tour.rawPrice, tour.currency || "USD")
-              : "On request"}
-          </strong>
-          <span className="text-xs text-slate-500 font-normal">pp</span>
+            <div className="flex items-baseline gap-1.5">
+              {tour.originalPrice != null && (
+                <span className="text-xs font-normal text-slate-400 line-through">
+                  {format(tour.originalPrice, tour.currency || "USD")}
+                </span>
+              )}
+              <strong className="text-base sm:text-lg font-black text-slate-950 font-heading">
+                {tour.rawPrice != null
+                  ? format(tour.rawPrice, tour.currency || "USD")
+                  : "On request"}
+              </strong>
+              <span className="text-[11px] text-slate-500 font-medium">
+                / person
+              </span>
+            </div>
+          </div>
+
+          {/* Interactive Action Pill Button */}
+          <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1F3A] px-3.5 py-2 text-xs font-bold text-white shadow-xs group-hover:bg-pub-accent group-hover:shadow-md transition-all duration-200">
+            <span>Explore</span>
+            <ArrowRight
+              size={13}
+              className="group-hover:translate-x-0.5 transition-transform"
+            />
+          </span>
         </div>
       </Link>
     </article>
@@ -192,23 +243,26 @@ export default function TrendingToursSection({
   initialTours,
   loading: initialLoading,
 }: TrendingToursSectionProps) {
+  const copy = useSectionCopy("trending_section");
   const [tours, setTours] = useState<Tour[]>(initialTours || []);
   const [loading, setLoading] = useState<boolean>(
     initialLoading !== undefined ? initialLoading : !initialTours?.length,
   );
-  const [sectionEnabled, setSectionEnabled] = useState(false);
+  const [sectionEnabled, setSectionEnabled] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Section is switched off by default (per current requirement) until
-  // enabled from admin/cms > Trending Tour Packages.
+  // Section can be switched off from admin/cms > Trending Tour Packages;
+  // defaults to shown (true) when no admin has set it either way.
   useEffect(() => {
     let active = true;
     fetchContentBlock<SectionVisibilityBlock>("trending_section")
       .then((res) => {
-        if (active && res?.data?.enabled === true) setSectionEnabled(true);
+        if (active && res?.data?.enabled === false) setSectionEnabled(false);
       })
       .catch(() => {});
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Fast independent data loading
@@ -294,17 +348,17 @@ export default function TrendingToursSection({
 
   return (
     <Reveal variant="fade-up">
-      <section className="relative w-full overflow-hidden py-14 sm:py-18 bg-gradient-to-b from-white via-[#F8FAFC] to-[#F1F5F9]">
+      <section className="relative w-full overflow-hidden py-14 sm:py-20 bg-gradient-to-b from-white via-[#F8FAFC] to-[#F1F5F9]">
         {/* Ambient decorative glowing blobs */}
-        <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-bl from-sky-200/20 via-blue-100/15 to-transparent blur-3xl animate-float-orb" />
+        <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-bl from-amber-200/20 via-orange-100/15 to-transparent blur-3xl animate-float-orb" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-sky-200/15 via-slate-100/20 to-transparent blur-3xl animate-float-orb-alt" />
 
-        <div className="relative z-10 mx-auto max-w-[1380px] px-5">
-          {/* Section Header with Arrows on right */}
-          <div className="mb-6 flex items-end justify-between gap-4">
+        <div className="relative z-10 mx-auto max-w-[1400px] px-5">
+          {/* Section Header with Eyebrow and Carousel Navigation */}
+          <div className="mb-8 flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-950 tracking-tight">
-                Trending Tour Packages
+              <h2 className="text-2xl sm:text-3xl lg:text-[38px] font-black text-slate-950 tracking-tight font-heading">
+                {text(copy.title, "Trending Tour Packages")}
               </h2>
             </div>
 
@@ -314,7 +368,7 @@ export default function TrendingToursSection({
                   type="button"
                   aria-label="Previous tours"
                   onClick={() => move(-1)}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-sky-500 hover:text-sky-600 hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-pub-accent hover:text-pub-accent hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
                 >
                   <ChevronLeft size={18} className="stroke-[2.5]" />
                 </button>
@@ -322,7 +376,7 @@ export default function TrendingToursSection({
                   type="button"
                   aria-label="Next tours"
                   onClick={() => move(1)}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-sky-500 hover:text-sky-600 hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-xs transition-all duration-200 hover:border-pub-accent hover:text-pub-accent hover:scale-110 active:scale-90 hover:shadow-sm cursor-pointer"
                 >
                   <ChevronRight size={18} className="stroke-[2.5]" />
                 </button>
@@ -346,7 +400,11 @@ export default function TrendingToursSection({
               ))
             ) : displayTours.length > 0 ? (
               displayTours.map((tour, index) => (
-                <TrendingTourCard key={`${tour.title}-${index}`} tour={tour} />
+                <TrendingTourCard
+                  key={`${tour.title}-${index}`}
+                  tour={tour}
+                  index={index}
+                />
               ))
             ) : (
               <EmptyCollection
@@ -361,4 +419,3 @@ export default function TrendingToursSection({
     </Reveal>
   );
 }
-

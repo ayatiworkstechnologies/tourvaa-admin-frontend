@@ -58,7 +58,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
   useEffect(() => setImgSrc(image), [image]);
   const resolvedHref = href ?? publicTourUrl({ country_name: tour.country_name, title: tour.title || "Tour", slug: tour.slug });
   const discounted = hasActiveDiscount(tour);
-  const days = tour.number_of_days || 6;
+  const days = tour.number_of_days || 0;
   // group_size sometimes comes through as a bare number ("16") rather than a
   // range/label - shown as-is that reads as a broken/truncated line, so a
   // purely numeric value gets a "Up to N people" wrapper instead.
@@ -75,7 +75,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
     image,
     price: tour.price_start_per_person ?? null,
     currency: tour.currency || "USD",
-    duration: tour.number_of_days ? `${tour.number_of_days}D` : "Flexible",
+    duration: tour.number_of_days ? `${tour.number_of_days}D` : "",
     href: resolvedHref,
   };
   const compactToggleWishlist = () => {
@@ -163,26 +163,30 @@ export default function TourCard({ tour, format, variant = "search", href, view 
         image,
         price: tour.price_start_per_person ?? null,
         currency: tour.currency || "USD",
-        duration: tour.number_of_days ? `${tour.number_of_days}D` : "Flexible",
+        duration: tour.number_of_days ? `${tour.number_of_days}D` : "",
         href: resolvedHref,
       });
     }
   };
 
-  const basePrice = tour.price_start_per_person || (discounted ? tour.discounted_price_per_person : 1182) || 1182;
+  // Everything below comes from the tour payload; a value the tour doesn't have is
+  // simply not shown (no invented prices, dates, ages or group sizes).
+  const basePrice = discounted ? tour.discounted_price_per_person : tour.price_start_per_person;
   const currency = tour.currency || "USD";
-  const originalPrice = tour.original_price_per_person || Math.round(basePrice * 1.33);
-  const routeSummary = tour.city_name?.includes(",")
-    ? tour.city_name.split(",").slice(0, 2).join(" → ")
-    : tour.city_name
-      ? `${tour.city_name} Circuit`
-      : `${tour.country_name || "Regional"} Circuit`;
+  const originalPrice = discounted ? tour.original_price_per_person : null;
+  const routeSummary = tour.start_location && tour.end_location && tour.start_location !== tour.end_location
+    ? `${tour.start_location} → ${tour.end_location}`
+    : tour.start_location || tour.city_name || tour.country_name || "";
 
-  const departureChips = [
-    { date: "5 Oct '26", price: format(basePrice, currency) },
-    { date: "12 Oct '26", price: format(Math.round(basePrice * 1.05), currency) },
-    { date: "19 Oct '26", price: format(Math.round(basePrice * 0.98), currency) },
-  ];
+  const departureChips = (tour.departures ?? [])
+    .filter((d) => d.date && d.status !== "closed" && d.status !== "sold_out" && d.slots > 0)
+    .sort((x, y) => x.date.localeCompare(y.date))
+    .slice(0, 3)
+    .map((d) => ({
+      date: new Date(d.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" }),
+      slots: `${d.slots} left`,
+    }));
+  const maxGroup = tour.max_group_size ? String(tour.max_group_size) : tour.group_size ? tour.group_size.replace(/^Max\s*/i, "") : "";
 
   return (
     <article className={`group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${view === "list" ? "sm:grid sm:grid-cols-[320px_1fr] sm:gap-5" : ""}`}>
@@ -220,83 +224,91 @@ export default function TourCard({ tour, format, variant = "search", href, view 
             >
               {tour.title}
             </Link>
-            <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-              {days}D | {Math.max(1, days - 1)}N
-            </span>
+            {days > 0 && (
+              <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                {days}D | {Math.max(0, days - 1)}N
+              </span>
+            )}
           </div>
 
           {/* 2-Column Specifications Grid with sky blue icons */}
           <div className="mt-3.5 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[11px] text-slate-600 font-medium">
             {/* Left Column */}
             <div className="space-y-1.5">
-              <p className="flex items-center gap-1.5 truncate">
-                <Sun size={12} className="text-sky-500 shrink-0" />
-                <span>{days} Days</span>
-              </p>
-              <p className="flex items-center gap-1.5 truncate">
-                <MapPin size={12} className="text-sky-500 shrink-0" />
-                <span className="truncate">{routeSummary}</span>
-              </p>
-              <p className="flex items-center gap-1.5 truncate">
-                <Compass size={12} className="text-sky-500 shrink-0" />
-                <span>{tour.category_name || "Full Guided"}</span>
-              </p>
-              <p className="flex items-center gap-1.5 truncate">
-                <Users size={12} className="text-sky-500 shrink-0" />
-                <span>Max Group Size: {tour.group_size ? tour.group_size.replace(/^Max\s*/i, "") : "16"}</span>
-              </p>
+              {days > 0 && (
+                <p className="flex items-center gap-1.5 truncate">
+                  <Sun size={12} className="text-sky-500 shrink-0" />
+                  <span>{days} Days</span>
+                </p>
+              )}
+              {routeSummary && (
+                <p className="flex items-center gap-1.5 truncate">
+                  <MapPin size={12} className="text-sky-500 shrink-0" />
+                  <span className="truncate">{routeSummary}</span>
+                </p>
+              )}
+              {tour.category_name && (
+                <p className="flex items-center gap-1.5 truncate">
+                  <Compass size={12} className="text-sky-500 shrink-0" />
+                  <span>{tour.category_name}</span>
+                </p>
+              )}
             </div>
 
             {/* Right Column */}
             <div className="space-y-1.5">
-              <p className="flex items-center gap-1.5 truncate">
-                <User size={12} className="text-sky-500 shrink-0" />
-                <span>Minimum age: 16</span>
-              </p>
-              <p className="flex items-center gap-1.5 truncate">
-                <User size={12} className="text-sky-500 shrink-0" />
-                <span>Maximum age: 65</span>
-              </p>
-              <p className="flex items-center gap-1.5 truncate">
-                <MapPin size={12} className="text-sky-500 shrink-0" />
-                <span className="truncate">{tour.city_name || tour.country_name || "Destinations"} +3 More</span>
-              </p>
+              {maxGroup && (
+                <p className="flex items-center gap-1.5 truncate">
+                  <Users size={12} className="text-sky-500 shrink-0" />
+                  <span>Max Group Size: {maxGroup}</span>
+                </p>
+              )}
+              {tour.suitable_age_range && (
+                <p className="flex items-center gap-1.5 truncate">
+                  <User size={12} className="text-sky-500 shrink-0" />
+                  <span>Age: {tour.suitable_age_range}</span>
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Upcoming Available Departure Date Chips */}
-          <div className="mt-3.5 grid grid-cols-4 gap-1.5">
-            {departureChips.map((chip, cIdx) => (
-              <div
-                key={cIdx}
-                className="rounded-lg border border-slate-200/90 bg-white py-1 px-1 text-center shadow-2xs"
+          {/* Upcoming departures from the tour's real calendar */}
+          {departureChips.length > 0 && (
+            <div className="mt-3.5 grid grid-cols-4 gap-1.5">
+              {departureChips.map((chip, cIdx) => (
+                <div
+                  key={cIdx}
+                  className="rounded-lg border border-slate-200/90 bg-white py-1 px-1 text-center shadow-2xs"
+                >
+                  <p className="text-[10px] font-bold text-slate-900 truncate">{chip.date}</p>
+                  <p className="text-[9px] font-medium text-slate-500 leading-tight truncate">{chip.slots}</p>
+                </div>
+              ))}
+              <Link
+                href={resolvedHref}
+                className="rounded-lg border border-slate-200/90 bg-slate-50/70 hover:bg-slate-100 py-1 px-1 text-center shadow-2xs flex items-center justify-center text-[11px] font-bold text-slate-800 transition"
               >
-                <p className="text-[9px] font-medium text-slate-500 truncate">{chip.date}</p>
-                <p className="text-[11px] font-bold text-slate-900 leading-tight truncate">{chip.price}</p>
-              </div>
-            ))}
-            <Link
-              href={resolvedHref}
-              className="rounded-lg border border-slate-200/90 bg-slate-50/70 hover:bg-slate-100 py-1 px-1 text-center shadow-2xs flex items-center justify-center text-[11px] font-bold text-slate-800 transition"
-            >
-              +More
-            </Link>
-          </div>
+                +More
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Bottom Pricing & CTA Button Row */}
         <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3.5">
           <div className="text-xs text-slate-500 font-medium">
-            <span>From </span>
-            {discounted ? (
+            {basePrice != null && basePrice > 0 ? (
               <>
-                <span className="line-through text-slate-400 mr-1 text-xs">{format(originalPrice, currency)}</span>
+                <span>From </span>
+                {originalPrice != null && originalPrice > basePrice && (
+                  <span className="line-through text-slate-400 mr-1 text-xs">{format(originalPrice, currency)}</span>
+                )}
                 <span className="text-base font-bold text-slate-900">{format(basePrice, currency)}</span>
+                <span className="text-[11px] text-slate-400 ml-0.5">pp</span>
               </>
             ) : (
-              <span className="text-base font-bold text-slate-900">{format(basePrice, currency)}</span>
+              <span>Price on request</span>
             )}
-            <span className="text-[11px] text-slate-400 ml-0.5">pp</span>
           </div>
 
           <PrimaryCtaButton href={resolvedHref} size="sm">

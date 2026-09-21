@@ -6,7 +6,11 @@ import type { CSSProperties, FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LuArrowRight as ArrowRight } from "react-icons/lu";
-import { CmsBlog, fetchPublicBlogs, subscribeNewsletter } from "@/lib/api/publicClient";
+import {
+  CmsBlog,
+  fetchPublicBlogs,
+  subscribeNewsletter,
+} from "@/lib/api/publicClient";
 
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
@@ -22,20 +26,29 @@ const CATEGORIES = [
   "News",
 ];
 
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80";
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80";
 
 function delay(milliseconds: number) {
   return { "--reveal-delay": `${milliseconds}ms` } as CSSProperties;
 }
 
 function readTime(content: string | null) {
-  const words = (content || "").replace(/<[^>]+>/g, " ").trim().split(/\s+/).filter(Boolean).length;
+  const words = (content || "")
+    .replace(/<[^>]+>/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
   return `${Math.max(1, Math.round(words / 200))} min read`;
 }
 
 function formatDate(value: string | null) {
   if (!value) return "";
-  return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  return new Date(value).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function categoryOf(post: CmsBlog) {
@@ -44,7 +57,12 @@ function categoryOf(post: CmsBlog) {
 
 function authorInitials(author: string | null) {
   const parts = (author || "Tourvaa").trim().split(/\s+/);
-  return parts.slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("") || "TV";
+  return (
+    parts
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() || "")
+      .join("") || "TV"
+  );
 }
 
 export default function BlogsPage() {
@@ -63,12 +81,22 @@ export default function BlogsPage() {
     fetchPublicBlogs()
       .then((items) => {
         if (!active) return;
-        const sorted = [...items].sort((a, b) => (b.published_at || b.created_at).localeCompare(a.published_at || a.created_at));
+        const sorted = [...items].sort((a, b) =>
+          (b.published_at || b.created_at).localeCompare(
+            a.published_at || a.created_at,
+          ),
+        );
         setPosts(sorted);
       })
-      .catch(() => { if (active) setLoadError(true); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .catch(() => {
+        if (active) setLoadError(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const featuredPost = posts[0] ?? null;
@@ -80,8 +108,10 @@ export default function BlogsPage() {
     return remainingPosts.filter((post) => {
       const tags = (post.tags || []).map((t) => t.toUpperCase());
       if (tags.includes(catUpper)) return true;
-      if (catUpper === "FOOD & DRINK") return tags.some((t) => t.includes("FOOD"));
-      if (catUpper === "TRAVEL TIPS") return tags.some((t) => t.includes("TIP") || t.includes("SUSTAINAB"));
+      if (catUpper === "FOOD & DRINK")
+        return tags.some((t) => t.includes("FOOD"));
+      if (catUpper === "TRAVEL TIPS")
+        return tags.some((t) => t.includes("TIP") || t.includes("SUSTAINAB"));
       return tags.some((t) => t.includes(catUpper) || catUpper.includes(t));
     });
   }, [activeCategory, remainingPosts]);
@@ -123,7 +153,9 @@ export default function BlogsPage() {
               Tourvaa Blog
             </h1>
             <p className="mt-2.5 text-sm sm:text-base leading-relaxed text-slate-500 max-w-3xl font-medium">
-              Everything you need to know before you go - from visa tips to packing lists, we&apos;ve got you covered on your next global adventure.
+              Everything you need to know before you go - from visa tips to
+              packing lists, we&apos;ve got you covered on your next global
+              adventure.
             </p>
           </div>
 
@@ -150,54 +182,66 @@ export default function BlogsPage() {
 
           {/* Featured Lead Article Card - the most recently published real post */}
           {featuredPost && (
-          <div data-reveal className="mt-10">
-            <Link
-              href={`/blogs/${featuredPost.slug}`}
-              className="group block overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                <div className="relative h-[260px] sm:h-[320px] md:h-[360px] w-full overflow-hidden rounded-[16px] bg-slate-100">
-                  <img
-                    src={featuredPost.featured_image ? mediaUrl(featuredPost.featured_image) : FALLBACK_IMAGE}
-                    alt={featuredPost.title}
-                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                  />
-                </div>
+            <div data-reveal className="mt-10">
+              <Link
+                href={`/blogs/${featuredPost.slug}`}
+                className="group block overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                  <div className="relative h-[260px] sm:h-[320px] md:h-[360px] w-full overflow-hidden rounded-[16px] bg-slate-100">
+                    <img
+                      src={
+                        featuredPost.featured_image
+                          ? mediaUrl(featuredPost.featured_image)
+                          : FALLBACK_IMAGE
+                      }
+                      alt={featuredPost.title}
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                    />
+                  </div>
 
-                <div className="flex flex-col justify-center py-2 px-2 sm:px-4">
-                  <span className="inline-flex w-fit items-center gap-1 rounded-md bg-sky-50 px-2.5 py-1 text-[11px] font-extrabold text-sky-700">
-                    {categoryOf(featuredPost)}
-                  </span>
+                  <div className="flex flex-col justify-center py-2 px-2 sm:px-4">
+                    <span className="inline-flex w-fit items-center gap-1 rounded-md bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700">
+                      {categoryOf(featuredPost)}
+                    </span>
 
-                  <h2 className="mt-3 text-2xl sm:text-3xl font-black text-slate-950 leading-tight tracking-tight group-hover:text-pub-secondary transition-colors">
-                    {featuredPost.title}
-                  </h2>
+                    <h2 className="mt-3 text-2xl sm:text-3xl font-black text-slate-950 leading-tight tracking-tight group-hover:text-pub-secondary transition-colors">
+                      {featuredPost.title}
+                    </h2>
 
-                  {featuredPost.excerpt && (
-                    <p className="mt-3 text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
-                      {featuredPost.excerpt}
-                    </p>
-                  )}
+                    {featuredPost.excerpt && (
+                      <p className="mt-3 text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                        {featuredPost.excerpt}
+                      </p>
+                    )}
 
-                  <div className="mt-6 flex items-center gap-3 pt-4 border-t border-slate-100">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 font-bold text-xs text-blue-700">
-                      {authorInitials(featuredPost.author)}
-                    </div>
-                    <div className="text-xs">
-                      <p className="font-bold text-slate-900">{featuredPost.author || "Tourvaa Team"}</p>
-                      <p className="text-slate-400">{formatDate(featuredPost.published_at || featuredPost.created_at)} · {readTime(featuredPost.content)}</p>
+                    <div className="mt-6 flex items-center gap-3 pt-4 border-t border-slate-100">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 font-bold text-xs text-blue-700">
+                        {authorInitials(featuredPost.author)}
+                      </div>
+                      <div className="text-xs">
+                        <p className="font-bold text-slate-900">
+                          {featuredPost.author || "Tourvaa Team"}
+                        </p>
+                        <p className="text-slate-400">
+                          {formatDate(
+                            featuredPost.published_at ||
+                              featuredPost.created_at,
+                          )}{" "}
+                          · {readTime(featuredPost.content)}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          </div>
+              </Link>
+            </div>
           )}
 
           {/* Latest Articles - real published posts */}
           <div className="mt-16 sm:mt-20">
             <div data-reveal>
-              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
                 Latest Articles
               </h2>
             </div>
@@ -205,20 +249,31 @@ export default function BlogsPage() {
             {loading ? (
               <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-72 animate-pulse rounded-[20px] border border-slate-100/90 bg-slate-50" />
+                  <div
+                    key={i}
+                    className="h-72 animate-pulse rounded-[20px] border border-slate-100/90 bg-slate-50"
+                  />
                 ))}
               </div>
             ) : loadError ? (
               <div className="mt-8 rounded-2xl border border-slate-100 bg-white p-10 text-center">
-                <p className="text-sm font-bold text-slate-700">Articles could not be loaded</p>
-                <p className="mt-1 text-xs text-slate-400">Please check your connection and try again.</p>
+                <p className="text-sm font-bold text-slate-700">
+                  Articles could not be loaded
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Please check your connection and try again.
+                </p>
               </div>
             ) : filteredArticles.length === 0 ? (
               <div className="mt-8 rounded-2xl border border-slate-100 bg-white p-10 text-center">
                 <p className="text-sm font-bold text-slate-700">
-                  {posts.length === 0 ? "No articles published yet" : "No articles in this category yet"}
+                  {posts.length === 0
+                    ? "No articles published yet"
+                    : "No articles in this category yet"}
                 </p>
-                <p className="mt-1 text-xs text-slate-400">Check back soon for new guides or explore all articles.</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Check back soon for new guides or explore all articles.
+                </p>
                 {posts.length > 0 && (
                   <button
                     type="button"
@@ -232,41 +287,45 @@ export default function BlogsPage() {
             ) : (
               <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredArticles.map((article, index) => (
-                <Link
-                  key={article.id}
-                  href={`/blogs/${article.slug}`}
-                  data-reveal
-                  style={delay(index * 60)}
-                  className="group flex flex-col overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-                >
-                  <div className="relative h-48 w-full overflow-hidden rounded-[14px] bg-slate-100">
-                    <img
-                      src={article.featured_image ? mediaUrl(article.featured_image) : FALLBACK_IMAGE}
-                      alt={article.title}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                    />
-                  </div>
+                  <Link
+                    key={article.id}
+                    href={`/blogs/${article.slug}`}
+                    data-reveal
+                    style={delay(index * 60)}
+                    className="group flex flex-col overflow-hidden rounded-[20px] border border-slate-100/90 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                  >
+                    <div className="relative h-48 w-full overflow-hidden rounded-[14px] bg-slate-100">
+                      <img
+                        src={
+                          article.featured_image
+                            ? mediaUrl(article.featured_image)
+                            : FALLBACK_IMAGE
+                        }
+                        alt={article.title}
+                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                      />
+                    </div>
 
-                  <div className="mt-3 flex flex-1 flex-col">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-600">
-                      {categoryOf(article)}
-                    </span>
-                    <h3 className="mt-1.5 text-base font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-pub-secondary transition-colors">
-                      {article.title}
-                    </h3>
-                    {article.excerpt && (
-                      <p className="mt-2 text-xs text-slate-500 line-clamp-2 leading-relaxed flex-1">
-                        {article.excerpt}
-                      </p>
-                    )}
-                    <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-pub-accent group-hover:underline">
-                      <span>Read Article</span>
-                      <ArrowRight size={13} aria-hidden="true" />
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                    <div className="mt-3 flex flex-1 flex-col">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-sky-600">
+                        {categoryOf(article)}
+                      </span>
+                      <h3 className="mt-1.5 text-base font-semibold text-slate-900 leading-snug line-clamp-2 group-hover:text-pub-secondary transition-colors">
+                        {article.title}
+                      </h3>
+                      {article.excerpt && (
+                        <p className="mt-2 text-xs text-slate-500 line-clamp-2 leading-relaxed flex-1">
+                          {article.excerpt}
+                        </p>
+                      )}
+                      <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-pub-accent group-hover:underline">
+                        <span>Read Article</span>
+                        <ArrowRight size={13} aria-hidden="true" />
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             )}
           </div>
 
@@ -279,11 +338,15 @@ export default function BlogsPage() {
                     Get Travel Tips Straight to Your Inbox
                   </h3>
                   <p className="mt-2 text-xs sm:text-sm text-slate-500 font-medium">
-                    Subscribe to receive tactical gear updates, packing checklists, and sudden destination safety bulletins.
+                    Subscribe to receive tactical gear updates, packing
+                    checklists, and sudden destination safety bulletins.
                   </p>
                 </div>
 
-                <form onSubmit={subscribe} className="flex w-full max-w-md items-center gap-3">
+                <form
+                  onSubmit={subscribe}
+                  className="flex w-full max-w-md items-center gap-3"
+                >
                   <input
                     type="email"
                     required
@@ -302,7 +365,9 @@ export default function BlogsPage() {
                 </form>
               </div>
               {message && (
-                <p className="mt-3 text-xs font-bold text-emerald-600">{message}</p>
+                <p className="mt-3 text-xs font-bold text-emerald-600">
+                  {message}
+                </p>
               )}
             </section>
           </div>
@@ -311,4 +376,3 @@ export default function BlogsPage() {
     </AboutReveal>
   );
 }
-

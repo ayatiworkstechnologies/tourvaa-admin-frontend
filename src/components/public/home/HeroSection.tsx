@@ -10,6 +10,8 @@ import {
   LuMessageSquare as MessageSquare,
   LuStar as Star,
 } from "react-icons/lu";
+import RichText from "./RichText";
+import { list, useSectionCopy } from "./useSectionCopy";
 import MarketingImage from "@/components/public/MarketingImage";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
 import {
@@ -44,14 +46,15 @@ export default function HeroSection({
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [showOfferBanner, setShowOfferBanner] = useState(true);
 
-  const TRUST_ITEMS = [
+  const DEFAULT_TRUST_ITEMS = [
     {
       id: "operators",
       Icon: Globe,
       iconColor: "text-sky-500",
       content: (
         <span>
-          Shop <strong className="font-extrabold text-slate-950">2,500+</strong> handpicked operators
+          Shop <strong className="font-semibold text-slate-950">2,500+</strong>{" "}
+          handpicked operators
         </span>
       ),
     },
@@ -61,7 +64,7 @@ export default function HeroSection({
       iconColor: "text-emerald-500 fill-emerald-500",
       content: (
         <span>
-          <strong className="font-extrabold text-slate-950">4.8 stars</strong> on{" "}
+          <strong className="font-semibold text-slate-950">4.8 stars</strong> on{" "}
           <span className="font-black text-emerald-600">Trustpilot</span>{" "}
           <span className="text-slate-500 font-normal">(15,000+ reviews)</span>
         </span>
@@ -73,7 +76,8 @@ export default function HeroSection({
       iconColor: "text-pub-accent",
       content: (
         <span>
-          <strong className="font-extrabold text-slate-950">24/7</strong> customer support
+          <strong className="font-semibold text-slate-950">24/7</strong>{" "}
+          customer support
         </span>
       ),
     },
@@ -83,14 +87,40 @@ export default function HeroSection({
       iconColor: "text-sky-500",
       content: (
         <span>
-          <strong className="font-extrabold text-slate-950">500k+</strong> experiences shared by travelers
+          <strong className="font-semibold text-slate-950">500k+</strong>{" "}
+          experiences shared by travelers
         </span>
       ),
     },
   ];
 
+  // CMS > Home Page > Slogans replaces the defaults above when it has entries.
+  const customSlogans = list(useSectionCopy("slogans").items);
+  const SLOGAN_ICONS = [
+    { Icon: Globe, iconColor: "text-sky-500" },
+    { Icon: Star, iconColor: "text-emerald-500 fill-emerald-500" },
+    { Icon: MessageSquare, iconColor: "text-pub-accent" },
+    { Icon: HeartHandshake, iconColor: "text-sky-500" },
+  ];
+  const TRUST_ITEMS = customSlogans.length
+    ? customSlogans.map((t, i) => ({
+        id: `slogan-${i}`,
+        ...SLOGAN_ICONS[i % SLOGAN_ICONS.length],
+        content: (
+          <span>
+            <RichText
+              value={t}
+              strongClassName="font-semibold text-slate-950"
+            />
+          </span>
+        ),
+      }))
+    : DEFAULT_TRUST_ITEMS;
+
   const [trustIndex, setTrustIndex] = useState(0);
-  const [animState, setAnimState] = useState<"visible" | "exit" | "enter">("visible");
+  const [animState, setAnimState] = useState<"visible" | "exit" | "enter">(
+    "visible",
+  );
 
   useEffect(() => {
     let enterTimer: NodeJS.Timeout | null = null;
@@ -231,7 +261,11 @@ export default function HeroSection({
             )}
 
             {banner?.cta_text && banner?.cta_url && (
-              <PrimaryCtaButton href={banner.cta_url} size="sm" className="animate-fade-up delay-100 mt-3">
+              <PrimaryCtaButton
+                href={banner.cta_url}
+                size="sm"
+                className="animate-fade-up delay-100 mt-3"
+              >
                 {banner.cta_text}
               </PrimaryCtaButton>
             )}
@@ -243,7 +277,6 @@ export default function HeroSection({
                 onPanelOpenChange={setSearchPanelOpen}
               />
             </div>
-
           </div>
 
           {/* Bottom Offer Capsule */}
@@ -259,7 +292,7 @@ export default function HeroSection({
                 <div className="flex items-center gap-2 shrink-0">
                   <Globe size={15} className="text-white/80 shrink-0" />
                   <span className="rounded bg-white/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white">
-                    OFFER
+                    {heroExtras.offer_label?.trim() || "OFFER"}
                   </span>
                 </div>
                 {heroOfferCtaUrl ? (
@@ -300,7 +333,7 @@ export default function HeroSection({
       >
         <div className="relative flex items-center justify-center min-h-[36px] w-full max-w-3xl mx-auto overflow-hidden">
           {(() => {
-            const currentItem = TRUST_ITEMS[trustIndex];
+            const currentItem = TRUST_ITEMS[trustIndex % TRUST_ITEMS.length];
             const Icon = currentItem.Icon;
             return (
               <div
@@ -309,8 +342,8 @@ export default function HeroSection({
                   animState === "visible"
                     ? "opacity-100 translate-y-0 transition-all duration-500 ease-out"
                     : animState === "exit"
-                    ? "opacity-0 -translate-y-3.5 transition-all duration-350 ease-in pointer-events-none"
-                    : "opacity-0 translate-y-3.5 transition-none pointer-events-none"
+                      ? "opacity-0 -translate-y-3.5 transition-all duration-350 ease-in pointer-events-none"
+                      : "opacity-0 translate-y-3.5 transition-none pointer-events-none"
                 }`}
               >
                 <Icon
@@ -326,4 +359,3 @@ export default function HeroSection({
     </>
   );
 }
-

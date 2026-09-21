@@ -61,7 +61,7 @@ export default function TravelSupportBanner({
     propImage || (data.image ? mediaUrl(data.image) : "/images/offer.png");
 
   return (
-    <section className="group relative w-full overflow-hidden py-12 sm:py-16 bg-white flex items-center min-h-[210px] sm:min-h-[240px]">
+    <section className="group relative w-full overflow-hidden py-14 sm:py-18 bg-white flex items-center min-h-[210px] sm:min-h-[240px]">
       {/* Full panoramic background image - left aligned so agents remain clearly in frame */}
       <img
         src={image}
@@ -73,7 +73,7 @@ export default function TravelSupportBanner({
       <div className="absolute inset-0 bg-white/75 sm:bg-transparent sm:bg-gradient-to-r sm:from-transparent sm:via-white/40 sm:via-35% sm:to-white/95 pointer-events-none" />
 
       {/* Foreground Content Aligned to the Right Half */}
-      <div className="relative z-10 mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 w-full">
+      <div className="relative z-10 mx-auto max-w-[1400px] px-5 w-full">
         <div className="flex flex-col items-start justify-center ml-auto max-w-lg lg:max-w-xl text-left py-1">
           {/* Eyebrow / Offer Ends Soon Badge */}
           <span className="inline-flex items-center rounded-full bg-pub-accent px-3.5 py-1 text-[11px] sm:text-xs font-semibold text-white shadow-2xs">

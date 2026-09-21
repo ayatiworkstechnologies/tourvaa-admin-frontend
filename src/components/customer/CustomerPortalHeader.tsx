@@ -20,9 +20,14 @@ export default function CustomerPortalHeader() {
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) setProfileOpen(false);
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      )
+        setProfileOpen(false);
     };
-    const escape = (event: KeyboardEvent) => event.key === "Escape" && setProfileOpen(false);
+    const escape = (event: KeyboardEvent) =>
+      event.key === "Escape" && setProfileOpen(false);
     document.addEventListener("mousedown", close);
     document.addEventListener("keydown", escape);
     return () => {
@@ -34,12 +39,21 @@ export default function CustomerPortalHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-100 bg-white text-slate-900 shadow-xs">
       <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-4 px-6 sm:h-[84px] lg:px-8">
-        <Link href="/" className="text-2xl font-extrabold tracking-tight text-[#0B1527]">
+        <Link
+          href="/"
+          className="text-2xl font-semibold tracking-tight text-[#0B1527]"
+        >
           Tourvaa
         </Link>
         <nav className="flex items-center gap-5 sm:gap-7">
-          <Link href="/customer/wishlist" className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E16B2D] transition-colors">
-            <Heart size={18} className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E16B2D]" />
+          <Link
+            href="/customer/wishlist"
+            className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E16B2D] transition-colors"
+          >
+            <Heart
+              size={18}
+              className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E16B2D]"
+            />
             <span>Wishlist</span>
             {wishlistCount > 0 && (
               <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E16B2D] px-1 text-[8px] font-black text-white shadow-xs">
@@ -47,8 +61,14 @@ export default function CustomerPortalHeader() {
               </span>
             )}
           </Link>
-          <Link href="/compare" className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E16B2D] transition-colors">
-            <Scale size={18} className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E16B2D]" />
+          <Link
+            href="/compare"
+            className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E16B2D] transition-colors"
+          >
+            <Scale
+              size={18}
+              className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E16B2D]"
+            />
             <span>Compare</span>
             {compareCount > 0 && (
               <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E16B2D] px-1 text-[8px] font-black text-white shadow-xs">
@@ -67,7 +87,10 @@ export default function CustomerPortalHeader() {
               aria-haspopup="menu"
               className="group flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E16B2D] transition-colors"
             >
-              <User size={18} className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E16B2D]" />
+              <User
+                size={18}
+                className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E16B2D]"
+              />
               <span>Profile</span>
             </button>
             {profileOpen && (
@@ -76,8 +99,12 @@ export default function CustomerPortalHeader() {
                 className="profile-dropdown-panel absolute right-0 top-[calc(100%+14px)] w-72 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 text-slate-900 shadow-[0_20px_55px_rgba(15,23,42,.18)]"
               >
                 <div className="border-b border-slate-100 px-3 pb-3 pt-2">
-                  <p className="truncate text-sm font-black">{user?.name || "My Tourvaa"}</p>
-                  <p className="mt-0.5 text-[10px] text-slate-400">Manage your account</p>
+                  <p className="truncate text-sm font-black">
+                    {user?.name || "My Tourvaa"}
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-slate-400">
+                    Manage your account
+                  </p>
                 </div>
                 <div className="pt-2">
                   <Link

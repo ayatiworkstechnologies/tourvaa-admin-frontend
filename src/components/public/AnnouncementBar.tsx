@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LuX as X, LuArrowRight as ArrowRight } from "react-icons/lu";
-import { CmsPromoPopup, fetchPromotionalPopups } from "@/lib/api/publicClient";
+import { CmsPromoPopup, fetchContentBlock, fetchPromotionalPopups } from "@/lib/api/publicClient";
 
 const DISMISS_KEY = "tourvaa_announcement_dismissed_id";
 
@@ -24,7 +24,17 @@ export default function AnnouncementBar() {
 
   useEffect(() => {
     let active = true;
-    fetchPromotionalPopups()
+    // The CMS "Top Bar" block (Home Page editor) wins over popups when set.
+    fetchContentBlock<{ text: string; cta_text: string; cta_url: string }>("top_bar")
+      .then((res) => {
+        const d = res?.data;
+        if (!active || !d?.text?.trim()) return false;
+        setPopup({ id: -1, title: d.text.trim(), content: d.cta_text ?? "", cta_url: d.cta_url ?? "" } as unknown as CmsPromoPopup);
+        setDismissed(sessionStorage.getItem(DISMISS_KEY) === "-1");
+        return true;
+      })
+      .catch(() => false)
+      .then((handled) => (handled ? [] : fetchPromotionalPopups()))
       .then((items) => {
         if (!active) return;
         const candidate = items.find((item) => item.is_active && isWithinValidRange(item));

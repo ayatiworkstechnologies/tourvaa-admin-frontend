@@ -15,19 +15,24 @@ export interface CountryOverviewSectionProps {
   info: CountryDestinationInfo;
 }
 
-export default function CountryOverviewSection({ info }: CountryOverviewSectionProps) {
+export default function CountryOverviewSection({
+  info,
+}: CountryOverviewSectionProps) {
   return (
-    <section id="section-overview" className="py-12 sm:py-16 bg-white border-b border-slate-100">
+    <section
+      id="section-overview"
+      className="py-12 sm:py-16 bg-white border-b border-slate-100"
+    >
       <div className="mx-auto max-w-[1380px] px-5">
         <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           {/* Left: Narrative & Highlights */}
           <div className="text-left">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-pub-accent">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-pub-accent">
               <Sparkles size={12} className="fill-pub-accent" />
               <span>Destination Overview</span>
             </div>
 
-            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-950 tracking-tight leading-tight">
+            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-950 tracking-tight leading-tight">
               Discover the Essence of {info.country_name}
             </h2>
 
@@ -41,9 +46,12 @@ export default function CountryOverviewSection({ info }: CountryOverviewSectionP
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-pub-accent mb-3">
                   <Globe size={18} />
                 </span>
-                <h3 className="text-sm font-bold text-slate-900">Curated Itineraries</h3>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Curated Itineraries
+                </h3>
                 <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-                  Handcrafted routes balancing iconic highlights and off-the-beaten-track gems.
+                  Handcrafted routes balancing iconic highlights and
+                  off-the-beaten-track gems.
                 </p>
               </div>
 
@@ -51,9 +59,12 @@ export default function CountryOverviewSection({ info }: CountryOverviewSectionP
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 mb-3">
                   <ShieldCheck size={18} />
                 </span>
-                <h3 className="text-sm font-bold text-slate-900">Trusted Local Guides</h3>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Trusted Local Guides
+                </h3>
                 <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-                  Vetted resident tour leaders providing deep cultural insights and safety.
+                  Vetted resident tour leaders providing deep cultural insights
+                  and safety.
                 </p>
               </div>
 
@@ -61,9 +72,12 @@ export default function CountryOverviewSection({ info }: CountryOverviewSectionP
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 mb-3">
                   <Compass size={18} />
                 </span>
-                <h3 className="text-sm font-bold text-slate-900">Seamless Logistics</h3>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Seamless Logistics
+                </h3>
                 <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-                  Air-conditioned transport, handpicked accommodation, and pre-booked entries.
+                  Air-conditioned transport, handpicked accommodation, and
+                  pre-booked entries.
                 </p>
               </div>
             </div>
@@ -80,9 +94,12 @@ export default function CountryOverviewSection({ info }: CountryOverviewSectionP
             </div>
             {/* Overlay Badge */}
             <div className="absolute -bottom-5 right-6 rounded-2xl border border-white/80 bg-white/95 p-4 shadow-xl backdrop-blur-md max-w-xs text-left">
-              <p className="text-[11px] font-black uppercase tracking-wider text-pub-accent">Best Way to Travel</p>
+              <p className="text-[11px] font-black uppercase tracking-wider text-pub-accent">
+                Best Way to Travel
+              </p>
               <p className="mt-1 text-xs font-semibold text-slate-700 leading-snug">
-                Join our small group tours or book private tailor-made itineraries across {info.country_name}.
+                Join our small group tours or book private tailor-made
+                itineraries across {info.country_name}.
               </p>
             </div>
           </div>
@@ -91,4 +108,3 @@ export default function CountryOverviewSection({ info }: CountryOverviewSectionP
     </section>
   );
 }
-

@@ -28,7 +28,9 @@ interface TravelTab {
   tip?: string;
 }
 
-export default function CountryTravelInfoSection({ info }: CountryTravelInfoSectionProps) {
+export default function CountryTravelInfoSection({
+  info,
+}: CountryTravelInfoSectionProps) {
   const { travel_info } = info;
 
   const tabs: TravelTab[] = [
@@ -105,17 +107,18 @@ export default function CountryTravelInfoSection({ info }: CountryTravelInfoSect
       <div className="mx-auto max-w-[1380px] px-5">
         {/* Section Header */}
         <div className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-pub-accent">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-pub-accent">
             <BookOpen size={12} className="text-pub-accent" />
             <span>Essential Practical Guide</span>
           </div>
 
-          <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-950 tracking-tight">
+          <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-950 tracking-tight">
             Travel Information & Advice: {info.country_name}
           </h2>
 
           <p className="mt-2.5 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed max-w-2xl mx-auto">
-            Everything you need to know before you fly — from visa requirements and currency tips to health advice and local cultural customs.
+            Everything you need to know before you fly — from visa requirements
+            and currency tips to health advice and local cultural customs.
           </p>
         </div>
 
@@ -205,22 +208,33 @@ export default function CountryTravelInfoSection({ info }: CountryTravelInfoSect
         <div className="mt-12 mx-auto max-w-4xl grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-2xs">
             <span className="text-xl font-black text-pub-accent">24/7</span>
-            <p className="mt-1 text-xs font-bold text-slate-900">Ground Assistance</p>
-            <p className="mt-0.5 text-[11px] text-slate-500">Dedicated Tour Leader & Operations</p>
+            <p className="mt-1 text-xs font-bold text-slate-900">
+              Ground Assistance
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-500">
+              Dedicated Tour Leader & Operations
+            </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-2xs">
             <span className="text-xl font-black text-pub-accent">100%</span>
-            <p className="mt-1 text-xs font-bold text-slate-900">Financial Protection</p>
-            <p className="mt-0.5 text-[11px] text-slate-500">ABTA & ATOL bonded partner coverage</p>
+            <p className="mt-1 text-xs font-bold text-slate-900">
+              Financial Protection
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-500">
+              ABTA & ATOL bonded partner coverage
+            </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-2xs">
             <span className="text-xl font-black text-pub-accent">Local</span>
-            <p className="mt-1 text-xs font-bold text-slate-900">Vetted Guides</p>
-            <p className="mt-0.5 text-[11px] text-slate-500">Passionate, native licensed storytelling</p>
+            <p className="mt-1 text-xs font-bold text-slate-900">
+              Vetted Guides
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-500">
+              Passionate, native licensed storytelling
+            </p>
           </div>
         </div>
       </div>
     </section>
   );
 }
-

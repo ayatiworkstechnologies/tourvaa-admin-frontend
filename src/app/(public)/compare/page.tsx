@@ -25,7 +25,11 @@ import {
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
-import { MAX_COMPARE_ITEMS, TravelItem, useTravelStore } from "@/providers/TravelStoreProvider";
+import {
+  MAX_COMPARE_ITEMS,
+  TravelItem,
+  useTravelStore,
+} from "@/providers/TravelStoreProvider";
 
 const HERO_BANNER_IMG = "/images/compare-hero.jpg";
 const FALLBACK_TOUR_IMG = "/images/compare-nz.jpg";
@@ -85,15 +89,20 @@ function buildCompareItem(
   base: CompareBase,
   detail: PublicTourDetail | null,
   idx: number,
-  format: (value: number, currency: string) => string
+  format: (value: number, currency: string) => string,
 ): CompareTourItem {
   const daysCount = detail?.number_of_days ?? base.fallbackDays ?? 7;
   const nightsCount = Math.max(0, daysCount - 1);
   const destination =
-    detail?.city_name || detail?.country_name || base.place || "Multiple Destinations";
+    detail?.city_name ||
+    detail?.country_name ||
+    base.place ||
+    "Multiple Destinations";
   const priceNum = detail?.price_start_per_person ?? base.rawPrice;
   const currency = detail?.currency || base.currency;
-  const incTexts = (detail?.inclusions || []).map((i) => i.text.toLowerCase()).join(" ");
+  const incTexts = (detail?.inclusions || [])
+    .map((i) => i.text.toLowerCase())
+    .join(" ");
 
   return {
     id: base.id,
@@ -115,14 +124,19 @@ function buildCompareItem(
     slug: detail?.slug || base.slug,
     specs: {
       duration: `${daysCount} Days / ${nightsCount} Nights`,
-      destinations: detail?.city_name ? "1 Destination" : "Multiple Destinations",
+      destinations: detail?.city_name
+        ? "1 Destination"
+        : "Multiple Destinations",
       groupSize: detail?.overview?.group_size
         ? `Max ${detail.overview.group_size} travellers`
         : "Max 16 travellers",
       difficulty: detail?.overview?.physical_rating || "Moderate",
-      accommodation: detail?.overview?.accommodation_summary || "3-4 Star Hostels & Hotels",
+      accommodation:
+        detail?.overview?.accommodation_summary || "3-4 Star Hostels & Hotels",
       meals: detail?.overview?.meal_summary || "Daily Breakfast Included",
-      transport: detail?.overview?.transportation_summary || "Private Coach & Scenic Ferry",
+      transport:
+        detail?.overview?.transportation_summary ||
+        "Private Coach & Scenic Ferry",
       guide: "English-speaking local guide",
       bestSeason: detail?.overview?.best_season || "Year-Round",
       visa: "Visa on Arrival / eTA",
@@ -158,21 +172,32 @@ function tourToBase(tour: PublicTour): CompareBase {
 async function loadCompareItemsFromTours(
   tours: PublicTour[],
   format: (value: number, currency: string) => string,
-  detailCache: Record<number, PublicTourDetail | null> = {}
+  detailCache: Record<number, PublicTourDetail | null> = {},
 ): Promise<CompareTourItem[]> {
   const missing = tours.filter((t) => !(t.id in detailCache));
   if (missing.length > 0) {
-    const results = await Promise.allSettled(missing.map((t) => fetchPublicTourDetail(t.id)));
+    const results = await Promise.allSettled(
+      missing.map((t) => fetchPublicTourDetail(t.id)),
+    );
     results.forEach((result, idx) => {
-      detailCache[missing[idx].id] = result.status === "fulfilled" ? result.value : null;
+      detailCache[missing[idx].id] =
+        result.status === "fulfilled" ? result.value : null;
     });
   }
   return tours.map((tour, idx) =>
-    buildCompareItem(tourToBase(tour), detailCache[tour.id] ?? null, idx, format)
+    buildCompareItem(
+      tourToBase(tour),
+      detailCache[tour.id] ?? null,
+      idx,
+      format,
+    ),
   );
 }
 
-function durationRange(filter: string): { min_days?: number; max_days?: number } {
+function durationRange(filter: string): {
+  min_days?: number;
+  max_days?: number;
+} {
   switch (filter) {
     case "1-5 Days":
       return { min_days: 1, max_days: 5 };
@@ -185,7 +210,10 @@ function durationRange(filter: string): { min_days?: number; max_days?: number }
   }
 }
 
-function budgetRange(filter: string): { min_price?: number; max_price?: number } {
+function budgetRange(filter: string): {
+  min_price?: number;
+  max_price?: number;
+} {
   switch (filter) {
     case "Under $1,500":
       return { max_price: 1500 };
@@ -210,7 +238,8 @@ export default function ComparePage() {
   const [searchError, setSearchError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [destinationFilter, setDestinationFilter] = useState("All Destinations");
+  const [destinationFilter, setDestinationFilter] =
+    useState("All Destinations");
   const [durationFilter, setDurationFilter] = useState("Any Duration");
   const [budgetFilter, setBudgetFilter] = useState("Any Budget");
   const [levelFilter, setLevelFilter] = useState("Any Level");
@@ -231,7 +260,7 @@ export default function ComparePage() {
 
   const destinationOptions = useMemo(
     () => ["All Destinations", ...[...countries].sort()],
-    [countries]
+    [countries],
   );
 
   // Default comparison set: whatever the user has added to Compare elsewhere on the site
@@ -243,14 +272,14 @@ export default function ComparePage() {
       compareList.map((item) =>
         item.id in detailCacheRef.current
           ? Promise.resolve(detailCacheRef.current[item.id])
-          : fetchPublicTourDetail(item.id)
-      )
+          : fetchPublicTourDetail(item.id),
+      ),
     )
       .then((results) => {
         if (!active) return;
         results.forEach((result, idx) => {
           detailCacheRef.current[compareList[idx].id] =
-            result.status === "fulfilled" ? result.value ?? null : null;
+            result.status === "fulfilled" ? (result.value ?? null) : null;
         });
         const mapped = compareList.map((item, idx) => {
           const base: CompareBase = {
@@ -262,7 +291,12 @@ export default function ComparePage() {
             rawPrice: item.price ?? 0,
             fallbackDays: parseInt(item.duration) || 7,
           };
-          return buildCompareItem(base, detailCacheRef.current[item.id] ?? null, idx, format);
+          return buildCompareItem(
+            base,
+            detailCacheRef.current[item.id] ?? null,
+            idx,
+            format,
+          );
         });
         setActiveItems(mapped);
       })
@@ -280,7 +314,13 @@ export default function ComparePage() {
     let active = true;
     setLoading(true);
     fetchPublicTours({ limit: MAX_COMPARE_ITEMS, sort: "newest" })
-      .then((res) => loadCompareItemsFromTours(res.items || [], format, detailCacheRef.current))
+      .then((res) =>
+        loadCompareItemsFromTours(
+          res.items || [],
+          format,
+          detailCacheRef.current,
+        ),
+      )
       .then((mapped) => {
         if (active) setActiveItems(mapped);
       })
@@ -307,9 +347,13 @@ export default function ComparePage() {
     setIsSearching(true);
     setSearchError(null);
     try {
-      const params: Record<string, string | number | boolean> = { limit: 20, sort: "newest" };
+      const params: Record<string, string | number | boolean> = {
+        limit: 20,
+        sort: "newest",
+      };
       if (searchQuery.trim()) params.search = searchQuery.trim();
-      if (destinationFilter !== "All Destinations") params.country = destinationFilter;
+      if (destinationFilter !== "All Destinations")
+        params.country = destinationFilter;
 
       const { min_days, max_days } = durationRange(durationFilter);
       if (min_days) params.min_days = min_days;
@@ -323,7 +367,9 @@ export default function ComparePage() {
       let candidates = res.items || [];
 
       if (candidates.length === 0) {
-        setSearchError("No tours match your search and filters. Try adjusting them.");
+        setSearchError(
+          "No tours match your search and filters. Try adjusting them.",
+        );
         return;
       }
 
@@ -334,12 +380,18 @@ export default function ComparePage() {
         const matched: PublicTour[] = [];
         const batchSize = MAX_COMPARE_ITEMS;
         const probeLimit = Math.min(candidates.length, 16);
-        for (let offset = 0; offset < probeLimit && matched.length < MAX_COMPARE_ITEMS; offset += batchSize) {
+        for (
+          let offset = 0;
+          offset < probeLimit && matched.length < MAX_COMPARE_ITEMS;
+          offset += batchSize
+        ) {
           const batch = candidates.slice(offset, offset + batchSize);
-          const toFetch = batch.filter((t) => !(t.id in detailCacheRef.current));
+          const toFetch = batch.filter(
+            (t) => !(t.id in detailCacheRef.current),
+          );
           if (toFetch.length > 0) {
             const results = await Promise.allSettled(
-              toFetch.map((t) => fetchPublicTourDetail(t.id))
+              toFetch.map((t) => fetchPublicTourDetail(t.id)),
             );
             results.forEach((result, idx) => {
               detailCacheRef.current[toFetch[idx].id] =
@@ -348,7 +400,9 @@ export default function ComparePage() {
           }
           batch.forEach((t) => {
             if (
-              detailCacheRef.current[t.id]?.overview?.physical_rating?.toLowerCase() ===
+              detailCacheRef.current[
+                t.id
+              ]?.overview?.physical_rating?.toLowerCase() ===
               levelFilter.toLowerCase()
             ) {
               matched.push(t);
@@ -357,13 +411,19 @@ export default function ComparePage() {
         }
         candidates = matched;
         if (candidates.length === 0) {
-          setSearchError("No tours match the selected difficulty level. Try a different filter.");
+          setSearchError(
+            "No tours match the selected difficulty level. Try a different filter.",
+          );
           return;
         }
       }
 
       const finalTours = candidates.slice(0, MAX_COMPARE_ITEMS);
-      const mapped = await loadCompareItemsFromTours(finalTours, format, detailCacheRef.current);
+      const mapped = await loadCompareItemsFromTours(
+        finalTours,
+        format,
+        detailCacheRef.current,
+      );
       setActiveItems(mapped);
     } catch {
       setSearchError("Something went wrong while searching. Please try again.");
@@ -381,7 +441,13 @@ export default function ComparePage() {
     setSearchError(null);
     setIsSearching(true);
     fetchPublicTours({ limit: MAX_COMPARE_ITEMS, sort: "newest" })
-      .then((res) => loadCompareItemsFromTours(res.items || [], format, detailCacheRef.current))
+      .then((res) =>
+        loadCompareItemsFromTours(
+          res.items || [],
+          format,
+          detailCacheRef.current,
+        ),
+      )
       .then((mapped) => setActiveItems(mapped))
       .catch(() => {})
       .finally(() => setIsSearching(false));
@@ -403,7 +469,7 @@ export default function ComparePage() {
 
         {/* Header: Eyebrow + Title + Subtitle */}
         <div className="mb-6">
-          <span className="inline-block rounded-full bg-[#EBF3FE] px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-pub-secondary">
+          <span className="inline-block rounded-full bg-[#EBF3FE] px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-pub-secondary">
             TRIP PLANNER
           </span>
           <h1 className="mt-2 text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
@@ -561,7 +627,9 @@ export default function ComparePage() {
           </div>
 
           {searchError && (
-            <p className="pt-1 text-xs font-semibold text-rose-500">{searchError}</p>
+            <p className="pt-1 text-xs font-semibold text-rose-500">
+              {searchError}
+            </p>
           )}
         </div>
 
@@ -569,7 +637,9 @@ export default function ComparePage() {
         {busy && activeItems.length === 0 ? (
           <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
             <LoaderCircle size={22} className="animate-spin text-slate-400" />
-            <p className="text-xs sm:text-sm text-slate-500">Loading tours...</p>
+            <p className="text-xs sm:text-sm text-slate-500">
+              Loading tours...
+            </p>
           </div>
         ) : activeItems.length === 0 ? (
           <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
@@ -577,8 +647,7 @@ export default function ComparePage() {
               No tours currently selected for comparison
             </h2>
             <p className="max-w-md text-xs sm:text-sm text-slate-500">
-              Reset the comparison or browse all tours to pick and compare up to
-              {" "}
+              Reset the comparison or browse all tours to pick and compare up to{" "}
               {MAX_COMPARE_ITEMS} destinations.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
@@ -662,7 +731,7 @@ export default function ComparePage() {
                             <h3 className="line-clamp-1 text-sm sm:text-[15px] font-bold text-slate-900">
                               {tour.title}
                             </h3>
-                            <span className="shrink-0 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9px] font-extrabold tracking-wider text-slate-600 uppercase">
+                            <span className="shrink-0 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9px] font-semibold tracking-wider text-slate-600 uppercase">
                               {tour.durationTag}
                             </span>
                           </div>
@@ -675,11 +744,26 @@ export default function ComparePage() {
                           {/* Rating Row */}
                           <div className="mt-2 flex items-center gap-1 text-xs">
                             <div className="flex items-center text-amber-400">
-                              <Star size={11} className="fill-amber-400 text-amber-400" />
-                              <Star size={11} className="fill-amber-400 text-amber-400" />
-                              <Star size={11} className="fill-amber-400 text-amber-400" />
-                              <Star size={11} className="fill-amber-400 text-amber-400" />
-                              <Star size={11} className="fill-amber-400 text-amber-400" />
+                              <Star
+                                size={11}
+                                className="fill-amber-400 text-amber-400"
+                              />
+                              <Star
+                                size={11}
+                                className="fill-amber-400 text-amber-400"
+                              />
+                              <Star
+                                size={11}
+                                className="fill-amber-400 text-amber-400"
+                              />
+                              <Star
+                                size={11}
+                                className="fill-amber-400 text-amber-400"
+                              />
+                              <Star
+                                size={11}
+                                className="fill-amber-400 text-amber-400"
+                              />
                             </div>
                             <span className="font-bold text-slate-900 text-[11px]">
                               {tour.rating.toFixed(1)}
@@ -908,7 +992,10 @@ export default function ComparePage() {
                         >
                           {item.inclusionsMap.flights ? (
                             <span className="inline-flex items-center gap-1.5 font-bold text-emerald-500">
-                              <SquareCheckBig size={14} className="stroke-[2.2]" />
+                              <SquareCheckBig
+                                size={14}
+                                className="stroke-[2.2]"
+                              />
                               <span>Included</span>
                             </span>
                           ) : (
@@ -933,7 +1020,10 @@ export default function ComparePage() {
                         >
                           {item.inclusionsMap.transfers ? (
                             <span className="inline-flex items-center gap-1.5 font-bold text-emerald-500">
-                              <SquareCheckBig size={14} className="stroke-[2.2]" />
+                              <SquareCheckBig
+                                size={14}
+                                className="stroke-[2.2]"
+                              />
                               <span>Included</span>
                             </span>
                           ) : (
@@ -958,7 +1048,10 @@ export default function ComparePage() {
                         >
                           {item.inclusionsMap.accommodation ? (
                             <span className="inline-flex items-center gap-1.5 font-bold text-emerald-500">
-                              <SquareCheckBig size={14} className="stroke-[2.2]" />
+                              <SquareCheckBig
+                                size={14}
+                                className="stroke-[2.2]"
+                              />
                               <span>Included</span>
                             </span>
                           ) : (
@@ -983,7 +1076,10 @@ export default function ComparePage() {
                         >
                           {item.inclusionsMap.breakfast ? (
                             <span className="inline-flex items-center gap-1.5 font-bold text-emerald-500">
-                              <SquareCheckBig size={14} className="stroke-[2.2]" />
+                              <SquareCheckBig
+                                size={14}
+                                className="stroke-[2.2]"
+                              />
                               <span>Included</span>
                             </span>
                           ) : (
@@ -1008,7 +1104,10 @@ export default function ComparePage() {
                         >
                           {item.inclusionsMap.guidedTours ? (
                             <span className="inline-flex items-center gap-1.5 font-bold text-emerald-500">
-                              <SquareCheckBig size={14} className="stroke-[2.2]" />
+                              <SquareCheckBig
+                                size={14}
+                                className="stroke-[2.2]"
+                              />
                               <span>Included</span>
                             </span>
                           ) : (
@@ -1033,7 +1132,10 @@ export default function ComparePage() {
                         >
                           {item.inclusionsMap.adventure ? (
                             <span className="inline-flex items-center gap-1.5 font-bold text-emerald-500">
-                              <SquareCheckBig size={14} className="stroke-[2.2]" />
+                              <SquareCheckBig
+                                size={14}
+                                className="stroke-[2.2]"
+                              />
                               <span>Included</span>
                             </span>
                           ) : (
@@ -1058,7 +1160,10 @@ export default function ComparePage() {
                         >
                           {item.inclusionsMap.insurance ? (
                             <span className="inline-flex items-center gap-1.5 font-bold text-emerald-500">
-                              <SquareCheckBig size={14} className="stroke-[2.2]" />
+                              <SquareCheckBig
+                                size={14}
+                                className="stroke-[2.2]"
+                              />
                               <span>Included</span>
                             </span>
                           ) : (
@@ -1083,7 +1188,10 @@ export default function ComparePage() {
                         >
                           {item.inclusionsMap.support ? (
                             <span className="inline-flex items-center gap-1.5 font-bold text-emerald-500">
-                              <SquareCheckBig size={14} className="stroke-[2.2]" />
+                              <SquareCheckBig
+                                size={14}
+                                className="stroke-[2.2]"
+                              />
                               <span>Included</span>
                             </span>
                           ) : (
@@ -1135,4 +1243,3 @@ export default function ComparePage() {
     </main>
   );
 }
-

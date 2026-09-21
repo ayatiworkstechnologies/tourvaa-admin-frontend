@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuChevronDown as ChevronDown, LuCompass as Compass, LuGlobe as Globe, LuHouse as House, LuLogOut as LogOut, LuMenu as Menu, LuSettings as Settings, LuUser as User } from "react-icons/lu";
+import {
+  LuChevronDown as ChevronDown,
+  LuCompass as Compass,
+  LuGlobe as Globe,
+  LuHouse as House,
+  LuLogOut as LogOut,
+  LuMenu as Menu,
+  LuSettings as Settings,
+  LuUser as User,
+} from "react-icons/lu";
 import NotificationInbox from "@/components/ui/NotificationInbox";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -27,14 +36,13 @@ type HeaderProps = {
   headerOffset?: boolean;
 };
 
-
 const AVATAR_BG: Record<string, string> = {
-  sky:     "bg-[#DAEFFE] text-[#1E86D4]",
-  navy:    "bg-[#EDF2FA] text-[#1D3A6D]",
+  sky: "bg-[#DAEFFE] text-[#1E86D4]",
+  navy: "bg-[#EDF2FA] text-[#1D3A6D]",
   emerald: "bg-emerald-50 text-emerald-600",
-  orange:  "bg-orange-50  text-orange-600",
-  violet:  "bg-violet-50 text-violet-600",
-  teal:    "bg-teal-50 text-teal-700",
+  orange: "bg-orange-50  text-orange-600",
+  violet: "bg-violet-50 text-violet-600",
+  teal: "bg-teal-50 text-teal-700",
 };
 
 export default function Header({
@@ -81,8 +89,14 @@ export default function Header({
   })();
 
   const headerTitle = title || currentMenu?.label || pathTitle || "Dashboard";
-  const canSettings  = settingsHref !== undefined ? !!settingsHref : allowedMenus.some((m) => m.href === "/admin/settings");
-  const canProfile   = profileHref  !== undefined ? !!profileHref  : allowedMenus.some((m) => m.href === "/admin/profile");
+  const canSettings =
+    settingsHref !== undefined
+      ? !!settingsHref
+      : allowedMenus.some((m) => m.href === "/admin/settings");
+  const canProfile =
+    profileHref !== undefined
+      ? !!profileHref
+      : allowedMenus.some((m) => m.href === "/admin/profile");
 
   const avatarColors = AVATAR_BG[theme] ?? AVATAR_BG.sky;
   const initial = name?.charAt(0)?.toUpperCase() ?? "A";
@@ -94,17 +108,25 @@ export default function Header({
   // permission like settings.view), so this also falls back to hasPermission
   // directly - relying on `menus` alone silently hid the button for any admin
   // whose menu list didn't include a discrete "website_cms" entry.
-  const websiteCmsNavItem = adminNavItems.find((item) => item.module === "website_cms");
+  const websiteCmsNavItem = adminNavItems.find(
+    (item) => item.module === "website_cms",
+  );
   const canCms =
     allowedMenus.some((m) => m.href === "/admin/cms") ||
-    (websiteCmsNavItem?.permissions.some((permission) => hasPermission(permission)) ?? false);
+    (websiteCmsNavItem?.permissions.some((permission) =>
+      hasPermission(permission),
+    ) ??
+      false);
 
   return (
-    <header className={`sticky z-30 border-b border-[#E8ECF3] bg-white/95 shadow-[0_1px_6px_-1px_rgba(15,23,42,0.06)] backdrop-blur-xl ${headerOffset ? "top-20" : "top-0"}`}>
+    <header
+      className={`sticky z-30 border-b border-[#E8ECF3] bg-white/95 shadow-[0_1px_6px_-1px_rgba(15,23,42,0.06)] backdrop-blur-xl ${headerOffset ? "top-20" : "top-0"}`}
+    >
       {/* Keep the same right-side lane as PublicHeader for the fixed Elfsight
           language widget, which renders directly under <body>. */}
-      <div className={`flex min-w-0 items-center justify-between gap-2 py-0 pl-3 pr-36 sm:pl-6 sm:pr-36 md:pl-9 lg:pr-40 ${spacious ? "h-20" : "h-[70px]"}`}>
-
+      <div
+        className={`flex min-w-0 items-center justify-between gap-2 py-0 pl-3 pr-36 sm:pl-6 sm:pr-36 md:pl-9 lg:pr-40 ${spacious ? "h-20" : "h-[70px]"}`}
+      >
         {/* left */}
         <div className="flex min-w-0 items-center gap-3">
           <button
@@ -117,16 +139,17 @@ export default function Header({
           </button>
 
           <div className="min-w-0">
-            <h1 className="truncate text-[17px] font-extrabold leading-tight tracking-tight text-[#0C1524] sm:text-[20px]">
+            <h1 className="truncate text-[17px] font-semibold leading-tight tracking-tight text-[#0C1524] sm:text-[20px]">
               {headerTitle}
             </h1>
-            <p className="mt-0.5 hidden truncate text-[12px] font-medium text-[#94A3B8] sm:block">{role}</p>
+            <p className="mt-0.5 hidden truncate text-[12px] font-medium text-[#94A3B8] sm:block">
+              {role}
+            </p>
           </div>
         </div>
 
         {/* right */}
         <div className="flex shrink-0 items-center gap-2">
-
           {canCms && (
             <button
               type="button"
@@ -140,18 +163,28 @@ export default function Header({
           )}
 
           {websiteHref && (
-            <button type="button" onClick={() => router.push(websiteHref)} className="hidden h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-slate-500 transition hover:bg-blue-50 hover:text-blue-700 xl:flex">
+            <button
+              type="button"
+              onClick={() => router.push(websiteHref)}
+              className="hidden h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-slate-500 transition hover:bg-blue-50 hover:text-blue-700 xl:flex"
+            >
               <House size={16} /> Website
             </button>
           )}
 
           {browseHref && (
-            <button type="button" onClick={() => router.push(browseHref)} className="hidden h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700 md:flex">
+            <button
+              type="button"
+              onClick={() => router.push(browseHref)}
+              className="hidden h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700 md:flex"
+            >
               <Compass size={16} /> Explore tours
             </button>
           )}
 
-          <div className="hidden sm:block"><CurrencySelector /></div>
+          <div className="hidden sm:block">
+            <CurrencySelector />
+          </div>
 
           {canSettings && (
             <button
@@ -175,7 +208,9 @@ export default function Header({
               type="button"
               onClick={() => setOpen((v) => !v)}
               className={`flex items-center gap-1 rounded-2xl border bg-white py-1.5 pl-1.5 pr-1.5 transition-all duration-200 hover:shadow-md sm:gap-3 sm:pr-3 ${
-                open ? "border-dash-brand/50 shadow-md ring-2 ring-dash-brand/15" : "border-[#E8ECF3] shadow-sm hover:border-[#C5D2DF]"
+                open
+                  ? "border-dash-brand/50 shadow-md ring-2 ring-dash-brand/15"
+                  : "border-[#E8ECF3] shadow-sm hover:border-[#C5D2DF]"
               }`}
             >
               {/* Avatar - same height as title block */}
@@ -188,23 +223,35 @@ export default function Header({
                   onError={() => setImageFailed(true)}
                 />
               ) : (
-                <div className={`flex h-9 w-9 items-center justify-center rounded-xl text-[14px] font-extrabold ${avatarColors}`}>
+                <div
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl text-[14px] font-semibold ${avatarColors}`}
+                >
                   {initial}
                 </div>
               )}
 
               {/* Name + role - same rhythm as left title block */}
               <div className="hidden flex-col text-left md:flex">
-                <span className="text-[15px] font-bold leading-tight text-[#0C1524]">{name}</span>
-                <span className="mt-0.5 text-[12px] font-medium leading-tight text-[#94A3B8]">{role}</span>
+                <span className="text-[15px] font-bold leading-tight text-[#0C1524]">
+                  {name}
+                </span>
+                <span className="mt-0.5 text-[12px] font-medium leading-tight text-[#94A3B8]">
+                  {role}
+                </span>
               </div>
 
-              <ChevronDown size={14} className={`ml-0.5 hidden text-[#94A3B8] transition-transform duration-200 sm:block ${open ? "rotate-180" : ""}`} />
+              <ChevronDown
+                size={14}
+                className={`ml-0.5 hidden text-[#94A3B8] transition-transform duration-200 sm:block ${open ? "rotate-180" : ""}`}
+              />
             </button>
 
             {open && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setOpen(false)}
+                />
                 <div className="absolute right-0 top-14.5 z-50 w-[min(15rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-[#E8ECF3] bg-white shadow-[0_16px_48px_-8px_rgba(15,23,42,0.16)]">
                   {/* identity header */}
                   <div className="flex items-center gap-3 border-b border-[#F0F4F8] px-4 py-3.5">
@@ -217,12 +264,16 @@ export default function Header({
                         onError={() => setImageFailed(true)}
                       />
                     ) : (
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold ${avatarColors}`}>
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold ${avatarColors}`}
+                      >
                         {initial}
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="truncate text-[14px] font-bold text-[#0C1524]">{name}</p>
+                      <p className="truncate text-[14px] font-bold text-[#0C1524]">
+                        {name}
+                      </p>
                       <p className="text-[12px] text-[#94A3B8]">{role}</p>
                     </div>
                   </div>
@@ -231,7 +282,10 @@ export default function Header({
                     {canProfile && (
                       <button
                         type="button"
-                        onClick={() => { setOpen(false); router.push(profileHref ?? "/admin/profile"); }}
+                        onClick={() => {
+                          setOpen(false);
+                          router.push(profileHref ?? "/admin/profile");
+                        }}
                         className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-[#334155] hover:bg-dash-bg-muted"
                       >
                         <User size={15} className="shrink-0 text-[#94A3B8]" />
@@ -241,10 +295,16 @@ export default function Header({
                     {canSettings && (
                       <button
                         type="button"
-                        onClick={() => { setOpen(false); router.push(settingsHref ?? "/admin/settings"); }}
+                        onClick={() => {
+                          setOpen(false);
+                          router.push(settingsHref ?? "/admin/settings");
+                        }}
                         className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-[#334155] hover:bg-dash-bg-muted"
                       >
-                        <Settings size={15} className="shrink-0 text-[#94A3B8]" />
+                        <Settings
+                          size={15}
+                          className="shrink-0 text-[#94A3B8]"
+                        />
                         Settings
                       </button>
                     )}
@@ -267,6 +327,3 @@ export default function Header({
     </header>
   );
 }
-
-
-

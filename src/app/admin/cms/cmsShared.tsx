@@ -50,27 +50,45 @@ export type TabConfig = {
 // A "block" tab edits a single key/JSON record (GET/PUT /cms/content-blocks/{blockKey})
 // instead of a list of rows - used for one-off homepage sections that don't
 // need their own table (hero extras, About Tourvaa, blog teaser, transfers banner).
-type BlockFieldType = "text" | "textarea" | "url" | "number" | "asset" | "boolean";
+type BlockFieldType = "text" | "textarea" | "url" | "number" | "asset" | "boolean" | "list" | "records";
 export type ContentBlockTabConfig = {
   key: string;
   label: string;
   blockKey: string;
-  fields: { key: string; label: string; type: BlockFieldType; hint?: string; default?: string }[];
+  fields: {
+    key: string;
+    label: string;
+    type: BlockFieldType;
+    hint?: string;
+    default?: string;
+    // For type "records": the inputs of each repeated entry. "csv" edits an array as comma-separated text.
+    subfields?: { key: string; label: string; type: "text" | "textarea" | "csv" }[];
+  }[];
 };
 
 
 export const TAB_DESCRIPTIONS: Record<string, string> = {
+  "destination-styles": "The travel style cards on the Destinations page (e.g. Alpine & Mountain Expeditions).",
+  "destination-seasons": "The best-time-to-travel season cards on the Destinations page.",
+  "trust-bar": "The dark bar at the very top of every page (e.g. Shop 2,500+ handpicked operators). Add, edit or remove highlights.",
+  slogans: "The slogan line under the hero search box that rotates one at a time. Add as many slogans as you like.",
+  "top-bar": "An optional announcement strip with a link. Leave the text blank to hide it.",
+  "handpicked-heading": "The title above the Handpicked Tours carousel.",
+  "countries-heading": "The title above the Countries Worth Exploring carousel.",
+  "testimonials-heading": "The title and subtitle above the traveller testimonials.",
+  "faq-heading": "The title above the homepage FAQ.",
+  home: "Edit every homepage section in one place, with the live public homepage shown alongside.",
   banners: "The homepage hero: background banners/video, the trust-rating badge, and the promotional offer strip.",
   "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order. Toggle the whole section on/off below.",
   "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Toggle the whole section on/off below.",
   "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section - a curated list of tours for the homepage.",
   "popular-destinations": "Countries shown in Countries Worth Exploring - title, image, description, destination link, order and enable/disable, per country. Countries without a row here fall back to being calculated automatically from real tour counts.",
   "favourite-countries": "The editorial country list and snippet copy shown in the homepage Favourite Countries section.",
-  "country-pages": "Override the hero banner, showcase panel, and SEO title/description for each country's dynamic /tours/{country} landing page. Countries without a row here use auto-generated content.",
+  "country-pages": "Country pages and destination guides, with a live preview. Override the hero banner, showcase panel, and SEO title/description for each country's dynamic /tours/{country} landing page. Countries without a row here use auto-generated content.",
   "country-destination-guide": "The full destination guide shown at /destinations/{country}: best time to visit, monsoon/season info, temperature, best places to visit, why visit, and travel info, per country.",
   "customer-reviews": "Customer testimonials shown in the homepage Testimonials section.",
   "help-centre": "Questions and answers shown in the homepage FAQ section.",
-  "hero-extras": "The trust-rating badge and the promotional offer strip shown over the homepage hero banner.",
+  "hero-extras": "The offer strip shown over the homepage hero banner.",
   "about-section": "The About Tourvaa banner shown on the homepage.",
   "blog-teaser": "The blog teaser banner shown on the homepage, linking through to the Blog.",
   "airport-transfer": "The Book Your Airport Transfers banner shown on the homepage.",
@@ -280,21 +298,13 @@ export const TABS: TabConfig[] = [
 // instead of hunting across separate tabs.
 export const HERO_EXTRAS_BLOCK: ContentBlockTabConfig = {
   key: "hero-extras",
-  label: "Rating Badge & Offer Strip",
+  label: "Hero Offer Strip",
   blockKey: "hero_extras",
   fields: [
-    { key: "rating", label: "Rating (e.g. 4.5)", type: "number" },
-    { key: "review_count", label: "Review Count", type: "number" },
-    { key: "review_source", label: "Review Source (e.g. Ayatiworks)", type: "text" },
-    { key: "offer_text", label: "Offer Banner Text", type: "text", hint: "Leave blank to hide the offer strip." },
-    { key: "offer_cta_text", label: "Offer CTA Text", type: "text" },
-    { key: "offer_cta_url", label: "Offer CTA URL", type: "url" },
-    { key: "sub_hero_text", label: "Sub-Hero Trust Line (under the search bar)", type: "text" },
-    { key: "deal_badge", label: "Escape Sale Badge (e.g. OFFER ENDS SOON)", type: "text", hint: "The badge on the Escape Sale banner just below the hero. Title/subtitle/image/CTA there come from the 2nd banner above if one is set; these deal_* fields are only the fallback used when it isn't." },
-    { key: "deal_title", label: "Escape Sale Title (fallback)", type: "text" },
-    { key: "deal_subtitle", label: "Escape Sale Subtitle (fallback)", type: "text" },
-    { key: "deal_cta_text", label: "Escape Sale CTA Text (fallback)", type: "text" },
-    { key: "deal_cta_url", label: "Escape Sale CTA URL (fallback)", type: "url" },
+    { key: "offer_label", label: "Label (e.g. OFFER)", type: "text", hint: "The small pill on the left of the strip. Defaults to OFFER." },
+    { key: "offer_text", label: "Offer Text", type: "text", hint: "Leave blank to hide the offer strip." },
+    { key: "offer_cta_text", label: "Link Text (optional)", type: "text" },
+    { key: "offer_cta_url", label: "Link URL", type: "url", hint: "Where the strip goes when clicked. Defaults to /deals." },
   ],
 };
 
@@ -307,6 +317,12 @@ export const TOP_DEALS_VISIBILITY_BLOCK: ContentBlockTabConfig = {
   blockKey: "top_deals_section",
   fields: [
     { key: "enabled", label: "Show the Top Deals section on the homepage", type: "boolean", default: "true" },
+    { key: "badge", label: "Badge (e.g. Offer Ends Soon)", type: "text" },
+    { key: "title", label: "Title", type: "text" },
+    { key: "subtitle", label: "Subtitle", type: "textarea" },
+    { key: "cta_text", label: "Button Text (e.g. Explore Deals)", type: "text" },
+    { key: "cta_url", label: "Button Link", type: "url", hint: "Defaults to /deals." },
+    { key: "view_all_text", label: "\"View all deals\" Link Text", type: "text" },
   ],
 };
 
@@ -316,6 +332,7 @@ export const TRENDING_VISIBILITY_BLOCK: ContentBlockTabConfig = {
   blockKey: "trending_section",
   fields: [
     { key: "enabled", label: "Show the Trending Tour Packages section on the homepage", type: "boolean", default: "false" },
+    { key: "title", label: "Section Title", type: "text" },
   ],
 };
 
@@ -334,6 +351,99 @@ export const FAVOURITE_COUNTRIES_HEADING_BLOCK: ContentBlockTabConfig = {
 };
 
 export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
+  {
+    key: "destination-styles",
+    label: "Destinations: Travel Styles",
+    blockKey: "destination_styles",
+    fields: [
+      {
+        key: "items",
+        label: "Travel style cards",
+        type: "records",
+        hint: "Shown on the Destinations page. Leave empty to use the built-in cards.",
+        subfields: [
+          { key: "title", label: "Title", type: "text" },
+          { key: "subtitle", label: "Subtitle", type: "textarea" },
+          { key: "countries", label: "Popular countries (e.g. Thailand • Greece)", type: "text" },
+          { key: "badge", label: "Badge (e.g. Sun & Sea)", type: "text" },
+          { key: "image", label: "Image URL", type: "text" },
+          { key: "href", label: "Link (e.g. /tours?tag=Beach)", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "destination-seasons",
+    label: "Destinations: Best Time to Travel",
+    blockKey: "destination_seasons",
+    fields: [
+      {
+        key: "items",
+        label: "Season cards",
+        type: "records",
+        hint: "Shown on the Destinations page. Leave empty to use the built-in seasons.",
+        subfields: [
+          { key: "season", label: "Season (e.g. Spring (March - May))", type: "text" },
+          { key: "tagline", label: "Tagline", type: "textarea" },
+          { key: "topPicks", label: "Top picks (comma-separated)", type: "csv" },
+          { key: "icon", label: "Icon (an emoji, e.g. 🌸)", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "trust-bar",
+    label: "Top Bar (trust highlights)",
+    blockKey: "trust_bar",
+    fields: [
+      { key: "items", label: "Highlights (shown left to right)", type: "list", hint: "Wrap words in **double asterisks** to make them bold, e.g. **24/7** customer support. Leave empty to use the defaults." },
+    ],
+  },
+  {
+    key: "slogans",
+    label: "Slogans (under search)",
+    blockKey: "slogans",
+    fields: [
+      { key: "items", label: "Slogans (rotate one at a time)", type: "list", hint: "Use **double asterisks** for bold. Click + Add for another slogan. Leave empty to use the defaults." },
+    ],
+  },
+  {
+    key: "top-bar",
+    label: "Announcement Bar",
+    blockKey: "top_bar",
+    fields: [
+      { key: "text", label: "Announcement Text", type: "text", hint: "Leave blank to fall back to the active promotional popup, if any." },
+      { key: "cta_text", label: "Link Text", type: "text" },
+      { key: "cta_url", label: "Link URL", type: "url" },
+    ],
+  },
+  {
+    key: "handpicked-heading",
+    label: "Handpicked Tours Heading",
+    blockKey: "handpicked_section",
+    fields: [{ key: "title", label: "Section Title", type: "text" }],
+  },
+  {
+    key: "countries-heading",
+    label: "Countries Worth Exploring Heading",
+    blockKey: "countries_section",
+    fields: [{ key: "title", label: "Section Title", type: "text" }],
+  },
+  {
+    key: "testimonials-heading",
+    label: "Testimonials Heading",
+    blockKey: "testimonials_section",
+    fields: [
+      { key: "title", label: "Section Title", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+    ],
+  },
+  {
+    key: "faq-heading",
+    label: "FAQ Heading",
+    blockKey: "faq_section",
+    fields: [{ key: "title", label: "Section Title", type: "text" }],
+  },
   {
     key: "about-section",
     label: "About Tourvaa",
@@ -427,7 +537,7 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
     try {
       const res = await api.get(`/cms/content-blocks/${tab.blockKey}`);
       const data = (res.data?.data?.data ?? {}) as Record<string, unknown>;
-      setValues(Object.fromEntries(tab.fields.map((f) => [f.key, data[f.key] != null ? String(data[f.key]) : (f.default ?? "")])));
+      setValues(Object.fromEntries(tab.fields.map((f) => [f.key, Array.isArray(data[f.key]) && f.type === "list" ? JSON.stringify(data[f.key]) : Array.isArray(data[f.key]) && f.type === "records" ? JSON.stringify((data[f.key] as Record<string, unknown>[]).map((rec) => Object.fromEntries((f.subfields ?? []).map((sf) => [sf.key, Array.isArray(rec[sf.key]) ? (rec[sf.key] as string[]).join(", ") : String(rec[sf.key] ?? "")])))) : data[f.key] != null ? String(data[f.key]) : (f.default ?? "")])));
     } catch {
       toast.error(`Could not load ${tab.label}.`);
     } finally {
@@ -447,7 +557,13 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
       const data: Record<string, unknown> = {};
       for (const f of tab.fields) {
         const raw = values[f.key] ?? "";
-        data[f.key] = f.key === "features"
+        data[f.key] = f.type === "records"
+          ? (JSON.parse(raw || "[]") as Record<string, string>[])
+              .map((rec) => Object.fromEntries((f.subfields ?? []).map((sf) => [sf.key, sf.type === "csv" ? (rec[sf.key] ?? "").split(",").map((v) => v.trim()).filter(Boolean) : (rec[sf.key] ?? "").trim()])))
+              .filter((rec) => Object.values(rec).some((v) => (Array.isArray(v) ? v.length : v)))
+          : f.type === "list"
+          ? (JSON.parse(raw || "[]") as string[]).map((v) => v.trim()).filter(Boolean)
+          : f.key === "features"
           ? raw.split(",").map((v) => v.trim()).filter(Boolean)
           : f.type === "number" ? (raw === "" ? "" : Number(raw))
           : f.type === "boolean" ? raw === "true"
@@ -476,7 +592,7 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
           <>
             <div className="grid gap-4 sm:grid-cols-2">
               {tab.fields.map((f) => (
-                <div key={f.key} className={f.type === "textarea" || f.type === "asset" ? "sm:col-span-2" : ""}>
+                <div key={f.key} className={f.type === "textarea" || f.type === "asset" || f.type === "list" || f.type === "records" ? "sm:col-span-2" : ""}>
                   {f.type !== "asset" && (
                     <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">{f.label}</label>
                   )}
@@ -488,6 +604,68 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
                       value={values[f.key] ?? ""}
                       onChange={(value) => setValues((v) => ({ ...v, [f.key]: value }))}
                     />
+                  ) : f.type === "records" ? (
+                    <div className="space-y-3">
+                      {(JSON.parse(values[f.key] || "[]") as Record<string, string>[]).map((rec, idx, all) => {
+                        const setAll = (next: Record<string, string>[]) => setValues((v) => ({ ...v, [f.key]: JSON.stringify(next) }));
+                        return (
+                          <div key={idx} className="space-y-2 rounded-xl border border-dash-border bg-slate-50/60 p-3">
+                            {(f.subfields ?? []).map((sf) => (
+                              <div key={sf.key}>
+                                <label className="mb-1 block text-[11px] font-bold uppercase text-dash-muted">{sf.label}</label>
+                                {sf.type === "textarea" ? (
+                                  <textarea
+                                    rows={2}
+                                    value={rec[sf.key] ?? ""}
+                                    onChange={(e) => setAll(all.map((r, i) => (i === idx ? { ...r, [sf.key]: e.target.value } : r)))}
+                                    className="w-full resize-none rounded-xl border border-dash-border bg-white px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                                  />
+                                ) : (
+                                  <input
+                                    type="text"
+                                    value={rec[sf.key] ?? ""}
+                                    onChange={(e) => setAll(all.map((r, i) => (i === idx ? { ...r, [sf.key]: e.target.value } : r)))}
+                                    className="w-full rounded-xl border border-dash-border bg-white px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                                  />
+                                )}
+                              </div>
+                            ))}
+                            <button type="button" onClick={() => setAll(all.filter((_, i) => i !== idx))} className="rounded-lg border border-dash-border px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-50">Remove</button>
+                          </div>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => setValues((v) => ({ ...v, [f.key]: JSON.stringify([...(JSON.parse(v[f.key] || "[]") as Record<string, string>[]), {}]) }))}
+                        className="rounded-xl border border-dashed border-[#9CCFF0] px-3 py-2 text-xs font-bold text-[#0284C7] hover:bg-[#F7FBFF]"
+                      >
+                        + Add
+                      </button>
+                    </div>
+                  ) : f.type === "list" ? (
+                    <div className="space-y-2">
+                      {(JSON.parse(values[f.key] || "[]") as string[]).map((item, idx, all) => {
+                        const setAll = (next: string[]) => setValues((v) => ({ ...v, [f.key]: JSON.stringify(next) }));
+                        return (
+                          <div key={idx} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={item}
+                              onChange={(e) => setAll(all.map((x, i) => (i === idx ? e.target.value : x)))}
+                              className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
+                            />
+                            <button type="button" onClick={() => setAll(all.filter((_, i) => i !== idx))} className="rounded-xl border border-dash-border px-3 text-xs font-bold text-red-600 hover:bg-red-50">Remove</button>
+                          </div>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => setValues((v) => ({ ...v, [f.key]: JSON.stringify([...(JSON.parse(v[f.key] || "[]") as string[]), ""]) }))}
+                        className="rounded-xl border border-dashed border-[#9CCFF0] px-3 py-2 text-xs font-bold text-[#0284C7] hover:bg-[#F7FBFF]"
+                      >
+                        + Add
+                      </button>
+                    </div>
                   ) : f.type === "boolean" ? (
                     <button
                       type="button"
@@ -1453,6 +1631,7 @@ export const FOOTER_TAB = { key: "footer", label: "Footer" };
 export const COUNTRY_DESTINATION_GUIDE_TAB = { key: "country-destination-guide", label: "Country Destination Guide" };
 
 export const ALL_TABS: { key: string; label: string }[] = [
+  { key: "home", label: "Home Page" },
   ...TABS.map((t) => ({ key: t.key, label: t.label })),
   ...CONTENT_BLOCK_TABS.map((t) => ({ key: t.key, label: t.label })),
   FOOTER_TAB,
@@ -1479,17 +1658,13 @@ export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
     key: "home",
     label: "Home Page",
     description: "Every section on the public homepage, top to bottom.",
-    tabs: [
-      "banners", "popular-tours", "handpicked-tours", "tours-on-deals",
-      "popular-destinations", "favourite-countries", "about-section",
-      "blog-teaser", "airport-transfer", "travel-support", "newsletter-banner",
-    ],
+    tabs: ["home"],
   },
   {
     key: "destinations",
     label: "Country Pages",
     description: "The dynamic per-country tour listing and destination guide pages.",
-    tabs: ["country-pages", "country-destination-guide"],
+    tabs: ["country-pages"],
   },
   {
     key: "content",
@@ -1501,7 +1676,7 @@ export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
     key: "site",
     label: "Header, Footer & Contact",
     description: "The footer's link sections, plus contact details and other site-wide settings.",
-    tabs: ["footer", "social-links"],
+    tabs: ["footer"],
     external: [
       { label: "Contact Details", href: "/admin/settings", description: "Support email, phone, and company address (Settings > General)." },
     ],

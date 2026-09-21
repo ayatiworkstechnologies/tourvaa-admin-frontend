@@ -25,7 +25,7 @@ import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
-import { getFieldErrors } from "@/lib/utils/errorHandler";
+import { getApiErrorMessage, getFieldErrors } from "@/lib/utils/errorHandler";
 
 function fieldInputClass(hasError: boolean) {
   return `w-full rounded-md border px-4 py-2.5 text-sm outline-none ${
@@ -200,7 +200,7 @@ export default function UsersPage() {
         setFieldErrors(errors);
         setMessage("Please fix the highlighted fields.");
       } else {
-        setMessage("Something went wrong. Please check the form.");
+        setMessage(getApiErrorMessage(result.error));
       }
     }
   };

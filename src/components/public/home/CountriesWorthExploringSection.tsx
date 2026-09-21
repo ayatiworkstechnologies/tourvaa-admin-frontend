@@ -4,6 +4,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSectionCopy, text } from "./useSectionCopy";
 import {
   LuArrowRight as ArrowRight,
   LuBookOpen as BookOpen,
@@ -54,7 +55,6 @@ export function CountryWorthExploringCard({
           <MapPin size={10} className="fill-white/30 text-white shrink-0" />
           <span className="truncate max-w-[100px]">{country.name}</span>
         </span>
-
       </div>
 
       {/* Card Body */}
@@ -67,7 +67,7 @@ export function CountryWorthExploringCard({
                 {country.name}
               </h3>
             </Link>
-            <div className="flex items-center gap-1 text-xs font-extrabold text-slate-800 shrink-0 bg-amber-50/80 px-2 py-0.5 rounded-md border border-amber-200/60">
+            <div className="flex items-center gap-1 text-xs font-semibold text-slate-800 shrink-0 bg-amber-50/80 px-2 py-0.5 rounded-md border border-amber-200/60">
               <Star size={12} className="fill-amber-400 text-amber-400" />
               <span>{ratingVal}</span>
             </div>
@@ -110,6 +110,7 @@ export default function CountriesWorthExploringSection({
   initialCountries,
   loading: initialLoading,
 }: CountriesWorthExploringSectionProps) {
+  const copy = useSectionCopy("countries_section");
   const [countries, setCountries] = useState<CountryWorthExploring[]>(
     initialCountries || [],
   );
@@ -193,12 +194,12 @@ export default function CountriesWorthExploringSection({
       <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-bl from-violet-200/20 via-purple-100/15 to-transparent blur-3xl animate-float-orb" />
       <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-indigo-100/20 via-slate-100/20 to-transparent blur-3xl animate-float-orb-alt" />
 
-      <div className="relative z-10 mx-auto max-w-[1380px] px-5">
+      <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Header */}
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-semibold text-slate-950 tracking-tight">
-              Countries Worth Exploring
+              {text(copy.title, "Countries Worth Exploring")}
             </h2>
           </div>
 

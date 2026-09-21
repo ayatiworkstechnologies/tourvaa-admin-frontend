@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSectionCopy, text } from "./useSectionCopy";
 import {
   LuArrowRight as ArrowRight,
   LuChevronLeft as ChevronLeft,
@@ -20,18 +21,17 @@ import {
   fetchToursOnDeals,
   SectionVisibilityBlock,
 } from "@/lib/api/publicClient";
-import {
-  mapPublicTour,
-  stableHash,
-  Tour,
-} from "./homeTypes";
+import { mapPublicTour, stableHash, Tour } from "./homeTypes";
 import { EmptyCollection, TourCardSkeleton } from "./HomeHelpers";
 import { useAutoSlide } from "./useAutoSlide";
 import { smoothScrollTo } from "./smoothScrollTo";
 
 function getDestinationName(place?: string): string {
   if (!place) return "Special";
-  const parts = place.split(",").map((s) => s.trim()).filter(Boolean);
+  const parts = place
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   return parts[parts.length - 1] || place;
 }
 
@@ -66,25 +66,30 @@ export function TopDealCard({ tour }: { tour: Tour }) {
     href,
   };
 
-  const ratingVal = tour.rating != null && tour.rating > 0 ? tour.rating.toFixed(1) : "4.9";
+  const ratingVal =
+    tour.rating != null && tour.rating > 0 ? tour.rating.toFixed(1) : null;
   const reviewCountStr = tour.reviews
     ? tour.reviews.replace(/^\(|\)$/g, "").includes("review")
       ? tour.reviews.replace(/^\(|\)$/g, "")
       : `${tour.reviews.replace(/^\(|\)$/g, "")} reviews`
-    : "1,842 reviews";
+    : "";
   const destinationName = getDestinationName(tour.place);
   const durationTag = getDurationTag(tour);
 
   const originalPriceVal =
-    tour.originalPrice != null && tour.rawPrice != null && tour.originalPrice > tour.rawPrice
+    tour.originalPrice != null &&
+    tour.rawPrice != null &&
+    tour.originalPrice > tour.rawPrice
       ? tour.originalPrice
-      : tour.rawPrice != null
-      ? Math.round(tour.rawPrice * 1.3)
       : null;
 
   const calculatedPct =
-    originalPriceVal != null && tour.rawPrice != null && originalPriceVal > tour.rawPrice
-      ? Math.round(((originalPriceVal - tour.rawPrice) / originalPriceVal) * 100)
+    originalPriceVal != null &&
+    tour.rawPrice != null &&
+    originalPriceVal > tour.rawPrice
+      ? Math.round(
+          ((originalPriceVal - tour.rawPrice) / originalPriceVal) * 100,
+        )
       : null;
 
   const discountLabel =
@@ -114,7 +119,10 @@ export function TopDealCard({ tour }: { tour: Tour }) {
           </span>
 
           {/* Wishlist button (top-right) */}
-          <WishlistButton item={travelItem} className="absolute right-3 top-3" />
+          <WishlistButton
+            item={travelItem}
+            className="absolute right-3 top-3"
+          />
 
           {/* Discount Badge (bottom-right of image) */}
           {discountLabel && (
@@ -139,29 +147,37 @@ export function TopDealCard({ tour }: { tour: Tour }) {
           </div>
 
           {/* Rating + review count */}
-          <div className="mt-1.5 flex items-center gap-1 text-xs">
-            <div className="flex items-center gap-0.5 text-amber-400">
-              {Array.from({ length: 5 }, (_, i) => (
-                <Star
-                  key={i}
-                  size={12}
-                  className={
-                    i < Math.round(Number(ratingVal))
-                      ? "fill-amber-400 text-amber-400"
-                      : "text-slate-200"
-                  }
-                />
-              ))}
+          {ratingVal && (
+            <div className="mt-1.5 flex items-center gap-1 text-xs">
+              <div className="flex items-center gap-0.5 text-amber-400">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <Star
+                    key={i}
+                    size={12}
+                    className={
+                      i < Math.round(Number(ratingVal))
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-slate-200"
+                    }
+                  />
+                ))}
+              </div>
+              <span className="font-bold text-slate-900 ml-0.5">
+                {ratingVal}
+              </span>
+              {reviewCountStr && (
+                <span className="text-slate-500 font-normal text-xs ml-1">
+                  {reviewCountStr}
+                </span>
+              )}
             </div>
-            <span className="font-bold text-slate-900 ml-0.5">{ratingVal}</span>
-            <span className="text-slate-500 font-normal text-xs ml-1">
-              {reviewCountStr}
-            </span>
-          </div>
+          )}
 
           {/* Price Row: From $old $new pp with discount savings pill */}
           <div className="mt-2.5 flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-xs sm:text-sm font-semibold text-slate-800">From</span>
+            <span className="text-xs sm:text-sm font-semibold text-slate-800">
+              From
+            </span>
             {originalPriceVal != null && (
               <span className="text-xs font-normal text-slate-400 line-through mr-1">
                 {format(originalPriceVal, tour.currency || "USD")}
@@ -173,7 +189,9 @@ export function TopDealCard({ tour }: { tour: Tour }) {
                 : "On request"}
             </strong>
             {tour.rawPrice != null && (
-              <span className="text-xs sm:text-sm font-medium text-slate-800 ml-0.5">pp</span>
+              <span className="text-xs sm:text-sm font-medium text-slate-800 ml-0.5">
+                pp
+              </span>
             )}
           </div>
         </div>
@@ -198,6 +216,7 @@ export default function TopDealsSection({
   const [activeTab, setActiveTab] = useState("Top deals");
   const [sectionEnabled, setSectionEnabled] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const copy = useSectionCopy("top_deals_section");
 
   // Section can be switched off from admin/cms > Top Deals; defaults to
   // shown (true) when no admin has set it either way.
@@ -208,7 +227,9 @@ export default function TopDealsSection({
         if (active && res?.data?.enabled === false) setSectionEnabled(false);
       })
       .catch(() => {});
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Fast independent data loading
@@ -264,7 +285,9 @@ export default function TopDealsSection({
         const featured = await fetchFeaturedTours(12);
         if (active && featured?.length) {
           const mapped = featured.map(mapPublicTour);
-          const slice = mapped.slice(6, 12).length ? mapped.slice(6, 12) : mapped.slice(0, 6);
+          const slice = mapped.slice(6, 12).length
+            ? mapped.slice(6, 12)
+            : mapped.slice(0, 6);
           setTours(slice);
           setLoading(false);
           return;
@@ -310,7 +333,10 @@ export default function TopDealsSection({
       .map(([place]) => place);
 
     if (uniquePlaces.length > 0) {
-      return ["Top deals", ...uniquePlaces.slice(0, 4).map((place) => `${place} deals`)];
+      return [
+        "Top deals",
+        ...uniquePlaces.slice(0, 4).map((place) => `${place} deals`),
+      ];
     }
 
     return ["Top deals", "China deals", "Turkey deals", "Italy deals"];
@@ -367,28 +393,34 @@ export default function TopDealsSection({
         )}`;
 
   return (
-    <section className="relative w-full overflow-hidden bg-pub-bg py-12 sm:py-16">
+    <section className="relative w-full overflow-hidden bg-pub-bg py-14 sm:py-18">
       <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Top Header Row: Badge, Title & Subtitle (Left) + Explore Deals (Right) */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
           <div className="max-w-2xl">
             <span className="inline-flex items-center rounded-full bg-[#DF6951] px-3.5 py-1 text-[11px] font-bold text-white shadow-2xs">
-              Offer Ends Soon
+              {text(copy.badge, "Offer Ends Soon")}
             </span>
-            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              Big Adventures. Smaller Prices. Save up to 60% off.
+            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 tracking-tight leading-tight">
+              {text(
+                copy.title,
+                "Big Adventures. Smaller Prices. Save up to 60% off.",
+              )}
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-slate-500 font-normal">
-              Explore handpicked tours at special prices and make your next journey one to remember.
+              {text(
+                copy.subtitle,
+                "Explore handpicked tours at special prices and make your next journey one to remember.",
+              )}
             </p>
           </div>
 
           <div className="shrink-0 pt-1 md:pt-0">
             <Link
-              href="/deals"
+              href={text(copy.cta_url, "/deals")}
               className="inline-flex items-center gap-2 rounded-xl bg-[#0F172A] hover:bg-[#1E293B] px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.98]"
             >
-              <span>Explore Deals</span>
+              <span>{text(copy.cta_text, "Explore Deals")}</span>
               <ArrowRight size={16} />
             </Link>
           </div>
@@ -423,7 +455,7 @@ export default function TopDealsSection({
               href={viewAllHref}
               className="text-xs sm:text-sm font-semibold text-[#DF6951] hover:underline"
             >
-              View all deals
+              {text(copy.view_all_text, "View all deals")}
             </Link>
 
             {!loading && displayTours.length > 0 && (
@@ -479,4 +511,3 @@ export default function TopDealsSection({
     </section>
   );
 }
-

@@ -28,47 +28,47 @@ export default function Home() {
       {/* 2. Top Deals Section with Dynamic Destination Tabs */}
       <TopDealsSection />
 
-      {/* 4. Favourite Countries Section */}
+      {/* 3. Favourite Countries Section */}
       <Reveal variant="fade-up">
         <FavouriteCountriesSection />
       </Reveal>
 
-      {/* 5. About Tourvaa Panoramic Banner */}
+      {/* 4. About Tourvaa Panoramic Banner */}
       <Reveal variant="fade">
         <AboutTourvaaBanner />
       </Reveal>
 
-      {/* 6. Trending Tour Packages Carousel */}
+      {/* 5. Trending Tour Packages Carousel */}
       <TrendingToursSection />
 
-      {/* 7. Blog Teaser Banner */}
+      {/* 6. Blog Teaser Banner */}
       <Reveal variant="fade">
         <BlogTeaserSection />
       </Reveal>
 
-      {/* 8. Handpicked Tours for You */}
+      {/* 7. Handpicked Tours for You */}
       <Reveal variant="fade">
         <HandpickedToursSection />
       </Reveal>
 
-      {/* 9. Countries Worth Exploring Carousel */}
+      {/* 8. Countries Worth Exploring Carousel */}
       <Reveal variant="fade">
         <CountriesWorthExploringSection />
       </Reveal>
 
-      {/* 10. Travellers' Testimonials Carousel */}
+      {/* 9. Travellers' Testimonials Carousel */}
       <Reveal variant="fade">
         <HomeTestimonialsSection />
       </Reveal>
 
-      {/* 11. Directory / Popular Destination Searches Tabs Grid */}
+      {/* 10. Directory / Popular Destination Searches Tabs Grid */}
       <div className="relative z-10 mx-auto max-w-[1400px] px-5 py-10 sm:py-14">
         <Reveal variant="fade-up">
           <ExploreDirectorySection />
         </Reveal>
       </div>
 
-      {/* 12. Airport Transfers Partner Banner */}
+      {/* 11. Airport Transfers Partner Banner */}
       <Reveal variant="scale-up">
         <AirportTransfersBanner />
       </Reveal>

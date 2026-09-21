@@ -64,8 +64,13 @@ export default function CountryDestinationHero({
                 onClick={scrollToTours}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-300 hover:text-white transition group cursor-pointer"
               >
-                <span>Browse all {tourCount || 24} tours in {info.country_name}</span>
-                <ArrowRight size={13} className="transition group-hover:translate-x-1" />
+                <span>
+                  Browse all {tourCount || 24} tours in {info.country_name}
+                </span>
+                <ArrowRight
+                  size={13}
+                  className="transition group-hover:translate-x-1"
+                />
               </a>
             </div>
           </div>
@@ -104,7 +109,7 @@ export default function CountryDestinationHero({
             <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-8 items-center">
               {/* Left Column: Narrative & Action Buttons */}
               <div className="text-left">
-                <p className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2">
                   An Introduction
                 </p>
                 <div className="space-y-3 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
@@ -113,7 +118,11 @@ export default function CountryDestinationHero({
 
                 {/* Two Action Buttons matching screenshot */}
                 <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <PrimaryCtaButton href="#section-tours" onClick={scrollToTours} size="sm">
+                  <PrimaryCtaButton
+                    href="#section-tours"
+                    onClick={scrollToTours}
+                    size="sm"
+                  >
                     Explore Tours
                   </PrimaryCtaButton>
                   <a
@@ -145,4 +154,3 @@ export default function CountryDestinationHero({
     </section>
   );
 }
-
