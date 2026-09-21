@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useState } from "react";
+import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import Link from "next/link";
 import {
   LuCalendar as Calendar,
@@ -104,6 +105,7 @@ const OFFICE_CONTACT_META: Record<string, { phone: string; email: string; hours:
 };
 
 export default function ContactPage() {
+  const { supportEmail } = usePublicSettings();
   const [openFaqId, setOpenFaqId] = useState<string>("cancellation");
   const [activeOfficeId, setActiveOfficeId] = useState<string>("nz");
   const [officeSelectionVersion, setOfficeSelectionVersion] = useState(0);
@@ -141,7 +143,7 @@ export default function ContactPage() {
   };
 
   const handleCopyEmail = () => {
-    navigator.clipboard.writeText("support@tourvaa.com");
+    navigator.clipboard.writeText(supportEmail);
     setEmailCopied(true);
     setTimeout(() => setEmailCopied(false), 2000);
   };
@@ -354,7 +356,8 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  {/* Direct Support Email */}
+                  {/* Direct Support Email (configured in Settings > General) */}
+                  {supportEmail && (
                   <div className="flex items-start gap-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white backdrop-blur-xs">
                       <Mail size={18} />
@@ -365,10 +368,10 @@ export default function ContactPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <a
-                          href="mailto:support@tourvaa.com"
+                          href={`mailto:${supportEmail}`}
                           className="text-sm font-bold text-white hover:text-sky-300 transition-colors"
                         >
-                          support@tourvaa.com
+                          {supportEmail}
                         </a>
                         <button
                           type="button"
@@ -379,11 +382,9 @@ export default function ContactPage() {
                           {emailCopied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
                         </button>
                       </div>
-                      <div className="text-[11px] text-white/60 mt-0.5">
-                        Guaranteed response within 2 business hours
-                      </div>
                     </div>
                   </div>
+                  )}
 
                   {/* Operational Hours */}
                   <div className="flex items-start gap-4">

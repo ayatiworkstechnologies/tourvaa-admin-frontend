@@ -14,6 +14,7 @@ import {
   LuSlidersHorizontal as Sliders,
   LuSparkles as Sparkles,
   LuStar as Star,
+  LuTrendingUp as TrendingUp,
   LuUsers as Users,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
@@ -140,6 +141,7 @@ export function TrendingTourCard({
             {/* Meta row: Location & Social Proof Rating */}
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="font-bold text-pub-accent uppercase tracking-wider text-[11px] truncate flex items-center gap-1">
+                <MapPin size={11} className="text-pub-accent shrink-0" />
                 <span>{tour.place || "Curated Adventure"}</span>
               </span>
 
@@ -355,10 +357,10 @@ export default function TrendingToursSection({
 
         <div className="relative z-10 mx-auto max-w-[1400px] px-5">
           {/* Section Header with Eyebrow and Carousel Navigation */}
-          <div className="mb-8 flex items-end justify-between gap-4">
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl sm:text-3xl lg:text-[38px] font-black text-slate-950 tracking-tight font-heading">
-                {text(copy.title, "Trending Tour Packages")}
+              <h2 className="text-2xl sm:text-3xl lg:text-[38px] font-semibold text-slate-950 tracking-tight font-heading flex items-center gap-2.5">
+                <span>{text(copy.title, "Trending Tour Packages")}</span>
               </h2>
             </div>
 

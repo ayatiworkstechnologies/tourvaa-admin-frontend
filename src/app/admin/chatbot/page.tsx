@@ -10,6 +10,7 @@ import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useConfirm } from "@/hooks/useConfirm";
+import ChatbotInsights from "@/components/admin/ChatbotInsights";
 
 type FAQ = {
   id: number;
@@ -68,7 +69,7 @@ export default function ChatbotFAQPage() {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
-  const [activeTab, setActiveTab] = useState<"faqs" | "train" | "sessions">("faqs");
+  const [activeTab, setActiveTab] = useState<"faqs" | "train" | "sessions" | "insights">("faqs");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsPage, setSessionsPage] = useState(1);
@@ -117,7 +118,7 @@ export default function ChatbotFAQPage() {
     if (activeTab === "sessions") void fetchSessions();
   }, [activeTab, fetchSessions]);
 
-  const switchTab = (tab: "faqs" | "train" | "sessions") => {
+  const switchTab = (tab: "faqs" | "train" | "sessions" | "insights") => {
     setActiveTab(tab);
     setPage(1);
   };
@@ -321,6 +322,13 @@ export default function ChatbotFAQPage() {
               >
                 Chat Sessions
               </button>
+              <button
+                type="button"
+                onClick={() => switchTab("insights")}
+                className={`rounded-lg px-4 py-2 text-sm font-bold ${activeTab === "insights" ? "bg-dash-brand text-white" : "text-dash-muted hover:bg-dash-bg"}`}
+              >
+                Insights
+              </button>
             </div>
           </section>
 
@@ -369,6 +377,8 @@ export default function ChatbotFAQPage() {
               </div>
             </section>
           )}
+
+          {activeTab === "insights" && <ChatbotInsights />}
 
           {activeTab === "sessions" && (
             <section className="rounded-2xl border border-dash-border bg-white p-6">

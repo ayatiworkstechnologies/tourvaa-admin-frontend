@@ -106,16 +106,27 @@ const FALLBACK_FOOTER_SECTIONS: CmsFooterSection[] = [
   },
 ];
 
-function normalizeFooterSections(sections: CmsFooterSection[]): CmsFooterSection[] {
+function normalizeFooterSections(
+  sections: CmsFooterSection[],
+): CmsFooterSection[] {
   if (!sections || !sections.length) return FALLBACK_FOOTER_SECTIONS;
   return sections;
 }
 
-const UNSAFE_SETTING_MARKERS = /<\/?script|javascript:|document\.|window\.|innerhtml|on(?:error|load)\s*=/i;
+const UNSAFE_SETTING_MARKERS =
+  /<\/?script|javascript:|document\.|window\.|innerhtml|on(?:error|load)\s*=/i;
 
-function safePublicText(value: string | undefined, fallback: string, maxLength: number) {
+function safePublicText(
+  value: string | undefined,
+  fallback: string,
+  maxLength: number,
+) {
   const normalized = (value || "").trim();
-  if (!normalized || normalized.length > maxLength || UNSAFE_SETTING_MARKERS.test(normalized)) {
+  if (
+    !normalized ||
+    normalized.length > maxLength ||
+    UNSAFE_SETTING_MARKERS.test(normalized)
+  ) {
     return fallback;
   }
   return normalized;
@@ -247,12 +258,15 @@ export default function PublicFooter() {
   );
 
   return (
-    <footer className="w-full bg-pub-primary text-white pt-12 sm:pt-16 pb-8 sm:pb-10 mt-8 sm:mt-12 transition-colors">
+    <footer className="w-full bg-pub-primary text-white pt-12 sm:pt-16 pb-8 sm:pb-10 transition-colors">
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-[1.1fr_1.1fr_0.9fr_1.6fr] gap-8 sm:gap-10">
           {/* Columns 1-3: CMS-managed footer sections (Support / Our Company / Login by default - see Admin > CMS > Footer) */}
           {footerSections.map((section, idx) => (
-            <div key={section.id} className={idx === 2 ? "col-span-2 sm:col-span-1" : "col-span-1"}>
+            <div
+              key={section.id}
+              className={idx === 2 ? "col-span-2 sm:col-span-1" : "col-span-1"}
+            >
               <h3 className="text-lg sm:text-xl font-bold text-white mb-4 tracking-tight">
                 {section.title}
               </h3>
@@ -292,9 +306,7 @@ export default function PublicFooter() {
                 <div ref={currencyRef} className="relative">
                   <button
                     type="button"
-                    onClick={() =>
-                      !forced && setCurrencyOpen((prev) => !prev)
-                    }
+                    onClick={() => !forced && setCurrencyOpen((prev) => !prev)}
                     className="w-full rounded-xl bg-white px-3.5 sm:px-4 py-2 text-slate-900 flex items-center justify-between text-xs sm:text-sm font-bold shadow-xs focus:outline-none hover:bg-slate-50 transition cursor-pointer"
                   >
                     <span className="truncate">
@@ -459,11 +471,11 @@ export default function PublicFooter() {
         {/* Bottom Copyright Text */}
         <div className="mt-10 sm:mt-12 pt-6 border-t border-white/10 text-center text-xs text-slate-400">
           <p>
-            Copyright © {new Date().getFullYear()} by Tourvaa Private Limited - All Right Reserved | Design & Developed by Ayatiworks
+            Copyright © {new Date().getFullYear()} by Tourvaa Private Limited -
+            All Right Reserved | Design & Developed by Ayatiworks
           </p>
         </div>
       </div>
     </footer>
   );
 }
-

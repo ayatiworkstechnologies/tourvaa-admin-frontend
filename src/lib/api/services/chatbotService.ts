@@ -15,6 +15,7 @@ export class ChatbotRateLimitError extends Error {
 export type ChatActionData = {
   tours?: { id: number; title: string; duration_days?: number; price?: number | null; currency: string; cover_image?: string | null; slug: string }[];
   tour_id?: number;
+  available_dates?: { date: string; slots: number }[];
   tour_title?: string;
   date?: string;
   duration_days?: number;
@@ -41,10 +42,13 @@ export async function streamChat(
   pageUrl: string | null,
   onEvent: (event: ChatStreamEvent) => void,
 ): Promise<void> {
+  // fetch() bypasses the axios interceptor that echoes the CSRF cookie, so a
+  // logged-in visitor (CSRF cookie present) would get 403 from CsrfMiddleware.
+  const csrf = typeof document !== "undefined" ? document.cookie.match(/(?:^|; )tourvaa_csrf=([^;]*)/)?.[1] : undefined;
   const res = await fetch(CHAT_ENDPOINT, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(csrf ? { "X-CSRF-Token": decodeURIComponent(csrf) } : {}) },
     body: JSON.stringify({ message, session_key: sessionKey, page_url: pageUrl }),
   });
 

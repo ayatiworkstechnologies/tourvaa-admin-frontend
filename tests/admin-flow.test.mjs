@@ -99,11 +99,12 @@ check(
 );
 check("supplier commission banner omits the misleading approve request action", !suppliers.includes("Approve request"));
 check("supplier document review uses private document service", suppliers.includes('openPrivateDocument("supplier"'));
+const suppliersCompact = suppliers.replace(/\s+/g, " "); // tolerate formatter line-wrapping
 check(
   "supplier document and vehicle filenames stay within their cards",
-  suppliers.includes('className="mt-0.5 truncate text-xs font-medium text-dash-muted" title={fileName}') &&
-    suppliers.includes('className="min-w-0 flex-1"') &&
-    suppliers.includes('className="min-w-0 rounded-xl border border-dash-border p-4"'),
+  suppliersCompact.includes('className="mt-0.5 truncate text-xs font-medium text-dash-muted" title={fileName}') &&
+    suppliersCompact.includes('className="min-w-0 flex-1"') &&
+    suppliersCompact.includes('className="min-w-0 rounded-xl border border-dash-border p-4"'),
 );
 check("agent document review uses private document service", agents.includes('openPrivateDocument("agent"'));
 check("admin can approve and reject individual agent documents", agents.includes("reviewAgentDocument") && agents.includes("Reject agent document"));
