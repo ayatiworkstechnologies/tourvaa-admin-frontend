@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   LuArrowLeft as ArrowLeft,
   LuArrowRight as ArrowRight,
+  LuSave as Save,
   LuCircleAlert as AlertCircle,
   LuEye as Eye,
   LuCompass as MapPinned,
@@ -15,14 +17,12 @@ import {
 import api from "@/lib/api/client";
 import TourFormPage from "@/components/cms/TourFormPage";
 import { TourWorkspaceContent, TourWorkspaceHeader } from "@/components/tours/TourWorkspace";
-import { WizardSidebar } from "@/components/tours/wizard/WizardSidebar";
-import { WizardMobileProgress } from "@/components/tours/wizard/WizardMobileProgress";
+import { WizardSideStepper } from "@/components/tours/wizard/WizardSideStepper";
 import { WizardStickyActionBar, type WizardBarButton } from "@/components/tours/wizard/WizardStickyActionBar";
 import { WizardReviewSubmit } from "@/components/tours/wizard/WizardReviewSubmit";
 import { useStepCompletion } from "@/components/tours/wizard/useStepCompletion";
 import { WIZARD_STEPS } from "@/components/tours/wizard/steps";
 import TourOverviewTab from "@/components/tours/TourOverviewTab";
-import PhysicalRatingField from "@/components/tours/PhysicalRatingField";
 import TourHighlightsTab from "@/components/tours/TourHighlightsTab";
 import TourItineraryTab from "@/components/tours/TourItineraryTab";
 import TourItemsTab from "@/components/tours/TourItemsTab";
@@ -92,43 +92,91 @@ function reviewBanner(tour: Tour): { label: string; message: string } | null {
   };
 }
 
+// Persistent forms per step (see saveCurrentStep in TourWizard).
+const STEP_FORM_IDS: Record<string, string[]> = {
+  basic: ["wizard-form-basic"],
+  location: ["wizard-form-location", "wizard-form-overview"],
+  media: ["wizard-form-media"],
+  settings: ["wizard-form-settings"],
+  seo: ["wizard-form-seo"],
+};
+
 export default function TourWizard({ tourId, role }: { tourId?: string; role: "admin" | "supplier" }) {
   const router = useRouter();
   const isSupplier = role === "supplier";
   const basePath = isSupplier ? "/supplier/tours" : "/admin/tours";
 
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([0]));
-  // Set right before an external "Save & Continue" button submits a
-  // TourFormPage-backed step via the HTML `form` attribute -- read inside
-  // that step's onSaved to decide whether to also advance, so the same
-  // in-form "Save" button (which should NOT jump steps) and the wizard's
-  // external continue button (which SHOULD) can share one submit handler.
-  // Plain state (not a ref) so it's never read/written from render output
-  // construction -- only from effects/handlers.
+  // The current step lives in the URL (?step=pricing) so a refresh or a shared
+  // link lands on the same step, and a freshly created tour opens on step 2.
+  const searchParams = useSearchParams();
+  const initialStep = Math.max(0, WIZARD_STEPS.findIndex((st) => st.id === searchParams.get("step")));
+  const [activeIndex, setActiveIndex] = useState(initialStep);
+  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([initialStep]));
+  const { confirm, dialog } = useConfirm();
+  // True once a persistent form on the current step has been edited and not yet
+  // saved; navigation asks before throwing those edits away.
+  const [dirty, setDirty] = useState(false);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  // "Save & Next" bookkeeping (see saveCurrentStep): forms still to report saved, and whether to advance.
+  const [pendingSaves, setPendingSaves] = useState(0);
   const [advanceAfterSave, setAdvanceAfterSave] = useState(false);
 
-  const selectStep = useCallback((index: number) => {
+  const moveToStep = useCallback((index: number) => {
     setActiveIndex(index);
     setVisitedSteps((prev) => new Set(prev).add(index));
+    setDirty(false);
+    setSavedAt(null);
+    setPendingSaves(0);
+    setAdvanceAfterSave(false);
+    window.history.replaceState(null, "", `?step=${WIZARD_STEPS[index].id}`);
   }, []);
 
+  const selectStep = useCallback(async (index: number) => {
+    if (index === activeIndex) return;
+    if (dirty) {
+      const leave = await confirm({
+        title: "Unsaved changes",
+        message: "You have changes on this step that haven't been saved. Leave without saving them?",
+        confirmLabel: "Leave without saving",
+        cancelLabel: "Stay and save",
+        danger: true,
+      });
+      if (!leave) return;
+    }
+    moveToStep(index);
+  }, [activeIndex, dirty, confirm, moveToStep]);
+
   const goNext = useCallback(() => {
-    selectStep(Math.min(WIZARD_STEPS.length - 1, activeIndex + 1));
+    void selectStep(Math.min(WIZARD_STEPS.length - 1, activeIndex + 1));
   }, [activeIndex, selectStep]);
 
-  // TourFormPage-backed steps have a real single form to submit; every
-  // other step's data already saves per-row through its own add/edit
-  // modal, so there is no separate batch "save" action there -- only
-  // "Save & Continue" (navigate), matching how the rows actually persist.
-  const currentFormId = ({ basic: "wizard-form-basic", location: "wizard-form-location", media: "wizard-form-media", seo: "wizard-form-seo" } as Record<string, string>)[WIZARD_STEPS[activeIndex]?.id];
+  // Browser refresh/close with unsaved edits.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
-  const submitCurrentForm = useCallback((advance: boolean) => {
+  // Only the step's persistent forms count (not the add/edit dialogs, which save themselves).
+  const trackEdit = useCallback((e: React.SyntheticEvent) => {
+    if ((e.target as HTMLElement).closest('form[id^="wizard-form-"]')) setDirty(true);
+  }, []);
+
+  // One Save per step. Steps whose content is a persistent form list its form
+  // ids here; the Save button submits all of them together. Every other step
+  // saves per item through its own add/edit dialog (pricing slabs, itinerary
+  // days, gallery uploads, ...), so it has no Save button - only Previous/Next.
+  const stepFormIds = STEP_FORM_IDS[WIZARD_STEPS[activeIndex]?.id] ?? [];
+
+  // "Save & Next": advance only once every form on the step has saved (a form
+  // that fails validation never reports saved, so we stay and show its errors).
+
+  const saveCurrentStep = useCallback((advance = false) => {
+    setPendingSaves(stepFormIds.length);
     setAdvanceAfterSave(advance);
-    (document.getElementById(currentFormId) as HTMLFormElement | null)?.requestSubmit();
-  }, [currentFormId]);
-  const submitCurrentFormAndSave = useCallback(() => submitCurrentForm(false), [submitCurrentForm]);
-  const submitCurrentFormAndContinue = useCallback(() => submitCurrentForm(true), [submitCurrentForm]);
+    for (const id of stepFormIds) (document.getElementById(id) as HTMLFormElement | null)?.requestSubmit();
+  }, [stepFormIds]);
 
   const [tour, setTour] = useState<Tour | null>(null);
   const [loadingTour, setLoadingTour] = useState(Boolean(tourId));
@@ -216,13 +264,19 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   };
 
   const afterFormSaved = useCallback(() => {
+    setDirty(false);
+    setSavedAt(new Date());
     void fetchTour(false);
     void refreshCompletion();
-    if (advanceAfterSave) {
+    setPendingSaves((n) => Math.max(0, n - 1));
+  }, [fetchTour, refreshCompletion]);
+
+  useEffect(() => {
+    if (advanceAfterSave && pendingSaves === 0) {
       setAdvanceAfterSave(false);
       goNext();
     }
-  }, [fetchTour, refreshCompletion, goNext, advanceAfterSave]);
+  }, [advanceAfterSave, pendingSaves, goNext]);
 
   // Create mode: no tour yet, only the essentials form can be shown. The
   // remaining 11 steps have nowhere to save to until a tour id exists.
@@ -232,15 +286,14 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
           <TourWorkspaceHeader
           role={role}
           title="Create New Tour"
-          description="Start with the essentials below. Saving creates the tour and unlocks the full 10-step editor for itinerary, pricing, media, and more."
+          description="Start with the essentials below. Saving creates the tour and unlocks the full 12-step editor for itinerary, pricing, media, and more."
           icon={MapPinned}
           eyebrow={isSupplier ? "Tour Builder" : "Admin Tour Builder"}
           actions={[{ label: isSupplier ? "Back to My Tours" : "Back to Tours", href: basePath, icon: ArrowLeft, variant: "secondary" }]}
         />
         <div className="mt-4 flex flex-col gap-4 lg:flex-row">
-          <WizardSidebar role={role} activeIndex={0} visitedIndexes={new Set()} statuses={{}} onSelect={() => {}} disabled />
+          <WizardSideStepper role={role} activeIndex={0} visitedIndexes={new Set()} statuses={{}} onSelect={() => {}} disabled />
           <div className="min-w-0 flex-1">
-            <WizardMobileProgress role={role} activeIndex={0} />
             <TourWorkspaceContent role={role} stepLabel={`Step ${WIZARD_STEPS[0].number} of ${WIZARD_STEPS.length} · ${WIZARD_STEPS[0].label}`}>
               <TourFormPage
                 embedded
@@ -249,7 +302,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 formId="wizard-form-create"
                 onSaved={(saved) => {
                   const id = (saved as { id?: number } | undefined)?.id;
-                  router.push(id ? `${basePath}/${id}/edit` : basePath);
+                  router.push(id ? `${basePath}/${id}/edit?step=location` : basePath);
                 }}
               />
             </TourWorkspaceContent>
@@ -313,31 +366,41 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     (["pending_approval", "repricing_required"].includes((tour.status ?? "").toLowerCase()) || Boolean(banner));
   const activeStep = WIZARD_STEPS[activeIndex];
   const activeKey = activeStep.id;
-  const openCommentsForStep = comments.filter((c) => c.section === activeKey);
+  const openCommentsForStep = comments.filter((c) => activeStep.reviewSections.includes(c.section));
   const isFirstStep = activeIndex === 0;
   const isReviewStep = activeKey === "review";
 
   const saveLabel = isSupplier ? "Save Changes" : "Save Draft";
+  const stepHasSave = stepFormIds.length > 0;
 
   const leftButtons: WizardBarButton[] = [
-    { key: "prev", label: "Previous", icon: ArrowLeft, variant: "secondary", disabled: isFirstStep, onClick: () => selectStep(Math.max(0, activeIndex - 1)) },
+    { key: "prev", label: "Previous", icon: ArrowLeft, variant: "secondary", disabled: isFirstStep, onClick: () => void selectStep(Math.max(0, activeIndex - 1)) },
   ];
   const rightButtons: WizardBarButton[] = [];
   if (!isReviewStep) {
-    if (currentFormId) {
-      rightButtons.push({ key: "save", label: saveLabel, variant: "secondary", onClick: submitCurrentFormAndSave });
-      rightButtons.push({ key: "continue", label: "Save & Continue", icon: ArrowRight, variant: "primary", onClick: submitCurrentFormAndContinue });
+    if (stepHasSave) {
+      rightButtons.push({ key: "save", label: saveLabel, icon: Save, variant: "secondary", onClick: () => saveCurrentStep(false) });
+      rightButtons.push({ key: "next", label: "Save & Next", icon: ArrowRight, variant: "primary", onClick: () => saveCurrentStep(true) });
     } else {
-      rightButtons.push({ key: "continue", label: "Save & Continue", icon: ArrowRight, variant: "primary", onClick: goNext });
+      rightButtons.push({ key: "next", label: "Next", icon: ArrowRight, variant: "primary", onClick: goNext });
     }
   }
+  const barHint = isReviewStep
+    ? undefined
+    : stepHasSave
+      ? dirty
+        ? "You have unsaved changes on this step."
+        : savedAt
+          ? `Saved at ${savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+          : "Save keeps you here; Save & Next saves and moves on."
+      : "Items on this step save as you add or edit them.";
 
   return (
     <>
       <TourWorkspaceHeader
         role={role}
         title={tour?.title ?? "Edit Tour"}
-          description="Complete the 10-step editor below. Each step saves independently, so you can leave and come back anytime."
+          description="Use the steps on the left to move through the editor. Each step has one Save button, and Next moves on without saving."
         icon={MapPinned}
         eyebrow={tour?.tour_code ? `Tour Editor · ${tour.tour_code}` : "Tour Editor"}
         actions={[
@@ -383,10 +446,10 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
         </div>
       )}
 
+      {dialog}
       <div className="mt-4 flex flex-col gap-4 lg:flex-row">
-        <WizardSidebar role={role} activeIndex={activeIndex} visitedIndexes={visitedSteps} statuses={statuses} onSelect={selectStep} />
+        <WizardSideStepper role={role} activeIndex={activeIndex} visitedIndexes={visitedSteps} statuses={statuses} onSelect={(i) => void selectStep(i)} />
         <div className="min-w-0 flex-1">
-          <WizardMobileProgress role={role} activeIndex={activeIndex} />
 
           {openCommentsForStep.length > 0 && (
             <div className="mt-4 space-y-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
@@ -411,6 +474,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
             </div>
           )}
 
+          <div onInputCapture={trackEdit} onChangeCapture={trackEdit}>
           <TourWorkspaceContent role={role} stepLabel={`Step ${activeStep.number} of ${WIZARD_STEPS.length} · ${activeStep.label}`}>
             {activeKey === "basic" && (
               <TourFormPage
@@ -421,21 +485,14 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 formId="wizard-form-basic"
                 initialData={tour ?? undefined}
                 onSaved={afterFormSaved}
-                onGoToPricing={() => selectStep(WIZARD_STEPS.findIndex((s) => s.id === "pricing"))}
+                onGoToPricing={() => void selectStep(WIZARD_STEPS.findIndex((s) => s.id === "pricing"))}
               />
             )}
             {activeKey === "location" && (
               <div className="space-y-6">
                 <TourFormPage tourId={tourId} embedded role={role} sections={["location"]} formId="wizard-form-location" initialData={tour ?? undefined} onSaved={afterFormSaved} />
-                <TourOverviewTab tourId={tourId} />
+                <TourOverviewTab tourId={tourId} embedded onSaved={afterFormSaved} />
                 <TourHighlightsTab tourId={tourId} />
-                <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
-                  <h2 className="text-xl font-black text-dash-text">Physical Rating</h2>
-                  <p className="mt-1 text-sm text-dash-subtle">How physically demanding this tour is for travellers.</p>
-                  <div className="mt-5">
-                    <PhysicalRatingField tourId={tourId} />
-                  </div>
-                </div>
               </div>
             )}
             {activeKey === "itinerary" && <TourItineraryTab tourId={tourId} numberOfDays={tour?.number_of_days ? Number(tour.number_of_days) : undefined} />}
@@ -452,6 +509,10 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
               <div className="space-y-6">
                 <TourAccommodationExtraTab tourId={tourId} />
                 <TourOptionalActivityTab tourId={tourId} />
+              </div>
+            )}
+            {activeKey === "extras" && (
+              <div className="space-y-6">
                 <TourExtensionsTab tourId={tourId} />
                 <TourSimilarTab tourId={tourId} />
               </div>
@@ -468,11 +529,14 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 <TourFormPage tourId={tourId} embedded role={role} sections={["media"]} formId="wizard-form-media" initialData={tour ?? undefined} onSaved={afterFormSaved} />
               </div>
             )}
-            {activeKey === "seo" && (
+            {activeKey === "settings" && (
               <div className="space-y-6">
-                <TourFormPage tourId={tourId} embedded role={role} sections={["seo", "settings"]} formId="wizard-form-seo" initialData={tour ?? undefined} onSaved={afterFormSaved} />
+                <TourFormPage tourId={tourId} embedded role={role} sections={["settings"]} formId="wizard-form-settings" initialData={tour ?? undefined} onSaved={afterFormSaved} />
                 <CancellationPolicySection tourId={tourId} />
               </div>
+            )}
+            {activeKey === "seo" && (
+              <TourFormPage tourId={tourId} embedded role={role} sections={["seo"]} formId="wizard-form-seo" initialData={tour ?? undefined} onSaved={afterFormSaved} />
             )}
             {activeKey === "review" && tour && (
               <WizardReviewSubmit
@@ -482,7 +546,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 isSupplier={isSupplier}
                 status={String(tour.status ?? "")}
                 statuses={statuses}
-                onEditStep={selectStep}
+                onEditStep={(i) => void selectStep(i)}
                 canSubmit={Boolean(canSubmit)}
                 submitting={submitting}
                 submitSuccess={submitSuccess}
@@ -495,8 +559,9 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
               />
             )}
           </TourWorkspaceContent>
+          </div>
 
-          <WizardStickyActionBar role={role} left={leftButtons} right={rightButtons} />
+          <WizardStickyActionBar role={role} left={leftButtons} right={rightButtons} hint={barHint} />
         </div>
       </div>
     </>

@@ -14,7 +14,7 @@ import {
   getAccommodationExtras,
   getOptionalActivities,
 } from "@/lib/api/services/tourDetailService";
-import type { StepStatus } from "./WizardSidebar";
+import type { StepStatus } from "./steps";
 
 type Tour = Record<string, unknown>;
 
@@ -67,17 +67,20 @@ export function useStepCompletion(tourId: string | undefined, tour: Tour | null)
 
   // Index must match WIZARD_STEPS order in steps.ts:
   // 0 basic, 1 overview/location, 2 itinerary, 3 pricing, 4 calendar,
-  // 5 accommodation/extensions, 6 inclusions, 7 media, 8 seo (9 review has no entry).
+  // 5 accommodation/activities, 6 extensions/similar, 7 inclusions, 8 media,
+  // 9 deposit/cancellation/settings, 10 seo (11 review has no entry).
   const statuses: Record<number, StepStatus> = {
     0: title && numberOfDays >= 1 ? "complete" : "missing",
     1: tour?.country_id && tour?.category_id && String(tour?.short_description ?? "").trim() ? "complete" : "missing",
     2: (counts.itineraries ?? 0) > 0 ? "complete" : "missing",
     3: (counts.pricing ?? 0) > 0 ? "complete" : "missing",
     4: (counts.calendar ?? 0) > 0 ? "complete" : "missing",
-    5: (counts.accommodation ?? 0) > 0 || (counts.activities ?? 0) > 0 || (counts.extensions ?? 0) > 0 || (counts.similar ?? 0) > 0 ? "complete" : "optional",
-    6: (counts.inclusions ?? 0) > 0 || (counts.exclusions ?? 0) > 0 ? "complete" : "optional",
-    7: String(tour?.banner_image ?? "").trim() || (counts.gallery ?? 0) > 0 ? "complete" : "missing",
-    8: String(tour?.seo_title ?? "").trim() && String(tour?.seo_description ?? "").trim() ? "complete" : "optional",
+    5: (counts.accommodation ?? 0) > 0 || (counts.activities ?? 0) > 0 ? "complete" : "optional",
+    6: (counts.extensions ?? 0) > 0 || (counts.similar ?? 0) > 0 ? "complete" : "optional",
+    7: (counts.inclusions ?? 0) > 0 || (counts.exclusions ?? 0) > 0 ? "complete" : "optional",
+    8: String(tour?.banner_image ?? "").trim() || (counts.gallery ?? 0) > 0 ? "complete" : "missing",
+    9: "optional",
+    10: String(tour?.seo_title ?? "").trim() && String(tour?.seo_description ?? "").trim() ? "complete" : "optional",
   };
 
   return { statuses, counts, loading, refresh };

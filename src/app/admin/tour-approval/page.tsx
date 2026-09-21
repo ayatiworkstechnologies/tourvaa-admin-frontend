@@ -1,5 +1,6 @@
 "use client";
 
+import { diffTourSnapshots, summarizeChanges, type SectionChange } from "@/lib/tours/tourDiff";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuGitCompare as GitCompare, LuLoaderCircle as Loader2, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
@@ -26,7 +27,7 @@ type TourVersion = {
   submitted_at?: string;
 };
 
-type DiffRow = { field: string; oldValue: string; newValue: string };
+type VersionSummary = { previousLabel: string; sections: SectionChange[]; first: boolean };
 
 const REVIEW_SECTIONS = [
   { key: "basic", label: "Basic Details" },
@@ -42,22 +43,6 @@ const REVIEW_SECTIONS = [
 ];
 const SEVERITIES = ["info", "minor", "required", "critical"] as const;
 
-function diffSnapshots(previous: Record<string, unknown> | undefined, next: Record<string, unknown> | undefined): DiffRow[] {
-  const keys = new Set([...Object.keys(previous || {}), ...Object.keys(next || {})]);
-  const rows: DiffRow[] = [];
-  for (const key of keys) {
-    const oldVal = previous?.[key];
-    const newVal = next?.[key];
-    if (JSON.stringify(oldVal) === JSON.stringify(newVal)) continue;
-    rows.push({
-      field: key,
-      oldValue: oldVal === undefined || oldVal === null || oldVal === "" ? "(empty)" : typeof oldVal === "object" ? JSON.stringify(oldVal) : String(oldVal),
-      newValue: newVal === undefined || newVal === null || newVal === "" ? "(empty)" : typeof newVal === "object" ? JSON.stringify(newVal) : String(newVal),
-    });
-  }
-  return rows.sort((a, b) => a.field.localeCompare(b.field));
-}
-
 export default function TourApprovalPage() {
   const toast = useToast();
   const { format } = useCurrency();
@@ -71,8 +56,11 @@ export default function TourApprovalPage() {
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [comparingVersion, setComparingVersion] = useState<TourVersion | null>(null);
   const [compareLoading, setCompareLoading] = useState(false);
-  const [compareDiff, setCompareDiff] = useState<DiffRow[] | null>(null);
+  const [compareDiff, setCompareDiff] = useState<SectionChange[] | null>(null);
   const [comparePrevLabel, setComparePrevLabel] = useState("");
+  // What each pending version changed vs the tour's previous version, shown on the
+  // card so an admin sees the kind of change before opening the full comparison.
+  const [summaries, setSummaries] = useState<Record<number, VersionSummary>>({});
   const closeCompareRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -96,6 +84,24 @@ export default function TourApprovalPage() {
   }, [toast]);
 
   useEffect(() => { void fetchVersions(); }, [fetchVersions]);
+
+  useEffect(() => {
+    let active = true;
+    versions.forEach(async (v) => {
+      if (summaries[v.id]) return;
+      try {
+        const res = await api.get(`/tours/${v.tour_id}/versions`, { params: { page: 1, limit: 50 } });
+        const all: TourVersion[] = res.data?.items ?? res.data?.data ?? [];
+        const previous = all.filter((o) => o.id !== v.id && o.version_number < v.version_number).sort((a, b) => b.version_number - a.version_number)[0];
+        const sections = diffTourSnapshots(previous?.snapshot as Record<string, unknown> | undefined, v.snapshot as unknown as Record<string, unknown>);
+        if (active) setSummaries((prev) => ({ ...prev, [v.id]: { previousLabel: previous ? `v${previous.version_number}` : "no earlier version", sections, first: !previous } }));
+      } catch {
+        /* the Compare button still loads it on demand */
+      }
+    });
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [versions]);
 
   const approve = async (v: TourVersion) => {
     setProcessingId(v.id);
@@ -135,13 +141,19 @@ export default function TourApprovalPage() {
     setCompareLoading(true);
     setCompareDiff(null);
     try {
+      const cached = summaries[v.id];
+      if (cached) {
+        setComparePrevLabel(cached.previousLabel);
+        setCompareDiff(cached.sections);
+        return;
+      }
       const res = await api.get(`/tours/${v.tour_id}/versions`, { params: { page: 1, limit: 50 } });
       const allVersions: TourVersion[] = res.data?.items ?? res.data?.data ?? [];
       const previous = allVersions
         .filter((other) => other.id !== v.id && other.version_number < v.version_number)
         .sort((a, b) => b.version_number - a.version_number)[0];
       setComparePrevLabel(previous ? `v${previous.version_number}` : "no earlier version");
-      setCompareDiff(diffSnapshots(previous?.snapshot as Record<string, unknown> | undefined, v.snapshot as unknown as Record<string, unknown>));
+      setCompareDiff(diffTourSnapshots(previous?.snapshot as Record<string, unknown> | undefined, v.snapshot as unknown as Record<string, unknown>));
     } catch {
       toast.error("Could not load version comparison.");
       setComparingVersion(null);
@@ -198,6 +210,22 @@ export default function TourApprovalPage() {
                     </div>
                     {v.snapshot?.short_description && (
                       <p className="mt-2 line-clamp-2 text-sm text-dash-body">{v.snapshot.short_description}</p>
+                    )}
+                    {summaries[v.id] && (
+                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[11px] font-bold uppercase tracking-wide text-dash-subtle">
+                          {summaries[v.id].first ? "New tour - all sections:" : `Changed since ${summaries[v.id].previousLabel}:`}
+                        </span>
+                        {summaries[v.id].sections.length === 0 ? (
+                          <span className="text-xs text-dash-muted">no data changes</span>
+                        ) : (
+                          summaries[v.id].sections.map((sec) => (
+                            <span key={sec.key} className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-bold text-sky-700">
+                              {sec.label} ({sec.items.length})
+                            </span>
+                          ))
+                        )}
+                      </div>
                     )}
                     <div className="mt-2 text-xs text-dash-subtle">
                       {v.submitted_by_name && <>Submitted by {v.submitted_by_name}</>}
@@ -308,26 +336,55 @@ export default function TourApprovalPage() {
               {compareLoading ? (
                 <div className="flex items-center gap-2 text-sm text-dash-muted"><Loader2 className="animate-spin" size={16} /> Loading comparison...</div>
               ) : !compareDiff || compareDiff.length === 0 ? (
-                <p className="text-sm text-dash-muted">No field changes detected against {comparePrevLabel}.</p>
+                <p className="text-sm text-dash-muted">No data changes detected against {comparePrevLabel}.</p>
               ) : (
-                <div className="space-y-3">
-                  {compareDiff.map((row) => (
-                    <div key={row.field} className="rounded-xl border border-dash-border p-3">
-                      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-dash-subtle">{row.field.replaceAll("_", " ")}</p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        <div className="rounded-lg bg-red-50 p-2 text-xs text-red-700">
-                          <p className="mb-1 font-bold uppercase">Before</p>
-                          <p className="break-words">{row.oldValue}</p>
-                        </div>
-                        <div className="rounded-lg bg-emerald-50 p-2 text-xs text-emerald-700">
-                          <p className="mb-1 font-bold uppercase">After</p>
-                          <p className="break-words">{row.newValue}</p>
-                        </div>
+                <div className="space-y-5">
+                  <p className="text-xs font-semibold text-dash-muted">{summarizeChanges(compareDiff)} compared with {comparePrevLabel}.</p>
+                  {compareDiff.map((section) => (
+                    <section key={section.key}>
+                      <h4 className="mb-2 text-sm font-black text-dash-text">{section.label}</h4>
+                      <div className="space-y-2">
+                        {section.items.map((item, idx) => (
+                          <div key={`${item.label}-${idx}`} className="rounded-xl border border-dash-border p-3">
+                            <div className="flex items-center gap-2">
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${item.kind === "added" ? "bg-emerald-100 text-emerald-700" : item.kind === "removed" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                                {item.kind}
+                              </span>
+                              <span className="text-sm font-bold text-dash-text">{item.label}</span>
+                            </div>
+                            {item.fields.length > 0 && (
+                              <div className="mt-2 space-y-2">
+                                {item.fields.map((f) => (
+                                  <div key={f.field}>
+                                    <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-dash-subtle">{f.field}</p>
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                      <p className="break-words rounded-lg bg-red-50 p-2 text-xs text-red-700"><span className="font-bold">Before: </span>{f.before}</p>
+                                      <p className="break-words rounded-lg bg-emerald-50 p-2 text-xs text-emerald-700"><span className="font-bold">After: </span>{f.after}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    </div>
+                    </section>
                   ))}
                 </div>
               )}
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-dash-border px-6 py-3">
+              <button type="button" onClick={() => setComparingVersion(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-body hover:bg-dash-bg">
+                Close
+              </button>
+              <button
+                type="button"
+                disabled={processingId === comparingVersion.id}
+                onClick={async () => { const v = comparingVersion; setComparingVersion(null); await approve(v); }}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+              >
+                <Check size={15} /> Approve these changes
+              </button>
             </div>
           </div>
         </div>

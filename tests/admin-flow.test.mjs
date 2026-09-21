@@ -165,8 +165,8 @@ check(
 check(
   "admin tour editor uses the common tab and content-card workflow",
   tourWizard.includes("TourWorkspaceContent") &&
-    tourWizard.includes("WizardSidebar") &&
-    tourWizard.includes("WizardMobileProgress") &&
+    tourWizard.includes("WizardSideStepper") &&
+    tourWizard.includes("STEP_FORM_IDS") &&
     ["Itinerary", "Pricing & Discounts", "Calendar & Availability"].every((label) =>
       wizardSteps.includes(`label: "${label}"`)
     ),

@@ -21,10 +21,13 @@ export function WizardStickyActionBar({
   role,
   left,
   right,
+  hint,
 }: {
   role: TourWorkspaceRole;
   left: WizardBarButton[];
   right: WizardBarButton[];
+  /** Shown between the buttons, e.g. when a step has nothing to Save. */
+  hint?: string;
 }) {
   const isSupplier = role === "supplier";
   const primaryClass = isSupplier
@@ -55,6 +58,7 @@ export function WizardStickyActionBar({
     <div className="sticky bottom-0 z-30 mt-6 -mx-1 border-t border-dash-border bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:rounded-2xl sm:border sm:shadow-[0_-8px_24px_-20px_rgba(24,76,140,.5)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">{left.map(renderButton)}</div>
+        {hint && <p className="order-last w-full text-center text-[11px] font-semibold text-dash-subtle sm:order-none sm:w-auto sm:flex-1">{hint}</p>}
         <div className="flex flex-wrap items-center gap-2">{right.map(renderButton)}</div>
       </div>
     </div>

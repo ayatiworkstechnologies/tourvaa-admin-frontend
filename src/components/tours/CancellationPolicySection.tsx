@@ -93,13 +93,32 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.days_before_tour_min || !form.refund_percentage) return;
+    if (!form.days_before_tour_min || !form.refund_percentage) {
+      toast.error("Minimum days and refund percentage are required.");
+      return;
+    }
+    const minDays = Number(form.days_before_tour_min);
+    const maxDays = form.days_before_tour_max ? Number(form.days_before_tour_max) : null;
+    const refundPct = Number(form.refund_percentage);
+
+    if (isNaN(minDays) || minDays < 0) {
+      toast.error("Days before tour minimum must be 0 or greater.");
+      return;
+    }
+    if (maxDays !== null && (isNaN(maxDays) || maxDays < minDays)) {
+      toast.error("Days before tour maximum cannot be less than minimum days.");
+      return;
+    }
+    if (isNaN(refundPct) || refundPct < 0 || refundPct > 100) {
+      toast.error("Refund percentage must be between 0% and 100%.");
+      return;
+    }
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
-        days_before_tour_min: Number(form.days_before_tour_min),
-        refund_percentage: Number(form.refund_percentage),
-        days_before_tour_max: form.days_before_tour_max ? Number(form.days_before_tour_max) : null,
+        days_before_tour_min: minDays,
+        refund_percentage: refundPct,
+        days_before_tour_max: maxDays,
         description: form.description || null,
       };
       if (editingId) {

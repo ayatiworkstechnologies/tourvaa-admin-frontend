@@ -196,6 +196,28 @@ export default function TourPricingTab({
   const saveSlab = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+
+    const pFrom = sanitizeNumber(editing.passenger_from, 1);
+    const pTo = sanitizeNumber(editing.passenger_to, 1);
+    const adultPrice = sanitizeNumber(editing.adult_price);
+    const childPrice = sanitizeNumber(editing.child_price);
+
+    if (pFrom < 1) {
+      toast.error("Pax From must be at least 1.");
+      return;
+    }
+    if (pTo < pFrom) {
+      toast.error("Pax To cannot be less than Pax From.");
+      return;
+    }
+    if (adultPrice <= 0) {
+      toast.error("Adult price must be greater than 0.");
+      return;
+    }
+    if (childPrice < 0) {
+      toast.error("Child price cannot be negative.");
+      return;
+    }
     if (editing.commission_percentage != null && editing.commission_percentage < resolvedFloor) {
       toast.error(`Commission % cannot be lower than your agreed rate of ${resolvedFloor}%.`);
       return;
@@ -204,10 +226,10 @@ export default function TourPricingTab({
     try {
       const payload: PricingSlab = {
         ...editing,
-        passenger_from: sanitizeNumber(editing.passenger_from, 1),
-        passenger_to: sanitizeNumber(editing.passenger_to, 1),
-        adult_price: sanitizeNumber(editing.adult_price),
-        child_price: sanitizeNumber(editing.child_price),
+        passenger_from: pFrom,
+        passenger_to: pTo,
+        adult_price: adultPrice,
+        child_price: childPrice,
         commission_percentage: editing.commission_percentage == null ? null : sanitizeNumber(editing.commission_percentage, resolvedFloor),
       };
       if (editing.id) {
@@ -455,32 +477,40 @@ export default function TourPricingTab({
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pax From</span>
+                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
+                  Pax From <span className="text-red-500 font-bold">*</span>
+                </span>
                 <input type="number" min={1} value={numberInputValue(editing.passenger_from)} onChange={(e) => setEditing((p) => p ? { ...p, passenger_from: parseNumberInput(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="1" />
               </label>
               <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pax To</span>
+                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
+                  Pax To <span className="text-red-500 font-bold">*</span>
+                </span>
                 <input type="number" min={1} value={numberInputValue(editing.passenger_to)} onChange={(e) => setEditing((p) => p ? { ...p, passenger_to: parseNumberInput(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="4" />
               </label>
               <div>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Commission %</span>
-                <p className="w-full rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">
+                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Commission %</span>
+                <p className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700">
                   {editing.commission_percentage ?? resolvedFloor}%
                 </p>
-                <span className="mt-1 block text-[11px] text-dash-subtle">Read-only -- set from your agreed rate ({resolvedFloor}%). Contact admin to change it.</span>
+                <span className="mt-1 block text-[11px] text-slate-400">Read-only -- set from agreed rate ({resolvedFloor}%).</span>
               </div>
 
               <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Adult Price (your price to Tourvaa)</span>
-                <input type="number" value={numberInputValue(editing.adult_price)} onChange={(e) => setEditing((p) => p ? { ...p, adult_price: parseNumberInput(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
+                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
+                  Adult Price ({editing.currency}) <span className="text-red-500 font-bold">*</span>
+                </span>
+                <input type="number" min={0} step="0.01" value={numberInputValue(editing.adult_price)} onChange={(e) => setEditing((p) => p ? { ...p, adult_price: parseNumberInput(e.target.value) } : p)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="0.00" />
               </label>
               <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Child Price (your price to Tourvaa)</span>
-                <input type="number" value={numberInputValue(editing.child_price)} onChange={(e) => setEditing((p) => p ? { ...p, child_price: parseNumberInput(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
+                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
+                  Child Price ({editing.currency})
+                </span>
+                <input type="number" min={0} step="0.01" value={numberInputValue(editing.child_price)} onChange={(e) => setEditing((p) => p ? { ...p, child_price: parseNumberInput(e.target.value) } : p)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="0.00" />
               </label>
               {isSupplier ? (
                 <div>

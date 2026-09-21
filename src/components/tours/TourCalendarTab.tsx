@@ -12,6 +12,7 @@ import {
 } from "react-icons/lu";
 import { CalendarEntry, getCalendar, createCalendarEntry, updateCalendarEntry, deleteCalendarEntry, UnavailableDate, getUnavailableDates, createUnavailableDate, deleteUnavailableDate, AvailabilityConfig, getAvailabilityConfig, saveAvailabilityConfig } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import { generateScheduleDates, MONTH_WEEK_OPTIONS } from "@/lib/tours/availabilitySchedule";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
@@ -51,15 +52,15 @@ const WEEKDAYS = [
   { value: 3, label: "Thursday" }, { value: 4, label: "Friday" }, { value: 5, label: "Saturday" }, { value: 6, label: "Sunday" },
 ];
 const FREQUENCIES = [
-  { value: "weekly" as const, label: "Weekly", note: "Tour runs every week" },
-  { value: "fortnightly" as const, label: "Fortnightly", note: "Tour runs every two weeks" },
-  { value: "monthly" as const, label: "Monthly", note: "Tour runs every month" },
+  { value: "weekly" as const, label: "Weekly", note: "Every week, on the days you pick" },
+  { value: "fortnightly" as const, label: "Fortnightly", note: "Every second week, on the days you pick" },
+  { value: "monthly" as const, label: "Monthly", note: "On chosen weeks of each month, e.g. 1st and 3rd Saturday" },
 ];
 const emptyAvailability = (): AvailabilityConfig => ({
   availability_start_date: null, availability_end_date: null, min_advance_booking_days: 0,
   agent_no_deposit_buffer_weeks: 4,
   agent_reserve_deposit_percentage: 30,
-  frequency: null, frequency_week: null, frequency_days: [], seats_per_occurrence: 10,
+  frequency: null, frequency_week: null, frequency_weeks: [], frequency_days: [], seats_per_occurrence: 10,
 });
 
 function todayStr() {
@@ -87,6 +88,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
   const [blocking, setBlocking] = useState(false);
   const [schedule, setSchedule] = useState<AvailabilityConfig>(emptyAvailability());
   const [savingSchedule, setSavingSchedule] = useState(false);
+  const [removeUnmatched, setRemoveUnmatched] = useState(false);
   const [syncingSeats, setSyncingSeats] = useState(false);
 
   // Filters & Pagination state for Tour Calendar
@@ -196,6 +198,38 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
     void load();
   }, [load]);
 
+  const toggleMonthWeek = (week: number) => {
+    setSchedule((prev) => {
+      const has = prev.frequency_weeks.includes(week);
+      const weeks = (has ? prev.frequency_weeks.filter((w) => w !== week) : [...prev.frequency_weeks, week]).sort((a, b) => a - b);
+      return { ...prev, frequency_weeks: weeks, frequency_week: weeks.find((w) => w <= 4) ?? null };
+    });
+  };
+
+  // Exactly the dates the backend will create for the current schedule.
+  const previewDates = useMemo(() => {
+    if (!schedule.frequency || !schedule.availability_start_date || !schedule.availability_end_date) return [];
+    return generateScheduleDates({
+      start: schedule.availability_start_date,
+      end: schedule.availability_end_date,
+      frequency: schedule.frequency,
+      frequencyWeek: schedule.frequency_week,
+      weeks: schedule.frequency_weeks,
+      weekdays: schedule.frequency_days,
+    });
+  }, [schedule.frequency, schedule.frequency_week, schedule.frequency_weeks, schedule.frequency_days, schedule.availability_start_date, schedule.availability_end_date]);
+
+  // Existing future, unbooked dates the schedule would no longer produce.
+  const unmatchedDates = useMemo(() => {
+    if (!schedule.frequency || previewDates.length === 0) return [];
+    const fitting = new Set(previewDates);
+    const today = todayStr();
+    return entries.filter((e) => {
+      const day = String(e.tour_date).slice(0, 10);
+      return !fitting.has(day) && day >= today && e.status !== "blocked" && !e.booked_seats;
+    });
+  }, [entries, previewDates, schedule.frequency]);
+
   const toggleWeekday = (day: number) => {
     setSchedule((prev) => ({
       ...prev,
@@ -212,6 +246,10 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
       toast.error("Select at least one day of the week for the chosen frequency.");
       return;
     }
+    if (schedule.frequency === "monthly" && schedule.frequency_weeks.length === 0) {
+      toast.error("Select at least one week of the month (1st, 2nd, 3rd, 4th or Last).");
+      return;
+    }
     setSavingSchedule(true);
     try {
       const targetSeats = sanitizeNumber(schedule.seats_per_occurrence) || 10;
@@ -221,10 +259,14 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
         agent_no_deposit_buffer_weeks: sanitizeNumber(schedule.agent_no_deposit_buffer_weeks),
         agent_reserve_deposit_percentage: sanitizeNumber(schedule.agent_reserve_deposit_percentage) || 30,
         seats_per_occurrence: targetSeats,
+        remove_unmatched_dates: removeUnmatched,
       });
       setSchedule(saved);
+      setRemoveUnmatched(false);
       await load();
-      toast.success(`Schedule saved. Calendar dates updated with ${targetSeats} available seats.`);
+      toast.success(
+        `Schedule saved: ${saved.generated_dates ?? 0} new date(s) added${saved.removed_dates ? `, ${saved.removed_dates} old date(s) removed` : ""}. Seats set to ${targetSeats}.`,
+      );
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -435,12 +477,17 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
 
         <div className="mt-5 rounded-xl border border-dash-border p-4">
           <h3 className="font-bold text-dash-text">Tour Frequency / Available Days</h3>
-          <p className="text-sm text-dash-subtle">Choose how often the tour runs and select the days you are available.</p>
+          <p className="text-sm text-dash-subtle">Pick how often the tour runs, then the weeks and days. The dates it will create are previewed below before you save.</p>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             {FREQUENCIES.map((f) => (
               <button key={f.value} type="button"
-                onClick={() => setSchedule((p) => ({ ...p, frequency: f.value, frequency_week: f.value === "weekly" ? null : p.frequency_week || 1 }))}
+                onClick={() => setSchedule((p) => ({
+                  ...p,
+                  frequency: f.value,
+                  frequency_week: f.value === "weekly" ? null : f.value === "fortnightly" ? (p.frequency_week && p.frequency_week <= 2 ? p.frequency_week : 1) : (p.frequency_weeks[0] && p.frequency_weeks[0] <= 4 ? p.frequency_weeks[0] : 1),
+                  frequency_weeks: f.value === "monthly" ? (p.frequency_weeks.length ? p.frequency_weeks : [1]) : [],
+                }))}
                 className={`rounded-xl border-2 p-4 text-left transition ${schedule.frequency === f.value ? "border-dash-brand bg-dash-brand/5" : "border-dash-border hover:border-dash-brand/40"}`}
               >
                 <span className={`block font-bold ${schedule.frequency === f.value ? "text-dash-brand" : "text-dash-text"}`}>{f.label}</span>
@@ -451,21 +498,45 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
 
           {schedule.frequency && (
             <div className="mt-4 space-y-4">
-              {schedule.frequency !== "weekly" && (
+              {schedule.frequency === "fortnightly" && (
                 <div>
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Select Week</span>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Which weeks</span>
                   <div className="flex flex-wrap gap-2">
-                    {(schedule.frequency === "fortnightly" ? [1, 2] : [1, 2, 3, 4]).map((week) => (
+                    {[
+                      { week: 1, label: "Start with the week of the Tour Start Date" },
+                      { week: 2, label: "Start with the week after" },
+                    ].map(({ week, label }) => (
                       <button key={week} type="button" onClick={() => setSchedule((p) => ({ ...p, frequency_week: week }))}
                         className={`rounded-lg border px-4 py-2 text-sm font-semibold ${schedule.frequency_week === week ? "border-dash-brand bg-dash-brand text-white" : "border-dash-border text-dash-text hover:bg-[#F2F4F7]"}`}>
-                        Week {week}
+                        {label}
                       </button>
                     ))}
                   </div>
+                  <span className="mt-1 block text-xs text-dash-subtle">Then it repeats every two weeks.</span>
                 </div>
               )}
+
+              {schedule.frequency === "monthly" && (
+                <div>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Which week of the month (pick one or more)</span>
+                  <div className="flex flex-wrap gap-2">
+                    {MONTH_WEEK_OPTIONS.map(({ value, label }) => (
+                      <button key={value} type="button" onClick={() => toggleMonthWeek(value)} aria-pressed={schedule.frequency_weeks.includes(value)}
+                        className={`rounded-lg border px-4 py-2 text-sm font-semibold ${schedule.frequency_weeks.includes(value) ? "border-dash-brand bg-dash-brand text-white" : "border-dash-border text-dash-text hover:bg-[#F2F4F7]"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="mt-1 block text-xs text-dash-subtle">
+                    &quot;1st&quot; with Saturday means the first Saturday of every month; &quot;Last&quot; means the final one. Pick several to run more than once a month.
+                  </span>
+                </div>
+              )}
+
               <div>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Select Days of the Week</span>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">
+                  {schedule.frequency === "monthly" ? "On which day(s)" : "Days of the week"}
+                </span>
                 <div className="flex flex-wrap gap-2">
                   {WEEKDAYS.map((day) => (
                     <label key={day.value} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer ${schedule.frequency_days.includes(day.value) ? "border-dash-brand bg-dash-brand/5" : "border-dash-border"}`}>
@@ -475,6 +546,36 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
                   ))}
                 </div>
               </div>
+
+              <div className="rounded-xl border border-dash-border bg-[#F8FAFC] p-3">
+                <p className="text-xs font-bold uppercase text-dash-subtle">
+                  Preview - {previewDates.length} date{previewDates.length === 1 ? "" : "s"} will be created
+                </p>
+                {!schedule.availability_start_date || !schedule.availability_end_date ? (
+                  <p className="mt-1 text-xs text-dash-subtle">Set the Tour Start Date and Tour End Date above to see the dates.</p>
+                ) : previewDates.length === 0 ? (
+                  <p className="mt-1 text-xs text-amber-700">No dates fall inside the start/end range with these choices.</p>
+                ) : (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {previewDates.slice(0, 36).map((d) => (
+                      <span key={d} className="rounded-md border border-dash-border bg-white px-2 py-0.5 text-[11px] font-semibold text-dash-text">
+                        {new Date(`${d}T00:00:00`).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "2-digit" })}
+                      </span>
+                    ))}
+                    {previewDates.length > 36 && <span className="px-1 text-[11px] font-semibold text-dash-subtle">+{previewDates.length - 36} more</span>}
+                  </div>
+                )}
+              </div>
+
+              {unmatchedDates.length > 0 && (
+                <label className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                  <input type="checkbox" className="mt-0.5" checked={removeUnmatched} onChange={(e) => setRemoveUnmatched(e.target.checked)} />
+                  <span>
+                    <strong>{unmatchedDates.length} existing unbooked date{unmatchedDates.length === 1 ? "" : "s"}</strong> in the calendar don&apos;t fit this schedule.
+                    Tick to delete them when you save (dates with bookings and blocked dates are never removed). Leave unticked to keep them.
+                  </span>
+                </label>
+              )}
             </div>
           )}
         </div>

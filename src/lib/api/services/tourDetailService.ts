@@ -398,8 +398,15 @@ export type AvailabilityConfig = {
   agent_reserve_deposit_percentage: number;
   frequency: "weekly" | "fortnightly" | "monthly" | null;
   frequency_week: number | null;
+  /** Monthly: 1-4 = 1st-4th occurrence of each chosen weekday, 5 = the last one. */
+  frequency_weeks: number[];
   frequency_days: number[];
   seats_per_occurrence: number;
+  /** Save-time option: also delete unbooked future dates that no longer fit the schedule. */
+  remove_unmatched_dates?: boolean;
+  /** Returned by save: how many calendar dates were created / removed. */
+  generated_dates?: number;
+  removed_dates?: number;
 };
 
 export async function getAvailabilityConfig(tourId: number | string): Promise<AvailabilityConfig | null> {

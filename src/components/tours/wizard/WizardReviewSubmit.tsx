@@ -14,7 +14,7 @@ import {
 import Link from "next/link";
 import { theme, type TourWorkspaceRole } from "@/components/tours/TourWorkspace";
 import { REVIEWABLE_STEPS } from "./steps";
-import type { StepStatus } from "./WizardSidebar";
+import type { StepStatus } from "./steps";
 
 const STATUS_BADGE: Record<StepStatus, { label: string; className: string; icon: React.ElementType | null }> = {
   complete: { label: "Complete", className: "border-emerald-200 bg-emerald-50 text-emerald-700", icon: Check },

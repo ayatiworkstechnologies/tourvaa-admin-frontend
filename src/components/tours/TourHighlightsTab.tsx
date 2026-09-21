@@ -41,6 +41,10 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    if (!editing.title?.trim()) {
+      toast.error("Highlight title is required.");
+      return;
+    }
     setSaving(true);
     try {
       const payload = { ...editing, display_order: sanitizeNumber(editing.display_order) };

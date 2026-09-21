@@ -16,6 +16,7 @@ import {
   LuCheck as Check,
   LuChevronDown as ChevronDown,
   LuX as X,
+  LuCircleAlert as AlertCircle,
 } from "react-icons/lu";
 
 import Loader from "@/components/ui/Loader";
@@ -66,7 +67,7 @@ function normalizeTourForm(data: Record<string, unknown>) {
 }
 
 const textFields: [string, string][] = [
-  ["title", "Tour title *"],
+  ["title", "Tour title"],
   ["subtitle", "Subtitle"],
   ["start_location", "Start location"],
   ["finish_location", "Finish location"],
@@ -301,10 +302,14 @@ function LanguageMultiSelect({
   value,
   onChange,
   inputClass,
+  error,
+  required,
 }: {
   value: string;
   onChange: (val: string) => void;
   inputClass: string;
+  error?: string;
+  required?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -385,11 +390,12 @@ function LanguageMultiSelect({
   }, [search]);
 
   return (
-    <div ref={containerRef} className="relative block">
+    <div ref={containerRef} className="relative block" data-field="tour_language">
       <div className="mb-1 flex items-center justify-between">
-        <span className="block text-xs font-bold uppercase text-dash-subtle">
+        <label className="block text-xs font-bold uppercase text-slate-600">
           Tour language (Multi-select)
-        </span>
+          {required && <span className="ml-1 text-red-500 font-bold">*</span>}
+        </label>
         {selectedList.length > 0 && (
           <button
             type="button"
@@ -438,10 +444,17 @@ function LanguageMultiSelect({
         <ChevronDown
           size={16}
           className={`text-slate-400 shrink-0 transition-transform duration-200 ${
-            open ? "rotate-180 text-dash-brand" : ""
+            open ? "rotate-180 text-blue-600" : ""
           }`}
         />
       </div>
+
+      {error && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+          <AlertCircle size={13} className="shrink-0 text-red-500" />
+          <span>{error}</span>
+        </p>
+      )}
 
       {open && (
         <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
@@ -606,22 +619,28 @@ const BALANCE_DEADLINE_OPTIONS = [
 ];
 
 function FormDropdownField({
+  name,
   label,
   value,
   onChange,
   options,
   inputClass,
+  error,
+  required,
   placeholder,
   inputType = "text",
   min,
   max,
   helpText,
 }: {
+  name?: string;
   label: string;
   value: string;
   onChange: (val: string) => void;
   options: { value: string; label: string }[];
   inputClass: string;
+  error?: string;
+  required?: boolean;
   placeholder?: string;
   inputType?: "text" | "number";
   min?: number;
@@ -648,14 +667,17 @@ function FormDropdownField({
   const selectValue = value !== undefined && value !== null ? String(value) : "";
 
   return (
-    <div className="block">
+    <div className="block" data-field={name}>
       <div className="mb-1 flex items-center justify-between">
-        <span className="block text-xs font-bold uppercase text-dash-subtle">{label}</span>
+        <label htmlFor={name} className="block text-xs font-bold uppercase text-slate-600">
+          {label}
+          {required && <span className="ml-1 text-red-500 font-bold">*</span>}
+        </label>
         {customMode ? (
           <button
             type="button"
             onClick={() => setCustomMode(false)}
-            className="text-[11px] font-bold text-dash-brand hover:underline cursor-pointer"
+            className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer"
           >
             ← Quick Select
           </button>
@@ -663,7 +685,7 @@ function FormDropdownField({
           <button
             type="button"
             onClick={() => setCustomMode(true)}
-            className="text-[11px] font-medium text-slate-400 hover:text-dash-brand hover:underline cursor-pointer"
+            className="text-[11px] font-medium text-slate-400 hover:text-blue-600 hover:underline cursor-pointer"
           >
             Custom
           </button>
@@ -672,6 +694,8 @@ function FormDropdownField({
 
       {customMode ? (
         <input
+          id={name}
+          name={name}
           type={inputType}
           min={min}
           max={max}
@@ -683,6 +707,8 @@ function FormDropdownField({
         />
       ) : (
         <select
+          id={name}
+          name={name}
           value={selectValue}
           onChange={handleSelectChange}
           className={`${inputClass} cursor-pointer`}
@@ -698,7 +724,13 @@ function FormDropdownField({
           <option value="__custom__">✏️ Custom / Enter manually...</option>
         </select>
       )}
-      {helpText && <span className="mt-1 block text-[11px] text-dash-subtle">{helpText}</span>}
+      {error && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+          <AlertCircle size={13} className="shrink-0 text-red-500" />
+          <span>{error}</span>
+        </p>
+      )}
+      {helpText && !error && <span className="mt-1 block text-[11px] text-slate-400">{helpText}</span>}
     </div>
   );
 }
@@ -709,27 +741,36 @@ function FormSection({
   description,
   children,
   role,
+  badge,
 }: {
   icon: React.ElementType;
   title: string;
   description?: string;
   children: React.ReactNode;
   role: "admin" | "supplier";
+  badge?: string;
 }) {
   return (
-    <section className="rounded-2xl border border-[#DCE6F3] bg-white shadow-[0_12px_34px_-29px_rgba(28,83,160,.7)]">
-      <div className="flex items-center gap-3 border-b border-[#E8EDF5] px-5 py-4 sm:px-6 rounded-t-2xl">
-        <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl ${
-          role === "supplier" ? "bg-emerald-50 text-emerald-700" : "bg-[#EDF5FF] text-dash-brand-hover"
-        }`}>
-          <Icon size={18} />
-        </span>
-        <div>
-          <h2 className="text-lg font-black text-dash-text">{title}</h2>
-          {description && <p className="text-xs font-medium text-dash-subtle">{description}</p>}
+    <section className="rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-shadow">
+      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6 rounded-t-2xl bg-gradient-to-r from-slate-50/50 via-white to-slate-50/20">
+        <div className="flex items-center gap-3">
+          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl shadow-2xs ${
+            role === "supplier" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-blue-50 text-blue-700 border border-blue-100"
+          }`}>
+            <Icon size={18} />
+          </span>
+          <div>
+            <h2 className="text-base font-bold text-slate-900">{title}</h2>
+            {description && <p className="text-xs font-normal text-slate-500">{description}</p>}
+          </div>
         </div>
+        {badge && (
+          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
+            {badge}
+          </span>
+        )}
       </div>
-      <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2">{children}</div>
+      <div className="grid gap-5 p-5 sm:p-6 md:grid-cols-2">{children}</div>
     </section>
   );
 }
@@ -751,11 +792,27 @@ export default function TourFormPage({
   const showMedia = sections.includes("media");
   const showSeo = sections.includes("seo");
   const isSupplier = role === "supplier";
-  const inputClass = `w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition ${
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const clearError = (field: string) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const baseInputClass = `w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition shadow-2xs font-normal ${
     isSupplier
       ? "focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-      : "focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
+      : "focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
   }`;
+  const defaultInputClass = `${baseInputClass} border-slate-200 bg-white text-slate-800 hover:border-slate-300 placeholder:text-slate-400`;
+  const errorInputClass = `${baseInputClass} border-red-400 bg-red-50/20 text-slate-900 focus:border-red-500 focus:ring-red-100 placeholder:text-red-300`;
+  const inputClass = defaultInputClass;
+  const getInputClass = (fieldName: string) => (errors[fieldName] ? errorInputClass : defaultInputClass);
+
   const saveButtonClass = isSupplier
     ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-800 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all"
     : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all";
@@ -986,11 +1043,145 @@ export default function TourFormPage({
     return subcategories.filter((subcategory) => subcategory.category_id === categoryId);
   }, [subcategories, form.category_id]);
 
+  const validateForm = (sectionsToValidate: Section[]): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    const checkBasic = sectionsToValidate.includes("basic-core");
+    const checkLocation = sectionsToValidate.includes("location");
+    const checkSettings = sectionsToValidate.includes("settings");
+    const checkMedia = sectionsToValidate.includes("media");
+    const checkSeo = sectionsToValidate.includes("seo");
+
+    if (checkBasic) {
+      const title = form.title?.trim() ?? "";
+      if (!title) {
+        newErrors.title = "Tour title is required.";
+      } else if (title.length < 3) {
+        newErrors.title = "Tour title must be at least 3 characters.";
+      }
+
+      const days = Number(form.number_of_days);
+      if (!form.number_of_days || isNaN(days) || days < 1) {
+        newErrors.number_of_days = "Duration must be at least 1 day.";
+      }
+
+      if (form.number_of_hours !== undefined && form.number_of_hours !== "") {
+        const hours = Number(form.number_of_hours);
+        if (isNaN(hours) || hours < 0) {
+          newErrors.number_of_hours = "Hours cannot be negative.";
+        }
+      }
+
+      if (form.number_of_nights !== undefined && form.number_of_nights !== "") {
+        const nights = Number(form.number_of_nights);
+        if (isNaN(nights) || nights < 0) {
+          newErrors.number_of_nights = "Nights cannot be negative.";
+        }
+      }
+
+      const maxGroup = form.max_group_size ? Number(form.max_group_size) : null;
+      const minBooking = form.min_booking_size ? Number(form.min_booking_size) : null;
+
+      if (maxGroup !== null && (isNaN(maxGroup) || maxGroup < 1)) {
+        newErrors.max_group_size = "Max group size must be at least 1.";
+      }
+
+      if (minBooking !== null) {
+        if (isNaN(minBooking) || minBooking < 1) {
+          newErrors.min_booking_size = "Min booking size must be at least 1.";
+        } else if (maxGroup !== null && minBooking > maxGroup) {
+          newErrors.min_booking_size = "Min booking size cannot exceed max group size.";
+        }
+      }
+    }
+
+    if (checkLocation) {
+      if (!form.country_id) {
+        newErrors.country_id = "Please select a destination country.";
+      }
+      if (!form.category_id) {
+        newErrors.category_id = "Please select a tour category.";
+      }
+    }
+
+    if (checkSettings) {
+      if ((form.deposit_type ?? "fixed") === "percentage") {
+        if (form.deposit_percentage !== undefined && form.deposit_percentage !== "") {
+          const dep = Number(form.deposit_percentage);
+          if (isNaN(dep) || dep < 0 || dep > 100) {
+            newErrors.deposit_percentage = "Deposit percentage must be between 0% and 100%.";
+          }
+        }
+      } else {
+        if (form.booking_deposit !== undefined && form.booking_deposit !== "") {
+          const fix = Number(form.booking_deposit);
+          if (isNaN(fix) || fix < 0) {
+            newErrors.booking_deposit = "Deposit amount cannot be negative.";
+          }
+        }
+      }
+
+      if (form.tax_percentage !== undefined && form.tax_percentage !== "") {
+        const tax = Number(form.tax_percentage);
+        if (isNaN(tax) || tax < 0 || tax > 100) {
+          newErrors.tax_percentage = "Tax percentage must be between 0% and 100%.";
+        }
+      }
+
+      if (form.service_fee !== undefined && form.service_fee !== "") {
+        const fee = Number(form.service_fee);
+        if (isNaN(fee) || fee < 0) {
+          newErrors.service_fee = "Service fee cannot be negative.";
+        }
+      }
+    }
+
+    if (checkMedia) {
+      if (form.tour_video_url?.trim()) {
+        const url = form.tour_video_url.trim();
+        if (!/^https?:\/\//i.test(url)) {
+          newErrors.tour_video_url = "Video URL must start with http:// or https://";
+        }
+      }
+    }
+
+    if (checkSeo) {
+      if (form.slug?.trim()) {
+        const slug = form.slug.trim();
+        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(slug)) {
+          newErrors.slug = "Slug can only contain lowercase letters, numbers, and hyphens.";
+        }
+      }
+      if (form.canonical_url?.trim()) {
+        const url = form.canonical_url.trim();
+        if (!/^https?:\/\//i.test(url)) {
+          newErrors.canonical_url = "Canonical URL must start with http:// or https://";
+        }
+      }
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstField = Object.keys(newErrors)[0];
+      const selector = `[data-field="${firstField}"], [name="${firstField}"], #${firstField}`;
+      const el = document.querySelector(selector);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        const focusable = el.matches("input, select, textarea") ? el : el.querySelector("input, select, textarea");
+        (focusable as HTMLElement | null)?.focus?.();
+      }
+      toast.error("Please resolve the highlighted field errors.");
+      return false;
+    }
+
+    return true;
+  };
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!form.title?.trim()) {
-      toast.error("Tour title is required.");
+    if (!validateForm(sections)) {
       return;
     }
 
@@ -1064,6 +1255,7 @@ export default function TourFormPage({
         ? await updateCms("/tours", tourId, payload)
         : await createCms("/tours", payload);
       toast.success("Tour saved successfully.");
+      setErrors({});
       await onSaved?.(saved);
     } catch (err: unknown) {
       const response = (err as { response?: { status?: number; data?: Record<string, unknown> } })?.response;
@@ -1074,6 +1266,26 @@ export default function TourFormPage({
         });
         return;
       }
+
+      if (response?.status === 422 && Array.isArray(response.data?.detail)) {
+        const serverErrors: Record<string, string> = {};
+        for (const item of response.data.detail as Array<{ loc?: Array<string | number>; msg?: string }>) {
+          const field = item.loc?.[item.loc.length - 1];
+          if (field && typeof item.msg === "string") {
+            serverErrors[String(field)] = item.msg;
+          }
+        }
+        if (Object.keys(serverErrors).length > 0) {
+          setErrors((prev) => ({ ...prev, ...serverErrors }));
+          const firstField = Object.keys(serverErrors)[0];
+          const el = document.querySelector(`[data-field="${firstField}"], [name="${firstField}"]`);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          (el as HTMLElement)?.focus?.();
+          toast.error("Some fields contain invalid data. Please review the errors below.");
+          return;
+        }
+      }
+
       // The backend's validation-error handler returns `detail` as an
       // array of per-field error objects, not a string (see
       // middleware/error_handlers.py) -- `message` is always the
@@ -1154,6 +1366,8 @@ export default function TourFormPage({
         </div>
       ) : (
         <form onSubmit={submit} id={formId} className={`${embedded ? "" : "mx-auto mt-4 max-w-6xl"} space-y-4`}>
+          {/* Embedded in the tour editor, the step's single Save button (bottom bar) submits this form. */}
+          {!embedded && (
           <div id="tour-form-save-bar" className="flex flex-col gap-3 rounded-2xl border border-[#DCE6F3] bg-white px-4 py-3 shadow-[0_10px_30px_-28px_rgba(28,83,160,.8)] sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-black text-dash-text">{tourId ? "Tour essentials" : "Tour setup"}</p>
@@ -1174,6 +1388,7 @@ export default function TourFormPage({
               </button>
             </div>
           </div>
+          )}
 
           {showBasic && (
           <FormSection role={role} icon={FileText} title="Basic tour details" description="Title, pricing, and duration.">
@@ -1206,95 +1421,178 @@ export default function TourFormPage({
                 </div>
               );
             })()}
-            {textFields.map(([key, label]) => (
-              <label key={key}>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
-                <input value={form[key] ?? ""} onChange={(e) => update(key, e.target.value)} className={inputClass} />
-              </label>
-            ))}
+            {textFields.map(([key, label]) => {
+              const isRequired = key === "title";
+              return (
+                <label key={key} data-field={key} className="block">
+                  <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
+                    {label}
+                    {isRequired && <span className="ml-1 text-red-500 font-bold">*</span>}
+                  </span>
+                  <input
+                    name={key}
+                    value={form[key] ?? ""}
+                    onChange={(e) => {
+                      update(key, e.target.value);
+                      if (errors[key]) clearError(key);
+                    }}
+                    placeholder={
+                      key === "title"
+                        ? "e.g. 5-Day Golden Triangle Explorer"
+                        : key === "subtitle"
+                        ? "e.g. Luxury heritage journey across Delhi, Agra & Jaipur"
+                        : undefined
+                    }
+                    className={getInputClass(key)}
+                  />
+                  {errors[key] && (
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                      <AlertCircle size={13} className="shrink-0 text-red-500" />
+                      <span>{errors[key]}</span>
+                    </p>
+                  )}
+                </label>
+              );
+            })}
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>
+            <label data-field="currency" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
+                Currency
+                <span className="ml-1 text-red-500 font-bold">*</span>
+              </span>
               {isSupplier ? (
                 <input
                   value={supplierCurrency || form.currency || "Not configured"}
                   readOnly
                   disabled
                   title="Currency is taken from your supplier profile."
-                  className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-600 disabled:opacity-100`}
+                  className={`${defaultInputClass} cursor-not-allowed bg-slate-50 text-slate-600 disabled:opacity-100`}
                 />
               ) : (
-                <CurrencySelect value={form.currency ?? "USD"} onChange={(code) => update("currency", code)} className={inputClass} />
+                <CurrencySelect
+                  value={form.currency ?? "USD"}
+                  onChange={(code) => {
+                    update("currency", code);
+                    if (errors.currency) clearError("currency");
+                  }}
+                  className={getInputClass("currency")}
+                />
+              )}
+              {errors.currency && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                  <AlertCircle size={13} className="shrink-0 text-red-500" />
+                  <span>{errors.currency}</span>
+                </p>
               )}
             </label>
 
             <FormDropdownField
+              name="number_of_days"
               label="Days"
+              required
+              error={errors.number_of_days}
               value={form.number_of_days ?? "1"}
-              onChange={(val) => update("number_of_days", val)}
+              onChange={(val) => {
+                update("number_of_days", val);
+                if (errors.number_of_days) clearError("number_of_days");
+              }}
               options={DAY_OPTIONS}
-              inputClass={inputClass}
+              inputClass={getInputClass("number_of_days")}
               inputType="number"
               min={1}
               placeholder="e.g. 1"
+              helpText="Tour duration in days (minimum 1 day)."
             />
 
             <FormDropdownField
+              name="number_of_hours"
               label="Hours"
+              error={errors.number_of_hours}
               value={form.number_of_hours ?? ""}
-              onChange={(val) => update("number_of_hours", val)}
+              onChange={(val) => {
+                update("number_of_hours", val);
+                if (errors.number_of_hours) clearError("number_of_hours");
+              }}
               options={HOUR_OPTIONS}
-              inputClass={inputClass}
+              inputClass={getInputClass("number_of_hours")}
               inputType="number"
               min={0}
               placeholder="e.g. 8"
+              helpText="Optional: duration in hours for day tours."
             />
 
             <FormDropdownField
+              name="number_of_nights"
               label="Nights"
+              error={errors.number_of_nights}
               value={form.number_of_nights ?? "0"}
-              onChange={(val) => update("number_of_nights", val)}
+              onChange={(val) => {
+                update("number_of_nights", val);
+                if (errors.number_of_nights) clearError("number_of_nights");
+              }}
               options={NIGHT_OPTIONS}
-              inputClass={inputClass}
+              inputClass={getInputClass("number_of_nights")}
               inputType="number"
               min={0}
               placeholder="e.g. 0"
             />
 
             <FormDropdownField
+              name="max_group_size"
               label="Max group size"
+              error={errors.max_group_size}
               value={form.max_group_size ?? ""}
-              onChange={(val) => update("max_group_size", val)}
+              onChange={(val) => {
+                update("max_group_size", val);
+                if (errors.max_group_size) clearError("max_group_size");
+                if (errors.min_booking_size) clearError("min_booking_size");
+              }}
               options={MAX_GROUP_SIZE_OPTIONS}
-              inputClass={inputClass}
+              inputClass={getInputClass("max_group_size")}
               inputType="number"
               min={1}
               placeholder="e.g. 16"
+              helpText="Maximum travellers per departure."
             />
 
             <FormDropdownField
+              name="min_booking_size"
               label="Min booking size"
+              error={errors.min_booking_size}
               value={form.min_booking_size ?? "1"}
-              onChange={(val) => update("min_booking_size", val)}
+              onChange={(val) => {
+                update("min_booking_size", val);
+                if (errors.min_booking_size) clearError("min_booking_size");
+              }}
               options={MIN_BOOKING_SIZE_OPTIONS}
-              inputClass={inputClass}
+              inputClass={getInputClass("min_booking_size")}
               inputType="number"
               min={1}
               placeholder="e.g. 1"
+              helpText="Minimum passengers required per single booking."
             />
 
             <LanguageMultiSelect
               value={form.tour_language ?? "English"}
-              onChange={(val) => update("tour_language", val)}
-              inputClass={inputClass}
+              onChange={(val) => {
+                update("tour_language", val);
+                if (errors.tour_language) clearError("tour_language");
+              }}
+              inputClass={getInputClass("tour_language")}
+              error={errors.tour_language}
             />
 
             <FormDropdownField
+              name="suitable_age_range"
               label="Suitable age range"
+              error={errors.suitable_age_range}
               value={form.suitable_age_range ?? ""}
-              onChange={(val) => update("suitable_age_range", val)}
+              onChange={(val) => {
+                update("suitable_age_range", val);
+                if (errors.suitable_age_range) clearError("suitable_age_range");
+              }}
               options={SUITABLE_AGE_RANGE_OPTIONS}
-              inputClass={inputClass}
+              inputClass={getInputClass("suitable_age_range")}
               inputType="text"
               placeholder="e.g. 12+"
             />
@@ -1471,18 +1769,52 @@ export default function TourFormPage({
             </label>
 
             {(form.deposit_type ?? "fixed") === "percentage" ? (
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Minimum deposit (%)</span>
-                <input type="number" min={0} max={100} value={form.deposit_percentage ?? ""} onChange={(e) => update("deposit_percentage", e.target.value)} className={inputClass} />
+              <label data-field="deposit_percentage" className="block">
+                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Minimum deposit (%)</span>
+                <input
+                  name="deposit_percentage"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.deposit_percentage ?? ""}
+                  onChange={(e) => {
+                    update("deposit_percentage", e.target.value);
+                    if (errors.deposit_percentage) clearError("deposit_percentage");
+                  }}
+                  className={getInputClass("deposit_percentage")}
+                />
+                {errors.deposit_percentage && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                    <AlertCircle size={13} className="shrink-0 text-red-500" />
+                    <span>{errors.deposit_percentage}</span>
+                  </p>
+                )}
               </label>
             ) : (
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Minimum deposit ({form.currency || "USD"})</span>
-                <input type="number" min={0} value={form.booking_deposit ?? ""} onChange={(e) => update("booking_deposit", e.target.value)} className={inputClass} />
+              <label data-field="booking_deposit" className="block">
+                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Minimum deposit ({form.currency || "USD"})</span>
+                <input
+                  name="booking_deposit"
+                  type="number"
+                  min={0}
+                  value={form.booking_deposit ?? ""}
+                  onChange={(e) => {
+                    update("booking_deposit", e.target.value);
+                    if (errors.booking_deposit) clearError("booking_deposit");
+                  }}
+                  className={getInputClass("booking_deposit")}
+                />
+                {errors.booking_deposit && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                    <AlertCircle size={13} className="shrink-0 text-red-500" />
+                    <span>{errors.booking_deposit}</span>
+                  </p>
+                )}
               </label>
             )}
 
             <FormDropdownField
+              name="deposit_cutoff_days"
               label="Deposit allowed until (days before departure)"
               value={form.deposit_cutoff_days ?? ""}
               onChange={(val) => update("deposit_cutoff_days", val)}
@@ -1495,6 +1827,7 @@ export default function TourFormPage({
             />
 
             <FormDropdownField
+              name="balance_payment_deadline_days"
               label="Final payment due (days before departure)"
               value={form.balance_payment_deadline_days ?? ""}
               onChange={(val) => update("balance_payment_deadline_days", val)}
@@ -1506,21 +1839,60 @@ export default function TourFormPage({
               helpText="After paying a deposit, the customer must clear the remaining balance by this many days before departure."
             />
 
-            <div className="md:col-span-2 mt-2 border-t border-dash-border-soft pt-4">
-              <p className="text-xs font-black uppercase tracking-wide text-dash-subtle">Tax &amp; service fee</p>
-              <p className="mt-0.5 text-xs text-dash-subtle">Added on top of the discounted subtotal at checkout -- shown to the customer as a separate line, not folded into the tour price.</p>
+            <div className="md:col-span-2 mt-2 border-t border-slate-100 pt-4">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-600">Tax &amp; service fee</p>
+              <p className="mt-0.5 text-xs text-slate-400">Added on top of the discounted subtotal at checkout -- shown to the customer as a separate line, not folded into the tour price.</p>
             </div>
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tax (%)</span>
-              <input type="number" min={0} max={100} step="0.01" value={form.tax_percentage ?? ""} onChange={(e) => update("tax_percentage", e.target.value)} className={inputClass} placeholder="0" />
-              <span className="mt-1 block text-[11px] text-dash-subtle">Percentage applied to the discounted subtotal.</span>
+            <label data-field="tax_percentage" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Tax (%)</span>
+              <input
+                name="tax_percentage"
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                value={form.tax_percentage ?? ""}
+                onChange={(e) => {
+                  update("tax_percentage", e.target.value);
+                  if (errors.tax_percentage) clearError("tax_percentage");
+                }}
+                className={getInputClass("tax_percentage")}
+                placeholder="0"
+              />
+              {errors.tax_percentage ? (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                  <AlertCircle size={13} className="shrink-0 text-red-500" />
+                  <span>{errors.tax_percentage}</span>
+                </p>
+              ) : (
+                <span className="mt-1 block text-[11px] text-slate-400">Percentage applied to the discounted subtotal.</span>
+              )}
             </label>
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Service fee ({form.currency || "USD"})</span>
-              <input type="number" min={0} step="0.01" value={form.service_fee ?? ""} onChange={(e) => update("service_fee", e.target.value)} className={inputClass} placeholder="0" />
-              <span className="mt-1 block text-[11px] text-dash-subtle">Flat amount added once per booking, regardless of traveller count.</span>
+            <label data-field="service_fee" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Service fee ({form.currency || "USD"})</span>
+              <input
+                name="service_fee"
+                type="number"
+                min={0}
+                step="0.01"
+                value={form.service_fee ?? ""}
+                onChange={(e) => {
+                  update("service_fee", e.target.value);
+                  if (errors.service_fee) clearError("service_fee");
+                }}
+                className={getInputClass("service_fee")}
+                placeholder="0"
+              />
+              {errors.service_fee ? (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                  <AlertCircle size={13} className="shrink-0 text-red-500" />
+                  <span>{errors.service_fee}</span>
+                </p>
+              ) : (
+                <span className="mt-1 block text-[11px] text-slate-400">Flat amount added once per booking, regardless of traveller count.</span>
+              )}
             </label>
           </FormSection>
           )}
@@ -1551,36 +1923,60 @@ export default function TourFormPage({
               </select>
             </label>
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tour category</span>
+            <label data-field="category_id" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
+                Tour category
+                <span className="ml-1 text-red-500 font-bold">*</span>
+              </span>
               <select
+                name="category_id"
                 value={form.category_id ?? ""}
-                onChange={(e) => update("category_id", e.target.value)}
-                className={inputClass}
+                onChange={(e) => {
+                  update("category_id", e.target.value);
+                  if (errors.category_id) clearError("category_id");
+                }}
+                className={getInputClass("category_id")}
               >
-                <option value="">- None -</option>
+                <option value="">- Select category -</option>
                 {categories.map((c) => (
                   <option key={c.id} value={String(c.id)}>{c.label}</option>
                 ))}
               </select>
+              {errors.category_id && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                  <AlertCircle size={13} className="shrink-0 text-red-500" />
+                  <span>{errors.category_id}</span>
+                </p>
+              )}
             </label>
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Country</span>
+            <label data-field="country_id" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
+                Country
+                <span className="ml-1 text-red-500 font-bold">*</span>
+              </span>
               <select
+                name="country_id"
                 value={form.country_id ?? ""}
                 onChange={(e) => {
                   update("country_id", e.target.value);
                   setSelectedStateId("");
                   update("city_id", "");
+                  if (errors.country_id) clearError("country_id");
                 }}
-                className={inputClass}
+                className={getInputClass("country_id")}
               >
-                <option value="">- None -</option>
+                <option value="">- Select country -</option>
                 {countries.map((c) => (
                   <option key={c.id} value={String(c.id)}>{c.name}</option>
                 ))}
               </select>
+              {errors.country_id && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                  <AlertCircle size={13} className="shrink-0 text-red-500" />
+                  <span>{errors.country_id}</span>
+                </p>
+              )}
             </label>
 
             <label>
@@ -1660,9 +2056,24 @@ export default function TourFormPage({
             <AdminAssetUpload label="Map image" value={form.map_image ?? ""} onChange={(value) => update("map_image", value)} />
             <AdminAssetUpload label="Mobile cover image" value={form.mobile_cover_image ?? ""} onChange={(value) => update("mobile_cover_image", value)} />
             <AdminAssetUpload label="Brochure (PDF)" value={form.brochure_pdf ?? ""} onChange={(value) => update("brochure_pdf", value)} />
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tour video URL</span>
-              <input value={form.tour_video_url ?? ""} onChange={(e) => update("tour_video_url", e.target.value)} className={inputClass} />
+            <label data-field="tour_video_url" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Tour video URL</span>
+              <input
+                name="tour_video_url"
+                value={form.tour_video_url ?? ""}
+                onChange={(e) => {
+                  update("tour_video_url", e.target.value);
+                  if (errors.tour_video_url) clearError("tour_video_url");
+                }}
+                placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                className={getInputClass("tour_video_url")}
+              />
+              {errors.tour_video_url && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                  <AlertCircle size={13} className="shrink-0 text-red-500" />
+                  <span>{errors.tour_video_url}</span>
+                </p>
+              )}
             </label>
           </FormSection>
           )}
@@ -1670,26 +2081,84 @@ export default function TourFormPage({
           {showSeo && (
           <FormSection role={role} icon={Search} title="SEO" description="Metadata for search engines and social sharing.">
             {seoFields.map(([key, label]) => (
-              <label key={key} className={key === "seo_description" ? "md:col-span-2" : ""}>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
+              <label key={key} data-field={key} className={key === "seo_description" ? "md:col-span-2 block" : "block"}>
+                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">{label}</span>
                 {key === "seo_description" ? (
-                  <textarea value={form[key] ?? ""} onChange={(e) => update(key, e.target.value)} className={`min-h-20 ${inputClass}`} />
+                  <textarea
+                    name={key}
+                    value={form[key] ?? ""}
+                    onChange={(e) => {
+                      update(key, e.target.value);
+                      if (errors[key]) clearError(key);
+                    }}
+                    className={`min-h-20 ${getInputClass(key)}`}
+                  />
                 ) : (
-                  <input value={form[key] ?? ""} onChange={(e) => update(key, e.target.value)} className={inputClass} />
+                  <input
+                    name={key}
+                    value={form[key] ?? ""}
+                    onChange={(e) => {
+                      update(key, e.target.value);
+                      if (errors[key]) clearError(key);
+                    }}
+                    className={getInputClass(key)}
+                  />
+                )}
+                {errors[key] && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                    <AlertCircle size={13} className="shrink-0 text-red-500" />
+                    <span>{errors[key]}</span>
+                  </p>
                 )}
               </label>
             ))}
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">URL slug</span>
-              <input value={form.slug ?? ""} onChange={(e) => update("slug", e.target.value)} placeholder="Auto-generated from title if left blank" className={inputClass} />
+            <label data-field="slug" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">URL slug</span>
+              <input
+                name="slug"
+                value={form.slug ?? ""}
+                onChange={(e) => {
+                  update("slug", e.target.value);
+                  if (errors.slug) clearError("slug");
+                }}
+                placeholder="Auto-generated from title if left blank (e.g. 5-day-golden-triangle)"
+                className={getInputClass("slug")}
+              />
+              {errors.slug && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                  <AlertCircle size={13} className="shrink-0 text-red-500" />
+                  <span>{errors.slug}</span>
+                </p>
+              )}
             </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Focus keyword</span>
-              <input value={form.focus_keyword ?? ""} onChange={(e) => update("focus_keyword", e.target.value)} className={inputClass} />
+            <label data-field="focus_keyword" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Focus keyword</span>
+              <input
+                name="focus_keyword"
+                value={form.focus_keyword ?? ""}
+                onChange={(e) => update("focus_keyword", e.target.value)}
+                className={inputClass}
+                placeholder="e.g. golden triangle tour"
+              />
             </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Canonical URL</span>
-              <input value={form.canonical_url ?? ""} onChange={(e) => update("canonical_url", e.target.value)} className={inputClass} />
+            <label data-field="canonical_url" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Canonical URL</span>
+              <input
+                name="canonical_url"
+                value={form.canonical_url ?? ""}
+                onChange={(e) => {
+                  update("canonical_url", e.target.value);
+                  if (errors.canonical_url) clearError("canonical_url");
+                }}
+                className={getInputClass("canonical_url")}
+                placeholder="https://tourvaa.com/tours/..."
+              />
+              {errors.canonical_url && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                  <AlertCircle size={13} className="shrink-0 text-red-500" />
+                  <span>{errors.canonical_url}</span>
+                </p>
+              )}
             </label>
             <AdminAssetUpload label="Open Graph image" value={form.open_graph_image ?? ""} onChange={(value) => update("open_graph_image", value)} />
             <label className="flex items-center gap-2 pt-6">
@@ -1699,6 +2168,7 @@ export default function TourFormPage({
           </FormSection>
           )}
 
+          {!embedded && (
           <div className="flex flex-col gap-3 rounded-2xl border border-[#DCE6F3] bg-white px-5 py-4 shadow-[0_10px_30px_-28px_rgba(28,83,160,.8)] sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-black text-dash-text">Ready to save this tour?</p>
@@ -1716,6 +2186,7 @@ export default function TourFormPage({
               <Save size={16} /> Go to save
             </button>
           </div>
+          )}
         </form>
       )}
       {dialog}

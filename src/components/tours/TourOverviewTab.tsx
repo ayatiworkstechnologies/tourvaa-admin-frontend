@@ -15,9 +15,13 @@ const empty: TourOverview = {
 };
 
 const inputClass =
-  "w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10";
+  "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition shadow-2xs focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-400 text-slate-900";
 
-export default function TourOverviewTab({ tourId }: { tourId: string }) {
+const RATINGS = ["easy", "moderate", "hard"] as const;
+
+/** `embedded`: rendered inside the tour editor, where the step's single Save
+ * button submits this form (id `wizard-form-overview`), so its own button is hidden. */
+export default function TourOverviewTab({ tourId, embedded = false, onSaved }: { tourId: string; embedded?: boolean; onSaved?: () => void }) {
   const toast = useToast();
   const [form, setForm] = useState<TourOverview>(empty);
   const [loading, setLoading] = useState(true);
@@ -49,6 +53,7 @@ export default function TourOverviewTab({ tourId }: { tourId: string }) {
     try {
       await saveOverview(tourId, form);
       toast.success("Overview saved.");
+      onSaved?.();
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -84,11 +89,23 @@ export default function TourOverviewTab({ tourId }: { tourId: string }) {
   );
 
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form id="wizard-form-overview" onSubmit={submit} className="space-y-6">
       <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
         <h2 className="text-xl font-black text-dash-text">Trip Planning Details</h2>
         <p className="mt-1 text-sm text-dash-subtle">Helps travellers decide if this tour fits them.</p>
         <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <label>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Physical rating</span>
+            <select
+              value={form.physical_rating}
+              onChange={(e) => update("physical_rating", e.target.value)}
+              className={inputClass}
+            >
+              {RATINGS.map((r) => (
+                <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+              ))}
+            </select>
+          </label>
           {field("best_season", "Best season", "e.g. October to March")}
           {field("tour_pace", "Tour pace", "e.g. Relaxed, Moderate, Fast-paced")}
           {textareaField("ideal_for", "Ideal for", "e.g. Couples, families with teens, first-time visitors")}
@@ -99,7 +116,7 @@ export default function TourOverviewTab({ tourId }: { tourId: string }) {
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className={embedded ? "hidden" : "flex justify-end"}>
         <button
           type="submit"
           disabled={saving}
