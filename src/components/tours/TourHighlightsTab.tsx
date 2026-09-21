@@ -1,5 +1,7 @@
 "use client";
 
+import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
+import { validateHighlight, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourHighlight, getHighlights, createHighlight, updateHighlight, deleteHighlight } from "@/lib/api/services/tourDetailService";
@@ -19,6 +21,7 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourHighlight | null>(null);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -41,8 +44,10 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
-    if (!editing.title?.trim()) {
-      toast.error("Highlight title is required.");
+    const found = validateHighlight(editing);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusField(Object.keys(found)[0]);
       return;
     }
     setSaving(true);
@@ -56,6 +61,7 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
+      setErrors({});
       toast.success("Saved.");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
@@ -110,10 +116,11 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
       </div>
 
       {editing && (
-        <form onSubmit={save} className="rounded-xl border-2 border-dash-brand bg-white p-6">
+        <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6">
+          <ErrorSummary errors={errors} />
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold text-dash-text">{editing.id ? "Edit Highlight" : "New Highlight"}</h3>
-            <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
+            <button type="button" aria-label="Close" onClick={() => { setEditing(null); setErrors({}); }}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
@@ -123,15 +130,16 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
                 onChange={(value) => setEditing((p) => (p ? { ...p, image: value } : p))}
               />
             </div>
-            {[["title", "Title *"], ["display_order", "Order"]].map(([key, lbl]) => (
-              <label key={key}>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
-                <input type={key === "display_order" ? "number" : "text"}
-                  value={key === "display_order" ? numberInputValue((editing as Record<string, unknown>)[key] as number) : ((editing as Record<string, unknown>)[key] as string ?? "")}
-                  onChange={(e) => setEditing((p) => p ? { ...p, [key]: key === "display_order" ? parseNumberInput(e.target.value) : e.target.value } : p)}
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-              </label>
-            ))}
+            <FormField name="title" label="Title" required error={errors.title} hint="A short headline travellers will see, e.g. Sunset dhow cruise." counter={{ value: (editing.title ?? "").length, max: 255 }}>
+              <input id="title" name="title" type="text" value={editing.title ?? ""}
+                onChange={(e) => { setEditing((p) => p ? { ...p, title: e.target.value } : p); setErrors(({ title: _t, ...rest }) => rest); }}
+                className={fieldClass(errors.title)} />
+            </FormField>
+            <FormField name="display_order" label="Order" error={errors.display_order} hint="Lower numbers show first. Leave 0 to keep the order you added them.">
+              <input id="display_order" name="display_order" type="number" min={0} value={numberInputValue(editing.display_order as number)}
+                onChange={(e) => { setEditing((p) => p ? { ...p, display_order: parseNumberInput(e.target.value) } : p); setErrors(({ display_order: _o, ...rest }) => rest); }}
+                className={fieldClass(errors.display_order)} />
+            </FormField>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
               <select value={editing.status} onChange={(e) => setEditing((p) => p ? { ...p, status: e.target.value } : p)}

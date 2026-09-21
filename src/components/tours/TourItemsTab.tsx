@@ -1,5 +1,7 @@
 "use client";
 
+import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
+import { validateInclusion, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import {
@@ -32,6 +34,7 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourItem | null>(null);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +56,12 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    const found = validateInclusion(editing, label);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusField(Object.keys(found)[0]);
+      return;
+    }
     setSaving(true);
     try {
       const payload = { ...editing, display_order: sanitizeNumber(editing.display_order) };
@@ -64,6 +73,7 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
+      setErrors({});
       toast.success("Saved.");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
@@ -128,23 +138,28 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
       </div>
 
       {editing && (
-        <form onSubmit={save} className="rounded-xl border-2 border-dash-brand bg-white p-6">
+        <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6">
+          <ErrorSummary errors={errors} />
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold text-dash-text">{editing.id ? `Edit ${label}` : `New ${label}`}</h3>
-            <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
+            <button type="button" aria-label="Close" onClick={() => { setEditing(null); setErrors({}); }}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            {[["icon", "Icon (emoji or URL)"], ["title", "Title *"], ["display_order", "Order"]].map(([key, lbl]) => (
-              <label key={key}>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
-                <input
-                  type={key === "display_order" ? "number" : "text"}
-                  value={key === "display_order" ? numberInputValue((editing as Record<string, unknown>)[key] as number) : ((editing as Record<string, unknown>)[key] as string ?? "")}
-                  onChange={(e) => setEditing((prev) => prev ? { ...prev, [key]: key === "display_order" ? parseNumberInput(e.target.value) : e.target.value } : prev)}
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-                />
-              </label>
-            ))}
+            <FormField name="title" label="Title" required error={errors.title} hint={`One short line, e.g. ${segment === "inclusions" ? "Airport transfers" : "International flights"}.`} counter={{ value: (editing.title ?? "").length, max: 255 }}>
+              <input id="title" name="title" type="text" value={editing.title ?? ""}
+                onChange={(e) => { setEditing((prev) => prev ? { ...prev, title: e.target.value } : prev); setErrors(({ title: _t, ...rest }) => rest); }}
+                className={fieldClass(errors.title)} />
+            </FormField>
+            <FormField name="icon" label="Icon" hint="An emoji (e.g. 🚌) or an image URL. Shown next to the title.">
+              <input id="icon" name="icon" type="text" value={editing.icon ?? ""}
+                onChange={(e) => setEditing((prev) => prev ? { ...prev, icon: e.target.value } : prev)}
+                className={fieldClass()} />
+            </FormField>
+            <FormField name="display_order" label="Order" error={errors.display_order} hint="Lower numbers show first.">
+              <input id="display_order" name="display_order" type="number" min={0} value={numberInputValue(editing.display_order as number)}
+                onChange={(e) => { setEditing((prev) => prev ? { ...prev, display_order: parseNumberInput(e.target.value) } : prev); setErrors(({ display_order: _o, ...rest }) => rest); }}
+                className={fieldClass(errors.display_order)} />
+            </FormField>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
               <select value={editing.status} onChange={(e) => setEditing((prev) => prev ? { ...prev, status: e.target.value } : prev)}

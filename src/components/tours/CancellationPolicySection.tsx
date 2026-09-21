@@ -1,5 +1,7 @@
 "use client";
 
+import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
+import { validateRefundRule, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil } from "react-icons/lu";
 import api from "@/lib/api/client";
@@ -28,6 +30,8 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
   const [defaultRules, setDefaultRules] = useState<RefundRule[]>([]);
   const [copyingDefaults, setCopyingDefaults] = useState(false);
 
@@ -93,26 +97,15 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.days_before_tour_min || !form.refund_percentage) {
-      toast.error("Minimum days and refund percentage are required.");
+    const found = validateRefundRule(form);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusField(Object.keys(found)[0]);
       return;
     }
     const minDays = Number(form.days_before_tour_min);
     const maxDays = form.days_before_tour_max ? Number(form.days_before_tour_max) : null;
     const refundPct = Number(form.refund_percentage);
-
-    if (isNaN(minDays) || minDays < 0) {
-      toast.error("Days before tour minimum must be 0 or greater.");
-      return;
-    }
-    if (maxDays !== null && (isNaN(maxDays) || maxDays < minDays)) {
-      toast.error("Days before tour maximum cannot be less than minimum days.");
-      return;
-    }
-    if (isNaN(refundPct) || refundPct < 0 || refundPct > 100) {
-      toast.error("Refund percentage must be between 0% and 100%.");
-      return;
-    }
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
@@ -134,6 +127,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
       }
       await load();
       setForm(emptyForm);
+      setErrors({});
       setEditingId(null);
       setShowForm(false);
     } catch (error: unknown) {
@@ -234,40 +228,25 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
       )}
 
       {showForm && (
-        <form onSubmit={save} className="rounded-xl border-2 border-dash-brand bg-white p-6">
+        <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6">
           <h3 className="mb-4 font-bold text-dash-text">{editingId ? "Edit Cancellation Rule" : "New Cancellation Rule"}</h3>
+          <ErrorSummary errors={errors} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Min days before *</span>
-              <input
-                type="number"
-                value={form.days_before_tour_min}
-                onChange={(e) => setForm((f) => ({ ...f, days_before_tour_min: e.target.value }))}
-                placeholder="e.g. 7"
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-              />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Max days before</span>
-              <input
-                type="number"
-                value={form.days_before_tour_max}
-                onChange={(e) => setForm((f) => ({ ...f, days_before_tour_max: e.target.value }))}
-                placeholder="e.g. 30"
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-              />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Refund % *</span>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={form.refund_percentage}
-                onChange={(e) => setForm((f) => ({ ...f, refund_percentage: e.target.value }))}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-              />
-            </label>
+            <FormField name="days_before_tour_min" label="From (days before)" required error={errors.days_before_tour_min} hint="The rule starts this many days before departure. 0 = departure day.">
+              <input id="days_before_tour_min" name="days_before_tour_min" type="number" min={0} value={form.days_before_tour_min}
+                onChange={(e) => { setForm((f) => ({ ...f, days_before_tour_min: e.target.value })); clearError("days_before_tour_min"); }}
+                placeholder="e.g. 7" className={fieldClass(errors.days_before_tour_min)} />
+            </FormField>
+            <FormField name="days_before_tour_max" label="Up to (days before)" error={errors.days_before_tour_max} hint="Optional upper limit. Leave blank for no limit (any earlier).">
+              <input id="days_before_tour_max" name="days_before_tour_max" type="number" min={0} value={form.days_before_tour_max}
+                onChange={(e) => { setForm((f) => ({ ...f, days_before_tour_max: e.target.value })); clearError("days_before_tour_max"); }}
+                placeholder="e.g. 30" className={fieldClass(errors.days_before_tour_max)} />
+            </FormField>
+            <FormField name="refund_percentage" label="Refund (%)" required error={errors.refund_percentage} hint="Share of the amount paid that is refunded. 0 = no refund.">
+              <input id="refund_percentage" name="refund_percentage" type="number" min={0} max={100} value={form.refund_percentage}
+                onChange={(e) => { setForm((f) => ({ ...f, refund_percentage: e.target.value })); clearError("refund_percentage"); }}
+                placeholder="e.g. 50" className={fieldClass(errors.refund_percentage)} />
+            </FormField>
             <label className="sm:col-span-2 lg:col-span-1">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Notes</span>
               <input
@@ -278,7 +257,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
             </label>
           </div>
           <div className="mt-4 flex justify-end gap-3">
-            <button type="button" onClick={() => { setShowForm(false); setForm(emptyForm); setEditingId(null); }} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
+            <button type="button" onClick={() => { setShowForm(false); setForm(emptyForm); setEditingId(null); setErrors({}); }} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
             <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
               {saving ? "Saving..." : editingId ? "Save Changes" : "Add Rule"}
             </button>

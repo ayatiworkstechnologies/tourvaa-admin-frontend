@@ -1,5 +1,7 @@
 "use client";
 
+import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
+import { validateExtension, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourExtension, getExtensions, createExtension, updateExtension, deleteExtension } from "@/lib/api/services/tourDetailService";
@@ -34,6 +36,8 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourExtension | null>(null);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,8 +56,11 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editing || !editing.extension_tour_id) {
-      toast.error("Select an extension tour.");
+    if (!editing) return;
+    const found = validateExtension(editing);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusField(Object.keys(found)[0]);
       return;
     }
     setSaving(true);
@@ -67,6 +74,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
+      setErrors({});
       toast.success("Saved.");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
@@ -125,49 +133,33 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
       ))}
 
       {editing && (
-        <form onSubmit={save} className="rounded-2xl border-2 border-dash-brand bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+        <form onSubmit={save} noValidate className="rounded-2xl border-2 border-dash-brand bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+          <ErrorSummary errors={errors} />
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold">{editing.id ? "Edit Extension" : "New Extension"}</h3>
-            <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
+            <button type="button" aria-label="Close" onClick={() => { setEditing(null); setErrors({}); }}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="md:col-span-2">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Extension Tour *</span>
+            <FormField name="extension_tour_id" label="Extension tour" required error={errors.extension_tour_id} hint="The tour travellers can add on to this one, e.g. a post-trip beach stay." className="md:col-span-2">
               <TourPicker
                 value={editing.extension_tour_id || null}
-                onChange={(id, title) =>
-                  setEditing((p) =>
-                    p
-                      ? {
-                          ...p,
-                          extension_tour_id: id ?? 0,
-                          extension_title: p.extension_title || title,
-                        }
-                      : p
-                  )
-                }
+                onChange={(id, title) => {
+                  setEditing((p) => (p ? { ...p, extension_tour_id: id ?? 0, extension_title: p.extension_title || title } : p));
+                  clearError("extension_tour_id");
+                }}
                 excludeIds={[Number(tourId)]}
               />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">
-                Custom title <span className="normal-case font-normal">(optional - defaults to the tour name above)</span>
-              </span>
-              <input
-                value={editing.extension_title ?? ""}
-                onChange={(e) => setEditing((p) => (p ? { ...p, extension_title: e.target.value } : p))}
-                className={inputClass}
-              />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Extra price</span>
-              <input
-                type="number"
-                value={numberInputValue(editing.extra_price)}
-                onChange={(e) => setEditing((p) => (p ? { ...p, extra_price: parseNumberInput(e.target.value) } : p))}
-                className={inputClass}
-              />
-            </label>
+            </FormField>
+            <FormField name="extension_title" label="Custom title" error={errors.extension_title} hint="Optional - the tour's own name is used if you leave this blank." counter={{ value: (editing.extension_title ?? "").length, max: 255 }}>
+              <input id="extension_title" name="extension_title" value={editing.extension_title ?? ""}
+                onChange={(e) => { setEditing((p) => (p ? { ...p, extension_title: e.target.value } : p)); clearError("extension_title"); }}
+                className={fieldClass(errors.extension_title)} />
+            </FormField>
+            <FormField name="extra_price" label="Extra price" error={errors.extra_price} hint="Added to the booking when a traveller picks this extension. 0 if free.">
+              <input id="extra_price" name="extra_price" type="number" min={0} step="0.01" value={numberInputValue(editing.extra_price)}
+                onChange={(e) => { setEditing((p) => (p ? { ...p, extra_price: parseNumberInput(e.target.value) } : p)); clearError("extra_price"); }}
+                className={fieldClass(errors.extra_price)} />
+            </FormField>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Price type</span>
               <select

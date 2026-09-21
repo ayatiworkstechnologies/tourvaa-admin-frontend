@@ -1,5 +1,7 @@
 "use client";
 
+import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
+import { validateDiscount, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuHistory as History, LuPencil as Pencil, LuSave as Save, LuTrash2 as Trash2, LuTrendingUp as TrendingUp, LuX as X } from "react-icons/lu";
 import { TourDiscount, DiscountHistoryEntry, getDiscounts, createDiscount, updateDiscount, amendDiscount, deactivateDiscount, getDiscountHistory, getPricing } from "@/lib/api/services/tourDetailService";
@@ -101,6 +103,8 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
   const [items, setItems] = useState<TourDiscount[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourDiscount | null>(null);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
   const [saving, setSaving] = useState(false);
   // Suppliers never get the full free-form editor above -- only a
   // restricted amend action (extend validity and/or raise the value),
@@ -178,6 +182,12 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    const found = validateDiscount(editing);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusField(Object.keys(found)[0]);
+      return;
+    }
     setSaving(true);
     try {
       const payload = { ...editing, discount_value: sanitizeNumber(editing.discount_value), minimum_booking_amount: sanitizeNumber(editing.minimum_booking_amount) };
@@ -191,6 +201,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
         toast.success("Discount created.");
       }
       setEditing(null);
+      setErrors({});
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err));
     } finally {
@@ -372,49 +383,53 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
 
       {editing && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true">
-          <form onSubmit={save} className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+          <form onSubmit={save} noValidate className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold text-dash-text">{editing.id ? "Edit Discount" : "New Discount"}</h3>
-            <button type="button" aria-label="Close editor" title="Close editor" onClick={() => setEditing(null)}><X size={18} /></button>
+            <button type="button" aria-label="Close editor" title="Close editor" onClick={() => { setEditing(null); setErrors({}); }}><X size={18} /></button>
           </div>
+          <ErrorSummary errors={errors} />
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="md:col-span-2">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Discount name *</span>
-              <input value={editing.discount_name} onChange={(e) => setEditing((p) => p ? { ...p, discount_name: e.target.value } : p)}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Promo code</span>
-              <input value={editing.discount_code ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, discount_code: e.target.value || null } : p)}
-                placeholder="Leave blank for auto discount"
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Type</span>
-              <select value={editing.discount_type} onChange={(e) => setEditing((p) => p ? { ...p, discount_type: e.target.value as "percentage" | "fixed" } : p)}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand">
+            <FormField name="discount_name" label="Discount name" required error={errors.discount_name} hint="Shown to travellers, e.g. Early bird 10% off." className="md:col-span-2" counter={{ value: (editing.discount_name ?? "").length, max: 255 }}>
+              <input id="discount_name" name="discount_name" value={editing.discount_name}
+                onChange={(e) => { setEditing((p) => p ? { ...p, discount_name: e.target.value } : p); clearError("discount_name"); }}
+                className={fieldClass(errors.discount_name)} />
+            </FormField>
+            <FormField name="discount_code" label="Promo code" error={errors.discount_code} hint="Leave blank to apply the discount automatically. Otherwise travellers must enter this code.">
+              <input id="discount_code" name="discount_code" value={editing.discount_code ?? ""}
+                onChange={(e) => { setEditing((p) => p ? { ...p, discount_code: e.target.value || null } : p); clearError("discount_code"); }}
+                placeholder="e.g. SUMMER25" className={fieldClass(errors.discount_code)} />
+            </FormField>
+            <FormField name="discount_type" label="Type" required hint="Percentage takes a share off the price; Fixed takes a set amount off.">
+              <select id="discount_type" name="discount_type" value={editing.discount_type}
+                onChange={(e) => { setEditing((p) => p ? { ...p, discount_type: e.target.value as "percentage" | "fixed" } : p); clearError("discount_value"); }}
+                className={fieldClass()}>
                 <option value="percentage">Percentage (%)</option>
                 <option value="fixed">Fixed amount</option>
               </select>
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Value</span>
-              <input type="number" value={numberInputValue(editing.discount_value)} onChange={(e) => setEditing((p) => p ? { ...p, discount_value: parseNumberInput(e.target.value) } : p)}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Min. booking amount</span>
-              <input type="number" value={numberInputValue(editing.minimum_booking_amount)} onChange={(e) => setEditing((p) => p ? { ...p, minimum_booking_amount: parseNumberInput(e.target.value) } : p)}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Usage limit</span>
-              <input type="number" value={editing.usage_limit ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, usage_limit: e.target.value ? Number(e.target.value) : null } : p)}
-                placeholder="Unlimited"
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            </label>
-            <DatePicker label="Start date" value={editing.start_date?.slice(0, 10) ?? ""} minDate={todayLocalDateStr()} maxDate={editing.end_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, start_date: date || null } : previous)} />
-            <DatePicker label="End date" value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, end_date: date || null } : previous)} />
+            </FormField>
+            <FormField name="discount_value" label={editing.discount_type === "percentage" ? "Value (%)" : "Value (amount)"} required error={errors.discount_value}
+              hint={editing.discount_type === "percentage" ? "Between 1 and 100." : "The amount taken off, in the tour's currency."}>
+              <input id="discount_value" name="discount_value" type="number" min={0} step="0.01" value={numberInputValue(editing.discount_value)}
+                onChange={(e) => { setEditing((p) => p ? { ...p, discount_value: parseNumberInput(e.target.value) } : p); clearError("discount_value"); }}
+                className={fieldClass(errors.discount_value)} />
+            </FormField>
+            <FormField name="minimum_booking_amount" label="Min. booking amount" error={errors.minimum_booking_amount} hint="The discount only applies to bookings of at least this amount. 0 = no minimum.">
+              <input id="minimum_booking_amount" name="minimum_booking_amount" type="number" min={0} step="0.01" value={numberInputValue(editing.minimum_booking_amount)}
+                onChange={(e) => { setEditing((p) => p ? { ...p, minimum_booking_amount: parseNumberInput(e.target.value) } : p); clearError("minimum_booking_amount"); }}
+                className={fieldClass(errors.minimum_booking_amount)} />
+            </FormField>
+            <FormField name="usage_limit" label="Usage limit" error={errors.usage_limit} hint="How many bookings can use it. Leave blank for unlimited.">
+              <input id="usage_limit" name="usage_limit" type="number" min={1} value={editing.usage_limit ?? ""}
+                onChange={(e) => { setEditing((p) => p ? { ...p, usage_limit: e.target.value ? Number(e.target.value) : null } : p); clearError("usage_limit"); }}
+                placeholder="Unlimited" className={fieldClass(errors.usage_limit)} />
+            </FormField>
+            <DatePicker label="Start date" value={editing.start_date?.slice(0, 10) ?? ""} minDate={todayLocalDateStr()} maxDate={editing.end_date?.slice(0, 10) || undefined} onChange={(date) => { setEditing((previous) => previous ? { ...previous, start_date: date || null } : previous); clearError("end_date"); }} />
+            <div data-field="end_date">
+              <DatePicker label="End date" value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10) || undefined} onChange={(date) => { setEditing((previous) => previous ? { ...previous, end_date: date || null } : previous); clearError("end_date"); }} />
+              {errors.end_date && <p role="alert" className="mt-1.5 text-xs font-semibold text-red-600">{errors.end_date}</p>}
+              {!errors.end_date && <p className="mt-1 text-[11px] text-dash-muted">Leave both dates blank for a discount with no time limit.</p>}
+            </div>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
               <select value={editing.status} onChange={(e) => setEditing((p) => p ? { ...p, status: e.target.value } : p)}

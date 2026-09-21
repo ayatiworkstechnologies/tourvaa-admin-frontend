@@ -1,5 +1,6 @@
 "use client";
 
+import { ErrorSummary } from "@/components/tours/FormKit";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuAlignLeft as AlignLeft,
@@ -84,6 +85,24 @@ const seoFields: [string, string][] = [
   ["seo_keywords", "SEO keywords"],
   ["image_alt_text", "Image SEO / alt text"],
 ];
+
+// Plain-language help under each text field, and the longest value the server accepts
+// (TourPayload in app/schemas/cms.py) so the counter and the error match what a save allows.
+const FIELD_HINTS: Record<string, string> = {
+  title: "The name travellers see everywhere, e.g. 5-Day Golden Triangle Explorer.",
+  subtitle: "One line that sells the tour. Shown under the title.",
+  start_location: "Where the tour begins, e.g. Delhi Airport.",
+  finish_location: "Where it ends. Leave blank if it returns to the start.",
+  seo_title: "Shown as the headline in Google results. Aim for 50-60 characters.",
+  seo_description: "Shown under the headline in Google results. Aim for 120-160 characters.",
+  seo_keywords: "Comma-separated words people search for, e.g. india tour, golden triangle.",
+  image_alt_text: "Describes the cover image for screen readers and search engines.",
+};
+const FIELD_MAX: Record<string, number> = {
+  title: 180, subtitle: 255, start_location: 150, finish_location: 150, tour_language: 100, suitable_age_range: 100,
+  short_description: 5000, long_description: 20000, seo_title: 180, seo_description: 255, seo_keywords: 255,
+  focus_keyword: 180, canonical_url: 500, tour_video_url: 500, image_alt_text: 180, slug: 200,
+};
 
 const simpleNumberFields: [string, string][] = [
   ["number_of_days", "Days"],
@@ -1160,6 +1179,19 @@ export default function TourFormPage({
       }
     }
 
+    // Longest values the server accepts - caught here so the message sits next to the field.
+    for (const [field, max] of Object.entries(FIELD_MAX)) {
+      const inScope =
+        (checkBasic && ["title", "subtitle", "start_location", "finish_location", "tour_language", "suitable_age_range"].includes(field)) ||
+        (checkLocation && ["short_description", "long_description"].includes(field)) ||
+        (checkMedia && ["tour_video_url", "image_alt_text"].includes(field)) ||
+        (checkSeo && ["seo_title", "seo_description", "seo_keywords", "focus_keyword", "canonical_url", "slug"].includes(field));
+      const value = form[field] ?? "";
+      if (inScope && !newErrors[field] && value.length > max) {
+        newErrors[field] = `This can be at most ${max} characters - it is ${value.length} now.`;
+      }
+    }
+
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
@@ -1365,7 +1397,8 @@ export default function TourFormPage({
           <Loader label="Loading tour..." />
         </div>
       ) : (
-        <form onSubmit={submit} id={formId} className={`${embedded ? "" : "mx-auto mt-4 max-w-6xl"} space-y-4`}>
+        <form onSubmit={submit} id={formId} noValidate className={`${embedded ? "" : "mx-auto mt-4 max-w-6xl"} space-y-4`}>
+          <ErrorSummary errors={Object.fromEntries(Object.entries(errors).filter(([, message]) => Boolean(message)))} />
           {/* Embedded in the tour editor, the step's single Save button (bottom bar) submits this form. */}
           {!embedded && (
           <div id="tour-form-save-bar" className="flex flex-col gap-3 rounded-2xl border border-[#DCE6F3] bg-white px-4 py-3 shadow-[0_10px_30px_-28px_rgba(28,83,160,.8)] sm:flex-row sm:items-center sm:justify-between">
@@ -1425,9 +1458,16 @@ export default function TourFormPage({
               const isRequired = key === "title";
               return (
                 <label key={key} data-field={key} className="block">
-                  <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
-                    {label}
-                    {isRequired && <span className="ml-1 text-red-500 font-bold">*</span>}
+                  <span className="mb-1 flex items-end justify-between gap-2 text-xs font-bold uppercase text-slate-600">
+                    <span>
+                      {label}
+                      {isRequired ? <span className="ml-1 text-red-500 font-bold">*</span> : <span className="ml-1 font-medium normal-case text-slate-400">(optional)</span>}
+                    </span>
+                    {FIELD_MAX[key] && (
+                      <span className={`text-[11px] font-semibold normal-case ${(form[key] ?? "").length > FIELD_MAX[key] ? "text-red-600" : "text-slate-400"}`}>
+                        {(form[key] ?? "").length}/{FIELD_MAX[key]}
+                      </span>
+                    )}
                   </span>
                   <input
                     name={key}
@@ -1445,11 +1485,13 @@ export default function TourFormPage({
                     }
                     className={getInputClass(key)}
                   />
-                  {errors[key] && (
+                  {errors[key] ? (
                     <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
                       <AlertCircle size={13} className="shrink-0 text-red-500" />
                       <span>{errors[key]}</span>
                     </p>
+                  ) : (
+                    FIELD_HINTS[key] && <span className="mt-1 block text-[11px] text-slate-400">{FIELD_HINTS[key]}</span>
                   )}
                 </label>
               );
@@ -2082,7 +2124,14 @@ export default function TourFormPage({
           <FormSection role={role} icon={Search} title="SEO" description="Metadata for search engines and social sharing.">
             {seoFields.map(([key, label]) => (
               <label key={key} data-field={key} className={key === "seo_description" ? "md:col-span-2 block" : "block"}>
-                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">{label}</span>
+                <span className="mb-1 flex items-end justify-between gap-2 text-xs font-bold uppercase text-slate-600">
+                  <span>{label} <span className="font-medium normal-case text-slate-400">(optional)</span></span>
+                  {FIELD_MAX[key] && (
+                    <span className={`text-[11px] font-semibold normal-case ${(form[key] ?? "").length > FIELD_MAX[key] ? "text-red-600" : "text-slate-400"}`}>
+                      {(form[key] ?? "").length}/{FIELD_MAX[key]}
+                    </span>
+                  )}
+                </span>
                 {key === "seo_description" ? (
                   <textarea
                     name={key}
@@ -2104,11 +2153,13 @@ export default function TourFormPage({
                     className={getInputClass(key)}
                   />
                 )}
-                {errors[key] && (
+                {errors[key] ? (
                   <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
                     <AlertCircle size={13} className="shrink-0 text-red-500" />
                     <span>{errors[key]}</span>
                   </p>
+                ) : (
+                  FIELD_HINTS[key] && <span className="mt-1 block text-[11px] text-slate-400">{FIELD_HINTS[key]}</span>
                 )}
               </label>
             ))}

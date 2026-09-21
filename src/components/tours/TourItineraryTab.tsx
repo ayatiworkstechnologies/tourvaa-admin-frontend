@@ -1,5 +1,7 @@
 ﻿"use client";
 
+import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
+import { validateItineraryDay, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuArrowDown as ArrowDown,
@@ -272,6 +274,20 @@ Each formatted point automatically generates an individual numbered milestone ca
   );
 }
 
+const ITINERARY_FIELDS: { key: string; label: string; type: "text" | "number" | "time"; required?: boolean; hint?: string; max?: number }[] = [
+  { key: "day_number", label: "Day number", type: "number", required: true, hint: "Which day of the trip this is (1 = first day)." },
+  { key: "day_title", label: "Day title", type: "text", required: true, hint: "A short headline, e.g. Arrival and city walk.", max: 255 },
+  { key: "location_name", label: "Location", type: "text", hint: "Where the group spends the day.", max: 255 },
+  { key: "accommodation", label: "Accommodation", type: "text", hint: "Where they stay that night.", max: 255 },
+  { key: "start_time", label: "Start time", type: "time", hint: "Optional. 24-hour time." },
+  { key: "end_time", label: "End time", type: "time", hint: "Optional. Must be after the start time." },
+  { key: "travel_distance", label: "Travel distance", type: "text", hint: "e.g. 120 km." },
+  { key: "travel_duration", label: "Travel duration", type: "text", hint: "e.g. 2 hours." },
+  { key: "transport_type", label: "Transport type", type: "text", hint: "e.g. Private coach." },
+  { key: "meals_included", label: "Meals included", type: "text", hint: "e.g. Breakfast, Dinner.", max: 150 },
+  { key: "display_order", label: "Display order", type: "number", hint: "Lower numbers show first." },
+];
+
 export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: string; numberOfDays?: number | null }) {
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
@@ -279,6 +295,8 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ItineraryDay | null>(null);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
 
   const duration = numberOfDays && numberOfDays > 0 ? numberOfDays : null;
   const atLimit = duration != null && items.length >= duration;
@@ -307,6 +325,15 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
       toast.error(`This tour is set to ${duration} day(s) in Basic Details -- remove a day there before adding another.`);
       return;
     }
+    const found = validateItineraryDay(editing, {
+      tourDays: duration ?? undefined,
+      existingDayNumbers: items.filter((i) => i.id !== editing.id).map((i) => Number(i.day_number)),
+    });
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusField(Object.keys(found)[0]);
+      return;
+    }
     setSaving(true);
     try {
       const payload = { ...editing, day_number: sanitizeNumber(editing.day_number, 1), display_order: sanitizeNumber(editing.display_order) };
@@ -321,6 +348,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
         toast.success("Day created successfully.");
       }
       setEditing(null);
+      setErrors({});
       void load();
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
@@ -418,7 +446,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
       ))}
 
       {editing && (
-        <form onSubmit={save} className="rounded-xl border-2 border-dash-brand bg-white p-6 shadow-sm">
+        <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-dash-text">
@@ -428,33 +456,31 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
                 {editing.id ? "Update the day's schedule, detailed descriptions, activities, and media." : "Add a new day to this tour's itinerary."}
               </p>
             </div>
-            <button type="button" onClick={() => setEditing(null)} aria-label="Close" title="Close" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-slate-100"><X size={18} /></button>
+            <button type="button" onClick={() => { setEditing(null); setErrors({}); }} aria-label="Close" title="Close" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-slate-100"><X size={18} /></button>
           </div>
+          <ErrorSummary errors={errors} />
           <div className="grid gap-4 md:grid-cols-2">
-            {[
-              ["day_number", "Day number", "number"],
-              ["day_title", "Day title", "text"],
-              ["location_name", "Location", "text"],
-              ["accommodation", "Accommodation", "text"],
-              ["start_time", "Start time", "time"],
-              ["end_time", "End time", "time"],
-              ["travel_distance", "Travel distance", "text"],
-              ["travel_duration", "Travel duration", "text"],
-              ["transport_type", "Transport type", "text"],
-              ["meals_included", "Meals included", "text"],
-              ["display_order", "Display order", "number"],
-            ].map(([key, label, type]) => (
-              <label key={key}>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
+            {ITINERARY_FIELDS.map(({ key, label, type, required, hint, max }) => (
+              <FormField
+                key={key}
+                name={key}
+                label={label}
+                required={required}
+                error={errors[key]}
+                hint={key === "day_number" && duration != null ? `${hint} This tour runs ${duration} day${duration === 1 ? "" : "s"}.` : hint}
+                counter={max ? { value: String((editing as unknown as Record<string, unknown>)[key] ?? "").length, max } : undefined}
+              >
                 <input
+                  id={key}
+                  name={key}
                   type={type}
                   min={key === "day_number" ? 1 : undefined}
                   max={key === "day_number" && duration != null ? duration : undefined}
-                  value={type === "number" ? numberInputValue((editing as Record<string, unknown>)[key] as number) : ((editing as Record<string, unknown>)[key] as string ?? "")}
-                  onChange={(e) => setEditing((prev) => prev ? { ...prev, [key]: type === "number" ? parseNumberInput(e.target.value) : e.target.value } : prev)}
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                  value={type === "number" ? numberInputValue((editing as unknown as Record<string, unknown>)[key] as number) : (((editing as unknown as Record<string, unknown>)[key] as string) ?? "")}
+                  onChange={(e) => { setEditing((prev) => prev ? { ...prev, [key]: type === "number" ? parseNumberInput(e.target.value) : e.target.value } : prev); clearError(key); }}
+                  className={fieldClass(errors[key])}
                 />
-              </label>
+              </FormField>
             ))}
             {/* Short description */}
             <label className="md:col-span-2">

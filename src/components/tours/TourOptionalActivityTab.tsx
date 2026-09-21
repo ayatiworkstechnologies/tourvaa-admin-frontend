@@ -1,5 +1,7 @@
 "use client";
 
+import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
+import { validateActivity, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuSave as Save, LuX as X } from "react-icons/lu";
 import {
@@ -36,6 +38,8 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<OptionalActivity | null>(null);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,6 +59,12 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    const found = validateActivity(editing);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusField(Object.keys(found)[0]);
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -71,6 +81,7 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
+      setErrors({});
       toast.success("Saved.");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
@@ -142,10 +153,11 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
       </div>
 
       {editing && (
-        <form onSubmit={save} className="rounded-xl border-2 border-dash-brand bg-white p-6">
+        <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6">
+          <ErrorSummary errors={errors} />
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold text-dash-text">{editing.id ? "Edit Activity" : "New Activity"}</h3>
-            <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
+            <button type="button" aria-label="Close" onClick={() => { setEditing(null); setErrors({}); }}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
@@ -155,23 +167,16 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
                 onChange={(value) => setEditing((p) => (p ? { ...p, image: value } : p))}
               />
             </div>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Activity name *</span>
-              <input
-                value={editing.activity_name}
-                onChange={(e) => setEditing((p) => (p ? { ...p, activity_name: e.target.value } : p))}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-              />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Price per person</span>
-              <input
-                type="number"
-                value={numberInputValue(editing.price_per_person)}
-                onChange={(e) => setEditing((p) => (p ? { ...p, price_per_person: parseNumberInput(e.target.value) } : p))}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-              />
-            </label>
+            <FormField name="activity_name" label="Activity name" required error={errors.activity_name} hint="What travellers can add, e.g. Desert safari." counter={{ value: (editing.activity_name ?? "").length, max: 255 }}>
+              <input id="activity_name" name="activity_name" value={editing.activity_name}
+                onChange={(e) => { setEditing((p) => (p ? { ...p, activity_name: e.target.value } : p)); clearError("activity_name"); }}
+                className={fieldClass(errors.activity_name)} />
+            </FormField>
+            <FormField name="price_per_person" label="Price per person" required error={errors.price_per_person} hint={`Extra charge added to the booking, in the tour's currency. Enter 0 if free.`}>
+              <input id="price_per_person" name="price_per_person" type="number" min={0} step="0.01" value={numberInputValue(editing.price_per_person)}
+                onChange={(e) => { setEditing((p) => (p ? { ...p, price_per_person: parseNumberInput(e.target.value) } : p)); clearError("price_per_person"); }}
+                className={fieldClass(errors.price_per_person)} />
+            </FormField>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pricing mode</span>
               <select
@@ -185,24 +190,18 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
             </label>
             {editing.pricing_mode === "per_passenger_type" && (
               <>
-                <label>
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Child price <span className="normal-case font-normal">(blank = same as adult)</span></span>
-                  <input
-                    type="number"
+                <FormField name="child_price_per_person" label="Child price" error={errors.child_price_per_person} hint="Leave blank to charge children the adult price.">
+                  <input id="child_price_per_person" name="child_price_per_person" type="number" min={0} step="0.01"
                     value={editing.child_price_per_person == null ? "" : numberInputValue(editing.child_price_per_person)}
-                    onChange={(e) => setEditing((p) => (p ? { ...p, child_price_per_person: e.target.value === "" ? null : parseNumberInput(e.target.value) } : p))}
-                    className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-                  />
-                </label>
-                <label>
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Infant price <span className="normal-case font-normal">(blank = free)</span></span>
-                  <input
-                    type="number"
+                    onChange={(e) => { setEditing((p) => (p ? { ...p, child_price_per_person: e.target.value === "" ? null : parseNumberInput(e.target.value) } : p)); clearError("child_price_per_person"); }}
+                    className={fieldClass(errors.child_price_per_person)} />
+                </FormField>
+                <FormField name="infant_price_per_person" label="Infant price" error={errors.infant_price_per_person} hint="Leave blank if infants are free.">
+                  <input id="infant_price_per_person" name="infant_price_per_person" type="number" min={0} step="0.01"
                     value={editing.infant_price_per_person == null ? "" : numberInputValue(editing.infant_price_per_person)}
-                    onChange={(e) => setEditing((p) => (p ? { ...p, infant_price_per_person: e.target.value === "" ? null : parseNumberInput(e.target.value) } : p))}
-                    className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-                  />
-                </label>
+                    onChange={(e) => { setEditing((p) => (p ? { ...p, infant_price_per_person: e.target.value === "" ? null : parseNumberInput(e.target.value) } : p)); clearError("infant_price_per_person"); }}
+                    className={fieldClass(errors.infant_price_per_person)} />
+                </FormField>
               </>
             )}
             <label>

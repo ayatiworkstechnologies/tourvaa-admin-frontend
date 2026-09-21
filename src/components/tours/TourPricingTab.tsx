@@ -1,5 +1,7 @@
 "use client";
 
+import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
+import { validatePricingSlab, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useState } from "react";
 import { LuBadgeDollarSign as BadgeDollarSign, LuInfo as Info, LuPencil as Pencil, LuPercent as Percent, LuPlus as Plus, LuSave as Save, LuSparkles as Sparkles, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } from "@/lib/api/services/tourDetailService";
@@ -125,6 +127,8 @@ export default function TourPricingTab({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<PricingSlab | null>(null);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
   const [markupEditing, setMarkupEditing] = useState<PricingSlab | null>(null);
 
   // Read-only -- the supplier's agreed commission floor (this slab-level
@@ -202,20 +206,10 @@ export default function TourPricingTab({
     const adultPrice = sanitizeNumber(editing.adult_price);
     const childPrice = sanitizeNumber(editing.child_price);
 
-    if (pFrom < 1) {
-      toast.error("Pax From must be at least 1.");
-      return;
-    }
-    if (pTo < pFrom) {
-      toast.error("Pax To cannot be less than Pax From.");
-      return;
-    }
-    if (adultPrice <= 0) {
-      toast.error("Adult price must be greater than 0.");
-      return;
-    }
-    if (childPrice < 0) {
-      toast.error("Child price cannot be negative.");
+    const found = validatePricingSlab(editing);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusField(Object.keys(found)[0]);
       return;
     }
     if (editing.commission_percentage != null && editing.commission_percentage < resolvedFloor) {
@@ -240,6 +234,7 @@ export default function TourPricingTab({
         setSlabs((prev) => [...prev, created].sort((a, b) => a.passenger_from - b.passenger_from));
       }
       setEditing(null);
+      setErrors({});
       toast.success("Pricing slab saved.");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
@@ -467,29 +462,26 @@ export default function TourPricingTab({
 
       {editing && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950/35 px-4 py-8" role="dialog" aria-modal="true">
-          <form onSubmit={saveSlab} className={`w-full max-w-2xl rounded-2xl border-2 bg-white p-6 shadow-2xl ${accent.ring}`}>
+          <form onSubmit={saveSlab} noValidate className={`w-full max-w-2xl rounded-2xl border-2 bg-white p-6 shadow-2xl ${accent.ring}`}>
             <div className="mb-5 flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-lg font-black text-dash-text">
                 <BadgeDollarSign size={18} className={isSupplier ? "text-emerald-700" : "text-dash-brand-hover"} />
                 {editing.id ? "Edit Pricing Slab" : "New Pricing Slab"}
               </h3>
-              <button type="button" onClick={() => setEditing(null)} aria-label="Close" className="text-dash-subtle hover:text-dash-text"><X size={18} /></button>
+              <button type="button" onClick={() => { setEditing(null); setErrors({}); }} aria-label="Close" className="text-dash-subtle hover:text-dash-text"><X size={18} /></button>
             </div>
+            <ErrorSummary errors={errors} />
             <div className="grid gap-4 md:grid-cols-3">
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
-                  Pax From <span className="text-red-500 font-bold">*</span>
-                </span>
-                <input type="number" min={1} value={numberInputValue(editing.passenger_from)} onChange={(e) => setEditing((p) => p ? { ...p, passenger_from: parseNumberInput(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="1" />
-              </label>
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
-                  Pax To <span className="text-red-500 font-bold">*</span>
-                </span>
-                <input type="number" min={1} value={numberInputValue(editing.passenger_to)} onChange={(e) => setEditing((p) => p ? { ...p, passenger_to: parseNumberInput(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="4" />
-              </label>
+              <FormField name="passenger_from" label="Travellers from" required error={errors.passenger_from} hint="Smallest group this price applies to.">
+                <input id="passenger_from" name="passenger_from" type="number" min={1} value={numberInputValue(editing.passenger_from)}
+                  onChange={(e) => { setEditing((p) => p ? { ...p, passenger_from: parseNumberInput(e.target.value) } : p); clearError("passenger_from"); }}
+                  className={fieldClass(errors.passenger_from)} placeholder="1" />
+              </FormField>
+              <FormField name="passenger_to" label="Travellers to" required error={errors.passenger_to} hint="Largest group this price applies to.">
+                <input id="passenger_to" name="passenger_to" type="number" min={1} value={numberInputValue(editing.passenger_to)}
+                  onChange={(e) => { setEditing((p) => p ? { ...p, passenger_to: parseNumberInput(e.target.value) } : p); clearError("passenger_to"); }}
+                  className={fieldClass(errors.passenger_to)} placeholder="4" />
+              </FormField>
               <div>
                 <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Commission %</span>
                 <p className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700">
@@ -498,20 +490,16 @@ export default function TourPricingTab({
                 <span className="mt-1 block text-[11px] text-slate-400">Read-only -- set from agreed rate ({resolvedFloor}%).</span>
               </div>
 
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
-                  Adult Price ({editing.currency}) <span className="text-red-500 font-bold">*</span>
-                </span>
-                <input type="number" min={0} step="0.01" value={numberInputValue(editing.adult_price)} onChange={(e) => setEditing((p) => p ? { ...p, adult_price: parseNumberInput(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="0.00" />
-              </label>
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
-                  Child Price ({editing.currency})
-                </span>
-                <input type="number" min={0} step="0.01" value={numberInputValue(editing.child_price)} onChange={(e) => setEditing((p) => p ? { ...p, child_price: parseNumberInput(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="0.00" />
-              </label>
+              <FormField name="adult_price" label={`Adult price (${editing.currency})`} required error={errors.adult_price} hint="Your price per adult, before Tourvaa's commission.">
+                <input id="adult_price" name="adult_price" type="number" min={0} step="0.01" value={numberInputValue(editing.adult_price)}
+                  onChange={(e) => { setEditing((p) => p ? { ...p, adult_price: parseNumberInput(e.target.value) } : p); clearError("adult_price"); }}
+                  className={fieldClass(errors.adult_price)} placeholder="0.00" />
+              </FormField>
+              <FormField name="child_price" label={`Child price (${editing.currency})`} error={errors.child_price} hint="Leave 0 if children are free.">
+                <input id="child_price" name="child_price" type="number" min={0} step="0.01" value={numberInputValue(editing.child_price)}
+                  onChange={(e) => { setEditing((p) => p ? { ...p, child_price: parseNumberInput(e.target.value) } : p); clearError("child_price"); }}
+                  className={fieldClass(errors.child_price)} placeholder="0.00" />
+              </FormField>
               {isSupplier ? (
                 <div>
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Currency</span>

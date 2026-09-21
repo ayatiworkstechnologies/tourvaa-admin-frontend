@@ -1,5 +1,7 @@
 "use client";
 
+import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
+import { validateAccommodation, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useState } from "react";
 import { LuPlus as Plus, LuSave as Save, LuX as X } from "react-icons/lu";
 import {
@@ -43,6 +45,8 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<AccommodationExtra | null>(null);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,6 +66,12 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    const found = validateAccommodation(editing);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusField(Object.keys(found)[0]);
+      return;
+    }
     setSaving(true);
     try {
       const payload = { ...editing, extra_price: sanitizeNumber(editing.extra_price) };
@@ -73,6 +83,7 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
         setItems((prev) => [...prev, created]);
       }
       setEditing(null);
+      setErrors({});
       toast.success("Saved.");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
@@ -137,10 +148,11 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
       </div>
 
       {editing && (
-        <form onSubmit={save} className="rounded-xl border-2 border-dash-brand bg-white p-6">
+        <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6">
+          <ErrorSummary errors={errors} />
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold text-dash-text">{editing.id ? "Edit Option" : "New Option"}</h3>
-            <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
+            <button type="button" aria-label="Close" onClick={() => { setEditing(null); setErrors({}); }}><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
@@ -150,23 +162,16 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
                 onChange={(value) => setEditing((p) => (p ? { ...p, image: value } : p))}
               />
             </div>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Name *</span>
-              <input
-                value={editing.accommodation_name}
-                onChange={(e) => setEditing((p) => (p ? { ...p, accommodation_name: e.target.value } : p))}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-              />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Extra price</span>
-              <input
-                type="number"
-                value={numberInputValue(editing.extra_price)}
-                onChange={(e) => setEditing((p) => (p ? { ...p, extra_price: parseNumberInput(e.target.value) } : p))}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-              />
-            </label>
+            <FormField name="accommodation_name" label="Name" required error={errors.accommodation_name} hint="The option travellers can pick, e.g. Deluxe sea-view room." counter={{ value: (editing.accommodation_name ?? "").length, max: 255 }}>
+              <input id="accommodation_name" name="accommodation_name" value={editing.accommodation_name}
+                onChange={(e) => { setEditing((p) => (p ? { ...p, accommodation_name: e.target.value } : p)); clearError("accommodation_name"); }}
+                className={fieldClass(errors.accommodation_name)} />
+            </FormField>
+            <FormField name="extra_price" label="Extra price" error={errors.extra_price} hint="Added to the booking on top of the tour price. Leave 0 if there is no extra cost.">
+              <input id="extra_price" name="extra_price" type="number" min={0} step="0.01" value={numberInputValue(editing.extra_price)}
+                onChange={(e) => { setEditing((p) => (p ? { ...p, extra_price: parseNumberInput(e.target.value) } : p)); clearError("extra_price"); }}
+                className={fieldClass(errors.extra_price)} />
+            </FormField>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Price type</span>
               <select
