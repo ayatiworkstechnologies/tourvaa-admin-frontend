@@ -411,6 +411,30 @@ export default function TourDetailExperience({
     tour.subtitle,
   ]);
 
+  // Ensure every tour has at least 5 photos for the unified 5-photo mosaic layout
+  const mosaicItems = useMemo(() => {
+    const items = [...galleryItems];
+    const fallbackPool = [
+      "/images/hero-1.jpg",
+      "/images/hero-2.jpg",
+      "/images/destination-desert.jpg",
+      "/images/destination-alpine.jpg",
+      "/images/hero-3.jpg",
+      "/images/about-mountain.png",
+    ];
+    let fallbackIndex = 0;
+    while (items.length < 5) {
+      const fallbackUrl = fallbackPool[fallbackIndex % fallbackPool.length];
+      items.push({
+        url: fallbackUrl,
+        title: `${title} photo ${items.length + 1}`,
+        caption: "",
+      });
+      fallbackIndex++;
+    }
+    return items;
+  }, [galleryItems, title]);
+
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -874,9 +898,9 @@ export default function TourDetailExperience({
       {modal}
 
       {/* Fullscreen Lightbox Modal */}
-      {lightboxOpen && galleryItems.length > 0 && (
+      {lightboxOpen && mosaicItems.length > 0 && (
         <LightboxModal
-          photos={galleryItems}
+          photos={mosaicItems}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxOpen(false)}
         />
@@ -1062,129 +1086,83 @@ export default function TourDetailExperience({
           </div>
         </section>
 
-        {/* ── 3. DYNAMIC PHOTO GALLERY ── */}
-        {galleryItems.length > 0 && (
-          <section className="mt-5">
-            {galleryItems.length === 1 ? (
-              // Single Hero Banner
-              <div
-                onClick={() => openLightbox(0)}
-                className="group relative h-[320px] sm:h-[420px] w-full overflow-hidden rounded-2xl bg-slate-900 cursor-pointer shadow-md"
-              >
-                <MarketingImage
-                  src={galleryItems[0].url}
-                  alt={galleryItems[0].title || title}
-                  fill
-                  priority
-                  sizes="100vw"
-                  className="object-cover transition duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
-                {galleryItems[0].title && (
-                  <div className="absolute bottom-5 left-5 right-5">
-                    <p className="text-base sm:text-lg font-bold text-white drop-shadow-md">
-                      {galleryItems[0].title}
-                    </p>
-                  </div>
-                )}
+        {/* ── 3. DYNAMIC PHOTO GALLERY (Unified 5-Photo Mosaic Layout for ALL Tours) ── */}
+        <section className="mt-5">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5 h-[340px] sm:h-[420px] md:h-[460px]">
+            {/* Slot 1: Large Feature Photo (Spans 2 columns on desktop) */}
+            <div
+              onClick={() => openLightbox(0)}
+              className="group relative md:col-span-2 h-full overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 cursor-pointer shadow-sm"
+            >
+              <MarketingImage
+                src={mosaicItems[0].url}
+                alt={mosaicItems[0].title || title}
+                fill
+                priority
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="object-cover transition duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6">
+                <p className="text-base sm:text-xl font-bold text-white line-clamp-1 drop-shadow-md">
+                  {title}
+                </p>
               </div>
-            ) : galleryItems.length <= 4 ? (
-              // 2 to 4 Photos Responsive Grid
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {galleryItems.map((item, idx) => (
+            </div>
+
+            {/* Slots 2 to 5: 2x2 Grid on desktop */}
+            <div className="hidden md:grid md:col-span-2 grid-cols-2 gap-2.5 h-full">
+              {mosaicItems.slice(1, 5).map((item, idx) => {
+                const actualIndex = idx + 1;
+                const isLast = idx === 3;
+                return (
                   <div
                     key={idx}
-                    onClick={() => openLightbox(idx)}
-                    className="group relative h-56 sm:h-64 overflow-hidden rounded-2xl bg-slate-100 cursor-pointer shadow-2xs"
+                    onClick={() => openLightbox(actualIndex)}
+                    className="group relative h-full overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 cursor-pointer shadow-2xs"
                   >
                     <MarketingImage
                       src={item.url}
-                      alt={item.title || `${title} photo ${idx + 1}`}
+                      alt={item.title || `Tour photo ${actualIndex}`}
                       fill
-                      sizes="(min-width: 768px) 33vw, 50vw"
-                      className="object-cover transition duration-500 group-hover:scale-105"
+                      sizes="25vw"
+                      className="object-cover transition duration-700 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              // 5+ Photos Magazine Layout
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5 h-[340px] sm:h-[420px] md:h-[460px]">
-                <div
-                  onClick={() => openLightbox(0)}
-                  className="group relative md:col-span-2 h-full overflow-hidden rounded-2xl bg-slate-900 cursor-pointer shadow-sm"
-                >
-                  <MarketingImage
-                    src={galleryItems[0].url}
-                    alt={galleryItems[0].title || title}
-                    fill
-                    priority
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                    className="object-cover transition duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <p className="text-sm sm:text-base font-bold text-white line-clamp-1 drop-shadow-md">
-                      {galleryItems[0].title || title}
-                    </p>
-                  </div>
-                </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                <div className="hidden md:grid md:col-span-2 grid-cols-2 gap-2.5 h-full">
-                  {galleryItems.slice(1, 5).map((item, idx) => {
-                    const actualIndex = idx + 1;
-                    const isLast = idx === 3;
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => openLightbox(actualIndex)}
-                        className="group relative h-full overflow-hidden rounded-2xl bg-slate-100 cursor-pointer shadow-2xs"
+                    {isLast && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openLightbox(0);
+                        }}
+                        className="absolute inset-0 flex items-center justify-center bg-black/45 hover:bg-black/55 backdrop-blur-xs transition text-white font-bold text-xs sm:text-sm gap-2 cursor-pointer"
                       >
-                        <MarketingImage
-                          src={item.url}
-                          alt={item.title || `Tour photo ${actualIndex}`}
-                          fill
-                          sizes="25vw"
-                          className="object-cover transition duration-700 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Camera size={18} />
+                        <span>
+                          View All {Math.max(galleryItems.length, 5)} Photos
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-                        {isLast && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openLightbox(0);
-                            }}
-                            className="absolute inset-0 flex items-center justify-center bg-black/50 hover:bg-black/60 backdrop-blur-xs transition text-white font-bold text-sm gap-2"
-                          >
-                            <Camera size={18} />
-                            <span>View All {galleryItems.length} Photos</span>
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* View all photos button if multiple */}
-            {galleryItems.length > 1 && (
-              <div className="mt-2.5 flex justify-end md:hidden">
-                <button
-                  type="button"
-                  onClick={() => openLightbox(0)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 shadow-sm"
-                >
-                  <Camera size={14} />
-                  <span>View All {galleryItems.length} Photos</span>
-                </button>
-              </div>
-            )}
-          </section>
-        )}
+          {/* View all photos button on mobile */}
+          <div className="mt-2.5 flex justify-end md:hidden">
+            <button
+              type="button"
+              onClick={() => openLightbox(0)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 shadow-sm cursor-pointer"
+            >
+              <Camera size={14} />
+              <span>View All {Math.max(galleryItems.length, 5)} Photos</span>
+            </button>
+          </div>
+        </section>
 
         {/* ── 4. DYNAMIC PRICE HIGHLIGHT BANNER ── */}
         <section className="mt-6 rounded-2xl bg-gradient-to-r from-[#0B1F3A] via-[#102A4E] to-[#1E3A8A] p-5 sm:p-6 text-white shadow-xl relative overflow-hidden border border-blue-900/50">

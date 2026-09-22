@@ -7,7 +7,6 @@ import Link from "next/link";
 import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
-  LuHeart as Heart,
   LuStar as Star,
   LuArrowRight as ArrowRight,
   LuLightbulb as Lightbulb,
@@ -16,6 +15,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useTravelStore, type TravelItem } from "@/providers/TravelStoreProvider";
 import { fetchToursOnDeals } from "@/lib/api/publicClient";
 import HomeNewsletterBanner from "@/components/public/home/HomeNewsletterBanner";
+import WishlistButton from "@/components/public/WishlistButton";
 import { destinationUrl } from "@/lib/utils/tourUrl";
 
 interface DealCardItem {
@@ -928,26 +928,14 @@ function DealCard({
           📍 {deal.country}
         </span>
 
-        {/* Wishlist Heart Top Right */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggleWishlist();
-          }}
-          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/80 backdrop-blur-xs transition hover:scale-110 cursor-pointer shadow-xs"
-        >
-          <Heart
-            size={15}
-            className={
-              isWishlisted
-                ? "fill-[#E53935] text-[#E53935]"
-                : "fill-none text-slate-700 hover:text-[#E53935]"
-            }
-          />
-        </button>
+        {/* Wishlist Heart Top Right -- shared control, see WishlistButton.tsx */}
+        <WishlistButton
+          item={toTravelItem(deal)}
+          variant="badge"
+          className="absolute top-3 right-3"
+          wishlisted={isWishlisted}
+          onToggle={onToggleWishlist}
+        />
 
         {/* Discount Badge Bottom Right */}
         <span className="absolute bottom-3 right-3 rounded-md bg-[#E53935] px-2.5 py-1 text-xs font-bold text-white shadow-md">

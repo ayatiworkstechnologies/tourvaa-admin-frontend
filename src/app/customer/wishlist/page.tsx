@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
-  LuHeart as Heart,
   LuLayoutGrid as LayoutGrid,
   LuList as List,
   LuMapPin as MapPin,
@@ -14,6 +13,7 @@ import {
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import WishlistButton from "@/components/public/WishlistButton";
 
 type WishlistTour = {
   id: string | number;
@@ -263,10 +263,23 @@ export default function CustomerWishlistPage() {
                   <MapPin size={11} className="text-slate-600" />
                   {tour.location}
                 </span>
-                {/* Top-Right Heart Button */}
-                <button
-                  type="button"
-                  onClick={() =>
+                {/* Top-Right Heart Button -- shared control, see WishlistButton.tsx.
+                    Always shown as wishlisted (filled) here since every card on this
+                    page is, by definition, already on the wishlist -- clicking removes it. */}
+                <WishlistButton
+                  item={{
+                    id: Number(tour.id) || 1,
+                    title: tour.title,
+                    price: typeof tour.price === "number" ? tour.price : 85000,
+                    currency: tour.currency || "INR",
+                    image: tour.image,
+                    place: tour.location,
+                    duration: tour.duration,
+                  }}
+                  variant="badge"
+                  className="absolute right-3 top-3"
+                  wishlisted
+                  onToggle={() =>
                     toggleWishlist({
                       id: Number(tour.id) || 1,
                       title: tour.title,
@@ -277,11 +290,7 @@ export default function CustomerWishlistPage() {
                       duration: tour.duration,
                     })
                   }
-                  aria-label="Wishlist"
-                  className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-blue-600 shadow-xs hover:scale-110 transition"
-                >
-                  <Heart size={14} className="fill-current text-blue-600" />
-                </button>
+                />
               </div>
 
               {/* Card Content */}

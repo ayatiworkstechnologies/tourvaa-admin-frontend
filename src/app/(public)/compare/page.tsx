@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown as ChevronDown,
-  LuHeart as Heart,
   LuLoaderCircle as LoaderCircle,
   LuMapPin as MapPin,
   LuSearch as Search,
@@ -25,6 +24,7 @@ import {
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
+import WishlistButton from "@/components/public/WishlistButton";
 import {
   MAX_COMPARE_ITEMS,
   TravelItem,
@@ -706,22 +706,14 @@ export default function ComparePage() {
                             <span>{tour.place}</span>
                           </span>
 
-                          {/* Top-Right Wishlist Button */}
-                          <button
-                            type="button"
-                            onClick={() => toggleWishlist(travelItem)}
-                            aria-label="Toggle Wishlist"
-                            className="absolute right-2.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/20 backdrop-blur-xs transition hover:scale-110"
-                          >
-                            <Heart
-                              size={14}
-                              className={
-                                wishlisted
-                                  ? "fill-red-500 text-red-500"
-                                  : "fill-white text-white"
-                              }
-                            />
-                          </button>
+                          {/* Top-Right Wishlist Button -- shared control, see WishlistButton.tsx */}
+                          <WishlistButton
+                            item={travelItem}
+                            variant="badge"
+                            className="absolute right-2.5 top-2.5"
+                            wishlisted={wishlisted}
+                            onToggle={() => toggleWishlist(travelItem)}
+                          />
                         </div>
 
                         {/* Details */}

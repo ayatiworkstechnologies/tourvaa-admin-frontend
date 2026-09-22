@@ -34,7 +34,7 @@ export default function WishlistButton({
 
   const shell =
     variant === "badge"
-      ? "flex h-8 w-8 items-center justify-center rounded-full bg-black/25 backdrop-blur-xs hover:bg-white"
+      ? "flex h-7 w-7 items-center justify-center rounded-full bg-white/85 backdrop-blur-xs shadow-xs hover:bg-white"
       : "flex h-7 w-7 items-center justify-center";
 
   return (
@@ -57,11 +57,15 @@ export default function WishlistButton({
       className={`z-10 ${shell} transition-transform duration-200 hover:scale-120 active:scale-90 focus:outline-none cursor-pointer ${className}`}
     >
       <Heart
-        size={18}
+        size={variant === "badge" ? 15 : 18}
         className={`transition-colors duration-200 ${
-          wishlisted
-            ? "fill-red-500 text-red-500 drop-shadow-md"
-            : "fill-white text-white drop-shadow-md hover:fill-red-400 hover:text-red-400"
+          variant === "badge"
+            ? wishlisted
+              ? "fill-red-500 text-red-500"
+              : "fill-none text-slate-700 hover:text-red-500"
+            : wishlisted
+              ? "fill-red-500 text-red-500 drop-shadow-md"
+              : "fill-white text-white drop-shadow-md hover:fill-red-400 hover:text-red-400"
         }`}
       />
     </button>
