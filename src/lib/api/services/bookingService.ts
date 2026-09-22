@@ -61,6 +61,24 @@ export type Booking = {
   // admin (see services.bookings.get_booking_detail's role gate); absent
   // for agent/supplier/customer views of the same booking.
   supplier_breakdown?: SupplierBreakdown | null;
+  booking_source?: "admin" | "agent" | "customer" | null;
+  // Immutable commission snapshot captured once at booking creation (see
+  // Booking model / serialize_booking in the backend). Admin-only, same
+  // gate as supplier_breakdown -- null/undefined for older bookings or
+  // non-admin views, so each field must be checked before rendering.
+  tourvaa_commission_percentage?: string | null;
+  tourvaa_commission_amount?: string | null;
+  supplier_net_payable?: string | null;
+  agent_commission_percentage?: string | null;
+  agent_commission_amount?: string | null;
+  affiliate_commission_percentage?: string | null;
+  affiliate_commission_amount?: string | null;
+  tourvaa_net_revenue?: string | null;
+  non_commissionable_addon_amount?: string | null;
+  cost_plus_supplier_payable?: string | null;
+  group_discount_funded_by?: "SUPPLIER" | "TOURVAA" | "SHARED" | null;
+  promo_discount_funded_by?: "SUPPLIER" | "TOURVAA" | "SHARED" | null;
+  cancellation_source?: string | null;
 };
 
 export type SupplierBreakdown = {

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil, LuCheck as Check, LuRefreshCw as RefreshCw, LuChevronDown as ChevronDown, LuPercent as Percent } from "react-icons/lu";
+import { LuPlus as Plus, LuTrash2 as Trash2, LuPencil as Pencil, LuCheck as Check, LuRefreshCw as RefreshCw, LuChevronDown as ChevronDown, LuPercent as Percent, LuX as X, LuSearch as Search } from "react-icons/lu";
 import api from "@/lib/api/client";
 import ActionModal from "@/components/operations/ActionModal";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
@@ -31,6 +31,167 @@ function renderImagePreview(item: CmsItem, key: string, label: string) {
     </div>
   );
 }
+// ---- country multi-select (feature pills etc.) ---------------------------
+// Same interaction pattern as TourFormPage's LanguageMultiSelect (search +
+// checkbox list + removable chips) but sourced from the real /countries list
+// instead of a static language table, and restricted to real countries only
+// (no free-text "add custom" escape hatch) -- replaces a plain comma-
+// separated text input for any field where the tags are meant to be countries.
+function CountryMultiSelect({
+  value,
+  onChange,
+  placeholder = "Select countries...",
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [countries, setCountries] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api
+      .get("/countries", { params: { limit: 300 } })
+      .then((res) => {
+        if (!active) return;
+        const items = (res.data?.items ?? res.data?.data ?? []) as { country_name?: string }[];
+        setCountries(items.map((c) => c.country_name).filter((n): n is string => Boolean(n)).sort());
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const selectedList = value
+    ? value.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const toggleCountry = (name: string) => {
+    const isSelected = selectedList.some((s) => s.toLowerCase() === name.toLowerCase());
+    const updated = isSelected
+      ? selectedList.filter((s) => s.toLowerCase() !== name.toLowerCase())
+      : [...selectedList, name];
+    onChange(updated.join(", "));
+  };
+
+  const removeCountry = (name: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    onChange(selectedList.filter((s) => s.toLowerCase() !== name.toLowerCase()).join(", "));
+  };
+
+  const filtered = countries.filter((name) =>
+    name.toLowerCase().includes(search.trim().toLowerCase())
+  );
+
+  return (
+    <div ref={containerRef} className="relative block">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen((prev) => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((prev) => !prev);
+          }
+        }}
+        className="w-full min-h-[44px] rounded-xl border border-dash-border px-3 py-2 flex items-center justify-between gap-2 cursor-pointer select-none bg-white"
+      >
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0 flex-1">
+          {selectedList.length === 0 ? (
+            <span className="text-slate-400 text-sm">{placeholder}</span>
+          ) : (
+            selectedList.map((name) => (
+              <span
+                key={name}
+                className="inline-flex items-center gap-1 rounded-lg bg-blue-50 border border-blue-200/90 px-2 py-0.5 text-xs font-semibold text-blue-700 shadow-2xs"
+              >
+                <span>{name}</span>
+                <button
+                  type="button"
+                  onClick={(e) => removeCountry(name, e)}
+                  className="rounded-full p-0.5 hover:bg-blue-200/70 text-blue-500 hover:text-blue-800 transition cursor-pointer"
+                  aria-label={`Remove ${name}`}
+                >
+                  <X size={11} className="stroke-[2.5]" />
+                </button>
+              </span>
+            ))
+          )}
+        </div>
+        <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform duration-200 ${open ? "rotate-180 text-[#0284C7]" : ""}`} />
+      </div>
+
+      {open && (
+        <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl space-y-2.5">
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search countries..."
+              autoFocus
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-9 pr-8 py-2 text-sm outline-none focus:border-[#0284C7] focus:bg-white focus:ring-2 focus:ring-[#0284C7]/10 transition"
+            />
+            {search && (
+              <button type="button" onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
+            {loading ? (
+              <p className="py-4 text-center text-xs text-slate-400">Loading countries...</p>
+            ) : filtered.length === 0 ? (
+              <p className="py-4 text-center text-xs text-slate-400">No countries found.</p>
+            ) : (
+              filtered.map((name) => {
+                const isSelected = selectedList.some((s) => s.toLowerCase() === name.toLowerCase());
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => toggleCountry(name)}
+                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium transition cursor-pointer ${
+                      isSelected ? "bg-blue-50/80 text-blue-900 font-semibold" : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className={`flex h-4 w-4 items-center justify-center rounded border transition ${isSelected ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 bg-white"}`}>
+                      {isSelected && <Check size={12} className="stroke-[3]" />}
+                    </span>
+                    <span>{name}</span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---- tab definitions -----------------------------------------------------
 type FieldOption = string | { value: string; label: string };
 
@@ -50,7 +211,7 @@ export type TabConfig = {
 // A "block" tab edits a single key/JSON record (GET/PUT /cms/content-blocks/{blockKey})
 // instead of a list of rows - used for one-off homepage sections that don't
 // need their own table (hero extras, About Tourvaa, blog teaser, transfers banner).
-type BlockFieldType = "text" | "textarea" | "url" | "number" | "asset" | "boolean" | "list" | "records";
+type BlockFieldType = "text" | "textarea" | "url" | "number" | "asset" | "boolean" | "list" | "records" | "countries";
 export type ContentBlockTabConfig = {
   key: string;
   label: string;
@@ -477,7 +638,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "eyebrow", label: "Eyebrow (e.g. PREMIUM TRANSFER PARTNER)", type: "text" },
       { key: "heading", label: "Heading", type: "text" },
       { key: "subtitle", label: "Subtitle", type: "textarea" },
-      { key: "features", label: "Feature pills (comma-separated)", type: "text" },
+      { key: "features", label: "Feature pills (countries shown as pills on the banner)", type: "countries" },
       { key: "cta_text", label: "CTA Text", type: "text" },
       { key: "cta_url", label: "CTA URL", type: "url", hint: "Leave blank to use the Brightlane link set in Settings." },
       { key: "image", label: "Image", type: "asset" },
@@ -592,7 +753,7 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
           <>
             <div className="grid gap-4 sm:grid-cols-2">
               {tab.fields.map((f) => (
-                <div key={f.key} className={f.type === "textarea" || f.type === "asset" || f.type === "list" || f.type === "records" ? "sm:col-span-2" : ""}>
+                <div key={f.key} className={f.type === "textarea" || f.type === "asset" || f.type === "list" || f.type === "records" || f.type === "countries" ? "sm:col-span-2" : ""}>
                   {f.type !== "asset" && (
                     <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">{f.label}</label>
                   )}
@@ -666,6 +827,11 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
                         + Add
                       </button>
                     </div>
+                  ) : f.type === "countries" ? (
+                    <CountryMultiSelect
+                      value={values[f.key] ?? ""}
+                      onChange={(val) => setValues((v) => ({ ...v, [f.key]: val }))}
+                    />
                   ) : f.type === "boolean" ? (
                     <button
                       type="button"

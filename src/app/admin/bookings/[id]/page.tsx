@@ -81,6 +81,12 @@ const BOOKING_STATUS_TRANSITIONS: Record<string, string[]> = {
   refunded: [],
 };
 
+function isNonZeroAmount(value?: string | null) {
+  if (value === null || value === undefined) return false;
+  const n = parseFloat(value);
+  return !Number.isNaN(n) && n !== 0;
+}
+
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -220,6 +226,30 @@ export default function BookingDetailPage() {
   const extensionItems = booking?.extensions || [];
   const travellers = booking?.travellers || [];
   const communications = booking?.communications || [];
+
+  // Commission snapshot -- immutable fields captured once at booking
+  // creation (see Booking model / serialize_booking's admin-only block in
+  // the backend). Only populated for bookings priced after that snapshot
+  // was introduced, so every row below is opt-in based on data presence.
+  const showSupplierCommissionRow =
+    booking?.supplier_breakdown?.gross_amount !== undefined && booking?.supplier_breakdown?.gross_amount !== null;
+  const hasSupplierSection =
+    showSupplierCommissionRow ||
+    booking?.tourvaa_commission_percentage != null ||
+    booking?.tourvaa_commission_amount != null ||
+    booking?.supplier_net_payable != null;
+  const hasTourvaaSection = booking?.tourvaa_commission_amount != null || booking?.tourvaa_net_revenue != null;
+  const carveOutAmount = booking?.agent_commission_amount ?? booking?.affiliate_commission_amount ?? null;
+  const carveOutLabel = booking?.agent_commission_amount != null ? "Less: Agent Commission" : "Less: Affiliate Commission";
+  const hasAgentCommission =
+    booking?.booking_source === "agent" &&
+    (booking?.agent_commission_percentage != null || booking?.agent_commission_amount != null);
+  const hasAffiliateCommission = booking?.affiliate_commission_percentage != null || booking?.affiliate_commission_amount != null;
+  const hasDiscountFunding = Boolean(booking?.group_discount_funded_by || booking?.promo_discount_funded_by);
+  const hasNonCommissionableAddon = isNonZeroAmount(booking?.non_commissionable_addon_amount);
+  const hasCostPlusAddon = isNonZeroAmount(booking?.cost_plus_supplier_payable);
+  const hasFinancialBreakdown =
+    hasSupplierSection || hasTourvaaSection || hasAgentCommission || hasAffiliateCommission || hasDiscountFunding || hasNonCommissionableAddon || hasCostPlusAddon;
 
   return (
     <ModuleWrapper title="Booking Detail" requiredPermission="bookings.view">
@@ -408,6 +438,107 @@ export default function BookingDetailPage() {
               </div>
             </DetailPanel>
           </div>
+
+          {canViewSupplierFinancials && hasFinancialBreakdown && (
+            <DetailPanel title="Financial Breakdown">
+              <div className="space-y-5">
+                {hasSupplierSection && (
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase text-dash-subtle">Supplier</p>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      {showSupplierCommissionRow && (
+                        <DetailField label="Gross Amount" value={formatExact(booking.supplier_breakdown!.gross_amount, booking.supplier_breakdown!.currency)} />
+                      )}
+                      {booking.tourvaa_commission_percentage != null && (
+                        <DetailField label="Tourvaa Commission %" value={`${booking.tourvaa_commission_percentage}%`} />
+                      )}
+                      {booking.tourvaa_commission_amount != null && (
+                        <DetailField label="Tourvaa Commission Amount" value={formatExact(booking.tourvaa_commission_amount, booking.currency)} />
+                      )}
+                      {booking.supplier_net_payable != null && (
+                        <DetailField label="Supplier Net Payable" value={formatExact(booking.supplier_net_payable, booking.currency)} />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {hasTourvaaSection && (
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase text-dash-subtle">Tourvaa</p>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      {booking.tourvaa_commission_amount != null && (
+                        <DetailField label="Commission Amount" value={formatExact(booking.tourvaa_commission_amount, booking.currency)} />
+                      )}
+                      {carveOutAmount != null && (
+                        <DetailField label={carveOutLabel} value={`- ${formatExact(carveOutAmount, booking.currency)}`} />
+                      )}
+                      {booking.tourvaa_net_revenue != null && (
+                        <DetailField label="Net Revenue" value={formatExact(booking.tourvaa_net_revenue, booking.currency)} />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {hasAgentCommission && (
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase text-dash-subtle">Agent Commission</p>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      {booking.agent_commission_percentage != null && (
+                        <DetailField label="Commission %" value={`${booking.agent_commission_percentage}%`} />
+                      )}
+                      {booking.agent_commission_amount != null && (
+                        <DetailField label="Commission Amount" value={formatExact(booking.agent_commission_amount, booking.currency)} />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {hasAffiliateCommission && (
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase text-dash-subtle">Affiliate Commission</p>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      {booking.affiliate_commission_percentage != null && (
+                        <DetailField label="Commission %" value={`${booking.affiliate_commission_percentage}%`} />
+                      )}
+                      {booking.affiliate_commission_amount != null && (
+                        <DetailField label="Commission Amount" value={formatExact(booking.affiliate_commission_amount, booking.currency)} />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {hasDiscountFunding && (
+                  <div className="flex flex-wrap gap-2">
+                    {booking.group_discount_funded_by && (
+                      <span className="inline-flex items-center rounded-full bg-dash-bg px-3 py-1 text-xs font-bold text-dash-body">
+                        Group discount funded by: {booking.group_discount_funded_by}
+                      </span>
+                    )}
+                    {booking.promo_discount_funded_by && (
+                      <span className="inline-flex items-center rounded-full bg-dash-bg px-3 py-1 text-xs font-bold text-dash-body">
+                        Promo discount funded by: {booking.promo_discount_funded_by}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {(hasNonCommissionableAddon || hasCostPlusAddon) && (
+                  <div className="space-y-1.5">
+                    {hasNonCommissionableAddon && (
+                      <p className="text-xs text-dash-muted">
+                        Non-commissionable addons: <span className="font-bold text-dash-text">{formatExact(booking.non_commissionable_addon_amount!, booking.currency)}</span> (paid to supplier in full, no commission)
+                      </p>
+                    )}
+                    {hasCostPlusAddon && (
+                      <p className="text-xs text-dash-muted">
+                        Cost-plus addons: <span className="font-bold text-dash-text">{formatExact(booking.cost_plus_supplier_payable!, booking.currency)}</span> (supplier&apos;s exact cost, no commission)
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </DetailPanel>
+          )}
 
           {travellers.length > 0 && (
             <DetailPanel title="Travellers">
