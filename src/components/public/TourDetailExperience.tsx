@@ -2483,6 +2483,18 @@ export default function TourDetailExperience({
                 Booking Summary
               </h4>
 
+              {groupSaving > 0 && (
+                <div className="mb-2 flex items-center justify-between rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-1.5 text-[11px] font-semibold text-blue-800">
+                  <span>
+                    🎉 Group rate applied ({travellerCount} travellers) vs.
+                    standard rate
+                  </span>
+                  <span className="font-bold">
+                    -{format(groupSaving, tourCurrency)} total
+                  </span>
+                </div>
+              )}
+
               <div className="space-y-1.5 text-xs">
                 {promoActive ? (
                   <>
@@ -2541,12 +2553,6 @@ export default function TourDetailExperience({
                       </div>
                     )}
                   </>
-                )}
-                {groupSaving > 0 && (
-                  <div className="flex justify-between text-emerald-600 font-bold">
-                    <span>Group Savings</span>
-                    <span>- {format(groupSaving, tourCurrency)}</span>
-                  </div>
                 )}
                 <div className="flex justify-between text-slate-600 font-medium">
                   <span>Taxes &amp; Fees</span>
