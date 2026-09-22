@@ -599,8 +599,8 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     : "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80");
 
   return (
-    <main className="min-h-screen bg-white pb-24 pt-3 text-slate-950">
-      <div className="mx-auto max-w-[1400px] px-5">
+    <main className="min-h-screen bg-white pb-24 pt-3 text-slate-950 overflow-x-clip">
+      <div className="mx-auto max-w-[1400px] px-5 min-w-0">
         {/* ── 1. Hero Landscape Banner ── */}
         <section className="relative h-[480px] min-h-[480px] w-full rounded-[20px] bg-slate-950 shadow-md">
           {/* Background Image -- its own clipped layer so the content below
@@ -757,7 +757,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         </div>
 
         {/* ── 4. Live Horizontal Filter Pills Bar ── */}
-        <div className="mt-5 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <div className="mt-5 flex w-full min-w-0 max-w-full items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {/* Main Filter Badge */}
           <button
             type="button"

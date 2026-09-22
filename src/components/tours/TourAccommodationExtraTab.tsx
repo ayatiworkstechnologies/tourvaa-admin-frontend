@@ -36,6 +36,7 @@ const empty = (): AccommodationExtra => ({
   category: "room_upgrade",
   is_default: false,
   status: "active",
+  commissionable: true,
 });
 
 export default function TourAccommodationExtraTab({ tourId }: { tourId: string }) {
@@ -215,6 +216,17 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
               />
               <span className="text-sm font-semibold text-dash-body">Included by default</span>
             </label>
+            <label className="flex items-center gap-2 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={editing.commissionable ?? true}
+                onChange={(e) => setEditing((p) => (p ? { ...p, commissionable: e.target.checked } : p))}
+              />
+              <span className="text-sm font-semibold text-dash-body">Commissionable</span>
+            </label>
+            <p className="-mt-3 text-xs text-dash-subtle md:col-span-2">
+              When off, the supplier is paid this item&apos;s full price with no Tourvaa commission deducted. Default: on.
+            </p>
             <label className="md:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Description</span>
               <textarea

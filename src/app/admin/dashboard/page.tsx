@@ -89,6 +89,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   const [fCountry, setFCountry] = useState("");
   // active filters - what the load() actually uses
   const [activeFilters, setActiveFilters] = useState({ start: "", end: "", country: "" });
+  const [setupProgress, setSetupProgress] = useState<{ percent: number; completed: number; total: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -140,6 +141,19 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   }, [activeFilters]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Platform setup checklist progress (company profile, payment gateway,
+  // etc.) - fetched once, separately from the main dashboard load() above so
+  // it never blocks/fails the rest of the dashboard.
+  useEffect(() => {
+    api
+      .get("/settings/setup-progress")
+      .then((res) => {
+        const data = res.data?.data ?? res.data ?? null;
+        if (data) setSetupProgress({ percent: data.percent ?? 0, completed: data.completed ?? 0, total: data.total ?? 0 });
+      })
+      .catch(() => {});
+  }, []);
 
   // Clamp back to the last valid page when the list shrinks (e.g. after an
   // approve/reject removes the last item on the current page).
@@ -248,6 +262,24 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         </div>
         <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
       </div>
+
+      {/* platform setup progress */}
+      {setupProgress && setupProgress.percent < 100 && (
+        <div className="rounded-2xl border border-dash-border bg-white p-5">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-bold text-dash-text">Platform Setup: {setupProgress.percent}% complete</span>
+            <Link href="/admin/settings" className="text-xs font-bold text-dash-brand hover:text-dash-brand-hover">
+              {setupProgress.completed}/{setupProgress.total} steps &middot; Finish setup
+            </Link>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-dash-bg">
+            <div
+              className="h-full rounded-full bg-dash-brand transition-all"
+              style={{ width: `${Math.min(100, Math.max(0, setupProgress.percent))}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* 2. stat cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">

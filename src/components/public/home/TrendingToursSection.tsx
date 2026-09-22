@@ -8,9 +8,7 @@ import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
   LuClock as Clock,
-  LuFlame as Flame,
   LuMapPin as MapPin,
-  LuShieldCheck as ShieldCheck,
   LuSlidersHorizontal as Sliders,
   LuSparkles as Sparkles,
   LuStar as Star,
@@ -75,7 +73,7 @@ export function TrendingTourCard({
   return (
     <article
       data-trending-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[26px] border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:shadow-xl hover:border-pub-secondary/40 hover:-translate-y-2 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-xs transition-all duration-300 hover:border-pub-accent hover:shadow-md h-full"
     >
       <Link href={href} className="flex flex-col h-full justify-between">
         <div>
@@ -88,23 +86,6 @@ export function TrendingTourCard({
               alt={tour.title}
               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
             />
-
-            {/* Top-left Badges: Prominent Ranking Pill + Destination */}
-            <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5 pointer-events-none">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 px-3 py-1 text-[11px] font-black text-white shadow-md tracking-wider">
-                <Flame
-                  size={13}
-                  className="fill-white text-white shrink-0 animate-pulse"
-                />
-                <span>#{rankNumber} TRENDING</span>
-              </span>
-              {tour.place && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white border border-white/20 shadow-xs">
-                  <MapPin size={10} className="text-amber-400 shrink-0" />
-                  <span className="truncate max-w-[90px]">{tour.place}</span>
-                </span>
-              )}
-            </div>
 
             {/* Wishlist Button (top-right) with frosted backdrop */}
             <div className="absolute right-3 top-3 z-10">
@@ -155,12 +136,7 @@ export function TrendingTourCard({
                     </span>
                   )}
                 </div>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                  <ShieldCheck size={11} />
-                  <span>Verified Operator</span>
-                </span>
-              )}
+              ) : null}
             </div>
 
             {/* Title: 2 lines with proper line clamp and font heading */}
@@ -199,35 +175,37 @@ export function TrendingTourCard({
           </div>
         </div>
 
-        {/* Pricing Row + Interactive Action Button */}
-        <div className="border-t border-slate-100 bg-slate-50/50 p-4 sm:px-5 sm:py-3.5 flex items-center justify-between rounded-b-[25px]">
+        {/* Pricing Row + Action Button (Arrow Only) */}
+        <div className="border-t border-slate-100 bg-slate-50/60 p-4 sm:px-5 sm:py-3.5 flex items-center justify-between rounded-b-[25px] transition-colors duration-300 group-hover:bg-slate-50">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Starting From
+              Starting from
             </span>
-            <div className="flex items-baseline gap-1.5">
+            <div className="flex items-baseline gap-1.5 mt-0.5">
               {tour.originalPrice != null && (
-                <span className="text-xs font-normal text-slate-400 line-through">
+                <span className="text-xs font-medium text-slate-400 line-through">
                   {format(tour.originalPrice, tour.currency || "USD")}
                 </span>
               )}
-              <strong className="text-base sm:text-lg font-black text-slate-950 font-heading">
+              <strong className="text-lg sm:text-xl font-black text-slate-950 font-heading tracking-tight">
                 {tour.rawPrice != null
                   ? format(tour.rawPrice, tour.currency || "USD")
                   : "On request"}
               </strong>
-              <span className="text-[11px] text-slate-500 font-medium">
+              <span className="text-xs text-slate-500 font-medium">
                 / person
               </span>
             </div>
           </div>
 
-          {/* Interactive Action Pill Button */}
-          <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1F3A] px-3.5 py-2 text-xs font-bold text-white shadow-xs group-hover:bg-pub-accent group-hover:shadow-md transition-all duration-200">
-            <span>Explore</span>
+          {/* Just Arrow Button Only */}
+          <span
+            aria-label="Explore tour"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0B1F3A] text-white shadow-xs transition-all duration-300 group-hover:bg-pub-accent group-hover:shadow-md group-hover:scale-105"
+          >
             <ArrowRight
-              size={13}
-              className="group-hover:translate-x-0.5 transition-transform"
+              size={17}
+              className="transition-transform duration-200 group-hover:translate-x-0.5"
             />
           </span>
         </div>

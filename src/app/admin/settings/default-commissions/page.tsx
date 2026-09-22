@@ -9,7 +9,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 
-type UserType = "affiliate" | "agent" | "supplier";
+type UserType = "supplier";
 
 // Maps each user type to the AppSetting key that stores its default
 // commission %. Supplier's key is also the platform-minimum floor (see
@@ -17,9 +17,12 @@ type UserType = "affiliate" | "agent" | "supplier";
 // the same write as the "Tourvaa Tour Commission (Minimum)" field on the
 // main Settings page. Dot colors mirror each portal's own brand color
 // (src/lib/constants/portalThemes.ts) so a row is recognizable at a glance.
+//
+// Agent and Affiliate used to have rows here too, but their default
+// commission % now lives alongside the rest of their portal's settings
+// under Settings -> Agent Settings / Affiliate Settings (see
+// src/app/admin/settings/page.tsx) so each setting only has one home.
 const USER_TYPES: { value: UserType; label: string; key: string; dot: string; chip: string }[] = [
-  { value: "affiliate", label: "Affiliate", key: "affiliate_default_commission_value", dot: "bg-[#7E22CE]", chip: "bg-[#F3E8FD] text-[#7E22CE]" },
-  { value: "agent", label: "Agent", key: "agent_default_commission_percentage", dot: "bg-[#2563EB]", chip: "bg-[#EFF6FF] text-[#2563EB]" },
   { value: "supplier", label: "Supplier", key: "supplier_commission_percentage", dot: "bg-[#16833A]", chip: "bg-emerald-50 text-emerald-700" },
 ];
 
@@ -109,8 +112,15 @@ export default function DefaultCommissionsPage() {
                   <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#2563C7]">Platform Settings</p>
                   <h1 className="mt-1 text-[22px] font-black leading-tight tracking-tight text-dash-text">Default Commissions</h1>
                   <p className="mt-1 max-w-xl text-[13px] leading-5 text-dash-muted">
-                    The commission percentage a new Affiliate, Agent, or Supplier is shown and asked to accept right
-                    after they log in for the first time, before they can upload verification documents.
+                    The commission percentage a new Supplier is shown and asked to accept right after they log in for
+                    the first time, before they can upload verification documents. This is also the platform-wide
+                    minimum commission floor.
+                  </p>
+                  <p className="mt-1 max-w-xl text-[13px] leading-5 text-dash-muted">
+                    Looking for Agent or Affiliate default commissions? Those now live under Settings &rarr;{" "}
+                    <a href="/admin/settings" className="font-bold text-dash-brand-hover underline underline-offset-2">
+                      Agent Settings / Affiliate Settings
+                    </a>.
                   </p>
                 </div>
               </div>

@@ -317,8 +317,8 @@ export default function TourPricingTab({
         iconTone={isSupplier ? "emerald" : "brand"}
         title={isSupplier ? "Supplier Pricing" : "Supplier Price to Tourvaa"}
         description={isSupplier
-          ? "Your 1-pax price and its discounted price (after your agreed commission is applied), per pax-range slab."
-          : "The supplier's 1-pax price, its discounted price after commission, and the agreed commission, per pax-range slab."}
+          ? "Your 1-pax price and the supplier get price (after your agreed commission is applied), per pax-range slab."
+          : "The supplier's 1-pax price, the supplier get price after commission, and the agreed commission, per pax-range slab."}
         action={addButton}
       >
         {isSupplier && isLiveTour && (
@@ -350,8 +350,8 @@ export default function TourPricingTab({
             {/* Table header */}
             <div className="grid grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_1fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
               {(isSupplier
-                ? ["PAX RANGE", "1 PAX PRICE (ADULT)", "DISCOUNTED PRICE (ADULT)", "1 PAX PRICE (CHILD)", "DISCOUNTED PRICE (CHILD)", "COMMISSION", "ACTIONS"]
-                : ["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER DISCOUNTED (ADULT)", "SUPPLIER PRICE (CHILD)", "SUPPLIER DISCOUNTED (CHILD)", "COMMISSION", "ACTIONS"]
+                ? ["PAX RANGE", "1 PAX PRICE (ADULT)", "SUPPLIER GET PRICE (ADULT)", "1 PAX PRICE (CHILD)", "SUPPLIER GET PRICE (CHILD)", "COMMISSION", "ACTIONS"]
+                : ["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER GET PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "SUPPLIER GET PRICE (CHILD)", "COMMISSION", "ACTIONS"]
               ).map((h) => (
                 <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
               ))}
@@ -518,13 +518,13 @@ export default function TourPricingTab({
 
             <div className="mt-4 grid gap-3 rounded-xl bg-dash-bg p-4 sm:grid-cols-2">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Discounted price (adult)</p>
+                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier get price (adult)</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
                   {fmt(sanitizeNumber(editing.adult_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Discounted price (child)</p>
+                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier get price (child)</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
                   {fmt(sanitizeNumber(editing.child_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
                 </p>

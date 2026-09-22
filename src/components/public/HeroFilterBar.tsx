@@ -148,10 +148,10 @@ export default function HeroFilterBar({
   const countryList = countries.length ? countries : FALLBACK_COUNTRIES;
 
   return (
-    <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[980px] md:w-fit text-slate-900">
+    <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[980px] lg:w-fit text-slate-900">
       <form
         onSubmit={submit}
-        className="hero-filter-bar flex flex-col md:flex-row md:items-center overflow-visible rounded-2xl border-[2px] border-white/95 bg-white p-1.5"
+        className="hero-filter-bar flex flex-col lg:flex-row lg:items-center overflow-visible rounded-2xl border-[2px] border-white/95 bg-white p-1.5"
       >
         {/* 1. Where to? */}
         <div className={fieldWrapClass}>
@@ -305,7 +305,7 @@ export default function HeroFilterBar({
         <div className="p-1">
           <button
             type="submit"
-            className="hero-search-button relative overflow-hidden flex h-12 w-full md:w-auto min-w-[130px] items-center justify-center gap-2 rounded-xl bg-pub-primary px-7 text-sm font-bold text-white shadow-md transition duration-200 hover:bg-pub-primary-dark hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+            className="hero-search-button relative overflow-hidden flex h-12 w-full lg:w-auto min-w-[130px] items-center justify-center gap-2 rounded-xl bg-pub-primary px-7 text-sm font-bold text-white shadow-md transition duration-200 hover:bg-pub-primary-dark hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
           >
             <Search size={16} className="stroke-[2.5]" />
             <span>Search</span>

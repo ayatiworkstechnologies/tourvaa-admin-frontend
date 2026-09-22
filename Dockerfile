@@ -18,9 +18,35 @@ COPY . .
 # use the Compose service names/default public URL.
 ARG API_PROXY_TARGET=http://backend:8000
 ARG NEXT_PUBLIC_WS_URL=ws://localhost:8000
+# Canonical public site URL for SEO metadata (src/lib/seo/pageMetadata.ts) -
+# also only read at build time, previously not wired through here at all and
+# silently falling back to http://localhost:3000 in every image.
+ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ENV API_PROXY_TARGET=${API_PROXY_TARGET}
 ENV NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL}
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 ENV NEXT_OUTPUT_STANDALONE=true
+
+# Set BUILD_ENV=production (see .github/workflows/ci-cd.yml) for any image
+# meant to actually serve traffic. Local/dev image builds that intentionally
+# use the Compose service name / localhost defaults above are unaffected.
+# This exists because API_PROXY_TARGET/NEXT_PUBLIC_WS_URL/NEXT_PUBLIC_SITE_URL
+# are compiled into the rewrites, CSP, browser bundle and SEO metadata at this
+# exact build step - a forgotten CI variable previously fell back to
+# http://backend:8000 / ws://localhost:8000 / http://localhost:3000 with no
+# error, baking a broken origin into a published production image.
+ARG BUILD_ENV=development
+RUN if [ "$BUILD_ENV" = "production" ]; then \
+      for pair in "API_PROXY_TARGET:$API_PROXY_TARGET" "NEXT_PUBLIC_WS_URL:$NEXT_PUBLIC_WS_URL" "NEXT_PUBLIC_SITE_URL:$NEXT_PUBLIC_SITE_URL"; do \
+        name="${pair%%:*}"; value="${pair#*:}"; \
+        case "$value" in \
+          ""|*localhost*|*127.0.0.1*) \
+            echo "ERROR: BUILD_ENV=production but $name=$value is unset or a local-dev default. Set the real production value (see deployment/env/frontend.env.example)." >&2; \
+            exit 1 ;; \
+        esac; \
+      done; \
+      echo "Production env check passed: API_PROXY_TARGET=$API_PROXY_TARGET NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL"; \
+    fi
 RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 FROM node:22-alpine AS runtime

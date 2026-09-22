@@ -16,6 +16,7 @@ import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/
 const empty = (): TourExtension => ({
   extension_tour_id: 0, extension_title: "", extension_note: "",
   extra_price: 0, price_type: "per_booking", category: "other", display_order: 0, status: "active",
+  commissionable: true,
 });
 
 const PRICE_TYPE_LABELS: Record<TourExtension["price_type"], string> = {
@@ -196,6 +197,17 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
                 <option value="inactive">Inactive</option>
               </select>
             </label>
+            <label className="flex items-center gap-2 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={editing.commissionable ?? true}
+                onChange={(e) => setEditing((p) => (p ? { ...p, commissionable: e.target.checked } : p))}
+              />
+              <span className="text-sm font-semibold text-dash-body">Commissionable</span>
+            </label>
+            <p className="-mt-3 text-xs text-dash-subtle md:col-span-2">
+              When off, the supplier is paid this item&apos;s full price with no Tourvaa commission deducted. Default: on.
+            </p>
             <label className="md:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Extension note</span>
               <textarea

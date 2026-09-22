@@ -141,8 +141,8 @@ export default function PublicHeader() {
       }`}
     >
       {/* Top Trust Bar -- full width edge-to-edge, matching footer pub-primary signature color */}
-      <div className="w-full bg-pub-primary text-white border-b border-white/10">
-        <div className="mx-auto flex h-11 sm:h-12 max-w-[1440px] items-center justify-center gap-4 sm:gap-6 md:gap-8 px-4 sm:px-8 lg:px-12 text-xs sm:text-[12.5px] font-semibold overflow-x-auto no-scrollbar whitespace-nowrap py-2 sm:py-2.5">
+      <div className="w-full bg-pub-primary text-white border-b border-white/10 overflow-hidden">
+        <div className="mx-auto flex h-11 sm:h-12 w-full max-w-[1440px] min-w-0 items-center justify-start lg:justify-center gap-4 sm:gap-6 md:gap-8 px-4 sm:px-8 lg:px-12 text-xs sm:text-[12.5px] font-semibold overflow-x-auto no-scrollbar whitespace-nowrap py-2 sm:py-2.5">
           {customTrust.length ? (
             customTrust.map((t, i) => {
               const { Icon, color } = TRUST_ICONS[i % TRUST_ICONS.length];

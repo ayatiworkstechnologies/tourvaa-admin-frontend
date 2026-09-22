@@ -260,12 +260,12 @@ export default function PublicFooter() {
   return (
     <footer className="w-full bg-pub-primary text-white pt-12 sm:pt-16 pb-8 sm:pb-10 transition-colors">
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-[1.1fr_1.1fr_0.9fr_1.6fr] gap-8 sm:gap-10">
+        <div className="grid grid-cols-2 lg:grid-cols-[1.1fr_1.1fr_0.9fr_1.6fr] gap-8 sm:gap-10">
           {/* Columns 1-3: CMS-managed footer sections (Support / Our Company / Login by default - see Admin > CMS > Footer) */}
           {footerSections.map((section, idx) => (
             <div
               key={section.id}
-              className={idx === 2 ? "col-span-2 sm:col-span-1" : "col-span-1"}
+              className={idx === 2 ? "col-span-2 lg:col-span-1" : "col-span-1"}
             >
               <h3 className="text-lg sm:text-xl font-bold text-white mb-4 tracking-tight">
                 {section.title}
@@ -291,7 +291,7 @@ export default function PublicFooter() {
           ))}
 
           {/* Column 4: Brand & Utilities */}
-          <div className="col-span-2 sm:col-span-2 md:col-span-1 flex flex-col justify-between">
+          <div className="col-span-2 lg:col-span-1 flex flex-col justify-between">
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 tracking-tight">
                 {siteName}
@@ -409,7 +409,7 @@ export default function PublicFooter() {
             </div>
 
             {/* Social Media Icons */}
-            <div className="flex items-center gap-4 sm:gap-5 text-white/90">
+            <div className="flex flex-wrap items-center gap-3.5 sm:gap-4 text-white/90">
               <a
                 href={socialLinks.facebook || "https://facebook.com"}
                 target="_blank"

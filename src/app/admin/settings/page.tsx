@@ -19,11 +19,15 @@ import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 const groupLabels: Record<string, string> = {
   general: "System Settings",
   system: "System Controls",
-  booking: "Booking Defaults",
+  pricing: "Pricing & Commission",
+  booking_rules: "Booking Rules",
+  agent: "Agent Settings",
+  affiliate: "Affiliate Settings",
   payment: "Payment Settings",
   api: "API Settings",
   smtp: "Email / SMTP",
   currency: "Currency",
+  security: "Security Status",
 };
 
 const booleanSettingKeys = new Set([
@@ -33,12 +37,90 @@ const booleanSettingKeys = new Set([
 
 const imageSettingKeys = new Set(["logo", "favicon"]);
 
+// Two AppSetting rows whose values are fixed in Python code (money rounding
+// is hardcoded, not actually driven by these settings) -- the backend now
+// hard-rejects any PUT that changes them, so the UI must show them as
+// read-only instead of letting an admin edit-then-fail.
+const readOnlySystemKeys = new Set(["money_decimal_places", "money_rounding_method"]);
+
+// Clearer admin-facing labels/help copy for the three related currency
+// settings, without touching the underlying AppSetting `key` values sent to
+// the API (renaming the DB keys is out of scope / too risky right now).
+const currencyDisplayOverrides: Record<string, { label: string; helper: string }> = {
+  currency: {
+    label: "Platform Currency",
+    helper: "The base currency all tours, bookings and financial calculations are stored in.",
+  },
+  default_currency: {
+    label: "Default Display Currency",
+    helper: "The currency shown to visitors by default before any auto-detection or manual override.",
+  },
+  force_site_currency: {
+    label: "Auto-detect visitor currency",
+    helper: "",
+  },
+};
+
 const commissionSettingKeys: { key: string; label: string; description: string }[] = [
   { key: "supplier_commission_percentage", label: "Tourvaa Tour Commission (Minimum)", description: "Tourvaa's own platform commission on every tour booking, deducted from the supplier's price. This is the floor - suppliers may agree to a higher rate, but it can never go lower." },
-  { key: "agent_commission_max_percentage", label: "Maximum Agent Commission", description: "The ceiling on what Tourvaa pays an agent per booking. Agent commission requests above this are rejected." },
-  { key: "affiliate_commission_max_percentage", label: "Maximum Affiliate Commission", description: "The ceiling on what Tourvaa pays an affiliate per booking, whether set as their base rate or in a commission rule." },
 ];
 const commissionSettingKeySet = new Set(commissionSettingKeys.map((c) => c.key));
+
+// Agent-only settings, all grouped together under the dedicated "Agent
+// Settings" tab instead of being split between Pricing & Commission (the
+// percentage fields) and the generic "affiliate"/other group loop.
+const agentPercentageKeys: { key: string; label: string; description: string }[] = [
+  { key: "agent_default_commission_percentage", label: "Default Agent Commission", description: "The commission percentage shown to a new agent and asked to be accepted right after they log in for the first time." },
+  { key: "agent_commission_max_percentage", label: "Maximum Agent Commission", description: "The ceiling on what Tourvaa pays an agent per booking. Agent commission requests above this are rejected." },
+];
+const agentBooleanKeys: { key: string; label: string; description: string }[] = [
+  { key: "allow_agent_markup", label: "Allow Agent Markup", description: "Whether agents are permitted to add their own markup on top of the supplier price when booking on behalf of a customer." },
+  { key: "allow_agent_and_affiliate_commission_same_booking", label: "Allow Agent + Affiliate Commission on Same Booking", description: "Whether both an agent's and an affiliate's commission can be paid out on the same booking, or whether only one applies." },
+];
+const agentSettingKeySet = new Set([...agentPercentageKeys.map((c) => c.key), ...agentBooleanKeys.map((c) => c.key)]);
+
+// Affiliate-only settings, all grouped together under the dedicated
+// "Affiliate Settings" tab instead of being split between Pricing &
+// Commission and the generic "affiliate" group loop.
+const affiliatePercentageKeys: { key: string; label: string; description: string }[] = [
+  { key: "affiliate_default_commission_value", label: "Default Affiliate Commission", description: "The commission percentage shown to a new affiliate and asked to be accepted right after they log in for the first time." },
+  { key: "affiliate_commission_max_percentage", label: "Maximum Affiliate Commission", description: "The ceiling on what Tourvaa pays an affiliate per booking, whether set as their base rate or in a commission rule." },
+];
+const affiliateNumberKeys: { key: string; label: string; description: string; suffix: string }[] = [
+  { key: "affiliate_default_attribution_window_days", label: "Default Attribution Window", description: "How many days after a click an affiliate link stays credited for a resulting booking, when the link itself doesn't override this.", suffix: "days" },
+  { key: "affiliate_minimum_payout", label: "Minimum Affiliate Payout", description: "The minimum accrued commission balance an affiliate must reach before a payout can be processed.", suffix: "" },
+];
+const affiliateSelectKeys: { key: string; label: string; description: string; options: { value: string; label: string }[] }[] = [
+  {
+    key: "affiliate_default_commission_type",
+    label: "Default Affiliate Commission Type",
+    description: "Whether a new affiliate's default commission is expressed as a percentage of the booking or a fixed amount.",
+    options: [
+      { value: "percentage", label: "Percentage" },
+      { value: "fixed", label: "Fixed Amount" },
+    ],
+  },
+  {
+    key: "affiliate_default_attribution_model",
+    label: "Default Attribution Model",
+    description: "Which click gets credit for a booking when a customer follows more than one affiliate link before booking, when the link itself doesn't override this.",
+    options: [
+      { value: "last_click", label: "Last Click" },
+      { value: "first_click", label: "First Click" },
+    ],
+  },
+];
+const affiliateBooleanKeys: { key: string; label: string; description: string }[] = [
+  { key: "affiliate_allow_self_link_creation", label: "Allow Affiliate Self-Service Link Creation", description: "Whether affiliates can create their own tracking links directly, without an admin creating one for them." },
+  { key: "affiliate_allow_custom_alias", label: "Allow Custom Alias", description: "Whether affiliates can choose a custom alias/slug for their tracking links instead of only an auto-generated one." },
+  { key: "affiliate_auto_approve_commission", label: "Auto-Approve Affiliate Commission", description: "Whether affiliate commission on a completed booking is approved automatically, or requires manual admin review first." },
+];
+const affiliateSettingKeySet = new Set([
+  ...affiliatePercentageKeys.map((c) => c.key),
+  ...affiliateNumberKeys.map((c) => c.key),
+  ...affiliateSelectKeys.map((c) => c.key),
+  ...affiliateBooleanKeys.map((c) => c.key),
+]);
 
 const depositSettingKeys: { key: string; label: string; description: string; suffix: string; max?: number }[] = [
   { key: "default_deposit_percentage", label: "Default Deposit Percentage", description: "Used only when a tour's own deposit settings (in the tour editor) are left blank. A supplier's per-tour deposit configuration always takes priority over this platform default.", suffix: "%", max: 100 },
@@ -46,10 +128,13 @@ const depositSettingKeys: { key: string; label: string; description: string; suf
   { key: "default_balance_payment_deadline_days", label: "Default Final Payment Due", description: "How many days before departure the remaining balance must be paid, when the tour itself doesn't set its own deadline.", suffix: "days" },
 ];
 const depositSettingKeySet = new Set(depositSettingKeys.map((c) => c.key));
-// Default (not ceiling/minimum) commission %s are managed on the dedicated
-// Default Commissions page (/admin/settings/default-commissions) instead --
-// excluded here too so they don't also show up editable in a generic tab.
-const defaultCommissionKeySet = new Set(["agent_default_commission_percentage", "affiliate_default_commission_value"]);
+// Note: the supplier default commission % (supplier_commission_percentage)
+// is still also managed on the dedicated Default Commissions page
+// (/admin/settings/default-commissions) as well as here in Pricing &
+// Commission -- unlike agent/affiliate, that duplication predates this
+// change and is out of scope. The agent/affiliate default-commission rows
+// that used to live on that page moved into the "Agent Settings"/
+// "Affiliate Settings" tabs below (see agentSettingKeySet/affiliateSettingKeySet).
 
 type Setting = {
   id: number;
@@ -59,6 +144,37 @@ type Setting = {
   group: string;
   is_public: boolean;
 };
+
+type CommissionPreviewData = {
+  sample_price: string;
+  tourvaa_commission_percentage: string;
+  direct: { supplier: string; tourvaa: string };
+  agent: { supplier: string; agent_commission_percentage: string; agent: string; tourvaa: string };
+  affiliate: { supplier: string; affiliate_commission_percentage: string; affiliate: string; tourvaa: string };
+};
+
+type SecurityStatus = {
+  jwt_secrets: Record<string, string>;
+  redis: string;
+  cloudinary: string;
+  settings_encryption_key: string;
+};
+
+function isConfigured(status: string) {
+  return status.toLowerCase().startsWith("configured");
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const ok = isConfigured(status);
+  return (
+    <span
+      title={status}
+      className={`rounded-full px-2.5 py-1 text-xs font-bold ${ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}
+    >
+      {ok ? "Configured" : "Missing"}
+    </span>
+  );
+}
 
 export default function SettingsPage() {
   const { dashboard, loading: dashboardLoading } = useDashboard();
@@ -74,6 +190,12 @@ export default function SettingsPage() {
   const pathname = usePathname();
   const initialGroup = pathname === "/admin/settings/api" ? "api" : pathname === "/admin/settings/payment" ? "payment" : "general";
   const [activeGroup, setActiveGroup] = useState(initialGroup);
+  const [previewInput, setPreviewInput] = useState("120");
+  const [previewPrice, setPreviewPrice] = useState("120");
+  const [preview, setPreview] = useState<CommissionPreviewData | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [securityStatus, setSecurityStatus] = useState<SecurityStatus | null>(null);
+  const [securityLoading, setSecurityLoading] = useState(false);
 
   const grouped = useMemo(() => {
     return settings
@@ -84,7 +206,7 @@ export default function SettingsPage() {
       // rows are a disconnected, unencrypted copy that the real payment
       // gateway code never reads - PaymentSettingsSection/ApiSettingsSection
       // below talk to the actual encrypted PaymentSetting/ApiSetting tables.
-      .filter((setting) => setting.key !== "default_currency" && setting.group !== "payment" && setting.group !== "api" && !commissionSettingKeySet.has(setting.key) && !defaultCommissionKeySet.has(setting.key) && !depositSettingKeySet.has(setting.key))
+      .filter((setting) => setting.key !== "default_currency" && setting.group !== "payment" && setting.group !== "api" && !commissionSettingKeySet.has(setting.key) && !agentSettingKeySet.has(setting.key) && !affiliateSettingKeySet.has(setting.key) && !depositSettingKeySet.has(setting.key))
       .reduce<Record<string, Setting[]>>((groups, setting) => {
         groups[setting.group] = groups[setting.group] || [];
         groups[setting.group].push(setting);
@@ -93,10 +215,39 @@ export default function SettingsPage() {
   }, [settings]);
 
   const groupEntries = useMemo(() => Object.entries(grouped), [grouped]);
-  // Payment/API/SMTP tabs are always shown (backed by dedicated components,
-  // not the fetched AppSetting list), appended after whatever general/system/
-  // booking groups the backend returns.
-  const tabKeys = useMemo(() => [...groupEntries.map(([group]) => group), "payment", "api", "smtp", "currency"], [groupEntries]);
+  // Pricing/Booking Rules/Payment/API/SMTP/Security tabs are always shown
+  // (backed by their own hardcoded sections below, not the generic grouped
+  // AppSetting list), appended after whatever general/system groups the
+  // backend returns.
+  const tabKeys = useMemo(() => [...groupEntries.map(([group]) => group), "pricing", "booking_rules", "agent", "affiliate", "payment", "api", "smtp", "currency", "security"], [groupEntries]);
+
+  const fetchPreview = useCallback(async (price: string) => {
+    setPreviewLoading(true);
+    try {
+      const response = await api.get("/settings/pricing/commission-preview", { params: { sample_price: price } });
+      setPreview(response.data?.data ?? null);
+    } catch {
+      setPreview(null);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeGroup === "pricing") {
+      void fetchPreview(previewPrice);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeGroup, previewPrice]);
+
+  useEffect(() => {
+    if (activeGroup !== "security" || securityStatus || securityLoading) return;
+    setSecurityLoading(true);
+    api
+      .get("/settings/security-status")
+      .then((response) => setSecurityStatus(response.data?.data ?? null))
+      .finally(() => setSecurityLoading(false));
+  }, [activeGroup, securityStatus, securityLoading]);
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -210,15 +361,113 @@ export default function SettingsPage() {
           </section>
         )}
 
-        {activeGroup === "booking" && (
+        {activeGroup === "pricing" && (
+          <>
+            <form onSubmit={saveSettings}>
+              <section className="rounded-2xl border border-dash-border bg-white p-6">
+                <h3 className="mb-1 text-lg font-bold text-dash-text">Commission Settings</h3>
+                <p className="mb-5 text-sm text-dash-muted">
+                  Set Tourvaa's own platform commission floor. Agent and Affiliate commission settings now live under their own dedicated tabs.
+                </p>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {commissionSettingKeys.map(({ key, label, description }) => (
+                    <label key={key} className="block rounded-xl border border-dash-border bg-dash-bg p-4">
+                      <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step="0.01"
+                          value={form[key] ?? ""}
+                          onChange={(event) =>
+                            setForm((current) => ({
+                              ...current,
+                              [key]: event.target.value,
+                            }))
+                          }
+                          className="w-full rounded-xl border border-dash-border bg-white px-4 py-2.5 pr-9 text-sm outline-none focus:border-dash-brand"
+                        />
+                        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-bold text-dash-muted">%</span>
+                      </div>
+                      <p className="mt-2 text-xs text-dash-subtle">{description}</p>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    disabled={saving}
+                    className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
+                  >
+                    {saving ? "Saving..." : "Save Commission Settings"}
+                  </button>
+                </div>
+              </section>
+            </form>
+
+            <section className="mt-6 rounded-2xl border border-dash-border bg-white p-6">
+              <h3 className="mb-1 text-lg font-bold text-dash-text">Commission Preview</h3>
+              <p className="mb-5 text-sm text-dash-muted">
+                Enter a sample tour price to see how it splits across supplier, Tourvaa, agent and affiliate under the settings above.
+              </p>
+              <label className="mb-5 block max-w-xs">
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Example Price</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={previewInput}
+                  onChange={(event) => setPreviewInput(event.target.value)}
+                  onBlur={() => previewInput && setPreviewPrice(previewInput)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      if (previewInput) setPreviewPrice(previewInput);
+                    }
+                  }}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                />
+              </label>
+
+              {previewLoading && !preview ? (
+                <p className="text-sm text-dash-muted">Loading preview...</p>
+              ) : preview ? (
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-xl border border-dash-border bg-dash-bg p-4">
+                    <p className="mb-2 text-xs font-bold uppercase text-dash-muted">Direct</p>
+                    <p className="text-sm text-dash-text">Supplier <span className="font-bold">{preview.direct.supplier}</span></p>
+                    <p className="text-sm text-dash-text">Tourvaa <span className="font-bold">{preview.direct.tourvaa}</span></p>
+                  </div>
+                  <div className="rounded-xl border border-dash-border bg-dash-bg p-4">
+                    <p className="mb-2 text-xs font-bold uppercase text-dash-muted">Agent</p>
+                    <p className="text-sm text-dash-text">Supplier <span className="font-bold">{preview.agent.supplier}</span></p>
+                    <p className="text-sm text-dash-text">Agent <span className="font-bold">{preview.agent.agent}</span></p>
+                    <p className="text-sm text-dash-text">Tourvaa <span className="font-bold">{preview.agent.tourvaa}</span></p>
+                  </div>
+                  <div className="rounded-xl border border-dash-border bg-dash-bg p-4">
+                    <p className="mb-2 text-xs font-bold uppercase text-dash-muted">Affiliate</p>
+                    <p className="text-sm text-dash-text">Supplier <span className="font-bold">{preview.affiliate.supplier}</span></p>
+                    <p className="text-sm text-dash-text">Affiliate <span className="font-bold">{preview.affiliate.affiliate}</span></p>
+                    <p className="text-sm text-dash-text">Tourvaa <span className="font-bold">{preview.affiliate.tourvaa}</span></p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-dash-muted">Could not load a preview.</p>
+              )}
+            </section>
+          </>
+        )}
+
+        {activeGroup === "agent" && (
           <form onSubmit={saveSettings}>
             <section className="rounded-2xl border border-dash-border bg-white p-6">
-              <h3 className="mb-1 text-lg font-bold text-dash-text">Commission Settings</h3>
+              <h3 className="mb-1 text-lg font-bold text-dash-text">Agent Settings</h3>
               <p className="mb-5 text-sm text-dash-muted">
-                Set the commission percentages Tourvaa applies to suppliers, agents and affiliates. These apply platform-wide, across every account and tour.
+                All commission and markup settings that apply to the Agent portal.
               </p>
-              <div className="grid gap-4 md:grid-cols-3">
-                {commissionSettingKeys.map(({ key, label, description }) => (
+              <div className="grid gap-4 md:grid-cols-2">
+                {agentPercentageKeys.map(({ key, label, description }) => (
                   <label key={key} className="block rounded-xl border border-dash-border bg-dash-bg p-4">
                     <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
                     <div className="relative">
@@ -242,31 +491,58 @@ export default function SettingsPage() {
                   </label>
                 ))}
               </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {agentBooleanKeys.map(({ key, label, description }) => (
+                  <label key={key} className="block rounded-xl border border-dash-border bg-dash-bg p-4">
+                    <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
+                    <select
+                      value={form[key] || "false"}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          [key]: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                    >
+                      <option value="false">Disabled</option>
+                      <option value="true">Enabled</option>
+                    </select>
+                    <p className="mt-2 text-xs text-dash-subtle">{description}</p>
+                  </label>
+                ))}
+              </div>
+
               <div className="mt-6 flex justify-end">
                 <button
                   disabled={saving}
                   className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
                 >
-                  {saving ? "Saving..." : "Save Commission Settings"}
+                  {saving ? "Saving..." : "Save Agent Settings"}
                 </button>
               </div>
             </section>
+          </form>
+        )}
 
-            <section className="mt-6 rounded-2xl border border-dash-border bg-white p-6">
-              <h3 className="mb-1 text-lg font-bold text-dash-text">Deposit Settings</h3>
+        {activeGroup === "affiliate" && (
+          <form onSubmit={saveSettings}>
+            <section className="rounded-2xl border border-dash-border bg-white p-6">
+              <h3 className="mb-1 text-lg font-bold text-dash-text">Affiliate Settings</h3>
               <p className="mb-5 text-sm text-dash-muted">
-                Platform-wide fallback for tours where the supplier hasn&apos;t set their own deposit terms.
+                All commission, attribution and self-service settings that apply to the Affiliate portal.
               </p>
-              <div className="grid gap-4 md:grid-cols-3">
-                {depositSettingKeys.map(({ key, label, description, suffix, max }) => (
+              <div className="grid gap-4 md:grid-cols-2">
+                {affiliatePercentageKeys.map(({ key, label, description }) => (
                   <label key={key} className="block rounded-xl border border-dash-border bg-dash-bg p-4">
                     <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
                     <div className="relative">
                       <input
                         type="number"
                         min={0}
-                        max={max}
-                        step={suffix === "%" ? "0.01" : "1"}
+                        max={100}
+                        step="0.01"
                         value={form[key] ?? ""}
                         onChange={(event) =>
                           setForm((current) => ({
@@ -274,27 +550,181 @@ export default function SettingsPage() {
                             [key]: event.target.value,
                           }))
                         }
-                        className="w-full rounded-xl border border-dash-border bg-white px-4 py-2.5 pr-14 text-sm outline-none focus:border-dash-brand"
+                        className="w-full rounded-xl border border-dash-border bg-white px-4 py-2.5 pr-9 text-sm outline-none focus:border-dash-brand"
                       />
-                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-bold text-dash-muted">{suffix}</span>
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-bold text-dash-muted">%</span>
                     </div>
                     <p className="mt-2 text-xs text-dash-subtle">{description}</p>
                   </label>
                 ))}
               </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {affiliateNumberKeys.map(({ key, label, description, suffix }) => (
+                  <label key={key} className="block rounded-xl border border-dash-border bg-dash-bg p-4">
+                    <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={0}
+                        step="1"
+                        value={form[key] ?? ""}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            [key]: event.target.value,
+                          }))
+                        }
+                        className={`w-full rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm outline-none focus:border-dash-brand ${suffix ? "pr-14" : ""}`}
+                      />
+                      {suffix && (
+                        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-bold text-dash-muted">{suffix}</span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-xs text-dash-subtle">{description}</p>
+                  </label>
+                ))}
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {affiliateSelectKeys.map(({ key, label, description, options }) => (
+                  <label key={key} className="block rounded-xl border border-dash-border bg-dash-bg p-4">
+                    <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
+                    <select
+                      value={form[key] || options[0].value}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          [key]: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                    >
+                      {options.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-xs text-dash-subtle">{description}</p>
+                  </label>
+                ))}
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {affiliateBooleanKeys.map(({ key, label, description }) => (
+                  <label key={key} className="block rounded-xl border border-dash-border bg-dash-bg p-4">
+                    <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
+                    <select
+                      value={form[key] || "false"}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          [key]: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                    >
+                      <option value="false">Disabled</option>
+                      <option value="true">Enabled</option>
+                    </select>
+                    <p className="mt-2 text-xs text-dash-subtle">{description}</p>
+                  </label>
+                ))}
+              </div>
+
               <div className="mt-6 flex justify-end">
                 <button
                   disabled={saving}
                   className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
                 >
-                  {saving ? "Saving..." : "Save Deposit Settings"}
+                  {saving ? "Saving..." : "Save Affiliate Settings"}
                 </button>
               </div>
             </section>
           </form>
         )}
 
-        {activeGroup === "booking" && <DefaultCancellationPolicySection />}
+        {activeGroup === "booking_rules" && (
+          <>
+            <form onSubmit={saveSettings}>
+              <section className="rounded-2xl border border-dash-border bg-white p-6">
+                <h3 className="mb-1 text-lg font-bold text-dash-text">Deposit Settings</h3>
+                <p className="mb-5 text-sm text-dash-muted">
+                  Platform-wide fallback for tours where the supplier hasn&apos;t set their own deposit terms.
+                </p>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {depositSettingKeys.map(({ key, label, description, suffix, max }) => (
+                    <label key={key} className="block rounded-xl border border-dash-border bg-dash-bg p-4">
+                      <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={0}
+                          max={max}
+                          step={suffix === "%" ? "0.01" : "1"}
+                          value={form[key] ?? ""}
+                          onChange={(event) =>
+                            setForm((current) => ({
+                              ...current,
+                              [key]: event.target.value,
+                            }))
+                          }
+                          className="w-full rounded-xl border border-dash-border bg-white px-4 py-2.5 pr-14 text-sm outline-none focus:border-dash-brand"
+                        />
+                        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-bold text-dash-muted">{suffix}</span>
+                      </div>
+                      <p className="mt-2 text-xs text-dash-subtle">{description}</p>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    disabled={saving}
+                    className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
+                  >
+                    {saving ? "Saving..." : "Save Deposit Settings"}
+                  </button>
+                </div>
+              </section>
+            </form>
+
+            <DefaultCancellationPolicySection />
+          </>
+        )}
+
+        {activeGroup === "security" && (
+          <section className="rounded-2xl border border-dash-border bg-white p-6">
+            <h3 className="mb-1 text-lg font-bold text-dash-text">Security Status</h3>
+            <p className="mb-5 text-sm text-dash-muted">
+              Read-only visibility into which secrets and integrations are configured. No secret values are ever shown here.
+            </p>
+            {securityLoading && !securityStatus ? (
+              <p className="text-sm text-dash-muted">Loading security status...</p>
+            ) : securityStatus ? (
+              <div className="overflow-hidden rounded-xl border border-dash-border divide-y divide-dash-border">
+                {Object.entries(securityStatus.jwt_secrets).map(([portal, status]) => (
+                  <div key={portal} className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm font-bold capitalize text-dash-text">{portal} JWT Secret</span>
+                    <StatusBadge status={status} />
+                  </div>
+                ))}
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-sm font-bold text-dash-text">Redis</span>
+                  <StatusBadge status={securityStatus.redis} />
+                </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-sm font-bold text-dash-text">Cloudinary</span>
+                  <StatusBadge status={securityStatus.cloudinary} />
+                </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-sm font-bold text-dash-text">Settings Encryption Key</span>
+                  <StatusBadge status={securityStatus.settings_encryption_key} />
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-dash-muted">Could not load security status.</p>
+            )}
+          </section>
+        )}
 
         {activeGenericGroup && (
           <form onSubmit={saveSettings}>
@@ -306,14 +736,30 @@ export default function SettingsPage() {
                 Update platform defaults used by the admin and customer experience.
               </p>
               <div className="grid gap-4 md:grid-cols-2">
-                {activeGenericGroup.map((setting) => (
+                {activeGenericGroup.map((setting) => {
+                  const override = currencyDisplayOverrides[setting.key];
+                  const displayLabel = override?.label || setting.label;
+                  return (
                   <div key={setting.key} className="block">
                     {!imageSettingKeys.has(setting.key) && (
                       <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">
-                        {setting.label}
+                        {displayLabel}
                       </span>
                     )}
-                    {imageSettingKeys.has(setting.key) ? (
+                    {readOnlySystemKeys.has(setting.key) ? (
+                      <>
+                        <input
+                          value={form[setting.key] || ""}
+                          disabled
+                          readOnly
+                          title="Fixed system value - not configurable."
+                          className="w-full cursor-not-allowed rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-muted outline-none"
+                        />
+                        <p className="mt-2 text-xs text-dash-subtle">
+                          Fixed system value — money is always rounded to 2 decimal places using standard rounding. Not configurable.
+                        </p>
+                      </>
+                    ) : imageSettingKeys.has(setting.key) ? (
                       <AdminAssetUpload
                         label={setting.label}
                         value={form[setting.key] || ""}
@@ -324,6 +770,25 @@ export default function SettingsPage() {
                           }))
                         }
                       />
+                    ) : setting.key === "force_site_currency" ? (
+                      <>
+                        <select
+                          value={form[setting.key] || "false"}
+                          onChange={(event) =>
+                            setForm((current) => ({
+                              ...current,
+                              [setting.key]: event.target.value,
+                            }))
+                          }
+                          className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+                        >
+                          <option value="false">Auto-detect ON</option>
+                          <option value="true">Auto-detect OFF (currency locked)</option>
+                        </select>
+                        <p className="mt-2 text-xs text-dash-subtle">
+                          Auto-detect ON lets each visitor&apos;s currency be detected automatically. Auto-detect OFF locks the same currency for every visitor.
+                        </p>
+                      </>
                     ) : booleanSettingKeys.has(setting.key) ? (
                       <select
                         value={form[setting.key] || "false"}
@@ -339,15 +804,20 @@ export default function SettingsPage() {
                         <option value="true">Enabled</option>
                       </select>
                     ) : setting.key === "currency" ? (
-                      <CurrencySelect
-                        value={form[setting.key] || "USD"}
-                        onChange={(code) =>
-                          setForm((current) => ({
-                            ...current,
-                            [setting.key]: code,
-                          }))
-                        }
-                      />
+                      <>
+                        <CurrencySelect
+                          value={form[setting.key] || "USD"}
+                          onChange={(code) =>
+                            setForm((current) => ({
+                              ...current,
+                              [setting.key]: code,
+                            }))
+                          }
+                        />
+                        {override?.helper && (
+                          <p className="mt-2 text-xs text-dash-subtle">{override.helper}</p>
+                        )}
+                      </>
                     ) : (
                       <input
                         value={form[setting.key] || ""}
@@ -360,8 +830,12 @@ export default function SettingsPage() {
                         className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
                       />
                     )}
+                    {override?.helper && setting.key !== "currency" && setting.key !== "force_site_currency" && (
+                      <p className="mt-2 text-xs text-dash-subtle">{override.helper}</p>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
 

@@ -41,6 +41,8 @@ import {
   LuLock as Lock,
   LuCar as Car,
   LuArrowLeftRight as ArrowLeftRight,
+  LuSun as Sun,
+  LuGauge as Gauge,
 } from "react-icons/lu";
 import { PublicTourDetail } from "@/lib/api/publicClient";
 import { destinationUrl } from "@/lib/utils/tourUrl";
@@ -709,14 +711,28 @@ export default function TourDetailExperience({
   const itineraryList = useMemo(() => {
     if (tour.itineraries && tour.itineraries.length > 0) {
       return tour.itineraries.map((it, idx) => {
-        const summary = (it.short_description || it.description || "").trim();
+        const rawSummary = (
+          it.short_description ||
+          it.description ||
+          ""
+        ).trim();
         const candidateDetail = (
           it.long_description ||
           (!it.short_description ? it.description : "") ||
           ""
         ).trim();
         const detail =
-          candidateDetail && candidateDetail !== summary ? candidateDetail : "";
+          candidateDetail && candidateDetail !== rawSummary
+            ? candidateDetail
+            : "";
+        // Skip the separate summary callout when the detail paragraph
+        // already opens with that same sentence -- otherwise the exact same
+        // line shows up twice in a row (once in the blue callout, again as
+        // the first line of the detail box below it).
+        const summary =
+          detail && detail.toLowerCase().startsWith(rawSummary.toLowerCase())
+            ? ""
+            : rawSummary;
         const activities = splitList(it.activities);
 
         return {
@@ -998,12 +1014,6 @@ export default function TourDetailExperience({
                 <span>{destination}</span>
               </span>
             )}
-            {tour.supplier_name && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
-                <ShieldCheck size={13} className="text-emerald-600" />
-                Verified Operator ({tour.supplier_name})
-              </span>
-            )}
             {realDates.length > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-800">
                 <Ticket size={12} className="text-amber-600" />
@@ -1275,9 +1285,9 @@ export default function TourDetailExperience({
         </section>
 
         {/* ── 5. TRAVEL ESSENTIALS METRICS (Rendered Only for Existing Tour Fields) ── */}
-        <section className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <section className="mt-8 flex flex-wrap gap-3">
           {durationLabel && (
-            <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
+            <div className="grow-0 shrink-0 basis-[calc(50%-0.375rem)] sm:basis-[calc(33.333%-0.5rem)] lg:basis-[calc(16.666%-0.625rem)] min-w-[140px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 mb-2">
                 <Clock size={18} />
               </div>
@@ -1295,7 +1305,7 @@ export default function TourDetailExperience({
           {(tour.max_group_size ||
             tour.min_booking_size ||
             tour.overview?.group_size) && (
-            <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
+            <div className="grow-0 shrink-0 basis-[calc(50%-0.375rem)] sm:basis-[calc(33.333%-0.5rem)] lg:basis-[calc(16.666%-0.625rem)] min-w-[140px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 mb-2">
                 <Users size={18} />
               </div>
@@ -1315,7 +1325,7 @@ export default function TourDetailExperience({
           )}
 
           {(tour.tour_language || tour.overview?.tour_type) && (
-            <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
+            <div className="grow-0 shrink-0 basis-[calc(50%-0.375rem)] sm:basis-[calc(33.333%-0.5rem)] lg:basis-[calc(16.666%-0.625rem)] min-w-[140px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600 mb-2">
                 <User size={18} />
               </div>
@@ -1333,7 +1343,7 @@ export default function TourDetailExperience({
           )}
 
           {(startLocation || finishLocation) && (
-            <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
+            <div className="grow-0 shrink-0 basis-[calc(50%-0.375rem)] sm:basis-[calc(33.333%-0.5rem)] lg:basis-[calc(16.666%-0.625rem)] min-w-[140px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600 mb-2">
                 <Car size={18} />
               </div>
@@ -1350,7 +1360,7 @@ export default function TourDetailExperience({
 
           {(tour.overview?.meal_summary ||
             (tour.itineraries && tour.itineraries.some((it) => it.meals))) && (
-            <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
+            <div className="grow-0 shrink-0 basis-[calc(50%-0.375rem)] sm:basis-[calc(33.333%-0.5rem)] lg:basis-[calc(16.666%-0.625rem)] min-w-[140px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-50 text-rose-600 mb-2">
                 <Utensils size={18} />
               </div>
@@ -1366,8 +1376,40 @@ export default function TourDetailExperience({
             </div>
           )}
 
+          {tour.overview?.best_season && (
+            <div className="grow-0 shrink-0 basis-[calc(50%-0.375rem)] sm:basis-[calc(33.333%-0.5rem)] lg:basis-[calc(16.666%-0.625rem)] min-w-[140px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600 mb-2">
+                <Sun size={18} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Best Season
+                </p>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5 truncate">
+                  {tour.overview.best_season}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {tour.overview?.tour_pace && (
+            <div className="grow-0 shrink-0 basis-[calc(50%-0.375rem)] sm:basis-[calc(33.333%-0.5rem)] lg:basis-[calc(16.666%-0.625rem)] min-w-[140px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 mb-2">
+                <Gauge size={18} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Tour Pace
+                </p>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5 truncate">
+                  {tour.overview.tour_pace}
+                </p>
+              </div>
+            </div>
+          )}
+
           {tour.suitable_age_range && (
-            <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
+            <div className="grow-0 shrink-0 basis-[calc(50%-0.375rem)] sm:basis-[calc(33.333%-0.5rem)] lg:basis-[calc(16.666%-0.625rem)] min-w-[140px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs flex flex-col justify-between hover:border-blue-300 transition">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600 mb-2">
                 <Ticket size={18} />
               </div>
@@ -1417,6 +1459,62 @@ export default function TourDetailExperience({
                 <p className="text-xs sm:text-sm leading-relaxed text-slate-600 whitespace-pre-line border-t border-slate-100 pt-3">
                   {tour.long_description}
                 </p>
+              )}
+
+              {tour.overview?.why_choose_this_tour && (
+                <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Sparkles size={15} className="text-blue-600" />
+                    <p className="text-xs sm:text-sm font-bold text-slate-900">
+                      Why Choose This Tour
+                    </p>
+                  </div>
+                  <p className="text-xs sm:text-sm leading-relaxed text-slate-600 whitespace-pre-line">
+                    {tour.overview.why_choose_this_tour}
+                  </p>
+                </div>
+              )}
+
+              {tour.overview?.ideal_for && (
+                <div className="mt-3 flex items-start gap-2">
+                  <Users size={15} className="mt-0.5 shrink-0 text-emerald-600" />
+                  <p className="text-xs sm:text-sm leading-relaxed text-slate-600">
+                    <span className="font-bold text-slate-900">Ideal for: </span>
+                    {tour.overview.ideal_for}
+                  </p>
+                </div>
+              )}
+
+              {(tour.overview?.transportation_summary ||
+                tour.overview?.accommodation_summary) && (
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+                  {tour.overview?.transportation_summary && (
+                    <div className="flex items-start gap-2">
+                      <Bus size={15} className="mt-0.5 shrink-0 text-violet-600" />
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">
+                          Transportation
+                        </p>
+                        <p className="text-xs leading-relaxed text-slate-600 mt-0.5">
+                          {tour.overview.transportation_summary}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {tour.overview?.accommodation_summary && (
+                    <div className="flex items-start gap-2">
+                      <Hotel size={15} className="mt-0.5 shrink-0 text-amber-600" />
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">
+                          Accommodation
+                        </p>
+                        <p className="text-xs leading-relaxed text-slate-600 mt-0.5">
+                          {tour.overview.accommodation_summary}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Download Brochure & Map links */}
@@ -1611,22 +1709,46 @@ export default function TourDetailExperience({
 
                         {isOpen && (
                           <div className="border-t border-slate-100 bg-[#FAFBFD] p-5 space-y-4">
-                            {day.summary && (
-                              <div className="rounded-xl bg-blue-50/70 border border-blue-100 p-4">
-                                <p className="text-xs sm:text-sm font-semibold text-blue-950 flex items-center gap-2">
-                                  <Sparkles
-                                    size={16}
-                                    className="text-blue-600 shrink-0"
-                                  />
-                                  <span>{day.summary}</span>
-                                </p>
-                              </div>
-                            )}
+                            {day.summary &&
+                              (day.summary.length > 160 ? (
+                                // Long-form content with no separate short
+                                // highlight (e.g. no short_description was
+                                // set) -- the compact blue callout below is
+                                // meant for a one-line highlight, not a full
+                                // multi-sentence paragraph, so this uses the
+                                // same plain card treatment as the detail
+                                // box instead.
+                                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs">
+                                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2.5">
+                                    <MapIcon size={13} className="text-blue-500" />
+                                    Day Overview
+                                  </p>
+                                  <p className="text-xs sm:text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+                                    {day.summary}
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="rounded-xl bg-blue-50/70 border border-blue-100 p-4">
+                                  <p className="text-xs sm:text-sm font-semibold text-blue-950 flex items-start gap-2">
+                                    <Sparkles
+                                      size={16}
+                                      className="text-blue-600 shrink-0 mt-0.5"
+                                    />
+                                    <span>{day.summary}</span>
+                                  </p>
+                                </div>
+                              ))}
 
                             {itineraryMode === "detailed" && day.detail && (
-                              <p className="text-xs sm:text-sm leading-relaxed text-slate-700 whitespace-pre-line bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs">
-                                {day.detail}
-                              </p>
+                              <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs">
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2.5">
+                                  <MapIcon size={13} className="text-blue-500" />
+                                  Full Day Details
+                                </p>
+                                <p className="text-xs sm:text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+                                  {day.detail}
+                                </p>
+                              </div>
                             )}
 
                             {/* Quick Facts Strip: Start, Timings, Transport (only if present) */}
@@ -2103,17 +2225,17 @@ export default function TourDetailExperience({
                   </span>
                 )}
               </div>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-black text-white">
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="text-2xl sm:text-3xl font-black text-white whitespace-nowrap">
                   {format(unitPrice, tourCurrency)}
                 </span>
-                <span className="text-xs text-slate-300">/ person</span>
-                {promoActive && originalUnitPrice > unitPrice && (
-                  <span className="text-xs text-slate-400 line-through">
-                    {format(originalUnitPrice, tourCurrency)}
-                  </span>
-                )}
+                <span className="text-xs text-slate-300 whitespace-nowrap">/ person</span>
               </div>
+              {promoActive && originalUnitPrice > unitPrice && (
+                <span className="text-xs text-slate-400 line-through">
+                  {format(originalUnitPrice, tourCurrency)}
+                </span>
+              )}
               <p className="text-[10px] text-slate-300 mt-1">
                 Taxes &amp; Service Fees Included
               </p>

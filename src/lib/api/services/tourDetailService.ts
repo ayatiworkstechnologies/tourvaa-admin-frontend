@@ -183,6 +183,9 @@ export type TourExtension = {
   category: string;
   display_order: number;
   status: string;
+  // When false, the supplier is paid this item's full price with no
+  // Tourvaa commission deducted. Defaults to true server-side.
+  commissionable?: boolean;
 };
 
 export async function getExtensions(tourId: number | string): Promise<TourExtension[]> {
@@ -310,6 +313,9 @@ export type OptionalActivity = {
   image: string;
   category: string;
   status: string;
+  // When false, the supplier is paid this item's full price with no
+  // Tourvaa commission deducted. Defaults to true server-side.
+  commissionable?: boolean;
 };
 
 export async function getOptionalActivities(tourId: number | string): Promise<OptionalActivity[]> {
@@ -341,6 +347,9 @@ export type AccommodationExtra = {
   category: string;
   is_default: boolean;
   status: string;
+  // When false, the supplier is paid this item's full price with no
+  // Tourvaa commission deducted. Defaults to true server-side.
+  commissionable?: boolean;
 };
 
 export async function getAccommodationExtras(tourId: number | string): Promise<AccommodationExtra[]> {

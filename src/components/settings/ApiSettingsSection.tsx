@@ -16,6 +16,33 @@ type ApiSummary = {
 
 const inputClass = "w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand";
 
+// Same badge look as the Security Status section on the General tab
+// (rounded-full px-2.5 py-1 text-xs font-bold) -- reused here instead of
+// inventing new styling, just with a neutral (not configured/missing) color
+// since "not implemented" isn't a pass/fail state.
+function NotImplementedBadge() {
+  return (
+    <span
+      title="This integration is seeded in Settings but has no working backend implementation yet -- configuring credentials here has no effect."
+      className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-500"
+    >
+      Not Implemented
+    </span>
+  );
+}
+
+function UnimplementedRow({ label }: { label: string }) {
+  return (
+    <label className="opacity-60">
+      <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase text-dash-muted">
+        {label}
+        <NotImplementedBadge />
+      </span>
+      <input type="password" value="" disabled placeholder="Not wired up to any backend functionality" className={`${inputClass} cursor-not-allowed bg-gray-50`} />
+    </label>
+  );
+}
+
 export default function ApiSettingsSection() {
   const [summary, setSummary] = useState<ApiSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,9 +51,11 @@ export default function ApiSettingsSection() {
 
   // Same masked-secret pattern as PaymentSettingsSection: secret fields start
   // blank, GET's masked value is shown only as a hint via placeholder text.
-  const [googleMapsKey, setGoogleMapsKey] = useState("");
-  const [emailApiKey, setEmailApiKey] = useState("");
-  const [smsApiKey, setSmsApiKey] = useState("");
+  // google_maps / email_service / sms_service are seeded ApiSetting rows with
+  // no real backend consumer (see app/services/settings.py DEFAULT_API_SETTINGS
+  // vs. app/utils/mailer.py which uses the separate SmtpSetting table) -- they
+  // render as disabled "Not Implemented" rows below instead of live inputs,
+  // so no local state is needed for them.
   const [brightlaneLink, setBrightlaneLink] = useState("");
   const [viatorApiKey, setViatorApiKey] = useState("");
   const [viatorAffiliatePid, setViatorAffiliatePid] = useState("");
@@ -38,9 +67,6 @@ export default function ApiSettingsSection() {
       const res = await api.get("/settings/api/summary");
       const data: ApiSummary = res.data.data;
       setSummary(data);
-      setGoogleMapsKey("");
-      setEmailApiKey("");
-      setSmsApiKey("");
       setBrightlaneLink(data.brightlane_external_link || "");
       setViatorApiKey("");
       setViatorAffiliatePid(data.viator_affiliate_pid || "");
@@ -62,9 +88,6 @@ export default function ApiSettingsSection() {
         viator_affiliate_pid: viatorAffiliatePid,
         viator_enabled: viatorEnabled,
       };
-      if (googleMapsKey.trim()) payload.google_map_api_key = googleMapsKey.trim();
-      if (emailApiKey.trim()) payload.email_api_key = emailApiKey.trim();
-      if (smsApiKey.trim()) payload.sms_api_key = smsApiKey.trim();
       if (viatorApiKey.trim()) payload.viator_api_key = viatorApiKey.trim();
 
       await api.put("/settings/api", payload);
@@ -84,18 +107,9 @@ export default function ApiSettingsSection() {
     <form onSubmit={save} className="space-y-6">
       {message && <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-dash-brand-hover">{message}</p>}
       <div className="grid gap-4 md:grid-cols-2">
-        <label>
-          <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Google Maps API key</span>
-          <input type="password" value={googleMapsKey} onChange={(e) => setGoogleMapsKey(e.target.value)} placeholder={summary.google_map_api_key ? `Saved: ${summary.google_map_api_key} (leave blank to keep)` : "Not set"} className={inputClass} />
-        </label>
-        <label>
-          <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Email service API key</span>
-          <input type="password" value={emailApiKey} onChange={(e) => setEmailApiKey(e.target.value)} placeholder={summary.email_api_key ? `Saved: ${summary.email_api_key} (leave blank to keep)` : "Not set"} className={inputClass} />
-        </label>
-        <label>
-          <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">SMS service API key</span>
-          <input type="password" value={smsApiKey} onChange={(e) => setSmsApiKey(e.target.value)} placeholder={summary.sms_api_key ? `Saved: ${summary.sms_api_key} (leave blank to keep)` : "Not set"} className={inputClass} />
-        </label>
+        <UnimplementedRow label="Google Maps API key" />
+        <UnimplementedRow label="Email service API key" />
+        <UnimplementedRow label="SMS service API key" />
         <label>
           <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Brightlane external link</span>
           <input value={brightlaneLink} onChange={(e) => setBrightlaneLink(e.target.value)} className={inputClass} />

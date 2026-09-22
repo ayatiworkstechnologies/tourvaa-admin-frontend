@@ -414,7 +414,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
         <h2 className="text-xl font-bold text-dash-text">Tour Calendar &amp; Availability</h2>
         <p className="mt-1 text-sm text-dash-subtle">Set the dates and schedule when your tour is available.</p>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-4">
+        <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Tour Start Date</span>
             <DatePicker
