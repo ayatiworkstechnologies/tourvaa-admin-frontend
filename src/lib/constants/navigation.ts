@@ -1,5 +1,5 @@
 import type { IconType as LucideIcon } from "react-icons";
-import { LuActivity as Activity, LuBadgeCheck as BadgeCheck, LuBell as Bell, LuBot as Bot, LuBriefcase as Briefcase, LuBuilding2 as Building2, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCircleDollarSign as CircleDollarSign, LuCoins as Coins, LuCreditCard as CreditCard, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuHandCoins as HandCoins, LuKeyRound as KeyRound, LuLayers as Layers, LuLink2 as Link2, LuMail as Mail, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuMonitorSmartphone as MonitorSmartphone, LuPercent as Percent, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShare2 as Share2, LuShield as Shield, LuSlidersHorizontal as SlidersHorizontal, LuStar as Star, LuUserCheck as UserCheck, LuUserRound as UserRound, LuUsers as Users, LuWallet as Wallet } from "react-icons/lu";
+import { LuActivity as Activity, LuBadgeCheck as BadgeCheck, LuBell as Bell, LuBot as Bot, LuBriefcase as Briefcase, LuBuilding2 as Building2, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCircleDollarSign as CircleDollarSign, LuCreditCard as CreditCard, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuHandCoins as HandCoins, LuKeyRound as KeyRound, LuLayers as Layers, LuLink2 as Link2, LuMail as Mail, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuMonitorSmartphone as MonitorSmartphone, LuPercent as Percent, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShare2 as Share2, LuShield as Shield, LuStar as Star, LuUserCheck as UserCheck, LuUserRound as UserRound, LuUsers as Users, LuWallet as Wallet } from "react-icons/lu";
 import { MenuItem } from "@/types/auth";
 
 export type NavItem = {
@@ -41,8 +41,11 @@ export const adminNavItems: NavItem[] = [
   { label: "Chatbot", module: "chatbot", href: "/admin/chatbot", icon: Bot, permissions: ["chatbot.view", "view-chatbot"], section: "System" },
   { label: "Email Templates", module: "email", href: "/admin/email-templates", icon: Mail, permissions: ["email_templates.view", "email.view", "view-email"], section: "System" },
   { label: "Settings", module: "settings", href: "/admin/settings", icon: Settings, permissions: ["settings.view", "view-settings"], placement: "bottom" },
-  { label: "Commission Rules", module: "affiliate_commission_rules", href: "/admin/affiliates/commission-rules", icon: SlidersHorizontal, permissions: ["affiliate_commission_rules.view"], placement: "bottom" },
-  { label: "Default Commissions", module: "default_commissions", href: "/admin/settings/default-commissions", icon: Coins, permissions: ["settings.view", "view-settings"], placement: "bottom" },
+  // Commission Rules and Default Commissions used to be separate bottom-of-
+  // sidebar entries; removed now that both are reachable as "Related
+  // Settings" quick-link cards inside Settings -> Pricing & Commission
+  // (see src/app/admin/settings/page.tsx), so they're no longer duplicated
+  // in two places.
   { label: "Activity Logs", module: "activity_logs", href: "/admin/activity-logs", icon: Activity, permissions: ["activity_logs.view", "activity-logs.view", "view-activity_logs", "view-activity-logs"], section: "System" },
   { label: "Sessions", module: "sessions", href: "/admin/sessions", icon: MonitorSmartphone, permissions: ["sessions.view", "view-sessions"], section: "System" },
   { label: "Notifications", module: "notifications", href: "/admin/notifications", icon: Bell, permissions: ["notifications.view", "view-notifications"], section: "System" },

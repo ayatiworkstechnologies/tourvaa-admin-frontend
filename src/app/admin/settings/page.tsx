@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
+import {
+  LuArrowRight as ArrowRight,
+  LuCoins as Coins,
+  LuSlidersHorizontal as SlidersHorizontal,
+} from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -405,6 +411,38 @@ export default function SettingsPage() {
                 </div>
               </section>
             </form>
+
+            <section className="mt-6 rounded-2xl border border-dash-border bg-white p-4">
+              <h3 className="mb-3 px-2 text-xs font-bold uppercase tracking-wider text-dash-muted">
+                Related Settings
+              </h3>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Link
+                  href="/admin/affiliates/commission-rules"
+                  className="group flex items-center gap-3 rounded-xl border border-dash-border bg-dash-bg p-3.5 transition hover:border-dash-brand hover:bg-white"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-dash-brand shadow-2xs">
+                    <SlidersHorizontal size={18} />
+                  </span>
+                  <span className="flex-1 text-sm font-bold text-dash-text">
+                    Commission Rules
+                  </span>
+                  <ArrowRight size={16} className="text-dash-muted transition group-hover:translate-x-0.5 group-hover:text-dash-brand" />
+                </Link>
+                <Link
+                  href="/admin/settings/default-commissions"
+                  className="group flex items-center gap-3 rounded-xl border border-dash-border bg-dash-bg p-3.5 transition hover:border-dash-brand hover:bg-white"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-dash-brand shadow-2xs">
+                    <Coins size={18} />
+                  </span>
+                  <span className="flex-1 text-sm font-bold text-dash-text">
+                    Default Commissions
+                  </span>
+                  <ArrowRight size={16} className="text-dash-muted transition group-hover:translate-x-0.5 group-hover:text-dash-brand" />
+                </Link>
+              </div>
+            </section>
 
             <section className="mt-6 rounded-2xl border border-dash-border bg-white p-6">
               <h3 className="mb-1 text-lg font-bold text-dash-text">Commission Preview</h3>
