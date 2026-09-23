@@ -19,6 +19,10 @@ type Props = {
   onSubmit?: (payload: Record<string, string | number>) => void;
   children?: React.ReactNode;
   initialValues?: Record<string, unknown>;
+  /** "lg" (default, 32rem) fits a handful of simple fields; "wide" (56rem)
+   * is for forms with rich custom `children` (e.g. the CMS Pages section
+   * builder) that need real horizontal room instead of a cramped column. */
+  size?: "lg" | "wide";
 
   // Backwards compatibility props
   isOpen?: boolean;
@@ -41,6 +45,7 @@ export default function ActionModal({
   onConfirm,
   children,
   initialValues,
+  size = "lg",
 }: Props) {
   const [form, setForm] = useState<Record<string, string>>({});
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
@@ -79,7 +84,7 @@ export default function ActionModal({
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 p-3 sm:p-4">
-      <form onSubmit={submit} className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-4 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6">
+      <form onSubmit={submit} className={`max-h-[calc(100dvh-1.5rem)] w-full overflow-y-auto rounded-xl bg-white p-4 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6 ${size === "wide" ? "max-w-3xl" : "max-w-lg"}`}>
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-xl font-bold text-dash-text">{title}</h2>
           <button type="button" onClick={onClose} className="rounded-lg p-2 text-dash-muted hover:bg-dash-bg">

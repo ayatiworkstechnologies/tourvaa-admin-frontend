@@ -18,10 +18,23 @@ import {
 } from "react-icons/lu";
 
 import AboutReveal from "@/components/public/AboutReveal";
+import PageUnavailable from "@/components/public/PageUnavailable";
 import { subscribeNewsletter } from "@/lib/api/publicClient";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import { useContentBlock } from "@/hooks/useContentBlock";
 
-const categories = [
+const DEFAULT_HERO = {
+  is_active: true,
+  badge_label: "Field-Tested Expedition Guidance",
+  badge_note: "Updated Weekly",
+  heading: "Essential Travel Advice & Guides",
+  subtitle:
+    "Everything you need to know before you embark — from border entry protocols and seasonal packing checklists to local currency tips, curated by our global tour leaders.",
+  background_image:
+    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",
+};
+
+const DEFAULT_CATEGORIES = [
   {
     title: "Visa & Passport Info",
     text: "Key entry requirements, validity thresholds, and e-Visa protocols for every continent.",
@@ -66,7 +79,7 @@ const categories = [
   },
 ];
 
-const articles = [
+const DEFAULT_ARTICLES = [
   {
     category: "VISAS & PASSPORTS",
     title: "Your Complete Guide to Travel Visas & Border Requirements",
@@ -105,7 +118,7 @@ const articles = [
   },
 ];
 
-const essentials = [
+const DEFAULT_ESSENTIALS = [
   {
     icon: UserRoundCheck,
     title: "Passport Validity",
@@ -132,6 +145,15 @@ const essentials = [
   },
 ];
 
+type CategoryItem = { image?: string; title?: string; text?: string; href?: string };
+type ArticleItem = { image?: string; category?: string; title?: string; text?: string; href?: string; readTime?: string };
+type EssentialItem = { title?: string; text?: string; tag?: string };
+type CategoriesBlock = { items?: CategoryItem[] };
+type ArticlesBlock = { items?: ArticleItem[] };
+type EssentialsBlock = { items?: EssentialItem[] };
+
+const ESSENTIAL_ICONS = DEFAULT_ESSENTIALS.map((e) => e.icon);
+
 function delay(milliseconds: number) {
   return { "--reveal-delay": `${milliseconds}ms` } as CSSProperties;
 }
@@ -140,6 +162,21 @@ export default function TravelAdvicePage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [subscribing, setSubscribing] = useState(false);
+
+  const hero = useContentBlock("travel_advice_hero", DEFAULT_HERO);
+  const categoriesBlock = useContentBlock<CategoriesBlock>("travel_advice_categories", {});
+  const articlesBlock = useContentBlock<ArticlesBlock>("travel_advice_articles", {});
+  const essentialsBlock = useContentBlock<EssentialsBlock>("travel_advice_essentials", {});
+
+  const categories = categoriesBlock.items?.length
+    ? categoriesBlock.items.map((it) => ({ image: it.image || "", title: it.title || "", text: it.text || "", href: it.href || "" }))
+    : DEFAULT_CATEGORIES;
+  const articles = articlesBlock.items?.length
+    ? articlesBlock.items.map((it) => ({ image: it.image || "", category: it.category || "", title: it.title || "", text: it.text || "", href: it.href || "", readTime: it.readTime || "" }))
+    : DEFAULT_ARTICLES;
+  const essentials = essentialsBlock.items?.length
+    ? essentialsBlock.items.map((it, i) => ({ icon: ESSENTIAL_ICONS[i % ESSENTIAL_ICONS.length], title: it.title || "", text: it.text || "", tag: it.tag || "" }))
+    : DEFAULT_ESSENTIALS;
 
   async function subscribe(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -156,6 +193,10 @@ export default function TravelAdvicePage() {
     }
   }
 
+  if (hero.is_active === false) {
+    return <PageUnavailable />;
+  }
+
   return (
     <AboutReveal>
       <main className="overflow-hidden bg-[#FAFAFC] text-slate-900 pb-24">
@@ -163,7 +204,7 @@ export default function TravelAdvicePage() {
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-4 sm:pt-6">
           <section className="relative min-h-[340px] sm:min-h-[400px] w-full overflow-hidden rounded-[26px] bg-[#0B1F3A] shadow-xl flex items-center">
             <img
-              src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80"
+              src={hero.background_image || DEFAULT_HERO.background_image}
               alt="Misty mountain river valley landscape"
               className="animate-tourvaa-hero absolute inset-0 h-full w-full object-cover opacity-55 scale-105"
             />
@@ -172,17 +213,17 @@ export default function TravelAdvicePage() {
             <div className="relative z-10 max-w-3xl px-6 sm:px-12 py-10">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-bold text-white backdrop-blur-md shadow-xs">
                 <Compass size={14} className="text-amber-400" />
-                <span>Field-Tested Expedition Guidance</span>
+                <span>{hero.badge_label || DEFAULT_HERO.badge_label}</span>
                 <span className="text-white/40">•</span>
-                <span className="text-white/80">Updated Weekly</span>
+                <span className="text-white/80">{hero.badge_note || DEFAULT_HERO.badge_note}</span>
               </div>
 
               <h1 className="mt-4 text-3xl sm:text-4xl lg:text-[46px] font-black tracking-tight text-white font-heading leading-tight drop-shadow-md">
-                Essential Travel Advice &amp; Guides
+                {hero.heading || DEFAULT_HERO.heading}
               </h1>
 
               <p className="mt-3 text-sm sm:text-base leading-relaxed text-white/85 font-medium max-w-2xl">
-                Everything you need to know before you embark — from border entry protocols and seasonal packing checklists to local currency tips, curated by our global tour leaders.
+                {hero.subtitle || DEFAULT_HERO.subtitle}
               </p>
             </div>
           </section>

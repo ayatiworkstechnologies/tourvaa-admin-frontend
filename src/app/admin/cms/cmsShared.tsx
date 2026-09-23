@@ -10,6 +10,8 @@ import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
+import PageSectionsBuilder from "@/components/admin/cms/PageSectionsBuilder";
+import type { CmsPageBlock } from "@/components/public/CmsPageSections";
 
 // ---- generic item type ---------------------------------------------------
 type CmsItem = Record<string, unknown> & { id: number };
@@ -223,7 +225,8 @@ export type ContentBlockTabConfig = {
     hint?: string;
     default?: string;
     // For type "records": the inputs of each repeated entry. "csv" edits an array as comma-separated text.
-    subfields?: { key: string; label: string; type: "text" | "textarea" | "csv" }[];
+    // "asset" uploads an image (e.g. a team member photo or gallery image) and stores its URL.
+    subfields?: { key: string; label: string; type: "text" | "textarea" | "csv" | "asset" }[];
   }[];
 };
 
@@ -257,7 +260,61 @@ export const TAB_DESCRIPTIONS: Record<string, string> = {
   "newsletter-banner": "The newsletter signup banner shown at the bottom of the homepage.",
   footer: "The public site footer's link sections (Support, Our Company, Login) - sections and links, each independently enable/disable-able and orderable.",
   "social-links": "The social media icon links shown in the site footer. Any left blank keep showing a generic placeholder URL.",
-  "cms-pages": "Create standalone pages with their own URL, content, and SEO details. Published pages become live at /{slug} and automatically appear as a footer link if assigned to a section - draft pages are never shown publicly.",
+  "cms-pages": "Create standalone pages with their own URL and SEO details. Build a modern designed page from Page Sections (hero, text, image + text, card grids, CTA), or fall back to plain HTML Content if you leave sections empty. Published pages become live at /{slug} and automatically appear as a footer link if assigned to a section - draft pages are never shown publicly.",
+  about: "Edit every section of the About Us page (hero, story, gallery, stats, values, team, awards, CTA) in one place, with the live public page shown alongside.",
+  contact: "Edit every section of the Contact Us page (hero, support cards, contact channels, FAQs, partner cards, offices) in one place, with the live public page shown alongside.",
+  "about-page-hero": "The top banner on the About Us page: badge, heading, subtitle and background image.",
+  "about-page-story": "The Our Philosophy & Mission narrative and founder quote on the About Us page.",
+  "about-page-gallery": "The photo mosaic gallery on the About Us page.",
+  "about-page-metrics": "The stat cards (years of excellence, expeditions, travelers, rating) on the About Us page.",
+  "about-page-values": "The Why Discerning Travelers Choose Us value cards on the About Us page.",
+  "about-page-team": "The Meet the Explorers team member cards on the About Us page.",
+  "about-page-awards": "The awards & industry recognition cards on the About Us page.",
+  "about-page-cta": "The Ready to Start Your Journey banner at the bottom of the About Us page.",
+  "contact-page-hero": "The top banner on the Contact Us page: badge, heading, subtitle and background image.",
+  "contact-page-support-cards": "The three support cards (Existing Booking, Live Chat, Help Center) on the Contact Us page.",
+  "contact-page-channels": "The direct contact channels panel (phone, hours, guarantee) next to the inquiry form on the Contact Us page.",
+  "contact-page-faqs": "The frequently asked questions on the Contact Us page.",
+  "contact-page-partners": "The partner solution cards (Operators, Travel Agents, Distribution, Media) on the Contact Us page.",
+  "contact-page-offices": "The regional office contact details on the Contact Us page.",
+  terms: "Edit the Terms & Conditions page - header, intro, and every numbered clause - with the live public page shown alongside.",
+  "privacy-policy": "Edit the Privacy Policy page - header, intro, and every numbered clause - with the live public page shown alongside.",
+  "cookie-policy": "Edit the Cookie Policy page - header, intro, and every numbered clause - with the live public page shown alongside.",
+  "terms-page-hero": "The Terms & Conditions page title, subtitle, intro note, and publish toggle.",
+  "terms-page-sections": "The numbered clauses on the Terms & Conditions page.",
+  "privacy-page-hero": "The Privacy Policy page title, subtitle, intro note, and publish toggle.",
+  "privacy-page-sections": "The numbered clauses on the Privacy Policy page.",
+  "cookie-page-hero": "The Cookie Policy page title, subtitle, intro note, and publish toggle.",
+  "cookie-page-sections": "The numbered clauses on the Cookie Policy page.",
+  "travel-advice": "Edit every section of the Travel Advice page (hero, categories, articles, checklist) in one place, with the live public page shown alongside.",
+  "travel-advice-hero": "The top banner on the Travel Advice page, plus its publish toggle.",
+  "travel-advice-categories": "The advice category cards on the Travel Advice page.",
+  "travel-advice-articles": "The featured article cards on the Travel Advice page.",
+  "travel-advice-essentials": "The pre-flight checklist cards on the Travel Advice page.",
+  "supplier-portal": "Edit every section of the Supplier Portal landing page in one place, with the live public page shown alongside. The earnings calculator stays interactive and isn't editable here.",
+  "agent-portal": "Edit every section of the Agent Portal landing page in one place, with the live public page shown alongside. The commission calculator stays interactive and isn't editable here.",
+  "affiliate-portal": "Edit every section of the Affiliate Portal landing page in one place, with the live public page shown alongside.",
+  "supplier-portal-hero": "The Supplier Portal hero banner and publish toggle.",
+  "supplier-portal-metrics": "The metrics strip on the Supplier Portal page.",
+  "supplier-portal-features": "The capability cards on the Supplier Portal page.",
+  "supplier-portal-steps": "The \"From sign-up to payout\" steps on the Supplier Portal page.",
+  "supplier-portal-documents": "The verification document cards on the Supplier Portal page.",
+  "supplier-portal-expectations": "The \"What we expect from partners\" cards on the Supplier Portal page.",
+  "supplier-portal-faqs": "The FAQs on the Supplier Portal page.",
+  "supplier-portal-cta": "The bottom call-to-action banner on the Supplier Portal page.",
+  "agent-portal-hero": "The Agent Portal hero banner and publish toggle.",
+  "agent-portal-metrics": "The metrics strip on the Agent Portal page.",
+  "agent-portal-features": "The tool cards on the Agent Portal page.",
+  "agent-portal-steps": "The \"From registration to bookings\" steps on the Agent Portal page.",
+  "agent-portal-documents": "The verification document cards on the Agent Portal page.",
+  "agent-portal-expectations": "The \"What we expect from partners\" cards on the Agent Portal page.",
+  "agent-portal-faqs": "The FAQs on the Agent Portal page.",
+  "agent-portal-cta": "The bottom call-to-action banner on the Agent Portal page.",
+  "affiliate-portal-hero": "The Affiliate Portal hero banner and publish toggle.",
+  "affiliate-portal-stats": "The stats strip on the Affiliate Portal page.",
+  "affiliate-portal-perks": "The \"Why join as an affiliate\" perk cards on the Affiliate Portal page.",
+  "affiliate-portal-ideal-for": "The \"Ideal for\" list on the Affiliate Portal page.",
+  "affiliate-portal-cta": "The bottom call-to-action banner on the Affiliate Portal page.",
 };
 export const TABS: TabConfig[] = [
   {
@@ -443,7 +500,7 @@ export const TABS: TabConfig[] = [
     formFields: [
       { key: "title", label: "Title", type: "text", required: true },
       { key: "slug", label: "URL slug (auto-generated from title if left blank)", type: "text" },
-      { key: "content", label: "Content (HTML)", type: "textarea" },
+      { key: "content", label: "Content (HTML) - only used as a fallback when no Page Sections are added below", type: "textarea" },
       { key: "seo_title", label: "SEO Title", type: "text" },
       { key: "seo_description", label: "SEO Description", type: "text" },
       { key: "footer_section_id", label: "Footer Section", type: "select" },
@@ -681,6 +738,561 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "linkedin", label: "LinkedIn URL", type: "url" },
     ],
   },
+
+  // ---- About Us page (see AboutPageEditor) ---------------------------------
+  {
+    key: "about-page-hero",
+    label: "Hero Banner",
+    blockKey: "about_page_hero",
+    fields: [
+      { key: "badge_label", label: "Badge Text (e.g. Our Story & Purpose)", type: "text" },
+      { key: "badge_year", label: "Badge Year (e.g. Est. 2015)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      { key: "background_image", label: "Background Image", type: "asset" },
+      { key: "rating_text", label: "Rating Badge (e.g. 4.9/5 Rating (3,200+ Reviews))", type: "text" },
+      { key: "vetted_text", label: "Trust Badge (e.g. 100% Vetted Local Operators)", type: "text" },
+    ],
+  },
+  {
+    key: "about-page-story",
+    label: "Our Story & Quote",
+    blockKey: "about_page_story",
+    fields: [
+      { key: "eyebrow", label: "Eyebrow (e.g. OUR PHILOSOPHY & MISSION)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "body", label: "Body", type: "textarea" },
+      { key: "quote_text", label: "Founder Quote", type: "textarea" },
+      { key: "quote_author", label: "Quote Attribution (e.g. Arjun Mehta, Founder & Chief Explorer at Tourvaa)", type: "text" },
+    ],
+  },
+  {
+    key: "about-page-gallery",
+    label: "Photo Gallery",
+    blockKey: "about_page_gallery",
+    fields: [
+      {
+        key: "items",
+        label: "Gallery Photos",
+        type: "records",
+        hint: "Shown in the mosaic gallery below the story section. Leave empty to use the built-in photos.",
+        subfields: [
+          { key: "image", label: "Photo", type: "asset" },
+          { key: "location", label: "Location Label (e.g. Bavaria, Germany)", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "about-page-metrics",
+    label: "Stats / Metrics",
+    blockKey: "about_page_metrics",
+    fields: [
+      {
+        key: "items",
+        label: "Metric Cards",
+        type: "records",
+        hint: "Leave empty to use the built-in stats.",
+        subfields: [
+          { key: "value", label: "Value (e.g. 500+)", type: "text" },
+          { key: "label", label: "Label (e.g. Curated Expeditions)", type: "text" },
+          { key: "sub", label: "Subtext (e.g. Across 80+ countries worldwide)", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "about-page-values",
+    label: "Why Choose Us",
+    blockKey: "about_page_values",
+    fields: [
+      { key: "eyebrow", label: "Eyebrow (e.g. THE TOURVAA DIFFERENCE)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      {
+        key: "items",
+        label: "Value Cards",
+        type: "records",
+        hint: "Leave empty to use the built-in cards.",
+        subfields: [
+          { key: "badge", label: "Badge (e.g. Direct Pricing)", type: "text" },
+          { key: "title", label: "Title", type: "text" },
+          { key: "description", label: "Description", type: "textarea" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "about-page-team",
+    label: "Our Team",
+    blockKey: "about_page_team",
+    fields: [
+      { key: "eyebrow", label: "Eyebrow (e.g. OUR TEAM)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      {
+        key: "items",
+        label: "Team Members",
+        type: "records",
+        hint: "Leave empty to use the built-in team.",
+        subfields: [
+          { key: "photo", label: "Photo", type: "asset" },
+          { key: "name", label: "Name", type: "text" },
+          { key: "role", label: "Role", type: "text" },
+          { key: "specialty", label: "Specialty Tag (e.g. 60+ Countries Explored)", type: "text" },
+          { key: "bio", label: "Bio", type: "textarea" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "about-page-awards",
+    label: "Awards & Recognition",
+    blockKey: "about_page_awards",
+    fields: [
+      { key: "eyebrow", label: "Eyebrow (e.g. CREDENTIALS & TRUST)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      {
+        key: "items",
+        label: "Awards",
+        type: "records",
+        hint: "Leave empty to use the built-in awards.",
+        subfields: [
+          { key: "title", label: "Title", type: "text" },
+          { key: "text", label: "Description", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "about-page-cta",
+    label: "Bottom CTA",
+    blockKey: "about_page_cta",
+    fields: [
+      { key: "badge_text", label: "Badge (e.g. Your Adventure Awaits)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      { key: "background_image", label: "Background Image", type: "asset" },
+      { key: "primary_cta_text", label: "Primary Button Text", type: "text" },
+      { key: "primary_cta_url", label: "Primary Button Link", type: "url", hint: "Defaults to /tours if left blank." },
+      { key: "secondary_cta_text", label: "Secondary Button Text", type: "text" },
+      { key: "secondary_cta_url", label: "Secondary Button Link", type: "url", hint: "Defaults to /contact if left blank." },
+    ],
+  },
+
+  // ---- Contact Us page (see ContactPageEditor) -----------------------------
+  {
+    key: "contact-page-hero",
+    label: "Hero Banner",
+    blockKey: "contact_page_hero",
+    fields: [
+      { key: "badge_label", label: "Badge Text (e.g. 24/7 Global Traveler Concierge)", type: "text" },
+      { key: "response_time_text", label: "Response Time Badge (e.g. Response < 2h)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      { key: "background_image", label: "Background Image", type: "asset" },
+    ],
+  },
+  {
+    key: "contact-page-support-cards",
+    label: "Support Cards",
+    blockKey: "contact_page_support_cards",
+    fields: [
+      {
+        key: "items",
+        label: "Support Cards (Existing Booking, Live Chat, Help Center, in order)",
+        type: "records",
+        hint: "Leave empty to use the built-in cards. Icons and buttons stay fixed to each card's position.",
+        subfields: [
+          { key: "eyebrow", label: "Eyebrow", type: "text" },
+          { key: "title", label: "Title", type: "text" },
+          { key: "description", label: "Description", type: "textarea" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "contact-page-channels",
+    label: "Contact Channels",
+    blockKey: "contact_page_channels",
+    fields: [
+      { key: "badge_text", label: "Badge (e.g. Verified Concierge Support)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      { key: "phone_display", label: "Phone Number (displayed)", type: "text" },
+      { key: "phone_href", label: "Phone Number (for the tel: link, digits only e.g. +6498879200)", type: "text" },
+      { key: "phone_hint", label: "Phone Hint (e.g. Available 24/7 in English, French & Spanish)", type: "text" },
+      { key: "hours_value", label: "Operating Hours (e.g. 24 Hours / 7 Days a Week)", type: "text" },
+      { key: "hours_hint", label: "Hours Hint (e.g. Dedicated in-trip emergency dispatch line)", type: "text" },
+      { key: "guarantee_title", label: "Guarantee Banner Title", type: "text" },
+      { key: "guarantee_text", label: "Guarantee Banner Text", type: "text" },
+    ],
+  },
+  {
+    key: "contact-page-faqs",
+    label: "FAQs",
+    blockKey: "contact_page_faqs",
+    fields: [
+      { key: "eyebrow", label: "Eyebrow (e.g. INSTANT ANSWERS)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      {
+        key: "items",
+        label: "Questions",
+        type: "records",
+        hint: "Leave empty to use the built-in FAQs.",
+        subfields: [
+          { key: "category", label: "Category (e.g. RESERVATIONS)", type: "text" },
+          { key: "question", label: "Question", type: "text" },
+          { key: "answer", label: "Answer", type: "textarea" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "contact-page-partners",
+    label: "Partner Cards",
+    blockKey: "contact_page_partners",
+    fields: [
+      { key: "eyebrow", label: "Eyebrow (e.g. PARTNERSHIP CHANNELS)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      {
+        key: "items",
+        label: "Partner Cards (Operators, Travel Agents, Distribution, Media, in order)",
+        type: "records",
+        hint: "Leave empty to use the built-in cards. Images and links stay fixed to each card's position.",
+        subfields: [
+          { key: "badge", label: "Badge", type: "text" },
+          { key: "title", label: "Title", type: "text" },
+          { key: "description", label: "Description", type: "textarea" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "contact-page-offices",
+    label: "Our Offices",
+    blockKey: "contact_page_offices",
+    fields: [
+      { key: "eyebrow", label: "Eyebrow (e.g. GLOBAL FOOTPRINT)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      {
+        key: "items",
+        label: "Office Details (New Zealand, Sri Lanka, India, in order)",
+        type: "records",
+        hint: "Leave empty to use the built-in office details. City, country and map position stay fixed per office.",
+        subfields: [
+          { key: "address_line1", label: "Address Line 1", type: "text" },
+          { key: "address_line2", label: "Address Line 2", type: "text" },
+          { key: "phone", label: "Phone", type: "text" },
+          { key: "hours", label: "Hours", type: "text" },
+          { key: "timezone", label: "Time Zone", type: "text" },
+        ],
+      },
+    ],
+  },
+
+  // ---- Legal pages (Terms / Privacy / Cookie) - see TermsPage / PrivacyPolicyPage / CookiePolicyPage ----
+  ...(["terms", "privacy", "cookie"] as const).map((page) => ({
+    key: `${page}-page-hero`,
+    label: "Page Header",
+    blockKey: `${page}_page_hero`,
+    fields: [
+      { key: "is_active", label: "Show this page on the public site", type: "boolean" as const, default: "true" },
+      { key: "title", label: "Page Title", type: "text" as const },
+      { key: "subtitle", label: "Subtitle", type: "textarea" as const },
+      { key: "intro", label: "Intro Note (shown above the numbered clauses)", type: "textarea" as const },
+    ],
+  })),
+  ...(["terms", "privacy", "cookie"] as const).map((page) => ({
+    key: `${page}-page-sections`,
+    label: "Clauses / Sections",
+    blockKey: `${page}_page_sections`,
+    fields: [
+      {
+        key: "items",
+        label: "Numbered Sections",
+        type: "records" as const,
+        hint: "Leave empty to use the built-in legal text. Editing this list replaces ALL sections below - add a new entry to append a new clause without losing the others.",
+        subfields: [
+          { key: "title", label: "Section Title", type: "text" as const },
+          { key: "body", label: "Body (one paragraph per line)", type: "textarea" as const },
+        ],
+      },
+    ],
+  })),
+
+  // ---- Travel Advice page (see TravelAdvicePageEditor) ---------------------
+  {
+    key: "travel-advice-hero",
+    label: "Hero Banner",
+    blockKey: "travel_advice_hero",
+    fields: [
+      { key: "is_active", label: "Show this page on the public site", type: "boolean", default: "true" },
+      { key: "badge_label", label: "Badge Text (e.g. Field-Tested Expedition Guidance)", type: "text" },
+      { key: "badge_note", label: "Badge Note (e.g. Updated Weekly)", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      { key: "background_image", label: "Background Image", type: "asset" },
+    ],
+  },
+  {
+    key: "travel-advice-categories",
+    label: "Advice Categories",
+    blockKey: "travel_advice_categories",
+    fields: [
+      {
+        key: "items",
+        label: "Category Cards",
+        type: "records",
+        hint: "Leave empty to use the built-in categories.",
+        subfields: [
+          { key: "image", label: "Image", type: "asset" },
+          { key: "title", label: "Title", type: "text" },
+          { key: "text", label: "Description", type: "textarea" },
+          { key: "href", label: "Link", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "travel-advice-articles",
+    label: "Featured Articles",
+    blockKey: "travel_advice_articles",
+    fields: [
+      {
+        key: "items",
+        label: "Article Cards",
+        type: "records",
+        hint: "Leave empty to use the built-in articles.",
+        subfields: [
+          { key: "image", label: "Image", type: "asset" },
+          { key: "category", label: "Category Label", type: "text" },
+          { key: "title", label: "Title", type: "text" },
+          { key: "text", label: "Description", type: "textarea" },
+          { key: "href", label: "Link", type: "text" },
+          { key: "readTime", label: "Read Time (e.g. 6 min read)", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "travel-advice-essentials",
+    label: "Pre-Flight Checklist",
+    blockKey: "travel_advice_essentials",
+    fields: [
+      {
+        key: "items",
+        label: "Checklist Cards",
+        type: "records",
+        hint: "Leave empty to use the built-in checklist. Icons stay fixed to each card's position.",
+        subfields: [
+          { key: "title", label: "Title", type: "text" },
+          { key: "text", label: "Description", type: "textarea" },
+          { key: "tag", label: "Tag (e.g. Rule #1)", type: "text" },
+        ],
+      },
+    ],
+  },
+
+  // ---- Supplier Portal / Agent Portal (see SupplierPortalPageEditor / AgentPortalPageEditor) ----
+  ...(["supplier", "agent"] as const).map((portal) => ({
+    key: `${portal}-portal-hero`,
+    label: "Hero Banner",
+    blockKey: `${portal}_portal_hero`,
+    fields: [
+      { key: "is_active", label: "Show this page on the public site", type: "boolean" as const, default: "true" },
+      { key: "heading", label: "Heading", type: "text" as const },
+      { key: "subtitle", label: "Subtitle", type: "textarea" as const },
+      { key: "primary_cta_text", label: "Primary Button Text", type: "text" as const },
+      { key: "secondary_cta_text", label: "Secondary Button Text", type: "text" as const },
+    ],
+  })),
+  ...(["supplier", "agent"] as const).map((portal) => ({
+    key: `${portal}-portal-metrics`,
+    label: "Metrics Strip",
+    blockKey: `${portal}_portal_metrics`,
+    fields: [
+      {
+        key: "items",
+        label: "Metric Tiles (3, in order)",
+        type: "records" as const,
+        hint: "Leave empty to use the built-in metrics.",
+        subfields: [
+          { key: "value", label: "Value (e.g. 80+ Countries)", type: "text" as const },
+          { key: "label", label: "Label", type: "text" as const },
+          { key: "sub", label: "Subtext", type: "text" as const },
+        ],
+      },
+    ],
+  })),
+  ...(["supplier", "agent"] as const).map((portal) => ({
+    key: `${portal}-portal-features`,
+    label: portal === "supplier" ? "Capabilities" : "Tools",
+    blockKey: portal === "supplier" ? "supplier_portal_capabilities" : "agent_portal_tools",
+    fields: [
+      {
+        key: "items",
+        label: "Feature Cards",
+        type: "records" as const,
+        hint: "Leave empty to use the built-in cards. Icons stay fixed to each card's position.",
+        subfields: [
+          { key: "badge", label: "Badge", type: "text" as const },
+          { key: "title", label: "Title", type: "text" as const },
+          { key: "description", label: "Description", type: "textarea" as const },
+        ],
+      },
+    ],
+  })),
+  ...(["supplier", "agent"] as const).map((portal) => ({
+    key: `${portal}-portal-steps`,
+    label: "How It Works",
+    blockKey: `${portal}_portal_steps`,
+    fields: [
+      {
+        key: "items",
+        label: "Steps (in order)",
+        type: "records" as const,
+        hint: "Leave empty to use the built-in steps.",
+        subfields: [
+          { key: "badge", label: "Badge (e.g. STEP 1)", type: "text" as const },
+          { key: "title", label: "Title", type: "text" as const },
+          { key: "description", label: "Description", type: "textarea" as const },
+        ],
+      },
+    ],
+  })),
+  ...(["supplier", "agent"] as const).map((portal) => ({
+    key: `${portal}-portal-documents`,
+    label: "Verification Documents",
+    blockKey: `${portal}_portal_documents`,
+    fields: [
+      {
+        key: "items",
+        label: "Document Cards",
+        type: "records" as const,
+        hint: "Leave empty to use the built-in list.",
+        subfields: [
+          { key: "badge", label: "Badge (e.g. MANDATORY or OPTIONAL)", type: "text" as const },
+          { key: "title", label: "Title", type: "text" as const },
+          { key: "description", label: "Description", type: "textarea" as const },
+          { key: "footer", label: "Footer Note (e.g. Accepted: PDF, JPG, PNG)", type: "text" as const },
+        ],
+      },
+    ],
+  })),
+  ...(["supplier", "agent"] as const).map((portal) => ({
+    key: `${portal}-portal-expectations`,
+    label: "What We Expect",
+    blockKey: `${portal}_portal_expectations`,
+    fields: [
+      {
+        key: "items",
+        label: "Expectation Cards",
+        type: "records" as const,
+        hint: "Leave empty to use the built-in list.",
+        subfields: [
+          { key: "title", label: "Title", type: "text" as const },
+          { key: "description", label: "Description", type: "textarea" as const },
+        ],
+      },
+    ],
+  })),
+  ...(["supplier", "agent"] as const).map((portal) => ({
+    key: `${portal}-portal-faqs`,
+    label: "FAQs",
+    blockKey: `${portal}_portal_faqs`,
+    fields: [
+      {
+        key: "items",
+        label: "Questions",
+        type: "records" as const,
+        hint: "Leave empty to use the built-in FAQs.",
+        subfields: [
+          { key: "q", label: "Question", type: "text" as const },
+          { key: "a", label: "Answer", type: "textarea" as const },
+        ],
+      },
+    ],
+  })),
+  ...(["supplier", "agent"] as const).map((portal) => ({
+    key: `${portal}-portal-cta`,
+    label: "Bottom CTA",
+    blockKey: `${portal}_portal_cta`,
+    fields: [
+      { key: "heading", label: "Heading", type: "text" as const },
+      { key: "subtitle", label: "Subtitle", type: "textarea" as const },
+      { key: "cta_text", label: "Button Text", type: "text" as const },
+    ],
+  })),
+
+  // ---- Affiliate Portal (see AffiliatePortalPageEditor) --------------------
+  {
+    key: "affiliate-portal-hero",
+    label: "Hero Banner",
+    blockKey: "affiliate_portal_hero",
+    fields: [
+      { key: "is_active", label: "Show this page on the public site", type: "boolean", default: "true" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      { key: "primary_cta_text", label: "Primary Button Text", type: "text" },
+    ],
+  },
+  {
+    key: "affiliate-portal-stats",
+    label: "Stats Strip",
+    blockKey: "affiliate_portal_stats",
+    fields: [
+      {
+        key: "items",
+        label: "Stat Tiles",
+        type: "records",
+        hint: "Leave empty to use the built-in stats.",
+        subfields: [
+          { key: "title", label: "Value", type: "text" },
+          { key: "detail", label: "Label", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "affiliate-portal-perks",
+    label: "Why Join Perks",
+    blockKey: "affiliate_portal_perks",
+    fields: [
+      {
+        key: "items",
+        label: "Perk Cards",
+        type: "records",
+        hint: "Leave empty to use the built-in perks. Icons stay fixed to each card's position.",
+        subfields: [
+          { key: "title", label: "Title", type: "text" },
+          { key: "description", label: "Description", type: "textarea" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "affiliate-portal-ideal-for",
+    label: "Ideal For",
+    blockKey: "affiliate_portal_ideal_for",
+    fields: [
+      { key: "items", label: "List Items", type: "list", hint: "Leave empty to use the built-in list." },
+    ],
+  },
+  {
+    key: "affiliate-portal-cta",
+    label: "Bottom CTA",
+    blockKey: "affiliate_portal_cta",
+    fields: [
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subtitle", label: "Subtitle", type: "textarea" },
+      { key: "cta_text", label: "Button Text", type: "text" },
+    ],
+  },
 ];
 
 // ---- ContentBlockPanel ----------------------------------------------------
@@ -773,8 +1385,17 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
                           <div key={idx} className="space-y-2 rounded-xl border border-dash-border bg-slate-50/60 p-3">
                             {(f.subfields ?? []).map((sf) => (
                               <div key={sf.key}>
-                                <label className="mb-1 block text-[11px] font-bold uppercase text-dash-muted">{sf.label}</label>
-                                {sf.type === "textarea" ? (
+                                {sf.type !== "asset" && (
+                                  <label className="mb-1 block text-[11px] font-bold uppercase text-dash-muted">{sf.label}</label>
+                                )}
+                                {sf.type === "asset" ? (
+                                  <AdminAssetUpload
+                                    label={sf.label}
+                                    kind="asset"
+                                    value={rec[sf.key] ?? ""}
+                                    onChange={(value) => setAll(all.map((r, i) => (i === idx ? { ...r, [sf.key]: value } : r)))}
+                                  />
+                                ) : sf.type === "textarea" ? (
                                   <textarea
                                     rows={2}
                                     value={rec[sf.key] ?? ""}
@@ -1321,6 +1942,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
   const [countryOptions, setCountryOptions] = useState<{ id: number; name: string }[]>([]);
   const [cityOptions, setCityOptions] = useState<{ id: number; name: string }[]>([]);
   const [footerSectionOptions, setFooterSectionOptions] = useState<{ id: number; title: string }[]>([]);
+  const [sectionBlocks, setSectionBlocks] = useState<CmsPageBlock[]>([]);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -1418,16 +2040,18 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
   const openCreate = () => {
     setEditingItem(null);
     setFormValues(Object.fromEntries(tab.formFields.map(f => [f.key, ""])));
+    setSectionBlocks([]);
     setShowForm(true);
   };
 
   const openEdit = (item: CmsItem) => {
     setEditingItem(item);
     setFormValues(Object.fromEntries(tab.formFields.map(f => [f.key, item[f.key] != null ? String(item[f.key]) : ""])));
+    setSectionBlocks(Array.isArray(item.sections) ? (item.sections as CmsPageBlock[]) : []);
     setShowForm(true);
   };
 
-  const closeForm = () => { setShowForm(false); setEditingItem(null); setFormValues({}); };
+  const closeForm = () => { setShowForm(false); setEditingItem(null); setFormValues({}); setSectionBlocks([]); };
 
   const save = async () => {
     const required = tab.formFields.filter(f => f.required);
@@ -1447,6 +2071,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
             : f.type === "number" || f.key.endsWith("_id") ? Number(formValues[f.key]) : formValues[f.key];
         }
       }
+      if (isCmsPageTab) body.sections = sectionBlocks;
       if (editingItem) {
         const method = tab.updateMethod ?? "put";
         const url = tab.updatePath === "collection" ? tab.endpoint : `${tab.endpoint}/${editingItem.id}`;
@@ -1633,6 +2258,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
         submitLabel={editingItem ? "Update" : "Create"}
         onClose={closeForm}
         onSubmit={() => void save()}
+        size={isCmsPageTab ? "wide" : "lg"}
       >
         <div className="-mt-1 mb-4">
           <p className="text-sm text-dash-muted">{visibleFieldCount} fields in this section. Required fields are marked.</p>
@@ -1739,6 +2365,12 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
               </div>
             ))}
         </div>
+
+        {isCmsPageTab && (
+          <div className="mt-4">
+            <PageSectionsBuilder value={sectionBlocks} onChange={setSectionBlocks} />
+          </div>
+        )}
       </ActionModal>
 
       <section className="rounded-xl border border-dash-border bg-white p-4">
@@ -1798,6 +2430,15 @@ export const COUNTRY_DESTINATION_GUIDE_TAB = { key: "country-destination-guide",
 
 export const ALL_TABS: { key: string; label: string }[] = [
   { key: "home", label: "Home Page" },
+  { key: "about", label: "About Us" },
+  { key: "contact", label: "Contact Us" },
+  { key: "terms", label: "Terms & Conditions" },
+  { key: "privacy-policy", label: "Privacy Policy" },
+  { key: "cookie-policy", label: "Cookie Policy" },
+  { key: "travel-advice", label: "Travel Advice" },
+  { key: "supplier-portal", label: "Supplier Portal" },
+  { key: "agent-portal", label: "Agent Portal" },
+  { key: "affiliate-portal", label: "Affiliate Portal" },
   ...TABS.map((t) => ({ key: t.key, label: t.label })),
   ...CONTENT_BLOCK_TABS.map((t) => ({ key: t.key, label: t.label })),
   FOOTER_TAB,
@@ -1835,8 +2476,14 @@ export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
   {
     key: "content",
     label: "Content & Pages",
-    description: "Testimonials, FAQs, and standalone pages (About Us, Contact, policies, etc).",
-    tabs: ["customer-reviews", "help-centre", "cms-pages"],
+    description: "Standalone pages (About Us, Contact Us, legal pages, Travel Advice, and one-off pages), plus testimonials and FAQs.",
+    tabs: ["cms-pages", "about", "contact", "terms", "privacy-policy", "cookie-policy", "travel-advice", "customer-reviews", "help-centre"],
+  },
+  {
+    key: "portals",
+    label: "Partner Portal Pages",
+    description: "The public landing pages for suppliers, travel agents, and affiliates - hero, features, steps, documents, FAQs and CTA. Interactive calculators stay code-driven.",
+    tabs: ["supplier-portal", "agent-portal", "affiliate-portal"],
   },
   {
     key: "site",

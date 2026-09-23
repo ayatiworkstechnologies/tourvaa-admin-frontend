@@ -1,7 +1,21 @@
+"use client";
+
 import ConfiguredSupportEmail from "@/components/public/ConfiguredSupportEmail";
 import LegalPageLayout, { LegalBullets, type LegalSection } from "@/components/public/LegalPageLayout";
+import PageUnavailable from "@/components/public/PageUnavailable";
+import { useContentBlock } from "@/hooks/useContentBlock";
 
-const sections: LegalSection[] = [
+type LegalHero = { title?: string; subtitle?: string; intro?: string; is_active?: boolean };
+type LegalSectionItem = { title?: string; body?: string };
+const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "section";
+
+const DEFAULT_HERO = {
+  title: "Cookie Policy",
+  subtitle: "This Cookie Policy explains how Tourvaa uses cookies and similar technologies on its website, application, and associated services.",
+  intro: "Cookies are small files stored on your browser or device. They help Tourvaa operate securely, remember preferences, understand platform performance, and support relevant marketing where permission is required.",
+};
+
+const DEFAULT_SECTIONS: LegalSection[] = [
   {
     id: "types-of-cookies",
     number: 1,
@@ -181,11 +195,25 @@ const sections: LegalSection[] = [
 ];
 
 export default function CookiePolicyPage() {
+  const hero = useContentBlock<LegalHero>("cookie_page_hero", DEFAULT_HERO);
+  const sectionsBlock = useContentBlock<{ items?: LegalSectionItem[] }>("cookie_page_sections", {});
+
+  if (hero.is_active === false) return <PageUnavailable />;
+
+  const sections: LegalSection[] = sectionsBlock.items?.length
+    ? sectionsBlock.items.map((it, i) => ({
+        id: `${slugify(it.title || `section-${i + 1}`)}-${i}`,
+        number: i + 1,
+        label: it.title || "",
+        body: (it.body || "").split("\n").filter(Boolean).map((line, li) => <p key={li}>{line}</p>),
+      }))
+    : DEFAULT_SECTIONS;
+
   return (
     <LegalPageLayout
-      title="Cookie Policy"
-      subtitle="This Cookie Policy explains how Tourvaa uses cookies and similar technologies on its website, application, and associated services."
-      intro="Cookies are small files stored on your browser or device. They help Tourvaa operate securely, remember preferences, understand platform performance, and support relevant marketing where permission is required."
+      title={hero.title || DEFAULT_HERO.title}
+      subtitle={hero.subtitle || DEFAULT_HERO.subtitle}
+      intro={hero.intro || DEFAULT_HERO.intro}
       sections={sections}
     />
   );

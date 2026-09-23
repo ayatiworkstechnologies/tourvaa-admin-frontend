@@ -1,7 +1,15 @@
+"use client";
+
 import Link from "next/link";
 
 import ConfiguredSupportEmail from "@/components/public/ConfiguredSupportEmail";
 import LegalPageLayout, { LegalBullets, type LegalSection } from "@/components/public/LegalPageLayout";
+import PageUnavailable from "@/components/public/PageUnavailable";
+import { useContentBlock } from "@/hooks/useContentBlock";
+
+type LegalHero = { title?: string; subtitle?: string; intro?: string; is_active?: boolean };
+type LegalSectionItem = { title?: string; body?: string };
+const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "section";
 
 const CANCELLATION_TIERS = [
   { window: "More than 60 days", refund: "Full refund minus a 3% platform processing fee" },
@@ -11,7 +19,13 @@ const CANCELLATION_TIERS = [
   { window: "Less than 7 days", refund: "No refund" },
 ];
 
-const sections: LegalSection[] = [
+const DEFAULT_HERO = {
+  title: "Terms & Conditions",
+  subtitle: "Everything you need to know before you go - from bookings and payments to cancellations and traveller responsibilities.",
+  intro: "By accessing Tourvaa, creating an account, applying as a partner, or making a booking, you agree to these Terms and Conditions. These Terms apply to travellers, suppliers, accommodation providers, transport providers, and other travel suppliers.",
+};
+
+const DEFAULT_SECTIONS: LegalSection[] = [
   {
     id: "tourvaas-role",
     number: 1,
@@ -359,11 +373,25 @@ const sections: LegalSection[] = [
 ];
 
 export default function TermsPage() {
+  const hero = useContentBlock<LegalHero>("terms_page_hero", DEFAULT_HERO);
+  const sectionsBlock = useContentBlock<{ items?: LegalSectionItem[] }>("terms_page_sections", {});
+
+  if (hero.is_active === false) return <PageUnavailable />;
+
+  const sections: LegalSection[] = sectionsBlock.items?.length
+    ? sectionsBlock.items.map((it, i) => ({
+        id: `${slugify(it.title || `section-${i + 1}`)}-${i}`,
+        number: i + 1,
+        label: it.title || "",
+        body: (it.body || "").split("\n").filter(Boolean).map((line, li) => <p key={li}>{line}</p>),
+      }))
+    : DEFAULT_SECTIONS;
+
   return (
     <LegalPageLayout
-      title="Terms & Conditions"
-      subtitle="Everything you need to know before you go - from bookings and payments to cancellations and traveller responsibilities."
-      intro="By accessing Tourvaa, creating an account, applying as a partner, or making a booking, you agree to these Terms and Conditions. These Terms apply to travellers, suppliers, accommodation providers, transport providers, and other travel suppliers."
+      title={hero.title || DEFAULT_HERO.title}
+      subtitle={hero.subtitle || DEFAULT_HERO.subtitle}
+      intro={hero.intro || DEFAULT_HERO.intro}
       sections={sections}
     />
   );

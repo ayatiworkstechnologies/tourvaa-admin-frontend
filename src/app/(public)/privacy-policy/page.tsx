@@ -1,9 +1,23 @@
+"use client";
+
 import Link from "next/link";
 
 import ConfiguredSupportEmail from "@/components/public/ConfiguredSupportEmail";
 import LegalPageLayout, { LegalBullets, type LegalSection } from "@/components/public/LegalPageLayout";
+import PageUnavailable from "@/components/public/PageUnavailable";
+import { useContentBlock } from "@/hooks/useContentBlock";
 
-const sections: LegalSection[] = [
+type LegalHero = { title?: string; subtitle?: string; intro?: string; is_active?: boolean };
+type LegalSectionItem = { title?: string; body?: string };
+const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "section";
+
+const DEFAULT_HERO = {
+  title: "Privacy Policy",
+  subtitle: "This Privacy Policy explains how Tourvaa collects, uses, shares, stores, and protects personal information when you use the Tourvaa website, application, traveller account, or partner dashboard.",
+  intro: "By using Tourvaa, you acknowledge the practices described in this Policy.",
+};
+
+const DEFAULT_SECTIONS: LegalSection[] = [
   {
     id: "information-we-collect",
     number: 1,
@@ -273,11 +287,25 @@ const sections: LegalSection[] = [
 ];
 
 export default function PrivacyPolicyPage() {
+  const hero = useContentBlock<LegalHero>("privacy_page_hero", DEFAULT_HERO);
+  const sectionsBlock = useContentBlock<{ items?: LegalSectionItem[] }>("privacy_page_sections", {});
+
+  if (hero.is_active === false) return <PageUnavailable />;
+
+  const sections: LegalSection[] = sectionsBlock.items?.length
+    ? sectionsBlock.items.map((it, i) => ({
+        id: `${slugify(it.title || `section-${i + 1}`)}-${i}`,
+        number: i + 1,
+        label: it.title || "",
+        body: (it.body || "").split("\n").filter(Boolean).map((line, li) => <p key={li}>{line}</p>),
+      }))
+    : DEFAULT_SECTIONS;
+
   return (
     <LegalPageLayout
-      title="Privacy Policy"
-      subtitle="This Privacy Policy explains how Tourvaa collects, uses, shares, stores, and protects personal information when you use the Tourvaa website, application, traveller account, or partner dashboard."
-      intro="By using Tourvaa, you acknowledge the practices described in this Policy."
+      title={hero.title || DEFAULT_HERO.title}
+      subtitle={hero.subtitle || DEFAULT_HERO.subtitle}
+      intro={hero.intro || DEFAULT_HERO.intro}
       sections={sections}
     />
   );

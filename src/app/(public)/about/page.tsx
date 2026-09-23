@@ -2,8 +2,9 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
+import { fetchContentBlock } from "@/lib/api/publicClient";
 import {
   LuAward as Award,
   LuBadgeCheck as BadgeCheck,
@@ -25,7 +26,7 @@ import {
 
 import AboutReveal from "@/components/public/AboutReveal";
 
-const metrics = [
+const DEFAULT_METRICS = [
   {
     value: "10+",
     label: "Years of Excellence",
@@ -56,7 +57,7 @@ const metrics = [
   },
 ];
 
-const team = [
+const DEFAULT_TEAM = [
   {
     name: "Arjun Mehta",
     role: "Founder & CEO",
@@ -91,7 +92,7 @@ const team = [
   },
 ];
 
-const values = [
+const DEFAULT_VALUES = [
   {
     number: "01",
     title: "Best Price Guarantee",
@@ -130,7 +131,7 @@ const values = [
   },
 ];
 
-const awards = [
+const DEFAULT_AWARDS = [
   {
     icon: BadgeCheck,
     title: "TripAdvisor Travelers’ Choice 2024",
@@ -158,11 +159,115 @@ const awards = [
   },
 ];
 
+// Mosaic gallery photos - className stays fixed per position (the layout
+// mixes two tall tiles with two stacked pairs and one large centre tile), only
+// the image + caption are CMS-editable.
+const DEFAULT_GALLERY = [
+  { image: "https://images.unsplash.com/photo-1513584684374-8bab748fbf90?auto=format&fit=crop&w=600&q=80", location: "Bavaria, Germany" },
+  { image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=600&q=80", location: "Bali, Indonesia" },
+  { image: "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=600&q=80", location: "Krabi, Thailand" },
+  { image: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=800&q=80", location: "Sydney, Australia" },
+  { image: "https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=600&q=80", location: "Kyoto, Japan" },
+  { image: "https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=600&q=80", location: "Dubai Desert, UAE" },
+  { image: "https://images.unsplash.com/photo-1543429776-2782fc8e1acd?auto=format&fit=crop&w=600&q=80", location: "Tuscany, Italy" },
+];
+
+const DEFAULT_HERO = {
+  badge_label: "Our Story & Purpose",
+  badge_year: "Est. 2015",
+  heading: "Connecting Curious Souls to Unforgettable Journeys",
+  subtitle: "Tourvaa is a world-class adventure booking platform uniting travelers with vetted local tour leaders across 80+ countries. We curate small group and private expeditions designed for true cultural depth.",
+  background_image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",
+  rating_text: "4.9/5 Rating (3,200+ Reviews)",
+  vetted_text: "100% Vetted Local Operators",
+};
+
+const DEFAULT_STORY = {
+  eyebrow: "OUR PHILOSOPHY & MISSION",
+  heading: "Crafting Journeys That Redefine Adventure",
+  body: "Founded in 2015, Tourvaa began with a simple yet powerful belief: that travel should be transformative, ethical, and deeply personal. What began as a small band of explorers has flourished into a trusted global platform, empowering tens of thousands of travelers to experience hidden mountain passes, remote archipelagoes, and ancient trade routes with total confidence.",
+  quote_text: "We don't build tours to check off tourist traps. We build journeys where you step off the beaten track, break bread with welcoming hosts, and return home with a transformed outlook on our shared world.",
+  quote_author: "Arjun Mehta, Founder & Chief Explorer at Tourvaa",
+};
+
+const DEFAULT_VALUES_HEADING = { eyebrow: "THE TOURVAA DIFFERENCE", heading: "Why Discerning Travelers Choose Us", subtitle: "Engineered from the ground up to protect your budget, amplify your cultural immersion, and keep you safe every mile." };
+const DEFAULT_TEAM_HEADING = { eyebrow: "OUR TEAM", heading: "Meet the Explorers Behind Tourvaa", subtitle: "From former expedition leaders to logistics veterans, our global team works tirelessly to ensure your journey is seamless." };
+const DEFAULT_AWARDS_HEADING = { eyebrow: "CREDENTIALS & TRUST", heading: "Awards & Global Recognition", subtitle: "Trusted by international travelers and acclaimed for ethical tour operations, certified safety protocols, and guest satisfaction." };
+
+const DEFAULT_CTA = {
+  badge_text: "Your Adventure Awaits",
+  heading: "Ready to Start Your Journey?",
+  subtitle: "Explore our curated collection of 500+ small-group and private tours, or speak with an expedition specialist for tailor-made itineraries.",
+  background_image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80",
+  primary_cta_text: "Browse All Tours",
+  primary_cta_url: "/tours",
+  secondary_cta_text: "Contact Specialists",
+  secondary_cta_url: "/contact",
+};
+
+type MetricItem = { value?: string; label?: string; sub?: string };
+type TeamItem = { name?: string; role?: string; specialty?: string; photo?: string; bio?: string };
+type ValueItem = { badge?: string; title?: string; description?: string };
+type AwardItem = { title?: string; text?: string };
+type GalleryItem = { image?: string; location?: string };
+type GalleryBlock = { items?: GalleryItem[] };
+type MetricsBlock = { items?: MetricItem[] };
+type ValuesBlock = { eyebrow?: string; heading?: string; subtitle?: string; items?: ValueItem[] };
+type TeamBlock = { eyebrow?: string; heading?: string; subtitle?: string; items?: TeamItem[] };
+type AwardsBlock = { eyebrow?: string; heading?: string; subtitle?: string; items?: AwardItem[] };
+
+const VALUE_ICONS = DEFAULT_VALUES.map((v) => v.icon);
+const AWARD_ICONS = DEFAULT_AWARDS.map((a) => a.icon);
+const METRIC_ICON_COLOR = DEFAULT_METRICS.map((m) => ({ icon: m.icon, color: m.color }));
+
 function delay(milliseconds: number) {
   return { "--reveal-delay": `${milliseconds}ms` } as CSSProperties;
 }
 
+// Fetches an admin-editable content block and returns its `data`, falling
+// back to `def` while loading or whenever the block is empty (see
+// useSectionCopy.ts for the same pattern used on the homepage).
+function useAboutBlock<T extends Record<string, unknown>>(key: string, def: T): T {
+  const [data, setData] = useState<T>(def);
+  useEffect(() => {
+    let active = true;
+    fetchContentBlock<T>(key)
+      .then((res) => {
+        if (active && res?.data && Object.keys(res.data).length) setData({ ...def, ...res.data });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return data;
+}
+
 export default function AboutPage() {
+  const hero = useAboutBlock("about_page_hero", DEFAULT_HERO);
+  const story = useAboutBlock("about_page_story", DEFAULT_STORY);
+  const galleryBlock = useAboutBlock<GalleryBlock>("about_page_gallery", {});
+  const metricsBlock = useAboutBlock<MetricsBlock>("about_page_metrics", {});
+  const valuesHeading = useAboutBlock<ValuesBlock>("about_page_values", DEFAULT_VALUES_HEADING);
+  const teamHeading = useAboutBlock<TeamBlock>("about_page_team", DEFAULT_TEAM_HEADING);
+  const awardsHeading = useAboutBlock<AwardsBlock>("about_page_awards", DEFAULT_AWARDS_HEADING);
+  const cta = useAboutBlock("about_page_cta", DEFAULT_CTA);
+
+  const gallery = galleryBlock.items?.length ? galleryBlock.items.map((it, i) => ({ image: it.image || DEFAULT_GALLERY[i % DEFAULT_GALLERY.length].image, location: it.location || "" })) : DEFAULT_GALLERY;
+  const metrics = metricsBlock.items?.length
+    ? metricsBlock.items.map((it, i) => ({ value: it.value || "", label: it.label || "", sub: it.sub || "", icon: METRIC_ICON_COLOR[i % METRIC_ICON_COLOR.length].icon, color: METRIC_ICON_COLOR[i % METRIC_ICON_COLOR.length].color }))
+    : DEFAULT_METRICS;
+  const values = valuesHeading.items?.length
+    ? valuesHeading.items.map((it, i) => ({ number: String(i + 1).padStart(2, "0"), title: it.title || "", desc: it.description || "", badge: it.badge || "", icon: VALUE_ICONS[i % VALUE_ICONS.length], featured: i === 1 }))
+    : DEFAULT_VALUES;
+  const team = teamHeading.items?.length
+    ? teamHeading.items.map((it) => ({ name: it.name || "", role: it.role || "", specialty: it.specialty || "", image: it.photo || "", bio: it.bio || "" }))
+    : DEFAULT_TEAM;
+  const awards = awardsHeading.items?.length
+    ? awardsHeading.items.map((it, i) => ({ title: it.title || "", text: it.text || "", icon: AWARD_ICONS[i % AWARD_ICONS.length] }))
+    : DEFAULT_AWARDS;
+
   return (
     <AboutReveal>
       <main className="overflow-hidden bg-[#FAFAFC] text-slate-900 pb-24">
@@ -170,7 +275,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-4 sm:pt-6">
           <section className="relative min-h-[360px] sm:min-h-[420px] md:min-h-[460px] w-full overflow-hidden rounded-[26px] bg-slate-950 shadow-xl flex items-center">
             <img
-              src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80"
+              src={hero.background_image || DEFAULT_HERO.background_image}
               alt="Misty scenic mountain valley with lake"
               className="animate-tourvaa-hero absolute inset-0 h-full w-full object-cover opacity-60 scale-105"
             />
@@ -182,27 +287,27 @@ export default function AboutPage() {
             <div className="relative z-10 max-w-3xl px-6 sm:px-12 py-12">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-bold text-white backdrop-blur-md shadow-xs">
                 <Sparkles size={14} className="text-amber-400" />
-                <span>Our Story &amp; Purpose</span>
+                <span>{hero.badge_label || DEFAULT_HERO.badge_label}</span>
                 <span className="text-white/40">•</span>
-                <span className="text-white/80">Est. 2015</span>
+                <span className="text-white/80">{hero.badge_year || DEFAULT_HERO.badge_year}</span>
               </div>
 
               <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-black tracking-tight text-white font-heading leading-tight drop-shadow-md">
-                Connecting Curious Souls to Unforgettable Journeys
+                {hero.heading || DEFAULT_HERO.heading}
               </h1>
 
               <p className="mt-4 text-sm sm:text-base md:text-lg leading-relaxed text-white/85 font-medium max-w-2xl">
-                Tourvaa is a world-class adventure booking platform uniting travelers with vetted local tour leaders across 80+ countries. We curate small group and private expeditions designed for true cultural depth.
+                {hero.subtitle || DEFAULT_HERO.subtitle}
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3 text-xs font-bold text-white">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur-xs border border-white/20">
                   <Star size={13} className="text-amber-400 fill-amber-400" />
-                  <span>4.9/5 Rating (3,200+ Reviews)</span>
+                  <span>{hero.rating_text || DEFAULT_HERO.rating_text}</span>
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur-xs border border-white/20">
                   <ShieldCheck size={13} className="text-emerald-400" />
-                  <span>100% Vetted Local Operators</span>
+                  <span>{hero.vetted_text || DEFAULT_HERO.vetted_text}</span>
                 </span>
               </div>
             </div>
@@ -213,30 +318,30 @@ export default function AboutPage() {
         <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-16 sm:pt-24">
           <div data-reveal className="mx-auto max-w-4xl text-center">
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
-              OUR PHILOSOPHY &amp; MISSION
+              {story.eyebrow || DEFAULT_STORY.eyebrow}
             </span>
             <h2 className="mt-2 text-3xl sm:text-4xl font-black tracking-tight text-slate-950 font-heading">
-              Crafting Journeys That Redefine Adventure
+              {story.heading || DEFAULT_STORY.heading}
             </h2>
             <p className="mt-4 text-sm sm:text-base leading-relaxed text-slate-600 font-medium max-w-3xl mx-auto">
-              Founded in 2015, Tourvaa began with a simple yet powerful belief: that travel should be transformative, ethical, and deeply personal. What began as a small band of explorers has flourished into a trusted global platform, empowering tens of thousands of travelers to experience hidden mountain passes, remote archipelagoes, and ancient trade routes with total confidence.
+              {story.body || DEFAULT_STORY.body}
             </p>
           </div>
 
-          {/* Mosaic Gallery */}
+          {/* Mosaic Gallery - photo + location are CMS-editable, the tile sizing per position is fixed */}
           <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 items-center">
             <div
               data-reveal
               className="hidden lg:block group relative h-[280px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
             >
               <img
-                src="https://images.unsplash.com/photo-1513584684374-8bab748fbf90?auto=format&fit=crop&w=600&q=80"
-                alt="European fairy-tale castle in alpine mountains"
+                src={gallery[0]?.image}
+                alt={gallery[0]?.location || "Gallery photo"}
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <span className="absolute bottom-3 left-3 text-[11px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                <MapPin size={11} /> Bavaria, Germany
+                <MapPin size={11} /> {gallery[0]?.location}
               </span>
             </div>
 
@@ -246,13 +351,13 @@ export default function AboutPage() {
                 className="group relative h-[145px] sm:h-[165px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
               >
                 <img
-                  src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=600&q=80"
-                  alt="Traditional water temple in Bali"
+                  src={gallery[1]?.image}
+                  alt={gallery[1]?.location || "Gallery photo"}
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  <MapPin size={10} /> Bali, Indonesia
+                  <MapPin size={10} /> {gallery[1]?.location}
                 </span>
               </div>
               <div
@@ -260,13 +365,13 @@ export default function AboutPage() {
                 className="group relative h-[145px] sm:h-[165px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
               >
                 <img
-                  src="https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=600&q=80"
-                  alt="Limestone sea cliffs in Thailand"
+                  src={gallery[2]?.image}
+                  alt={gallery[2]?.location || "Gallery photo"}
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  <MapPin size={10} /> Krabi, Thailand
+                  <MapPin size={10} /> {gallery[2]?.location}
                 </span>
               </div>
             </div>
@@ -276,13 +381,13 @@ export default function AboutPage() {
               className="group relative h-[310px] sm:h-[350px] overflow-hidden rounded-2xl shadow-md border border-slate-200/60"
             >
               <img
-                src="https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=800&q=80"
-                alt="Sydney Opera House and harbour"
+                src={gallery[3]?.image}
+                alt={gallery[3]?.location || "Gallery photo"}
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <span className="absolute bottom-3 left-3 text-[11px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                <MapPin size={11} /> Sydney, Australia
+                <MapPin size={11} /> {gallery[3]?.location}
               </span>
             </div>
 
@@ -292,13 +397,13 @@ export default function AboutPage() {
                 className="group relative h-[145px] sm:h-[165px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
               >
                 <img
-                  src="https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=600&q=80"
-                  alt="Serene mountain temple in Japan"
+                  src={gallery[4]?.image}
+                  alt={gallery[4]?.location || "Gallery photo"}
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  <MapPin size={10} /> Kyoto, Japan
+                  <MapPin size={10} /> {gallery[4]?.location}
                 </span>
               </div>
               <div
@@ -306,13 +411,13 @@ export default function AboutPage() {
                 className="group relative h-[145px] sm:h-[165px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
               >
                 <img
-                  src="https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=600&q=80"
-                  alt="Dubai golden dunes"
+                  src={gallery[5]?.image}
+                  alt={gallery[5]?.location || "Gallery photo"}
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  <MapPin size={10} /> Dubai Desert, UAE
+                  <MapPin size={10} /> {gallery[5]?.location}
                 </span>
               </div>
             </div>
@@ -322,13 +427,13 @@ export default function AboutPage() {
               className="hidden lg:block group relative h-[280px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
             >
               <img
-                src="https://images.unsplash.com/photo-1543429776-2782fc8e1acd?auto=format&fit=crop&w=600&q=80"
-                alt="Historic Italian architecture"
+                src={gallery[6]?.image}
+                alt={gallery[6]?.location || "Gallery photo"}
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <span className="absolute bottom-3 left-3 text-[11px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                <MapPin size={11} /> Tuscany, Italy
+                <MapPin size={11} /> {gallery[6]?.location}
               </span>
             </div>
           </div>
@@ -341,10 +446,10 @@ export default function AboutPage() {
               </div>
               <div>
                 <p className="text-sm sm:text-base font-medium italic leading-relaxed text-slate-800">
-                  &ldquo;We don&apos;t build tours to check off tourist traps. We build journeys where you step off the beaten track, break bread with welcoming hosts, and return home with a transformed outlook on our shared world.&rdquo;
+                  &ldquo;{story.quote_text || DEFAULT_STORY.quote_text}&rdquo;
                 </p>
                 <p className="mt-2 text-xs font-bold text-pub-secondary">
-                  — Arjun Mehta, Founder &amp; Chief Explorer at Tourvaa
+                  — {story.quote_author || DEFAULT_STORY.quote_author}
                 </p>
               </div>
             </div>
@@ -356,7 +461,7 @@ export default function AboutPage() {
               const Icon = m.icon;
               return (
                 <div
-                  key={m.label}
+                  key={index}
                   data-reveal
                   style={delay(index * 60)}
                   className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
@@ -386,13 +491,13 @@ export default function AboutPage() {
         <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-20 sm:pt-28">
           <div data-reveal className="text-center">
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
-              THE TOURVAA DIFFERENCE
+              {valuesHeading.eyebrow || DEFAULT_VALUES_HEADING.eyebrow}
             </span>
             <h2 className="mt-2 text-3xl sm:text-4xl font-black tracking-tight text-slate-950 font-heading">
-              Why Discerning Travelers Choose Us
+              {valuesHeading.heading || DEFAULT_VALUES_HEADING.heading}
             </h2>
             <p className="mt-3 text-sm text-slate-600 font-medium max-w-xl mx-auto">
-              Engineered from the ground up to protect your budget, amplify your cultural immersion, and keep you safe every mile.
+              {valuesHeading.subtitle || DEFAULT_VALUES_HEADING.subtitle}
             </p>
           </div>
 
@@ -474,20 +579,20 @@ export default function AboutPage() {
         <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-20 sm:pt-28">
           <div data-reveal>
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
-              OUR TEAM
+              {teamHeading.eyebrow || DEFAULT_TEAM_HEADING.eyebrow}
             </span>
             <h2 className="mt-1 text-3xl sm:text-4xl font-black tracking-tight text-slate-950 font-heading">
-              Meet the Explorers Behind Tourvaa
+              {teamHeading.heading || DEFAULT_TEAM_HEADING.heading}
             </h2>
             <p className="mt-2 text-sm text-slate-600 font-medium max-w-xl">
-              From former expedition leaders to logistics veterans, our global team works tirelessly to ensure your journey is seamless.
+              {teamHeading.subtitle || DEFAULT_TEAM_HEADING.subtitle}
             </p>
           </div>
 
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {team.map((member, index) => (
               <div
-                key={member.name}
+                key={index}
                 data-reveal
                 style={delay(index * 60)}
                 className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
@@ -522,13 +627,13 @@ export default function AboutPage() {
         <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-20 sm:pt-28">
           <div data-reveal className="text-center max-w-2xl mx-auto">
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
-              CREDENTIALS &amp; TRUST
+              {awardsHeading.eyebrow || DEFAULT_AWARDS_HEADING.eyebrow}
             </span>
             <h2 className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-slate-950 font-heading">
-              Awards &amp; Global Recognition
+              {awardsHeading.heading || DEFAULT_AWARDS_HEADING.heading}
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-slate-600 font-medium">
-              Trusted by international travelers and acclaimed for ethical tour operations, certified safety protocols, and guest satisfaction.
+              {awardsHeading.subtitle || DEFAULT_AWARDS_HEADING.subtitle}
             </p>
           </div>
 
@@ -537,7 +642,7 @@ export default function AboutPage() {
               const Icon = item.icon;
               return (
                 <div
-                  key={item.title}
+                  key={index}
                   data-reveal
                   style={delay(index * 60)}
                   className="flex flex-col items-start rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all"
@@ -564,7 +669,7 @@ export default function AboutPage() {
             className="relative flex min-h-[320px] sm:min-h-[380px] flex-col items-center justify-center overflow-hidden rounded-[26px] bg-[#0B1F3A] p-8 text-center text-white shadow-xl"
           >
             <img
-              src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80"
+              src={cta.background_image || DEFAULT_CTA.background_image}
               alt="Sunset mountain lake vista"
               className="absolute inset-0 h-full w-full object-cover opacity-40 scale-105"
             />
@@ -572,28 +677,28 @@ export default function AboutPage() {
 
             <div className="relative z-10 max-w-2xl">
               <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-xs mb-3">
-                Your Adventure Awaits
+                {cta.badge_text || DEFAULT_CTA.badge_text}
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white font-heading drop-shadow-md">
-                Ready to Start Your Journey?
+                {cta.heading || DEFAULT_CTA.heading}
               </h2>
               <p className="mt-3 text-xs sm:text-sm md:text-base text-white/90 font-medium leading-relaxed max-w-xl mx-auto">
-                Explore our curated collection of 500+ small-group and private tours, or speak with an expedition specialist for tailor-made itineraries.
+                {cta.subtitle || DEFAULT_CTA.subtitle}
               </p>
 
               <div className="mt-7 flex flex-wrap items-center justify-center gap-3.5">
                 <Link
-                  href="/tours"
+                  href={cta.primary_cta_url || DEFAULT_CTA.primary_cta_url}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-7 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-slate-100 hover:-translate-y-0.5"
                 >
-                  <span>Browse All Tours</span>
+                  <span>{cta.primary_cta_text || DEFAULT_CTA.primary_cta_text}</span>
                   <ArrowRight size={15} />
                 </Link>
                 <Link
-                  href="/contact"
+                  href={cta.secondary_cta_url || DEFAULT_CTA.secondary_cta_url}
                   className="inline-flex h-12 items-center justify-center rounded-xl border border-white/30 bg-black/30 backdrop-blur-xs px-6 text-sm font-bold text-white shadow-md transition hover:bg-white/20"
                 >
-                  Contact Specialists
+                  {cta.secondary_cta_text || DEFAULT_CTA.secondary_cta_text}
                 </Link>
               </div>
             </div>

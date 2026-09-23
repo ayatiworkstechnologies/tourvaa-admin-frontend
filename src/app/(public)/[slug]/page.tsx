@@ -1,10 +1,21 @@
 import { notFound } from "next/navigation";
 import { fetchCmsPageForServer } from "@/lib/seo/cmsPageMetadata";
+import CmsPageSections from "@/components/public/CmsPageSections";
 
 export default async function CmsPageDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const page = await fetchCmsPageForServer(slug);
   if (!page) notFound();
+
+  if (page.sections?.length) {
+    return (
+      <main className="min-h-screen bg-[#FAFAFC]">
+        <div className="mx-auto max-w-[1240px] px-4 py-10 sm:px-6 sm:py-14">
+          <CmsPageSections sections={page.sections} />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white">

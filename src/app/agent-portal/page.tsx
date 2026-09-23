@@ -14,7 +14,10 @@ import {
   LuCircleMinus as MinusCircle,
 } from "react-icons/lu";
 
-const TOOLS = [
+import PageUnavailable from "@/components/public/PageUnavailable";
+import { useContentBlock } from "@/hooks/useContentBlock";
+
+const DEFAULT_TOOLS = [
   {
     icon: Bookmark,
     badge: "GLOBAL INVENTORY",
@@ -59,7 +62,7 @@ const TOOLS = [
   },
 ] as const;
 
-const STEPS = [
+const DEFAULT_STEPS = [
   {
     step: "01",
     badge: "STEP 1",
@@ -90,13 +93,14 @@ const STEPS = [
   },
 ] as const;
 
-const VERIFICATION_DOCUMENTS = [
+const DEFAULT_VERIFICATION_DOCUMENTS = [
   {
     badge: "MANDATORY",
     badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
     title: "Agency Registration Certificate",
     description:
       "Proof of business registration (LLC, Pvt Ltd, Partnership, or Sole Proprietorship certificate).",
+    footer: "Accepted: PDF, JPG, PNG",
   },
   {
     badge: "MANDATORY",
@@ -104,6 +108,7 @@ const VERIFICATION_DOCUMENTS = [
     title: "Tax Identification (GST / VAT / TIN)",
     description:
       "Valid company tax registration certificate corresponding to your registered operational jurisdiction.",
+    footer: "Accepted: PDF, JPG, PNG",
   },
   {
     badge: "MANDATORY",
@@ -111,6 +116,7 @@ const VERIFICATION_DOCUMENTS = [
     title: "Authorized Signatory Identification",
     description:
       "Government-issued passport or national photo ID of the principal agency director or authorized consultant.",
+    footer: "Accepted: PDF, JPG, PNG",
   },
   {
     badge: "MANDATORY",
@@ -118,6 +124,7 @@ const VERIFICATION_DOCUMENTS = [
     title: "Bank Account Proof / Cheque",
     description:
       "Bank statement header or cancelled business cheque for wire/ACH payout of earned commissions.",
+    footer: "Accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
@@ -125,6 +132,7 @@ const VERIFICATION_DOCUMENTS = [
     title: "Travel License / IATA Accreditation",
     description:
       "If applicable (IATA, ASTA, TAAI, ABTA, or regional tourism ministry authorization).",
+    footer: "Accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
@@ -132,10 +140,11 @@ const VERIFICATION_DOCUMENTS = [
     title: "Commercial Address Verification",
     description:
       "Utility bill or lease agreement showing the operating address of your physical agency branch.",
+    footer: "Accepted: PDF, JPG, PNG",
   },
 ] as const;
 
-const EXPECTATIONS = [
+const DEFAULT_EXPECTATIONS = [
   {
     title: "Accurate Traveller Manifest Information",
     description:
@@ -158,7 +167,7 @@ const EXPECTATIONS = [
   },
 ] as const;
 
-const FAQS = [
+const DEFAULT_FAQS = [
   {
     q: "How do I earn commission with Tourvaa?",
     a: "Agents receive competitive B2B net partner rates across all tours on Tourvaa. On every confirmed client booking, your commission (typically 10% to 15%) is automatically calculated and tracked in your agent dashboard.",
@@ -185,7 +194,54 @@ const FAQS = [
   },
 ];
 
+const DEFAULT_HERO = {
+  heading: "Your clients dream it, You make it happen.",
+  subtitle:
+    "Join an exclusive network of travel advisors, earn up to 15% commission on multi-day tours, and access 10,000+ verified itineraries across 80+ countries.",
+  primary_cta_text: "Become an Agent Partner",
+  secondary_cta_text: "Sign In",
+};
+
+const DEFAULT_METRICS = [
+  { value: "10,000+", label: "Multi-Day Tours", sub: "Available to book instantly" },
+  { value: "Up to 15%", label: "Tiered Commission", sub: "On every confirmed booking" },
+  { value: "100%", label: "Verified Operators", sub: "Direct local partnerships" },
+];
+
+const DEFAULT_CTA = {
+  heading: "Ready to empower your travel agency?",
+  subtitle: "Join 2,000+ travel advisors worldwide delivering unforgettable experiences and building reliable commission income.",
+  cta_text: "Become an Agent Partner",
+};
+
+type HeroBlock = { is_active?: boolean; heading?: string; subtitle?: string; primary_cta_text?: string; secondary_cta_text?: string };
+type MetricItem = { value?: string; label?: string; sub?: string };
+type MetricsBlock = { items?: MetricItem[] };
+type FeatureItem = { badge?: string; title?: string; description?: string };
+type FeaturesBlock = { items?: FeatureItem[] };
+type StepItem = { badge?: string; title?: string; description?: string };
+type StepsBlock = { items?: StepItem[] };
+type DocumentItem = { badge?: string; title?: string; description?: string; footer?: string };
+type DocumentsBlock = { items?: DocumentItem[] };
+type ExpectationItem = { title?: string; description?: string };
+type ExpectationsBlock = { items?: ExpectationItem[] };
+type FaqBlockItem = { q?: string; a?: string };
+type FaqsBlock = { items?: FaqBlockItem[] };
+type CtaBlock = { heading?: string; subtitle?: string; cta_text?: string };
+
+const TOOL_ICONS = DEFAULT_TOOLS.map((t) => t.icon);
+const DOCUMENT_BADGE_COLORS = DEFAULT_VERIFICATION_DOCUMENTS.map((d) => d.badgeColor);
+
 export default function AgentPortalLandingPage() {
+  const hero = useContentBlock<HeroBlock>("agent_portal_hero", { is_active: true, ...DEFAULT_HERO });
+  const metricsBlock = useContentBlock<MetricsBlock>("agent_portal_metrics", {});
+  const toolsBlock = useContentBlock<FeaturesBlock>("agent_portal_tools", {});
+  const stepsBlock = useContentBlock<StepsBlock>("agent_portal_steps", {});
+  const documentsBlock = useContentBlock<DocumentsBlock>("agent_portal_documents", {});
+  const expectationsBlock = useContentBlock<ExpectationsBlock>("agent_portal_expectations", {});
+  const faqsBlock = useContentBlock<FaqsBlock>("agent_portal_faqs", {});
+  const cta = useContentBlock<CtaBlock>("agent_portal_cta", DEFAULT_CTA);
+
   // Interactive Commission Calculator State
   const [monthlyBookings, setMonthlyBookings] = useState(25);
   const [avgBookingValue, setAvgBookingValue] = useState(650);
@@ -206,6 +262,27 @@ export default function AgentPortalLandingPage() {
       ? "Gold Tier Partner"
       : "Standard Agent Tier";
 
+  if (hero.is_active === false) return <PageUnavailable />;
+
+  const metrics = metricsBlock.items?.length
+    ? metricsBlock.items.map((it) => ({ value: it.value || "", label: it.label || "", sub: it.sub || "" }))
+    : DEFAULT_METRICS;
+  const tools = toolsBlock.items?.length
+    ? toolsBlock.items.map((it, i) => ({ icon: TOOL_ICONS[i % TOOL_ICONS.length], badge: it.badge || "", title: it.title || "", description: it.description || "" }))
+    : DEFAULT_TOOLS;
+  const steps = stepsBlock.items?.length
+    ? stepsBlock.items.map((it, i) => ({ step: String(i + 1).padStart(2, "0"), badge: it.badge || "", title: it.title || "", description: it.description || "" }))
+    : DEFAULT_STEPS;
+  const documents = documentsBlock.items?.length
+    ? documentsBlock.items.map((it, i) => ({ badge: it.badge || "", badgeColor: DOCUMENT_BADGE_COLORS[i % DOCUMENT_BADGE_COLORS.length], title: it.title || "", description: it.description || "", footer: it.footer || "" }))
+    : DEFAULT_VERIFICATION_DOCUMENTS;
+  const expectations = expectationsBlock.items?.length
+    ? expectationsBlock.items.map((it) => ({ title: it.title || "", description: it.description || "" }))
+    : DEFAULT_EXPECTATIONS;
+  const faqs = faqsBlock.items?.length
+    ? faqsBlock.items.map((it) => ({ q: it.q || "", a: it.a || "" }))
+    : DEFAULT_FAQS;
+
   return (
     <main className="overflow-x-hidden bg-white text-pub-fg">
       {/* ── 1. HERO SECTION ── */}
@@ -225,10 +302,10 @@ export default function AgentPortalLandingPage() {
           {/* Center Floating Glassmorphism Card */}
           <div className="relative z-10 w-full max-w-[660px] rounded-[22px] sm:rounded-[26px] border border-white/20 bg-black/45 p-6 sm:p-10 text-center backdrop-blur-xl sm:backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
-              Your clients dream it, You make it happen.
+              {hero.heading || DEFAULT_HERO.heading}
             </h1>
             <p className="mt-3.5 text-xs sm:text-sm text-white/90 font-normal leading-relaxed max-w-lg mx-auto">
-              Join an exclusive network of travel advisors, earn up to 15% commission on multi-day tours, and access 10,000+ verified itineraries across 80+ countries.
+              {hero.subtitle || DEFAULT_HERO.subtitle}
             </p>
 
             {/* CTAs matching Figma screenshot */}
@@ -237,13 +314,13 @@ export default function AgentPortalLandingPage() {
                 href="/agent-portal/login?tab=register"
                 className="inline-flex items-center justify-center rounded-xl bg-pub-secondary hover:bg-pub-secondary/90 px-6 sm:px-7 py-3 text-xs sm:text-sm font-semibold text-white shadow-md transition active:scale-95"
               >
-                Become an Agent Partner
+                {hero.primary_cta_text || DEFAULT_HERO.primary_cta_text}
               </Link>
               <Link
                 href="/agent-portal/login"
                 className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-black/25 hover:bg-black/40 px-6 sm:px-7 py-3 text-xs sm:text-sm font-semibold text-white backdrop-blur-xs transition active:scale-95"
               >
-                Sign In
+                {hero.secondary_cta_text || DEFAULT_HERO.secondary_cta_text}
               </Link>
             </div>
           </div>
@@ -257,41 +334,19 @@ export default function AgentPortalLandingPage() {
       <section className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-6 sm:mt-8">
         <div className="rounded-2xl bg-pub-primary p-6 sm:p-8 text-white shadow-md">
           <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/15 text-center">
-            <div className="px-4 py-3 sm:py-0">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                10,000+
+            {metrics.map((m, index) => (
+              <div key={index} className="px-4 py-3 sm:py-0">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+                  {m.value}
+                </div>
+                <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
+                  {m.label}
+                </div>
+                <div className="mt-0.5 text-xs text-slate-400 font-normal">
+                  {m.sub}
+                </div>
               </div>
-              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
-                Multi-Day Tours
-              </div>
-              <div className="mt-0.5 text-xs text-slate-400 font-normal">
-                Available to book instantly
-              </div>
-            </div>
-
-            <div className="px-4 py-3 sm:py-0">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                Up to 15%
-              </div>
-              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
-                Tiered Commission
-              </div>
-              <div className="mt-0.5 text-xs text-slate-400 font-normal">
-                On every confirmed booking
-              </div>
-            </div>
-
-            <div className="px-4 py-3 sm:py-0">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                100%
-              </div>
-              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
-                Verified Operators
-              </div>
-              <div className="mt-0.5 text-xs text-slate-400 font-normal">
-                Direct local partnerships
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -441,7 +496,7 @@ export default function AgentPortalLandingPage() {
         </div>
 
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {TOOLS.map(({ icon: Icon, badge, title, description }) => (
+          {tools.map(({ icon: Icon, badge, title, description }) => (
             <div
               key={title}
               className="flex flex-col justify-between rounded-2xl border border-pub-border bg-white p-6 shadow-2xs transition-all duration-300 hover:border-slate-300 hover:shadow-md"
@@ -478,7 +533,7 @@ export default function AgentPortalLandingPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {STEPS.map(({ step, badge, title, description }) => {
+            {steps.map(({ step, badge, title, description }) => {
               const isDark = step === "04";
               return (
                 <div
@@ -540,7 +595,7 @@ export default function AgentPortalLandingPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {VERIFICATION_DOCUMENTS.map(({ badge, badgeColor, title, description }) => (
+          {documents.map(({ badge, badgeColor, title, description, footer }) => (
             <div
               key={title}
               className="flex flex-col justify-between rounded-2xl border border-pub-border bg-white p-5 sm:p-6 shadow-2xs hover:shadow-md transition"
@@ -561,7 +616,7 @@ export default function AgentPortalLandingPage() {
               </div>
 
               <div className="mt-4 border-t border-pub-border pt-3 text-[11px] font-medium text-pub-muted">
-                Accepted: PDF, JPG, PNG
+                {footer}
               </div>
             </div>
           ))}
@@ -594,7 +649,7 @@ export default function AgentPortalLandingPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            {EXPECTATIONS.map(({ title, description }) => (
+            {expectations.map(({ title, description }) => (
               <div
                 key={title}
                 className="rounded-2xl border border-pub-border bg-white p-6 shadow-2xs hover:shadow-md transition"
@@ -620,7 +675,7 @@ export default function AgentPortalLandingPage() {
         </div>
 
         <div className="space-y-3.5">
-          {FAQS.map((faq, idx) => {
+          {faqs.map((faq, idx) => {
             const isOpen = openFaqIndex === idx;
             return (
               <div
@@ -661,10 +716,10 @@ export default function AgentPortalLandingPage() {
       <section className="bg-pub-primary py-16 sm:py-20 text-white text-center mt-20 sm:mt-24">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <h2 className="text-2xl sm:text-4xl font-bold text-white tracking-tight">
-            Ready to empower your travel agency?
+            {cta.heading || DEFAULT_CTA.heading}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-xs sm:text-sm leading-relaxed text-slate-300 font-normal">
-            Join 2,000+ travel advisors worldwide delivering unforgettable experiences and building reliable commission income.
+            {cta.subtitle || DEFAULT_CTA.subtitle}
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -672,7 +727,7 @@ export default function AgentPortalLandingPage() {
               href="/agent-portal/login?tab=register"
               className="inline-flex items-center justify-center rounded-xl bg-pub-accent hover:bg-pub-accent/90 px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5"
             >
-              Become an Agent Partner
+              {cta.cta_text || DEFAULT_CTA.cta_text}
             </Link>
             <Link
               href="/contact"

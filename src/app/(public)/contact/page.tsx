@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import Link from "next/link";
 import {
@@ -25,7 +25,7 @@ import {
   LuCopy as Copy,
   LuCheck as Check,
 } from "react-icons/lu";
-import publicApi from "@/lib/api/publicClient";
+import publicApi, { fetchContentBlock } from "@/lib/api/publicClient";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import OfficesWorldMap, {
   OFFICES,
@@ -38,7 +38,7 @@ interface FaqItem {
   answer: string;
 }
 
-const FAQS: FaqItem[] = [
+const DEFAULT_FAQS: FaqItem[] = [
   {
     id: "booking",
     category: "RESERVATIONS",
@@ -104,7 +104,87 @@ const OFFICE_CONTACT_META: Record<string, { phone: string; email: string; hours:
   },
 };
 
+const DEFAULT_HERO = {
+  badge_label: "24/7 Global Traveler Concierge",
+  response_time_text: "Response < 2h",
+  heading: "We're Here to Help You Explore the World",
+  subtitle: "Have questions about an upcoming tour, custom private itinerary, or existing reservation? Our global team is available around the clock to support your journey.",
+  background_image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",
+};
+
+type SupportCardItem = { eyebrow?: string; title?: string; description?: string };
+const DEFAULT_SUPPORT_CARDS: Required<SupportCardItem>[] = [
+  { eyebrow: "Existing Reservation", title: "Questions About Your Booking?", description: "Connect directly with your verified tour operator through your personal dashboard for real-time itinerary updates, pickup details, and luggage guidance." },
+  { eyebrow: "Instant Chat Assistance", title: "Chat With Concierge Scout", description: "Chat 24/7 with Scout, our intelligent travel assistant, or connect instantly with a human destination specialist for immediate booking answers." },
+  { eyebrow: "Self-Service Library", title: "Help & Knowledge Base", description: "Browse detailed guides on visas, packing essentials, payment safety, flexible cancellation policies, and partner supplier guidelines." },
+];
+
+const DEFAULT_CHANNELS = {
+  badge_text: "Verified Concierge Support",
+  heading: "Get in Touch Directly",
+  subtitle: "Whether you are planning an expedition or have questions regarding an existing booking, our specialists are ready to guide you.",
+  phone_display: "+64 9 887 9200 (Global Toll-Free)",
+  phone_href: "+6498879200",
+  phone_hint: "Available 24/7 in English, French & Spanish",
+  hours_value: "24 Hours / 7 Days a Week",
+  hours_hint: "Dedicated in-trip emergency dispatch line",
+  guarantee_title: "Traveler Protection Guarantee",
+  guarantee_text: "100% verified operators & encrypted booking protection.",
+};
+
+const DEFAULT_FAQ_HEADING = { eyebrow: "INSTANT ANSWERS", heading: "Frequently Asked Questions", subtitle: "Quick solutions to the most common queries from travelers and partners." };
+
+type PartnerItem = { badge?: string; title?: string; description?: string };
+const DEFAULT_PARTNERS: Required<PartnerItem>[] = [
+  { badge: "Tour Suppliers", title: "Tour Operators", description: "List Adventures: Apply to join our vetted supplier network and showcase your multi-day expeditions." },
+  { badge: "Travel Advisors", title: "Travel Agents", description: "Agent Bookings: Unlock top-tier net rates, commission tracking, and client itinerary builders." },
+  { badge: "API & Distribution", title: "Enterprise Solutions", description: "Distribution API: Seamlessly connect Tourvaa inventory into your OTAs, airline loyalty, or white-label platforms." },
+  { badge: "Press Room", title: "Media & Press", description: "Press Kit & Data: Access travel trend reports, press releases, high-res photography, and executive interviews." },
+];
+const DEFAULT_PARTNERS_HEADING = { eyebrow: "PARTNERSHIP CHANNELS", heading: "Dedicated Solutions for Industry Partners", subtitle: "Specialized business portals and rapid support desks for operators, travel agencies, and media." };
+
+type OfficeItem = { address_line1?: string; address_line2?: string; phone?: string; hours?: string; timezone?: string };
+const DEFAULT_OFFICES_HEADING = { eyebrow: "GLOBAL FOOTPRINT", heading: "Our Regional Headquarters", subtitle: "Local knowledge. Worldwide coordination. Select an office below to inspect our regional headquarters and operational contact details." };
+
+// Fetches an admin-editable content block and returns its `data`, falling
+// back to `def` while loading or whenever the block is empty (same pattern
+// as useSectionCopy.ts on the homepage).
+function useContactBlock<T extends Record<string, unknown>>(key: string, def: T): T {
+  const [data, setData] = useState<T>(def);
+  useEffect(() => {
+    let active = true;
+    fetchContentBlock<T>(key)
+      .then((res) => {
+        if (active && res?.data && Object.keys(res.data).length) setData({ ...def, ...res.data });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return data;
+}
+
 export default function ContactPage() {
+  const hero = useContactBlock("contact_page_hero", DEFAULT_HERO);
+  const supportCardsBlock = useContactBlock<{ items?: SupportCardItem[] }>("contact_page_support_cards", {});
+  const channels = useContactBlock("contact_page_channels", DEFAULT_CHANNELS);
+  const faqHeading = useContactBlock("contact_page_faqs", { ...DEFAULT_FAQ_HEADING, items: [] as (Partial<FaqItem>)[] });
+  const partnersBlock = useContactBlock("contact_page_partners", { ...DEFAULT_PARTNERS_HEADING, items: [] as PartnerItem[] });
+  const officesBlock = useContactBlock("contact_page_offices", { ...DEFAULT_OFFICES_HEADING, items: [] as OfficeItem[] });
+
+  const supportCards = supportCardsBlock.items?.length
+    ? [0, 1, 2].map((i) => ({ ...DEFAULT_SUPPORT_CARDS[i], ...supportCardsBlock.items?.[i] }))
+    : DEFAULT_SUPPORT_CARDS;
+  const faqs: FaqItem[] = faqHeading.items?.length
+    ? faqHeading.items.map((it, i) => ({ id: `faq-${i}`, category: it.category || "", question: it.question || "", answer: it.answer || "" }))
+    : DEFAULT_FAQS;
+  const partners = partnersBlock.items?.length
+    ? [0, 1, 2, 3].map((i) => ({ ...DEFAULT_PARTNERS[i], ...partnersBlock.items?.[i] }))
+    : DEFAULT_PARTNERS;
+  const officeItems = officesBlock.items ?? [];
+
   const { supportEmail } = usePublicSettings();
   const [openFaqId, setOpenFaqId] = useState<string>("cancellation");
   const [activeOfficeId, setActiveOfficeId] = useState<string>("nz");
@@ -175,7 +255,7 @@ export default function ContactPage() {
       <div className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-4 sm:pt-6">
         <section className="relative min-h-[320px] sm:min-h-[360px] w-full overflow-hidden rounded-[26px] bg-[#0B1F3A] shadow-lg flex items-center">
           <img
-            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80"
+            src={hero.background_image || DEFAULT_HERO.background_image}
             alt="Misty mountain valley landscape"
             className="absolute inset-0 h-full w-full object-cover opacity-50 scale-105"
           />
@@ -185,16 +265,16 @@ export default function ContactPage() {
           <div className="relative z-10 flex h-full flex-col justify-center px-6 sm:px-12 py-10 max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-bold text-white backdrop-blur-md shadow-xs w-fit">
               <Sparkles size={13} className="text-amber-400" />
-              <span>24/7 Global Traveler Concierge</span>
+              <span>{hero.badge_label || DEFAULT_HERO.badge_label}</span>
               <span className="text-white/40">•</span>
-              <span className="text-emerald-400">Response &lt; 2h</span>
+              <span className="text-emerald-400">{hero.response_time_text || DEFAULT_HERO.response_time_text}</span>
             </div>
 
             <h1 className="mt-4 text-3xl sm:text-4xl lg:text-[46px] font-black tracking-tight text-white font-heading leading-tight drop-shadow-md">
-              We&apos;re Here to Help You Explore the World
+              {hero.heading || DEFAULT_HERO.heading}
             </h1>
             <p className="mt-3 text-sm sm:text-base font-medium leading-relaxed text-white/85 max-w-2xl">
-              Have questions about an upcoming tour, custom private itinerary, or existing reservation? Our global team is available around the clock to support your journey.
+              {hero.subtitle || DEFAULT_HERO.subtitle}
             </p>
 
             {/* Quick Action Navigation Pills */}
@@ -241,13 +321,13 @@ export default function ContactPage() {
                 <Calendar size={22} />
               </div>
               <span className="mt-4 inline-block text-[11px] font-bold uppercase tracking-wider text-sky-700">
-                Existing Reservation
+                {supportCards[0].eyebrow}
               </span>
               <h3 className="mt-1 text-lg font-bold text-slate-950 leading-snug font-heading">
-                Questions About Your Booking?
+                {supportCards[0].title}
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
-                Connect directly with your verified tour operator through your personal dashboard for real-time itinerary updates, pickup details, and luggage guidance.
+                {supportCards[0].description}
               </p>
             </div>
             <Link
@@ -266,13 +346,13 @@ export default function ContactPage() {
                 <MessageCircle size={22} />
               </div>
               <span className="mt-4 inline-block text-[11px] font-bold uppercase tracking-wider text-amber-700">
-                Instant Chat Assistance
+                {supportCards[1].eyebrow}
               </span>
               <h3 className="mt-1 text-lg font-bold text-slate-950 leading-snug font-heading">
-                Chat With Concierge Scout
+                {supportCards[1].title}
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
-                Chat 24/7 with Scout, our intelligent travel assistant, or connect instantly with a human destination specialist for immediate booking answers.
+                {supportCards[1].description}
               </p>
             </div>
             <button
@@ -292,13 +372,13 @@ export default function ContactPage() {
                 <HelpCircle size={22} />
               </div>
               <span className="mt-4 inline-block text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-                Self-Service Library
+                {supportCards[2].eyebrow}
               </span>
               <h3 className="mt-1 text-lg font-bold text-slate-950 leading-snug font-heading">
-                Help &amp; Knowledge Base
+                {supportCards[2].title}
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
-                Browse detailed guides on visas, packing essentials, payment safety, flexible cancellation policies, and partner supplier guidelines.
+                {supportCards[2].description}
               </p>
             </div>
             <Link
@@ -324,13 +404,13 @@ export default function ContactPage() {
               <div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur-xs">
                   <ShieldCheck size={14} className="text-emerald-400" />
-                  <span>Verified Concierge Support</span>
+                  <span>{channels.badge_text || DEFAULT_CHANNELS.badge_text}</span>
                 </span>
                 <h2 className="mt-4 text-2xl sm:text-3xl font-black text-white font-heading">
-                  Get in Touch Directly
+                  {channels.heading || DEFAULT_CHANNELS.heading}
                 </h2>
                 <p className="mt-2 text-xs sm:text-sm text-white/80 font-normal leading-relaxed">
-                  Whether you are planning an expedition or have questions regarding an existing booking, our specialists are ready to guide you.
+                  {channels.subtitle || DEFAULT_CHANNELS.subtitle}
                 </p>
 
                 {/* Direct Channel Items */}
@@ -345,13 +425,13 @@ export default function ContactPage() {
                         International Booking Hotline
                       </div>
                       <a
-                        href="tel:+6498879200"
+                        href={`tel:${channels.phone_href || DEFAULT_CHANNELS.phone_href}`}
                         className="text-sm font-bold text-white hover:text-sky-300 transition-colors"
                       >
-                        +64 9 887 9200 (Global Toll-Free)
+                        {channels.phone_display || DEFAULT_CHANNELS.phone_display}
                       </a>
                       <div className="text-[11px] text-white/60 mt-0.5">
-                        Available 24/7 in English, French &amp; Spanish
+                        {channels.phone_hint || DEFAULT_CHANNELS.phone_hint}
                       </div>
                     </div>
                   </div>
@@ -396,10 +476,10 @@ export default function ContactPage() {
                         Live Operations Response
                       </div>
                       <div className="text-sm font-bold text-white">
-                        24 Hours / 7 Days a Week
+                        {channels.hours_value || DEFAULT_CHANNELS.hours_value}
                       </div>
                       <div className="text-[11px] text-white/60 mt-0.5">
-                        Dedicated in-trip emergency dispatch line
+                        {channels.hours_hint || DEFAULT_CHANNELS.hours_hint}
                       </div>
                     </div>
                   </div>
@@ -414,10 +494,10 @@ export default function ContactPage() {
                   </span>
                   <div className="text-xs">
                     <span className="font-bold text-white block">
-                      Traveler Protection Guarantee
+                      {channels.guarantee_title || DEFAULT_CHANNELS.guarantee_title}
                     </span>
                     <span className="text-white/75 block mt-0.5">
-                      100% verified operators &amp; encrypted booking protection.
+                      {channels.guarantee_text || DEFAULT_CHANNELS.guarantee_text}
                     </span>
                   </div>
                 </div>
@@ -616,18 +696,18 @@ export default function ContactPage() {
       >
         <div className="text-center">
           <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
-            INSTANT ANSWERS
+            {faqHeading.eyebrow || DEFAULT_FAQ_HEADING.eyebrow}
           </span>
           <h2 className="mt-1 text-2xl sm:text-3xl font-black text-slate-950 font-heading">
-            Frequently Asked Questions
+            {faqHeading.heading || DEFAULT_FAQ_HEADING.heading}
           </h2>
           <p className="mt-2 text-xs sm:text-sm text-slate-500">
-            Quick solutions to the most common queries from travelers and partners.
+            {faqHeading.subtitle || DEFAULT_FAQ_HEADING.subtitle}
           </p>
         </div>
 
         <div className="mt-10 space-y-3.5">
-          {FAQS.map((faq) => {
+          {faqs.map((faq) => {
             const isOpen = openFaqId === faq.id;
 
             return (
@@ -684,14 +764,14 @@ export default function ContactPage() {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
-              PARTNERSHIP CHANNELS
+              {partnersBlock.eyebrow || DEFAULT_PARTNERS_HEADING.eyebrow}
             </span>
             <h2 className="mt-1 text-2xl sm:text-3xl font-black text-slate-950 font-heading">
-              Dedicated Solutions for Industry Partners
+              {partnersBlock.heading || DEFAULT_PARTNERS_HEADING.heading}
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 max-w-md">
-            Specialized business portals and rapid support desks for operators, travel agencies, and media.
+            {partnersBlock.subtitle || DEFAULT_PARTNERS_HEADING.subtitle}
           </p>
         </div>
 
@@ -706,18 +786,15 @@ export default function ContactPage() {
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
                 <span className="absolute top-3 left-3 rounded-md bg-[#0B1F3A]/80 backdrop-blur-xs px-2.5 py-1 text-[10px] font-bold text-white">
-                  Tour Suppliers
+                  {partners[0].badge}
                 </span>
               </div>
               <div className="p-5">
                 <h3 className="text-base font-bold text-slate-950 font-heading">
-                  Tour Operators
+                  {partners[0].title}
                 </h3>
                 <div className="mt-2.5 space-y-2 text-xs text-slate-600 leading-relaxed font-normal">
-                  <p>
-                    <strong className="text-slate-800 font-semibold">List Adventures:</strong>{" "}
-                    Apply to join our vetted supplier network and showcase your multi-day expeditions.
-                  </p>
+                  <p>{partners[0].description}</p>
                 </div>
               </div>
             </div>
@@ -742,18 +819,15 @@ export default function ContactPage() {
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
                 <span className="absolute top-3 left-3 rounded-md bg-[#0B1F3A]/80 backdrop-blur-xs px-2.5 py-1 text-[10px] font-bold text-white">
-                  Travel Advisors
+                  {partners[1].badge}
                 </span>
               </div>
               <div className="p-5">
                 <h3 className="text-base font-bold text-slate-950 font-heading">
-                  Travel Agents
+                  {partners[1].title}
                 </h3>
                 <div className="mt-2.5 space-y-2 text-xs text-slate-600 leading-relaxed font-normal">
-                  <p>
-                    <strong className="text-slate-800 font-semibold">Agent Bookings:</strong>{" "}
-                    Unlock top-tier net rates, commission tracking, and client itinerary builders.
-                  </p>
+                  <p>{partners[1].description}</p>
                 </div>
               </div>
             </div>
@@ -778,18 +852,15 @@ export default function ContactPage() {
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
                 <span className="absolute top-3 left-3 rounded-md bg-[#0B1F3A]/80 backdrop-blur-xs px-2.5 py-1 text-[10px] font-bold text-white">
-                  API &amp; Distribution
+                  {partners[2].badge}
                 </span>
               </div>
               <div className="p-5">
                 <h3 className="text-base font-bold text-slate-950 font-heading">
-                  Enterprise Solutions
+                  {partners[2].title}
                 </h3>
                 <div className="mt-2.5 space-y-2 text-xs text-slate-600 leading-relaxed font-normal">
-                  <p>
-                    <strong className="text-slate-800 font-semibold">Distribution API:</strong>{" "}
-                    Seamlessly connect Tourvaa inventory into your OTAs, airline loyalty, or white-label platforms.
-                  </p>
+                  <p>{partners[2].description}</p>
                 </div>
               </div>
             </div>
@@ -814,18 +885,15 @@ export default function ContactPage() {
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
                 <span className="absolute top-3 left-3 rounded-md bg-[#0B1F3A]/80 backdrop-blur-xs px-2.5 py-1 text-[10px] font-bold text-white">
-                  Press Room
+                  {partners[3].badge}
                 </span>
               </div>
               <div className="p-5">
                 <h3 className="text-base font-bold text-slate-950 font-heading">
-                  Media &amp; Press
+                  {partners[3].title}
                 </h3>
                 <div className="mt-2.5 space-y-2 text-xs text-slate-600 leading-relaxed font-normal">
-                  <p>
-                    <strong className="text-slate-800 font-semibold">Press Kit &amp; Data:</strong>{" "}
-                    Access travel trend reports, press releases, high-res photography, and executive interviews.
-                  </p>
+                  <p>{partners[3].description}</p>
                 </div>
               </div>
             </div>
@@ -849,22 +917,26 @@ export default function ContactPage() {
       >
         <div className="max-w-xl">
           <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
-            GLOBAL FOOTPRINT
+            {officesBlock.eyebrow || DEFAULT_OFFICES_HEADING.eyebrow}
           </span>
           <h2 className="mt-1 text-2xl sm:text-3xl font-black text-slate-950 font-heading">
-            Our Regional Headquarters
+            {officesBlock.heading || DEFAULT_OFFICES_HEADING.heading}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-500 font-medium">
-            Local knowledge. Worldwide coordination. Select an office below to inspect our regional headquarters and operational contact details.
+            {officesBlock.subtitle || DEFAULT_OFFICES_HEADING.subtitle}
           </p>
         </div>
 
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-8 items-center">
-          {/* Left Column: Office Cards */}
+          {/* Left Column: Office Cards - city/country and map position stay fixed per office, contact details are CMS-editable */}
           <div className="space-y-3.5">
-            {OFFICES.map((office) => {
+            {OFFICES.map((office, index) => {
               const isSelected = activeOfficeId === office.id;
-              const meta = OFFICE_CONTACT_META[office.id];
+              const defaultMeta = OFFICE_CONTACT_META[office.id];
+              const cmsMeta = officeItems[index];
+              const meta = { phone: cmsMeta?.phone || defaultMeta.phone, hours: cmsMeta?.hours || defaultMeta.hours };
+              const addressLine1 = cmsMeta?.address_line1 || office.addressLine1;
+              const addressLine2 = cmsMeta?.address_line2 || office.addressLine2;
 
               return (
                 <button
@@ -896,7 +968,7 @@ export default function ContactPage() {
                   <div className="mt-2 text-xs text-slate-600 space-y-1">
                     <div className="flex items-center gap-1.5 font-medium">
                       <MapPin size={12} className="text-slate-400 shrink-0" />
-                      <span>{office.addressLine1}, {office.addressLine2}</span>
+                      <span>{addressLine1}, {addressLine2}</span>
                     </div>
                     {meta && (
                       <>

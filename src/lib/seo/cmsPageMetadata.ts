@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL, metadataFor } from "./pageMetadata";
+import type { CmsPageBlock } from "@/components/public/CmsPageSections";
 
 export type ServerCmsPage = {
   id: number;
   title: string;
   slug: string;
   content: string | null;
+  sections: CmsPageBlock[];
   seo_title: string | null;
   seo_description: string | null;
   status: string;

@@ -15,7 +15,10 @@ import {
   LuBriefcaseBusiness as Briefcase,
 } from "react-icons/lu";
 
-const CAPABILITIES = [
+import PageUnavailable from "@/components/public/PageUnavailable";
+import { useContentBlock } from "@/hooks/useContentBlock";
+
+const DEFAULT_CAPABILITIES = [
   {
     icon: Globe,
     badge: "DISTRIBUTION",
@@ -60,7 +63,7 @@ const CAPABILITIES = [
   },
 ] as const;
 
-const STEPS = [
+const DEFAULT_STEPS = [
   {
     step: "01",
     badge: "STEP 1",
@@ -91,7 +94,7 @@ const STEPS = [
   },
 ] as const;
 
-const VERIFICATION_DOCUMENTS = [
+const DEFAULT_VERIFICATION_DOCUMENTS = [
   {
     badge: "MANDATORY",
     badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
@@ -142,7 +145,7 @@ const VERIFICATION_DOCUMENTS = [
   },
 ] as const;
 
-const EXPECTATIONS = [
+const DEFAULT_EXPECTATIONS = [
   {
     title: "Guaranteed Accuracy & Pricing Parity",
     description:
@@ -165,7 +168,7 @@ const EXPECTATIONS = [
   },
 ] as const;
 
-const FAQS = [
+const DEFAULT_FAQS = [
   {
     q: "How does Tourvaa pay suppliers?",
     a: "Payouts are transferred automatically via direct bank wire / ACH to your registered corporate bank account on a transparent bi-weekly or monthly schedule following tour departure dates.",
@@ -188,7 +191,54 @@ const FAQS = [
   },
 ];
 
+const DEFAULT_HERO = {
+  heading: "Turn remarkable tours into a global business.",
+  subtitle:
+    "Publish excursions, control real-time seat availability, connect with verified global travel agents, and receive automated, transparent bank payouts from one unified workspace.",
+  primary_cta_text: "Become a Supplier Partner",
+  secondary_cta_text: "Supplier Sign In",
+};
+
+const DEFAULT_METRICS = [
+  { value: "80+ Countries", label: "International Traveller Base", sub: "Direct & agent distribution in key tourism corridors" },
+  { value: "0% Listing Fees", label: "Pay Only On Confirmed Bookings", sub: "Completely risk-free onboarding & catalog management" },
+  { value: "< 48 Hours", label: "Expedited Compliance Review", sub: "Dedicated compliance specialists for quick approvals" },
+];
+
+const DEFAULT_CTA = {
+  heading: "Ready to list your tours on Tourvaa?",
+  subtitle: "Registration takes less than 5 minutes. Join hundreds of verified operators expanding their international customer base.",
+  cta_text: "Become a Supplier Partner",
+};
+
+type HeroBlock = { is_active?: boolean; heading?: string; subtitle?: string; primary_cta_text?: string; secondary_cta_text?: string };
+type MetricItem = { value?: string; label?: string; sub?: string };
+type MetricsBlock = { items?: MetricItem[] };
+type FeatureItem = { badge?: string; title?: string; description?: string };
+type FeaturesBlock = { items?: FeatureItem[] };
+type StepItem = { badge?: string; title?: string; description?: string };
+type StepsBlock = { items?: StepItem[] };
+type DocumentItem = { badge?: string; title?: string; description?: string; footer?: string };
+type DocumentsBlock = { items?: DocumentItem[] };
+type ExpectationItem = { title?: string; description?: string };
+type ExpectationsBlock = { items?: ExpectationItem[] };
+type FaqBlockItem = { q?: string; a?: string };
+type FaqsBlock = { items?: FaqBlockItem[] };
+type CtaBlock = { heading?: string; subtitle?: string; cta_text?: string };
+
+const CAPABILITY_ICONS = DEFAULT_CAPABILITIES.map((c) => c.icon);
+const DOCUMENT_BADGE_COLORS = DEFAULT_VERIFICATION_DOCUMENTS.map((d) => d.badgeColor);
+
 export default function SupplierPortalLandingPage() {
+  const hero = useContentBlock<HeroBlock>("supplier_portal_hero", { is_active: true, ...DEFAULT_HERO });
+  const metricsBlock = useContentBlock<MetricsBlock>("supplier_portal_metrics", {});
+  const featuresBlock = useContentBlock<FeaturesBlock>("supplier_portal_capabilities", {});
+  const stepsBlock = useContentBlock<StepsBlock>("supplier_portal_steps", {});
+  const documentsBlock = useContentBlock<DocumentsBlock>("supplier_portal_documents", {});
+  const expectationsBlock = useContentBlock<ExpectationsBlock>("supplier_portal_expectations", {});
+  const faqsBlock = useContentBlock<FaqsBlock>("supplier_portal_faqs", {});
+  const cta = useContentBlock<CtaBlock>("supplier_portal_cta", DEFAULT_CTA);
+
   // Interactive Earnings Calculator State
   const [monthlyGuests, setMonthlyGuests] = useState(45);
   const [avgTicketPrice, setAvgTicketPrice] = useState(120);
@@ -198,6 +248,27 @@ export default function SupplierPortalLandingPage() {
   const tourvaaCommissionRate = 0.1; // 10% Tourvaa commission
   const netEarnings = grossSales * (1 - tourvaaCommissionRate);
   const annualEarnings = netEarnings * 12;
+
+  if (hero.is_active === false) return <PageUnavailable />;
+
+  const metrics = metricsBlock.items?.length
+    ? metricsBlock.items.map((it) => ({ value: it.value || "", label: it.label || "", sub: it.sub || "" }))
+    : DEFAULT_METRICS;
+  const capabilities = featuresBlock.items?.length
+    ? featuresBlock.items.map((it, i) => ({ icon: CAPABILITY_ICONS[i % CAPABILITY_ICONS.length], badge: it.badge || "", title: it.title || "", description: it.description || "" }))
+    : DEFAULT_CAPABILITIES;
+  const steps = stepsBlock.items?.length
+    ? stepsBlock.items.map((it, i) => ({ step: String(i + 1).padStart(2, "0"), badge: it.badge || "", title: it.title || "", description: it.description || "" }))
+    : DEFAULT_STEPS;
+  const documents = documentsBlock.items?.length
+    ? documentsBlock.items.map((it, i) => ({ badge: it.badge || "", badgeColor: DOCUMENT_BADGE_COLORS[i % DOCUMENT_BADGE_COLORS.length], title: it.title || "", description: it.description || "", footer: it.footer || "" }))
+    : DEFAULT_VERIFICATION_DOCUMENTS;
+  const expectations = expectationsBlock.items?.length
+    ? expectationsBlock.items.map((it) => ({ title: it.title || "", description: it.description || "" }))
+    : DEFAULT_EXPECTATIONS;
+  const faqs = faqsBlock.items?.length
+    ? faqsBlock.items.map((it) => ({ q: it.q || "", a: it.a || "" }))
+    : DEFAULT_FAQS;
 
   return (
     <main className="overflow-x-hidden bg-white text-pub-fg">
@@ -218,11 +289,17 @@ export default function SupplierPortalLandingPage() {
           {/* Center Floating Glassmorphism Card */}
           <div className="relative z-10 w-full max-w-[700px] rounded-[22px] sm:rounded-[26px] border border-white/20 bg-black/45 p-6 sm:p-10 text-center backdrop-blur-xl sm:backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
-              Turn remarkable tours into a{" "}
-              <span className="text-pub-accent">global business.</span>
+              {hero.heading && hero.heading !== DEFAULT_HERO.heading ? (
+                hero.heading
+              ) : (
+                <>
+                  Turn remarkable tours into a{" "}
+                  <span className="text-pub-accent">global business.</span>
+                </>
+              )}
             </h1>
             <p className="mt-3.5 text-xs sm:text-sm text-white/90 font-normal leading-relaxed max-w-xl mx-auto">
-              Publish excursions, control real-time seat availability, connect with verified global travel agents, and receive automated, transparent bank payouts from one unified workspace.
+              {hero.subtitle || DEFAULT_HERO.subtitle}
             </p>
 
             {/* CTAs matching screenshot */}
@@ -231,13 +308,13 @@ export default function SupplierPortalLandingPage() {
                 href="/supplier-portal/login?tab=register"
                 className="inline-flex items-center justify-center rounded-xl bg-pub-secondary hover:bg-pub-secondary/90 px-6 sm:px-7 py-3 text-xs sm:text-sm font-semibold text-white shadow-md transition active:scale-95"
               >
-                Become a Supplier Partner
+                {hero.primary_cta_text || DEFAULT_HERO.primary_cta_text}
               </Link>
               <Link
                 href="/supplier-portal/login"
                 className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-black/25 hover:bg-black/40 px-6 sm:px-7 py-3 text-xs sm:text-sm font-semibold text-white backdrop-blur-xs transition active:scale-95"
               >
-                Supplier Sign In
+                {hero.secondary_cta_text || DEFAULT_HERO.secondary_cta_text}
               </Link>
             </div>
           </div>
@@ -251,41 +328,19 @@ export default function SupplierPortalLandingPage() {
       <section className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-6 sm:mt-8">
         <div className="rounded-2xl bg-pub-primary p-6 sm:p-8 text-white shadow-md">
           <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/15 text-center">
-            <div className="px-4 py-3 sm:py-0">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                80+ Countries
+            {metrics.map((m, index) => (
+              <div key={index} className="px-4 py-3 sm:py-0">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+                  {m.value}
+                </div>
+                <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
+                  {m.label}
+                </div>
+                <div className="mt-0.5 text-xs text-slate-400 font-normal">
+                  {m.sub}
+                </div>
               </div>
-              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
-                International Traveller Base
-              </div>
-              <div className="mt-0.5 text-xs text-slate-400 font-normal">
-                Direct & agent distribution in key tourism corridors
-              </div>
-            </div>
-
-            <div className="px-4 py-3 sm:py-0">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                0% Listing Fees
-              </div>
-              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
-                Pay Only On Confirmed Bookings
-              </div>
-              <div className="mt-0.5 text-xs text-slate-400 font-normal">
-                Completely risk-free onboarding & catalog management
-              </div>
-            </div>
-
-            <div className="px-4 py-3 sm:py-0">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                &lt; 48 Hours
-              </div>
-              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
-                Expedited Compliance Review
-              </div>
-              <div className="mt-0.5 text-xs text-slate-400 font-normal">
-                Dedicated compliance specialists for quick approvals
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -438,7 +493,7 @@ export default function SupplierPortalLandingPage() {
         </div>
 
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {CAPABILITIES.map(({ icon: Icon, badge, title, description }) => (
+          {capabilities.map(({ icon: Icon, badge, title, description }) => (
             <div
               key={title}
               className="flex flex-col justify-between rounded-2xl border border-pub-border bg-white p-6 shadow-2xs transition-all duration-300 hover:border-slate-300 hover:shadow-md"
@@ -475,7 +530,7 @@ export default function SupplierPortalLandingPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {STEPS.map(({ step, badge, title, description }) => {
+            {steps.map(({ step, badge, title, description }) => {
               const isDark = step === "04";
               return (
                 <div
@@ -537,7 +592,7 @@ export default function SupplierPortalLandingPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {VERIFICATION_DOCUMENTS.map(({ badge, badgeColor, title, description, footer }) => (
+          {documents.map(({ badge, badgeColor, title, description, footer }) => (
             <div
               key={title}
               className="flex flex-col justify-between rounded-2xl border border-pub-border bg-white p-5 sm:p-6 shadow-2xs hover:shadow-md transition"
@@ -591,7 +646,7 @@ export default function SupplierPortalLandingPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            {EXPECTATIONS.map(({ title, description }) => (
+            {expectations.map(({ title, description }) => (
               <div
                 key={title}
                 className="rounded-2xl border border-pub-border bg-white p-6 shadow-2xs hover:shadow-md transition"
@@ -620,7 +675,7 @@ export default function SupplierPortalLandingPage() {
         </div>
 
         <div className="space-y-3.5">
-          {FAQS.map((faq, idx) => {
+          {faqs.map((faq, idx) => {
             const isOpen = openFaqIndex === idx;
             return (
               <div
@@ -661,10 +716,10 @@ export default function SupplierPortalLandingPage() {
       <section className="bg-pub-primary py-16 sm:py-20 text-white text-center mt-20 sm:mt-24">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <h2 className="text-2xl sm:text-4xl font-bold text-white tracking-tight">
-            Ready to list your tours on Tourvaa?
+            {cta.heading || DEFAULT_CTA.heading}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-xs sm:text-sm leading-relaxed text-slate-300 font-normal">
-            Registration takes less than 5 minutes. Join hundreds of verified operators expanding their international customer base.
+            {cta.subtitle || DEFAULT_CTA.subtitle}
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -672,7 +727,7 @@ export default function SupplierPortalLandingPage() {
               href="/supplier-portal/login?tab=register"
               className="inline-flex items-center justify-center rounded-xl bg-pub-accent hover:bg-pub-accent/90 px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5"
             >
-              Become a Supplier Partner
+              {cta.cta_text || DEFAULT_CTA.cta_text}
             </Link>
             <Link
               href="/supplier-portal/login"
