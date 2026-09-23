@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import RichText from "@/components/public/home/RichText";
 import { list, useSectionCopy } from "@/components/public/home/useSectionCopy";
+import { useSectionVisibility } from "@/components/public/home/sectionVisibility";
 import { useEffect, useRef, useState } from "react";
 import {
   LuArrowRight as ArrowRight,
@@ -44,6 +45,7 @@ const TRUST_ICONS = [
 export default function PublicHeader() {
   // CMS > Home Page > Top Bar replaces the default highlights when set.
   const customTrust = list(useSectionCopy("trust_bar").items);
+  const showTopBar = useSectionVisibility()("top-bar");
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [visible, setVisible] = useState(true);
@@ -140,7 +142,9 @@ export default function PublicHeader() {
           : "-translate-y-full opacity-0 pointer-events-none"
       }`}
     >
-      {/* Top Trust Bar -- full width edge-to-edge, matching footer pub-primary signature color */}
+      {/* Top Trust Bar -- full width edge-to-edge, matching footer pub-primary signature color.
+          Hidden site-wide by the Top Bar switch in CMS > Home Page. */}
+      {showTopBar && (
       <div className="w-full bg-pub-primary text-white border-b border-white/10 overflow-hidden">
         <div className="mx-auto flex h-11 sm:h-12 w-full max-w-[1440px] min-w-0 items-center justify-start lg:justify-center gap-4 sm:gap-6 md:gap-8 px-4 sm:px-8 lg:px-12 text-xs sm:text-[12.5px] font-semibold overflow-x-auto no-scrollbar whitespace-nowrap py-2 sm:py-2.5">
           {customTrust.length ? (
@@ -197,6 +201,7 @@ export default function PublicHeader() {
           )}
         </div>
       </div>
+      )}
 
       <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:px-8 lg:px-12">
         <Link

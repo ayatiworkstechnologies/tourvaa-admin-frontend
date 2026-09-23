@@ -243,8 +243,8 @@ export const TAB_DESCRIPTIONS: Record<string, string> = {
   "faq-heading": "The title above the homepage FAQ.",
   home: "Edit every homepage section in one place, with the live public homepage shown alongside.",
   banners: "The homepage hero: background banners/video, the trust-rating badge, and the promotional offer strip.",
-  "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order. Toggle the whole section on/off below.",
-  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Toggle the whole section on/off below.",
+  "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order. Show/hide the whole section with its switch in the Home Page section list.",
+  "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Show/hide the whole section with its switch in the Home Page section list.",
   "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section - a curated list of tours for the homepage.",
   "popular-destinations": "Countries shown in Countries Worth Exploring - title, image, description, destination link, order and enable/disable, per country. Countries without a row here fall back to being calculated automatically from real tour counts.",
   "favourite-countries": "The editorial country list and snippet copy shown in the homepage Favourite Countries section.",
@@ -527,14 +527,13 @@ export const HERO_EXTRAS_BLOCK: ContentBlockTabConfig = {
 };
 
 // Rendered together with the Top Deals / Trending Tour Packages list tabs -
-// a simple on/off switch for whether that whole homepage section shows at
-// all, independent of which tours are pinned into it.
+// the section's heading copy. Its on/off `enabled` flag lives in the same
+// block but is switched from the Home Page section list (HomePageEditor).
 export const TOP_DEALS_VISIBILITY_BLOCK: ContentBlockTabConfig = {
   key: "top-deals-visibility",
-  label: "Top Deals Section Visibility",
+  label: "Top Deals Section Heading",
   blockKey: "top_deals_section",
   fields: [
-    { key: "enabled", label: "Show the Top Deals section on the homepage", type: "boolean", default: "true" },
     { key: "badge", label: "Badge (e.g. Offer Ends Soon)", type: "text" },
     { key: "title", label: "Title", type: "text" },
     { key: "subtitle", label: "Subtitle", type: "textarea" },
@@ -546,10 +545,9 @@ export const TOP_DEALS_VISIBILITY_BLOCK: ContentBlockTabConfig = {
 
 export const TRENDING_VISIBILITY_BLOCK: ContentBlockTabConfig = {
   key: "trending-visibility",
-  label: "Trending Section Visibility",
+  label: "Trending Section Heading",
   blockKey: "trending_section",
   fields: [
-    { key: "enabled", label: "Show the Trending Tour Packages section on the homepage", type: "boolean", default: "false" },
     { key: "title", label: "Section Title", type: "text" },
   ],
 };
@@ -1342,7 +1340,11 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
           : f.type === "boolean" ? raw === "true"
           : raw;
       }
-      await api.put(`/cms/content-blocks/${tab.blockKey}`, { data });
+      // Keep keys this form doesn't edit (e.g. a section's `enabled` flag,
+      // which is switched from the Home Page section list) - re-read the
+      // latest block so a switch flipped after this form loaded isn't undone.
+      const latest = await api.get(`/cms/content-blocks/${tab.blockKey}`).then((r) => (r.data?.data?.data ?? {}) as Record<string, unknown>).catch(() => ({}));
+      await api.put(`/cms/content-blocks/${tab.blockKey}`, { data: { ...latest, ...data } });
       toast.success(`${tab.label} updated.`);
     } catch {
       toast.error(`Could not save ${tab.label}.`);

@@ -9,6 +9,7 @@ export { default as TrendingToursSection, TrendingTourCard } from "./TrendingTou
 export { default as BlogTeaserSection } from "./BlogTeaserSection";
 export { default as HandpickedToursSection, HandpickedTourCard } from "./HandpickedToursSection";
 export { default as CountriesWorthExploringSection, CountryWorthExploringCard } from "./CountriesWorthExploringSection";
+export { default as HomeExtraSections } from "./HomeExtraSections";
 export { default as HomeTestimonialsSection } from "./HomeTestimonialsSection";
 export { default as AirportTransfersBanner } from "./AirportTransfersBanner";
 export { default as HomeFaqSection } from "./HomeFaqSection";

@@ -12,6 +12,7 @@ import {
 } from "react-icons/lu";
 import RichText from "./RichText";
 import { list, useSectionCopy } from "./useSectionCopy";
+import { useSectionVisibility } from "./sectionVisibility";
 import MarketingImage from "@/components/public/MarketingImage";
 import HeroFilterBar from "@/components/public/HeroFilterBar";
 import {
@@ -45,6 +46,7 @@ export default function HeroSection({
   );
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [showOfferBanner, setShowOfferBanner] = useState(true);
+  const shown = useSectionVisibility();
 
   const DEFAULT_TRUST_ITEMS = [
     {
@@ -326,7 +328,8 @@ export default function HeroSection({
         </section>
       </div>
 
-      {/* Sub-hero Trust Indicator with Dynamic Auto Animation */}
+      {/* Sub-hero Trust Indicator with Dynamic Auto Animation (CMS > Home Page > Slogan switch) */}
+      {shown("slogan") && (
       <div
         className="mx-auto max-w-[1400px] px-5 py-5 sm:py-6 overflow-hidden flex items-center justify-center min-h-[52px]"
         aria-label="Tourvaa trust highlights"
@@ -356,6 +359,7 @@ export default function HeroSection({
           })()}
         </div>
       </div>
+      )}
     </>
   );
 }

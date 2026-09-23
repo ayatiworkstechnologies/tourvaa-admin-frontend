@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LuX as X, LuArrowRight as ArrowRight } from "react-icons/lu";
 import { CmsPromoPopup, fetchContentBlock, fetchPromotionalPopups } from "@/lib/api/publicClient";
+import { useSectionVisibility } from "@/components/public/home/sectionVisibility";
 
 const DISMISS_KEY = "tourvaa_announcement_dismissed_id";
 
@@ -21,6 +22,8 @@ function isWithinValidRange(popup: CmsPromoPopup) {
 export default function AnnouncementBar() {
   const [popup, setPopup] = useState<CmsPromoPopup | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  // Top Bar switch in CMS > Home Page hides this bar and the header trust strip.
+  const showTopBar = useSectionVisibility()("top-bar");
 
   useEffect(() => {
     let active = true;
@@ -51,7 +54,7 @@ export default function AnnouncementBar() {
     };
   }, []);
 
-  if (!popup || dismissed) return null;
+  if (!popup || dismissed || !showTopBar) return null;
 
   const dismiss = () => {
     sessionStorage.setItem(DISMISS_KEY, String(popup.id));
