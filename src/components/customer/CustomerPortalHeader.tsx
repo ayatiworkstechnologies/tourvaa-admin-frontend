@@ -11,6 +11,7 @@ import {
 import { useAuthContext } from "@/providers/AuthProvider";
 import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelector";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
+import CustomerAvatar from "./CustomerAvatar";
 
 export default function CustomerPortalHeader() {
   const [profileOpen, setProfileOpen] = useState(false);
@@ -98,13 +99,21 @@ export default function CustomerPortalHeader() {
                 role="menu"
                 className="profile-dropdown-panel absolute right-0 top-[calc(100%+14px)] w-72 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 text-slate-900 shadow-[0_20px_55px_rgba(15,23,42,.18)]"
               >
-                <div className="border-b border-slate-100 px-3 pb-3 pt-2">
-                  <p className="truncate text-sm font-black">
-                    {user?.name || "My Tourvaa"}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-slate-400">
-                    Manage your account
-                  </p>
+                <div className="flex items-center gap-3 border-b border-slate-100 px-3 pb-3 pt-2">
+                  <CustomerAvatar
+                    name={user?.name || "Explorer"}
+                    src={user?.profile_image}
+                    size="sm"
+                    showBadge
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-black text-slate-900">
+                      {user?.name || "My Account"}
+                    </p>
+                    <p className="truncate text-[10px] text-slate-400">
+                      {user?.email || "Manage your account"}
+                    </p>
+                  </div>
                 </div>
                 <div className="pt-2">
                   <Link

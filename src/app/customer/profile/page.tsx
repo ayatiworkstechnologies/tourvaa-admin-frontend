@@ -8,7 +8,7 @@ import { LuCheck as Check, LuLoaderCircle as Loader2 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
-import { mediaUrl } from "@/lib/utils/mediaUrl";
+import CustomerAvatar from "@/components/customer/CustomerAvatar";
 
 const AIRLINES = [
   "American Airlines",
@@ -177,6 +177,25 @@ export default function CustomerProfilePage() {
         profile_image: profileImage,
         address,
         address_line_1: address,
+        nationality,
+        country: nationality,
+        country_name: nationality,
+        passport_no: passportNumber,
+        passport_number: passportNumber,
+        passport_expiry: passportExpiry,
+        dob,
+        date_of_birth: dob,
+        gender,
+        frequent_flyer: frequentFlyer,
+        preferred_airline: preferredAirline,
+        emergency_contact_name: emergencyName,
+        emergency_name: emergencyName,
+        emergency_contact_relationship: emergencyRelation,
+        emergency_relation: emergencyRelation,
+        emergency_contact_phone: emergencyPhone,
+        emergency_phone: emergencyPhone,
+        emergency_contact_email: emergencyEmail,
+        emergency_email: emergencyEmail,
       });
       await refreshSession();
       toast.success("Profile updated successfully.");
@@ -517,21 +536,12 @@ export default function CustomerProfilePage() {
               </h3>
 
               <div className="my-5 flex justify-center">
-                {profileImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={mediaUrl(profileImage)}
-                    alt="Profile"
-                    className="h-24 w-24 rounded-full object-cover ring-4 ring-slate-100 shadow-sm"
-                  />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
-                    alt="Profile"
-                    className="h-24 w-24 rounded-full object-cover ring-4 ring-slate-100 shadow-sm"
-                  />
-                )}
+                <CustomerAvatar
+                  name={`${firstName} ${lastName}`.trim() || user?.name || "Explorer"}
+                  src={profileImage}
+                  size="xl"
+                  showBadge
+                />
               </div>
 
               <input
@@ -549,15 +559,17 @@ export default function CustomerProfilePage() {
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full rounded-xl bg-[#0B1527] py-2.5 text-center text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C] disabled:opacity-60"
                 >
-                  {uploadingImage ? "Uploading..." : "Change Photo"}
+                  {uploadingImage ? "Uploading..." : profileImage ? "Change Photo" : "Upload Photo"}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-center text-xs font-bold text-slate-600 transition hover:bg-slate-50"
-                >
-                  Remove
-                </button>
+                {Boolean(profileImage) && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-center text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Remove Photo
+                  </button>
+                )}
               </div>
             </div>
 

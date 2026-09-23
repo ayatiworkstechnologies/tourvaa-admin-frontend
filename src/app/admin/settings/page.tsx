@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LuArrowRight as ArrowRight,
-  LuCoins as Coins,
   LuSlidersHorizontal as SlidersHorizontal,
 } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -134,13 +133,15 @@ const depositSettingKeys: { key: string; label: string; description: string; suf
   { key: "default_balance_payment_deadline_days", label: "Default Final Payment Due", description: "How many days before departure the remaining balance must be paid, when the tour itself doesn't set its own deadline.", suffix: "days" },
 ];
 const depositSettingKeySet = new Set(depositSettingKeys.map((c) => c.key));
-// Note: the supplier default commission % (supplier_commission_percentage)
-// is still also managed on the dedicated Default Commissions page
-// (/admin/settings/default-commissions) as well as here in Pricing &
-// Commission -- unlike agent/affiliate, that duplication predates this
-// change and is out of scope. The agent/affiliate default-commission rows
-// that used to live on that page moved into the "Agent Settings"/
-// "Affiliate Settings" tabs below (see agentSettingKeySet/affiliateSettingKeySet).
+const setupFlagKeys = new Set([
+  "company_setup_completed", "pricing_setup_completed", "booking_rules_completed", "payment_setup_completed",
+  "email_setup_completed", "storage_setup_completed", "security_check_completed",
+]);
+// The supplier default commission % (supplier_commission_percentage) is
+// managed only here, in Pricing & Commission. The old Default Commissions
+// page (/admin/settings/default-commissions) now just redirects here; the
+// agent/affiliate defaults live in the "Agent Settings"/"Affiliate Settings"
+// tabs below (see agentSettingKeySet/affiliateSettingKeySet).
 
 type Setting = {
   id: number;
@@ -196,6 +197,12 @@ export default function SettingsPage() {
   const pathname = usePathname();
   const initialGroup = pathname === "/admin/settings/api" ? "api" : pathname === "/admin/settings/payment" ? "payment" : "general";
   const [activeGroup, setActiveGroup] = useState(initialGroup);
+  // Deep link to a tab with a hash, e.g. /admin/settings#pricing (used by the
+  // retired /admin/settings/default-commissions page).
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash && groupLabels[hash]) setActiveGroup(hash);
+  }, []);
   const [previewInput, setPreviewInput] = useState("120");
   const [previewPrice, setPreviewPrice] = useState("120");
   const [preview, setPreview] = useState<CommissionPreviewData | null>(null);
@@ -212,6 +219,10 @@ export default function SettingsPage() {
       // rows are a disconnected, unencrypted copy that the real payment
       // gateway code never reads - PaymentSettingsSection/ApiSettingsSection
       // below talk to the actual encrypted PaymentSetting/ApiSetting tables.
+      // The Platform Setup *_completed flags are no longer shown: setup
+      // progress is now derived from real configuration checks
+      // (GET /settings/setup-progress), so toggling a flag changes nothing.
+      .filter((setting) => !setupFlagKeys.has(setting.key))
       .filter((setting) => setting.key !== "default_currency" && setting.group !== "payment" && setting.group !== "api" && !commissionSettingKeySet.has(setting.key) && !agentSettingKeySet.has(setting.key) && !affiliateSettingKeySet.has(setting.key) && !depositSettingKeySet.has(setting.key))
       .reduce<Record<string, Setting[]>>((groups, setting) => {
         groups[setting.group] = groups[setting.group] || [];
@@ -373,7 +384,7 @@ export default function SettingsPage() {
               <section className="rounded-2xl border border-dash-border bg-white p-6">
                 <h3 className="mb-1 text-lg font-bold text-dash-text">Commission Settings</h3>
                 <p className="mb-5 text-sm text-dash-muted">
-                  Set Tourvaa's own platform commission floor. Agent and Affiliate commission settings now live under their own dedicated tabs.
+                  Set Tourvaa&apos;s own platform commission floor. Agent and Affiliate commission settings now live under their own dedicated tabs.
                 </p>
                 <div className="grid gap-4 md:grid-cols-3">
                   {commissionSettingKeys.map(({ key, label, description }) => (
@@ -426,18 +437,6 @@ export default function SettingsPage() {
                   </span>
                   <span className="flex-1 text-sm font-bold text-dash-text">
                     Commission Rules
-                  </span>
-                  <ArrowRight size={16} className="text-dash-muted transition group-hover:translate-x-0.5 group-hover:text-dash-brand" />
-                </Link>
-                <Link
-                  href="/admin/settings/default-commissions"
-                  className="group flex items-center gap-3 rounded-xl border border-dash-border bg-dash-bg p-3.5 transition hover:border-dash-brand hover:bg-white"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-dash-brand shadow-2xs">
-                    <Coins size={18} />
-                  </span>
-                  <span className="flex-1 text-sm font-bold text-dash-text">
-                    Default Commissions
                   </span>
                   <ArrowRight size={16} className="text-dash-muted transition group-hover:translate-x-0.5 group-hover:text-dash-brand" />
                 </Link>

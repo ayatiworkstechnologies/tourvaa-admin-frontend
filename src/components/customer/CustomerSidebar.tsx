@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import {
   LuHeart as Heart,
   LuLogOut as LogOut,
+  LuShieldCheck as ShieldCheck,
   LuTicket as Ticket,
   LuUserRound as UserRound,
 } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
-import { mediaUrl } from "@/lib/utils/mediaUrl";
+import CustomerAvatar from "./CustomerAvatar";
 
 type CustomerSidebarProps = {
   mobile?: boolean;
@@ -26,39 +27,36 @@ export default function CustomerSidebar({ mobile = false, onNavigate }: Customer
   const pathname = usePathname();
   const { user, logout } = useAuthContext();
 
-  const displayName = user?.name || "Srinath";
-  const displayEmail = user?.email || "srinath@tourvaa.com";
+  const displayName = user?.name || "Explorer";
+  const displayEmail = user?.email || "explorer@tourvaa.com";
 
   return (
     <aside className={`${mobile ? "relative flex h-full" : "fixed inset-y-0 top-20 sm:top-[84px] left-0 hidden lg:flex"} z-40 w-[240px] flex-col p-4 bg-transparent`}>
       {/* Top User Profile Card */}
       <div className="flex flex-col items-center rounded-2xl border border-slate-200/90 bg-white p-5 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
         <div className="relative mb-3">
-          {user?.profile_image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={mediaUrl(user.profile_image)}
-              alt={displayName}
-              className="h-16 w-16 rounded-full object-cover ring-2 ring-slate-100"
-            />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
-              alt={displayName}
-              className="h-16 w-16 rounded-full object-cover ring-2 ring-slate-100"
-            />
-          )}
+          <CustomerAvatar
+            name={displayName}
+            src={user?.profile_image}
+            size="lg"
+            showBadge
+          />
         </div>
         <h3 className="text-sm font-bold text-slate-900 truncate max-w-[170px]">{displayName}</h3>
-        <p className="text-[11px] font-semibold text-emerald-600 mt-0.5">Verified Explorer</p>
-        <p className="text-[11px] text-slate-400 mt-0.5 truncate max-w-[170px]">{displayEmail}</p>
+        <div className="inline-flex items-center gap-1 mt-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600">
+          <ShieldCheck size={11} className="text-emerald-500 stroke-[2.5]" />
+          <span>Verified Explorer</span>
+        </div>
+        <p className="text-[11px] text-slate-400 mt-1 truncate max-w-[170px]">{displayEmail}</p>
       </div>
 
       {/* Navigation Links */}
       <nav className="mt-4 flex flex-col gap-1">
         {navigation.map(({ label, href, icon: Icon }) => {
-          const active = pathname === href || (href !== "/customer/dashboard" && pathname.startsWith(`${href}/`));
+          const active =
+            href === "/customer/dashboard"
+              ? pathname === "/customer/dashboard" || pathname.startsWith("/customer/profile")
+              : pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={href}

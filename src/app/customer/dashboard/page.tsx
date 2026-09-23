@@ -13,6 +13,7 @@ import {
   LuPencil as Pencil,
   LuShare2 as Share2,
   LuStar as Star,
+  LuTicket as Ticket,
   LuUserPlus as UserPlus,
 } from "react-icons/lu";
 import api from "@/lib/api/client";
@@ -36,6 +37,7 @@ type Profile = {
   pincode?: string;
   postal_code?: string;
   passport_no?: string;
+  passport_number?: string;
   nationality?: string;
 };
 
@@ -157,8 +159,8 @@ export default function CustomerDashboardPage() {
         setProfile(profileResult.value.data?.data ?? null);
       }
       if (bookingResult.status === "fulfilled") {
-        const items = bookingResult.value.data?.items ?? bookingResult.value.data?.data ?? [];
-        if (items.length > 0) {
+        const items = bookingResult.value.data?.items ?? bookingResult.value.data?.data;
+        if (Array.isArray(items)) {
           setBookings(items);
         }
       }
@@ -171,12 +173,12 @@ export default function CustomerDashboardPage() {
     void load();
   }, [load]);
 
-  const fullName = profile?.full_name || profile?.name || user?.name || "Sarah Mitchell";
-  const email = profile?.email || user?.email || "sarah.mitchell@tourvaaa.com";
-  const phone = profile?.phone || "+1 (555) 743-2190";
-  const passportNo = profile?.passport_no || (profile?.pincode ? `US-${profile.pincode}` : "US-X4829301");
-  const nationality = profile?.nationality || profile?.country_name || profile?.country || "American";
-  const homeAddress = profile?.address || profile?.address_line_1 || "58 Sunset Blvd, Los Angeles, CA 90028";
+  const fullName = profile?.full_name || profile?.name || user?.name || "";
+  const email = profile?.email || user?.email || "";
+  const phone = profile?.phone || user?.phone || "";
+  const passportNo = profile?.passport_no || profile?.passport_number || "";
+  const nationality = profile?.nationality || profile?.country_name || profile?.country || "";
+  const homeAddress = profile?.address || profile?.address_line_1 || "";
 
   // Wishlist items from real travel store
   const wishlistItems = wishlist.slice(0, 3).map((w) => ({
@@ -232,7 +234,7 @@ export default function CustomerDashboardPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><FileText size={16} /></span>
             <span className="text-[11px] font-bold text-slate-800">View Invoices</span>
           </Link>
-          <Link href="/customer/support" className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+          <Link href="/customer/support" className="col-span-2 sm:col-span-1 flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600"><Headset size={16} /></span>
             <span className="text-[11px] font-bold text-slate-800">Contact Support</span>
           </Link>
@@ -256,72 +258,162 @@ export default function CustomerDashboardPage() {
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 FULL NAME
               </label>
-              <input
-                type="text"
-                readOnly
-                value={fullName}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  readOnly
+                  value={fullName}
+                  placeholder="Not provided"
+                  className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition cursor-default ${
+                    fullName
+                      ? "border-slate-200 bg-white font-semibold text-slate-800"
+                      : "border-dashed border-slate-200 bg-slate-50/70 font-normal italic text-slate-400"
+                  }`}
+                />
+                {!fullName && (
+                  <Link
+                    href="/customer/profile"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#1464F4] hover:underline"
+                  >
+                    + Add
+                  </Link>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 EMAIL ADDRESS
               </label>
-              <input
-                type="text"
-                readOnly
-                value={email}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  readOnly
+                  value={email}
+                  placeholder="Not provided"
+                  className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition cursor-default ${
+                    email
+                      ? "border-slate-200 bg-white font-semibold text-slate-800"
+                      : "border-dashed border-slate-200 bg-slate-50/70 font-normal italic text-slate-400"
+                  }`}
+                />
+                {!email && (
+                  <Link
+                    href="/customer/profile"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#1464F4] hover:underline"
+                  >
+                    + Add
+                  </Link>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 PHONE NUMBER
               </label>
-              <input
-                type="text"
-                readOnly
-                value={phone}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  readOnly
+                  value={phone}
+                  placeholder="Not provided"
+                  className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition cursor-default ${
+                    phone
+                      ? "border-slate-200 bg-white font-semibold text-slate-800"
+                      : "border-dashed border-slate-200 bg-slate-50/70 font-normal italic text-slate-400"
+                  }`}
+                />
+                {!phone && (
+                  <Link
+                    href="/customer/profile"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#1464F4] hover:underline"
+                  >
+                    + Add
+                  </Link>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 PASSPORT NO.
               </label>
-              <input
-                type="text"
-                readOnly
-                value={passportNo}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  readOnly
+                  value={passportNo}
+                  placeholder="Not provided"
+                  className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition cursor-default ${
+                    passportNo
+                      ? "border-slate-200 bg-white font-semibold text-slate-800"
+                      : "border-dashed border-slate-200 bg-slate-50/70 font-normal italic text-slate-400"
+                  }`}
+                />
+                {!passportNo && (
+                  <Link
+                    href="/customer/profile"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#1464F4] hover:underline"
+                  >
+                    + Add
+                  </Link>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 NATIONALITY
               </label>
-              <input
-                type="text"
-                readOnly
-                value={nationality}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  readOnly
+                  value={nationality}
+                  placeholder="Not provided"
+                  className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition cursor-default ${
+                    nationality
+                      ? "border-slate-200 bg-white font-semibold text-slate-800"
+                      : "border-dashed border-slate-200 bg-slate-50/70 font-normal italic text-slate-400"
+                  }`}
+                />
+                {!nationality && (
+                  <Link
+                    href="/customer/profile"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#1464F4] hover:underline"
+                  >
+                    + Add
+                  </Link>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 HOME ADDRESS
               </label>
-              <input
-                type="text"
-                readOnly
-                value={homeAddress}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-default"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  readOnly
+                  value={homeAddress}
+                  placeholder="Not provided"
+                  className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition cursor-default ${
+                    homeAddress
+                      ? "border-slate-200 bg-white font-semibold text-slate-800"
+                      : "border-dashed border-slate-200 bg-slate-50/70 font-normal italic text-slate-400"
+                  }`}
+                />
+                {!homeAddress && (
+                  <Link
+                    href="/customer/profile"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#1464F4] hover:underline"
+                  >
+                    + Add
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -339,51 +431,65 @@ export default function CustomerDashboardPage() {
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left">
-              <thead>
-                <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  <th className="pb-3 pt-1">BOOKING ID</th>
-                  <th className="pb-3 pt-1">DATE</th>
-                  <th className="pb-3 pt-1">TOUR</th>
-                  <th className="pb-3 pt-1 text-center">STATUS</th>
-                  <th className="pb-3 pt-1 text-right">TOTAL</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {bookings.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50/60 transition">
-                    <td className="py-4">
-                      <Link
-                        href={`/customer/bookings/${b.id}`}
-                        className="text-xs font-bold text-[#1B64F2] hover:underline"
-                      >
-                        #{b.booking_code.replace(/^#/, "")}
-                      </Link>
-                    </td>
-                    <td className="py-4 text-xs font-medium text-slate-500">
-                      {formatDate(b.tour_date)}
-                    </td>
-                    <td className="py-4 text-xs font-bold text-slate-800">
-                      {b.tour_name || "Tour Package"}
-                    </td>
-                    <td className="py-4 text-center">
-                      {formatStatus(b.booking_status)}
-                    </td>
-                    <td className="py-4 text-right text-xs font-bold text-slate-900">
-                      {Number(b.amount_pending || 0) > 0 ? (
-                        <Link href={`/customer/bookings/${b.id}?action=pay`} className="text-amber-600 hover:underline">
-                          {formatPrice(b.amount_pending)} due
-                        </Link>
-                      ) : (
-                        formatPrice(b.final_amount)
-                      )}
-                    </td>
+          {bookings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
+              <Ticket size={28} className="text-slate-300" />
+              <p className="mt-2 text-xs font-bold text-slate-600">No tour bookings yet</p>
+              <p className="mt-0.5 text-[11px] text-slate-400">Discover incredible hand-crafted itineraries and start your journey</p>
+              <Link
+                href="/tours"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
+              >
+                Explore Tours
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left">
+                <thead>
+                  <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <th className="pb-3 pt-1">BOOKING ID</th>
+                    <th className="pb-3 pt-1">DATE</th>
+                    <th className="pb-3 pt-1">TOUR</th>
+                    <th className="pb-3 pt-1 text-center">STATUS</th>
+                    <th className="pb-3 pt-1 text-right">TOTAL</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {bookings.map((b) => (
+                    <tr key={b.id} className="hover:bg-slate-50/60 transition">
+                      <td className="py-4">
+                        <Link
+                          href={`/customer/bookings/${b.id}`}
+                          className="text-xs font-bold text-[#1B64F2] hover:underline"
+                        >
+                          #{b.booking_code.replace(/^#/, "")}
+                        </Link>
+                      </td>
+                      <td className="py-4 text-xs font-medium text-slate-500">
+                        {formatDate(b.tour_date)}
+                      </td>
+                      <td className="py-4 text-xs font-bold text-slate-800">
+                        {b.tour_name || "Tour Package"}
+                      </td>
+                      <td className="py-4 text-center">
+                        {formatStatus(b.booking_status)}
+                      </td>
+                      <td className="py-4 text-right text-xs font-bold text-slate-900">
+                        {Number(b.amount_pending || 0) > 0 ? (
+                          <Link href={`/customer/bookings/${b.id}?action=pay`} className="text-amber-600 hover:underline">
+                            {formatPrice(b.amount_pending)} due
+                          </Link>
+                        ) : (
+                          formatPrice(b.final_amount)
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* ── Card 3: My Wishlist ── */}

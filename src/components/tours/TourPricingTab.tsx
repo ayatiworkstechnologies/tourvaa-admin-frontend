@@ -129,7 +129,6 @@ export default function TourPricingTab({
   const [editing, setEditing] = useState<PricingSlab | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
-  const [markupEditing, setMarkupEditing] = useState<PricingSlab | null>(null);
 
   // Read-only -- the supplier's agreed commission floor (this slab-level
   // rate can be raised, never lowered below it) is set on the supplier's
@@ -212,8 +211,8 @@ export default function TourPricingTab({
       focusField(Object.keys(found)[0]);
       return;
     }
-    if (editing.commission_percentage != null && editing.commission_percentage < resolvedFloor) {
-      toast.error(`Commission % cannot be lower than your agreed rate of ${resolvedFloor}%.`);
+    if (!isSupplier && editing.commission_percentage != null && editing.commission_percentage < resolvedFloor) {
+      toast.error(`Commission % cannot be lower than the agreed rate of ${resolvedFloor}%.`);
       return;
     }
     setSaving(true);
@@ -224,7 +223,9 @@ export default function TourPricingTab({
         passenger_to: pTo,
         adult_price: adultPrice,
         child_price: childPrice,
-        commission_percentage: editing.commission_percentage == null ? null : sanitizeNumber(editing.commission_percentage, resolvedFloor),
+        // Suppliers never choose the commission; the backend also ignores it
+        // from a supplier (services.tours._apply_pricing_computation).
+        commission_percentage: isSupplier || editing.commission_percentage == null ? null : sanitizeNumber(editing.commission_percentage, resolvedFloor),
       };
       if (editing.id) {
         const updated = await updatePricing(tourId, editing.id, payload);
@@ -250,22 +251,6 @@ export default function TourPricingTab({
       setSlabs((prev) => prev.filter((s) => s.id !== id));
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
-    }
-  };
-
-  const saveMarkup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!markupEditing?.id) return;
-    setSaving(true);
-    try {
-      const updated = await updatePricing(tourId, markupEditing.id, markupEditing);
-      setSlabs((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-      setMarkupEditing(null);
-      toast.success("Publishable price updated.");
-    } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -405,60 +390,9 @@ export default function TourPricingTab({
 
         <p className="mt-4 flex items-start gap-2 rounded-xl border border-dash-border bg-dash-bg p-3 text-xs text-dash-subtle">
           <Sparkles size={14} className="mt-0.5 shrink-0 text-dash-subtle" />
-          <span><strong className="text-dash-body">Note:</strong> The prices entered above are your net supplier prices. Tourvaa will apply a retail markup before publishing your tour to cover agent commissions, transaction fees, marketing, and operating costs.</span>
+          <span><strong className="text-dash-body">Note:</strong> The prices entered above are the selling prices customers pay. There is no markup on top: Tourvaa&apos;s commission is deducted from each price, and the supplier receives the &quot;get price&quot; shown. Agent and affiliate commission comes out of Tourvaa&apos;s commission, never the supplier&apos;s share.</span>
         </p>
       </SectionCard>
-
-      {!isSupplier && (
-        <SectionCard
-          icon={Percent}
-          iconTone="brand"
-          title="Admin Markup"
-          description="Admin-only markup added on top of the supplier's price. Suppliers never see this section."
-        >
-          {/* Admin Markup Table */}
-          {slabs.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-dash-border bg-dash-bg/30 p-10 text-center">
-              <p className="text-sm font-bold text-dash-text">No pricing slabs yet</p>
-              <p className="mt-1 text-xs text-dash-subtle">Add a pricing slab in Supplier Price to Tourvaa above first.</p>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-2xl border border-dash-border-soft">
-              {/* Header */}
-              <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
-                {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "ADMIN MARKUP", "PUBLIC PRICE (CUSTOMER PAYS)", "ACTIONS"].map((h) => (
-                  <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
-                ))}
-              </div>
-
-              {/* Rows */}
-              {slabs.map((r, idx) => (
-                <div key={r.id ?? idx}
-                  className="grid grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_auto] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30"
-                >
-                  <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
-                    {r.passenger_from}–{r.passenger_to} pax
-                  </span>
-                  <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
-                  <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
-                  <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
-                    <Percent size={10} />{r.admin_markup_value ?? 0}
-                  </span>
-                  {/* The actual configured public/customer price -- services.tours.
-                      _apply_pricing_computation's storefront_adult_price, the same field
-                      routers.public._public_pricing_rows and services.bookings._price_booking
-                      both charge from (with no markup set this equals the supplier's own
-                      price verbatim). Always the real, undiscounted figure -- any active
-                      promo discount is a separate, time-limited overlay shown on the
-                      Discounts tab, not this column's job to reflect. */}
-                  <PriceCell value={r.storefront_adult_price ?? r.adult_price} currency={r.currency} discountPercent={null} valueClassName="font-bold text-blue-700 text-sm" />
-                  <ActionButtons onEdit={() => setMarkupEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />
-                </div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-      )}
 
       {editing && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950/35 px-4 py-8" role="dialog" aria-modal="true">
@@ -482,15 +416,23 @@ export default function TourPricingTab({
                   onChange={(e) => { setEditing((p) => p ? { ...p, passenger_to: parseNumberInput(e.target.value) } : p); clearError("passenger_to"); }}
                   className={fieldClass(errors.passenger_to)} placeholder="4" />
               </FormField>
-              <div>
-                <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Commission %</span>
-                <p className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700">
-                  {editing.commission_percentage ?? resolvedFloor}%
-                </p>
-                <span className="mt-1 block text-[11px] text-slate-400">Read-only -- set from agreed rate ({resolvedFloor}%).</span>
-              </div>
+              {isSupplier ? (
+                <div>
+                  <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Tourvaa Commission</span>
+                  <p className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700">
+                    {editing.commission_percentage ?? resolvedFloor}%
+                  </p>
+                  <span className="mt-1 block text-[11px] text-slate-400">Read-only -- set by Tourvaa. Contact admin to discuss your rate.</span>
+                </div>
+              ) : (
+                <FormField name="commission_percentage" label="Tourvaa Commission %" error={errors.commission_percentage} hint={`Minimum ${resolvedFloor}% (supplier or platform rate).`}>
+                  <input id="commission_percentage" name="commission_percentage" type="number" min={resolvedFloor} max={100} step="0.01" value={numberInputValue(editing.commission_percentage ?? resolvedFloor)}
+                    onChange={(e) => { setEditing((p) => p ? { ...p, commission_percentage: parseNumberInput(e.target.value) } : p); clearError("commission_percentage"); }}
+                    className={fieldClass(errors.commission_percentage)} />
+                </FormField>
+              )}
 
-              <FormField name="adult_price" label={`Adult price (${editing.currency})`} required error={errors.adult_price} hint="Your price per adult, before Tourvaa's commission.">
+              <FormField name="adult_price" label={`Adult selling price (${editing.currency})`} required error={errors.adult_price} hint="What the customer pays per adult. Tourvaa's commission is deducted from it.">
                 <input id="adult_price" name="adult_price" type="number" min={0} step="0.01" value={numberInputValue(editing.adult_price)}
                   onChange={(e) => { setEditing((p) => p ? { ...p, adult_price: parseNumberInput(e.target.value) } : p); clearError("adult_price"); }}
                   className={fieldClass(errors.adult_price)} placeholder="0.00" />
@@ -549,46 +491,6 @@ export default function TourPricingTab({
         </div>
       )}
 
-      {markupEditing && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true">
-          <form onSubmit={saveMarkup} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-lg font-black text-dash-text"><Percent size={16} className="text-dash-brand-hover" /> Edit Slab</h3>
-              <button type="button" onClick={() => setMarkupEditing(null)} aria-label="Close" className="text-dash-subtle hover:text-dash-text"><X size={18} /></button>
-            </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pax From</span>
-                <p className="rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">{markupEditing.passenger_from}</p>
-              </div>
-              <div>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Pax To</span>
-                <p className="rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">{markupEditing.passenger_to}</p>
-              </div>
-              <div>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier Price (Adult)</span>
-                <p className="rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">{fmt(markupEditing.adult_price, markupEditing.currency)}</p>
-              </div>
-              <div>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier Price (Child)</span>
-                <p className="rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm font-semibold text-dash-body">{fmt(markupEditing.child_price, markupEditing.currency)}</p>
-              </div>
-              <label>
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Admin Markup %</span>
-                <input type="number" step="0.01" value={numberInputValue(markupEditing.admin_markup_value)} onChange={(e) => setMarkupEditing((p) => p ? { ...p, admin_markup_value: parseNumberInput(e.target.value) } : p)}
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10" />
-              </label>
-            </div>
-            <p className="mt-4 flex items-start gap-2 rounded-xl border border-dash-border bg-dash-bg p-3 text-xs text-dash-subtle">
-              <Info size={14} className="mt-0.5 shrink-0" />
-              <span>No minimum or maximum for this Admin Markup %. Only visible in the Admin Portal, added on top of the supplier&apos;s price before publishing to customers.</span>
-            </p>
-            <button type="submit" disabled={saving} className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-dash-brand-hover disabled:cursor-not-allowed disabled:opacity-60">
-              <Save size={14} /> {saving ? "Saving..." : "Save Slab"}
-            </button>
-          </form>
-        </div>
-      )}
       {dialog}
     </div>
   );

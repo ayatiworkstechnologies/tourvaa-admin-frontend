@@ -89,7 +89,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   const [fCountry, setFCountry] = useState("");
   // active filters - what the load() actually uses
   const [activeFilters, setActiveFilters] = useState({ start: "", end: "", country: "" });
-  const [setupProgress, setSetupProgress] = useState<{ percent: number; completed: number; total: number } | null>(null);
+  const [setupProgress, setSetupProgress] = useState<{ percent: number; completed: number; total: number; pending: string[] } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -150,7 +150,16 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
       .get("/settings/setup-progress")
       .then((res) => {
         const data = res.data?.data ?? res.data ?? null;
-        if (data) setSetupProgress({ percent: data.percent ?? 0, completed: data.completed ?? 0, total: data.total ?? 0 });
+        if (data) {
+          // First failing check of each incomplete step (see
+          // services.settings._setup_checks) so the admin knows what to fix.
+          const details = (data.details ?? {}) as Record<string, { done: boolean; checks?: { label: string; ok: boolean }[] }>;
+          const pending = Object.values(details)
+            .filter((step) => !step.done)
+            .map((step) => step.checks?.find((check) => !check.ok)?.label)
+            .filter((label): label is string => Boolean(label));
+          setSetupProgress({ percent: data.percent ?? 0, completed: data.completed ?? 0, total: data.total ?? 0, pending });
+        }
       })
       .catch(() => {});
   }, []);
@@ -277,7 +286,17 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
               className="h-full rounded-full bg-dash-brand transition-all"
               style={{ width: `${Math.min(100, Math.max(0, setupProgress.percent))}%` }}
             />
-          </div>
+          </div>          {setupProgress.pending.length > 0 && (
+            <ul className="mt-3 space-y-1 text-xs text-dash-muted">
+              {setupProgress.pending.map((label) => (
+                <li key={label} className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                  {label}
+                </li>
+              ))}
+            </ul>
+          )}
+
         </div>
       )}
 

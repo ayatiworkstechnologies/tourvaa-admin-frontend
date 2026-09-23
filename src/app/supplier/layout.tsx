@@ -11,6 +11,7 @@ import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { canAccessSupplierRoute, isApprovedSupplier, isSupplierOperationalRoute } from "@/lib/auth/supplierAccess";
 import api from "@/lib/api/client";
 import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
+import CommissionCheckFailed from "@/components/common/CommissionCheckFailed";
 
 const NAV = [
   { href: "/supplier/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -58,6 +59,10 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   // null = not yet checked. Checked right after login, before the
   // approval/onboarding logic below - see CommissionConsentModal.
   const [commissionAccepted, setCommissionAccepted] = useState<boolean | null>(null);
+  // Fail closed: a failed consent check blocks the portal with a retry,
+  // it is never treated as acceptance.
+  const [consentCheckFailed, setConsentCheckFailed] = useState(false);
+  const [consentRetry, setConsentRetry] = useState(0);
 
   useEffect(() => {
     const close = () => setSidebarOpen(false);
@@ -77,11 +82,11 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   }, [loading, isLoggedIn, dashboard, router]);
 
   useEffect(() => {
-    if (loading || !isLoggedIn) { setCommissionAccepted(null); return; }
+    if (loading || !isLoggedIn) { setCommissionAccepted(null); setConsentCheckFailed(false); return; }
     api.get("/suppliers/me")
       .then((res) => setCommissionAccepted(Boolean(res.data?.data?.commission_accepted_at)))
-      .catch(() => setCommissionAccepted(true)); // fail open - don't block on a transient error
-  }, [loading, isLoggedIn]);
+      .catch(() => setConsentCheckFailed(true));
+  }, [loading, isLoggedIn, consentRetry]);
 
   const approved = isApprovedSupplier(user);
   const onboardingCheckedRef = useRef(false);
@@ -126,6 +131,10 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   }
 
   if (!isLoggedIn || !user) return null;
+
+  if (consentCheckFailed) {
+    return <CommissionCheckFailed onRetry={() => { setConsentCheckFailed(false); setConsentRetry((n) => n + 1); }} />;
+  }
 
   if (commissionAccepted === null) {
     return (

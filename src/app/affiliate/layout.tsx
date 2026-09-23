@@ -11,6 +11,7 @@ import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { canAccessAffiliateRoute, isApprovedAffiliate, isAffiliateOperationalRoute } from "@/lib/auth/affiliateAccess";
 import api from "@/lib/api/client";
 import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
+import CommissionCheckFailed from "@/components/common/CommissionCheckFailed";
 
 const NAV = [
   { href: "/affiliate/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -52,6 +53,10 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [approvalNotice, setApprovalNotice] = useState(false);
   const [commissionAccepted, setCommissionAccepted] = useState<boolean | null>(null);
+  // Fail closed: a failed consent check blocks the portal with a retry,
+  // it is never treated as acceptance.
+  const [consentCheckFailed, setConsentCheckFailed] = useState(false);
+  const [consentRetry, setConsentRetry] = useState(0);
 
   useEffect(() => {
     const close = () => setSidebarOpen(false);
@@ -60,11 +65,11 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
-    if (loading || !isLoggedIn) { setCommissionAccepted(null); return; }
+    if (loading || !isLoggedIn) { setCommissionAccepted(null); setConsentCheckFailed(false); return; }
     api.get("/affiliates/me")
       .then((res) => setCommissionAccepted(Boolean(res.data?.data?.commission_accepted_at)))
-      .catch(() => setCommissionAccepted(true));
-  }, [loading, isLoggedIn]);
+      .catch(() => setConsentCheckFailed(true));
+  }, [loading, isLoggedIn, consentRetry]);
 
   useEffect(() => {
     if (!loading && !isLoggedIn) router.replace(`/login?redirect=${pathname}`);
@@ -107,6 +112,10 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
   }
 
   if (!isLoggedIn || !user) return null;
+
+  if (consentCheckFailed) {
+    return <CommissionCheckFailed onRetry={() => { setConsentCheckFailed(false); setConsentRetry((n) => n + 1); }} />;
+  }
 
   if (commissionAccepted === null) {
     return (
