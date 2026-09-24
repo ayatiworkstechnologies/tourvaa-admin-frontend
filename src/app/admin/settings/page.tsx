@@ -813,7 +813,7 @@ export default function SettingsPage() {
           <section className="rounded-2xl border border-dash-border bg-white p-6">
             <h3 className="mb-1 text-lg font-bold text-dash-text">Security Status</h3>
             <p className="mb-5 text-sm text-dash-muted">
-              Read-only visibility into which secrets and integrations are configured. No secret values are ever shown here.
+              Read-only status for the single platform JWT signing key and supporting services. No secret values are ever shown here.
             </p>
             {securityLoading && !securityStatus ? (
               <p className="text-sm text-dash-muted">Loading security status...</p>
