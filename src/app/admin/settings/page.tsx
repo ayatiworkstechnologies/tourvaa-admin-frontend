@@ -77,6 +77,19 @@ const TIMEZONE_OPTIONS = [
   ["UTC", "UTC (Coordinated Universal Time)"],
 ] as const;
 
+const LEGACY_TIMEZONE_ALIASES: Record<string, string> = {
+  India: "Asia/Kolkata",
+  IST: "Asia/Kolkata",
+  "New Zealand": "Pacific/Auckland",
+  NZST: "Pacific/Auckland",
+  Auckland: "Pacific/Auckland",
+  GMT: "UTC",
+};
+
+function normalizeTimezone(value: string) {
+  return LEGACY_TIMEZONE_ALIASES[value.trim()] || value.trim();
+}
+
 function TimezoneSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -340,7 +353,9 @@ export default function SettingsPage() {
       setSettings(items);
       setForm(
         items.reduce<Record<string, string>>((values, item) => {
-          values[item.key] = item.value || "";
+          values[item.key] = item.key === "timezone"
+            ? normalizeTimezone(item.value || "")
+            : item.value || "";
           return values;
         }, {})
       );
