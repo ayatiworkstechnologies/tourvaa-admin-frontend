@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LuCalendarDays as Calendar, LuCheck as Check, LuChevronDown as ChevronDown, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuCompass as Compass, LuMinus as Minus, LuPlus as Plus, LuSearch as Search, LuSparkles as Sparkles, LuSun as Sun, LuX as X, LuArrowRight as ArrowRight } from "react-icons/lu";
 import FlagIcon from "@/components/ui/FlagIcon";
@@ -61,15 +61,12 @@ type DestinationCountry = {
   tour_count?: number;
 };
 
-// Only offer countries you can actually book: the countries API returns the
-// whole world list, and picking one with no tours always ended in "0 tours
-// found". Busiest first, then A-Z. Falls back to the given list when no
-// counts are available (e.g. the static fallback list).
+// Every country is offered, but the ones with tours come first (busiest
+// first), then the rest A-Z. Falls back to the given order when no counts
+// are available (e.g. the static fallback list).
 function bookableCountries(countries: DestinationCountry[]): DestinationCountry[] {
   if (!countries.some((c) => typeof c.tour_count === "number")) return countries;
-  return countries
-    .filter((c) => (c.tour_count ?? 0) > 0)
-    .sort((a, b) => (b.tour_count ?? 0) - (a.tour_count ?? 0) || a.country_name.localeCompare(b.country_name));
+  return [...countries].sort((a, b) => (b.tour_count ?? 0) - (a.tour_count ?? 0) || a.country_name.localeCompare(b.country_name));
 }
 
 const FALLBACK_COUNTRIES: DestinationCountry[] = [
@@ -444,11 +441,17 @@ function DestinationPanel({
       {/* Destination List */}
       <div className="max-h-72 space-y-1 overflow-y-auto overscroll-contain pr-1 no-scrollbar">
         {filtered.length > 0 ? (
-          filtered.map((country) => {
+          filtered.map((country, index) => {
             const isSelected = selected === country.country_name;
+            const hasTours = (country.tour_count ?? 0) > 0;
+            // Divider between the countries with tours and the rest.
+            const startsOthers = !hasTours && typeof country.tour_count === "number" && index > 0 && (filtered[index - 1].tour_count ?? 0) > 0;
             return (
+              <Fragment key={country.country_code || country.country_name}>
+              {startsOthers && (
+                <p className="px-1 pb-1 pt-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">More countries</p>
+              )}
               <button
-                key={country.country_code || country.country_name}
                 type="button"
                 onClick={() => onSelect(country.country_name)}
                 className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold transition ${
@@ -465,7 +468,7 @@ function DestinationPanel({
                   <span className="truncate">{country.country_name}</span>
                 </div>
                 <span className="flex shrink-0 items-center gap-1.5">
-                  {typeof country.tour_count === "number" && (
+                  {hasTours && (
                     <span className={`text-[10px] font-semibold ${isSelected ? "text-white/70" : "text-slate-400"}`}>
                       {country.tour_count} tour{country.tour_count === 1 ? "" : "s"}
                     </span>
@@ -473,6 +476,7 @@ function DestinationPanel({
                   {isSelected && <Check size={15} className="text-[#d95d2c]" />}
                 </span>
               </button>
+              </Fragment>
             );
           })
         ) : (

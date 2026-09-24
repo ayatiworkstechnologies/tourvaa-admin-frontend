@@ -44,7 +44,7 @@ const AGENT_TYPES = [
 
 export default function AgencyDetailsTab() {
   const toast = useToast();
-  const { refreshSession } = useAuthContext();
+  const { refreshSession, logout } = useAuthContext();
 
   // agency form
   const [form, setForm] = useState<AgencyForm>({
@@ -176,7 +176,8 @@ export default function AgencyDetailsTab() {
         new_password: pwForm.new_password,
       });
       setPwForm({ current_password: "", new_password: "", confirm_password: "" });
-      toast.success("Password updated successfully.");
+      toast.success("Password updated. All devices have been signed out.");
+      await logout("/login");
     } catch (err) {
       toast.error(apiErr(err, "Could not update password."));
     } finally {

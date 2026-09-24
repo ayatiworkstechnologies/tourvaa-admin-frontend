@@ -3,9 +3,11 @@ import PublicHeader from "@/components/public/PublicHeader";
 import PortalPublicFooter from "@/components/public/portal/PortalPublicFooter";
 import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
-import { metadataFor } from "@/lib/seo/pageMetadata";
+import { cmsMetadataFor } from "@/lib/seo/cmsSeo";
 
-export const metadata: Metadata = metadataFor("/agent-portal");
+export async function generateMetadata(): Promise<Metadata> {
+  return cmsMetadataFor("/agent-portal");
+}
 
 export default function AgentPortalLayout({ children }: { children: React.ReactNode }) {
   return (

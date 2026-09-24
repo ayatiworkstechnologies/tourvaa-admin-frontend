@@ -21,7 +21,6 @@ const TABS: { key: ParticipantType; label: string }[] = [
   { key: "agent", label: "Agents" },
   { key: "supplier", label: "Suppliers" },
   { key: "customer", label: "Customers" },
-  { key: "affiliate", label: "Affiliates" },
 ];
 
 function timeAgo(value?: string | null) {

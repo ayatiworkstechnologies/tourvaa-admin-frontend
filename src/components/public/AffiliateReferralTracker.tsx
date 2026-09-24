@@ -2,11 +2,13 @@
 
 import { useEffect } from "react";
 import { storeReferralCode } from "@/lib/utils/affiliateReferral";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 
 const TRACKED_KEY_PREFIX = "tourvaa_affiliate_ref_tracked_";
 
 export default function AffiliateReferralTracker() {
   useEffect(() => {
+    if (!AFFILIATE_ENABLED) return;
     const refCode = new URLSearchParams(window.location.search).get("ref")?.trim();
     if (!refCode) return;
 

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import axios from "axios";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 import {
   LuArrowRight as ArrowRight,
   LuCircleCheckBig as Check,
@@ -111,7 +112,7 @@ const PORTAL_SWITCHER: { roleSlug: string; label: string; href: string; icon: Re
   { roleSlug: "agent-reseller", label: "Agent", href: "/agent-portal/login", icon: <Briefcase size={13} /> },
   { roleSlug: "supplier", label: "Supplier", href: "/supplier-portal/login", icon: <Building size={13} /> },
   { roleSlug: "affiliate", label: "Affiliate", href: "/affiliate-portal/login", icon: <Megaphone size={13} /> },
-];
+].filter((portal) => AFFILIATE_ENABLED || portal.roleSlug !== "affiliate");
 
 type Tab = "login" | "register";
 type LoginFormValues = { identifier: string; password: string };

@@ -7,6 +7,7 @@ import {
   LuHouse as House,
   LuLayoutPanelTop as LayoutPanelTop,
   LuMapPinned as MapPinned,
+  LuSearchCheck as SearchCheck,
 } from "react-icons/lu";
 import Sidebar, { SidebarNavItem } from "@/components/layout/Sidebar";
 import { ALL_TABS, CMS_DASHBOARD_GROUPS } from "@/app/admin/cms/cmsShared";
@@ -25,6 +26,7 @@ const GROUP_ICONS: Record<string, React.ElementType> = {
   destinations: MapPinned,
   content: FileText,
   site: LayoutPanelTop,
+  seo: SearchCheck,
 };
 
 // A separate, dedicated sidebar shown only while inside /admin/cms/* (see

@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { LuExternalLink as ExternalLink, LuRefreshCw as RefreshCw } from "react-icons/lu";
+import {
+  LuColumns2 as Columns,
+  LuExternalLink as ExternalLink,
+  LuEye as Eye,
+  LuMonitor as Monitor,
+  LuPenTool as PenTool,
+  LuRefreshCw as RefreshCw,
+  LuSmartphone as Smartphone,
+  LuTablet as Tablet,
+} from "react-icons/lu";
 import CmsSectionContent from "@/app/admin/cms/CmsSectionContent";
 
 // Show/hide switch for a section on the live page. `on` is the current saved
@@ -63,7 +72,7 @@ function SectionNavButton({ sec, number, active, onSelect }: { sec: PageEditorSe
           onSelect();
         }
       }}
-      className={`group flex min-w-0 cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 transition ${
+      className={`group flex min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 transition ${
         active
           ? "border-[#0284C7] bg-[#EDF5FF] shadow-[0_0_0_3px_rgba(2,132,199,0.12)]"
           : sec.custom
@@ -98,10 +107,16 @@ function SectionNavButton({ sec, number, active, onSelect }: { sec: PageEditorSe
   );
 }
 
-// The public site is rendered at a real desktop width and scaled down to fit
-// the pane, so the preview shows the exact desktop design instead of the
-// cramped mobile layout a ~500px-wide iframe would trigger.
-const PREVIEW_WIDTH = 1440;
+// Device simulation widths for live previews
+const DEVICE_WIDTHS = {
+  desktop: 1440,
+  tablet: 768,
+  mobile: 390,
+} as const;
+
+type DeviceMode = keyof typeof DEVICE_WIDTHS;
+type ViewMode = "split" | "editor" | "preview";
+
 const PREVIEW_HEIGHT_VH = 78;
 
 // Shared "sections + live preview" CMS page (Home Page, Country Pages, Footer):
@@ -139,22 +154,38 @@ export default function PageEditor({
     onActiveChange?.(key);
   };
   const [previewKey, setPreviewKey] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("split");
+  const [device, setDevice] = useState<DeviceMode>("desktop");
   const paneRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [scale, setScale] = useState(0.4);
+
+  const targetWidth = DEVICE_WIDTHS[device];
+
   useEffect(() => {
     const el = paneRef.current;
     if (!el) return;
-    const update = () => setScale(Math.min(1, el.clientWidth / PREVIEW_WIDTH));
+    const update = () => {
+      const containerWidth = el.clientWidth;
+      setScale(Math.min(1, containerWidth / targetWidth));
+    };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [targetWidth, viewMode]);
+
   const current = sections.find((sec) => sec.key === active) ?? sections[0];
   const src = previewSrc(current);
   const toggles = sections.filter((sec) => sec.toggle);
   const shownCount = toggles.filter((sec) => sec.toggle?.on).length;
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setPreviewKey((k) => k + 1);
+    setTimeout(() => setIsRefreshing(false), 600);
+  };
 
   const onFrameLoad = () => {
     if (!scrollToBottom) return;
@@ -167,64 +198,209 @@ export default function PageEditor({
     }
   };
 
+  const showEditor = viewMode === "split" || viewMode === "editor";
+  const showPreview = viewMode === "split" || viewMode === "preview";
+
   return (
-    <div className="grid items-start gap-5 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <div className="min-w-0 space-y-4">
-        <div className="rounded-xl border border-dash-border bg-white p-3.5">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-0.5">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wide text-dash-muted">Page sections</span>
-              {toggles.length > 0 && (
-                <p className="text-xs text-dash-subtle">
-                  <strong className="text-emerald-600">{shownCount}</strong> of {toggles.length} shown · use the switch to show/hide a section
-                </p>
-              )}
-            </div>
-            {headerAction}
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {sections.map((sec, i) => (
-              <SectionNavButton key={sec.key} sec={sec} number={String(i + 1)} active={active === sec.key} onSelect={() => setActive(sec.key)} />
-            ))}
+    <div className="space-y-4">
+      {/* Top View Mode Switcher bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dash-border bg-white px-4 py-2.5 shadow-2xs">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-bold uppercase tracking-wider text-dash-muted mr-1 hidden sm:inline">
+            View:
+          </span>
+          <div className="inline-flex items-center rounded-lg border border-dash-border bg-slate-50 p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode("split")}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-bold transition ${
+                viewMode === "split"
+                  ? "bg-white text-[#0284C7] shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Columns size={13} />
+              <span>Split</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("editor")}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-bold transition ${
+                viewMode === "editor"
+                  ? "bg-white text-[#0284C7] shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <PenTool size={13} />
+              <span>Editor only</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("preview")}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-bold transition ${
+                viewMode === "preview"
+                  ? "bg-white text-[#0284C7] shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Eye size={13} />
+              <span>Preview only</span>
+            </button>
           </div>
         </div>
-        {current?.render
-          ? current.render()
-          : (current?.tabs ?? []).map((tab) => <CmsSectionContent key={tab} activeTab={tab} />)}
+
+        {headerAction && <div className="shrink-0">{headerAction}</div>}
       </div>
 
-      <div className="min-w-0 2xl:sticky 2xl:top-4">
-        <div className="overflow-hidden rounded-xl border border-dash-border bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dash-border px-4 py-2.5">
-            <span className="text-sm font-bold text-dash-text">{previewTitle}</span>
-            <div className="flex flex-wrap items-center gap-2">
-              {toolbarExtra}
-              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-2.5 py-1 text-xs font-bold text-dash-text hover:bg-[#F7FBFF]">
-                <RefreshCw size={13} /> Refresh preview
-              </button>
-              {src && (
-                <a href={src} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-2.5 py-1 text-xs font-bold text-dash-text hover:bg-[#F7FBFF]">
-                  <ExternalLink size={13} /> Open
-                </a>
-              )}
+      {/* Main Content: Editor, Preview, or Split */}
+      <div
+        className={`grid items-start gap-5 ${
+          viewMode === "split"
+            ? "xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
+            : "grid-cols-1"
+        }`}
+      >
+        {/* Editor Column */}
+        {showEditor && (
+          <div className="min-w-0 space-y-4">
+            <div className="rounded-xl border border-dash-border bg-white p-4 shadow-2xs">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-0.5">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wide text-dash-muted">Page sections</span>
+                  {toggles.length > 0 && (
+                    <p className="mt-0.5 text-xs text-dash-subtle">
+                      <strong className="text-emerald-600 font-bold">{shownCount}</strong> of {toggles.length} shown · use the switch to show/hide a section
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div
+                className={`grid gap-2 grid-cols-1 sm:grid-cols-2 ${
+                  viewMode === "editor" ? "xl:grid-cols-3 2xl:grid-cols-4" : ""
+                }`}
+              >
+                {sections.map((sec, i) => (
+                  <SectionNavButton key={sec.key} sec={sec} number={String(i + 1)} active={active === sec.key} onSelect={() => setActive(sec.key)} />
+                ))}
+              </div>
+            </div>
+
+            {current?.render
+              ? current.render()
+              : (current?.tabs ?? []).map((tab) => <CmsSectionContent key={tab} activeTab={tab} />)}
+          </div>
+        )}
+
+        {/* Live Preview Column */}
+        {showPreview && (
+          <div className={`min-w-0 ${viewMode === "split" ? "xl:sticky xl:top-4" : ""}`}>
+            <div className="overflow-hidden rounded-xl border border-dash-border bg-white shadow-2xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dash-border px-4 py-2.5 bg-slate-50/60">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-dash-text">{previewTitle}</span>
+                  <span className="text-[11px] font-semibold text-dash-muted hidden sm:inline">
+                    ({targetWidth}px)
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {toolbarExtra}
+
+                  {/* Device selector */}
+                  <div className="inline-flex items-center rounded-lg border border-dash-border bg-white p-0.5 shadow-2xs">
+                    <button
+                      type="button"
+                      title="Desktop preview (1440px)"
+                      onClick={() => setDevice("desktop")}
+                      className={`rounded p-1 text-xs transition ${
+                        device === "desktop" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      <Monitor size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Tablet preview (768px)"
+                      onClick={() => setDevice("tablet")}
+                      className={`rounded p-1 text-xs transition ${
+                        device === "tablet" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      <Tablet size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Mobile preview (390px)"
+                      onClick={() => setDevice("mobile")}
+                      className={`rounded p-1 text-xs transition ${
+                        device === "mobile" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      <Smartphone size={14} />
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleRefresh}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border bg-white px-2.5 py-1 text-xs font-bold text-dash-text hover:bg-slate-50 transition shadow-2xs"
+                  >
+                    <RefreshCw size={13} className={isRefreshing ? "animate-spin text-[#0284C7]" : ""} />
+                    <span>Refresh</span>
+                  </button>
+
+                  {src && (
+                    <a
+                      href={src}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border bg-white px-2.5 py-1 text-xs font-bold text-dash-text hover:bg-slate-50 transition shadow-2xs"
+                    >
+                      <ExternalLink size={13} />
+                      <span>Open</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              <div
+                ref={paneRef}
+                className="w-full overflow-hidden bg-slate-100/70 p-2 flex justify-center items-start"
+                style={{ minHeight: `${PREVIEW_HEIGHT_VH}vh`, height: `${PREVIEW_HEIGHT_VH}vh` }}
+              >
+                {src ? (
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ${
+                      device !== "desktop"
+                        ? "rounded-2xl border-4 border-slate-700/80 shadow-2xl bg-white"
+                        : "w-full bg-white shadow-xs rounded-lg"
+                    }`}
+                    style={{
+                      width: device === "desktop" ? "100%" : `${targetWidth * scale}px`,
+                      height: `${PREVIEW_HEIGHT_VH}vh`,
+                    }}
+                  >
+                    <iframe
+                      ref={frameRef}
+                      key={`${previewKey}-${previewVersion}-${src}-${device}`}
+                      src={src}
+                      title={previewTitle}
+                      onLoad={onFrameLoad}
+                      className="origin-top-left border-0 bg-white"
+                      style={{
+                        width: targetWidth,
+                        height: `${(PREVIEW_HEIGHT_VH / scale) * 0.95}vh`,
+                        transform: `scale(${scale})`,
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <p className="p-6 text-sm text-dash-muted">Pick a country to preview.</p>
+                )}
+              </div>
             </div>
           </div>
-          <div ref={paneRef} className="w-full overflow-hidden bg-white" style={{ height: `${PREVIEW_HEIGHT_VH}vh` }}>
-            {src ? (
-              <iframe
-                ref={frameRef}
-                key={`${previewKey}-${previewVersion}-${src}`}
-                src={src}
-                title={previewTitle}
-                onLoad={onFrameLoad}
-                className="origin-top-left border-0 bg-white"
-                style={{ width: PREVIEW_WIDTH, height: `${PREVIEW_HEIGHT_VH / scale}vh`, transform: `scale(${scale})` }}
-              />
-            ) : (
-              <p className="p-6 text-sm text-dash-muted">Pick a country to preview.</p>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

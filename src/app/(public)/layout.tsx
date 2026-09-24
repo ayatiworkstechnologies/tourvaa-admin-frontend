@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import PublicLayout from "@/components/public/PublicLayout";
 import AffiliateReferralTracker from "@/components/public/AffiliateReferralTracker";
 import ElfsightTranslator from "@/components/public/ElfsightTranslator";
-import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL, metadataFor } from "@/lib/seo/pageMetadata";
+import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo/pageMetadata";
+import { cmsMetadataFor } from "@/lib/seo/cmsSeo";
 
-export const metadata: Metadata = metadataFor("/");
+// Also the homepage metadata (editable in Website CMS > SEO & Meta Tags).
+export async function generateMetadata(): Promise<Metadata> {
+  return cmsMetadataFor("/");
+}
 
 // Organization + WebSite structured data, scoped to the public site only
 // (not admin/agent/supplier/customer portals) - this is what search engines'

@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { LuBuilding2 as Building } from "react-icons/lu";
 import PortalPublicHeader from "@/components/public/portal/PortalPublicHeader";
 import PortalPublicFooter from "@/components/public/portal/PortalPublicFooter";
-import { metadataFor } from "@/lib/seo/pageMetadata";
+import { cmsMetadataFor } from "@/lib/seo/cmsSeo";
 
-export const metadata: Metadata = metadataFor("/supplier-portal");
+export async function generateMetadata(): Promise<Metadata> {
+  return cmsMetadataFor("/supplier-portal");
+}
 
 export default function SupplierPortalLayout({ children }: { children: React.ReactNode }) {
   return (

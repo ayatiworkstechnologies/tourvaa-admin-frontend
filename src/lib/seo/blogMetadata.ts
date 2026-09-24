@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { DEFAULT_DESCRIPTION, DEFAULT_SOCIAL_IMAGE, SITE_NAME, SITE_URL, metadataFor } from "./pageMetadata";
+import { DEFAULT_DESCRIPTION, DEFAULT_SOCIAL_IMAGE, SITE_NAME, SITE_URL, metadataFor, brandTitle } from "./pageMetadata";
+import { cleanMetaText } from "./seoPages";
 
 export type ServerBlog = {
   title: string;
@@ -42,12 +43,12 @@ export function blogMetadataFrom(canonicalPath: string, blog: ServerBlog | null)
   if (!blog) return fallback;
 
   const title = blog.seo_title?.trim() || blog.title;
-  const description = blog.seo_description?.trim() || blog.excerpt?.trim() || DEFAULT_DESCRIPTION;
+  const description = cleanMetaText(blog.seo_description) || cleanMetaText(blog.excerpt) || DEFAULT_DESCRIPTION;
   const image = blog.featured_image || DEFAULT_SOCIAL_IMAGE;
-  const absoluteTitle = `${title} | ${SITE_NAME}`;
+  const absoluteTitle = brandTitle(title);
 
   return {
-    title,
+    title: { absolute: absoluteTitle },
     description,
     alternates: { canonical: canonicalPath },
     robots: { index: true, follow: true },

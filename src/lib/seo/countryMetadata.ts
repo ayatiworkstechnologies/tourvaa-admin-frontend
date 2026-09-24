@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { SITE_NAME, metadataFor } from "./pageMetadata";
+import { SITE_NAME, metadataFor, brandTitle } from "./pageMetadata";
+import { cleanMetaText } from "./seoPages";
 import { slugifyTourSegment } from "@/lib/utils/tourUrl";
 
 const API_BASE = (process.env.API_PROXY_TARGET || "http://127.0.0.1:8000").replace(/\/+$/, "");
@@ -48,15 +49,15 @@ export async function countryMetadataFor(canonicalPath: string, slug: string): P
 
   const count = country.tour_count ?? 0;
   const title = countryPageSeo?.seo_title?.trim() || `${country.country_name} Tour Packages`;
-  const description = countryPageSeo?.seo_description?.trim() || (
+  const description = cleanMetaText(countryPageSeo?.seo_description) || (
     count > 0
       ? `Browse ${count} curated ${country.country_name} tour package${count === 1 ? "" : "s"} - compare itineraries, dates, and prices, then book securely with Tourvaa.`
       : `Explore upcoming ${country.country_name} tour packages and book securely with Tourvaa.`
   );
-  const absoluteTitle = `${title} | ${SITE_NAME}`;
+  const absoluteTitle = brandTitle(title);
 
   return {
-    title,
+    title: { absolute: absoluteTitle },
     description,
     alternates: { canonical: canonicalPath },
     robots: { index: true, follow: true },

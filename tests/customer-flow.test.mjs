@@ -22,7 +22,8 @@ console.log("\n=== Customer Booking Flow ===\n");
 
 const search = read("src/components/public/HeroFilterBar.tsx");
 const homepageHero = read("src/components/public/home/HeroSection.tsx");
-check("homepage destination filter uses the active country API list", homepageHero.includes("fetchPublicCountries()") && homepageHero.includes("setSearchCountries(data)") && homepageHero.includes("countries={searchCountries}") && search.includes("return countries.filter((c) => c.country_name.toLowerCase().includes(q))") && search.includes("filtered.map((country)"));
+check("homepage destination filter uses the active country API list", homepageHero.includes("fetchPublicCountries()") && homepageHero.includes("setSearchCountries(data)") && homepageHero.includes("countries={searchCountries}") && search.includes("return countries.filter((c) => c.country_name.toLowerCase().includes(q))") && search.includes("filtered.map((country, index)"));
+check("homepage destination filter lists every country, ones with tours first", search.includes("[...countries].sort((a, b) => (b.tour_count ?? 0) - (a.tour_count ?? 0)") && search.includes("More countries"));
 check("search preserves travel date", search.includes('params.set("travel_date"'));
 check("search preserves adult count", search.includes('params.set("adults"'));
 check("search preserves child count", search.includes('params.set("children"'));

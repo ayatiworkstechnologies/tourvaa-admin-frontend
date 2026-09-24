@@ -165,15 +165,25 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/affiliate/referral-links": { title: "Referral Links", description: "Create and manage trackable Tourvaa affiliate referral links.", index: false },
 };
 
+/** "<title> | Tourvaa", unless the title already names the brand. Titles are
+ * returned as absolute: any nested layout with a plain-string title resets
+ * the "%s | Tourvaa" template for everything below it, which left most
+ * public pages without the brand suffix. */
+export function brandTitle(title: string): string {
+  return title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
+}
+
+export const TITLE_TEMPLATE = `%s | ${SITE_NAME}`;
+
 export function metadataFor(path: keyof typeof PAGE_METADATA | string, resolvedPath?: string): Metadata {
   const definition = PAGE_METADATA[path];
   if (!definition) throw new Error(`Missing metadata definition for ${path}`);
   const index = definition.index !== false;
-  const absoluteTitle = `${definition.title} | ${SITE_NAME}`;
+  const absoluteTitle = brandTitle(definition.title);
   const canonicalPath = resolvedPath || (path.includes("[") ? undefined : path);
 
   return {
-    title: definition.title,
+    title: { absolute: absoluteTitle, template: TITLE_TEMPLATE },
     description: definition.description,
     keywords: definition.keywords,
     alternates: index && canonicalPath ? { canonical: canonicalPath } : undefined,

@@ -6,6 +6,7 @@ import { LuEye as Eye, LuEyeOff as EyeOff } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
+import { useAuthContext } from "@/providers/AuthProvider";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
@@ -44,6 +45,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export default function ProfilePage() {
   const { dashboard, loading } = useDashboard();
+  const { logout } = useAuthContext();
   const [profile, setProfile] = useState(emptyProfile);
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
@@ -150,7 +152,7 @@ export default function ProfilePage() {
         new_password: passwordForm.new_password,
       });
       setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
-      setMessage("Password updated successfully.");
+      await logout("/admin/login");
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Could not update password."));
     } finally {

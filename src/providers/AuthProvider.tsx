@@ -68,7 +68,6 @@ const docsCaptureDashboard = {
     { label: "Customers", permission: "customers.view", module: "customers" },
     { label: "Suppliers", permission: "suppliers.view", module: "suppliers" },
     { label: "Agents", permission: "agents.view", module: "agents" },
-    { label: "Affiliates", permission: "affiliates.view", module: "affiliates" },
     { label: "Tours", permission: "tours.view", module: "tours" },
     { label: "Bookings", permission: "bookings.view", module: "bookings" },
     { label: "Payments", permission: "payments.view", module: "payments" },
@@ -189,6 +188,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   }, []);
+
+  // "Sign out everywhere" (password change/reset, admin force logout) revokes
+  // this device's tokens server-side, but an idle tab only notices on its
+  // next API call. Re-check the session when the tab comes back into view
+  // and every couple of minutes; a revoked session gets a 401, which the API
+  // client turns into the normal sign-out + redirect to login.
+  const signedIn = Boolean(token) && token !== "docs-capture-session";
+  useEffect(() => {
+    if (!signedIn || DOCS_CAPTURE_MODE) return;
+    let last = Date.now();
+    const check = () => {
+      if (document.visibilityState !== "visible" || Date.now() - last < 15_000) return;
+      last = Date.now();
+      api.get("/auth/me").catch(() => {});
+    };
+    const interval = window.setInterval(() => {
+      last = 0;
+      check();
+    }, 120_000);
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener("focus", check);
+    };
+  }, [signedIn]);
 
   useEffect(() => {
     let active = true;

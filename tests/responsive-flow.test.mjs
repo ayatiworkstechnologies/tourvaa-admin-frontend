@@ -42,7 +42,10 @@ check("partner landing heroes adapt across mobile and desktop", [supplierPortal,
 check("partner landing motion respects reduced-motion preferences", partnerMotion.includes("@media (prefers-reduced-motion: reduce)") && partnerMotion.includes("animation: none"));
 
 const portalHeader = read("src/components/layout/Header.tsx");
-check("portal header reserves clearance for the fixed language widget", portalHeader.includes("pr-36") && portalHeader.includes("lg:pr-40"));
+// The Elfsight language widget only renders on the public site and the
+// customer portal (CustomerPortalHeader), never with this admin/agent/
+// supplier/affiliate header - so no right-side clearance is reserved here.
+check("portal header uses normal right padding (no language widget lane)", portalHeader.includes("pr-4") && !portalHeader.includes("pr-36"));
 
 const customerHeader = read("src/components/customer/CustomerPortalHeader.tsx");
 check("customer header has compact mobile height", customerHeader.includes("h-20") && customerHeader.includes("sm:h-[84px]"));

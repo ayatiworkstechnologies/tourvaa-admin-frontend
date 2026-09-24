@@ -34,6 +34,7 @@ import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelector";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import type { AuthUser } from "@/types/auth";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 
 const TRUST_ICONS = [
   { Icon: Globe, color: "text-sky-400" },
@@ -521,7 +522,7 @@ const partnerPortals = [
     icon: Building,
     accent: "text-indigo-600 bg-indigo-50 group-hover:bg-indigo-600",
   },
-] as const;
+].filter((portal) => AFFILIATE_ENABLED || !portal.href.startsWith("/affiliate"));
 
 function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
   return (

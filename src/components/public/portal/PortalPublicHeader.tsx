@@ -15,6 +15,7 @@ import {
   LuUserRound as User,
   LuX as X,
 } from "react-icons/lu";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 
 export type PortalTheme = "emerald" | "blue" | "indigo" | "purple";
 
@@ -37,7 +38,7 @@ const PORTALS = [
     badge: "Creators & Content Publishers",
     icon: Megaphone,
   },
-];
+].filter((portal) => AFFILIATE_ENABLED || !portal.path.startsWith("/affiliate"));
 
 export default function PortalPublicHeader({
   portalPath,
@@ -212,16 +213,15 @@ export default function PortalPublicHeader({
             </span>
           </Link>
 
-          {/* Switch to Affiliate */}
-          <Link
-            href="/affiliate-portal"
-            className="flex flex-col items-center justify-center text-pub-muted hover:text-pub-fg transition group"
-          >
-            <Megaphone size={16} className="text-pub-muted group-hover:text-pub-fg transition" />
-            <span className="text-[10px] font-medium tracking-tight mt-0.5">
-              To Affiliate
-            </span>
-          </Link>
+          {AFFILIATE_ENABLED && (
+            <Link
+              href="/affiliate-portal"
+              className="flex flex-col items-center justify-center text-pub-muted hover:text-pub-fg transition group"
+            >
+              <Megaphone size={16} className="text-pub-muted group-hover:text-pub-fg transition" />
+              <span className="text-[10px] font-medium tracking-tight mt-0.5">To Affiliate</span>
+            </Link>
+          )}
 
           {/* Help */}
           <Link

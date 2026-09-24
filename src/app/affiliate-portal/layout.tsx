@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { LuMegaphone as Megaphone } from "react-icons/lu";
 import PortalPublicHeader from "@/components/public/portal/PortalPublicHeader";
 import PortalPublicFooter from "@/components/public/portal/PortalPublicFooter";
-import { metadataFor } from "@/lib/seo/pageMetadata";
+import { cmsMetadataFor } from "@/lib/seo/cmsSeo";
 
-export const metadata: Metadata = metadataFor("/affiliate-portal");
+export async function generateMetadata(): Promise<Metadata> {
+  return cmsMetadataFor("/affiliate-portal");
+}
 
 export default function AffiliatePortalLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { DEFAULT_DESCRIPTION, DEFAULT_SOCIAL_IMAGE, SITE_NAME, SITE_URL, metadataFor } from "./pageMetadata";
+import { DEFAULT_DESCRIPTION, DEFAULT_SOCIAL_IMAGE, SITE_NAME, SITE_URL, metadataFor, brandTitle } from "./pageMetadata";
+import { cleanMetaText } from "./seoPages";
 
 export type TourSeoData = {
   id: number;
@@ -54,13 +55,13 @@ export function tourMetadataFrom(fallbackPageKey: string, canonicalPath: string,
   if (!tour) return fallback;
 
   const title = tour.seo_title?.trim() || tour.title;
-  const description = tour.seo_description?.trim() || tour.short_description?.trim() || DEFAULT_DESCRIPTION;
+  const description = cleanMetaText(tour.seo_description) || cleanMetaText(tour.short_description) || DEFAULT_DESCRIPTION;
   const image = tour.open_graph_image || tour.banner_image || DEFAULT_SOCIAL_IMAGE;
   const canonical = tour.canonical_url?.trim() || canonicalPath;
-  const absoluteTitle = `${title} | ${SITE_NAME}`;
+  const absoluteTitle = brandTitle(title);
 
   return {
-    title,
+    title: { absolute: absoluteTitle },
     description,
     keywords: tour.seo_keywords?.split(",").map((keyword) => keyword.trim()).filter(Boolean),
     alternates: { canonical },

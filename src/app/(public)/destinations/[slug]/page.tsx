@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { fetchCountryDestinationInfo, fetchPublicTours, PublicTour } from "@/lib/api/publicClient";
+import { cleanMetaText } from "@/lib/seo/seoPages";
 import CountryDestinationPageContent from "@/components/public/country/CountryDestinationPageContent";
 
 interface DestinationPageProps {
@@ -15,19 +16,20 @@ export async function generateMetadata({
 
   if (!info) {
     return {
-      title: "Destination Guide | Tourvaa",
+      title: { absolute: "Destination Guide | Tourvaa" },
       description: "Explore curated destination guides and tours with Tourvaa.",
     };
   }
 
   const title = `${info.country_name} Travel Guide & Tours | Tourvaa`;
-  const description =
+  const description = cleanMetaText(
     info.tagline ||
     info.overview_narrative?.slice(0, 155) ||
-    `Plan your trip to ${info.country_name}. Explore climate matrix, best places to visit, travel advice, and handcrafted tour packages.`;
+    `Plan your trip to ${info.country_name}. Explore climate matrix, best places to visit, travel advice, and handcrafted tour packages.`,
+  );
 
   return {
-    title,
+    title: { absolute: title },
     description,
     openGraph: {
       title,

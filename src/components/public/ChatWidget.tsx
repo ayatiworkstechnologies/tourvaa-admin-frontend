@@ -514,6 +514,11 @@ export default function ChatWidget() {
     });
   };
 
+  // Suppress floating chat widget in embedded iframes (e.g. CMS live preview)
+  if (typeof window !== "undefined" && window.self !== window.top) {
+    return null;
+  }
+
   return (
     <>
       {/* ── Chat Dialog Modal Window ── */}

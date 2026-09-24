@@ -180,8 +180,8 @@ export default function CountryDestinationInfoPanel() {
     <div className="space-y-6">
       {/* ── Top Header & Country Picker ── */}
       <section className="rounded-xl border border-dash-border bg-white p-5 shadow-xs">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
             <div className="inline-flex items-center gap-2 rounded-lg bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">
               <Compass size={14} />
               <span>Country-wise Destination Information</span>
@@ -195,11 +195,11 @@ export default function CountryDestinationInfoPanel() {
           </div>
 
           {/* Action Toolbar */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex shrink-0 flex-wrap items-center gap-2.5">
             <Link
               href={liveUrl}
               target="_blank"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border bg-white px-3.5 py-2 text-xs font-bold text-dash-text shadow-xs hover:border-dash-brand hover:text-dash-brand transition"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-lg border border-dash-border bg-white px-3.5 py-2 text-xs font-bold text-dash-text shadow-xs hover:border-dash-brand hover:text-dash-brand transition"
             >
               <span>View Public Page</span>
               <ExternalLink size={13} />
@@ -208,7 +208,7 @@ export default function CountryDestinationInfoPanel() {
             <button
               type="button"
               onClick={handleResetToDefaults}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 transition"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 transition"
               title="Reset fields to curated baseline"
             >
               <Undo2 size={13} />
@@ -219,7 +219,7 @@ export default function CountryDestinationInfoPanel() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#0284C7] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#0369A1] transition disabled:opacity-50"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-lg bg-[#0284C7] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#0369A1] transition disabled:opacity-50"
             >
               {saving ? (
                 <>

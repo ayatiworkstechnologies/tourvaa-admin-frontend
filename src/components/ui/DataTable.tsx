@@ -30,6 +30,7 @@ type Props<T> = {
   emptyDescription?: string;
   emptyAction?: React.ReactNode;
   renderExpandedRow?: (row: T) => React.ReactNode;
+  minWidthClass?: string;
 };
 
 export default function DataTable<T extends { id?: number | string }>({
@@ -50,6 +51,7 @@ export default function DataTable<T extends { id?: number | string }>({
   emptyDescription,
   emptyAction,
   renderExpandedRow,
+  minWidthClass,
 }: Props<T>) {
   const hasPagination =
     page !== undefined &&
@@ -87,7 +89,7 @@ export default function DataTable<T extends { id?: number | string }>({
       <div className="overflow-hidden rounded-2xl border border-dash-border-soft bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
         <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <table
-            className="w-full min-w-170 border-collapse text-left text-sm"
+            className={`w-full ${minWidthClass ?? (columns.length <= 4 ? "min-w-full" : "min-w-140")} border-collapse text-left text-sm`}
             aria-label={ariaLabel}
           >
             {/* head */}

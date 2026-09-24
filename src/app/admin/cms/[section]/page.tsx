@@ -15,6 +15,7 @@ import TravelAdvicePageEditor from "@/components/admin/cms/TravelAdvicePageEdito
 import SupplierPortalPageEditor from "@/components/admin/cms/SupplierPortalPageEditor";
 import AgentPortalPageEditor from "@/components/admin/cms/AgentPortalPageEditor";
 import AffiliatePortalPageEditor from "@/components/admin/cms/AffiliatePortalPageEditor";
+import PageSeoEditor from "@/components/admin/cms/PageSeoEditor";
 
 // Sections rendered by their own dedicated "sections + live preview" editor
 // rather than the generic single-tab CmsSectionContent fallback below.
@@ -31,6 +32,7 @@ const PAGE_EDITORS: Record<string, React.ComponentType> = {
   "supplier-portal": SupplierPortalPageEditor,
   "agent-portal": AgentPortalPageEditor,
   "affiliate-portal": AffiliatePortalPageEditor,
+  seo: PageSeoEditor,
 };
 
 // Navigation between CMS sections lives in the dedicated CMS sidebar

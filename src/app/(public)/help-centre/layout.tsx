@@ -1,6 +1,9 @@
-import { metadataFor } from "@/lib/seo/pageMetadata";
+import type { Metadata } from "next";
+import { cmsMetadataFor } from "@/lib/seo/cmsSeo";
 
-export const metadata = metadataFor("/help-centre");
+export async function generateMetadata(): Promise<Metadata> {
+  return cmsMetadataFor("/help-centre");
+}
 
 export default function MetadataLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return children;

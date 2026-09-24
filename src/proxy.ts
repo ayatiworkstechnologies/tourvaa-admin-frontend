@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { AFFILIATE_ENABLED, isAffiliatePath } from "@/lib/features";
 
 // Next.js 16 renamed the `middleware.ts`/`middleware()` convention to
 // `proxy.ts`/`proxy()` - see node_modules/next/dist/docs/.../file-conventions/proxy.md.
@@ -18,6 +19,10 @@ const PUBLIC_EXCEPTIONS = ["/admin/login"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (!AFFILIATE_ENABLED && isAffiliatePath(pathname)) {
+    return NextResponse.redirect(new URL(pathname.startsWith("/admin/") ? "/admin/dashboard" : "/", request.url));
+  }
 
   // next.config.ts sets skipTrailingSlashRedirect: true so that /api/users
   // and /api/users/ can be rewritten as two distinct, deliberate proxy

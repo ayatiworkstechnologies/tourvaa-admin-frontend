@@ -48,6 +48,72 @@ const imageSettingKeys = new Set(["logo", "favicon"]);
 // read-only instead of letting an admin edit-then-fail.
 const readOnlySystemKeys = new Set(["money_decimal_places", "money_rounding_method"]);
 
+const TIMEZONE_OPTIONS = [
+  ["Pacific/Auckland", "Auckland (NZST/NZDT)"],
+  ["Pacific/Fiji", "Fiji (FJT)"],
+  ["Australia/Sydney", "Sydney (AEST/AEDT)"],
+  ["Australia/Perth", "Perth (AWST)"],
+  ["Asia/Tokyo", "Tokyo (JST)"],
+  ["Asia/Singapore", "Singapore (SGT)"],
+  ["Asia/Kolkata", "India (IST)"],
+  ["Asia/Dubai", "Dubai (GST)"],
+  ["Asia/Karachi", "Pakistan (PKT)"],
+  ["Asia/Dhaka", "Dhaka (BST)"],
+  ["Asia/Bangkok", "Bangkok (ICT)"],
+  ["Asia/Shanghai", "China (CST)"],
+  ["Asia/Hong_Kong", "Hong Kong (HKT)"],
+  ["Europe/London", "London (GMT/BST)"],
+  ["Europe/Paris", "Paris (CET/CEST)"],
+  ["Europe/Berlin", "Berlin (CET/CEST)"],
+  ["Europe/Istanbul", "Istanbul (TRT)"],
+  ["Africa/Johannesburg", "Johannesburg (SAST)"],
+  ["Africa/Nairobi", "Nairobi (EAT)"],
+  ["America/New_York", "New York (EST/EDT)"],
+  ["America/Chicago", "Chicago (CST/CDT)"],
+  ["America/Denver", "Denver (MST/MDT)"],
+  ["America/Los_Angeles", "Los Angeles (PST/PDT)"],
+  ["America/Toronto", "Toronto (EST/EDT)"],
+  ["America/Sao_Paulo", "São Paulo (BRT)"],
+  ["UTC", "UTC (Coordinated Universal Time)"],
+] as const;
+
+function TimezoneSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const known = TIMEZONE_OPTIONS.some(([zone]) => zone === value);
+  let preview = "Select a timezone";
+  if (value) {
+    try {
+      preview = new Intl.DateTimeFormat("en-GB", {
+        timeZone: value,
+        dateStyle: "full",
+        timeStyle: "medium",
+      }).format(now);
+    } catch {
+      preview = "Invalid timezone";
+    }
+  }
+
+  return (
+    <>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+      >
+        <option value="" disabled>Select timezone</option>
+        {!known && value && <option value={value}>{value}</option>}
+        {TIMEZONE_OPTIONS.map(([zone, label]) => <option key={zone} value={zone}>{label} — {zone}</option>)}
+      </select>
+      <p className="mt-2 text-xs text-dash-subtle">Current platform time: <span className="font-semibold text-dash-muted">{preview}</span></p>
+    </>
+  );
+}
+
 // Clearer admin-facing labels/help copy for the three related currency
 // settings, without touching the underlying AppSetting `key` values sent to
 // the API (renaming the DB keys is out of scope / too risky right now).
@@ -201,7 +267,7 @@ export default function SettingsPage() {
   // retired /admin/settings/default-commissions page).
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
-    if (hash && groupLabels[hash]) setActiveGroup(hash);
+    if (hash && hash !== "affiliate" && groupLabels[hash]) setActiveGroup(hash);
   }, []);
   const [previewInput, setPreviewInput] = useState("120");
   const [previewPrice, setPreviewPrice] = useState("120");
@@ -236,7 +302,7 @@ export default function SettingsPage() {
   // (backed by their own hardcoded sections below, not the generic grouped
   // AppSetting list), appended after whatever general/system groups the
   // backend returns.
-  const tabKeys = useMemo(() => [...groupEntries.map(([group]) => group), "pricing", "booking_rules", "agent", "affiliate", "payment", "api", "smtp", "currency", "security"], [groupEntries]);
+  const tabKeys = useMemo(() => [...groupEntries.map(([group]) => group), "pricing", "booking_rules", "agent", "payment", "api", "smtp", "currency", "security"], [groupEntries]);
 
   const fetchPreview = useCallback(async (price: string) => {
     setPreviewLoading(true);
@@ -840,6 +906,13 @@ export default function SettingsPage() {
                         <option value="false">Disabled</option>
                         <option value="true">Enabled</option>
                       </select>
+                    ) : setting.key === "timezone" ? (
+                      <TimezoneSelect
+                        value={form[setting.key] || "Pacific/Auckland"}
+                        onChange={(value) =>
+                          setForm((current) => ({ ...current, [setting.key]: value }))
+                        }
+                      />
                     ) : setting.key === "currency" ? (
                       <>
                         <CurrencySelect

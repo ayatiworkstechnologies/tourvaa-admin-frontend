@@ -42,7 +42,7 @@ const EMPTY_INVOICING: InvoicingForm = { contact_name: "", email: "", phone: "",
 
 export default function CompanyInfoTab() {
   const toast = useToast();
-  const { user, refreshSession } = useAuthContext();
+  const { user, refreshSession, logout } = useAuthContext();
 
   const [form, setForm] = useState<ProfileForm>(EMPTY_PROFILE);
   const [marketing, setMarketing] = useState<MarketingForm>(EMPTY_MARKETING);
@@ -155,7 +155,8 @@ export default function CompanyInfoTab() {
         new_password: pwForm.new_password,
       });
       setPwForm({ current_password: "", new_password: "", confirm_password: "" });
-      toast.success("Password updated successfully.");
+      toast.success("Password updated. All devices have been signed out.");
+      await logout("/login");
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     } finally {

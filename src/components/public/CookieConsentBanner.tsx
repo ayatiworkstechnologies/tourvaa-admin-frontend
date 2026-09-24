@@ -75,6 +75,7 @@ export default function CookieConsentBanner() {
   };
 
   if (!visible) return null;
+  if (typeof window !== "undefined" && window.self !== window.top) return null;
 
   return (
     <div

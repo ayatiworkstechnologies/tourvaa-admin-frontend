@@ -9,6 +9,7 @@ import {
   isNotificationPushMessage,
   NOTIFICATION_REFRESH_EVENT,
 } from '@/lib/notifications/events';
+import { enablePush, ensurePushSubscription, pushPermission, type PushState } from '@/lib/notifications/webPush';
 
 type Notification = {
   id: number;
@@ -97,6 +98,28 @@ export default function NotificationInbox() {
     };
   }, [fetchNotifications]);
 
+  // Browser push: silently (re)subscribe when permission was already given,
+  // otherwise the panel offers an "Enable" button (permission prompts must
+  // come from a click).
+  const [pushState, setPushState] = useState<PushState>('unsupported');
+  const [pushBusy, setPushBusy] = useState(false);
+  useEffect(() => {
+    if (!userId) return;
+    setPushState(pushPermission());
+    if (pushPermission() === 'granted') void ensurePushSubscription().catch(() => {});
+  }, [userId]);
+
+  async function turnOnPush() {
+    setPushBusy(true);
+    try {
+      setPushState(await enablePush());
+    } catch {
+      setPushState(pushPermission());
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
   useEffect(() => {
     window.addEventListener('pointerdown', unlockNotificationSound, { once: true });
     window.addEventListener('keydown', unlockNotificationSound, { once: true });
@@ -160,6 +183,25 @@ export default function NotificationInbox() {
               </span>
             )}
           </div>
+
+          {pushState === 'default' && (
+            <div className="flex items-center justify-between gap-2 border-b border-dash-border bg-[#F7FBFF] px-4 py-2.5">
+              <span className="text-xs text-dash-text">Get alerts even when this tab is closed.</span>
+              <button
+                type="button"
+                disabled={pushBusy}
+                onClick={() => void turnOnPush()}
+                className="shrink-0 rounded-lg bg-dash-brand px-2.5 py-1 text-xs font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
+              >
+                {pushBusy ? 'Enabling…' : 'Enable'}
+              </button>
+            </div>
+          )}
+          {pushState === 'denied' && (
+            <p className="border-b border-dash-border bg-amber-50 px-4 py-2 text-xs text-amber-800">
+              Browser notifications are blocked. Allow them in your browser&apos;s site settings to get alerts.
+            </p>
+          )}
 
           <ul className="max-h-96 overflow-y-auto divide-y divide-[#F3F5F8]">
             {items.length === 0 ? (

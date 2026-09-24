@@ -12,8 +12,8 @@ self.addEventListener('push', event => {
     Promise.all([
       self.registration.showNotification(data.title || 'Tourvaa', {
         body: data.body || '',
-        icon: data.icon || '/icon.png',
-        badge: '/icon.png',
+        icon: data.icon || '/favicon.ico',
+        badge: '/favicon.ico',
         data: { url: data.url || '/', action: data.action, phone: data.phone, waMsg: data.waMsg },
       }),
       notifyOpenClients,

@@ -232,6 +232,7 @@ export type ContentBlockTabConfig = {
 
 
 export const TAB_DESCRIPTIONS: Record<string, string> = {
+  seo: "Meta title and description for each public page (Home, Tours, About, Contact, legal pages and more).",
   "destination-styles": "The travel style cards on the Destinations page (e.g. Alpine & Mountain Expeditions).",
   "destination-seasons": "The best-time-to-travel season cards on the Destinations page.",
   "trust-bar": "The dark bar at the very top of every page (e.g. Shop 2,500+ handpicked operators). Add, edit or remove highlights.",
@@ -1746,40 +1747,23 @@ export function FooterPanel() {
   };
 
   const columns: DataTableColumn<FooterSectionRow>[] = [
-    { key: "title", header: "Section Title" },
-    { key: "sort_order", header: "Sort Order" },
-    { key: "is_active", header: "Status", render: (s) => <StatusTogglePill active={s.is_active} onToggle={() => void toggleActive(s)} /> },
-    {
-      key: "_actions",
-      header: "",
-      render: (s) => (
-        <div className="flex items-center justify-end gap-1">
-          <button type="button" title="Manage links" onClick={() => setExpandedId(expandedId === s.id ? null : s.id)} className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#0284C7] hover:bg-[#EDF5FF]">
-            {expandedId === s.id ? "Hide links" : "Manage links"}
-          </button>
-          <button type="button" title="Edit" onClick={() => { setEditing(s); setShowForm(true); }} className="rounded-lg p-1.5 text-dash-brand hover:bg-[#F3F8FC]">
-            <Pencil size={15} />
-          </button>
-          <button type="button" title="Delete" onClick={() => void deleteSection(s.id)} className="rounded-lg p-1.5 text-red-600 hover:bg-red-50">
-            <Trash2 size={15} />
-          </button>
-        </div>
-      ),
-    },
+    { key: "title", header: "Section Title", className: "font-semibold text-dash-text min-w-32" },
+    { key: "sort_order", header: "Sort Order", className: "w-24 text-center" },
+    { key: "is_active", header: "Status", className: "w-28", render: (s) => <StatusTogglePill active={s.is_active} onToggle={() => void toggleActive(s)} /> },
   ];
 
   return (
     <div className="space-y-5">
       <section className="rounded-xl border border-dash-border bg-white p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
             <h3 className="text-lg font-bold text-dash-text">Footer</h3>
             <p className="mt-1 text-sm text-dash-muted">Manage the public site footer&apos;s link sections (e.g. Support, Our Company, Login) - add sections, edit titles, add/edit links, enable or disable either, and control display order. Changes reflect on the live site immediately.</p>
           </div>
           <button
             type="button"
             onClick={() => { setEditing(null); setShowForm(true); }}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#0284C7] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0369A1]"
+            className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-xl bg-[#0284C7] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0369A1] transition shadow-xs"
           >
             <Plus size={15} /> Add Section
           </button>
@@ -1792,11 +1776,43 @@ export function FooterPanel() {
           columns={columns}
           rows={sections}
           loading={loading}
+          minWidthClass="min-w-full"
           emptyTitle="No footer sections yet."
+          actions={(s) => (
+            <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+              <button
+                type="button"
+                title="Manage links"
+                onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
+                  expandedId === s.id ? "bg-[#0284C7] text-white" : "text-[#0284C7] hover:bg-[#EDF5FF]"
+                }`}
+              >
+                <span>{expandedId === s.id ? "Hide links" : "Manage links"}</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 ${expandedId === s.id ? "rotate-180" : ""}`} />
+              </button>
+              <button
+                type="button"
+                title="Edit"
+                onClick={() => { setEditing(s); setShowForm(true); }}
+                className="rounded-lg p-1.5 text-dash-brand hover:bg-[#F3F8FC] transition"
+              >
+                <Pencil size={15} />
+              </button>
+              <button
+                type="button"
+                title="Delete"
+                onClick={() => void deleteSection(s.id)}
+                className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 transition"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          )}
           renderExpandedRow={(section) =>
             expandedId === section.id ? (
               <tr>
-                <td colSpan={columns.length} className="bg-dash-bg-muted px-5 py-4">
+                <td colSpan={columns.length + 1} className="bg-dash-bg-muted px-5 py-4">
                   <FooterLinksTable sectionId={section.id} />
                 </td>
               </tr>
@@ -2213,8 +2229,8 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
   return (
     <div className="space-y-5">
       <section className="rounded-xl border border-dash-border bg-white p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-lg font-bold text-dash-text">{tab.label}</h3>
               <span className="rounded-full bg-[#EDF5FF] px-2.5 py-1 text-xs font-bold text-[#0369A1]">
@@ -2224,11 +2240,11 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
             <p className="mt-1 text-sm text-dash-muted">{description}</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {requiresExistingDiscount && (
               <Link
                 href="/admin/discounts"
-                className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg"
+                className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg"
                 title="Discounts are created and edited in the Discounts module, not here"
               >
                 <Percent size={15} /> Manage Discounts
@@ -2238,14 +2254,14 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
               type="button"
               onClick={() => void fetchItems()}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg disabled:opacity-60"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg disabled:opacity-60"
             >
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh
             </button>
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#0284C7] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0369A1]"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-xl bg-[#0284C7] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0369A1] transition shadow-xs"
             >
               <Plus size={15} /> Add {tab.label}
             </button>
@@ -2440,11 +2456,11 @@ export const ALL_TABS: { key: string; label: string }[] = [
   { key: "travel-advice", label: "Travel Advice" },
   { key: "supplier-portal", label: "Supplier Portal" },
   { key: "agent-portal", label: "Agent Portal" },
-  { key: "affiliate-portal", label: "Affiliate Portal" },
   ...TABS.map((t) => ({ key: t.key, label: t.label })),
   ...CONTENT_BLOCK_TABS.map((t) => ({ key: t.key, label: t.label })),
   FOOTER_TAB,
   COUNTRY_DESTINATION_GUIDE_TAB,
+  { key: "seo", label: "SEO & Meta Tags" },
 ];
 
 // ---- Dashboard grouping ----------------------------------------------------
@@ -2484,8 +2500,8 @@ export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
   {
     key: "portals",
     label: "Partner Portal Pages",
-    description: "The public landing pages for suppliers, travel agents, and affiliates - hero, features, steps, documents, FAQs and CTA. Interactive calculators stay code-driven.",
-    tabs: ["supplier-portal", "agent-portal", "affiliate-portal"],
+    description: "The public landing pages for suppliers and travel agents - hero, features, steps, documents, FAQs and CTA. Interactive calculators stay code-driven.",
+    tabs: ["supplier-portal", "agent-portal"],
   },
   {
     key: "site",
@@ -2495,5 +2511,11 @@ export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
     external: [
       { label: "Contact Details", href: "/admin/settings", description: "Support email, phone, and company address (Settings > General)." },
     ],
+  },
+  {
+    key: "seo",
+    label: "SEO & Meta Tags",
+    description: "The title and description Google and social shares show for each public page.",
+    tabs: ["seo"],
   },
 ];

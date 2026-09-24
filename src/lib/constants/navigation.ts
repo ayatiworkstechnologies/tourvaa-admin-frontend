@@ -1,6 +1,7 @@
 import type { IconType as LucideIcon } from "react-icons";
 import { LuActivity as Activity, LuBadgeCheck as BadgeCheck, LuBell as Bell, LuBot as Bot, LuBriefcase as Briefcase, LuBuilding2 as Building2, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCircleDollarSign as CircleDollarSign, LuCreditCard as CreditCard, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuHandCoins as HandCoins, LuKeyRound as KeyRound, LuLayers as Layers, LuLink2 as Link2, LuMail as Mail, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuMonitorSmartphone as MonitorSmartphone, LuPercent as Percent, LuPlugZap as PlugZap, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShare2 as Share2, LuShield as Shield, LuStar as Star, LuUserCheck as UserCheck, LuUserRound as UserRound, LuUsers as Users, LuWallet as Wallet } from "react-icons/lu";
 import { MenuItem } from "@/types/auth";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 
 export type NavItem = {
   label: string;
@@ -13,7 +14,7 @@ export type NavItem = {
   matchHrefs?: string[];
 };
 
-export const adminNavItems: NavItem[] = [
+const allAdminNavItems: NavItem[] = [
   { label: "Dashboard", module: "dashboard", href: "/admin/dashboard", icon: Grid2X2, permissions: ["dashboard.view", "view-dashboard"] },
   { label: "Users", module: "users", href: "/admin/users", icon: Users, permissions: ["users.view", "view-users"], section: "User Management" },
   { label: "Roles", module: "roles", href: "/admin/roles", icon: Shield, permissions: ["roles.view", "view-roles"], section: "User Management" },
@@ -55,6 +56,10 @@ export const adminNavItems: NavItem[] = [
   { label: "Messages", module: "messages", href: "/admin/messages", icon: MessageSquare, permissions: ["messages.view"], section: "System" },
   { label: "Profile", module: "profile", href: "/admin/profile", icon: UserRound, permissions: ["profile.view", "view-profile"], placement: "bottom" },
 ];
+
+export const adminNavItems = allAdminNavItems.filter(
+  (item) => AFFILIATE_ENABLED || !item.href.startsWith("/admin/affiliates"),
+);
 
 const navByModule = new Map(adminNavItems.map((item) => [item.module, item]));
 const navByPermission = new Map(adminNavItems.flatMap((item) => item.permissions.map((permission) => [permission, item] as const)));

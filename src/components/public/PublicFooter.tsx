@@ -109,8 +109,13 @@ const FALLBACK_FOOTER_SECTIONS: CmsFooterSection[] = [
 function normalizeFooterSections(
   sections: CmsFooterSection[],
 ): CmsFooterSection[] {
-  if (!sections || !sections.length) return FALLBACK_FOOTER_SECTIONS;
-  return sections;
+  const source = !sections || !sections.length ? FALLBACK_FOOTER_SECTIONS : sections;
+  return source.map((section) => ({
+    ...section,
+    links: section.links.filter(
+      (link) => !link.url.toLowerCase().includes("affiliate") && !link.label.toLowerCase().includes("affiliate"),
+    ),
+  }));
 }
 
 const UNSAFE_SETTING_MARKERS =
@@ -142,7 +147,7 @@ export default function PublicFooter() {
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
   const [footerSections, setFooterSections] = useState<CmsFooterSection[]>(
-    FALLBACK_FOOTER_SECTIONS,
+    normalizeFooterSections(FALLBACK_FOOTER_SECTIONS),
   );
   // Generic placeholder hosts until the admin sets Tourvaa's real handles via
   // the Website CMS - see F-05 in _audit_tools/CONSOLIDATED-BUG-REPORT.md.

@@ -84,10 +84,13 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h2 className="text-xl font-bold text-dash-text">Tour Highlights</h2>
-        <button type="button" onClick={() => setEditing({ ...empty(), display_order: items.length })}
-          className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white">
+        <button
+          type="button"
+          onClick={() => setEditing({ ...empty(), display_order: items.length })}
+          className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-dash-brand-hover transition"
+        >
           <Plus size={16} /> Add Highlight
         </button>
       </div>
@@ -98,7 +101,7 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
-          <div key={item.id} className="rounded-xl border border-dash-border bg-white overflow-hidden">
+          <div key={item.id} className="rounded-xl border border-dash-border bg-white overflow-hidden shadow-2xs hover:shadow-sm transition">
             {item.image && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={item.image} alt={item.title} className="h-36 w-full object-cover" />
@@ -107,8 +110,8 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
               <p className="font-semibold text-dash-text">{item.title}</p>
               <p className="mt-1 text-sm text-dash-subtle">{item.short_description}</p>
               <div className="mt-3 flex gap-2">
-                <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border px-3 py-1.5 text-xs font-semibold hover:bg-[#F2F4F7]">Edit</button>
-                <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-[#FFF0F0]">Delete</button>
+                <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border px-3 py-1.5 text-xs font-semibold text-dash-text hover:bg-slate-50 transition">Edit</button>
+                <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition">Delete</button>
               </div>
             </div>
           </div>
@@ -116,11 +119,11 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
       </div>
 
       {editing && (
-        <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6">
+        <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6 shadow-sm">
           <ErrorSummary errors={errors} />
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold text-dash-text">{editing.id ? "Edit Highlight" : "New Highlight"}</h3>
-            <button type="button" aria-label="Close" onClick={() => { setEditing(null); setErrors({}); }}><X size={18} /></button>
+            <button type="button" aria-label="Close" onClick={() => { setEditing(null); setErrors({}); }} className="text-dash-muted hover:text-dash-text transition"><X size={18} /></button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
@@ -156,8 +159,8 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
             </label>
           </div>
           <div className="mt-4 flex justify-end gap-3">
-            <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
-            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
+            <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">Cancel</button>
+            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover transition disabled:opacity-60 shadow-xs">
               <Save size={14} /> {saving ? "Saving..." : "Save Highlight"}
             </button>
           </div>

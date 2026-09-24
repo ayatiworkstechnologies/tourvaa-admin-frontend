@@ -9,6 +9,7 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import CustomerAvatar from "@/components/customer/CustomerAvatar";
+import { passwordHelp, validatePassword } from "@/lib/utils/validators";
 
 const AIRLINES = [
   "American Airlines",
@@ -46,7 +47,7 @@ const GENDERS = ["Female", "Male", "Other", "Prefer not to say"];
 export default function CustomerProfilePage() {
   const router = useRouter();
   const toast = useToast();
-  const { user, refreshSession } = useAuthContext();
+  const { user, refreshSession, logout } = useAuthContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const userParts = (user?.name || "").trim().split(" ");
@@ -79,6 +80,12 @@ export default function CustomerProfilePage() {
   const [profileImage, setProfileImage] = useState<string>(user?.profile_image || "");
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -213,6 +220,40 @@ export default function CustomerProfilePage() {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (passwordForm.current_password === passwordForm.new_password) {
+      toast.error("New password must be different from your current password.");
+      return;
+    }
+    if (!validatePassword(passwordForm.new_password)) {
+      toast.error(passwordHelp);
+      return;
+    }
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      toast.error("Confirm password must match the new password.");
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await api.post("/customer/change-password", {
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password,
+      });
+      toast.success("Password updated. All devices have been signed out.");
+      await logout("/login");
+    } catch (err: unknown) {
+      toast.error(
+        axios.isAxiosError(err)
+          ? err.response?.data?.detail || "Could not update password."
+          : "Could not update password.",
+      );
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -614,6 +655,44 @@ export default function CustomerProfilePage() {
                 </div>
               </div>
             </div>
+          </div>
+        </form>
+
+        <form
+          onSubmit={handlePasswordChange}
+          className="mt-6 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]"
+        >
+          <h2 className="text-sm font-bold text-[#0B1527]">Account Security</h2>
+          <p className="mt-1 text-[11px] text-slate-400">
+            Changing your password signs your account out on every device.
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <label className="block">
+              <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Current password</span>
+              <input type="password" required autoComplete="current-password" value={passwordForm.current_password}
+                onChange={(event) => setPasswordForm((form) => ({ ...form, current_password: event.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100" />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">New password</span>
+              <input type="password" required minLength={8} autoComplete="new-password" value={passwordForm.new_password}
+                onChange={(event) => setPasswordForm((form) => ({ ...form, new_password: event.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100" />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Confirm password</span>
+              <input type="password" required minLength={8} autoComplete="new-password" value={passwordForm.confirm_password}
+                onChange={(event) => setPasswordForm((form) => ({ ...form, confirm_password: event.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100" />
+            </label>
+          </div>
+          <p className="mt-2 text-[10px] text-slate-400">{passwordHelp}</p>
+          <div className="mt-4 flex justify-end">
+            <button type="submit" disabled={savingPassword}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#0B1527] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-[#15233C] disabled:opacity-60">
+              {savingPassword && <Loader2 size={13} className="animate-spin" />}
+              Change Password &amp; Sign Out Everywhere
+            </button>
           </div>
         </form>
       </div>

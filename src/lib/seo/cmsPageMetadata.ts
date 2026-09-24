@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL, metadataFor } from "./pageMetadata";
+import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL, metadataFor, brandTitle } from "./pageMetadata";
+import { cleanMetaText } from "./seoPages";
 import type { CmsPageBlock } from "@/components/public/CmsPageSections";
 
 export type ServerCmsPage = {
@@ -39,11 +40,11 @@ export function cmsPageMetadataFrom(canonicalPath: string, page: ServerCmsPage |
   if (!page) return fallback;
 
   const title = page.seo_title?.trim() || page.title;
-  const description = page.seo_description?.trim() || DEFAULT_DESCRIPTION;
-  const absoluteTitle = `${title} | ${SITE_NAME}`;
+  const description = cleanMetaText(page.seo_description) || DEFAULT_DESCRIPTION;
+  const absoluteTitle = brandTitle(title);
 
   return {
-    title,
+    title: { absolute: absoluteTitle },
     description,
     alternates: { canonical: canonicalPath },
     robots: { index: true, follow: true },
