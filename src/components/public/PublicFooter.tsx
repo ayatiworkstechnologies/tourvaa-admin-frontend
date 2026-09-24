@@ -109,11 +109,14 @@ const FALLBACK_FOOTER_SECTIONS: CmsFooterSection[] = [
 function normalizeFooterSections(
   sections: CmsFooterSection[],
 ): CmsFooterSection[] {
-  const source = !sections || !sections.length ? FALLBACK_FOOTER_SECTIONS : sections;
+  const source =
+    !sections || !sections.length ? FALLBACK_FOOTER_SECTIONS : sections;
   return source.map((section) => ({
     ...section,
     links: section.links.filter(
-      (link) => !link.url.toLowerCase().includes("affiliate") && !link.label.toLowerCase().includes("affiliate"),
+      (link) =>
+        !link.url.toLowerCase().includes("affiliate") &&
+        !link.label.toLowerCase().includes("affiliate"),
     ),
   }));
 }
