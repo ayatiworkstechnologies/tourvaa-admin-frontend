@@ -15,9 +15,10 @@ import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/
 
 const STATUSES = ["active", "inactive"];
 
-const emptySlab = (defaults: { currency: string; commission: number }): PricingSlab => ({
+const emptySlab = (defaults: { currency: string; commission: number; markup: number }): PricingSlab => ({
   passenger_from: 1, passenger_to: 4, adult_price: 0, child_price: 0,
   commission_percentage: defaults.commission,
+  admin_markup_value: defaults.markup,
   currency: defaults.currency, status: "active",
 });
 
@@ -136,6 +137,7 @@ export default function TourPricingTab({
   // See services.bookings.resolve_effective_commission_percentage, the
   // same resolution order applied server-side per slab.
   const [commissionFloor, setCommissionFloor] = useState<number | null>(null);
+  const [defaultMarkup, setDefaultMarkup] = useState(0);
   const [defaultCurrency, setDefaultCurrency] = useState("USD");
   // Same active_discount the public storefront computes (see
   // services/cms.py _active_discount) - reused here so the strikethrough
@@ -175,6 +177,18 @@ export default function TourPricingTab({
 
   useEffect(() => { void loadCommissionFloor(); }, [loadCommissionFloor]);
 
+  useEffect(() => {
+    if (isSupplier) return;
+    api.get("/settings/")
+      .then((res) => {
+        const rows = (res.data?.data ?? []) as { key?: string; value?: string | null }[];
+        const raw = rows.find((row) => row.key === "default_admin_markup_percentage")?.value;
+        const parsed = Number(raw);
+        setDefaultMarkup(Number.isFinite(parsed) && parsed >= 0 ? parsed : 0);
+      })
+      .catch(() => setDefaultMarkup(0));
+  }, [isSupplier]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -194,7 +208,7 @@ export default function TourPricingTab({
   // instead of a misleading "0" in that brief window.
   const resolvedFloor = commissionFloor ?? 0;
 
-  const openNewSlab = () => setEditing(emptySlab({ currency: defaultCurrency, commission: resolvedFloor }));
+  const openNewSlab = () => setEditing(emptySlab({ currency: defaultCurrency, commission: resolvedFloor, markup: defaultMarkup }));
 
   const saveSlab = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,6 +218,7 @@ export default function TourPricingTab({
     const pTo = sanitizeNumber(editing.passenger_to, 1);
     const adultPrice = sanitizeNumber(editing.adult_price);
     const childPrice = sanitizeNumber(editing.child_price);
+    const markupPercentage = sanitizeNumber(editing.admin_markup_value);
 
     const found = validatePricingSlab(editing);
     setErrors(found);
@@ -226,6 +241,9 @@ export default function TourPricingTab({
         // Suppliers never choose the commission; the backend also ignores it
         // from a supplier (services.tours._apply_pricing_computation).
         commission_percentage: isSupplier || editing.commission_percentage == null ? null : sanitizeNumber(editing.commission_percentage, resolvedFloor),
+        // Supplier responses never contain this field and the backend preserves
+        // the existing admin value when a supplier updates their base price.
+        ...(!isSupplier ? { admin_markup_value: markupPercentage } : {}),
       };
       if (editing.id) {
         const updated = await updatePricing(tourId, editing.id, payload);
@@ -264,6 +282,8 @@ export default function TourPricingTab({
   // to Discounts. Always the real, undiscounted storefront price plus,
   // while a promo is active, the discounted price alongside it.
   const onePaxSlab = slabs.find((s) => s.passenger_from <= 1 && (s.passenger_to ?? 1) >= 1) ?? slabs[0];
+  const supplierGridClass = "grid-cols-[1fr_1.2fr_1.2fr_1.2fr_1.2fr_0.8fr_auto]";
+  const adminMarkupGridClass = "grid-cols-[0.8fr_1.1fr_1.1fr_1fr_1.2fr_auto]";
 
   const addButton = (
     <button type="button" onClick={openNewSlab}
@@ -331,13 +351,10 @@ export default function TourPricingTab({
             </button>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-dash-border-soft">
+          <div className="overflow-x-auto rounded-2xl border border-dash-border-soft">
             {/* Table header */}
-            <div className="grid grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_1fr_auto] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3">
-              {(isSupplier
-                ? ["PAX RANGE", "1 PAX PRICE (ADULT)", "SUPPLIER GET PRICE (ADULT)", "1 PAX PRICE (CHILD)", "SUPPLIER GET PRICE (CHILD)", "COMMISSION", "ACTIONS"]
-                : ["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER GET PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "SUPPLIER GET PRICE (CHILD)", "COMMISSION", "ACTIONS"]
-              ).map((h) => (
+            <div className={`grid ${supplierGridClass} min-w-[980px] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3`}>
+              {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER GET PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "SUPPLIER GET PRICE (CHILD)", "COMMISSION", "ACTIONS"].map((h) => (
                 <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
               ))}
             </div>
@@ -345,7 +362,7 @@ export default function TourPricingTab({
             {/* Rows */}
             {slabs.map((r, idx) => (
               <div key={r.id ?? idx}
-                className="grid grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr_1fr_auto] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30"
+                className={`grid ${supplierGridClass} min-w-[980px] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30`}
               >
                 {/* Pax range badge */}
                 <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
@@ -353,7 +370,7 @@ export default function TourPricingTab({
                 </span>
 
                 {/* Adult price (1-pax price to Tourvaa) */}
-                <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
+                <PriceCell value={r.adult_price} currency={r.currency} discountPercent={null} valueClassName="font-semibold text-dash-text text-sm" />
 
                 {/* Supplier discounted price -- adult_price after commission is deducted.
                     Never re-apply the storefront promo % here: that coupon (TourDiscount)
@@ -364,7 +381,7 @@ export default function TourPricingTab({
                 <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={null} valueClassName="font-bold text-emerald-700 text-sm" />
 
                 {/* Child price (1-pax price to Tourvaa) */}
-                <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
+                <PriceCell value={r.child_price} currency={r.currency} discountPercent={null} valueClassName="font-semibold text-dash-text text-sm" />
 
                 {/* Supplier discounted price -- child_price after commission is deducted (see note above) */}
                 <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={null} valueClassName="font-bold text-emerald-700 text-sm" />
@@ -390,9 +407,47 @@ export default function TourPricingTab({
 
         <p className="mt-4 flex items-start gap-2 rounded-xl border border-dash-border bg-dash-bg p-3 text-xs text-dash-subtle">
           <Sparkles size={14} className="mt-0.5 shrink-0 text-dash-subtle" />
-          <span><strong className="text-dash-body">Note:</strong> The prices entered above are the selling prices customers pay. There is no markup on top: Tourvaa&apos;s commission is deducted from each price, and the supplier receives the &quot;get price&quot; shown. Agent and affiliate commission comes out of Tourvaa&apos;s commission, never the supplier&apos;s share.</span>
+          <span><strong className="text-dash-body">Note:</strong> Tourvaa commission is deducted from the supplier price to calculate the supplier get price.</span>
         </p>
       </SectionCard>
+
+      {!isSupplier && slabs.length > 0 && (
+        <SectionCard
+          icon={Percent}
+          iconTone="brand"
+          title="Admin Markup"
+          description="Admin-only markup added on top of the supplier's price. Suppliers never see this section."
+        >
+          <div className="overflow-x-auto rounded-2xl border border-dash-border-soft">
+            <div className={`grid ${adminMarkupGridClass} min-w-[880px] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3`}>
+              {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "ADMIN MARKUP", "PUBLIC PRICE (CUSTOMER PAYS)", "ACTIONS"].map((heading) => (
+                <span key={heading} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{heading}</span>
+              ))}
+            </div>
+            {slabs.map((slab, index) => (
+              <div
+                key={slab.id ?? index}
+                className={`grid ${adminMarkupGridClass} min-w-[880px] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30`}
+              >
+                <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
+                  {slab.passenger_from}&ndash;{slab.passenger_to} pax
+                </span>
+                <PriceCell value={slab.adult_price} currency={slab.currency} discountPercent={null} valueClassName="font-semibold text-dash-text text-sm" />
+                <PriceCell value={slab.child_price} currency={slab.currency} discountPercent={null} valueClassName="font-semibold text-dash-text text-sm" />
+                <span className="inline-flex min-h-8 items-center gap-1 rounded-xl border border-dash-border bg-white px-3 text-xs font-bold text-dash-body">
+                  <Percent size={10} />{slab.admin_markup_value ?? 0}
+                </span>
+                <PriceCell value={slab.storefront_adult_price ?? slab.adult_price} currency={slab.currency} discountPercent={discountPercent} valueClassName="font-bold text-blue-700 text-sm" />
+                <ActionButtons onEdit={() => setEditing({ ...slab })} onDelete={() => removeSlab(slab.id!)} />
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 flex items-start gap-2 rounded-xl border border-dash-border bg-dash-bg p-3 text-xs text-dash-subtle">
+            <Sparkles size={14} className="mt-0.5 shrink-0" />
+            <span><strong className="text-dash-body">Note:</strong> The prices above are supplier prices. Tourvaa applies the admin markup before publishing the customer price; any active promotion is shown against that public price.</span>
+          </p>
+        </SectionCard>
+      )}
 
       {editing && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950/35 px-4 py-8" role="dialog" aria-modal="true">
@@ -432,12 +487,20 @@ export default function TourPricingTab({
                 </FormField>
               )}
 
-              <FormField name="adult_price" label={`Adult selling price (${editing.currency})`} required error={errors.adult_price} hint="What the customer pays per adult. Tourvaa's commission is deducted from it.">
+              {!isSupplier && (
+                <FormField name="admin_markup_value" label="Tourvaa Markup %" error={errors.admin_markup_value} hint="Added on top of the supplier price to calculate the customer price.">
+                  <input id="admin_markup_value" name="admin_markup_value" type="number" min={0} max={100} step="0.01" value={numberInputValue(editing.admin_markup_value ?? 0)}
+                    onChange={(e) => { setEditing((p) => p ? { ...p, admin_markup_value: parseNumberInput(e.target.value) } : p); clearError("admin_markup_value"); }}
+                    className={fieldClass(errors.admin_markup_value)} />
+                </FormField>
+              )}
+
+              <FormField name="adult_price" label={`Supplier price - adult (${editing.currency})`} required error={errors.adult_price} hint="Base adult price before Tourvaa markup; commission is deducted from this amount.">
                 <input id="adult_price" name="adult_price" type="number" min={0} step="0.01" value={numberInputValue(editing.adult_price)}
                   onChange={(e) => { setEditing((p) => p ? { ...p, adult_price: parseNumberInput(e.target.value) } : p); clearError("adult_price"); }}
                   className={fieldClass(errors.adult_price)} placeholder="0.00" />
               </FormField>
-              <FormField name="child_price" label={`Child price (${editing.currency})`} error={errors.child_price} hint="Leave 0 if children are free.">
+              <FormField name="child_price" label={`Supplier price - child (${editing.currency})`} error={errors.child_price} hint="Base child price before Tourvaa markup. Leave 0 if children are free.">
                 <input id="child_price" name="child_price" type="number" min={0} step="0.01" value={numberInputValue(editing.child_price)}
                   onChange={(e) => { setEditing((p) => p ? { ...p, child_price: parseNumberInput(e.target.value) } : p); clearError("child_price"); }}
                   className={fieldClass(errors.child_price)} placeholder="0.00" />
@@ -458,13 +521,29 @@ export default function TourPricingTab({
               )}
             </div>
 
-            <div className="mt-4 grid gap-3 rounded-xl bg-dash-bg p-4 sm:grid-cols-2">
+            <div className={`mt-4 grid gap-3 rounded-xl bg-dash-bg p-4 ${isSupplier ? "sm:grid-cols-2" : "sm:grid-cols-4"}`}>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier get price (adult)</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
                   {fmt(sanitizeNumber(editing.adult_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
                 </p>
               </div>
+              {!isSupplier && (
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Tourvaa price (adult)</p>
+                  <p className="mt-1 text-xl font-black text-blue-700">
+                    {fmt(sanitizeNumber(editing.adult_price) * (1 + sanitizeNumber(editing.admin_markup_value) / 100), editing.currency)}
+                  </p>
+                </div>
+              )}
+              {!isSupplier && (
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Tourvaa price (child)</p>
+                  <p className="mt-1 text-xl font-black text-blue-700">
+                    {fmt(sanitizeNumber(editing.child_price) * (1 + sanitizeNumber(editing.admin_markup_value) / 100), editing.currency)}
+                  </p>
+                </div>
+              )}
               <div>
                 <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier get price (child)</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">

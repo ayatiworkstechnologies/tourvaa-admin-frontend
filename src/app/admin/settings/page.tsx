@@ -147,6 +147,7 @@ const currencyDisplayOverrides: Record<string, { label: string; helper: string }
 
 const commissionSettingKeys: { key: string; label: string; description: string }[] = [
   { key: "supplier_commission_percentage", label: "Tourvaa Tour Commission (Minimum)", description: "Tourvaa's own platform commission on every tour booking, deducted from the supplier's price. This is the floor - suppliers may agree to a higher rate, but it can never go lower." },
+  { key: "default_admin_markup_percentage", label: "Default Admin Markup", description: "The starting markup applied to new pricing slabs created by an admin. Each slab can still be given its own markup in Pricing & Discounts." },
 ];
 const commissionSettingKeySet = new Set(commissionSettingKeys.map((c) => c.key));
 
@@ -463,9 +464,9 @@ export default function SettingsPage() {
           <>
             <form onSubmit={saveSettings}>
               <section className="rounded-2xl border border-dash-border bg-white p-6">
-                <h3 className="mb-1 text-lg font-bold text-dash-text">Commission Settings</h3>
+                <h3 className="mb-1 text-lg font-bold text-dash-text">Commission &amp; Markup Settings</h3>
                 <p className="mb-5 text-sm text-dash-muted">
-                  Set Tourvaa&apos;s own platform commission floor. Agent and Affiliate commission settings now live under their own dedicated tabs.
+                  Set Tourvaa&apos;s platform commission floor and the default admin markup for new tour pricing slabs.
                 </p>
                 <div className="grid gap-4 md:grid-cols-3">
                   {commissionSettingKeys.map(({ key, label, description }) => (
@@ -498,7 +499,7 @@ export default function SettingsPage() {
                     disabled={saving}
                     className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
                   >
-                    {saving ? "Saving..." : "Save Commission Settings"}
+                    {saving ? "Saving..." : "Save Pricing Settings"}
                   </button>
                 </div>
               </section>

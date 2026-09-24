@@ -202,7 +202,7 @@ export type TabConfig = {
   label: string;
   endpoint: string;
   columns: { key: string; header: string; render?: (item: CmsItem) => React.ReactNode; className?: string }[];
-  formFields: { key: string; label: string; type: "text" | "textarea" | "select" | "url" | "number" | "asset" | "video"; options?: FieldOption[]; required?: boolean }[];
+  formFields: { key: string; label: string; type: "text" | "textarea" | "select" | "url" | "number" | "asset" | "video"; options?: FieldOption[]; required?: boolean; min?: number; max?: number; step?: number }[];
   createMethod?: "post" | "put";
   updateMethod?: "put" | "patch";
   updatePath?: "item" | "collection";
@@ -247,7 +247,7 @@ export const TAB_DESCRIPTIONS: Record<string, string> = {
   "tours-on-deals": "Tours shown in the homepage Top Deals section, with deal labels and sort order. Show/hide the whole section with its switch in the Home Page section list.",
   "popular-tours": "Tours shown in the homepage Trending Tour Packages section. Show/hide the whole section with its switch in the Home Page section list.",
   "handpicked-tours": "Tours shown in the homepage Handpicked Tours for You section - a curated list of tours for the homepage.",
-  "popular-destinations": "Countries shown in Countries Worth Exploring - title, image, description, destination link, order and enable/disable, per country. Countries without a row here fall back to being calculated automatically from real tour counts.",
+  "popular-destinations": "Countries shown in Countries Worth Exploring - country name, rating, destination link, package count and display order.",
   "favourite-countries": "The editorial country list and snippet copy shown in the homepage Favourite Countries section.",
   "country-pages": "Country pages and destination guides, with a live preview. Override the hero banner, showcase panel, and SEO title/description for each country's dynamic /tours/{country} landing page. Countries without a row here use auto-generated content.",
   "country-destination-guide": "The full destination guide shown at /destinations/{country}: best time to visit, monsoon/season info, temperature, best places to visit, why visit, and travel info, per country.",
@@ -390,20 +390,18 @@ export const TABS: TabConfig[] = [
     label: "Countries",
     endpoint: "/cms/popular-destinations",
     columns: [
-      { key: "image", header: "Preview", render: (item) => renderImagePreview(item, "image", "Destination image"), className: "w-32" },
-      { key: "title", header: "Title" },
-      { key: "country_id", header: "Country ID" },
-      { key: "city_id", header: "City ID" },
+      { key: "title", header: "Country Name" },
+      { key: "rating", header: "Rating" },
       { key: "href", header: "Destination Link" },
+      { key: "package_count", header: "Package Count" },
+      { key: "sort_order", header: "Order" },
     ],
     formFields: [
-      { key: "title", label: "Title (must match country name)", type: "text", required: true },
-      { key: "country_id", label: "Country", type: "number" },
-      { key: "image", label: "Image", type: "asset" },
-      { key: "city_id", label: "City", type: "number" },
-      { key: "description", label: "Description", type: "textarea" },
-      { key: "href", label: "Destination Link (e.g. /tours?country=Egypt; blank auto-generates from the country name)", type: "text" },
-      { key: "sort_order", label: "Sort Order", type: "number" },
+      { key: "country_id", label: "Country Name", type: "select", required: true },
+      { key: "rating", label: "Rating (0-5)", type: "number", min: 0, max: 5, step: 0.1 },
+      { key: "href", label: "Destination Link", type: "text" },
+      { key: "package_count", label: "Package Count", type: "number", min: 0, step: 1 },
+      { key: "sort_order", label: "Order", type: "number", min: 0, step: 1 },
     ],
   },
   {
@@ -2089,6 +2087,14 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
             : f.type === "number" || f.key.endsWith("_id") ? Number(formValues[f.key]) : formValues[f.key];
         }
       }
+      if (isDestinationTab) {
+        const selectedCountry = countryOptions.find((country) => country.id === Number(body.country_id));
+        if (!selectedCountry) {
+          toast.error("Select a valid country name.");
+          return;
+        }
+        body.title = selectedCountry.name;
+      }
       if (isCmsPageTab) body.sections = sectionBlocks;
       if (editingItem) {
         const method = tab.updateMethod ?? "put";
@@ -2375,6 +2381,9 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
                 ) : (
                   <input
                     type={f.type === "url" ? "url" : f.type === "number" ? "number" : "text"}
+                    min={f.min}
+                    max={f.max}
+                    step={f.step}
                     value={formValues[f.key] ?? ""}
                     onChange={e => setFormValues(v => ({ ...v, [f.key]: e.target.value }))}
                     className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"

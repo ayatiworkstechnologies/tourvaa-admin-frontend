@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const SITE_NAME = "Tourvaa";
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/+$/, "");
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://tourvaa.com").replace(/\/+$/, "");
 export const DEFAULT_DESCRIPTION = "Discover curated tours, trusted travel experiences, and simple online booking with Tourvaa.";
 export const DEFAULT_SOCIAL_IMAGE = "/images/tour-card-fallback.jpg";
 

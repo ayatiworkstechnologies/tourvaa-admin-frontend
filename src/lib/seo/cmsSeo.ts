@@ -32,12 +32,17 @@ export async function cmsMetadataFor(path: string, resolvedPath?: string): Promi
   const override = (await fetchPageSeo())[path] || {};
   const title = stripSiteSuffix(cleanMetaText(override.title));
   const description = cleanMetaText(override.description);
-  if (!title && !description) return base;
+  const keywords = cleanMetaText(override.keywords)
+    .split(",")
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
+  if (!title && !description && !keywords.length) return base;
 
   const next: Metadata = { ...base };
   const socialTitle = brandTitle(title || PAGE_METADATA[path].title);
   if (title) next.title = { absolute: socialTitle, template: TITLE_TEMPLATE };
   if (description) next.description = description;
+  if (keywords.length) next.keywords = keywords;
   const socialDescription = description || String(base.description || "");
   if (base.openGraph) next.openGraph = { ...base.openGraph, title: socialTitle, description: socialDescription };
   if (base.twitter) next.twitter = { ...base.twitter, title: socialTitle, description: socialDescription };

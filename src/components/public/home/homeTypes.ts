@@ -213,7 +213,7 @@ export function topDestinationsFromCountries(
         const match =
           (item.country_id != null ? countryById.get(item.country_id) : undefined) ??
           countryByName.get(item.title.trim().toLowerCase());
-        const tourCount = match?.tour_count || 0;
+        const tourCount = item.package_count ?? match?.tour_count ?? 0;
         return {
           name: match?.country_name || item.title,
           count: `${tourCount} package${tourCount === 1 ? "" : "s"}`,
@@ -222,6 +222,7 @@ export function topDestinationsFromCountries(
           currency: "USD",
           snippet: item.description || undefined,
           href: item.href || undefined,
+          rating: item.rating ?? undefined,
         };
       });
   }

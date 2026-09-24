@@ -10,6 +10,7 @@ import {
   EDITABLE_SEO_PAGES,
   PAGE_SEO_BLOCK_KEY,
   SEO_DESCRIPTION_LIMIT,
+  SEO_KEYWORDS_LIMIT,
   SEO_TITLE_LIMIT,
   cleanMetaText,
   type PageSeoMap,
@@ -25,7 +26,7 @@ function Counter({ value, limit }: { value: number; limit: number }) {
   );
 }
 
-/** Admin > Website CMS > SEO & Meta Tags: the <title> and meta description of
+/** Admin > Website CMS > SEO & Meta Tags: the title, description and keywords of
  * each public page. Blank fields keep the built-in copy (shown as the
  * placeholder). Tours, blogs, country pages and custom CMS pages have their
  * own SEO fields on their own edit forms. */
@@ -59,6 +60,7 @@ export default function PageSeoEditor() {
   const current = draft[page.path] ?? {};
   const title = current.title ?? "";
   const description = current.description ?? "";
+  const keywords = current.keywords ?? "";
   const effectiveTitle = brandTitle(cleanMetaText(title) || defaults.title);
   const effectiveDescription = cleanMetaText(description) || defaults.description;
 
@@ -72,17 +74,19 @@ export default function PageSeoEditor() {
     return [...new Set(visible.map((p) => p.group))].map((group) => ({ group, pages: visible.filter((p) => p.group === group) }));
   }, [filter]);
 
-  const update = (field: "title" | "description", value: string) =>
+  const update = (field: "title" | "description" | "keywords", value: string) =>
     setDraft((d) => ({ ...d, [page.path]: { ...d[page.path], [field]: value } }));
 
   const save = async () => {
     const tooLong = PAGES.find((p) => {
       const entry = draft[p.path] ?? {};
-      return cleanMetaText(entry.title).length > SEO_TITLE_LIMIT || cleanMetaText(entry.description).length > SEO_DESCRIPTION_LIMIT;
+      return cleanMetaText(entry.title).length > SEO_TITLE_LIMIT
+        || cleanMetaText(entry.description).length > SEO_DESCRIPTION_LIMIT
+        || cleanMetaText(entry.keywords).length > SEO_KEYWORDS_LIMIT;
     });
     if (tooLong) {
       setSelected(tooLong.path);
-      toast.error(`${tooLong.label}: keep the title within ${SEO_TITLE_LIMIT} and the description within ${SEO_DESCRIPTION_LIMIT} characters.`);
+      toast.error(`${tooLong.label}: keep the title within ${SEO_TITLE_LIMIT}, description within ${SEO_DESCRIPTION_LIMIT}, and keywords within ${SEO_KEYWORDS_LIMIT} characters.`);
       return;
     }
     // Only non-empty values are stored; blank = use the built-in copy.
@@ -90,7 +94,12 @@ export default function PageSeoEditor() {
     for (const [path, entry] of Object.entries(draft)) {
       const t = cleanMetaText(entry?.title);
       const d = cleanMetaText(entry?.description);
-      if (t || d) data[path] = { ...(t ? { title: t } : {}), ...(d ? { description: d } : {}) };
+      const k = cleanMetaText(entry?.keywords);
+      if (t || d || k) data[path] = {
+        ...(t ? { title: t } : {}),
+        ...(d ? { description: d } : {}),
+        ...(k ? { keywords: k } : {}),
+      };
     }
     setSaving(true);
     try {
@@ -113,7 +122,7 @@ export default function PageSeoEditor() {
         <div className="min-w-0">
           <h3 className="text-lg font-bold text-dash-text">SEO &amp; Meta Tags</h3>
           <p className="mt-1 text-sm text-dash-muted">
-            The title and description search engines and social shares show for each public page. Leave a field blank to use the default.
+            The title, description and keywords search engines and social shares use for each public page. Leave a field blank to use the default.
             Tours, blogs, country pages and custom pages have their own SEO fields on their edit forms.
           </p>
         </div>
@@ -138,7 +147,7 @@ export default function PageSeoEditor() {
               <div key={group}>
                 <p className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-dash-muted">{group}</p>
                 {pages.map((p) => {
-                  const custom = Boolean(cleanMetaText(saved[p.path]?.title) || cleanMetaText(saved[p.path]?.description));
+                  const custom = Boolean(cleanMetaText(saved[p.path]?.title) || cleanMetaText(saved[p.path]?.description) || cleanMetaText(saved[p.path]?.keywords));
                   const dirty = dirtyPaths.includes(p.path);
                   return (
                     <button
@@ -174,7 +183,7 @@ export default function PageSeoEditor() {
               <button
                 type="button"
                 onClick={() => setDraft((d) => { const next = { ...d }; delete next[page.path]; return next; })}
-                disabled={!title && !description}
+                disabled={!title && !description && !keywords}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-body hover:bg-dash-bg disabled:opacity-50"
               >
                 <RotateCcw size={13} /> Use defaults
@@ -197,6 +206,22 @@ export default function PageSeoEditor() {
               <Counter value={cleanMetaText(description).length} limit={SEO_DESCRIPTION_LIMIT} />
             </div>
             <textarea id="seo-description" rows={4} value={description} onChange={(e) => update("description", e.target.value)} placeholder={defaults.description} className={`${inputClass} resize-none`} disabled={loading} />
+          </div>
+
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label htmlFor="seo-keywords" className="text-xs font-bold uppercase text-dash-muted">Meta keywords</label>
+              <Counter value={cleanMetaText(keywords).length} limit={SEO_KEYWORDS_LIMIT} />
+            </div>
+            <input
+              id="seo-keywords"
+              value={keywords}
+              onChange={(e) => update("keywords", e.target.value)}
+              placeholder={defaults.keywords?.join(", ") || "tour, travel, holiday packages"}
+              className={inputClass}
+              disabled={loading}
+            />
+            <p className="mt-1 text-xs text-dash-muted">Separate keywords with commas.</p>
           </div>
 
           <div>

@@ -1,14 +1,15 @@
 /** Public pages whose <title>/meta description can be overridden from
  * Admin > Website CMS > SEO & Meta Tags. Stored in the `page_seo` content
- * block as { [path]: { title, description } }; an empty field falls back to
+ * block as { [path]: { title, description, keywords } }; an empty field falls back to
  * the built-in copy in PAGE_METADATA. Shared by the admin editor (client)
  * and cmsMetadataFor (server). */
 export const PAGE_SEO_BLOCK_KEY = "page_seo";
 
 export const SEO_TITLE_LIMIT = 60;
 export const SEO_DESCRIPTION_LIMIT = 160;
+export const SEO_KEYWORDS_LIMIT = 255;
 
-export type PageSeoOverride = { title?: string; description?: string };
+export type PageSeoOverride = { title?: string; description?: string; keywords?: string };
 export type PageSeoMap = Record<string, PageSeoOverride>;
 
 export const EDITABLE_SEO_PAGES: { path: string; label: string; group: string }[] = [

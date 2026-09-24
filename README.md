@@ -11,8 +11,8 @@ Single Next.js 16 (App Router) application serving both the public marketing/boo
 | Framework | Next.js 16 (App Router) |
 | Language | TypeScript 5 |
 | UI | Tailwind CSS 4 (`@theme` design tokens) |
-| Fonts | `next/font/google` - Outfit (headings) + Work Sans (body), scoped to public pages |
-| Icons | Lucide React |
+| Fonts | `@fontsource-variable/onest` (Onest Variable) |
+| Icons | `react-icons` (Lucide set via `react-icons/lu`) |
 | HTTP Client | Axios |
 | Forms | React Hook Form |
 | State | React Context + custom hooks |
@@ -31,6 +31,8 @@ npm install
 
 ```env
 API_PROXY_TARGET=http://127.0.0.1:8000
+NEXT_PUBLIC_WS_URL=ws://127.0.0.1:8000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 For production, point at the live backend:
@@ -66,18 +68,18 @@ docker build --build-arg API_PROXY_TARGET=http://backend:8000 --build-arg NEXT_P
 
 The image runs as a non-root user on port `3000` and includes a health check. The workflow at `.github/workflows/ci-cd.yml` runs audit, lint, tests and production build, scans the image, then publishes verified main/tag builds to `ghcr.io/<owner>/<repository>`.
 
-For the complete frontend/backend/MySQL/Redis stack, use `compose.yaml` and `DOCKER_CICD_GUIDE.md` from the shared workspace root.
+For the complete frontend/backend/MySQL/Redis stack, use the versioned templates in the workspace `deployment/` folder.
 
 ---
 
 ## Authentication
 
-- JWT stored in memory (not localStorage) with an Axios interceptor (`src/lib/api/client.ts`)
-- Silent token refresh on 401 - queues concurrent requests until refresh completes
-- Forced logout clears all sessions server-side
-- Authenticated file downloads (e.g. invoice PDFs) use a blob-fetch through the authenticated client rather than a plain `<a href>`, since Bearer tokens can't ride on raw browser navigation
+- The web app uses an httpOnly `tourvaa_access` cookie with CSRF-protected mutating requests and cookie-based refresh; it does not store the JWT in browser storage.
+- Silent token refresh on 401 queues concurrent requests until refresh completes.
+- Forced logout ends the current device session; the separate logout-all flow ends every session.
+- Authenticated file downloads use a blob fetch through the authenticated client rather than a plain `<a href>`.
 
-Log in at `/login` with the super-admin account configured on the backend (see the backend README's `SUPER_ADMIN_EMAIL`/`SUPER_ADMIN_PASSWORD` setup).
+Customers sign in at `/login`; staff use `/admin/login`; suppliers use `/supplier-portal/login`; agents use `/agent-portal/login`; affiliates use `/affiliate-portal/login`.
 
 ---
 
@@ -183,22 +185,17 @@ A previous Google Translate integration (`components/public/GoogleTranslateLoade
 
 ## Tests
 
-```bash
-# Lint check
-npm run lint
+Use `npm test` for the contract, unit, and type checks, or run the individual commands directly:
 
-# Filesystem / integration tests
-node tests/dashboard.test.mjs
+```bash
+npm run lint
+node tests/run-tests.mjs
+npm run test:unit
+npx tsc --noEmit
+npm run test:e2e
 ```
 
-The test file (`tests/dashboard.test.mjs`) verifies:
-
-- `AuthProvider.tsx` fetches `/dashboard/me` directly (no dedicated `dashboardService.ts` wrapper exists)
-- `AuthProvider` includes `dashboard_type`, `allowed_modules`, `sidebar_menu`
-- `AuthUser` type has `user_type` and `approval_status`
-- No `/api/v1` references anywhere in dashboard files
-
-No automated browser/E2E suite exists yet - UI/flow verification is currently manual (API-contract + reachability checks). Consider adding Playwright for real browser-level coverage.
+The Playwright suite requires a running frontend and the services it targets.
 
 ---
 
