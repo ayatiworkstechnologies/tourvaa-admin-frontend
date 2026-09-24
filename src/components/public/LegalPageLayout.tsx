@@ -23,10 +23,10 @@ export type LegalSection = {
 
 export function LegalBullets({ items }: { items: ReactNode[] }) {
   return (
-    <ul className="mt-3 space-y-2 text-sm leading-relaxed text-slate-600">
+    <ul className="mt-3 space-y-2 text-sm sm:text-base leading-relaxed text-black">
       {items.map((item, idx) => (
         <li key={idx} className="flex items-start gap-2.5">
-          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-pub-secondary" />
+          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-pub-secondary" />
           <span className="flex-1">{item}</span>
         </li>
       ))}
@@ -277,7 +277,7 @@ export default function LegalPageLayout({
           {/* Section Clauses Body */}
           <div className="min-w-0 space-y-6">
             {intro && (
-              <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-5 text-sm leading-relaxed text-slate-700 font-medium">
+              <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-5 text-[15px] sm:text-base leading-relaxed text-black font-normal">
                 {intro}
               </div>
             )}
@@ -307,7 +307,7 @@ export default function LegalPageLayout({
                     </h2>
                   </div>
 
-                  <div className="mt-4 text-sm sm:text-[15px] leading-relaxed text-slate-600 space-y-3 font-normal">
+                  <div className="mt-4 text-[15px] sm:text-base leading-relaxed text-black space-y-3 font-normal">
                     {s.body}
                   </div>
                 </section>

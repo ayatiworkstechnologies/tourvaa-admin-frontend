@@ -27,8 +27,8 @@
   --color-pub-secondary: #146EF5;
   --color-pub-accent: #E16B2D;
   --color-pub-bg: #FBF7F5;
-  --color-pub-fg: #0F172A;
-  --color-pub-muted: #64748B;
+  --color-pub-fg: #000000;
+  --color-pub-muted: #475569;
   --color-pub-border: #E2E8F0;
 
   --color-dash-text: #121826;
@@ -45,14 +45,17 @@
 }
 
 :root {
+  --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-onest: "Onest Variable", "Segoe UI", sans-serif;
+  --font-body: var(--font-inter);
+  --font-heading: "Onest Variable", "Segoe UI", sans-serif;
   --primary: #4f46e5;
   --primary-dark: #3730a3;
   --accent: #8b5cf6;
   --bg-main: #fafafa;
   --bg-sidebar: #ffffff;
-  --text-main: #09090b;
-  --text-muted: #71717a;
+  --text-main: #000000;
+  --text-muted: #52525b;
   --border: #e4e4e7;
   --admin-color: #00FFFF;
   --supplier-color: #FF00FF;
@@ -70,6 +73,9 @@ html {
   overflow-x: clip;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* Public site heading font - aliased to --font-onest in PublicLayout.tsx.
@@ -86,8 +92,11 @@ body {
   max-width: 100%;
   overflow-x: clip;
   background: var(--bg-main);
-  color: var(--text-main);
-  font-family: var(--font-onest);
+  color: #000000;
+  font-family: var(--font-inter);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 button,
@@ -601,12 +610,52 @@ button {
   --public-primary: var(--color-pub-secondary);
   --public-primary-hover: var(--color-pub-secondary);
   --public-primary-soft: color-mix(in srgb, var(--color-pub-secondary) 10%, white);
-  --public-ink: var(--color-pub-fg);
+  --public-ink: #000000;
   background: var(--color-pub-bg);
-  color: var(--public-ink);
+  color: #000000;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 .public-site h1, .public-site h2, .public-site h3, .public-site h4 {
   font-family: var(--font-heading);
+}
+.public-site p {
+  font-family: var(--font-body);
+}
+
+.public-site p:not([class*="text-white"]):not([class*="text-slate-100"]):not([class*="text-slate-200"]):not([class*="text-slate-300"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="text-red-"]):not([class*="text-rose-"]):not([class*="text-blue-"]):not([class*="text-sky-"]):not([class*="text-teal-"]):not([class*="text-violet-"]) {
+  color: #000000;
+}
+
+/* Force pure black on all public paragraphs that previously used washed-out grays */
+.public-site p.text-slate-600,
+.public-site p.text-slate-700,
+.public-site p.text-slate-500,
+.public-site p.text-slate-800,
+.public-site p.text-slate-900,
+.public-site p.text-gray-600,
+.public-site p.text-gray-700,
+.public-site p.text-gray-500,
+.public-site p.text-gray-800,
+.public-site p.text-neutral-600,
+.public-site p.text-neutral-700,
+.public-site p.text-neutral-800,
+.public-site p.text-zinc-500,
+.public-site p.text-zinc-600,
+.public-site p.text-zinc-700 {
+  color: #000000 !important;
+}
+
+/* Ensure rich HTML CMS content and article paragraphs are pure black with comfortable 16px reading size */
+.public-site article p,
+.public-site .prose p,
+.public-site [class*="[&_h2]"] p,
+.public-site .cms-content p {
+  color: #000000 !important;
+  font-size: 1rem;
+  line-height: 1.7;
 }
 .public-page-enter { animation: publicPageFade .45s ease both; }
 @keyframes publicPageFade { from { opacity: 0; } to { opacity: 1; } }

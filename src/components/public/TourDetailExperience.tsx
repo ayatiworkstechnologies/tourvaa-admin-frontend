@@ -1281,19 +1281,19 @@ export default function TourDetailExperience({
               </div>
 
               {tour.subtitle && (
-                <p className="text-sm sm:text-base font-semibold text-slate-800 leading-relaxed">
+                <p className="text-base sm:text-lg font-semibold text-black leading-relaxed">
                   {tour.subtitle}
                 </p>
               )}
 
               {tour.short_description && (
-                <p className="text-xs sm:text-sm leading-relaxed text-slate-600 whitespace-pre-line">
+                <p className="text-[15px] sm:text-base leading-relaxed text-black font-normal whitespace-pre-line">
                   {tour.short_description}
                 </p>
               )}
 
               {tour.long_description && (
-                <p className="text-xs sm:text-sm leading-relaxed text-slate-600 whitespace-pre-line">
+                <p className="text-[15px] sm:text-base leading-relaxed text-black font-normal whitespace-pre-line">
                   {tour.long_description}
                 </p>
               )}
@@ -1302,11 +1302,11 @@ export default function TourDetailExperience({
                 <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Sparkles size={15} className="text-blue-600" />
-                    <p className="text-xs sm:text-sm font-bold text-slate-900">
+                    <p className="text-sm sm:text-base font-bold text-black">
                       Why Choose This Tour
                     </p>
                   </div>
-                  <p className="text-xs sm:text-sm leading-relaxed text-slate-600 whitespace-pre-line">
+                  <p className="text-[15px] sm:text-base leading-relaxed text-black font-normal whitespace-pre-line">
                     {tour.overview.why_choose_this_tour}
                   </p>
                 </div>
@@ -1315,8 +1315,8 @@ export default function TourDetailExperience({
               {tour.overview?.ideal_for && (
                 <div className="mt-3 flex items-start gap-2">
                   <Users size={15} className="mt-0.5 shrink-0 text-emerald-600" />
-                  <p className="text-xs sm:text-sm leading-relaxed text-slate-600">
-                    <span className="font-bold text-slate-900">Ideal for: </span>
+                  <p className="text-[15px] sm:text-base leading-relaxed text-black">
+                    <span className="font-bold text-black">Ideal for: </span>
                     {tour.overview.ideal_for}
                   </p>
                 </div>
@@ -1329,10 +1329,10 @@ export default function TourDetailExperience({
                     <div className="flex items-start gap-2">
                       <Bus size={15} className="mt-0.5 shrink-0 text-violet-600" />
                       <div>
-                        <p className="text-xs font-bold text-slate-900">
+                        <p className="text-xs font-bold text-black uppercase tracking-wider">
                           Transportation
                         </p>
-                        <p className="text-xs leading-relaxed text-slate-600 mt-0.5">
+                        <p className="text-sm leading-relaxed text-black mt-0.5 font-normal">
                           {tour.overview.transportation_summary}
                         </p>
                       </div>
@@ -1342,10 +1342,10 @@ export default function TourDetailExperience({
                     <div className="flex items-start gap-2">
                       <Hotel size={15} className="mt-0.5 shrink-0 text-amber-600" />
                       <div>
-                        <p className="text-xs font-bold text-slate-900">
+                        <p className="text-xs font-bold text-black uppercase tracking-wider">
                           Accommodation
                         </p>
-                        <p className="text-xs leading-relaxed text-slate-600 mt-0.5">
+                        <p className="text-sm leading-relaxed text-black mt-0.5 font-normal">
                           {tour.overview.accommodation_summary}
                         </p>
                       </div>
@@ -1590,11 +1590,11 @@ export default function TourDetailExperience({
                       )}
                       <div className="p-4 flex-1 flex flex-col justify-between">
                         <div>
-                          <h4 className="text-sm font-bold text-slate-900 leading-snug">
+                          <h4 className="text-base font-bold text-black leading-snug">
                             {h.title}
                           </h4>
                           {h.desc && (
-                            <p className="mt-1 text-xs text-slate-500 leading-relaxed line-clamp-2">
+                            <p className="mt-1 text-sm text-black leading-relaxed line-clamp-3 font-normal">
                               {h.desc}
                             </p>
                           )}
@@ -1722,17 +1722,17 @@ export default function TourDetailExperience({
                                 // same plain card treatment as the detail
                                 // box instead.
                                 <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs">
-                                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2.5">
-                                    <MapIcon size={13} className="text-blue-500" />
+                                  <p className="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5 mb-2.5">
+                                    <MapIcon size={14} className="text-blue-500" />
                                     Day Overview
                                   </p>
-                                  <p className="text-xs sm:text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+                                  <p className="text-[15px] sm:text-base leading-relaxed text-black whitespace-pre-line font-normal">
                                     {day.summary}
                                   </p>
                                 </div>
                               ) : (
                                 <div className="rounded-xl bg-blue-50/70 border border-blue-100 p-4">
-                                  <p className="text-xs sm:text-sm font-semibold text-blue-950 flex items-start gap-2">
+                                  <p className="text-[15px] sm:text-base font-medium text-black flex items-start gap-2 leading-relaxed">
                                     <Sparkles
                                       size={16}
                                       className="text-blue-600 shrink-0 mt-0.5"
@@ -1744,11 +1744,11 @@ export default function TourDetailExperience({
 
                             {itineraryMode === "detailed" && day.detail && (
                               <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2.5">
-                                  <MapIcon size={13} className="text-blue-500" />
+                                <p className="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5 mb-2.5">
+                                  <MapIcon size={14} className="text-blue-500" />
                                   Full Day Details
                                 </p>
-                                <p className="text-xs sm:text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+                                <p className="text-[15px] sm:text-base leading-relaxed text-black whitespace-pre-line font-normal">
                                   {day.detail}
                                 </p>
                               </div>
@@ -1814,17 +1814,17 @@ export default function TourDetailExperience({
                             {/* Key Stops List */}
                             {day.activities.length > 0 && (
                               <div className="rounded-xl border border-slate-200/80 bg-white p-4">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3">
+                                <p className="text-xs font-bold uppercase tracking-wider text-black mb-3">
                                   Included Activities &amp; Stops:
                                 </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm sm:text-[15px]">
                                   {day.activities.map((act, aIdx) => (
                                     <div
                                       key={aIdx}
-                                      className="flex items-start gap-2 text-slate-700 font-medium"
+                                      className="flex items-start gap-2 text-black font-medium"
                                     >
                                       <Check
-                                        size={14}
+                                        size={15}
                                         className="mt-0.5 shrink-0 text-emerald-600 stroke-[3]"
                                       />
                                       <span>{act}</span>
@@ -1908,7 +1908,7 @@ export default function TourDetailExperience({
                           What&apos;s Included
                         </h4>
                       </div>
-                      <ul className="space-y-3.5 text-xs text-slate-700">
+                      <ul className="space-y-3.5 text-sm sm:text-[15px] text-black">
                         {inclusionsList.map((inc, i) => (
                           <li key={i} className="flex items-start gap-2.5">
                             {renderItemIcon(
@@ -1917,11 +1917,11 @@ export default function TourDetailExperience({
                               "text-emerald-600",
                             )}
                             <div>
-                              <p className="font-bold text-slate-900">
+                              <p className="font-bold text-black">
                                 {inc.text}
                               </p>
                               {inc.description && (
-                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                <p className="text-xs sm:text-sm text-black/80 mt-0.5 font-normal">
                                   {inc.description}
                                 </p>
                               )}
@@ -1943,16 +1943,16 @@ export default function TourDetailExperience({
                           What&apos;s Not Included
                         </h4>
                       </div>
-                      <ul className="space-y-3.5 text-xs text-slate-700">
+                      <ul className="space-y-3.5 text-sm sm:text-[15px] text-black">
                         {exclusionsList.map((exc, i) => (
                           <li key={i} className="flex items-start gap-2.5">
                             {renderItemIcon(exc.icon, X, "text-rose-500")}
                             <div>
-                              <p className="font-bold text-slate-900">
+                              <p className="font-bold text-black">
                                 {exc.text}
                               </p>
                               {exc.description && (
-                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                <p className="text-xs sm:text-sm text-black/80 mt-0.5 font-normal">
                                   {exc.description}
                                 </p>
                               )}

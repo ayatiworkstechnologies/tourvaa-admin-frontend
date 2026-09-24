@@ -8,15 +8,11 @@ import ChatWidget from "@/components/public/ChatWidget";
 import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
 import NetworkStatusBanner from "@/components/public/NetworkStatusBanner";
 
-// The public site used to load its own Outfit/Work_Sans fonts, scoped here
-// via --font-heading/--font-body. The whole app now shares one variable
-// font (Onest, loaded once in app/layout.tsx as --font-onest) - these two
-// vars just alias to it so the existing `font-heading` class and
-// font-[family-name:var(--font-body)] usages across public pages keep
-// working unchanged.
+// Headings retain the brand font (Onest), while body paragraphs and long-form
+// reading text use Inter for maximum clarity and effortless legibility across all ages.
 const fontVars = {
   "--font-heading": "var(--font-onest)",
-  "--font-body": "var(--font-onest)",
+  "--font-body": "var(--font-inter, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
 } as React.CSSProperties;
 
 export default function PublicLayout({
@@ -29,7 +25,7 @@ export default function PublicLayout({
       <TravelStoreProvider>
         <div
           style={fontVars}
-          className="public-site min-h-screen font-[family-name:var(--font-body)] overflow-x-clip min-w-0 max-w-full"
+          className="public-site min-h-screen font-[family-name:var(--font-body)] text-black antialiased overflow-x-clip min-w-0 max-w-full"
         >
           <DynamicFavicon />
           <div className="print:hidden"><AnnouncementBar /></div>

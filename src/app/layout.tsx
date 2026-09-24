@@ -1,5 +1,9 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import "@fontsource-variable/onest";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import "./globals.css";

@@ -58,7 +58,7 @@ export default function CmsPageSections({ sections }: { sections: CmsPageBlock[]
           return (
             <section key={index} className="mx-auto max-w-3xl">
               {block.heading && <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950 font-heading">{block.heading}</h2>}
-              <div className="mt-3 space-y-3 text-sm sm:text-base leading-relaxed text-slate-600 font-medium">
+              <div className="mt-3 space-y-3 text-[15px] sm:text-base leading-relaxed text-black font-normal">
                 <Paragraphs body={block.body} />
               </div>
             </section>
@@ -76,7 +76,7 @@ export default function CmsPageSections({ sections }: { sections: CmsPageBlock[]
               )}
               <div className={imageFirst ? "md:order-2" : "md:order-1"}>
                 {block.heading && <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950 font-heading">{block.heading}</h2>}
-                <div className="mt-3 space-y-3 text-sm sm:text-base leading-relaxed text-slate-600 font-medium">
+                <div className="mt-3 space-y-3 text-[15px] sm:text-base leading-relaxed text-black font-normal">
                   <Paragraphs body={block.body} />
                 </div>
               </div>
@@ -91,7 +91,7 @@ export default function CmsPageSections({ sections }: { sections: CmsPageBlock[]
               {(block.heading || block.subtitle) && (
                 <div className="mx-auto max-w-2xl text-center">
                   {block.heading && <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950 font-heading">{block.heading}</h2>}
-                  {block.subtitle && <p className="mt-2 text-sm text-slate-600 font-medium">{block.subtitle}</p>}
+                  {block.subtitle && <p className="mt-2 text-sm sm:text-base text-black font-medium">{block.subtitle}</p>}
                 </div>
               )}
               {items.length > 0 && (
@@ -106,7 +106,7 @@ export default function CmsPageSections({ sections }: { sections: CmsPageBlock[]
                         )}
                         <div className="flex flex-1 flex-col p-5">
                           {item.title && <h3 className="text-base font-bold text-slate-950 font-heading">{item.title}</h3>}
-                          {item.description && <p className="mt-2 flex-1 text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">{item.description}</p>}
+                          {item.description && <p className="mt-2 flex-1 text-sm text-black leading-relaxed font-normal">{item.description}</p>}
                           {item.link && (
                             <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-pub-secondary">
                               <span>Learn more</span>
