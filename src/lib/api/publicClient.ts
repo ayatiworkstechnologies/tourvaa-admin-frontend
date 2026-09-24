@@ -143,6 +143,8 @@ export type PublicTourDetail = PublicTour & {
     image?: string | null;
     image_alt_text?: string;
     images?: string[];
+    /** "free_day" = admin-flagged free/leisure day (shows partner suggestions). */
+    day_type?: "standard" | "free_day";
   }[];
   highlights: { text: string; title?: string; image?: string | null; description?: string }[];
   inclusions: { text: string; description?: string; icon?: string | null }[];
@@ -256,33 +258,7 @@ export async function fetchPublicCategories(country?: string) {
   return res.data.items as PublicCategory[];
 }
 
-export type ExternalDayTrip = {
-  product_code: string;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  rating: number | null;
-  review_count: number | null;
-  from_price: number | null;
-  currency: string | null;
-  duration_label: string | null;
-  booking_url: string;
-};
-
-export async function fetchExternalDayTrips() {
-  const res = await publicApi.get("/external-day-trips");
-  return res.data as {
-    configured: boolean;
-    destination_name: string;
-    stale: boolean;
-    items: ExternalDayTrip[];
-  };
-}
-
-export async function fetchViatorRedirectUrl() {
-  const res = await publicApi.get("/viator/redirect-url");
-  return res.data.url as string;
-}
+// Day Tours & Experiences (Viator) lives in ./externalTours.ts.
 
 export async function fetchPublicSubcategories(category?: string) {
   const res = await publicApi.get("/subcategories", { params: category ? { category } : {} });

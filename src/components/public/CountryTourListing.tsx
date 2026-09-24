@@ -27,6 +27,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 import WishlistButton from "@/components/public/WishlistButton";
+import ExternalExperiencesSection from "@/components/public/external/ExternalExperiencesSection";
 
 type TourItem = {
   id: number | string;
@@ -1246,6 +1247,12 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           </div>
         )}
       </div>
+
+      {/* Partner "things to do" - a separate section after Tourvaa's own
+          tours (never mixed into them); only on a country landing page. */}
+      {countryName && (countrySlug || queryCountry) && (
+        <ExternalExperiencesSection placement="show_on_destination_pages" source="destination" country={countryName} />
+      )}
     </main>
   );
 }

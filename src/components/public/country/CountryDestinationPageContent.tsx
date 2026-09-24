@@ -10,6 +10,7 @@ import CountryDurationGuidingStyles from "@/components/public/country/CountryDur
 import CountryWhenToGoSection from "@/components/public/country/CountryWhenToGoSection";
 import CountryToursSection from "@/components/public/country/CountryToursSection";
 import CountryExploreFaqSection from "@/components/public/country/CountryExploreFaqSection";
+import ExternalExperiencesSection from "@/components/public/external/ExternalExperiencesSection";
 
 export interface CountryDestinationPageContentProps {
   info: CountryDestinationInfo;
@@ -71,6 +72,10 @@ export default function CountryDestinationPageContent({
         selectedPlaceFilter={selectedPlaceFilter}
         onClearPlaceFilter={handleClearPlaceFilter}
       />
+
+      {/* ── 10b: Things to Do in {Country} - partner experiences (Viator),
+          kept as their own section after Tourvaa's tours ── */}
+      <ExternalExperiencesSection placement="show_on_destination_pages" source="destination" country={info.country_name} />
 
       {/* ── 11, 12, 13: Countries Worth Exploring, Directory & FAQs ── */}
       <CountryExploreFaqSection info={info} />

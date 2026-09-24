@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 
@@ -128,7 +129,8 @@ export default function ApiSettingsSection() {
         <span>
           <span className="block text-sm font-bold text-dash-text">Enable Viator</span>
           <span className="block text-xs text-dash-muted">
-            Shows the &quot;Viator Day Trips&quot; option on the homepage and activates the /external-day-trips page. Off by default while the Viator integration is taken forward separately.
+            Turns on Viator day tours &amp; experiences (homepage option, country pages, free itinerary days). Test the connection, sync destinations and choose where experiences appear in{" "}
+            <Link href="/admin/integrations/viator" className="font-bold text-dash-brand underline">Integrations → Viator</Link>. The sandbox/production API host is set by VIATOR_ENV on the server.
           </span>
         </span>
       </label>

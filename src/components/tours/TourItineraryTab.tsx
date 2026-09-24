@@ -32,7 +32,7 @@ const empty = (): ItineraryDay => ({
   short_description: "", long_description: "", activities: "", optional_activities: "", accommodation: "",
   start_time: "", end_time: "", travel_distance: "", travel_duration: "",
   transport_type: "", meals_included: "", important_notes: "",
-  image: "", image_alt_text: "", images: [], display_order: 0, status: "active",
+  image: "", image_alt_text: "", images: [], display_order: 0, status: "active", day_type: "standard",
 });
 
 function parseStopTitles(text: string): string[] {
@@ -426,7 +426,12 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
           <div className="flex items-start justify-between">
             <div>
               <span className="text-xs font-bold uppercase text-dash-brand">Day {item.day_number}</span>
-              <h3 className="mt-0.5 font-semibold text-dash-text">{item.day_title || "-"}</h3>
+              <h3 className="mt-0.5 font-semibold text-dash-text">
+                {item.day_title || "-"}
+                {item.day_type === "free_day" && (
+                  <span className="ml-2 rounded-full bg-teal-50 px-2 py-0.5 align-middle text-[10px] font-bold uppercase text-teal-700">Free day</span>
+                )}
+              </h3>
               {item.location_name && <p className="text-sm text-dash-subtle">{item.location_name}</p>}
             </div>
             <div className="flex gap-2">
@@ -482,6 +487,22 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
                 />
               </FormField>
             ))}
+            {/* Day type - explicit flag, never inferred from the title */}
+            <label className="md:col-span-2">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Day type</span>
+              <select
+                value={editing.day_type ?? "standard"}
+                onChange={(e) => setEditing((prev) => prev ? { ...prev, day_type: e.target.value as "standard" | "free_day" } : prev)}
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
+              >
+                <option value="standard">Standard day</option>
+                <option value="free_day">Free day / day at leisure</option>
+              </select>
+              <span className="mt-1 block text-xs text-dash-subtle">
+                Free days can show optional &quot;things to do&quot; suggestions from our travel partner (Viator) on the tour page. They are not part of this tour&apos;s price or booking.
+              </span>
+            </label>
+
             {/* Short description */}
             <label className="md:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Short description</span>

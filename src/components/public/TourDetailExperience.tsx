@@ -49,6 +49,7 @@ import { destinationUrl } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import MarketingImage from "@/components/public/MarketingImage";
+import ExternalExperiencesSection from "@/components/public/external/ExternalExperiencesSection";
 import {
   useTravelStore,
   type TravelItem,
@@ -776,6 +777,8 @@ export default function TourDetailExperience({
           activities,
           optionalActivities: splitList(it.optional_activities),
           importantNotes: it.important_notes || "",
+          location: it.location || "",
+          isFreeDay: it.day_type === "free_day",
           photos:
             it.images && it.images.length > 0
               ? it.images.map(mediaUrl)
@@ -1691,6 +1694,11 @@ export default function TourDetailExperience({
                               <span className="text-sm font-bold text-slate-900">
                                 {day.title}
                               </span>
+                              {day.isFreeDay && (
+                                <span className="ml-2 rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-teal-700">
+                                  Free day
+                                </span>
+                              )}
                             </div>
                           </div>
                           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition shrink-0">
@@ -1846,6 +1854,21 @@ export default function TourDetailExperience({
                                   </div>
                                 ))}
                               </div>
+                            )}
+
+                            {/* Free day: optional partner experiences, only
+                                on days an admin flagged as free/leisure
+                                (day_type = free_day) - never guessed from
+                                the text. Not part of this tour's booking. */}
+                            {day.isFreeDay && (
+                              <ExternalExperiencesSection
+                                placement="show_on_itinerary"
+                                source="free-day"
+                                variant="compact"
+                                limit={3}
+                                location={day.location || undefined}
+                                country={tour.country_name || undefined}
+                              />
                             )}
                           </div>
                         )}

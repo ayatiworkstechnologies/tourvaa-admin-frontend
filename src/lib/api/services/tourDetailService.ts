@@ -59,6 +59,9 @@ export type ItineraryDay = {
   images?: string[];
   display_order: number;
   status: string;
+  // "free_day" marks a free/leisure day (optional partner "things to do"
+  // suggestions on the public tour page). Defaults to "standard".
+  day_type?: "standard" | "free_day";
 };
 
 export async function getItineraries(tourId: number | string): Promise<ItineraryDay[]> {

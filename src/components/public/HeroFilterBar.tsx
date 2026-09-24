@@ -4,7 +4,8 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LuCalendarDays as Calendar, LuCheck as Check, LuChevronDown as ChevronDown, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuCompass as Compass, LuMinus as Minus, LuPlus as Plus, LuSearch as Search, LuSparkles as Sparkles, LuSun as Sun, LuX as X, LuArrowRight as ArrowRight } from "react-icons/lu";
 import FlagIcon from "@/components/ui/FlagIcon";
-import { fetchExternalDayTrips, fetchViatorRedirectUrl } from "@/lib/api/publicClient";
+import { fetchPublicTours } from "@/lib/api/publicClient";
+import { fetchExternalToursConfig, fetchViatorDestinationUrl } from "@/lib/api/externalTours";
 
 const MONTH_CODES: Record<string, string> = {
   Jan: "01",
@@ -27,6 +28,10 @@ function travelDateToMonth(value: string): string {
   const code = MONTH_CODES[match[1] as keyof typeof MONTH_CODES];
   return code ? `${match[2]}-${code}` : "";
 }
+
+// Duration choice that opens partner (Viator) experiences instead of
+// filtering Tourvaa's own tours.
+const VIATOR_OPTION = "Viator Experiences";
 
 function durationToRange(value: string): { min?: string; max?: string } {
   switch (value) {
@@ -52,7 +57,20 @@ type DestinationCountry = {
   country_name: string;
   country_code: string;
   count?: number;
+  // Published tours in this country (from /public/countries).
+  tour_count?: number;
 };
+
+// Only offer countries you can actually book: the countries API returns the
+// whole world list, and picking one with no tours always ended in "0 tours
+// found". Busiest first, then A-Z. Falls back to the given list when no
+// counts are available (e.g. the static fallback list).
+function bookableCountries(countries: DestinationCountry[]): DestinationCountry[] {
+  if (!countries.some((c) => typeof c.tour_count === "number")) return countries;
+  return countries
+    .filter((c) => (c.tour_count ?? 0) > 0)
+    .sort((a, b) => (b.tour_count ?? 0) - (a.tour_count ?? 0) || a.country_name.localeCompare(b.country_name));
+}
 
 const FALLBACK_COUNTRIES: DestinationCountry[] = [
   { country_name: "New Zealand", country_code: "NZ" },
@@ -84,7 +102,17 @@ export default function HeroFilterBar({
   const [duration, setDuration] = useState("");
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
-  const [showViatorRedirect, setShowViatorRedirect] = useState(false);
+  // Shows the separate "Viator Day Tours & Experiences" option when the
+  // admin has that switched on (Admin -> Integrations -> Viator -> "Homepage
+  // search"). "Day Tours" itself always filters Tourvaa's own tours.
+  const [dayToursExternal, setDayToursExternal] = useState(false);
+  useEffect(() => {
+    let active = true;
+    fetchExternalToursConfig().then((cfg) => active && setDayToursExternal(Boolean(cfg?.show_on_homepage)));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
@@ -105,13 +133,25 @@ export default function HeroFilterBar({
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // "Viator" is a dedicated option that hands off to our Viator
-    // partnership -- separate from "Day Tours", which stays a normal filter
-    // over Tourvaa's own inventory.
-    if (duration === "Viator") {
-      setShowViatorRedirect(true);
+    if (duration === VIATOR_OPTION && dayToursExternal) {
+      // Straight to Viator's own affiliate page for the destination (new
+      // tab). The tab is opened synchronously in the click so browsers don't
+      // block it, then pointed at the URL once the backend returns it.
+      setOpen(null);
+      const tab = window.open("about:blank", "_blank");
+      if (tab) tab.opener = null;
+      fetchViatorDestinationUrl({ country: destination || undefined, source: "home" })
+        .then((url) => {
+          if (tab) tab.location.href = url;
+          else window.location.href = url;
+        })
+        .catch(() => {
+          tab?.close();
+        });
       return;
     }
+    // Day Tours and every multi-day duration use Tourvaa's own tour search
+    // (unchanged); only the Viator option above leaves it.
     const params = new URLSearchParams();
     if (destination) params.set("country", destination);
     const departureMonth = travelDateToMonth(travelDate);
@@ -145,7 +185,25 @@ export default function HeroFilterBar({
           children > 0 ? `, ${children} child${children > 1 ? "ren" : ""}` : ""
         }`;
 
-  const countryList = countries.length ? countries : FALLBACK_COUNTRIES;
+  const bookable = bookableCountries(countries);
+  const countryList = bookable.length ? bookable : FALLBACK_COUNTRIES;
+
+  // Tour lengths (number_of_days) for the chosen country - or all tours when
+  // none is chosen - so the duration panel can show how many tours each
+  // option matches instead of letting visitors pick a dead end.
+  const [tourDays, setTourDays] = useState<number[] | null>(null);
+  useEffect(() => {
+    let active = true;
+    setTourDays(null);
+    fetchPublicTours({ limit: 100, page: 1, ...(destination ? { country: destination } : {}) })
+      .then((res) => {
+        if (active) setTourDays((res.items || []).map((t) => t.number_of_days).filter((d): d is number => typeof d === "number"));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [destination]);
 
   return (
     <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[980px] lg:w-fit text-slate-900">
@@ -255,6 +313,9 @@ export default function HeroFilterBar({
           </button>
           {open === "duration" && (
             <DurationPanel
+              tourDays={tourDays}
+              destination={destination}
+              dayToursExternal={dayToursExternal}
               selected={duration}
               onSelect={(val) => {
                 setDuration(val);
@@ -312,57 +373,6 @@ export default function HeroFilterBar({
           </button>
         </div>
       </form>
-
-      {showViatorRedirect && (
-        <ViatorRedirectModal onClose={() => setShowViatorRedirect(false)} />
-      )}
-    </div>
-  );
-}
-
-function ViatorRedirectModal({ onClose }: { onClose: () => void }) {
-  const [loading, setLoading] = useState(false);
-
-  const handleContinue = async () => {
-    setLoading(true);
-    try {
-      const url = await fetchViatorRedirectUrl();
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch {
-      window.open("https://www.viator.com", "_blank", "noopener,noreferrer");
-    } finally {
-      setLoading(false);
-      onClose();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/50 px-4" role="dialog" aria-modal="true" aria-label="You are being redirected">
-      <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl sm:p-7">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute right-4 top-4 text-slate-400 transition hover:text-slate-700"
-        >
-          <X size={18} />
-        </button>
-        <h3 className="text-lg font-black text-pub-primary">You are being redirected</h3>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          Click <b>Continue</b> to visit Viator.com in a new tab, our day tours partner.
-        </p>
-        <p className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-400">
-          powered by <span className="text-pub-secondary">viator</span>
-        </p>
-        <button
-          type="button"
-          onClick={handleContinue}
-          disabled={loading}
-          className="mt-5 w-full rounded-xl bg-pub-accent px-6 py-3.5 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#cf4b25] disabled:opacity-70"
-        >
-          {loading ? "Redirecting..." : "Continue"}
-        </button>
-      </div>
     </div>
   );
 }
@@ -454,7 +464,14 @@ function DestinationPanel({
                   />
                   <span className="truncate">{country.country_name}</span>
                 </div>
-                {isSelected && <Check size={15} className="text-[#d95d2c] shrink-0" />}
+                <span className="flex shrink-0 items-center gap-1.5">
+                  {typeof country.tour_count === "number" && (
+                    <span className={`text-[10px] font-semibold ${isSelected ? "text-white/70" : "text-slate-400"}`}>
+                      {country.tour_count} tour{country.tour_count === 1 ? "" : "s"}
+                    </span>
+                  )}
+                  {isSelected && <Check size={15} className="text-[#d95d2c]" />}
+                </span>
               </button>
             );
           })
@@ -814,28 +831,28 @@ const DURATION_PRESETS = [
 ];
 
 function DurationPanel({
+  tourDays,
+  destination,
+  dayToursExternal,
   selected,
   onSelect,
   onClear,
 }: {
+  tourDays: number[] | null;
+  destination: string;
+  dayToursExternal: boolean;
   selected: string;
   onSelect: (value: string) => void;
   onClear: () => void;
 }) {
+  // Same min/max rule the tours API applies to number_of_days.
+  const countFor = (label: string) => {
+    if (!tourDays) return null;
+    const { min, max } = durationToRange(label);
+    return tourDays.filter((d) => (!min || d >= Number(min)) && (!max || d <= Number(max))).length;
+  };
   const [customOpen, setCustomOpen] = useState(false);
   const [sliderVal, setSliderVal] = useState(1);
-  // Admin-controlled (Settings -> API Settings -> Viator "Enabled" toggle),
-  // not a code flag - so it can be switched back on without a redeploy. The
-  // same /external-day-trips "configured" flag already reflects that toggle
-  // (see app/services/viator.py:is_configured), so no extra endpoint needed.
-  const [viatorEnabled, setViatorEnabled] = useState(false);
-  useEffect(() => {
-    let active = true;
-    fetchExternalDayTrips()
-      .then((res) => { if (active) setViatorEnabled(res.configured); })
-      .catch(() => { if (active) setViatorEnabled(false); });
-    return () => { active = false; };
-  }, []);
 
   return (
     <div className={`${basePanelClass} left-0 w-full min-w-[280px] sm:min-w-[300px] max-w-xs`}>
@@ -856,15 +873,19 @@ function DurationPanel({
       <div className="grid grid-cols-2 gap-1.5">
         {DURATION_PRESETS.map(({ label, icon: Icon, accent }) => {
           const isSelected = selected === label;
+          const count = accent ? null : countFor(label);
+          const empty = count === 0;
           return (
             <button
               key={label}
               type="button"
+              disabled={empty && !isSelected}
+              title={empty ? `No ${label.toLowerCase()} tours${destination ? ` in ${destination}` : ""} yet` : undefined}
               onClick={() => onSelect(label)}
-              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition ${
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-40 ${
                 isSelected
                   ? "border-pub-accent bg-white text-pub-primary shadow-sm"
-                  : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
+                  : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800 disabled:hover:bg-transparent"
               }`}
             >
               <Icon
@@ -872,31 +893,30 @@ function DurationPanel({
                 className={isSelected || accent ? "text-[#d95d2c]" : "text-slate-400"}
               />
               <span className="text-[11px] font-bold leading-tight">{label}</span>
+              {count !== null && <span className="ml-auto text-[10px] font-semibold text-slate-400">{count}</span>}
             </button>
           );
         })}
       </div>
+      {destination && tourDays !== null && (
+        <p className="mt-2 px-0.5 text-[10px] text-slate-400">Tourvaa tour counts for {destination}</p>
+      )}
 
-      {/* Viator -- separate from Tourvaa's own tours, hands off via the
-          confirmation popup rather than filtering local inventory. Hidden
-          whenever the admin's Viator "Enabled" toggle (Settings -> API
-          Settings) is off (see project review item 19: Viator is taken
-          forward separately later; Affiliate stays enabled). */}
-      {viatorEnabled && (
+      {/* Partner inventory - separate from Tourvaa's own Day Tours above;
+          opens Day Tours & Experiences (booked on Viator). */}
+      {dayToursExternal && (
         <button
           type="button"
-          onClick={() => onSelect("Viator")}
+          onClick={() => onSelect(VIATOR_OPTION)}
           className={`mt-1.5 flex w-full items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition ${
-            selected === "Viator"
-              ? "border-pub-secondary bg-pub-secondary/5 text-pub-primary shadow-sm"
+            selected === VIATOR_OPTION
+              ? "border-pub-accent bg-white text-pub-primary shadow-sm"
               : "border-slate-150 hover:border-slate-300 hover:bg-slate-50 text-slate-800"
           }`}
         >
-          <Compass size={13} className="text-pub-secondary" />
-          <span className="text-[11px] font-bold leading-tight">Viator Day Trips</span>
-          <span className="ml-auto rounded-full bg-pub-secondary px-1.5 py-[1px] text-[8px] font-black uppercase tracking-wide text-white">
-            Partner
-          </span>
+          <Compass size={13} className="text-teal-600" />
+          <span className="text-[11px] font-bold leading-tight">Viator Day Tours &amp; Experiences</span>
+          <span className="ml-auto rounded-full bg-teal-600 px-1.5 py-[1px] text-[8px] font-black uppercase tracking-wide text-white">Partner</span>
         </button>
       )}
 
@@ -918,7 +938,7 @@ function DurationPanel({
             <input
               aria-label="Custom trip duration"
               type="range"
-              min="0"
+              min="1"
               max="30"
               value={sliderVal}
               onChange={(e) => setSliderVal(Number(e.target.value))}
@@ -927,7 +947,7 @@ function DurationPanel({
               className="w-full accent-pub-primary cursor-pointer"
             />
             <div className="mt-1 flex justify-between text-[11px] font-bold text-slate-700">
-              <span>0 days</span>
+              <span>1 day</span>
               <span>{sliderVal} day{sliderVal === 1 ? "" : "s"}</span>
             </div>
           </div>

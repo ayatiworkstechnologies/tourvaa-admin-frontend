@@ -1,5 +1,5 @@
 import type { IconType as LucideIcon } from "react-icons";
-import { LuActivity as Activity, LuBadgeCheck as BadgeCheck, LuBell as Bell, LuBot as Bot, LuBriefcase as Briefcase, LuBuilding2 as Building2, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCircleDollarSign as CircleDollarSign, LuCreditCard as CreditCard, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuHandCoins as HandCoins, LuKeyRound as KeyRound, LuLayers as Layers, LuLink2 as Link2, LuMail as Mail, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuMonitorSmartphone as MonitorSmartphone, LuPercent as Percent, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShare2 as Share2, LuShield as Shield, LuStar as Star, LuUserCheck as UserCheck, LuUserRound as UserRound, LuUsers as Users, LuWallet as Wallet } from "react-icons/lu";
+import { LuActivity as Activity, LuBadgeCheck as BadgeCheck, LuBell as Bell, LuBot as Bot, LuBriefcase as Briefcase, LuBuilding2 as Building2, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCircleDollarSign as CircleDollarSign, LuCreditCard as CreditCard, LuGlobe as Globe, LuGrid2X2 as Grid2X2, LuHandCoins as HandCoins, LuKeyRound as KeyRound, LuLayers as Layers, LuLink2 as Link2, LuMail as Mail, LuMapPinned as MapPinned, LuMessageSquare as MessageSquare, LuMonitorSmartphone as MonitorSmartphone, LuPercent as Percent, LuPlugZap as PlugZap, LuReceiptText as ReceiptText, LuRotateCcw as RotateCcw, LuSettings as Settings, LuShare2 as Share2, LuShield as Shield, LuStar as Star, LuUserCheck as UserCheck, LuUserRound as UserRound, LuUsers as Users, LuWallet as Wallet } from "react-icons/lu";
 import { MenuItem } from "@/types/auth";
 
 export type NavItem = {
@@ -40,6 +40,9 @@ export const adminNavItems: NavItem[] = [
   { label: "Website CMS", module: "website_cms", href: "/admin/cms", icon: Globe, permissions: ["website_cms.view", "view-website_cms", "settings.view", "view-settings"], section: "System" },
   { label: "Chatbot", module: "chatbot", href: "/admin/chatbot", icon: Bot, permissions: ["chatbot.view", "view-chatbot"], section: "System" },
   { label: "Email Templates", module: "email", href: "/admin/email-templates", icon: Mail, permissions: ["email_templates.view", "email.view", "view-email"], section: "System" },
+  // Before Settings on purpose: it shares Settings' permissions, and the
+  // permission -> nav lookup below keeps the last match (Settings).
+  { label: "Integrations", module: "integrations", href: "/admin/integrations/viator", icon: PlugZap, permissions: ["settings.view", "view-settings"], section: "System", matchHrefs: ["/admin/integrations"] },
   { label: "Settings", module: "settings", href: "/admin/settings", icon: Settings, permissions: ["settings.view", "view-settings"], placement: "bottom" },
   // Commission Rules and Default Commissions used to be separate bottom-of-
   // sidebar entries; removed now that both are reachable as "Related
