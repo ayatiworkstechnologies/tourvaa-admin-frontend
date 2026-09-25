@@ -147,7 +147,7 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
           <div className="grid gap-4 md:grid-cols-2">
             <FormField name="title" label="Title" required error={errors.title} hint={`One short line, e.g. ${segment === "inclusions" ? "Airport transfers" : "International flights"}.`} counter={{ value: (editing.title ?? "").length, max: 255 }}>
               <input id="title" name="title" type="text" value={editing.title ?? ""}
-                onChange={(e) => { setEditing((prev) => prev ? { ...prev, title: e.target.value } : prev); setErrors(({ title: _t, ...rest }) => rest); }}
+                onChange={(e) => { setEditing((prev) => prev ? { ...prev, title: e.target.value } : prev); setErrors((previous) => { const next = { ...previous }; delete next.title; return next; }); }}
                 className={fieldClass(errors.title)} />
             </FormField>
             <FormField name="icon" label="Icon" hint="An emoji (e.g. 🚌) or an image URL. Shown next to the title.">
@@ -157,7 +157,7 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
             </FormField>
             <FormField name="display_order" label="Order" error={errors.display_order} hint="Lower numbers show first.">
               <input id="display_order" name="display_order" type="number" min={0} value={numberInputValue(editing.display_order as number)}
-                onChange={(e) => { setEditing((prev) => prev ? { ...prev, display_order: parseNumberInput(e.target.value) } : prev); setErrors(({ display_order: _o, ...rest }) => rest); }}
+                onChange={(e) => { setEditing((prev) => prev ? { ...prev, display_order: parseNumberInput(e.target.value) } : prev); setErrors((previous) => { const next = { ...previous }; delete next.display_order; return next; }); }}
                 className={fieldClass(errors.display_order)} />
             </FormField>
             <label>

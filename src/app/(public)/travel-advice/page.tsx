@@ -12,9 +12,7 @@ import {
   LuShieldCheck as ShieldCheck,
   LuUserRoundCheck as UserRoundCheck,
   LuCompass as Compass,
-  LuBookOpen as BookOpen,
   LuSparkles as Sparkles,
-  LuMail as Mail,
 } from "react-icons/lu";
 
 import AboutReveal from "@/components/public/AboutReveal";

@@ -895,10 +895,8 @@ export default function TourFormPage({
   // Storefront Price preview (Basic Information step) - only ever shown when
   // the tour has an active discount (services/cms.py _active_discount), and
   // sourced from the 1-pax pricing slab so it matches Pricing & Discounts
-  // exactly: storefront_adult_price (admin, markup-inclusive) is stripped
-  // from a supplier's own API response server-side, so the same
-  // `storefront_adult_price ?? adult_price` fallback used there naturally
-  // shows the supplier their own net price instead.
+  // exactly. The compatibility storefront field equals adult_price under the
+  // commission-only model.
   const [activeDiscount, setActiveDiscount] = useState<ActiveDiscount | null>(null);
   const [onePaxSlab, setOnePaxSlab] = useState<PricingSlab | null>(null);
 
@@ -1432,7 +1430,7 @@ export default function TourFormPage({
               </label>
             )}
             {tourId && activeDiscount && onePaxSlab && (() => {
-              const original = onePaxSlab.storefront_adult_price ?? onePaxSlab.adult_price ?? 0;
+              const original = onePaxSlab.adult_price ?? 0;
               const discounted = original * (1 - activeDiscount.discount_percentage / 100);
               return (
                 <div className="sm:col-span-2">

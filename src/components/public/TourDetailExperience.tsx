@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   LuArrowRight as ArrowRight,
-  LuCalendar as Calendar,
   LuCheck as Check,
   LuChevronDown as ChevronDown,
   LuChevronLeft as ChevronLeft,
@@ -13,7 +12,6 @@ import {
   LuCompass as Compass,
   LuHeart as Heart,
   LuHotel as Hotel,
-  LuInfo as Info,
   LuMapPin as MapPin,
   LuMinus as Minus,
   LuPlus as Plus,
@@ -25,8 +23,6 @@ import {
   LuUtensils as Utensils,
   LuX as X,
   LuBus as Bus,
-  LuGlobe as Globe,
-  LuFlag as Flag,
   LuWallet as Wallet,
   LuBox as Box,
   LuMap as MapIcon,
@@ -79,11 +75,12 @@ function renderItemIcon(
   colorClass: string,
 ) {
   if (icon && /^https?:\/\//i.test(icon)) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
-      <img
+      <MarketingImage
         src={icon}
         alt=""
+        width={16}
+        height={16}
         className="mt-0.5 h-4 w-4 shrink-0 rounded object-cover"
       />
     );
@@ -132,6 +129,9 @@ type MonthGroup = {
   dates: DepartureDateItem[];
 };
 
+// Kept for the structured-itinerary presentation variant that can be enabled
+// without changing the stored CMS format.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function parseItineraryDetail(
   raw: string,
 ): { title: string | null; body: string }[] {
@@ -312,7 +312,6 @@ export default function TourDetailExperience({
   initialAdults,
   initialChildren,
   onBook,
-  agentBooking = false,
   onWishlist,
   wishlisted,
   modal,
@@ -323,7 +322,6 @@ export default function TourDetailExperience({
   const city = tour.city_name || "";
   const title = tour.title || "Tour Experience";
   const dayCount = tour.number_of_days || tour.itineraries?.length || 1;
-  const nightCount = tour.number_of_nights ?? Math.max(0, dayCount - 1);
   const durationLabel =
     [
       tour.number_of_hours != null && tour.number_of_hours > 0

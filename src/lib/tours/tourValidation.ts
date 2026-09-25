@@ -73,7 +73,7 @@ export function validateItineraryDay(
 // Overlapping slabs are allowed (the pricing engine picks the narrowest matching band), so
 // only each slab's own numbers are checked here.
 export function validatePricingSlab(
-  v: { passenger_from?: unknown; passenger_to?: unknown; adult_price?: unknown; child_price?: unknown; commission_percentage?: unknown; admin_markup_value?: unknown },
+  v: { passenger_from?: unknown; passenger_to?: unknown; adult_price?: unknown; child_price?: unknown; commission_percentage?: unknown },
 ): FieldErrors {
   const e: FieldErrors = {};
   const from = num(v.passenger_from);
@@ -84,10 +84,6 @@ export function validatePricingSlab(
   if (isBlank(v.adult_price)) e.adult_price = "Enter the adult price per traveller.";
   else if (Number.isNaN(num(v.adult_price)) || num(v.adult_price) <= 0) e.adult_price = "Adult price must be greater than 0.";
   nonNegative(e, "child_price", v.child_price, "Child price");
-  nonNegative(e, "admin_markup_value", v.admin_markup_value, "Tourvaa markup");
-  if (!e.admin_markup_value && !isBlank(v.admin_markup_value) && num(v.admin_markup_value) > 100) {
-    e.admin_markup_value = "Tourvaa markup cannot exceed 100%.";
-  }
   if (!isBlank(v.commission_percentage)) {
     const c = num(v.commission_percentage);
     if (Number.isNaN(c) || c < 0 || c > 100) e.commission_percentage = "Commission must be between 0% and 100%.";

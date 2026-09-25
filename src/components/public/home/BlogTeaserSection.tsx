@@ -3,7 +3,6 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useState } from "react";
-import { LuSparkles as Sparkles } from "react-icons/lu";
 import { BlogTeaserBlock, fetchContentBlock } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";

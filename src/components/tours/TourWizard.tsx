@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -167,7 +167,10 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   // ids here; the Save button submits all of them together. Every other step
   // saves per item through its own add/edit dialog (pricing slabs, itinerary
   // days, gallery uploads, ...), so it has no Save button - only Previous/Next.
-  const stepFormIds = STEP_FORM_IDS[WIZARD_STEPS[activeIndex]?.id] ?? [];
+  const stepFormIds = useMemo(
+    () => STEP_FORM_IDS[WIZARD_STEPS[activeIndex]?.id] ?? [],
+    [activeIndex],
+  );
 
   // "Save & Next": advance only once every form on the step has saved (a form
   // that fails validation never reports saved, so we stay and show its errors).

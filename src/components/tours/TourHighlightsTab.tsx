@@ -135,12 +135,12 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
             </div>
             <FormField name="title" label="Title" required error={errors.title} hint="A short headline travellers will see, e.g. Sunset dhow cruise." counter={{ value: (editing.title ?? "").length, max: 255 }}>
               <input id="title" name="title" type="text" value={editing.title ?? ""}
-                onChange={(e) => { setEditing((p) => p ? { ...p, title: e.target.value } : p); setErrors(({ title: _t, ...rest }) => rest); }}
+                onChange={(e) => { setEditing((p) => p ? { ...p, title: e.target.value } : p); setErrors((previous) => { const next = { ...previous }; delete next.title; return next; }); }}
                 className={fieldClass(errors.title)} />
             </FormField>
             <FormField name="display_order" label="Order" error={errors.display_order} hint="Lower numbers show first. Leave 0 to keep the order you added them.">
               <input id="display_order" name="display_order" type="number" min={0} value={numberInputValue(editing.display_order as number)}
-                onChange={(e) => { setEditing((p) => p ? { ...p, display_order: parseNumberInput(e.target.value) } : p); setErrors(({ display_order: _o, ...rest }) => rest); }}
+                onChange={(e) => { setEditing((p) => p ? { ...p, display_order: parseNumberInput(e.target.value) } : p); setErrors((previous) => { const next = { ...previous }; delete next.display_order; return next; }); }}
                 className={fieldClass(errors.display_order)} />
             </FormField>
             <label>

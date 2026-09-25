@@ -171,8 +171,8 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
       const child = Number(onePaxSlab.child_price ?? 0);
       setSupplierAdultPrice(adult);
       setSupplierChildPrice(child);
-      setStorefrontAdultPrice(onePaxSlab.storefront_adult_price != null ? Number(onePaxSlab.storefront_adult_price) : adult);
-      setStorefrontChildPrice(onePaxSlab.storefront_child_price != null ? Number(onePaxSlab.storefront_child_price) : child);
+      setStorefrontAdultPrice(adult);
+      setStorefrontChildPrice(child);
       if (onePaxSlab.currency) setCurrency(onePaxSlab.currency);
     }).catch(() => {
       // Non-fatal -- the discount list itself is the primary content of this tab.

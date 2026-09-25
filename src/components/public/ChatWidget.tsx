@@ -9,7 +9,6 @@ import {
   LuCompass as Compass,
   LuCreditCard as CreditCard,
   LuLoaderCircle as Loader2,
-  LuMessageSquareMore as MessageSquareMore,
   LuMinus as Minus,
   LuPlus as Plus,
   LuSend as Send,

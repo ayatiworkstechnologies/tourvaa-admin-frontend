@@ -12,7 +12,6 @@ import {
   LuSlidersHorizontal as Sliders,
   LuSparkles as Sparkles,
   LuStar as Star,
-  LuTrendingUp as TrendingUp,
   LuUsers as Users,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
@@ -31,13 +30,7 @@ import { EmptyCollection, Reveal, TourCardSkeleton } from "./HomeHelpers";
 import { useAutoSlide } from "./useAutoSlide";
 import { smoothScrollTo } from "./smoothScrollTo";
 
-export function TrendingTourCard({
-  tour,
-  index = 0,
-}: {
-  tour: Tour;
-  index?: number;
-}) {
+export function TrendingTourCard({ tour }: { tour: Tour }) {
   const { format } = useCurrency();
   const itemId = tour.id ?? stableHash(tour.slug || tour.title);
   const href = tour.id
@@ -67,8 +60,6 @@ export function TrendingTourCard({
       : null;
   const discountLabel =
     tour.discountBadge || (calculatedPct ? `Save ${calculatedPct}%` : null);
-
-  const rankNumber = String(index + 1).padStart(2, "0");
 
   return (
     <article
@@ -383,7 +374,6 @@ export default function TrendingToursSection({
                 <TrendingTourCard
                   key={`${tour.title}-${index}`}
                   tour={tour}
-                  index={index}
                 />
               ))
             ) : (

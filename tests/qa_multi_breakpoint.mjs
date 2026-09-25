@@ -68,7 +68,7 @@ async function runQA() {
             await cookieAccept.click();
             await page.waitForTimeout(300);
           }
-        } catch (_) {}
+        } catch {}
 
         // 1. Check Horizontal Overflow
         const overflowDetails = await page.evaluate(() => {
