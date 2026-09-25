@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   LuArrowRight as ArrowRight,
@@ -40,7 +41,7 @@ import {
   LuSun as Sun,
   LuGauge as Gauge,
 } from "react-icons/lu";
-import { PublicTourDetail } from "@/lib/api/publicClient";
+import publicApi, { PublicTourDetail } from "@/lib/api/publicClient";
 import { destinationUrl } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
@@ -118,6 +119,8 @@ function groupTierLabel(personsFrom: number, personsTo: number | null): string {
 type DepartureDateItem = {
   id: string;
   date: string;
+  /** YYYY-MM-DD, for API calls (date above is display-formatted). */
+  isoDate: string;
   seats: string;
   urgent: boolean;
   slotsRemaining: number | null;
@@ -128,6 +131,25 @@ type MonthGroup = {
   key: string;
   dates: DepartureDateItem[];
 };
+
+function toIsoDate(val?: string | null): string {
+  if (!val) return "";
+  const s = decodeURIComponent(val).replace(/\+/g, " ").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const dmyMatch = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmyMatch) {
+    return `${dmyMatch[3]}-${dmyMatch[2].padStart(2, "0")}-${dmyMatch[1].padStart(2, "0")}`;
+  }
+  if (s.includes("T")) return s.split("T")[0];
+  const d = new Date(s);
+  if (!Number.isNaN(d.getTime())) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  return s;
+}
 
 // Kept for the structured-itinerary presentation variant that can be enabled
 // without changing the stored CMS format.
@@ -200,13 +222,25 @@ function LightboxModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [photos.length, onClose]);
 
+  // While open: stop the page scrolling behind the gallery, and hide the
+  // floating third-party widgets (Elfsight "EN" translator, chat) via
+  // globals.css `body.lightbox-open` -- the Elfsight picker floats at a very
+  // high z-index and was sitting exactly on top of the close button.
+  useEffect(() => {
+    document.body.classList.add("lightbox-open");
+    return () => document.body.classList.remove("lightbox-open");
+  }, []);
+
   const current = photos[index];
 
-  return (
+  // Portalled to <body> at the top z-index so no ancestor stacking context
+  // or floating widget can cover the controls.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-md text-white animate-fade-in"
+      className="fixed inset-0 z-[2147483000] flex flex-col bg-slate-950/95 backdrop-blur-md text-white animate-fade-in"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <div className="flex items-center gap-3">
@@ -297,7 +331,8 @@ function LightboxModal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -312,6 +347,7 @@ export default function TourDetailExperience({
   initialAdults,
   initialChildren,
   onBook,
+  agentBooking = false,
   onWishlist,
   wishlisted,
   modal,
@@ -449,12 +485,20 @@ export default function TourDetailExperience({
       string,
       { id: number | string; date: string; slots?: number; status?: string }
     >();
+    // Hide departures inside the Minimum Advance Booking window -- booking
+    // creation rejects them (tour_availability.assert_meets_advance_booking_window),
+    // so offering them here only leads to an error at checkout.
+    const earliest = new Date();
+    earliest.setHours(0, 0, 0, 0);
+    earliest.setDate(earliest.getDate() + Math.max(0, Number(tour.min_advance_booking_days ?? 0)));
+    const earliestKey = `${earliest.getFullYear()}-${String(earliest.getMonth() + 1).padStart(2, "0")}-${String(earliest.getDate()).padStart(2, "0")}`;
     source.forEach((item) => {
       if (
         item &&
         item.date &&
         item.status !== "unavailable" &&
-        item.status !== "cancelled"
+        item.status !== "cancelled" &&
+        item.date.split("T")[0] >= earliestKey
       ) {
         const dateKey = item.date.split("T")[0];
         if (!map.has(dateKey)) {
@@ -465,7 +509,7 @@ export default function TourDetailExperience({
     return Array.from(map.values()).sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
-  }, [tour.calendar, tour.departures]);
+  }, [tour.calendar, tour.departures, tour.min_advance_booking_days]);
 
   const monthGroups: MonthGroup[] = useMemo(() => {
     if (realDates.length === 0) return [];
@@ -503,6 +547,7 @@ export default function TourDetailExperience({
       groupMap.get(monthKey)!.push({
         id: String(rd.id || rd.date),
         date: cardDate,
+        isoDate: rd.date.split("T")[0],
         seats,
         urgent: slots != null && slots > 0 && slots <= 5,
         slotsRemaining: slots,
@@ -533,6 +578,22 @@ export default function TourDetailExperience({
   );
 
   const [selectedDateId, setSelectedDateId] = useState<string>("");
+
+  useEffect(() => {
+    if (initialTravelDate && monthGroups.length > 0) {
+      const targetIso = toIsoDate(initialTravelDate);
+      for (let mIdx = 0; mIdx < monthGroups.length; mIdx++) {
+        const found = monthGroups[mIdx].dates.find(
+          (d) => d.isoDate === targetIso || toIsoDate(d.date) === targetIso
+        );
+        if (found) {
+          setCurrentMonthIndex(mIdx);
+          setSelectedDateId(found.id);
+          return;
+        }
+      }
+    }
+  }, [initialTravelDate, monthGroups]);
 
   useEffect(() => {
     if (currentMonth && currentMonth.dates.length > 0) {
@@ -661,20 +722,57 @@ export default function TourDetailExperience({
     cheapestRow?.original_price_per_person ?? startingUnitPrice,
   );
 
-  // Dynamic Deposit Calculation from DB
+  // Static "Deposit Terms" (tour policy text) -- whether the tour has any
+  // deposit configured at all.
   const hasDeposit = Boolean(
     tour.deposit_type ||
     tour.booking_deposit != null ||
     tour.deposit_percentage != null,
   );
-  const depositPercent =
-    tour.deposit_percentage ?? (tour.deposit_type === "percentage" ? 30 : null);
-  const depositDue =
-    depositPercent != null
-      ? Math.round((totalAmount * depositPercent) / 100)
-      : tour.booking_deposit != null
-        ? Math.min(totalAmount, tour.booking_deposit * adults)
-        : null;
+
+  // Live deposit offer for the selected date, from the same eligibility
+  // rule checkout and booking creation enforce (GET
+  // /tours/{id}/deposit-options -> tour_availability._deposit_window): a
+  // deposit is only offered when booking more than X weeks before the
+  // Minimum Advance cutoff. Customers get the tour's deposit terms ("Secure
+  // with a Deposit"); agents get the Reserve Now percentage.
+  const [depositOptions, setDepositOptions] = useState<{
+    customer: { eligible: boolean; due_date: string | null; deposit_type: "percentage" | "fixed" | null; deposit_percentage: number | null; booking_deposit: number | null };
+    agent: { eligible: boolean; due_date: string | null; deposit_percentage: number };
+  } | null>(null);
+  const selectedIsoDate = selectedDeparture?.isoDate;
+  useEffect(() => {
+    if (!tour.id || !selectedIsoDate) {
+      setDepositOptions(null);
+      return;
+    }
+    let active = true;
+    publicApi
+      .get(`/tours/${tour.id}/deposit-options`, { params: { travel_date: selectedIsoDate } })
+      .then((res) => { if (active) setDepositOptions(res.data?.data ?? null); })
+      .catch(() => { if (active) setDepositOptions(null); });
+    return () => { active = false; };
+  }, [tour.id, selectedIsoDate]);
+
+  const depositOffer = (() => {
+    if (!depositOptions || totalAmount <= 0) return null;
+    if (agentBooking) {
+      const { eligible, due_date, deposit_percentage } = depositOptions.agent;
+      if (!eligible) return null;
+      return { percent: deposit_percentage, amount: Math.round((totalAmount * deposit_percentage) / 100), dueDate: due_date };
+    }
+    const c = depositOptions.customer;
+    if (!c.eligible) return null;
+    if (c.deposit_type === "percentage" && c.deposit_percentage) {
+      return { percent: c.deposit_percentage, amount: Math.round((totalAmount * c.deposit_percentage) / 100), dueDate: c.due_date };
+    }
+    if (c.booking_deposit) {
+      return { percent: null, amount: Math.min(totalAmount, c.booking_deposit), dueDate: c.due_date };
+    }
+    return null;
+  })();
+  const depositPercent = depositOffer?.percent ?? null;
+  const depositDue = depositOffer?.amount ?? null;
 
   // Highlights: Dynamic only
   const highlightsList = useMemo(() => {
@@ -877,7 +975,7 @@ export default function TourDetailExperience({
 
   const handleBookNow = (agentAction?: "reserve" | "full") => {
     const chosen = currentMonth.dates.find((d) => d.id === selectedDateId);
-    const chosenDate = chosen?.date || initialTravelDate;
+    const chosenDate = chosen?.isoDate || toIsoDate(chosen?.date) || toIsoDate(initialTravelDate);
     if (!chosenDate) return;
     onBook({
       travelDate: chosenDate,
@@ -1223,11 +1321,11 @@ export default function TourDetailExperience({
                     </span>
                   </span>
                 )}
-                {hasDeposit && depositDue != null && (
+                {depositDue != null && (
                   <span className="flex items-center gap-1.5">
                     <Check size={14} className="text-emerald-400 stroke-[3]" />
                     <span>
-                      <b>Reserve with Deposit:</b>{" "}
+                      <b>{agentBooking ? "Reserve Now:" : "Secure with a Deposit:"}</b>{" "}
                       {depositPercent != null ? `${depositPercent}%` : ""} (
                       {format(depositDue, tourCurrency)})
                     </span>
@@ -2103,13 +2201,11 @@ export default function TourDetailExperience({
                             confirmation.
                           </li>
                         )}
-                        {tour.balance_payment_deadline_days != null && (
-                          <li>
-                            Balance due{" "}
-                            <b>{tour.balance_payment_deadline_days} day(s)</b>{" "}
-                            prior to tour departure.
-                          </li>
-                        )}
+                        <li>
+                          Deposits are available when booking well ahead; the
+                          exact balance due date is shown at checkout for your
+                          travel date.
+                        </li>
                       </ul>
                     </div>
                   )}
@@ -2601,16 +2697,24 @@ export default function TourDetailExperience({
                 </div>
 
                 {/* Deposit Option in Summary */}
-                {hasDeposit && depositDue != null && (
-                  <div className="mt-2 rounded-lg bg-blue-50 border border-blue-200/60 p-2.5 flex items-center justify-between text-xs">
-                    <span className="font-bold text-blue-900 flex items-center gap-1">
-                      <Wallet size={13} className="text-blue-600" />
-                      Deposit Due Today (
-                      {depositPercent != null ? `${depositPercent}%` : ""}):
-                    </span>
-                    <span className="font-black text-blue-700">
-                      {format(depositDue, tourCurrency)}
-                    </span>
+                {depositDue != null && (
+                  <div className="mt-2 rounded-lg bg-blue-50 border border-blue-200/60 p-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-blue-900 flex items-center gap-1">
+                        <Wallet size={13} className="text-blue-600" />
+                        Or pay a deposit today
+                        {depositPercent != null ? ` (${depositPercent}%)` : ""}:
+                      </span>
+                      <span className="font-black text-blue-700">
+                        {format(depositDue, tourCurrency)}
+                      </span>
+                    </div>
+                    {depositOffer?.dueDate && (
+                      <p className="mt-1 text-[10px] font-medium text-blue-800/80">
+                        Balance of {format(Math.max(0, totalAmount - depositDue), tourCurrency)} due by{" "}
+                        {new Date(`${depositOffer.dueDate}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -2636,14 +2740,14 @@ export default function TourDetailExperience({
                 )}
               </button>
 
-              {hasDeposit && depositDue != null && (
+              {depositDue != null && (
                 <button
                   type="button"
                   onClick={() => handleBookNow("reserve")}
                   disabled={!selectedDeparture || !unitPrice}
                   className="w-full rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 py-2.5 text-xs font-bold text-blue-800 transition cursor-pointer disabled:opacity-40"
                 >
-                  Reserve with {format(depositDue, tourCurrency)} Deposit
+                  {agentBooking ? "Reserve Now" : "Secure with a Deposit"} ({format(depositDue, tourCurrency)} today)
                 </button>
               )}
             </div>

@@ -164,7 +164,21 @@ export type PublicTourDetail = PublicTour & {
   optional_activities: { id: number; name: string; description: string; price: number | null; child_price?: number | null; infant_price?: number | null; pricing_mode?: string; currency: string; category: string; image?: string | null }[];
   accommodations: { id: number; name: string; description: string; price: number | null; category: string; image?: string | null }[];
   extensions: { id: number; title: string; description: string; duration_days: number | null; price: number | null; category: string; image?: string | null }[];
-  discounts: { label: string; discount_type: string; value: number; valid_from: string | null; valid_to: string | null }[];
+  /** Live offers (services.discounts.list_public_offers): automatic
+   * discounts (requires_code=false) and promo codes marked "show on
+   * website" (requires_code=true, discount_code set). */
+  discounts: {
+    label: string;
+    discount_name?: string;
+    discount_type: string;
+    value: number;
+    discount_value?: number;
+    requires_code?: boolean;
+    discount_code?: string | null;
+    minimum_booking_amount?: number | null;
+    valid_from: string | null;
+    valid_to: string | null;
+  }[];
   calendar: { id: number; date: string; slots: number; status: string }[];
   min_advance_booking_days?: number;
   agent_no_deposit_buffer_weeks?: number;

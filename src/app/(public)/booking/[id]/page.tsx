@@ -16,6 +16,7 @@ import {
   LuArrowLeft as ArrowLeft,
   LuArrowRight as ArrowRight,
   LuBadgeCheck as BadgeCheck,
+  LuBadgePercent as BadgePercent,
   LuBed as Bed,
   LuCalendar as Calendar,
   LuCheck as Check,
@@ -23,6 +24,7 @@ import {
   LuCircleAlert as CircleAlert,
   LuCircleCheckBig as CheckCircle,
   LuClock as Clock,
+  LuCopy as Copy,
   LuGlobe as Globe,
   LuHeadphones as Headphones,
   LuLoaderCircle as LoaderCircle,
@@ -37,8 +39,10 @@ import {
   LuShieldCheck as ShieldCheck,
   LuSparkles as Sparkles,
   LuTag as Tag,
+  LuTicket as Ticket,
   LuUserRound as User,
   LuUsers as Users,
+  LuX as X,
 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { StripeBadge, PayPalLogo, VisaBadge, MastercardBadge, AmexBadge } from "@/components/common/PaymentLogos";
@@ -111,8 +115,34 @@ function emptyPassenger(type: PassengerType): PassengerData {
   };
 }
 
+function normalizeDateStringToIso(val?: string | null): string {
+  if (!val) return "";
+  const cleaned = decodeURIComponent(val).replace(/\+/g, " ").trim();
+  if (!cleaned) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+    return cleaned;
+  }
+  const dmyMatch = cleaned.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmyMatch) {
+    const day = dmyMatch[1].padStart(2, "0");
+    const month = dmyMatch[2].padStart(2, "0");
+    const year = dmyMatch[3];
+    return `${year}-${month}-${day}`;
+  }
+  const parsed = new Date(cleaned);
+  if (!Number.isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return cleaned;
+}
+
 function formatDate(isoDate: string): string {
-  const parsed = new Date(`${isoDate}T00:00:00`);
+  if (!isoDate) return "";
+  const iso = normalizeDateStringToIso(isoDate);
+  const parsed = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return isoDate;
   return parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -307,6 +337,9 @@ function AgentCommercialFields({
   onAgentPaymentMethodChange,
   reserveDepositPercentage,
   reserveEligible,
+  reserveDepositLabel,
+  reserveBalanceLabel,
+  reserveDueDate,
 }: {
   agentMarkup: string;
   onAgentMarkupChange: (value: string) => void;
@@ -315,11 +348,17 @@ function AgentCommercialFields({
   agentPaymentMethod: AgentPaymentMethod;
   onAgentPaymentMethodChange: (value: AgentPaymentMethod) => void;
   reserveDepositPercentage: number;
-  /** Whether this tour/travel date still qualifies for a no-deposit
-   * reservation (see tour_availability.agent_reserve_eligibility) - when
-   * false, "Reserve Now" is hidden entirely rather than shown and then
-   * rejected by booking creation. */
+  /** Whether this tour/travel date still qualifies for a Reserve Now
+   * (deposit now, balance later) booking (see
+   * tour_availability.agent_reserve_eligibility) - when false, "Reserve Now"
+   * is hidden entirely rather than shown and then rejected by booking creation. */
   reserveEligible: boolean;
+  /** Pre-formatted deposit due today and remaining balance, once a price
+   * estimate exists; null before that. */
+  reserveDepositLabel: string | null;
+  reserveBalanceLabel: string | null;
+  /** Balance due date from the eligibility check (ISO date), if eligible. */
+  reserveDueDate: string | null;
 }) {
   return (
     <div className="rounded-xl border border-slate-200 p-4 sm:p-5 space-y-4">
@@ -352,16 +391,20 @@ function AgentCommercialFields({
           {reserveEligible && (
             <button type="button" onClick={() => onAgentPaymentMethodChange("pay_later")} className={`rounded-xl border p-4 text-left transition ${agentPaymentMethod === "pay_later" ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}>
               <span className="block text-sm font-black text-slate-900">Reserve Now ({reserveDepositPercentage}% deposit)</span>
-              <span className="mt-1 block text-xs leading-5 text-slate-500">Pay a {reserveDepositPercentage}% deposit now to secure this booking; the remaining balance is due before departure.</span>
+              <span className="mt-1 block text-xs leading-5 text-slate-500">
+                Reserve your booking now with a {reserveDepositPercentage}% deposit{reserveDepositLabel ? <> (<strong className="text-slate-700">{reserveDepositLabel}</strong>)</> : null}.
+                {" "}{reserveBalanceLabel ? <>Balance of <strong className="text-slate-700">{reserveBalanceLabel}</strong> is due</> : "The balance is due"}
+                {reserveDueDate ? <> by <strong className="text-slate-700">{formatDate(reserveDueDate)}</strong>.</> : " before the booking cutoff."}
+              </span>
             </button>
           )}
           <button type="button" onClick={() => onAgentPaymentMethodChange("card")} className={`rounded-xl border p-4 text-left transition ${agentPaymentMethod === "card" ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}>
             <span className="block text-sm font-black text-slate-900">Pay in Full Today</span>
-            <span className="mt-1 block text-xs leading-5 text-slate-500">Create the booking and continue directly to secure full payment.</span>
+            <span className="mt-1 block text-xs leading-5 text-slate-500">Pay in full today and confirm your booking.</span>
           </button>
         </div>
         {!reserveEligible && (
-          <p className="mt-2 text-xs text-amber-700">This tour&apos;s travel date is too close for a no-deposit reservation -- full payment is required to confirm this booking.</p>
+          <p className="mt-2 text-xs text-amber-700">This travel date is too close for Reserve Now -- full payment is required to confirm this booking.</p>
         )}
       </div>
     </div>
@@ -386,10 +429,11 @@ export default function DynamicTourBookingPage() {
 
   const initialAdults = Math.max(1, Number(searchParams.get("adults") || 1));
   const initialChildren = Math.max(0, Number(searchParams.get("children") || 0));
-  const initialTravelDate = searchParams.get("travel_date") || "";
+  const rawParamDate = searchParams.get("travel_date") || "";
+  const initialTravelDate = normalizeDateStringToIso(rawParamDate) || rawParamDate;
 
   const [adultCount, setAdultCount] = useState(initialAdults);
-  const [childCount] = useState(initialChildren);
+  const [childCount, setChildCount] = useState(initialChildren);
   const [travelDate, setTravelDate] = useState(initialTravelDate);
   const [selectedRoomUpgradeId, setSelectedRoomUpgradeId] = useState<number | null>(null);
   const [nightAddonQty, setNightAddonQty] = useState<Record<number, number>>({});
@@ -402,6 +446,7 @@ export default function DynamicTourBookingPage() {
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   // Agent-only: the customer this booking is placed for -- an agent never
   // books as themselves, so the lead traveller always comes from here.
@@ -442,7 +487,10 @@ export default function DynamicTourBookingPage() {
   const [priceLoading, setPriceLoading] = useState(false);
 
   const [depositEligibility, setDepositEligibility] = useState<DepositOptions | null>(null);
-  const [customerPaymentMethod, setCustomerPaymentMethod] = useState<CustomerPaymentMethod>("full");
+  // "Secure with a Deposit" on the tour page arrives as agent_action=reserve
+  // too; preselect the deposit option (the effect below falls back to full
+  // payment if the date turns out not to be eligible).
+  const [customerPaymentMethod, setCustomerPaymentMethod] = useState<CustomerPaymentMethod>(initialAgentAction === "reserve" ? "deposit" : "full");
 
   const roleSlug = (user?.role?.slug || "").toLowerCase();
   const userType = (user?.user_type || "").toLowerCase();
@@ -496,7 +544,17 @@ export default function DynamicTourBookingPage() {
   const selectedCalendar = useMemo(() => {
     if (availableCalendar.length === 0) return null;
     if (travelDate) {
-      const match = availableCalendar.find((c) => c.date === travelDate);
+      const normTravel = normalizeDateStringToIso(travelDate);
+      const match = availableCalendar.find((c) => {
+        if (c.date === travelDate) return true;
+        if (normTravel && (c.date === normTravel || normalizeDateStringToIso(c.date) === normTravel)) return true;
+        const d1 = new Date(c.date.includes("T") ? c.date : `${c.date}T00:00:00`);
+        const d2 = new Date(travelDate.includes("T") ? travelDate : `${travelDate.replace(/\+/g, " ")}T00:00:00`);
+        if (!Number.isNaN(d1.getTime()) && !Number.isNaN(d2.getTime())) {
+          return d1.toDateString() === d2.toDateString();
+        }
+        return false;
+      });
       if (match) return match;
       // A date explicitly selected on the tour page must never be silently
       // replaced by the first available departure.
@@ -507,7 +565,11 @@ export default function DynamicTourBookingPage() {
 
   // Default the date picker to the resolved departure once availability loads.
   useEffect(() => {
-    if (!travelDate && selectedCalendar) setTravelDate(selectedCalendar.date);
+    if (selectedCalendar && travelDate !== selectedCalendar.date) {
+      setTravelDate(selectedCalendar.date);
+    } else if (!travelDate && selectedCalendar) {
+      setTravelDate(selectedCalendar.date);
+    }
   }, [travelDate, selectedCalendar]);
 
   useEffect(() => {
@@ -660,6 +722,8 @@ export default function DynamicTourBookingPage() {
   const tourThumbnail = tour?.banner_image ? mediaUrl(tour.banner_image) : FALLBACK_THUMB;
   const totalTravellers = adultCount + childCount;
   const maxAdults = Math.max(1, Math.min(10, (selectedCalendar?.slots ?? 10) - childCount));
+  // Seats left on the departure after adults (same 10-traveller cap as adults).
+  const maxChildren = Math.max(0, Math.min(10, selectedCalendar?.slots ?? 10) - adultCount);
 
   const pricingSlab = useMemo(
     () =>
@@ -724,10 +788,78 @@ export default function DynamicTourBookingPage() {
     });
   };
 
-  const handleApplyPromo = () => {
-    if (!promoCode.trim()) return;
+  // Offers come only from the public tour payload (tour.discounts, built by
+  // services.discounts.list_public_offers): automatic discounts
+  // (requires_code=false) and promo codes the admin marked "show on
+  // website" (requires_code=true, with discount_code). Private codes are
+  // never listed but still work when typed.
+  const { availableCoupons, automaticDiscounts } = useMemo(() => {
+    const couponMap = new Map<string, {
+      code: string;
+      name: string;
+      type: "percentage" | "fixed";
+      value: number;
+      validUntil?: string | null;
+      minAmount?: number | null;
+    }>();
+
+    const autoList: Array<{
+      label: string;
+      type: "percentage" | "fixed";
+      value: number;
+    }> = [];
+
+    (tour?.discounts ?? []).forEach((d) => {
+      const name = d.label || d.discount_name || "Special Tour Deal";
+      const val = Number(d.value ?? d.discount_value ?? 0);
+      const type = (d.discount_type === "fixed" ? "fixed" : "percentage") as "percentage" | "fixed";
+      const code = (d.discount_code || "").trim().toUpperCase();
+      // requires_code decides the bucket, not whether a code string happens
+      // to be present -- a promo code must never show as automatic savings.
+      if (d.requires_code) {
+        if (code) {
+          couponMap.set(code, {
+            code,
+            name,
+            type,
+            value: val,
+            validUntil: d.valid_to || null,
+            minAmount: d.minimum_booking_amount ? Number(d.minimum_booking_amount) : null,
+          });
+        }
+      } else if (val > 0) {
+        autoList.push({ label: name, type, value: val });
+      }
+    });
+
+    return {
+      availableCoupons: Array.from(couponMap.values()),
+      automaticDiscounts: autoList,
+    };
+  }, [tour?.discounts]);
+
+  const handleCopyCode = (code: string) => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 2000);
+    }
+  };
+
+  const handleApplyPromo = (codeToApply?: string | unknown) => {
+    const code = (typeof codeToApply === "string" ? codeToApply : promoCode).trim().toUpperCase();
+    if (!code) return;
     setPromoError(null);
+    setPromoCode(code);
     setPromoApplied(true);
+  };
+
+  // Drops the code; the price estimate effect re-runs without it, so the
+  // price falls back to any automatic discount.
+  const handleRemovePromo = () => {
+    setPromoCode("");
+    setPromoApplied(false);
+    setPromoError(null);
   };
 
   const handleLinkCustomer = async () => {
@@ -965,6 +1097,24 @@ export default function DynamicTourBookingPage() {
     }
     return undefined;
   }
+
+  // Deposit-today / balance-later split shown on the "Secure with a Deposit"
+  // (customer) and "Reserve Now" (agent) options, from the live price
+  // estimate. Display only -- the amounts actually charged are still derived
+  // from the created booking (computeCustomerDepositAmount /
+  // booking.agent_reserve_deposit.minimum_amount).
+  const estimateTotal = priceEstimate ? Number(priceEstimate.final_amount) : NaN;
+  const customerDepositToday = Number.isFinite(estimateTotal) ? computeCustomerDepositAmount(String(estimateTotal)) : undefined;
+  const customerDepositSplit = customerDepositToday != null
+    ? { deposit: Number(customerDepositToday), balance: Math.max(0, estimateTotal - Number(customerDepositToday)) }
+    : null;
+  const agentReservePercentage = depositEligibility?.agent.deposit_percentage ?? tour?.agent_reserve_deposit_percentage ?? 30;
+  const agentReserveSplit = Number.isFinite(estimateTotal) && estimateTotal > 0
+    ? (() => {
+        const deposit = Math.round(estimateTotal * agentReservePercentage) / 100;
+        return { deposit, balance: Math.max(0, estimateTotal - deposit) };
+      })()
+    : null;
 
   const paymentIdempotencyKeys = useRef<Record<string, string>>({});
   const startPayment = async (booking: { id: number; amount_pending: string; currency: string }, amountOverride?: string) => {
@@ -1414,7 +1564,14 @@ export default function DynamicTourBookingPage() {
                                 <span>{selectedCalendar.slots} spots available on this departure</span>
                               </div>
                             ) : (
-                              <p className="mt-2 text-[11px] text-amber-600 font-medium">Please select an available departure date</p>
+                              travelDate ? (
+                                <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                  <span>Departure selected: {formatDate(travelDate)}</span>
+                                </div>
+                              ) : (
+                                <p className="mt-2 text-[11px] text-amber-600 font-medium">Please select an available departure date</p>
+                              )
                             )}
                           </div>
                         ) : (
@@ -1458,17 +1615,36 @@ export default function DynamicTourBookingPage() {
                             </div>
                           </div>
 
-                          {childCount > 0 && (
-                            <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-                              <div>
-                                <span className="font-semibold text-slate-700">Children (3-11 yrs)</span>
-                                <span className="block text-[10px] text-slate-400">From tour selection</span>
-                              </div>
-                              <span className="font-bold text-slate-900 px-2.5 py-1 bg-slate-100 rounded-md text-xs">
-                                {childCount} {childCount === 1 ? "child" : "children"}
-                              </span>
+                          {/* Children Quantity Stepper -- same control as adults */}
+                          <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                            <div>
+                              <span className="block text-xs font-bold text-slate-900">Children (3-11 yrs)</span>
+                              <span className="text-[11px] text-slate-400">Child fare</span>
                             </div>
-                          )}
+                            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100/70 p-1">
+                              <button
+                                type="button"
+                                disabled={childCount <= 0}
+                                onClick={() => setChildCount(Math.max(0, childCount - 1))}
+                                aria-label="Decrease child count"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-white font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed"
+                              >
+                                <Minus size={14} />
+                              </button>
+                              <span className="w-8 text-center text-sm font-black text-slate-900">
+                                {childCount}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={childCount >= maxChildren}
+                                onClick={() => setChildCount(Math.min(maxChildren, childCount + 1))}
+                                aria-label="Increase child count"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-white font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed"
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                          </div>
 
                           <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                             <span className="font-medium">Total travellers</span>
@@ -2210,6 +2386,9 @@ export default function DynamicTourBookingPage() {
                       onAgentPaymentMethodChange={setAgentPaymentMethod}
                       reserveDepositPercentage={depositEligibility?.agent.deposit_percentage ?? tour?.agent_reserve_deposit_percentage ?? 30}
                       reserveEligible={depositEligibility?.agent.eligible ?? true}
+                      reserveDepositLabel={agentReserveSplit ? format(agentReserveSplit.deposit, priceEstimate!.currency) : null}
+                      reserveBalanceLabel={agentReserveSplit ? format(agentReserveSplit.balance, priceEstimate!.currency) : null}
+                      reserveDueDate={depositEligibility?.agent.due_date ?? null}
                     />
                   )}
 
@@ -2237,10 +2416,15 @@ export default function DynamicTourBookingPage() {
                             </span>
                           </div>
                           <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
-                            Pay <strong className="text-slate-900 font-bold">{depositEligibility.customer.deposit_type === "percentage" ? `${depositEligibility.customer.deposit_percentage}%` : formatExact(Number(depositEligibility.customer.booking_deposit ?? 0), tourCurrency)}</strong> today to secure your booking.
+                            Pay <strong className="text-slate-900 font-bold">
+                              {customerDepositSplit && priceEstimate
+                                ? format(customerDepositSplit.deposit, priceEstimate.currency)
+                                : depositEligibility.customer.deposit_type === "percentage" ? `${depositEligibility.customer.deposit_percentage}%` : formatExact(Number(depositEligibility.customer.booking_deposit ?? 0), tourCurrency)}
+                            </strong>
+                            {customerDepositSplit && depositEligibility.customer.deposit_type === "percentage" ? ` (${depositEligibility.customer.deposit_percentage}%)` : ""} today to secure your booking.
                             {depositEligibility.customer.due_date && (
                               <span className="block mt-1 text-[11px] text-slate-500 font-medium">
-                                Remaining balance is due by {formatDate(depositEligibility.customer.due_date)}.
+                                Your remaining balance{customerDepositSplit && priceEstimate ? <> of <strong className="text-slate-700">{format(customerDepositSplit.balance, priceEstimate.currency)}</strong></> : null} is due by {formatDate(depositEligibility.customer.due_date)}.
                               </span>
                             )}
                           </p>
@@ -2262,7 +2446,7 @@ export default function DynamicTourBookingPage() {
                             </span>
                           </div>
                           <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
-                            Pay in full today and receive complete booking confirmation immediately.
+                            Pay in full today and confirm your booking.
                           </p>
                         </button>
                       </div>
@@ -2549,7 +2733,7 @@ export default function DynamicTourBookingPage() {
                     <div>
                       <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Date</span>
                       <span className="font-bold text-slate-900">
-                        {selectedCalendar ? formatDate(selectedCalendar.date) : "Departure not selected"}
+                        {selectedCalendar ? formatDate(selectedCalendar.date) : travelDate ? formatDate(travelDate) : "Departure not selected"}
                       </span>
                     </div>
                   </div>
@@ -2580,6 +2764,153 @@ export default function DynamicTourBookingPage() {
                     Edit
                   </button>
                 </div>
+              </div>
+
+              {/* Cart-side promo entry; automatic discounts need no action and
+                  are shown in the price breakdown below. */}
+              <div className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-3">
+                <div>
+                  <label htmlFor="cart-promo-code" className="mb-2 flex items-center justify-between text-xs font-bold text-slate-800">
+                    <span className="flex items-center gap-1.5">
+                      <Tag size={13} className="text-pub-primary" /> Promo code
+                    </span>
+                    {availableCoupons.length > 0 && (
+                      <span className="text-[10px] font-semibold text-pub-primary bg-pub-primary/10 px-1.5 py-0.5 rounded-full">
+                        {availableCoupons.length} {availableCoupons.length === 1 ? "Offer Available" : "Offers Available"}
+                      </span>
+                    )}
+                  </label>
+                  <div className="flex gap-2">
+                    <input id="cart-promo-code" value={promoCode}
+                      onChange={(event) => { setPromoCode(event.target.value.toUpperCase()); setPromoApplied(false); setPromoError(null); }}
+                      onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); handleApplyPromo(); } }}
+                      placeholder="Enter code"
+                      className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs uppercase outline-none focus:border-pub-primary" />
+                    {promoApplied ? (
+                      <button type="button" onClick={handleRemovePromo}
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Remove</button>
+                    ) : (
+                      <button type="button" onClick={() => handleApplyPromo()} disabled={!promoCode.trim() || priceLoading}
+                        className="rounded-lg bg-pub-primary px-3 py-2 text-xs font-bold text-white hover:bg-pub-primary-dark disabled:opacity-50 transition cursor-pointer">Apply</button>
+                    )}
+                  </div>
+                  {promoError && <p className="mt-2 text-[11px] font-semibold text-rose-600">{promoError}</p>}
+                  {!promoApplied && priceEstimate && Number(priceEstimate.discount_amount) > 0 && (
+                    <p className="mt-2 text-[11px] font-semibold text-emerald-700">Best eligible discount applied automatically.</p>
+                  )}
+                </div>
+
+                {/* Available Offers & Coupons Listout */}
+                {availableCoupons.length > 0 && (
+                  <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                        <BadgePercent size={13} className="text-pub-accent" />
+                        Available Offers &amp; Coupons
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {availableCoupons.map((coupon) => {
+                        const isApplied = promoApplied && promoCode.toUpperCase() === coupon.code.toUpperCase();
+                        return (
+                          <div
+                            key={coupon.code}
+                            className={`rounded-xl border p-2.5 transition-all ${
+                              isApplied
+                                ? "border-emerald-500 bg-emerald-50/50 shadow-2xs ring-2 ring-emerald-500/15"
+                                : "border-dashed border-pub-primary/30 bg-orange-50/20 hover:border-pub-primary hover:bg-orange-50/40"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="font-mono text-xs font-black text-slate-900 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-2xs">
+                                  {coupon.code}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCode(coupon.code)}
+                                  title="Copy code"
+                                  className="text-[10px] text-slate-400 hover:text-slate-600 transition"
+                                >
+                                  {copiedCode === coupon.code ? (
+                                    <span className="text-emerald-600 font-bold">Copied!</span>
+                                  ) : (
+                                    <Copy size={11} />
+                                  )}
+                                </button>
+                              </div>
+                              <span className="text-[11px] font-black text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full shrink-0">
+                                {coupon.type === "percentage" ? `${coupon.value}% OFF` : `${format(coupon.value, tourCurrency)} OFF`}
+                              </span>
+                            </div>
+
+                            <p className="mt-1.5 text-xs font-bold text-slate-800 line-clamp-1 leading-snug">
+                              {coupon.name}
+                            </p>
+
+                            <div className="mt-1 flex items-center justify-between text-[10px] text-slate-500">
+                              <span>
+                                {coupon.minAmount ? `Min. spend ${format(coupon.minAmount, tourCurrency)}` : coupon.validUntil ? `Valid till ${formatDate(coupon.validUntil)}` : "Special offer"}
+                              </span>
+                              {coupon.validUntil && coupon.minAmount && (
+                                <span>Till {formatDate(coupon.validUntil)}</span>
+                              )}
+                            </div>
+
+                            <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-end">
+                              {isApplied ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
+                                    <Check size={12} className="stroke-[3]" /> Applied
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={handleRemovePromo}
+                                    disabled={priceLoading}
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-1 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                                  >
+                                    <X size={12} /> Remove
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleApplyPromo(coupon.code)}
+                                  disabled={priceLoading}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-pub-primary hover:text-white bg-white hover:bg-pub-primary border border-pub-primary px-3 py-1 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                  <Ticket size={12} />
+                                  Apply Coupon
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Automatic discounts overview if present */}
+                {automaticDiscounts.length > 0 && (
+                  <div className="pt-2.5 border-t border-slate-100 space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Automatic Savings Included
+                    </span>
+                    {automaticDiscounts.map((ad, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-xs text-emerald-700 bg-emerald-50/70 border border-emerald-100 rounded-lg px-2.5 py-1.5">
+                        <span className="font-medium flex items-center gap-1.5">
+                          <CheckCircle size={12} className="text-emerald-600 shrink-0" />
+                          <span>{ad.label}</span>
+                        </span>
+                        <span className="font-bold">
+                          {ad.type === "percentage" ? `${ad.value}% OFF` : `${format(ad.value, tourCurrency)} OFF`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Price Breakdown */}
@@ -2644,7 +2975,7 @@ export default function DynamicTourBookingPage() {
                         <div className="flex items-center justify-between text-emerald-600 pt-1.5 border-t border-slate-100">
                           <span className="font-medium flex items-center gap-1">
                             <Tag size={12} />
-                            <span>Voucher Discount</span>
+                            <span>{promoApplied ? `Promo code ${promoCode}` : "Automatic discount"}</span>
                           </span>
                           <span className="font-bold">
                             - {format(Number(priceEstimate.discount_amount), priceEstimate.currency)}
@@ -2681,9 +3012,7 @@ export default function DynamicTourBookingPage() {
                               <p className="text-[10px] text-slate-400">Secures your travel reservation</p>
                             </div>
                             <span className="text-xl font-black text-white">
-                              {depositEligibility.customer.deposit_type === "percentage"
-                                ? format(Number(priceEstimate.final_amount) * ((depositEligibility.customer.deposit_percentage ?? 30) / 100), priceEstimate.currency)
-                                : format(Number(depositEligibility.customer.booking_deposit ?? priceEstimate.final_amount), priceEstimate.currency)}
+                              {format(customerDepositSplit?.deposit ?? Number(priceEstimate.final_amount), priceEstimate.currency)}
                             </span>
                           </div>
                           <div className="pt-2 border-t border-slate-700/80 flex items-center justify-between text-xs text-slate-400">

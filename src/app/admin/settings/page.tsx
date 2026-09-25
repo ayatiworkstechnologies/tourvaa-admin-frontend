@@ -147,6 +147,7 @@ const currencyDisplayOverrides: Record<string, { label: string; helper: string }
 
 const commissionSettingKeys: { key: string; label: string; description: string }[] = [
   { key: "supplier_commission_percentage", label: "Tourvaa Tour Commission (Minimum)", description: "Tourvaa's own platform commission on every tour booking, deducted from the supplier's price. This is the floor - suppliers may agree to a higher rate, but it can never go lower." },
+  { key: "default_admin_markup_percentage", label: "Default Tourvaa Markup", description: "Added on top of the supplier's price to give the storefront price customers pay. Pre-filled on every new pricing slab (admins can change it per slab). Suppliers never see it. 0 = storefront price equals the supplier price." },
 ];
 const commissionSettingKeySet = new Set(commissionSettingKeys.map((c) => c.key));
 
@@ -209,9 +210,11 @@ const affiliateSettingKeySet = new Set([
 const depositSettingKeys: { key: string; label: string; description: string; suffix: string; max?: number }[] = [
   { key: "default_deposit_percentage", label: "Default Deposit Percentage", description: "Used only when a tour's own deposit settings (in the tour editor) are left blank. A supplier's per-tour deposit configuration always takes priority over this platform default.", suffix: "%", max: 100 },
   { key: "default_deposit_cutoff_days", label: "Default Deposit Cutoff", description: "How many days before departure a deposit is still offered, when the tour itself doesn't set its own cutoff. Booking within this window requires full payment.", suffix: "days" },
-  { key: "default_balance_payment_deadline_days", label: "Default Final Payment Due", description: "How many days before departure the remaining balance must be paid, when the tour itself doesn't set its own deadline.", suffix: "days" },
 ];
-const depositSettingKeySet = new Set(depositSettingKeys.map((c) => c.key));
+// default_balance_payment_deadline_days is retired (the balance due date now
+// follows the deposit buffer rule -- tour_availability.deposit_balance_due_date);
+// kept in the set only so it doesn't resurface in the generic settings list.
+const depositSettingKeySet = new Set([...depositSettingKeys.map((c) => c.key), "default_balance_payment_deadline_days"]);
 const setupFlagKeys = new Set([
   "company_setup_completed", "pricing_setup_completed", "booking_rules_completed", "payment_setup_completed",
   "email_setup_completed", "storage_setup_completed", "security_check_completed",
@@ -465,7 +468,7 @@ export default function SettingsPage() {
               <section className="rounded-2xl border border-dash-border bg-white p-6">
                 <h3 className="mb-1 text-lg font-bold text-dash-text">Commission Settings</h3>
                 <p className="mb-5 text-sm text-dash-muted">
-                  Set Tourvaa&apos;s platform commission floor for tour pricing slabs.
+                  Set Tourvaa&apos;s platform commission floor and default markup for tour pricing slabs.
                 </p>
                 <div className="grid gap-4 md:grid-cols-3">
                   {commissionSettingKeys.map(({ key, label, description }) => (

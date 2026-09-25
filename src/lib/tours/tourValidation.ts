@@ -73,7 +73,7 @@ export function validateItineraryDay(
 // Overlapping slabs are allowed (the pricing engine picks the narrowest matching band), so
 // only each slab's own numbers are checked here.
 export function validatePricingSlab(
-  v: { passenger_from?: unknown; passenger_to?: unknown; adult_price?: unknown; child_price?: unknown; commission_percentage?: unknown },
+  v: { passenger_from?: unknown; passenger_to?: unknown; adult_price?: unknown; child_price?: unknown; commission_percentage?: unknown; admin_markup_value?: unknown },
 ): FieldErrors {
   const e: FieldErrors = {};
   const from = num(v.passenger_from);
@@ -87,6 +87,15 @@ export function validatePricingSlab(
   if (!isBlank(v.commission_percentage)) {
     const c = num(v.commission_percentage);
     if (Number.isNaN(c) || c < 0 || c > 100) e.commission_percentage = "Commission must be between 0% and 100%.";
+  }
+  // Suppliers do not receive this property. In the admin editor it is
+  // mandatory; an explicit 0% is valid when no markup is intended.
+  if ("admin_markup_value" in v) {
+    if (isBlank(v.admin_markup_value)) e.admin_markup_value = "Enter the Tourvaa markup (use 0 for no markup).";
+    else {
+      const markup = num(v.admin_markup_value);
+      if (Number.isNaN(markup) || markup < 0 || markup > 100) e.admin_markup_value = "Markup must be between 0% and 100%.";
+    }
   }
   return e;
 }
@@ -139,7 +148,7 @@ export function validateDiscount(v: {
     if (Number.isNaN(n) || n <= 0) e.discount_value = "The discount must be more than 0.";
     else if (v.discount_type === "percentage" && n > 100) e.discount_value = "A percentage discount cannot be more than 100%.";
   }
-  if (v.start_date && v.end_date && new Date(v.end_date) < new Date(v.start_date)) e.end_date = "The end date must be on or after the start date.";
+  if (v.start_date && v.end_date && new Date(v.end_date) <= new Date(v.start_date)) e.end_date = "The end time must be after the start time.";
   if (!isBlank(v.usage_limit)) {
     const u = num(v.usage_limit);
     if (Number.isNaN(u) || !Number.isInteger(u) || u < 1) e.usage_limit = "Usage limit must be a whole number, 1 or more (or leave blank for unlimited).";

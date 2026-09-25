@@ -750,6 +750,15 @@ button {
   }
 }
 
+/* Hide the floating Elfsight translator ("EN" picker) while a full-screen
+   photo gallery is open -- it floats at a very high z-index and covered the
+   gallery's close button (TourDetailExperience LightboxModal). */
+body.lightbox-open [class*="elfsight-app"],
+body.lightbox-open [class*="eapps-website-translator"],
+body.lightbox-open [class*="eapp-website-translator"] {
+  display: none !important;
+}
+
 /* Google Translate clean styling */
 .goog-te-banner-frame.skiptranslate,
 .goog-te-banner-frame,

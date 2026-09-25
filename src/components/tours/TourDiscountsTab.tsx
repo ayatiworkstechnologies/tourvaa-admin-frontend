@@ -18,6 +18,12 @@ function fmt(n: number, currency: string) {
   return `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
+function formatSchedule(value?: string | null, fallback = "Open") {
+  if (!value) return fallback;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+}
+
 /** Preview of this discount's real effect on the tour's starting price -
  * same struck-through-original/discounted-below treatment used in the
  * pricing table (TourPricingTab.tsx), so a discount rule's actual impact is
@@ -50,7 +56,8 @@ function PricePreviewRow({ label, base, discounted, currency }: { label: string;
 /** Preview of this discount's real effect on the 1-pax slab's actual adult
  * and child prices -- both shown separately (not just adult), and computed
  * for cart/checkout display only -- this never writes back to the slab's
- * stored price, same rule as everywhere else discounts are previewed. */
+ * stored price, same rule as everywhere else discounts are previewed.
+ * Supplier view: the discount on their own 1-pax price. */
 function DiscountPricePreview({ item, adultPrice, childPrice, currency }: { item: TourDiscount; adultPrice: number; childPrice: number; currency: string }) {
   const discountedAdult = discountedValue(item, adultPrice);
   const discountedChild = discountedValue(item, childPrice);
@@ -58,34 +65,29 @@ function DiscountPricePreview({ item, adultPrice, childPrice, currency }: { item
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-4 rounded-lg bg-dash-bg px-3 py-2">
-      <PricePreviewRow label="Adult price" base={adultPrice} discounted={discountedAdult} currency={currency} />
-      <PricePreviewRow label="Child price" base={childPrice} discounted={discountedChild} currency={currency} />
+      <PricePreviewRow label="Adult price (1 pax)" base={adultPrice} discounted={discountedAdult} currency={currency} />
+      <PricePreviewRow label="Child price (1 pax)" base={childPrice} discounted={discountedChild} currency={currency} />
     </div>
   );
 }
 
-/** Admin sees the 1-pax slab's actual supplier price (for reference)
- * alongside the discount applied to the same slab's publishable/storefront
- * price -- the markup-inclusive price customers actually pay after the
- * discount -- for both adult and child, not just adult. Both bases come
- * straight from that one slab (see the pricing-fetch effect below), never
- * from tour.price_start_per_person, which can reflect a *different*
- * (cheaper, higher-pax) slab and mismatch what's shown right next to it. */
+/** Admin view: the 1-pax supplier price and the discount applied to the
+ * same slab's publishable/storefront price (supplier price + Tourvaa
+ * markup) -- what customers actually pay after the discount. Both come from
+ * that one slab, never tour.price_start_per_person (possibly a different,
+ * higher-pax slab). */
 function AdminDiscountPricePreview({
   item, supplierAdultPrice, supplierChildPrice, storefrontAdultPrice, storefrontChildPrice, currency,
 }: {
   item: TourDiscount; supplierAdultPrice: number; supplierChildPrice: number; storefrontAdultPrice: number; storefrontChildPrice: number; currency: string;
 }) {
-  const discountedAdult = discountedValue(item, storefrontAdultPrice);
-  const discountedChild = discountedValue(item, storefrontChildPrice);
   if (supplierAdultPrice <= 0 && supplierChildPrice <= 0) return null;
-
   return (
     <div className="mt-2 flex flex-wrap items-center gap-4 rounded-lg bg-dash-bg px-3 py-2">
-      <PricePreviewRow label="Supplier price (adult)" base={supplierAdultPrice} discounted={null} currency={currency} />
-      <PricePreviewRow label="Supplier price (child)" base={supplierChildPrice} discounted={null} currency={currency} />
-      <PricePreviewRow label="Discount price (adult)" base={storefrontAdultPrice} discounted={discountedAdult} currency={currency} />
-      <PricePreviewRow label="Discount price (child)" base={storefrontChildPrice} discounted={discountedChild} currency={currency} />
+      <PricePreviewRow label="Supplier price (adult)" base={supplierAdultPrice} discounted={discountedValue(item, supplierAdultPrice)} currency={currency} />
+      <PricePreviewRow label="Supplier price (child)" base={supplierChildPrice} discounted={discountedValue(item, supplierChildPrice)} currency={currency} />
+      <PricePreviewRow label="Storefront price (adult)" base={storefrontAdultPrice} discounted={discountedValue(item, storefrontAdultPrice)} currency={currency} />
+      <PricePreviewRow label="Storefront price (child)" base={storefrontChildPrice} discounted={discountedValue(item, storefrontChildPrice)} currency={currency} />
     </div>
   );
 }
@@ -103,6 +105,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
   const [items, setItems] = useState<TourDiscount[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<TourDiscount | null>(null);
+  const [applicationMode, setApplicationMode] = useState<"automatic" | "code">("automatic");
   const [errors, setErrors] = useState<FieldErrors>({});
   const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
   const [saving, setSaving] = useState(false);
@@ -115,11 +118,11 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
   const [amendReason, setAmendReason] = useState("");
   const [amendSaving, setAmendSaving] = useState(false);
   // 1-pax tier prices the discount preview is computed from: the supplier's
-  // own net adult/child price, and the markup-inclusive storefront/publishable
-  // adult/child price -- both always read from that single slab (see the
-  // pricing-fetch effect below), never mixed with a different slab's price.
-  const [supplierAdultPrice, setSupplierAdultPrice] = useState(0);
-  const [supplierChildPrice, setSupplierChildPrice] = useState(0);
+  // adult/child price and (admin only -- stripped from supplier responses)
+  // the storefront price incl. Tourvaa markup, always read from that single
+  // slab (see the pricing-fetch effect below).
+  const [onePaxAdultPrice, setOnePaxAdultPrice] = useState(0);
+  const [onePaxChildPrice, setOnePaxChildPrice] = useState(0);
   const [storefrontAdultPrice, setStorefrontAdultPrice] = useState(0);
   const [storefrontChildPrice, setStorefrontChildPrice] = useState(0);
   const [currency, setCurrency] = useState("USD");
@@ -169,10 +172,10 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
       if (!onePaxSlab) return;
       const adult = Number(onePaxSlab.adult_price ?? 0);
       const child = Number(onePaxSlab.child_price ?? 0);
-      setSupplierAdultPrice(adult);
-      setSupplierChildPrice(child);
-      setStorefrontAdultPrice(adult);
-      setStorefrontChildPrice(child);
+      setOnePaxAdultPrice(adult);
+      setOnePaxChildPrice(child);
+      setStorefrontAdultPrice(Number(onePaxSlab.storefront_adult_price ?? adult));
+      setStorefrontChildPrice(Number(onePaxSlab.storefront_child_price ?? child));
       if (onePaxSlab.currency) setCurrency(onePaxSlab.currency);
     }).catch(() => {
       // Non-fatal -- the discount list itself is the primary content of this tab.
@@ -183,6 +186,9 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     e.preventDefault();
     if (!editing) return;
     const found = validateDiscount(editing);
+    if (applicationMode === "code" && !editing.discount_code?.trim()) {
+      found.discount_code = "Enter the promo code travellers must use.";
+    }
     setErrors(found);
     if (Object.keys(found).length > 0) {
       focusField(Object.keys(found)[0]);
@@ -190,7 +196,12 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     }
     setSaving(true);
     try {
-      const payload = { ...editing, discount_value: sanitizeNumber(editing.discount_value), minimum_booking_amount: sanitizeNumber(editing.minimum_booking_amount) };
+      const payload = {
+        ...editing,
+        discount_code: applicationMode === "automatic" ? null : editing.discount_code?.trim().toUpperCase(),
+        discount_value: sanitizeNumber(editing.discount_value),
+        minimum_booking_amount: sanitizeNumber(editing.minimum_booking_amount),
+      };
       if (editing.id) {
         const updated = await updateDiscount(tourId, editing.id, payload);
         setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
@@ -274,7 +285,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-dash-text">Discounts &amp; Promo Codes</h2>
-        <button type="button" onClick={() => setEditing(empty())}
+        <button type="button" onClick={() => { setApplicationMode("automatic"); setEditing(empty()); }}
           className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white">
           <Plus size={16} /> Add Discount
         </button>
@@ -295,20 +306,20 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                     <span className="rounded-full bg-[#FBEAEA] px-2 py-0.5 text-[10px] font-bold uppercase text-red-600">Inactive</span>
                   )}
                 </div>
-                {item.discount_code && (
-                  <span className="mt-1 inline-block rounded-full bg-[#EEF8FF] px-2.5 py-0.5 text-xs font-bold text-dash-brand">{item.discount_code}</span>
-                )}
+                <span className="mt-1 inline-block rounded-full bg-[#EEF8FF] px-2.5 py-0.5 text-xs font-bold text-dash-brand">
+                  {item.discount_code ? `Code: ${item.discount_code}` : "Automatic discount"}
+                </span>
                 <p className="mt-1.5 text-sm text-dash-body">
                   {item.discount_value}{item.discount_type === "percentage" ? "%" : ""} off
                   {item.minimum_booking_amount > 0 ? ` - min. ${item.minimum_booking_amount}` : ""}
                 </p>
                 {isSupplier ? (
-                  <DiscountPricePreview item={item} adultPrice={supplierAdultPrice} childPrice={supplierChildPrice} currency={currency} />
+                  <DiscountPricePreview item={item} adultPrice={onePaxAdultPrice} childPrice={onePaxChildPrice} currency={currency} />
                 ) : (
                   <AdminDiscountPricePreview
                     item={item}
-                    supplierAdultPrice={supplierAdultPrice}
-                    supplierChildPrice={supplierChildPrice}
+                    supplierAdultPrice={onePaxAdultPrice}
+                    supplierChildPrice={onePaxChildPrice}
                     storefrontAdultPrice={storefrontAdultPrice}
                     storefrontChildPrice={storefrontChildPrice}
                     currency={currency}
@@ -316,7 +327,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                 )}
                 {(item.start_date || item.end_date) && (
                   <p className="text-xs text-dash-subtle">
-                    {item.start_date?.slice(0, 10)} → {item.end_date?.slice(0, 10)}
+                    {formatSchedule(item.start_date, "Immediately")} → {formatSchedule(item.end_date, "No end time")}
                   </p>
                 )}
                 <p className="mt-1 text-xs text-dash-subtle">Used: {item.used_count ?? 0}{item.usage_limit ? ` / ${item.usage_limit}` : ""}</p>
@@ -329,7 +340,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                   )
                 ) : (
                   <>
-                    <button type="button" onClick={() => setEditing({ ...item })} className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white hover:bg-dash-brand-hover"><Pencil size={14} /> Edit</button>
+                    <button type="button" onClick={() => { setApplicationMode(item.discount_code ? "code" : "automatic"); setEditing({ ...item }); }} className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white hover:bg-dash-brand-hover"><Pencil size={14} /> Edit</button>
                     {item.status !== "inactive" && (
                       <button type="button" onClick={() => deactivate(item)} aria-label="Delete discount" title="Delete discount" className="inline-flex items-center justify-center rounded-lg border border-[#FFCDD2] p-2 text-red-500 hover:bg-[#FFF0F0]"><Trash2 size={14} /></button>
                     )}
@@ -343,7 +354,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
 
       <div>
         <h2 className="text-xl font-bold text-dash-text">Discount History</h2>
-        <p className="mt-1 text-xs text-dash-subtle">Every discount ever applied to this tour by the supplier -- view only.</p>
+        <p className="mt-1 text-xs text-dash-subtle">Every discount ever applied to this tour, including inactive ones -- view only.</p>
         {items.length === 0 ? (
           <div className="mt-3 rounded-xl border border-dashed border-dash-border p-8 text-center text-sm text-dash-subtle">No discount history yet.</div>
         ) : (
@@ -356,6 +367,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                   <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-dash-subtle">Dates applied</th>
                   <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-dash-subtle">Used</th>
                   <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-dash-subtle">Discount added</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-dash-subtle">Added by</th>
                 </tr>
               </thead>
               <tbody>
@@ -369,10 +381,11 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                       </td>
                       <td className="px-4 py-3 text-dash-body">{item.discount_value}{item.discount_type === "percentage" ? "%" : ` ${currency}`}</td>
                       <td className="px-4 py-3 text-dash-body">
-                        {item.start_date || item.end_date ? `${item.start_date?.slice(0, 10) ?? "—"} → ${item.end_date?.slice(0, 10) ?? "—"}` : "—"}
+                        {item.start_date || item.end_date ? `${formatSchedule(item.start_date, "Immediately")} → ${formatSchedule(item.end_date, "No end time")}` : "Always active"}
                       </td>
                       <td className="px-4 py-3 text-dash-body">{item.used_count ?? 0}{item.usage_limit ? ` / ${item.usage_limit}` : ""}</td>
                       <td className="px-4 py-3 text-dash-body">{item.created_at ? item.created_at.slice(0, 10) : "—"}</td>
+                      <td className="px-4 py-3 text-dash-body">{item.added_by === "supplier" ? "Supplier" : item.added_by === "admin" ? "Tourvaa" : "—"}</td>
                     </tr>
                   ))}
               </tbody>
@@ -395,11 +408,36 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                 onChange={(e) => { setEditing((p) => p ? { ...p, discount_name: e.target.value } : p); clearError("discount_name"); }}
                 className={fieldClass(errors.discount_name)} />
             </FormField>
-            <FormField name="discount_code" label="Promo code" error={errors.discount_code} hint="Leave blank to apply the discount automatically. Otherwise travellers must enter this code.">
-              <input id="discount_code" name="discount_code" value={editing.discount_code ?? ""}
-                onChange={(e) => { setEditing((p) => p ? { ...p, discount_code: e.target.value || null } : p); clearError("discount_code"); }}
-                placeholder="e.g. SUMMER25" className={fieldClass(errors.discount_code)} />
-            </FormField>
+            <fieldset className="md:col-span-2">
+              <legend className="mb-2 text-xs font-bold uppercase text-dash-subtle">How customers receive it</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(["automatic", "code"] as const).map((mode) => (
+                  <button key={mode} type="button" onClick={() => { setApplicationMode(mode); if (mode === "automatic") setEditing((p) => p ? { ...p, discount_code: null } : p); }}
+                    className={`rounded-xl border p-3 text-left text-sm ${applicationMode === mode ? "border-dash-brand bg-blue-50 text-dash-brand" : "border-dash-border bg-white text-dash-body"}`}>
+                    <span className="block font-bold">{mode === "automatic" ? "Automatic discount" : "Promo code"}</span>
+                    <span className="mt-1 block text-xs opacity-75">{mode === "automatic" ? "Applied automatically in the cart when eligible." : "Applied only after the customer enters the code."}</span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            {applicationMode === "code" && (
+              <FormField name="discount_code" label="Promo code" required error={errors.discount_code} hint="Customers enter this code in the cart. Codes are saved in uppercase.">
+                <input id="discount_code" name="discount_code" value={editing.discount_code ?? ""}
+                  onChange={(e) => { setEditing((p) => p ? { ...p, discount_code: e.target.value.toUpperCase() } : p); clearError("discount_code"); }}
+                  placeholder="e.g. SUMMER25" className={fieldClass(errors.discount_code)} />
+              </FormField>
+            )}
+            {applicationMode === "code" && (
+              <label className="flex items-start gap-2.5 rounded-xl border border-dash-border bg-dash-bg px-4 py-3 text-sm md:col-span-2">
+                <input type="checkbox" checked={editing.show_on_website ?? true}
+                  onChange={(e) => setEditing((p) => p ? { ...p, show_on_website: e.target.checked } : p)}
+                  className="mt-0.5 h-4 w-4" />
+                <span>
+                  <span className="block font-semibold text-dash-text">Show this code on the website</span>
+                  <span className="block text-xs text-dash-subtle">Listed under &quot;Available offers&quot; at checkout for one-click apply. Untick for a private code (newsletter, partner, agent) that only works when typed.</span>
+                </span>
+              </label>
+            )}
             <FormField name="discount_type" label="Type" required hint="Percentage takes a share off the price; Fixed takes a set amount off.">
               <select id="discount_type" name="discount_type" value={editing.discount_type}
                 onChange={(e) => { setEditing((p) => p ? { ...p, discount_type: e.target.value as "percentage" | "fixed" } : p); clearError("discount_value"); }}
@@ -424,11 +462,23 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                 onChange={(e) => { setEditing((p) => p ? { ...p, usage_limit: e.target.value ? Number(e.target.value) : null } : p); clearError("usage_limit"); }}
                 placeholder="Unlimited" className={fieldClass(errors.usage_limit)} />
             </FormField>
-            <DatePicker label="Start date" value={editing.start_date?.slice(0, 10) ?? ""} minDate={todayLocalDateStr()} maxDate={editing.end_date?.slice(0, 10) || undefined} onChange={(date) => { setEditing((previous) => previous ? { ...previous, start_date: date || null } : previous); clearError("end_date"); }} />
+            <FormField name="start_date" label="Starts at" hint="Leave blank to start immediately.">
+              <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
+                <DatePicker value={editing.start_date?.slice(0, 10) ?? ""} maxDate={editing.end_date?.slice(0, 10)}
+                  onChange={(date) => { setEditing((previous) => previous ? { ...previous, start_date: date ? `${date}T${previous.start_date?.slice(11, 16) || "00:00"}` : null } : previous); clearError("end_date"); }} />
+                <input aria-label="Start time" type="time" value={editing.start_date?.slice(11, 16) || "00:00"}
+                  onChange={(event) => setEditing((previous) => previous?.start_date ? { ...previous, start_date: `${previous.start_date.slice(0, 10)}T${event.target.value}` } : previous)} className={fieldClass()} />
+              </div>
+            </FormField>
             <div data-field="end_date">
-              <DatePicker label="End date" value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10) || undefined} onChange={(date) => { setEditing((previous) => previous ? { ...previous, end_date: date || null } : previous); clearError("end_date"); }} />
-              {errors.end_date && <p role="alert" className="mt-1.5 text-xs font-semibold text-red-600">{errors.end_date}</p>}
-              {!errors.end_date && <p className="mt-1 text-[11px] text-dash-muted">Leave both dates blank for a discount with no time limit.</p>}
+              <FormField name="end_date" label="Ends at" error={errors.end_date} hint="Leave blank for no expiry.">
+                <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
+                  <DatePicker value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10)}
+                    onChange={(date) => { setEditing((previous) => previous ? { ...previous, end_date: date ? `${date}T${previous.end_date?.slice(11, 16) || "23:59"}` : null } : previous); clearError("end_date"); }} />
+                  <input aria-label="End time" type="time" value={editing.end_date?.slice(11, 16) || "23:59"}
+                    onChange={(event) => setEditing((previous) => previous?.end_date ? { ...previous, end_date: `${previous.end_date.slice(0, 10)}T${event.target.value}` } : previous)} className={fieldClass(errors.end_date)} />
+                </div>
+              </FormField>
             </div>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>

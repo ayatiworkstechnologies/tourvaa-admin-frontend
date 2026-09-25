@@ -625,18 +625,6 @@ const DEPOSIT_CUTOFF_OPTIONS = [
   { value: "60", label: "60 days before departure (2 Months)" },
 ];
 
-const BALANCE_DEADLINE_OPTIONS = [
-  { value: "", label: "Not set" },
-  { value: "0", label: "0 days (Due on departure day)" },
-  { value: "7", label: "7 days before departure (1 Week)" },
-  { value: "14", label: "14 days before departure (2 Weeks)" },
-  { value: "21", label: "21 days before departure (3 Weeks)" },
-  { value: "30", label: "30 days before departure (1 Month)" },
-  { value: "45", label: "45 days before departure" },
-  { value: "60", label: "60 days before departure (2 Months)" },
-  { value: "90", label: "90 days before departure (3 Months)" },
-];
-
 function FormDropdownField({
   name,
   label,
@@ -892,11 +880,11 @@ export default function TourFormPage({
   const [loading, setLoading] = useState(Boolean(tourId && !initialData));
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState<{ message: string; current_updated_by?: number } | null>(null);
-  // Storefront Price preview (Basic Information step) - only ever shown when
-  // the tour has an active discount (services/cms.py _active_discount), and
-  // sourced from the 1-pax pricing slab so it matches Pricing & Discounts
-  // exactly. The compatibility storefront field equals adult_price under the
-  // commission-only model.
+  // Storefront Price preview (Basic Information step) - sourced from the
+  // 1-pax pricing slab so it matches Pricing & Discounts exactly (admins see
+  // its storefront price incl. markup, suppliers their own price).
+  // activeDiscount (services/cms.py _active_discount) only adds the
+  // struck-through original and "% OFF" badge when a discount is live.
   const [activeDiscount, setActiveDiscount] = useState<ActiveDiscount | null>(null);
   const [onePaxSlab, setOnePaxSlab] = useState<PricingSlab | null>(null);
 
@@ -1429,25 +1417,39 @@ export default function TourFormPage({
                 <input value={form.tour_code ?? "Assigned on save"} disabled className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-500`} />
               </label>
             )}
-            {tourId && activeDiscount && onePaxSlab && (() => {
-              const original = onePaxSlab.adult_price ?? 0;
-              const discounted = original * (1 - activeDiscount.discount_percentage / 100);
+            {tourId && onePaxSlab && (() => {
+              // Admin: the 1-pax storefront price (supplier price + Tourvaa
+              // markup) customers pay. Supplier: their own 1-pax price -- the
+              // API strips storefront/markup fields for suppliers, so the
+              // markup is never shown to them. Shown with or without a
+              // discount; an active discount adds the struck-through original
+              // and the "% OFF" badge.
+              const original = Number((isSupplier ? onePaxSlab.adult_price : onePaxSlab.storefront_adult_price ?? onePaxSlab.adult_price) ?? 0);
+              const discountPercent = activeDiscount?.discount_percentage ?? 0;
+              const discounted = original * (1 - discountPercent / 100);
+              const money = (n: number) => `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${onePaxSlab.currency}`;
               return (
                 <div className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Storefront price</span>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">
+                    {isSupplier ? "Your price (1 pax)" : "Storefront price (1 pax)"}
+                  </span>
                   <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dash-border bg-[#F7F9FC] px-4 py-3">
-                    <span className="text-sm font-medium text-dash-subtle line-through decoration-red-400 decoration-2">
-                      {original.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {onePaxSlab.currency}
-                    </span>
-                    <span className="text-lg font-black text-dash-text">
-                      {discounted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {onePaxSlab.currency}
-                    </span>
-                    <span className="rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-red-700">
-                      {activeDiscount.discount_percentage}% OFF
-                    </span>
+                    {discountPercent > 0 && (
+                      <span className="text-sm font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{money(original)}</span>
+                    )}
+                    <span className="text-lg font-black text-dash-text">{money(discounted)}</span>
+                    {discountPercent > 0 && (
+                      <span className="rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-red-700">
+                        {discountPercent}% OFF
+                      </span>
+                    )}
                   </div>
                   <p className="mt-1 text-[11px] text-dash-subtle">
-                    Live from an active discount on the Discounts tab -- this is what customers see on the storefront right now.
+                    {isSupplier
+                      ? (discountPercent > 0 ? "Your 1-pax adult price from the Pricing step, with your active discount applied." : "Your 1-pax adult price from the Pricing step.")
+                      : (discountPercent > 0
+                        ? "Supplier price + Tourvaa markup, with the active discount applied -- what customers see on the storefront right now."
+                        : "Supplier price + Tourvaa markup -- what customers see on the storefront right now.")}
                   </p>
                 </div>
               );
@@ -1866,18 +1868,13 @@ export default function TourFormPage({
               helpText="Leave blank to allow a deposit right up to departure. Once fewer days remain, customers see only 'Pay in Full Today'."
             />
 
-            <FormDropdownField
-              name="balance_payment_deadline_days"
-              label="Final payment due (days before departure)"
-              value={form.balance_payment_deadline_days ?? ""}
-              onChange={(val) => update("balance_payment_deadline_days", val)}
-              options={BALANCE_DEADLINE_OPTIONS}
-              inputClass={inputClass}
-              inputType="number"
-              min={0}
-              placeholder="e.g. 30"
-              helpText="After paying a deposit, the customer must clear the remaining balance by this many days before departure."
-            />
+            {/* No "Final payment due" field: the balance due date is fixed by
+                the client rule -- X weeks (Calendar step's Reserve Now buffer)
+                before the Minimum Advance Booking cutoff, same for customers
+                and agents (tour_availability.deposit_balance_due_date). */}
+            <p className="md:col-span-2 text-[11px] text-slate-500">
+              Balance due date: the remaining balance is due the buffer weeks (Calendar &amp; Availability step) before the Minimum Advance Booking cutoff.
+            </p>
 
             <div className="md:col-span-2 mt-2 border-t border-slate-100 pt-4">
               <p className="text-xs font-black uppercase tracking-wide text-slate-600">Tax &amp; service fee</p>

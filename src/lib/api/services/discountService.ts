@@ -19,6 +19,8 @@ export type GlobalDiscount = {
   used_count?: number;
   minimum_booking_amount: number;
   status: string;
+  /** Promo codes only: list on the tour page/checkout (true) or keep private (false). */
+  show_on_website?: boolean;
 };
 
 export async function listAllDiscounts(params: { scope?: string; search?: string } = {}): Promise<GlobalDiscount[]> {

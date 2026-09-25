@@ -246,18 +246,20 @@ export type PricingSlab = {
   passenger_to: number;
   adult_price: number;
   child_price: number;
-  // adult_price/child_price are the public customer prices. The server
-  // deducts the floor-enforced commission to derive supplier_final_*.
-  // Markup/storefront fields remain optional for old-client compatibility;
-  // markup is always zero and storefront values mirror adult/child prices.
+  // adult_price/child_price are the SUPPLIER's prices. The server derives:
+  //   supplier_final_* = price * (1 - commission%)   (supplier receives)
+  //   storefront_*     = price * (1 + admin markup%) (customer pays)
+  // admin_markup_value/storefront_* are admin-only: the API strips them for
+  // supplier users, and ignores admin_markup_value from a supplier payload.
   // The backend also has legacy supplier_price/final_price columns, but
   // neither is read by any pricing logic and final_price is always
   // server-overwritten, so this type omits them.
   commission_percentage?: number | null;
   supplier_final_adult_price?: number | null;
   supplier_final_child_price?: number | null;
-  /** @deprecated Always zero; retained for old API responses. */
+  /** Tourvaa markup %, admin-only. */
   admin_markup_value?: number;
+  /** Customer-facing price incl. markup, admin-only. */
   storefront_adult_price?: number | null;
   storefront_child_price?: number | null;
   currency: string;
@@ -460,6 +462,10 @@ export type TourDiscount = {
   minimum_booking_amount: number;
   status: string;
   created_at?: string;
+  /** Promo codes only: list on the tour page/checkout (true) or keep private (false). */
+  show_on_website?: boolean;
+  /** Who created it (from its first history version); read-only, null for legacy rows. */
+  added_by?: "supplier" | "admin" | null;
 };
 
 export type DiscountAmendment = {

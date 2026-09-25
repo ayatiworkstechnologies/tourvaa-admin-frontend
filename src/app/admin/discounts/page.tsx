@@ -5,10 +5,9 @@ import { LuPercent as Percent, LuHistory as History, LuPencil as Pencil, LuPlus 
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
-import TourPicker from "@/components/tours/TourPicker";
 import DatePicker from "@/components/ui/DatePicker";
+import TourPicker from "@/components/tours/TourPicker";
 import { listCms } from "@/lib/api/services/cmsService";
-import { todayLocalDateStr } from "@/lib/utils/date";
 import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -77,6 +76,7 @@ export default function DiscountsPage() {
   const [scopeFilter, setScopeFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<GlobalDiscount | null>(null);
+  const [applicationMode, setApplicationMode] = useState<"automatic" | "code">("automatic");
   const [saving, setSaving] = useState(false);
   const [historyFor, setHistoryFor] = useState<GlobalDiscount | null>(null);
   const [history, setHistory] = useState<GlobalDiscountHistoryEntry[]>([]);
@@ -117,14 +117,26 @@ export default function DiscountsPage() {
       toast.error("A percentage discount must be between 0 and 100.");
       return;
     }
+    if (applicationMode === "code" && !editing.discount_code?.trim()) {
+      toast.error("Enter the promo code customers must use.");
+      return;
+    }
+    if (editing.start_date && editing.end_date && new Date(editing.end_date) <= new Date(editing.start_date)) {
+      toast.error("Discount end time must be after its start time.");
+      return;
+    }
+    const payload = {
+      ...editing,
+      discount_code: applicationMode === "automatic" ? null : editing.discount_code?.trim().toUpperCase(),
+    };
     setSaving(true);
     try {
       if (editing.id) {
-        const updated = await updateGlobalDiscount(editing.id, editing);
+        const updated = await updateGlobalDiscount(editing.id, payload);
         setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
         toast.success("Discount updated.");
       } else {
-        const created = await createGlobalDiscount(editing);
+        const created = await createGlobalDiscount(payload);
         setItems((prev) => [created, ...prev]);
         toast.success("Discount created.");
       }
@@ -187,7 +199,7 @@ export default function DiscountsPage() {
           {canEdit && (
           <button
             type="button"
-            onClick={() => setEditing(empty())}
+            onClick={() => { setApplicationMode("automatic"); setEditing(empty()); }}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-dash-brand px-5 py-3 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] transition-all hover:-translate-y-0.5 hover:bg-dash-brand-hover sm:w-auto"
           >
             <Plus size={18} strokeWidth={2.5} />
@@ -241,11 +253,9 @@ export default function DiscountsPage() {
                     <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#F0F3F8] px-2.5 py-0.5 text-xs font-bold text-dash-muted">
                       <Tag size={11} /> {scopeLabel(item)}
                     </span>
-                    {item.discount_code && (
-                      <span className="ml-1.5 mt-1.5 inline-block rounded-full bg-[#EEF8FF] px-2.5 py-0.5 text-xs font-bold text-dash-brand">
-                        {item.discount_code}
-                      </span>
-                    )}
+                    <span className="ml-1.5 mt-1.5 inline-block rounded-full bg-[#EEF8FF] px-2.5 py-0.5 text-xs font-bold text-dash-brand">
+                      {item.discount_code ? `Code: ${item.discount_code}` : "Automatic"}
+                    </span>
                     <p className="mt-1.5 flex items-center gap-1 text-sm font-semibold text-dash-body">
                       <Percent size={13} className="text-dash-subtle" />
                       {item.discount_value}
@@ -267,7 +277,7 @@ export default function DiscountsPage() {
                       <History size={13} />
                     </button>
                     {canEdit && (
-                      <button type="button" onClick={() => setEditing({ ...item })} title="Edit" className="inline-flex items-center gap-1 rounded-lg bg-dash-brand px-2.5 py-1.5 text-xs font-bold text-white hover:bg-dash-brand-hover">
+                      <button type="button" onClick={() => { setApplicationMode(item.discount_code ? "code" : "automatic"); setEditing({ ...item }); }} title="Edit" className="inline-flex items-center gap-1 rounded-lg bg-dash-brand px-2.5 py-1.5 text-xs font-bold text-white hover:bg-dash-brand-hover">
                         <Pencil size={13} /> Edit
                       </button>
                     )}
@@ -376,15 +386,32 @@ export default function DiscountsPage() {
                   </label>
                 )}
 
-                <label>
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Promo code</span>
-                  <input
-                    value={editing.discount_code ?? ""}
-                    onChange={(e) => setEditing((p) => (p ? { ...p, discount_code: e.target.value || null } : p))}
-                    placeholder="Leave blank for auto discount"
-                    className={inputClass}
-                  />
+                <label className="md:col-span-2">
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Application mode</span>
+                  <select value={applicationMode} onChange={(event) => { const mode = event.target.value as "automatic" | "code"; setApplicationMode(mode); if (mode === "automatic") setEditing((p) => p ? { ...p, discount_code: null } : p); }} className={inputClass}>
+                    <option value="automatic">Automatic — applied in eligible carts</option>
+                    <option value="code">Promo code — customer must enter a code</option>
+                  </select>
                 </label>
+                {applicationMode === "code" && (
+                  <label>
+                    <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Promo code *</span>
+                    <input value={editing.discount_code ?? ""}
+                      onChange={(e) => setEditing((p) => (p ? { ...p, discount_code: e.target.value.toUpperCase() } : p))}
+                      placeholder="SUMMER25" className={inputClass} />
+                  </label>
+                )}
+                {applicationMode === "code" && (
+                  <label className="flex items-start gap-2.5 rounded-xl border border-dash-border bg-dash-bg px-4 py-3 text-sm md:col-span-2">
+                    <input type="checkbox" checked={editing.show_on_website ?? true}
+                      onChange={(e) => setEditing((p) => (p ? { ...p, show_on_website: e.target.checked } : p))}
+                      className="mt-0.5 h-4 w-4" />
+                    <span>
+                      <span className="block font-semibold text-dash-text">Show this code on the website</span>
+                      <span className="block text-xs text-dash-subtle">Listed under &quot;Available offers&quot; at checkout for one-click apply. Untick for a private code that only works when typed.</span>
+                    </span>
+                  </label>
+                )}
                 <label>
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Type</span>
                   <select
@@ -426,8 +453,24 @@ export default function DiscountsPage() {
                     className={inputClass}
                   />
                 </label>
-                <DatePicker label="Start date" value={editing.start_date?.slice(0, 10) ?? ""} minDate={todayLocalDateStr()} maxDate={editing.end_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, start_date: date || null } : previous)} />
-                <DatePicker label="End date" value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10) || undefined} onChange={(date) => setEditing((previous) => previous ? { ...previous, end_date: date || null } : previous)} />
+                <label>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Starts at</span>
+                  <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
+                    <DatePicker value={editing.start_date?.slice(0, 10) ?? ""} maxDate={editing.end_date?.slice(0, 10)}
+                      onChange={(date) => setEditing((previous) => previous ? { ...previous, start_date: date ? `${date}T${previous.start_date?.slice(11, 16) || "00:00"}` : null } : previous)} />
+                    <input aria-label="Start time" type="time" value={editing.start_date?.slice(11, 16) || "00:00"}
+                      onChange={(event) => setEditing((previous) => previous?.start_date ? { ...previous, start_date: `${previous.start_date.slice(0, 10)}T${event.target.value}` } : previous)} className={inputClass} />
+                  </div>
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Ends at</span>
+                  <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
+                    <DatePicker value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10)}
+                      onChange={(date) => setEditing((previous) => previous ? { ...previous, end_date: date ? `${date}T${previous.end_date?.slice(11, 16) || "23:59"}` : null } : previous)} />
+                    <input aria-label="End time" type="time" value={editing.end_date?.slice(11, 16) || "23:59"}
+                      onChange={(event) => setEditing((previous) => previous?.end_date ? { ...previous, end_date: `${previous.end_date.slice(0, 10)}T${event.target.value}` } : previous)} className={inputClass} />
+                  </div>
+                </label>
                 <label>
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
                   <select value={editing.status} onChange={(e) => setEditing((p) => (p ? { ...p, status: e.target.value } : p))} className={inputClass}>

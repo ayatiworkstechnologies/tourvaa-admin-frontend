@@ -477,8 +477,11 @@ export default function PublicFooter() {
         </div>
 
         {/* Bottom Copyright Text */}
-        <div className="mt-10 sm:mt-12 pt-6 border-t border-white/10 text-center text-xs text-slate-400">
-          <p>
+        <div className="mt-10 sm:mt-12 pt-6 border-t border-white/10 text-center text-xs text-white">
+          {/* Colour set on the <p> itself -- a global paragraph colour was
+              overriding the inherited one and rendering this near-black on
+              the dark footer. */}
+          <p className="text-white">
             Copyright © {new Date().getFullYear()} by Tourvaa Private Limited -
             All Right Reserved | Design & Developed by Ayatiworks
           </p>
