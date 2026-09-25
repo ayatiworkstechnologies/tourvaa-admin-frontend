@@ -3009,22 +3009,22 @@ export default function DynamicTourBookingPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-xs font-bold text-emerald-400">Due Today (Deposit)</p>
-                              <p className="text-[10px] text-slate-400">Secures your travel reservation</p>
+                              <p className="text-[11px] font-medium text-slate-200">Secures your travel reservation</p>
                             </div>
                             <span className="text-xl font-black text-white">
                               {format(customerDepositSplit?.deposit ?? Number(priceEstimate.final_amount), priceEstimate.currency)}
                             </span>
                           </div>
-                          <div className="pt-2 border-t border-slate-700/80 flex items-center justify-between text-xs text-slate-400">
+                          <div className="pt-2 border-t border-slate-700/80 flex items-center justify-between text-xs text-slate-200">
                             <span>Total Trip Value:</span>
-                            <span className="font-bold text-slate-200">{format(Number(priceEstimate.final_amount), priceEstimate.currency)}</span>
+                            <span className="font-bold text-white">{format(Number(priceEstimate.final_amount), priceEstimate.currency)}</span>
                           </div>
                         </div>
                       ) : (
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-xs font-bold text-slate-200">Total Payable</p>
-                            <p className="text-[10px] text-slate-400">Taxes &amp; fees included</p>
+                            <p className="text-xs font-black text-white">Total Payable</p>
+                            <p className="text-[11px] font-semibold text-white">Taxes &amp; fees included</p>
                           </div>
                           <strong className="text-xl font-black text-white">
                             {format(Number(priceEstimate.final_amount), priceEstimate.currency)}

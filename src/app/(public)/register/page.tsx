@@ -19,6 +19,7 @@ import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import { dialCodeForIso, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useGeoCountries } from "@/hooks/useGeo";
 import type { CountryCode } from "libphonenumber-js/min";
 
 // Traveller (customer) accounts only - agents and suppliers register through
@@ -28,6 +29,7 @@ const ACCOUNT_TYPE = "CUSTOMER";
 const initialForm = {
   first_name: "",
   email: "",
+  country_id: "",
   country_code: "",
   mobile_number: "",
   accepted_terms: false,
@@ -82,6 +84,7 @@ const PERKS = [
 export default function RegisterPage() {
   const [form, setForm] = useState(initialForm);
   const [phoneIso, setPhoneIso] = useState<CountryCode | "">("");
+  const { countries, loading: countriesLoading } = useGeoCountries();
   const { setCountry } = useCurrency();
   const [sentEmail, setSentEmail] = useState(() => readPendingRegistration()?.email ?? "");
   const [changeToken, setChangeToken] = useState(() => readPendingRegistration()?.changeToken ?? "");
@@ -124,6 +127,7 @@ export default function RegisterPage() {
     event.preventDefault();
     setError("");
     if (!validateEmail(form.email)) return setError("Enter a valid email address.");
+    if (!form.country_id) return setError("Select your country.");
     if (!phoneIso) return setError("Select your country before entering your mobile number.");
     if (!validatePhoneForCountry(phoneIso, form.mobile_number)) return setError("Enter a valid mobile number for the selected country.");
     if (!form.accepted_terms) return setError("Accept the Terms and Privacy Policy to continue.");
@@ -135,6 +139,7 @@ export default function RegisterPage() {
         await api.post("/auth/change-registration-email", {
           change_token: changeToken,
           email,
+          country_id: Number(form.country_id),
           redirect,
         });
         startResendCooldown(email, changeToken);
@@ -255,6 +260,22 @@ export default function RegisterPage() {
                     className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
+              </div>
+
+              {/* Mobile */}
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600">Country</label>
+                <select
+                  required
+                  autoComplete="country"
+                  value={form.country_id}
+                  onChange={(e) => setForm((current) => ({ ...current, country_id: e.target.value }))}
+                  disabled={countriesLoading}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50"
+                >
+                  <option value="">{countriesLoading ? "Loading countries…" : "Select your country"}</option>
+                  {countries.map((country) => <option key={country.id} value={country.id}>{country.name}</option>)}
+                </select>
               </div>
 
               {/* Mobile */}

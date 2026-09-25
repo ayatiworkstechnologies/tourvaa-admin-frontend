@@ -88,9 +88,10 @@ export function validatePricingSlab(
     const c = num(v.commission_percentage);
     if (Number.isNaN(c) || c < 0 || c > 100) e.commission_percentage = "Commission must be between 0% and 100%.";
   }
-  // Suppliers do not receive this property. In the admin editor it is
-  // mandatory; an explicit 0% is valid when no markup is intended.
-  if ("admin_markup_value" in v) {
+  // Suppliers do not receive this property. In the admin editor null means
+  // "follow the platform default markup"; a custom value must be 0-100
+  // (an explicit 0% is valid when no markup is intended).
+  if ("admin_markup_value" in v && v.admin_markup_value !== null) {
     if (isBlank(v.admin_markup_value)) e.admin_markup_value = "Enter the Tourvaa markup (use 0 for no markup).";
     else {
       const markup = num(v.admin_markup_value);

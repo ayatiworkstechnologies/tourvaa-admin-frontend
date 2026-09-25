@@ -1,17 +1,23 @@
 import Link from "next/link";
 import { LuArrowRight as ArrowRight } from "react-icons/lu";
 
-type AgentPageAction = {
+type AgentPageActionBase = {
   label: string;
-  href: string;
   icon?: React.ElementType;
   variant?: "primary" | "secondary";
 };
 
+type AgentPageAction = AgentPageActionBase & (
+  | { href: string; onClick?: never }
+  | { href?: never; onClick: () => void }
+);
+
 export function AgentPageShell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`min-h-screen min-w-0 bg-[#F5F8FD] px-4 py-4 text-[#10213F] sm:px-6 sm:py-6 xl:px-8 ${className}`}>
-      <div className="mx-auto max-w-[1500px]">{children}</div>
+    // Same page canvas as the customer portal pages (app/customer/*), which
+    // the agent portal now shares its header/sidebar/footer shell with.
+    <div className={`min-h-screen min-w-0 bg-[#F8FAFC] px-4 py-6 text-[#10213F] sm:px-8 sm:py-8 ${className}`}>
+      <div className="mx-auto max-w-[1200px]">{children}</div>
     </div>
   );
 }
@@ -49,20 +55,19 @@ export function AgentPageHeader({
 
         {actions.length > 0 && (
           <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap">
-            {actions.map(({ label, href, icon: ActionIcon = ArrowRight, variant = "primary" }) => (
-              <Link
-                key={`${href}-${label}`}
-                href={href}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 ${
+            {actions.map(({ label, href, onClick, icon: ActionIcon = ArrowRight, variant = "primary" }) => {
+              const className = `inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 ${
                   variant === "primary"
                     ? "bg-[#2563EB] text-white shadow-md shadow-blue-200 hover:bg-[#1D4ED8]"
                     : "border border-[#D7E2F2] bg-white text-[#355174] hover:bg-[#F1F6FD]"
-                }`}
-              >
-                <ActionIcon size={15} />
-                {label}
-              </Link>
-            ))}
+                }`;
+              const content = <><ActionIcon size={15} />{label}</>;
+              return href ? (
+                <Link key={`${href}-${label}`} href={href} className={className}>{content}</Link>
+              ) : (
+                <button key={label} type="button" onClick={onClick} className={className}>{content}</button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -80,7 +85,7 @@ export function AgentSection({
 }: {
   title?: string;
   description?: string;
-  action?: AgentPageAction;
+  action?: AgentPageActionBase & { href: string };
   children: React.ReactNode;
   className?: string;
 }) {

@@ -94,11 +94,18 @@ export default function AgentCustomersPage() {
         setCustomers(r.data?.items ?? r.data?.data ?? []);
         setTotal(r.data?.total ?? 0);
       })
-      .catch(() => {
+      .catch((err: { response?: { data?: { detail?: { code?: string; message?: string } } } }) => {
         if (!ctrl.signal.aborted) {
           setCustomers([]);
           setTotal(0);
-          setError("Customers could not be loaded. Please retry.");
+          // Unapproved agents are blocked server-side (ensure_approved_agent):
+          // say so instead of a generic "please retry" that can never succeed.
+          const detail = err?.response?.data?.detail;
+          setError(
+            detail?.code === "AGENT_APPROVAL_REQUIRED"
+              ? "Your agent account is awaiting admin approval. Your customers will appear here once it's approved."
+              : "Customers could not be loaded. Please retry.",
+          );
         }
       })
       .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });

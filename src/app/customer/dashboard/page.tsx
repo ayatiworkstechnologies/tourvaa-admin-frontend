@@ -22,6 +22,7 @@ import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { useToast } from "@/hooks/useToast";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
+import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 
 type Profile = {
   full_name?: string;
@@ -194,66 +195,43 @@ export default function CustomerDashboardPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] px-4 py-6 sm:px-8 sm:py-8">
-      <div className="mx-auto max-w-[1100px]">
-        {/* Page Title & Subtitle */}
-        <div className="mb-6 flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl sm:text-[28px] font-black tracking-tight text-[#0B1527]">
-              Account Settings
-            </h1>
-            <p className="mt-1 text-xs text-slate-400 font-medium">
-              Manage your profile details, tour bookings, and saved destinations.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleReferralShare}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#0B1527] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
-          >
-            <Share2 size={13} />
-            Refer & Earn
-          </button>
-        </div>
+    <AgentPageShell className="customer-dashboard">
+        <AgentPageHeader
+          title={`Welcome back, ${fullName || "Traveller"}`}
+          description="Manage your profile, bookings, payments, travellers, and saved destinations."
+          icon={Compass}
+          eyebrow="Customer Dashboard"
+          actions={[{ label: "Refer & Earn", onClick: handleReferralShare, icon: Share2 }]}
+        />
 
         {/* ── Quick Actions ── */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <Link href="/tours" className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <Link href="/tours" className="flex flex-col items-center gap-2 rounded-2xl border border-dash-border/80 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:border-dash-brand/30 hover:shadow-md">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Compass size={16} /></span>
             <span className="text-[11px] font-bold text-slate-800">Book a Tour</span>
           </Link>
-          <Link href="/customer/payments" className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+          <Link href="/customer/payments" className="flex flex-col items-center gap-2 rounded-2xl border border-dash-border/80 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:border-dash-brand/30 hover:shadow-md">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><CreditCard size={16} /></span>
             <span className="text-[11px] font-bold text-slate-800">Make a Payment</span>
           </Link>
-          <Link href="/customer/travellers" className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+          <Link href="/customer/travellers" className="flex flex-col items-center gap-2 rounded-2xl border border-dash-border/80 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:border-dash-brand/30 hover:shadow-md">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><UserPlus size={16} /></span>
             <span className="text-[11px] font-bold text-slate-800">Add Traveller</span>
           </Link>
-          <Link href="/customer/invoices" className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+          <Link href="/customer/invoices" className="flex flex-col items-center gap-2 rounded-2xl border border-dash-border/80 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:border-dash-brand/30 hover:shadow-md">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><FileText size={16} /></span>
             <span className="text-[11px] font-bold text-slate-800">View Invoices</span>
           </Link>
-          <Link href="/customer/support" className="col-span-2 sm:col-span-1 flex flex-col items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+          <Link href="/customer/support" className="col-span-2 flex flex-col items-center gap-2 rounded-2xl border border-dash-border/80 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:border-dash-brand/30 hover:shadow-md sm:col-span-1">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600"><Headset size={16} /></span>
             <span className="text-[11px] font-bold text-slate-800">Contact Support</span>
           </Link>
         </div>
 
         {/* ── Card 1: Profile Details ── */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-[#0B1527]">Profile Details</h2>
-            <Link
-              href="/customer/profile"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
-            >
-              <Pencil size={13} />
-              Edit Profile
-            </Link>
-          </div>
+        <AgentSection className="mt-4" title="Profile Details" description="Your personal and travel information at a glance." action={{ label: "Edit profile", href: "/customer/profile", icon: Pencil }}>
 
-          <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 p-5 md:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 FULL NAME
@@ -416,20 +394,11 @@ export default function CustomerDashboardPage() {
               </div>
             </div>
           </div>
-        </div>
+        </AgentSection>
 
         {/* ── Card 2: My Bookings ── */}
-        <div className="mt-6 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-[#0B1527]">My Bookings</h2>
-            <Link
-              href="/customer/bookings"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
-            >
-              <LayoutGrid size={13} />
-              See All
-            </Link>
-          </div>
+        <AgentSection className="mt-4" title="My Bookings" description="Track your latest trips, balances, and booking status." action={{ label: "See all", href: "/customer/bookings", icon: LayoutGrid }}>
+          <div className="p-5">
 
           {bookings.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
@@ -438,7 +407,7 @@ export default function CustomerDashboardPage() {
               <p className="mt-0.5 text-[11px] text-slate-400">Discover incredible hand-crafted itineraries and start your journey</p>
               <Link
                 href="/tours"
-                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[#2563EB] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#1D4ED8]"
               >
                 Explore Tours
               </Link>
@@ -490,20 +459,12 @@ export default function CustomerDashboardPage() {
               </table>
             </div>
           )}
-        </div>
+          </div>
+        </AgentSection>
 
         {/* ── Card 3: My Wishlist ── */}
-        <div className="mt-6 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-bold text-[#0B1527]">My Wishlist</h2>
-            <Link
-              href="/customer/wishlist"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
-            >
-              <LayoutGrid size={13} />
-              See All
-            </Link>
-          </div>
+        <AgentSection className="mt-4" title="My Wishlist" description="Your saved tours and future travel ideas." action={{ label: "See all", href: "/customer/wishlist", icon: LayoutGrid }}>
+          <div className="p-5">
 
           {wishlistItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
@@ -512,7 +473,7 @@ export default function CustomerDashboardPage() {
               <p className="mt-0.5 text-[11px] text-slate-400">Explore our destinations and save tours to your wishlist</p>
               <Link
                 href="/tours"
-                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[#0B1527] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C]"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[#2563EB] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#1D4ED8]"
               >
                 Explore Tours
               </Link>
@@ -577,7 +538,7 @@ export default function CustomerDashboardPage() {
                       </div>
                       <Link
                         href={item.href || "/tours"}
-                        className="rounded-xl bg-[#0B1527] px-3.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#15233C]"
+                        className="rounded-xl bg-[#2563EB] px-3.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#1D4ED8]"
                       >
                         Book Now
                       </Link>
@@ -588,7 +549,7 @@ export default function CustomerDashboardPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </AgentSection>
+    </AgentPageShell>
   );
 }

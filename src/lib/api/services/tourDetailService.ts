@@ -257,8 +257,10 @@ export type PricingSlab = {
   commission_percentage?: number | null;
   supplier_final_adult_price?: number | null;
   supplier_final_child_price?: number | null;
-  /** Tourvaa markup %, admin-only. */
-  admin_markup_value?: number;
+  /** Tourvaa markup %, admin-only. null = follows the platform default (Settings). */
+  admin_markup_value?: number | null;
+  /** True when the slab has no markup of its own and uses the Settings default. */
+  markup_follows_default?: boolean;
   /** Customer-facing price incl. markup, admin-only. */
   storefront_adult_price?: number | null;
   storefront_child_price?: number | null;

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import type { IconType } from "react-icons";
 import {
   LuHeart as Heart,
   LuLogOut as LogOut,
@@ -10,14 +11,31 @@ import {
 } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelector";
+import NotificationInbox from "@/components/ui/NotificationInbox";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import CustomerAvatar from "./CustomerAvatar";
 
-export default function CustomerPortalHeader() {
+export type PortalHeaderLink = { label: string; href: string; icon: IconType; count?: number };
+
+type CustomerPortalHeaderProps = {
+  /** Icon links left of the currency picker. Defaults to Wishlist + Compare. */
+  quickLinks?: PortalHeaderLink[];
+  /** "Profile Settings" target in the profile menu. */
+  profileHref?: string;
+  /** Notification bell (same inbox as the admin/partner headers). */
+  showNotifications?: boolean;
+};
+
+/** Top bar shared by the customer and agent portals (public-site style). */
+export default function CustomerPortalHeader({ quickLinks, profileHref = "/customer/profile", showNotifications = false }: CustomerPortalHeaderProps = {}) {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuthContext();
   const { wishlistCount, compareCount } = useTravelStore();
+  const links: PortalHeaderLink[] = quickLinks ?? [
+    { label: "Wishlist", href: "/customer/wishlist", icon: Heart, count: wishlistCount },
+    { label: "Compare", href: "/compare", icon: Scale, count: compareCount },
+  ];
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
@@ -39,7 +57,9 @@ export default function CustomerPortalHeader() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-100 bg-white text-slate-900 shadow-xs">
-      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-4 px-6 sm:h-[84px] lg:px-8">
+      {/* Right padding keeps the last items (Profile) clear of the floating
+          Elfsight "EN" language picker, which is fixed to the top-right corner. */}
+      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-4 pl-6 pr-[132px] sm:h-[84px] lg:pl-8 lg:pr-[150px]">
         <Link
           href="/"
           className="text-2xl font-semibold tracking-tight text-[#0B1527]"
@@ -47,36 +67,25 @@ export default function CustomerPortalHeader() {
           Tourvaa
         </Link>
         <nav className="flex items-center gap-5 sm:gap-7">
-          <Link
-            href="/customer/wishlist"
-            className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E16B2D] transition-colors"
-          >
-            <Heart
-              size={18}
-              className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E16B2D]"
-            />
-            <span>Wishlist</span>
-            {wishlistCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E16B2D] px-1 text-[8px] font-black text-white shadow-xs">
-                {wishlistCount > 99 ? "99+" : wishlistCount}
-              </span>
-            )}
-          </Link>
-          <Link
-            href="/compare"
-            className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E16B2D] transition-colors"
-          >
-            <Scale
-              size={18}
-              className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E16B2D]"
-            />
-            <span>Compare</span>
-            {compareCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E16B2D] px-1 text-[8px] font-black text-white shadow-xs">
-                {compareCount}
-              </span>
-            )}
-          </Link>
+          {links.map(({ label, href, icon: Icon, count }) => (
+            <Link
+              key={href}
+              href={href}
+              className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-[#0f2439] hover:text-[#E16B2D] transition-colors"
+            >
+              <Icon
+                size={18}
+                className="text-[#0f2439] stroke-[1.8] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:text-[#E16B2D]"
+              />
+              <span>{label}</span>
+              {!!count && count > 0 && (
+                <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E16B2D] px-1 text-[8px] font-black text-white shadow-xs">
+                  {count > 99 ? "99+" : count}
+                </span>
+              )}
+            </Link>
+          ))}
+          {showNotifications && <NotificationInbox />}
           <div className="flex items-center">
             <LanguageCurrencySelector />
           </div>
@@ -118,7 +127,7 @@ export default function CustomerPortalHeader() {
                 <div className="pt-2">
                   <Link
                     role="menuitem"
-                    href="/customer/profile"
+                    href={profileHref}
                     onClick={() => setProfileOpen(false)}
                     className="group flex items-center gap-3 rounded-xl px-3 py-3 text-xs font-bold text-slate-700 transition hover:bg-orange-50 hover:text-[#E16B2D]"
                   >

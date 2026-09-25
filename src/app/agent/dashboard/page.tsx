@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuFileText as FileText, LuCompass as MapPinned, LuPackageCheck as PackageCheck, LuUsers as Users } from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuFileText as FileText, LuCompass as MapPinned, LuMessageSquare as MessageSquare, LuPackageCheck as PackageCheck, LuPencil as Pencil, LuPlus as Plus, LuUserPlus as UserPlus, LuUsers as Users } from "react-icons/lu";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -35,11 +35,25 @@ type Booking = {
 };
 
 type AgentProfile = {
+  agent_name?: string;
+  agent_type?: string;
+  country_name?: string;
   discount_type?: "percentage" | "fixed" | null;
   discount_value?: number;
   commission_request_type?: "percentage" | "fixed" | null;
   commission_request_value?: number | null;
   commission_request_status?: "pending" | "approved" | "rejected" | null;
+  approval_status?: string | null;
+  pending_requirements?: string | null;
+  admin_comments?: string | null;
+  documents?: unknown[];
+};
+
+type AccountProfile = {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
 };
 
 type ChartRow = { status: string; count: number };
@@ -60,6 +74,7 @@ export default function AgentDashboardPage() {
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [agentProfile, setAgentProfile] = useState<AgentProfile | null>(null);
+  const [accountProfile, setAccountProfile] = useState<AccountProfile | null>(null);
   const [monthlyBookings, setMonthlyBookings] = useState<MonthRow[]>([]);
   const [paymentStatusChart, setPaymentStatusChart] = useState<ChartRow[]>([]);
   const [commissionType, setCommissionType] = useState<"percentage" | "fixed">("percentage");
@@ -86,11 +101,12 @@ export default function AgentDashboardPage() {
           end_date: filters.end_date || undefined,
           booking_status: filters.status || undefined,
         };
-        const [sumRes, bookRes, agentRes, chartsRes] = await Promise.allSettled([
+        const [sumRes, bookRes, agentRes, chartsRes, profileRes] = await Promise.allSettled([
           api.get("/dashboard/summary", { params: summaryParams }),
           api.get("/bookings", { params: bookingParams }),
           api.get("/agents/me"),
           api.get("/dashboard/charts", { params: summaryParams }),
+          api.get("/profile/me"),
         ]);
         if (sumRes.status === "fulfilled") setSummary(sumRes.value.data?.data ?? {});
         if (bookRes.status === "fulfilled") setBookings(bookRes.value.data?.items ?? bookRes.value.data?.data ?? []);
@@ -100,6 +116,7 @@ export default function AgentDashboardPage() {
           setMonthlyBookings(chartData.monthly_bookings ?? []);
           setPaymentStatusChart(chartData.payment_status_chart ?? []);
         }
+        if (profileRes.status === "fulfilled") setAccountProfile(profileRes.value.data?.data ?? profileRes.value.data ?? null);
 
         const rejections = [sumRes, bookRes, agentRes].filter((r) => r.status === "rejected") as PromiseRejectedResult[];
         if (rejections.length > 0) {
@@ -160,16 +177,99 @@ export default function AgentDashboardPage() {
     { label: "Completed", value: summary.completed_bookings ?? 0, icon: PackageCheck, sub: "Finished", href: "/agent/bookings" },
   ];
 
+  // Until an admin approves the agent, the backend blocks bookings, customers,
+  // invoices, etc. (and the layout locks those links) -- so the dashboard
+  // shows the approval checklist instead of shortcuts and stats that can't load.
+  const isPending = agentProfile != null && (agentProfile.approval_status ?? "").toLowerCase() !== "approved";
+  const documentCount = agentProfile?.documents?.length ?? 0;
+
   return (
     <AgentPageShell>
       <AgentPageHeader
-        title={`Welcome back, ${user?.name || "Agent"}`}
-        description="Create customer bookings, track sales performance, and manage every traveller relationship."
+        title={`Welcome${isPending ? "" : " back"}, ${user?.name || "Agent"}`}
+        description={isPending
+          ? "Your agent account is being reviewed by Tourvaa. Complete your profile and documents to get approved."
+          : "Create customer bookings, track sales performance, and manage every traveller relationship."}
         icon={PackageCheck}
         eyebrow="Agent Dashboard"
-        actions={[{ label: "Browse Tours", href: "/agent/tours", icon: MapPinned }]}
+        actions={isPending
+          ? [{ label: "Upload documents", href: "/agent/profile", icon: FileText }]
+          : [{ label: "Browse Tours", href: "/agent/tours", icon: MapPinned }]}
       />
 
+      {isPending && (
+        <AgentSection className="mt-4" title="Account under review" description="Bookings, customers, invoices and payouts unlock once Tourvaa approves your account.">
+          <div className="space-y-3 p-5">
+            {[
+              { done: Boolean(agentProfile?.agent_name && agentProfile?.agent_type), title: "Complete your agency details", note: "Agency name, type, contact and address in My Profile." },
+              { done: documentCount > 0, title: "Upload verification documents", note: documentCount > 0 ? `${documentCount} document${documentCount === 1 ? "" : "s"} uploaded.` : "Add your business registration and ID documents in My Profile → Verification Documents." },
+              { done: false, title: "Tourvaa review", note: "Our team checks your details and documents. You'll be notified when your account is approved." },
+            ].map(({ done, title, note }, i) => (
+              <div key={title} className="flex items-start gap-3 rounded-xl border border-dash-border px-4 py-3">
+                <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black ${done ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                  {done ? "✓" : i + 1}
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-dash-text">{title}</p>
+                  <p className="text-xs text-dash-muted">{note}</p>
+                </div>
+              </div>
+            ))}
+            {(agentProfile?.pending_requirements || agentProfile?.admin_comments) && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                <p className="font-bold">Message from Tourvaa</p>
+                <p className="mt-1 whitespace-pre-line">{agentProfile?.pending_requirements || agentProfile?.admin_comments}</p>
+              </div>
+            )}
+            <Link href="/agent/profile" className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-xs font-black text-white hover:bg-dash-brand-hover">
+              Go to My Profile <ArrowRight size={14} />
+            </Link>
+          </div>
+        </AgentSection>
+      )}
+
+      {/* Customer-dashboard-style shortcuts, tailored to an agent's workflow. */}
+      {!isPending && <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {[
+          { href: "/agent/tours", label: "Browse Tours", icon: MapPinned, tone: "bg-blue-50 text-blue-600" },
+          { href: "/agent/bookings/create", label: "New Booking", icon: Plus, tone: "bg-emerald-50 text-emerald-600" },
+          { href: "/agent/customers", label: "Add Customer", icon: UserPlus, tone: "bg-violet-50 text-violet-600" },
+          { href: "/agent/invoices", label: "View Invoices", icon: FileText, tone: "bg-amber-50 text-amber-600" },
+          { href: "/agent/messages", label: "Messages", icon: MessageSquare, tone: "bg-rose-50 text-rose-600" },
+        ].map(({ href, label, icon: Icon, tone }) => (
+          <Link key={href} href={href} className="flex flex-col items-center gap-2 rounded-2xl border border-dash-border/80 bg-white p-4 text-center shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition hover:-translate-y-0.5 hover:border-dash-brand/30 hover:shadow-md">
+            <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tone}`}><Icon size={16} /></span>
+            <span className="text-[11px] font-bold text-dash-text">{label}</span>
+          </Link>
+        ))}
+      </div>}
+
+      <AgentSection
+        className="mt-4"
+        title="Account Details"
+        description="Your agent and contact information at a glance."
+        action={{ label: "Edit profile", href: "/agent/profile", icon: Pencil }}
+      >
+        <div className="grid gap-x-6 gap-y-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: "Agent / Agency", value: agentProfile?.agent_name || accountProfile?.name || user?.name },
+            { label: "Email address", value: accountProfile?.email || user?.email },
+            { label: "Phone number", value: accountProfile?.phone },
+            { label: "Agency type", value: agentProfile?.agent_type?.replaceAll("_", " ") },
+            { label: "Country", value: agentProfile?.country_name },
+            { label: "Business address", value: accountProfile?.address, wide: true },
+          ].map(({ label, value, wide }) => (
+            <div key={label} className={wide ? "sm:col-span-2 lg:col-span-4" : ""}>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-dash-muted">{label}</p>
+              <div className={`mt-1.5 min-h-10 rounded-xl border px-4 py-2.5 text-xs capitalize ${value ? "border-dash-border bg-white font-semibold text-dash-text" : "border-dashed border-dash-border bg-dash-bg italic text-dash-muted"}`}>
+                {value || "Not provided"}
+              </div>
+            </div>
+          ))}
+        </div>
+      </AgentSection>
+
+      {!isPending && (<>
       {/* Stat cards */}
       {error && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
@@ -359,6 +459,7 @@ export default function AgentDashboardPage() {
           </Link>
         ))}
       </div>
+      </>)}
     </AgentPageShell>
   );
 }

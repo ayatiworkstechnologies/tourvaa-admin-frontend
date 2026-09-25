@@ -3,6 +3,7 @@
 import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
 import { validatePricingSlab, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { LuBadgeDollarSign as BadgeDollarSign, LuInfo as Info, LuPencil as Pencil, LuPercent as Percent, LuPlus as Plus, LuSave as Save, LuSparkles as Sparkles, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } from "@/lib/api/services/tourDetailService";
 import api from "@/lib/api/client";
@@ -15,10 +16,12 @@ import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/
 
 const STATUSES = ["active", "inactive"];
 
-const emptySlab = (defaults: { currency: string; commission: number; markup: number }): PricingSlab => ({
+const emptySlab = (defaults: { currency: string; commission: number }): PricingSlab => ({
   passenger_from: 1, passenger_to: 4, adult_price: 0, child_price: 0,
   commission_percentage: defaults.commission,
-  admin_markup_value: defaults.markup,
+  // New slabs follow the platform default markup (Settings) until an admin
+  // sets a slab-specific one.
+  admin_markup_value: null,
   currency: defaults.currency, status: "active",
 });
 
@@ -183,19 +186,27 @@ export default function TourPricingTab({
 
   useEffect(() => { void loadCommissionFloor(); }, [loadCommissionFloor]);
 
-  // Admin-only: the platform default markup (default_admin_markup_percentage)
-  // pre-filled on a new slab. Suppliers never see or send a markup.
+  // Admin-only markup (never loaded for suppliers). Order: slab > tour >
+  // platform default (services/markup.py). tourMarkup null = the tour uses
+  // the default.
   const [defaultMarkup, setDefaultMarkup] = useState(0);
+  const [tourMarkup, setTourMarkup] = useState<number | null>(null);
+  const [tourMarkupDraft, setTourMarkupDraft] = useState<{ useDefault: boolean; value: string }>({ useDefault: true, value: "" });
+  const [tourMarkupSaving, setTourMarkupSaving] = useState(false);
+  const applyTourMarkupResponse = useCallback((data: { admin_markup_percentage: number | string | null; default_markup_percentage: number | string }) => {
+    const tour = data.admin_markup_percentage == null ? null : Number(data.admin_markup_percentage);
+    setDefaultMarkup(Number(data.default_markup_percentage ?? 0));
+    setTourMarkup(tour);
+    setTourMarkupDraft({ useDefault: tour == null, value: tour == null ? "" : String(tour) });
+  }, []);
   useEffect(() => {
     if (isSupplier) return;
-    api.get("/settings/").then((res) => {
-      const items: Array<{ key: string; value: string | null }> = res.data?.data ?? [];
-      const value = Number(items.find((s) => s.key === "default_admin_markup_percentage")?.value ?? 0);
-      if (Number.isFinite(value)) setDefaultMarkup(value);
+    api.get(`/tours/${tourId}/markup`).then((res) => {
+      if (res.data?.data) applyTourMarkupResponse(res.data.data);
     }).catch(() => {
-      // Non-fatal -- a new slab just starts at 0% markup.
+      // Non-fatal -- previews fall back to 0% until the markup loads.
     });
-  }, [isSupplier]);
+  }, [isSupplier, tourId, applyTourMarkupResponse]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -216,7 +227,31 @@ export default function TourPricingTab({
   // instead of a misleading "0" in that brief window.
   const resolvedFloor = commissionFloor ?? 0;
 
-  const openNewSlab = () => setEditing(emptySlab({ currency: defaultCurrency, commission: resolvedFloor, markup: isSupplier ? 0 : defaultMarkup }));
+  const openNewSlab = () => setEditing(emptySlab({ currency: defaultCurrency, commission: resolvedFloor }));
+  // What a slab without its own markup inherits: the tour's, else the default.
+  const inheritedMarkup = tourMarkup ?? defaultMarkup;
+  const inheritedLabel = tourMarkup != null ? `tour markup (${tourMarkup}%)` : `default (${defaultMarkup}%)`;
+  // The markup actually applied to a slab.
+  const effectiveMarkup = (slab: PricingSlab) => (slab.admin_markup_value ?? inheritedMarkup);
+
+  const saveTourMarkup = async () => {
+    const value = tourMarkupDraft.useDefault ? null : Number(tourMarkupDraft.value);
+    if (value != null && (!Number.isFinite(value) || value < 0 || value > 100 || tourMarkupDraft.value.trim() === "")) {
+      toast.error("Tour markup must be between 0% and 100%.");
+      return;
+    }
+    setTourMarkupSaving(true);
+    try {
+      const res = await api.put(`/tours/${tourId}/markup`, { admin_markup_percentage: value });
+      applyTourMarkupResponse(res.data.data);
+      await load(); // storefront prices were re-priced server-side
+      toast.success(value == null ? "Tour now uses the default markup." : `Tour markup set to ${value}%.`);
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setTourMarkupSaving(false);
+    }
+  };
 
   const saveSlab = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,7 +284,8 @@ export default function TourPricingTab({
         commission_percentage: isSupplier || editing.commission_percentage == null ? null : sanitizeNumber(editing.commission_percentage, resolvedFloor),
         // Admin-only; never sent by a supplier (the backend ignores it from
         // suppliers anyway and keeps the admin-set markup).
-        admin_markup_value: isSupplier ? undefined : sanitizeNumber(editing.admin_markup_value ?? 0),
+        // null = follow the Settings default markup.
+        admin_markup_value: isSupplier ? undefined : editing.admin_markup_value == null ? null : sanitizeNumber(editing.admin_markup_value),
       };
       if (editing.id) {
         const updated = await updatePricing(tourId, editing.id, payload);
@@ -283,7 +319,7 @@ export default function TourPricingTab({
   if (loading) return <Loader label="Loading pricing..." />;
 
   const supplierGridClass = "grid-cols-[1fr_1.2fr_1.2fr_1.2fr_1.2fr_0.8fr_auto]";
-  const publishableGridClass = "grid-cols-[1fr_1.2fr_1.2fr_0.8fr_1.2fr_1.2fr_0.6fr]";
+  const publishableGridClass = "grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1.2fr_0.6fr_auto]";
 
   const addButton = (
     <button type="button" onClick={openNewSlab}
@@ -301,27 +337,69 @@ export default function TourPricingTab({
           icon={Percent}
           iconTone="brand"
           title="Publishable Price"
-          description="Admin-only markup added on top of the supplier's price to produce the storefront price. Suppliers never see this section. Edit a slab to change its markup."
+          description="Admin-only markup added on top of the supplier's price to produce the storefront price. Suppliers never see this section."
         >
+          {/* Tour-level markup: one % for every slab of this tour that has no
+              markup of its own. Order: slab > tour > platform default. */}
+          <div className="mb-4 rounded-xl border border-dash-border bg-dash-bg px-4 py-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span className="text-xs font-black uppercase tracking-wide text-dash-text">Markup for this tour</span>
+              <label className="flex items-center gap-2 text-xs font-semibold text-dash-body">
+                <input type="radio" name="tour-markup-mode" checked={tourMarkupDraft.useDefault}
+                  onChange={() => setTourMarkupDraft((d) => ({ ...d, useDefault: true }))} className="h-4 w-4" />
+                Use default ({defaultMarkup}%)
+              </label>
+              <label className="flex items-center gap-2 text-xs font-semibold text-dash-body">
+                <input type="radio" name="tour-markup-mode" checked={!tourMarkupDraft.useDefault}
+                  onChange={() => setTourMarkupDraft((d) => ({ useDefault: false, value: d.value || String(tourMarkup ?? defaultMarkup) }))} className="h-4 w-4" />
+                Custom for this tour
+              </label>
+              {!tourMarkupDraft.useDefault && (
+                <span className="relative">
+                  <input type="number" min={0} max={100} step="0.01" value={tourMarkupDraft.value} aria-label="Tour markup percentage"
+                    onChange={(e) => setTourMarkupDraft((d) => ({ ...d, value: e.target.value }))}
+                    className="w-28 rounded-lg border border-dash-border bg-white px-3 py-1.5 pr-7 text-sm outline-none focus:border-dash-brand" />
+                  <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-xs font-bold text-dash-muted">%</span>
+                </span>
+              )}
+              <button type="button" onClick={() => void saveTourMarkup()} disabled={tourMarkupSaving}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-black text-white disabled:opacity-60 ${accent.solidBtn}`}>
+                <Save size={13} /> {tourMarkupSaving ? "Saving..." : "Save"}
+              </button>
+            </div>
+            <p className="mt-2 text-[11px] text-dash-subtle">
+              Now applying: <strong className="text-dash-body">{tourMarkup != null ? `${tourMarkup}% (this tour)` : `${defaultMarkup}% (default)`}</strong> to every slab without its own markup.
+              {" "}Default is set in <Link href="/admin/settings#pricing" className="font-bold text-dash-brand hover:underline">Settings</Link>; use a row&apos;s edit button for a slab-only markup.
+            </p>
+          </div>
           <div className="overflow-x-auto rounded-2xl border border-dash-border-soft">
-            <div className={`grid ${publishableGridClass} min-w-[900px] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3`}>
-              {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "TOURVAA MARKUP", "STOREFRONT PRICE (ADULT)", "STOREFRONT PRICE (CHILD)", "CURRENCY"].map((h) => (
+            <div className={`grid ${publishableGridClass} min-w-[980px] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3`}>
+              {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "TOURVAA MARKUP", "STOREFRONT PRICE (ADULT)", "STOREFRONT PRICE (CHILD)", "CURRENCY", "EDIT"].map((h) => (
                 <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
               ))}
             </div>
             {slabs.map((r, idx) => (
-              <div key={r.id ?? idx} className={`grid ${publishableGridClass} min-w-[900px] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0`}>
+              <div key={r.id ?? idx} className={`grid ${publishableGridClass} min-w-[980px] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0`}>
                 <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
                   {r.passenger_from}–{r.passenger_to} pax
                 </span>
                 <PriceCell value={Number(r.adult_price)} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
                 <PriceCell value={Number(r.child_price)} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
-                <span className="inline-flex w-fit items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
-                  <Percent size={10} />{Number(r.admin_markup_value ?? 0)}
+                <span className="flex flex-col items-start gap-0.5">
+                  <span className="inline-flex w-fit items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
+                    <Percent size={10} />{Number(effectiveMarkup(r))}
+                  </span>
+                  <span className={`text-[10px] font-semibold ${r.admin_markup_value != null ? "text-amber-600" : tourMarkup != null ? "text-dash-brand" : "text-dash-subtle"}`}>
+                    {r.admin_markup_value != null ? "This slab" : tourMarkup != null ? "Tour" : "Default"}
+                  </span>
                 </span>
-                <PriceCell value={Number(r.storefront_adult_price ?? withMarkup(r.adult_price, r.admin_markup_value))} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700 text-sm" />
-                <PriceCell value={Number(r.storefront_child_price ?? withMarkup(r.child_price, r.admin_markup_value))} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700 text-sm" />
+                <PriceCell value={Number(r.storefront_adult_price ?? withMarkup(r.adult_price, effectiveMarkup(r)))} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700 text-sm" />
+                <PriceCell value={Number(r.storefront_child_price ?? withMarkup(r.child_price, effectiveMarkup(r)))} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700 text-sm" />
                 <span className="text-xs font-semibold text-dash-subtle">{r.currency}</span>
+                <button type="button" onClick={() => setEditing({ ...r })} aria-label="Edit markup" title="Edit markup"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:border-dash-brand/40 hover:bg-sky-50 hover:text-dash-brand-hover">
+                  <Pencil size={15} />
+                </button>
               </div>
             ))}
           </div>
@@ -483,10 +561,23 @@ export default function TourPricingTab({
                   className={fieldClass(errors.child_price)} placeholder="0.00" />
               </FormField>
               {!isSupplier && (
-                <FormField name="admin_markup_value" label="Tourvaa markup %" required error={errors.admin_markup_value} hint="Admin-only. Added on top of the supplier price. Enter 0 for no markup. Suppliers never see it.">
-                  <input id="admin_markup_value" name="admin_markup_value" type="number" min={0} max={100} step="0.01" value={numberInputValue(editing.admin_markup_value ?? 0)}
-                    onChange={(e) => { setEditing((p) => p ? { ...p, admin_markup_value: parseNumberInput(e.target.value) } : p); clearError("admin_markup_value"); }}
-                    className={fieldClass(errors.admin_markup_value)} />
+                <FormField name="admin_markup_value" label="Tourvaa markup %" error={errors.admin_markup_value}
+                  hint={editing.admin_markup_value == null
+                    ? `Using the ${inheritedLabel}. It updates automatically when that changes.`
+                    : "Markup for this slab only. Enter 0 for no markup. Suppliers never see it."}>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-dash-body">
+                      <input type="checkbox" checked={editing.admin_markup_value == null}
+                        onChange={(e) => { setEditing((p) => p ? { ...p, admin_markup_value: e.target.checked ? null : inheritedMarkup } : p); clearError("admin_markup_value"); }}
+                        className="h-4 w-4" />
+                      Use {inheritedLabel}
+                    </label>
+                    {editing.admin_markup_value != null && (
+                      <input id="admin_markup_value" name="admin_markup_value" type="number" min={0} max={100} step="0.01" value={numberInputValue(editing.admin_markup_value)}
+                        onChange={(e) => { setEditing((p) => p ? { ...p, admin_markup_value: parseNumberInput(e.target.value) } : p); clearError("admin_markup_value"); }}
+                        className={fieldClass(errors.admin_markup_value)} />
+                    )}
+                  </div>
                 </FormField>
               )}
               {isSupplier ? (
@@ -516,7 +607,7 @@ export default function TourPricingTab({
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Storefront price (adult)</p>
                   <p className="mt-1 text-xl font-black text-blue-700">
-                    {fmt(withMarkup(sanitizeNumber(editing.adult_price), editing.admin_markup_value), editing.currency)}
+                    {fmt(withMarkup(sanitizeNumber(editing.adult_price), effectiveMarkup(editing)), editing.currency)}
                   </p>
                 </div>
               )}
@@ -524,7 +615,7 @@ export default function TourPricingTab({
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Storefront price (child)</p>
                   <p className="mt-1 text-xl font-black text-blue-700">
-                    {fmt(withMarkup(sanitizeNumber(editing.child_price), editing.admin_markup_value), editing.currency)}
+                    {fmt(withMarkup(sanitizeNumber(editing.child_price), effectiveMarkup(editing)), editing.currency)}
                   </p>
                 </div>
               )}
