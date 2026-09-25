@@ -3,8 +3,14 @@
 import { LuHeadphones as Headphones, LuMail as Mail, LuMessageSquare as MessageSquare, LuPhone as Phone } from "react-icons/lu";
 import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
 import PortalMessageThread from "@/components/messaging/PortalMessageThread";
+import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 
 export default function CustomerSupportPage() {
+  // Real contact details from Settings -> General (support_email /
+  // support_phone), never hard-coded placeholders; each row is hidden until
+  // it's configured.
+  const { supportEmail, supportPhone, supportPhoneHref } = usePublicSettings();
+
   return (
     <CustomerPageShell>
       <CustomerPageHeader
@@ -24,26 +30,30 @@ export default function CustomerSupportPage() {
           <div className="rounded-2xl border border-[#DDE7F3] bg-white p-6 shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
             <h3 className="mb-4 font-black text-dash-text">Contact Details</h3>
             <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--portal-soft)]">
-                  <Mail size={18} className="text-dash-brand" />
+              {supportEmail && (
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--portal-soft)]">
+                    <Mail size={18} className="text-dash-brand" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-dash-muted">Email</p>
+                    <a href={`mailto:${supportEmail}`} className="mt-0.5 block text-sm font-semibold text-dash-text hover:text-dash-brand">{supportEmail}</a>
+                    <p className="mt-0.5 text-xs text-dash-subtle">Response within 24 hours</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-dash-muted">Email</p>
-                  <p className="mt-0.5 text-sm font-semibold text-dash-text">support@tourvaa.com</p>
-                  <p className="mt-0.5 text-xs text-dash-subtle">Response within 24 hours</p>
+              )}
+              {supportPhone && (
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--portal-soft)]">
+                    <Phone size={18} className="text-dash-brand" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-dash-muted">Phone</p>
+                    <a href={`tel:${supportPhoneHref}`} className="mt-0.5 block text-sm font-semibold text-dash-text hover:text-dash-brand">{supportPhone}</a>
+                    <p className="mt-0.5 text-xs text-dash-subtle">Mon–Fri, 9am–6pm GST</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--portal-soft)]">
-                  <Phone size={18} className="text-dash-brand" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-dash-muted">Phone</p>
-                  <p className="mt-0.5 text-sm font-semibold text-dash-text">+971 4 XXX XXXX</p>
-                  <p className="mt-0.5 text-xs text-dash-subtle">Mon–Fri, 9am–6pm GST</p>
-                </div>
-              </div>
+              )}
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--portal-soft)]">
                   <MessageSquare size={18} className="text-dash-brand" />

@@ -236,6 +236,9 @@ type Setting = {
 
 type CommissionPreviewData = {
   sample_price: string;
+  default_markup_percentage?: string;
+  customer_price?: string;
+  markup_amount?: string;
   tourvaa_commission_percentage: string;
   direct: { supplier: string; tourvaa: string };
   agent: { supplier: string; agent_commission_percentage: string; agent: string; tourvaa: string };
@@ -533,7 +536,7 @@ export default function SettingsPage() {
                 Enter a sample tour price to see how it splits across supplier, Tourvaa, agent and affiliate under the settings above.
               </p>
               <label className="mb-5 block max-w-xs">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Example Price</span>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Example Supplier Price</span>
                 <input
                   type="number"
                   min={0}
@@ -554,6 +557,13 @@ export default function SettingsPage() {
               {previewLoading && !preview ? (
                 <p className="text-sm text-dash-muted">Loading preview...</p>
               ) : preview ? (
+                <>
+                {preview.customer_price && (
+                  <p className="mb-3 text-sm text-dash-body">
+                    Customer pays <span className="font-bold text-dash-text">{preview.customer_price}</span>
+                    {" "}(supplier price {preview.sample_price} + {preview.default_markup_percentage}% default markup = {preview.markup_amount}). Tourvaa below includes commission + markup.
+                  </p>
+                )}
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="rounded-xl border border-dash-border bg-dash-bg p-4">
                     <p className="mb-2 text-xs font-bold uppercase text-dash-muted">Direct</p>
@@ -573,6 +583,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-dash-text">Tourvaa <span className="font-bold">{preview.affiliate.tourvaa}</span></p>
                   </div>
                 </div>
+                </>
               ) : (
                 <p className="text-sm text-dash-muted">Could not load a preview.</p>
               )}

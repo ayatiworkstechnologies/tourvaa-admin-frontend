@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuFileText as FileText, LuCompass as MapPinned, LuMessageSquare as MessageSquare, LuPackageCheck as PackageCheck, LuPencil as Pencil, LuPlus as Plus, LuUserPlus as UserPlus, LuUsers as Users } from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuFileText as FileText, LuCompass as MapPinned, LuMessageSquare as MessageSquare, LuPackageCheck as PackageCheck, LuPencil as Pencil, LuUserPlus as UserPlus, LuUsers as Users } from "react-icons/lu";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -232,7 +232,7 @@ export default function AgentDashboardPage() {
       {!isPending && <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {[
           { href: "/agent/tours", label: "Browse Tours", icon: MapPinned, tone: "bg-blue-50 text-blue-600" },
-          { href: "/agent/bookings/create", label: "New Booking", icon: Plus, tone: "bg-emerald-50 text-emerald-600" },
+          { href: "/agent/bookings", label: "My Bookings", icon: CalendarCheck, tone: "bg-emerald-50 text-emerald-600" },
           { href: "/agent/customers", label: "Add Customer", icon: UserPlus, tone: "bg-violet-50 text-violet-600" },
           { href: "/agent/invoices", label: "View Invoices", icon: FileText, tone: "bg-amber-50 text-amber-600" },
           { href: "/agent/messages", label: "Messages", icon: MessageSquare, tone: "bg-rose-50 text-rose-600" },
