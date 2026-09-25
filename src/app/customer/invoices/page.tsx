@@ -20,6 +20,7 @@ type Invoice = {
   total_amount?: string | number;
   grand_total?: string | number;
   currency?: string;
+  currency_symbol?: string;
   created_at?: string;
   amount_due?: string | number;
   balance_due_date?: string;
@@ -79,6 +80,7 @@ export default function CustomerInvoicesPage() {
     { key: "booking", header: "Booking", render: (i) => i.booking_id ? <Link className="font-semibold text-dash-brand hover:underline" href={`/customer/bookings/${i.booking_id}`}>{i.booking_code || `Booking #${i.booking_id}`}</Link> : "-" },
     { key: "status", header: "Status", render: (i) => <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-bold capitalize text-slate-700">{(i.status || "generated").replaceAll("_", " ")}</span> },
     { key: "type", header: "Type", render: (i) => (i.invoice_type || "tax_invoice").replaceAll("_", " "), className: "capitalize" },
+    { key: "currency", header: "Currency", render: (i) => <span className="font-semibold text-dash-text">{i.currency_symbol || i.currency || "USD"} <span className="text-xs text-dash-muted">{i.currency || "USD"}</span></span> },
     { key: "amount", header: "Amount", render: (i) => money(i.grand_total ?? i.total_amount, i.currency), className: "text-right font-bold text-dash-text" },
     { key: "due", header: "Balance", render: (i) => money(i.amount_due, i.currency), className: "text-right" },
     { key: "due_date", header: "Due date", render: (i) => i.amount_due && Number(i.amount_due) > 0 ? dateText(i.balance_due_date) : "Fully paid", className: "hidden text-dash-muted lg:table-cell" },

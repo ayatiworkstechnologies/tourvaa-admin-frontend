@@ -12,6 +12,7 @@ export type Invoice = {
   invoice_type: string;
   status: string;
   currency: string;
+  currency_symbol?: string;
   subtotal_amount: string;
   gst_rate: string;
   gst_amount: string;
