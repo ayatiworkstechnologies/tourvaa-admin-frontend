@@ -300,7 +300,7 @@ export default function AgentPortalLandingPage() {
           <div className="absolute inset-0 bg-black/15" />
 
           {/* Center Floating Glassmorphism Card */}
-          <div className="relative z-10 w-full max-w-[660px] rounded-[22px] sm:rounded-[26px] border border-white/20 bg-black/45 p-6 sm:p-10 text-center backdrop-blur-xl sm:backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]">
+          <div className="relative z-10 w-full max-w-[660px] rounded-[22px] border border-white/25 bg-black/25 p-6 text-center shadow-[0_8px_32px_0_rgba(0,0,0,0.28)] backdrop-blur-xl sm:rounded-[26px] sm:p-10 sm:backdrop-blur-2xl">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
               {hero.heading || DEFAULT_HERO.heading}
             </h1>

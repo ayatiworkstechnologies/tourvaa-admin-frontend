@@ -212,8 +212,8 @@ export default function HeroSection({
   return (
     <>
       {/* Contained Hero Section */}
-      <div className="relative z-30 mx-auto max-w-[1400px] px-5 pt-3 pb-4 sm:pb-6">
-        <section className="relative flex min-h-[480px] w-full flex-col justify-between items-center rounded-[20px] p-4 sm:p-6 text-center text-white shadow-[0_12px_40px_rgba(15,23,42,0.12)]">
+      <div className="relative z-30 mx-auto max-w-[1480px] px-3 pt-3 pb-4 sm:px-5 sm:pb-6">
+        <section className="relative flex min-h-[520px] w-full flex-col items-center justify-between rounded-[20px] p-4 text-center text-white shadow-[0_12px_40px_rgba(15,23,42,0.12)] sm:min-h-[540px] sm:p-6">
           {/* Background image/video & gradient overlay */}
           <div className="absolute inset-0 overflow-hidden rounded-[20px] pointer-events-none">
             {heroVideo ? (
@@ -290,7 +290,7 @@ export default function HeroSection({
                   : "opacity-100"
               }`}
             >
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-white/20 bg-pub-primary/75 backdrop-blur-md px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm text-white shadow-xl transition-all">
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-white/35 bg-white/10 px-4 py-2 text-xs text-white shadow-[0_10px_32px_rgba(15,23,42,0.18)] ring-1 ring-white/10 backdrop-blur-xl transition-all sm:px-6 sm:py-2.5 sm:text-sm">
                 <div className="flex items-center gap-2 shrink-0">
                   <Globe size={15} className="text-white/80 shrink-0" />
                   <span className="rounded bg-white/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white">
