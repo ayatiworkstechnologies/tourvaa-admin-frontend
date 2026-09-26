@@ -152,12 +152,12 @@ export default function FavouriteCountriesSection({
                 <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight drop-shadow-sm transition-colors duration-200 group-hover:text-pub-secondary">
                   {country.name.toLowerCase().endsWith("tours") ? country.name : `${country.name} tours`}
                 </h3>
-                <div className="mt-1.5 flex items-start gap-1.5 text-[11px] text-white/85 leading-relaxed">
+                <div className="mt-1.5 flex items-start gap-1.5 text-[11px] text-white leading-relaxed">
                   <SquareCheckBig
                     size={12}
-                    className="mt-0.5 shrink-0 text-white/70"
+                    className="mt-0.5 shrink-0 text-white"
                   />
-                  <p className="line-clamp-2 drop-shadow">
+                  <p className="line-clamp-2 !text-white drop-shadow">
                     {country.snippet || "Explore historic landmarks, scenic landscapes and vibrant local culture."}
                   </p>
                 </div>

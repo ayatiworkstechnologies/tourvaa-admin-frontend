@@ -2,6 +2,7 @@ import type { AuthUser } from "@/types/auth";
 
 const SUPPLIER_OPERATIONAL_ROUTES = [
   "/supplier/tours",
+  "/supplier/discounts",
   "/supplier/bookings",
   "/supplier/departures",
   "/supplier/calendar",

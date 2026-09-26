@@ -28,6 +28,14 @@ function getErrorMessage(error: unknown, fallback: string) {
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
+  const role = searchParams.get("role");
+  const loginHref = role === "agent-reseller"
+    ? "/agent-portal/login"
+    : role === "supplier"
+      ? "/supplier-portal/login"
+      : role === "affiliate"
+        ? "/affiliate-portal/login"
+        : "/login";
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -177,7 +185,7 @@ function ResetPasswordForm() {
 
         <p className="text-center text-sm text-gray-700">
           Back to{" "}
-          <Link href="/login" className="font-bold text-black">
+          <Link href={loginHref} className="font-bold text-black">
             Login
           </Link>
         </p>

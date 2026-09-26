@@ -33,6 +33,10 @@ export function invalidateGeoStates(countryId?: number) {
   else _statesCache.clear();
 }
 
+export function invalidateGeoCountries() {
+  _countriesCache = null;
+}
+
 function responseItems<T>(payload: { data?: T[]; items?: T[] }) {
   return payload.items ?? payload.data ?? [];
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuBell as Bell, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCompass as Compass, LuFileCheck2 as FileCheck, LuHandCoins as HandCoins, LuLayoutDashboard as LayoutDashboard, LuMessageSquare as MessageSquare, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
+import { LuBell as Bell, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCompass as Compass, LuFileCheck2 as FileCheck, LuHandCoins as HandCoins, LuLayoutDashboard as LayoutDashboard, LuMessageSquare as MessageSquare, LuPercent as Percent, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
@@ -17,6 +17,7 @@ const NAV = [
   { href: "/supplier/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/supplier/tours", icon: Compass, label: "My Tours", section: "Tour Workspace" },
   { href: "/supplier/tours/create", icon: Plus, label: "Create", section: "Tour Workspace" },
+  { href: "/supplier/discounts", icon: Percent, label: "Discounts", section: "Tour Workspace" },
   { href: "/supplier/bookings", icon: CalendarCheck, label: "Bookings", section: "Operations" },
   { href: "/supplier/earnings", icon: Wallet, label: "Earnings", section: "Operations" },
   { href: "/supplier/payouts", icon: HandCoins, label: "Payouts", section: "Operations" },
@@ -31,6 +32,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/supplier/dashboard": "Dashboard",
   "/supplier/tours": "My Tours",
   "/supplier/tours/create": "Create Tour",
+  "/supplier/discounts": "Discounts & History",
   "/supplier/bookings": "Bookings",
   "/supplier/earnings": "Earnings",
   "/supplier/payouts": "Payouts",

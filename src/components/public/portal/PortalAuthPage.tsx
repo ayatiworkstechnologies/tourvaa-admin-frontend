@@ -303,7 +303,7 @@ function maskEmail(email: string) {
 function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: PortalAuthConfig; safeRedirect: string | null; onSwitchToLogin: () => void }) {
   const t = THEME[config.theme];
   const key = PENDING_KEY(config.accountType);
-  const [form, setForm] = useState({ first_name: "", email: "", country_id: "", country_code: "", mobile_number: "", accepted_terms: false });
+  const [form, setForm] = useState({ first_name: "", email: "", country_code: "", mobile_number: "", accepted_terms: false });
   const [phoneIso, setPhoneIso] = useState<CountryCode | "">("");
   const { countries, loading: countriesLoading } = useGeoCountries();
   const { setCountry } = useCurrency();
@@ -328,9 +328,11 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setError("");
+    const selectedCountry = countries.find((country) => country.code.toUpperCase() === phoneIso);
     if (!validateEmail(form.email)) return setError("Enter a valid email address.");
-    if (!form.country_id) return setError("Select your country.");
     if (!phoneIso) return setError("Select your country before entering your mobile number.");
+    if (countriesLoading) return setError("Countries are still loading. Please try again.");
+    if (!selectedCountry) return setError("Select a valid country.");
     if (!validatePhoneForCountry(phoneIso, form.mobile_number)) return setError("Enter a valid mobile number for the selected country.");
     if (!form.accepted_terms) return setError("Accept the Terms and Privacy Policy to continue.");
     setLoading(true);
@@ -341,7 +343,7 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
         startCooldown(email, changeToken);
       } else {
         const res = await api.post("/auth/register", {
-          first_name: form.first_name, email, country_id: Number(form.country_id),
+          first_name: form.first_name, email, country_id: selectedCountry.id,
           country_iso: phoneIso, country_code: form.country_code, mobile_number: form.mobile_number,
           accepted_terms: form.accepted_terms, account_type: config.accountType, redirect: safeRedirect,
         });
@@ -423,22 +425,6 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
             className={`pl-10 ${t.focusBorder} ${t.focusRing}`}
           />
         </div>
-      </div>
-
-      {/* Country */}
-      <div>
-        <FieldLabel>Country</FieldLabel>
-        <select
-          required
-          autoComplete="country"
-          value={form.country_id}
-          onChange={(e) => setForm((current) => ({ ...current, country_id: e.target.value }))}
-          disabled={countriesLoading}
-          className={`w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:ring-4 disabled:bg-slate-50 ${t.focusBorder} ${t.focusRing}`}
-        >
-          <option value="">{countriesLoading ? "Loading countries…" : "Select your country"}</option>
-          {countries.map((country) => <option key={country.id} value={country.id}>{country.name}</option>)}
-        </select>
       </div>
 
       {/* Phone */}

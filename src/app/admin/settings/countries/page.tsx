@@ -4,12 +4,11 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LuCoins as Coins, LuSquarePen as Edit, LuGlobe as Globe, LuMapPin as MapPin, LuPlus as Plus } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
-import StatusBadge from "@/components/operations/StatusBadge";
 import ActionModal from "@/components/operations/ActionModal";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
-import { invalidateGeoStates, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
+import { invalidateGeoCountries, invalidateGeoStates, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import { invalidateCurrencyList } from "@/lib/utils/currency";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import api from "@/lib/api/client";
@@ -52,6 +51,7 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
   const [editing, setEditing] = useState<Row | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string | number>>({});
@@ -101,6 +101,7 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
         await api.post(endpoint, payload);
         toast.success(`${singular(title)} added`);
       }
+      if (endpoint === "/countries") invalidateGeoCountries();
       if (endpoint === "/states") invalidateGeoStates(Number(form.country_id) || undefined);
       if (endpoint === "/currencies") invalidateCurrencyList();
       setOpen(false);
@@ -114,13 +115,18 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
 
   async function toggleStatus(row: Row) {
     const next = row.status === "active" ? "inactive" : "active";
+    setTogglingId(Number(row.id));
     try {
       await api.patch(`${endpoint}/${row.id}/status`, { status: next });
+      if (endpoint === "/countries") invalidateGeoCountries();
+      if (endpoint === "/states") invalidateGeoStates(Number(row.country_id) || undefined);
       if (endpoint === "/currencies") invalidateCurrencyList();
-      toast.success("Status updated");
+      toast.success(`${singular(title)} ${next === "active" ? "enabled" : "disabled"}`);
       await load();
     } catch {
       toast.error("Status update failed");
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -135,11 +141,28 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
     {
       key: "status" as keyof Row,
       header: "Status",
-      render: (r) => (
-        <button type="button" title={`Toggle status (currently ${r.status})`} onClick={() => toggleStatus(r)} className="cursor-pointer">
-          <StatusBadge value={r.status as string} />
+      render: (r) => {
+        const active = r.status === "active";
+        const busy = togglingId === Number(r.id);
+        return (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={active}
+          title={canEdit ? `${active ? "Disable" : "Enable"} ${singular(title).toLowerCase()}` : "You do not have permission to change status"}
+          onClick={() => toggleStatus(r)}
+          disabled={!canEdit || busy}
+          className="inline-flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <span className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${active ? "bg-emerald-500" : "bg-slate-300"}`}>
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${active ? "translate-x-5" : "translate-x-0.5"}`} />
+          </span>
+          <span className={`min-w-14 text-left text-xs font-bold ${active ? "text-emerald-700" : "text-slate-500"}`}>
+            {busy ? "Saving…" : active ? "Active" : "Inactive"}
+          </span>
         </button>
-      ),
+        );
+      },
     },
     ...(canEdit ? [{
       key: "_actions" as keyof Row,

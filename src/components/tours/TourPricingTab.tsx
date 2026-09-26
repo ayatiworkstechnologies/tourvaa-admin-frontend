@@ -5,7 +5,7 @@ import { validatePricingSlab, type FieldErrors } from "@/lib/tours/tourValidatio
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { LuBadgeDollarSign as BadgeDollarSign, LuInfo as Info, LuPencil as Pencil, LuPercent as Percent, LuPlus as Plus, LuSave as Save, LuSparkles as Sparkles, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
-import { PricingSlab, getPricing, createPricing, updatePricing, deletePricing } from "@/lib/api/services/tourDetailService";
+import { PricingSlab, getPricing, getDiscounts, createPricing, updatePricing, deletePricing } from "@/lib/api/services/tourDetailService";
 import api from "@/lib/api/client";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
@@ -153,11 +153,36 @@ export default function TourPricingTab({
   // price shown to admin/supplier matches what the customer actually pays.
   const [discountPercent, setDiscountPercent] = useState<number | null>(null);
 
+  const loadDiscountPreview = useCallback(async (startingPrice = 0) => {
+    try {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const discounts = await getDiscounts(tourId);
+      const percentages = discounts
+        .filter((item) => {
+          if (item.status !== "active") return false;
+          if (item.start_date && new Date(item.start_date) > now) return false;
+          if (item.end_date && new Date(item.end_date) < today) return false;
+          if (item.usage_limit != null && Number(item.used_count ?? 0) >= Number(item.usage_limit)) return false;
+          return true;
+        })
+        .map((item) => item.discount_type === "percentage"
+          ? Number(item.discount_value)
+          : startingPrice > 0 ? (Number(item.discount_value) / startingPrice) * 100 : 0)
+        .filter((value) => Number.isFinite(value) && value > 0)
+        .map((value) => Math.min(90, value));
+      setDiscountPercent(percentages.length ? Math.max(...percentages) : null);
+    } catch {
+      // Non-fatal: pricing remains usable if discount preview loading fails.
+    }
+  }, [tourId]);
+
   const loadCommissionFloor = useCallback(async () => {
     try {
       const tourRes = await api.get(`/tours/${tourId}`);
       const activeDiscount = tourRes.data?.data?.active_discount;
       setDiscountPercent(activeDiscount?.discount_percentage ?? null);
+      void loadDiscountPreview(Number(tourRes.data?.data?.price_start_per_person ?? 0));
       // Pricing is always entered in the tour's own currency (see the
       // per-slab currency field on TourItinerary/tours.currency) -- suppliers
       // never chose this from the CurrencySelect below, it just fell through
@@ -182,9 +207,18 @@ export default function TourPricingTab({
     } catch {
       // Non-fatal -- the price form itself is the primary content of this tab.
     }
-  }, [tourId, isSupplier]);
+  }, [tourId, isSupplier, loadDiscountPreview]);
 
   useEffect(() => { void loadCommissionFloor(); }, [loadCommissionFloor]);
+
+  useEffect(() => {
+    const refreshDiscountPreview = (event: Event) => {
+      const detail = (event as CustomEvent<{ tourId?: string }>).detail;
+      if (!detail?.tourId || detail.tourId === tourId) void loadCommissionFloor();
+    };
+    window.addEventListener("tourvaa:discounts-changed", refreshDiscountPreview);
+    return () => window.removeEventListener("tourvaa:discounts-changed", refreshDiscountPreview);
+  }, [tourId, loadCommissionFloor]);
 
   // Admin-only markup (never loaded for suppliers). Order: slab > tour >
   // platform default (services/markup.py). tourMarkup null = the tour uses
@@ -318,7 +352,7 @@ export default function TourPricingTab({
 
   if (loading) return <Loader label="Loading pricing..." />;
 
-  const supplierGridClass = "grid-cols-[1fr_1.2fr_1.2fr_1.2fr_1.2fr_0.8fr_auto]";
+  const supplierGridClass = "grid-cols-[1fr_1.2fr_1.2fr_1.2fr_1.2fr_0.9fr_0.65fr_auto]";
   const publishableGridClass = "grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1.2fr_0.6fr_auto]";
 
   const addButton = (
@@ -413,8 +447,8 @@ export default function TourPricingTab({
         iconTone={isSupplier ? "emerald" : "brand"}
         title={isSupplier ? "Supplier Pricing" : "Supplier Price to Tourvaa"}
         description={isSupplier
-          ? "Your 1-pax price and the supplier get price (after your agreed commission is applied), per pax-range slab."
-          : "The supplier's 1-pax price, the supplier get price after commission, and the agreed commission, per pax-range slab."}
+          ? "Tourvaa's adult/child price and the amount you receive after commission, per pax-range slab."
+          : "Tourvaa's adult/child price, the amount the supplier receives, and the agreed commission, per pax-range slab."}
         action={addButton}
       >
         {isSupplier && isLiveTour && (
@@ -447,16 +481,16 @@ export default function TourPricingTab({
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-dash-border-soft">
             {/* Table header */}
-            <div className={`grid ${supplierGridClass} min-w-[980px] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3`}>
-              {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER GET PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "SUPPLIER GET PRICE (CHILD)", "COMMISSION", "ACTIONS"].map((h) => (
-                <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
+            <div className={`grid ${supplierGridClass} min-w-[1120px] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3`}>
+              {["PAX RANGE", "ADULT PRICE (TOURVAA)", "SUPPLIER RECEIVES (YOU)", "CHILD PRICE (TOURVAA)", "SUPPLIER RECEIVES (YOU)", "TOURVAA COMMISSION", "CURRENCY", "ACTIONS"].map((h, columnIndex) => (
+                <span key={`${columnIndex}-${h}`} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
               ))}
             </div>
 
             {/* Rows */}
             {slabs.map((r, idx) => (
               <div key={r.id ?? idx}
-                className={`grid ${supplierGridClass} min-w-[980px] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30`}
+                className={`grid ${supplierGridClass} min-w-[1120px] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30`}
               >
                 {/* Pax range badge */}
                 <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
@@ -464,26 +498,24 @@ export default function TourPricingTab({
                 </span>
 
                 {/* Adult price (1-pax price to Tourvaa) */}
-                <PriceCell value={r.adult_price} currency={r.currency} discountPercent={null} valueClassName="font-semibold text-dash-text text-sm" />
+                <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
 
-                {/* Supplier discounted price -- adult_price after commission is deducted.
-                    Never re-apply the storefront promo % here: that coupon (TourDiscount)
-                    is a separate mechanism from what actually drives supplier payouts
-                    (TourGroupDiscountTier, see services.bookings._resolve_group_discount),
-                    so stacking it on top of the commission-net figure would show a number
-                    the backend never actually pays out. */}
-                <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={null} valueClassName="font-bold text-emerald-700 text-sm" />
+                {/* Amount the supplier receives after commission, with the
+                    active discount shown against the same amount. */}
+                <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700 text-sm" />
 
                 {/* Child price (1-pax price to Tourvaa) */}
-                <PriceCell value={r.child_price} currency={r.currency} discountPercent={null} valueClassName="font-semibold text-dash-text text-sm" />
+                <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
 
-                {/* Supplier discounted price -- child_price after commission is deducted (see note above) */}
-                <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={null} valueClassName="font-bold text-emerald-700 text-sm" />
+                {/* Child amount the supplier receives after commission/discount. */}
+                <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700 text-sm" />
 
                 {/* Commission badge */}
                 <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
                   <Percent size={10} />{r.commission_percentage ?? commissionFloor ?? "…"}
                 </span>
+
+                <span className="text-xs font-semibold text-dash-subtle">{r.currency}</span>
 
                 {/* Actions */}
                 <ActionButtons onEdit={() => setEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />
@@ -504,8 +536,8 @@ export default function TourPricingTab({
           <span>
             <strong className="text-dash-body">Note:</strong>{" "}
             {isSupplier
-              ? "The prices entered above are your net supplier prices. Tourvaa commission is deducted from them to calculate what you receive."
-              : "Tourvaa commission is deducted from the supplier price to calculate the supplier get price. The storefront price (below) adds Tourvaa's markup on top."}
+              ? "Adult/child price is the price supplied to Tourvaa. Tourvaa commission is deducted to calculate what you receive; an active discount is shown as a crossed-out original and its discounted price."
+              : "Tourvaa commission is deducted from the adult/child price to calculate what the supplier receives. An active discount is shown against both amounts; the storefront price below adds Tourvaa's markup."}
           </span>
         </p>
       </SectionCard>

@@ -21,6 +21,7 @@ import { dialCodeForIso, validatePhoneForCountry } from "@/lib/utils/phoneCountr
 import { useCurrency } from "@/hooks/useCurrency";
 import { useGeoCountries } from "@/hooks/useGeo";
 import type { CountryCode } from "libphonenumber-js/min";
+import { FaApple, FaFacebookF, FaGoogle } from "react-icons/fa";
 
 // Traveller (customer) accounts only - agents and suppliers register through
 // their own dedicated portals (/agent-portal/login, /supplier-portal/login).
@@ -29,7 +30,6 @@ const ACCOUNT_TYPE = "CUSTOMER";
 const initialForm = {
   first_name: "",
   email: "",
-  country_id: "",
   country_code: "",
   mobile_number: "",
   accepted_terms: false,
@@ -92,6 +92,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [socialProviders, setSocialProviders] = useState<Record<string, boolean>>({});
   const [resendIn, setResendIn] = useState(() => {
     const pending = readPendingRegistration();
     return pending ? secondsUntil(pending.cooldownUntil) : RESEND_COOLDOWN_SECONDS;
@@ -118,6 +119,12 @@ export default function RegisterPage() {
   }, []);
 
   useEffect(() => {
+    api.get("/auth/oauth/providers")
+      .then((response) => setSocialProviders(response.data.data || {}))
+      .catch(() => setSocialProviders({}));
+  }, []);
+
+  useEffect(() => {
     if (!sentEmail || resendIn <= 0) return;
     const timer = window.setTimeout(() => setResendIn((seconds) => seconds - 1), 1000);
     return () => window.clearTimeout(timer);
@@ -126,9 +133,13 @@ export default function RegisterPage() {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
+    const selectedCountry = countries.find(
+      (country) => country.code.toUpperCase() === phoneIso,
+    );
     if (!validateEmail(form.email)) return setError("Enter a valid email address.");
-    if (!form.country_id) return setError("Select your country.");
     if (!phoneIso) return setError("Select your country before entering your mobile number.");
+    if (countriesLoading) return setError("Countries are still loading. Please try again.");
+    if (!selectedCountry) return setError("Select a valid country.");
     if (!validatePhoneForCountry(phoneIso, form.mobile_number)) return setError("Enter a valid mobile number for the selected country.");
     if (!form.accepted_terms) return setError("Accept the Terms and Privacy Policy to continue.");
 
@@ -139,7 +150,7 @@ export default function RegisterPage() {
         await api.post("/auth/change-registration-email", {
           change_token: changeToken,
           email,
-          country_id: Number(form.country_id),
+          country_id: selectedCountry.id,
           redirect,
         });
         startResendCooldown(email, changeToken);
@@ -147,6 +158,7 @@ export default function RegisterPage() {
         const base = {
           first_name: form.first_name,
           email,
+          country_id: selectedCountry.id,
           country_iso: phoneIso,
           country_code: form.country_code,
           mobile_number: form.mobile_number,
@@ -232,6 +244,26 @@ export default function RegisterPage() {
             </div>
 
             <form onSubmit={submit} className="space-y-4">
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: "google", label: "Google", icon: FaGoogle },
+                  { key: "facebook", label: "Facebook", icon: FaFacebookF },
+                  { key: "apple", label: "Apple", icon: FaApple },
+                ].map(({ key, label, icon: Icon }) => {
+                  const enabled = Boolean(socialProviders[key]);
+                  return enabled ? (
+                    <a key={key} href={`/api/auth/oauth/${key}/start${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-3 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50">
+                      <Icon size={16} /> {label}
+                    </a>
+                  ) : (
+                    <button key={key} type="button" disabled title={`${label} registration must be enabled in Admin Settings`} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-xs font-bold text-slate-400">
+                      <Icon size={16} /> {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-3"><span className="h-px flex-1 bg-slate-200" /><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Or register manually</span><span className="h-px flex-1 bg-slate-200" /></div>
+
               {/* First name */}
               <div>
                 <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600">First name</label>
@@ -260,22 +292,6 @@ export default function RegisterPage() {
                     className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
-              </div>
-
-              {/* Mobile */}
-              <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600">Country</label>
-                <select
-                  required
-                  autoComplete="country"
-                  value={form.country_id}
-                  onChange={(e) => setForm((current) => ({ ...current, country_id: e.target.value }))}
-                  disabled={countriesLoading}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50"
-                >
-                  <option value="">{countriesLoading ? "Loading countries…" : "Select your country"}</option>
-                  {countries.map((country) => <option key={country.id} value={country.id}>{country.name}</option>)}
-                </select>
               </div>
 
               {/* Mobile */}

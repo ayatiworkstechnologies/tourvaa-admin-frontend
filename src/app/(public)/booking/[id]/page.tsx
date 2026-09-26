@@ -8,6 +8,10 @@
 // sections stay in the code (untouched below) rather than being deleted;
 // flip this back to true once that's ready.
 const SHOW_ACCOMMODATION_BOOKING = false;
+// Customer records for agent bookings are now resolved automatically from
+// the lead traveller entered in Step 2. Keep the legacy selector code during
+// rollout, but do not make agents search/create the same person twice.
+const SHOW_AGENT_CUSTOMER_SELECTOR = false;
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -50,6 +54,7 @@ import DatePicker from "@/components/ui/DatePicker";
 import { fetchPublicTourDetail, PublicTourDetail } from "@/lib/api/publicClient";
 import publicApi from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { combinePhone } from "@/lib/utils/validators";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -720,6 +725,12 @@ export default function DynamicTourBookingPage() {
   const tourRoute =
     tour?.start_location && tour?.end_location ? `${tour.start_location} → ${tour.end_location}` : "";
   const tourThumbnail = tour?.banner_image ? mediaUrl(tour.banner_image) : FALLBACK_THUMB;
+  const tourDetailsPath = tour ? publicTourUrl(tour) : "/tours";
+  const tourDetailsQuery = new URLSearchParams();
+  if (selectedCalendar?.date) tourDetailsQuery.set("travel_date", selectedCalendar.date.split("T")[0]);
+  tourDetailsQuery.set("adults", String(adultCount));
+  tourDetailsQuery.set("children", String(childCount));
+  const tourDetailsHref = `${tourDetailsPath}?${tourDetailsQuery.toString()}`;
   const totalTravellers = adultCount + childCount;
   const maxAdults = Math.max(1, Math.min(10, (selectedCalendar?.slots ?? 10) - childCount));
   // Seats left on the departure after adults (same 10-traveller cap as adults).
@@ -941,10 +952,6 @@ export default function DynamicTourBookingPage() {
       setStepError(`Only ${selectedCalendar.slots} seat(s) left for this date. Please reduce travellers.`);
       return;
     }
-    if (isAgent && !agentCustomerId) {
-      setStepError("Select or create a customer to book this tour for.");
-      return;
-    }
     if (sessionKey) {
       try {
         await api.patch(`/checkout/session/${sessionKey}`, {
@@ -1055,6 +1062,41 @@ export default function DynamicTourBookingPage() {
       phone: idx === 0 ? `${p.phoneCountry}${p.phone}`.trim() : undefined,
       is_primary_contact: idx === 0,
     }));
+
+  const ensureAgentCustomer = async (): Promise<number> => {
+    if (agentCustomerId) return agentCustomerId;
+    const lead = passengers[0];
+    if (!lead) throw new Error("Enter the lead passenger details first.");
+    const email = lead.email.trim().toLowerCase();
+    const fullName = `${lead.firstName} ${lead.middleName} ${lead.lastName}`.replace(/\s+/g, " ").trim();
+    if (!email || !fullName) throw new Error("Enter the lead passenger's name and email first.");
+
+    try {
+      const linked = await api.post("/customers/link", { email });
+      const customer = linked.data?.data;
+      if (customer?.id) {
+        setAgentCustomerId(customer.id);
+        setAgentCustomerName(customer.full_name || fullName);
+        setAgentCustomerEmail(customer.email || email);
+        return customer.id;
+      }
+    } catch {
+      // No linked customer with this email: create one from the lead
+      // traveller below. The endpoint still enforces agent ownership.
+    }
+
+    const created = await api.post("/customers/", {
+      full_name: fullName,
+      email,
+      phone: lead.phone.trim() ? `${lead.phoneCountry}${lead.phone}`.trim() : "",
+    });
+    const customer = created.data?.data;
+    if (!customer?.id) throw new Error("Customer record could not be created.");
+    setAgentCustomerId(customer.id);
+    setAgentCustomerName(customer.full_name || fullName);
+    setAgentCustomerEmail(customer.email || email);
+    return customer.id;
+  };
 
   const handleContinueStep2 = async () => {
     const err = validatePassengers();
@@ -1167,18 +1209,15 @@ export default function DynamicTourBookingPage() {
       return;
     }
 
-    // Agent bookings are placed for a selected customer, never the agent's
-    // own session -- they submit straight to /bookings instead of the
-    // customer-scoped checkout session.
+    // Agent bookings submit directly to /bookings. The customer record is
+    // resolved automatically from the lead traveller entered in Step 2;
+    // agent_id comes from the authenticated user and supplier_id from tour.
     if (isAgent) {
-      if (!agentCustomerId) {
-        setPaymentError("Select or create a customer first.");
-        return;
-      }
       setPaymentSubmitting(true);
       try {
+        const resolvedCustomerId = await ensureAgentCustomer();
         const res = await api.post("/bookings", {
-          customer_id: agentCustomerId,
+          customer_id: resolvedCustomerId,
           tour_id: tour!.id,
           tour_calendar_id: selectedCalendar?.id ?? null,
           tour_date: travelDate || undefined,
@@ -1284,7 +1323,7 @@ export default function DynamicTourBookingPage() {
         {/* TOP NAVIGATION & CONFIDENCE HEADER */}
         <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
           <Link
-            href={tour.slug ? `/tours/${tour.slug}` : `/tours`}
+            href={tourDetailsHref}
             className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-pub-primary transition group"
           >
             <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
@@ -1435,7 +1474,7 @@ export default function DynamicTourBookingPage() {
             </div>
 
             <Link
-              href={tour.slug ? `/tours/${tour.slug}` : `/tours`}
+              href={tourDetailsHref}
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-800 transition shrink-0 self-start sm:self-center cursor-pointer"
             >
               <span>View Tour</span>
@@ -1507,7 +1546,7 @@ export default function DynamicTourBookingPage() {
                     <h2 className="text-base sm:text-lg font-bold text-slate-900">Passengers &amp; Accommodation</h2>
                   </div>
 
-                  {isAgent && (
+                  {SHOW_AGENT_CUSTOMER_SELECTOR && isAgent && (
                     <div className="pt-6">
                       <AgentCustomerSelector
                         selectedCustomerId={agentCustomerId}

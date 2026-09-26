@@ -54,6 +54,8 @@ const allAdminNavItems: NavItem[] = [
   { label: "Sessions", module: "sessions", href: "/admin/sessions", icon: MonitorSmartphone, permissions: ["sessions.view", "view-sessions"], section: "System" },
   { label: "Notifications", module: "notifications", href: "/admin/notifications", icon: Bell, permissions: ["notifications.view", "view-notifications"], section: "System" },
   { label: "Messages", module: "messages", href: "/admin/messages", icon: MessageSquare, permissions: ["messages.view"], section: "System" },
+  { label: "Contact Enquiries", module: "contact_enquiries", href: "/admin/contact-enquiries", icon: MessageSquare, permissions: ["settings.view", "view-settings", "messages.view"], section: "System" },
+  { label: "Homepage Subscribers", module: "homepage_subscribers", href: "/admin/homepage-subscribers", icon: Mail, permissions: ["settings.view", "view-settings", "messages.view"], section: "System" },
   { label: "Profile", module: "profile", href: "/admin/profile", icon: UserRound, permissions: ["profile.view", "view-profile"], placement: "bottom" },
 ];
 

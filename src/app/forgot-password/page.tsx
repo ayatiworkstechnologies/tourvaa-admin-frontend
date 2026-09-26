@@ -26,7 +26,18 @@ type ForgotPasswordFormValues = {
 function ForgotPasswordForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
+  const role = searchParams.get("role");
   const safeRedirect = redirect?.startsWith("/") && !redirect.startsWith("//") ? redirect : null;
+  const loginPath = role === "agent-reseller"
+    ? "/agent-portal/login"
+    : role === "supplier"
+      ? "/supplier-portal/login"
+      : role === "affiliate"
+        ? "/affiliate-portal/login"
+        : "/login";
+  const loginHref = safeRedirect
+    ? `${loginPath}?redirect=${encodeURIComponent(safeRedirect)}`
+    : loginPath;
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const {
@@ -99,7 +110,7 @@ function ForgotPasswordForm() {
 
         <p className="text-center text-sm text-gray-700">
           Remember password?{" "}
-          <Link href={safeRedirect ? `/login?redirect=${encodeURIComponent(safeRedirect)}` : "/login"} className="font-bold text-black">
+          <Link href={loginHref} className="font-bold text-black">
             Login
           </Link>
         </p>

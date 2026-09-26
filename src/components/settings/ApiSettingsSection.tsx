@@ -13,6 +13,9 @@ type ApiSummary = {
   viator_api_key: string; // masked, display-only
   viator_affiliate_pid: string; // not a secret - shown in full
   viator_enabled: boolean;
+  google_oauth_client_id: string; google_oauth_client_secret: string; google_oauth_enabled: boolean;
+  facebook_oauth_app_id: string; facebook_oauth_app_secret: string; facebook_oauth_enabled: boolean;
+  apple_oauth_service_id: string; apple_oauth_private_key: string; apple_oauth_metadata: string; apple_oauth_enabled: boolean;
 };
 
 const inputClass = "w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand";
@@ -61,6 +64,7 @@ export default function ApiSettingsSection() {
   const [viatorApiKey, setViatorApiKey] = useState("");
   const [viatorAffiliatePid, setViatorAffiliatePid] = useState("");
   const [viatorEnabled, setViatorEnabled] = useState(false);
+  const [oauth, setOauth] = useState({ googleId: "", googleSecret: "", googleEnabled: false, facebookId: "", facebookSecret: "", facebookEnabled: false, appleServiceId: "", applePrivateKey: "", appleMetadata: "", appleEnabled: false });
 
   const load = async () => {
     setLoading(true);
@@ -72,6 +76,7 @@ export default function ApiSettingsSection() {
       setViatorApiKey("");
       setViatorAffiliatePid(data.viator_affiliate_pid || "");
       setViatorEnabled(Boolean(data.viator_enabled));
+      setOauth((current) => ({ ...current, googleId: "", googleSecret: "", googleEnabled: Boolean(data.google_oauth_enabled), facebookId: "", facebookSecret: "", facebookEnabled: Boolean(data.facebook_oauth_enabled), appleServiceId: "", applePrivateKey: "", appleMetadata: data.apple_oauth_metadata || "", appleEnabled: Boolean(data.apple_oauth_enabled) }));
     } finally {
       setLoading(false);
     }
@@ -90,6 +95,16 @@ export default function ApiSettingsSection() {
         viator_enabled: viatorEnabled,
       };
       if (viatorApiKey.trim()) payload.viator_api_key = viatorApiKey.trim();
+      if (oauth.googleId.trim()) payload.google_oauth_client_id = oauth.googleId.trim();
+      if (oauth.googleSecret.trim()) payload.google_oauth_client_secret = oauth.googleSecret.trim();
+      if (oauth.facebookId.trim()) payload.facebook_oauth_app_id = oauth.facebookId.trim();
+      if (oauth.facebookSecret.trim()) payload.facebook_oauth_app_secret = oauth.facebookSecret.trim();
+      if (oauth.appleServiceId.trim()) payload.apple_oauth_service_id = oauth.appleServiceId.trim();
+      if (oauth.applePrivateKey.trim()) payload.apple_oauth_private_key = oauth.applePrivateKey.trim();
+      payload.google_oauth_enabled = oauth.googleEnabled;
+      payload.facebook_oauth_enabled = oauth.facebookEnabled;
+      payload.apple_oauth_enabled = oauth.appleEnabled;
+      payload.apple_oauth_metadata = oauth.appleMetadata.trim();
 
       await api.put("/settings/api", payload);
       setMessage("API settings updated successfully.");
@@ -134,6 +149,23 @@ export default function ApiSettingsSection() {
           </span>
         </span>
       </label>
+      <section className="space-y-4 rounded-2xl border border-dash-border bg-white p-5">
+        <div><h3 className="text-base font-bold text-dash-text">Traveller Social Registration</h3><p className="text-xs text-dash-muted">Configure OAuth credentials. Manual email registration remains available.</p></div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Google Client ID</span><input type="password" value={oauth.googleId} onChange={(e) => setOauth({ ...oauth, googleId: e.target.value })} placeholder={summary.google_oauth_client_id ? `Saved: ${summary.google_oauth_client_id}` : "Not set"} className={inputClass} /></label>
+          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Google Client Secret</span><input type="password" value={oauth.googleSecret} onChange={(e) => setOauth({ ...oauth, googleSecret: e.target.value })} placeholder={summary.google_oauth_client_secret ? "Saved (leave blank to keep)" : "Not set"} className={inputClass} /></label>
+          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Facebook App ID</span><input type="password" value={oauth.facebookId} onChange={(e) => setOauth({ ...oauth, facebookId: e.target.value })} placeholder={summary.facebook_oauth_app_id ? `Saved: ${summary.facebook_oauth_app_id}` : "Not set"} className={inputClass} /></label>
+          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Facebook App Secret</span><input type="password" value={oauth.facebookSecret} onChange={(e) => setOauth({ ...oauth, facebookSecret: e.target.value })} placeholder={summary.facebook_oauth_app_secret ? "Saved (leave blank to keep)" : "Not set"} className={inputClass} /></label>
+          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Apple Service ID</span><input type="password" value={oauth.appleServiceId} onChange={(e) => setOauth({ ...oauth, appleServiceId: e.target.value })} placeholder={summary.apple_oauth_service_id ? `Saved: ${summary.apple_oauth_service_id}` : "Not set"} className={inputClass} /></label>
+          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Apple Team ID and Key ID</span><input value={oauth.appleMetadata} onChange={(e) => setOauth({ ...oauth, appleMetadata: e.target.value })} placeholder="TEAM_ID:KEY_ID" className={inputClass} /></label>
+          <label className="md:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Apple Private Key (.p8 contents)</span><textarea rows={4} value={oauth.applePrivateKey} onChange={(e) => setOauth({ ...oauth, applePrivateKey: e.target.value })} placeholder={summary.apple_oauth_private_key ? "Private key saved (leave blank to keep)" : "-----BEGIN PRIVATE KEY-----"} className={inputClass} /></label>
+        </div>
+        <div className="flex flex-wrap gap-5 text-sm font-semibold text-dash-text">
+          <label className="flex items-center gap-2"><input type="checkbox" checked={oauth.googleEnabled} onChange={(e) => setOauth({ ...oauth, googleEnabled: e.target.checked })} /> Enable Google</label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={oauth.facebookEnabled} onChange={(e) => setOauth({ ...oauth, facebookEnabled: e.target.checked })} /> Enable Facebook</label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={oauth.appleEnabled} onChange={(e) => setOauth({ ...oauth, appleEnabled: e.target.checked })} /> Enable Apple</label>
+        </div>
+      </section>
       <div className="flex justify-end">
         <button disabled={saving} className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60">
           {saving ? "Saving..." : "Save API Settings"}

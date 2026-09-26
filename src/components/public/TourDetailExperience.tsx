@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
@@ -14,6 +14,7 @@ import {
   LuHeart as Heart,
   LuHotel as Hotel,
   LuMapPin as MapPin,
+  LuMessageCircle as MessageCircle,
   LuMinus as Minus,
   LuPlus as Plus,
   LuShieldCheck as ShieldCheck,
@@ -108,6 +109,31 @@ function splitList(value?: string | null): string[] {
       (item) => item && !/^activities:?$/i.test(item) && !/^-+$/.test(item),
     )
     .map((item) => item.replace(/^-\s*/, ""));
+}
+
+function TextParagraphs({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
+  const paragraphs = text
+    .replace(/\r\n/g, "\n")
+    .trim()
+    .split(/\n\s*\n+/)
+    .map((paragraph) => paragraph.replace(/\s*\n\s*/g, " ").trim())
+    .filter(Boolean);
+
+  return (
+    <div className="space-y-3">
+      {paragraphs.map((paragraph, index) => (
+        <p key={index} className={className}>
+          {paragraph}
+        </p>
+      ))}
+    </div>
+  );
 }
 
 function groupTierLabel(personsFrom: number, personsTo: number | null): string {
@@ -563,6 +589,9 @@ export default function TourDetailExperience({
   }, [realDates]);
 
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
+  const [datePageIndex, setDatePageIndex] = useState(0);
+  const [monthMenuOpen, setMonthMenuOpen] = useState(false);
+  const monthMenuRef = useRef<HTMLDivElement>(null);
   const safeMonthIndex = Math.min(
     Math.max(0, currentMonthIndex),
     Math.max(0, monthGroups.length - 1),
@@ -576,6 +605,32 @@ export default function TourDetailExperience({
       },
     [monthGroups, safeMonthIndex],
   );
+  const datePageCount = Math.max(1, Math.ceil(currentMonth.dates.length / 3));
+  const safeDatePageIndex = Math.min(datePageIndex, datePageCount - 1);
+  const visibleDepartureDates = currentMonth.dates.slice(
+    safeDatePageIndex * 3,
+    safeDatePageIndex * 3 + 3,
+  );
+
+  useEffect(() => {
+    setDatePageIndex(0);
+  }, [safeMonthIndex]);
+
+  useEffect(() => {
+    if (!monthMenuOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (monthMenuRef.current && !monthMenuRef.current.contains(event.target as Node)) setMonthMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMonthMenuOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [monthMenuOpen]);
 
   const [selectedDateId, setSelectedDateId] = useState<string>("");
 
@@ -721,14 +776,9 @@ export default function TourDetailExperience({
   const startingOriginalPrice = Number(
     cheapestRow?.original_price_per_person ?? startingUnitPrice,
   );
-
-  // Static "Deposit Terms" (tour policy text) -- whether the tour has any
-  // deposit configured at all.
-  const hasDeposit = Boolean(
-    tour.deposit_type ||
-    tour.booking_deposit != null ||
-    tour.deposit_percentage != null,
-  );
+  const startingTierLabel = cheapestRow
+    ? groupTierLabel(cheapestRow.persons_from, cheapestRow.persons_to)
+    : "";
 
   // Live deposit offer for the selected date, from the same eligibility
   // rule checkout and booking creation enforce (GET
@@ -773,6 +823,9 @@ export default function TourDetailExperience({
   })();
   const depositPercent = depositOffer?.percent ?? null;
   const depositDue = depositOffer?.amount ?? null;
+  const agentReserveEligible = Boolean(
+    agentBooking && depositOptions?.agent.eligible && depositDue != null,
+  );
 
   // Highlights: Dynamic only
   const highlightsList = useMemo(() => {
@@ -1282,6 +1335,7 @@ export default function TourDetailExperience({
                   <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-md">
                     <BadgePercent size={14} className="text-amber-300" />
                     {pricingRows.length} Group Pricing Tiers
+                    {startingTierLabel ? ` · Best rate: ${startingTierLabel}` : ""}
                   </span>
                 )}
               </div>
@@ -1362,12 +1416,12 @@ export default function TourDetailExperience({
         </section>
 
         {/* ── 5. MAIN 2-COLUMN SECTION (DYNAMIC CONTENT + STICKY BOOKING WIDGET) ── */}
-        <div className="mt-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_390px] gap-8 items-start">
+        <div className="mt-10 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_410px] xl:grid-cols-[minmax(0,1fr)_440px] xl:gap-8">
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-10 min-w-0">
             {/* A. OVERVIEW SECTION */}
-            <div id="overview" className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
+            <div id="overview" className="space-y-3.5">
+              <div className="flex items-center gap-2 pb-1">
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                   <Compass size={17} />
                 </span>
@@ -1383,15 +1437,17 @@ export default function TourDetailExperience({
               )}
 
               {tour.short_description && (
-                <p className="text-[15px] sm:text-base leading-relaxed text-black font-normal whitespace-pre-line">
-                  {tour.short_description}
-                </p>
+                <TextParagraphs
+                  text={tour.short_description}
+                  className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
+                />
               )}
 
               {tour.long_description && (
-                <p className="text-[15px] sm:text-base leading-relaxed text-black font-normal whitespace-pre-line">
-                  {tour.long_description}
-                </p>
+                <TextParagraphs
+                  text={tour.long_description}
+                  className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
+                />
               )}
 
               {tour.overview?.why_choose_this_tour && (
@@ -1402,9 +1458,10 @@ export default function TourDetailExperience({
                       Why Choose This Tour
                     </p>
                   </div>
-                  <p className="text-[15px] sm:text-base leading-relaxed text-black font-normal whitespace-pre-line">
-                    {tour.overview.why_choose_this_tour}
-                  </p>
+                  <TextParagraphs
+                    text={tour.overview.why_choose_this_tour}
+                    className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
+                  />
                 </div>
               )}
 
@@ -1822,9 +1879,10 @@ export default function TourDetailExperience({
                                     <MapIcon size={14} className="text-blue-500" />
                                     Day Overview
                                   </p>
-                                  <p className="text-[15px] sm:text-base leading-relaxed text-black whitespace-pre-line font-normal">
-                                    {day.summary}
-                                  </p>
+                                  <TextParagraphs
+                                    text={day.summary}
+                                    className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
+                                  />
                                 </div>
                               ) : (
                                 <div className="rounded-xl bg-blue-50/70 border border-blue-100 p-4">
@@ -1844,9 +1902,10 @@ export default function TourDetailExperience({
                                   <MapIcon size={14} className="text-blue-500" />
                                   Full Day Details
                                 </p>
-                                <p className="text-[15px] sm:text-base leading-relaxed text-black whitespace-pre-line font-normal">
-                                  {day.detail}
-                                </p>
+                                <TextParagraphs
+                                  text={day.detail}
+                                  className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
+                                />
                               </div>
                             )}
 
@@ -2161,57 +2220,21 @@ export default function TourDetailExperience({
               </div>
             )}
 
-            {/* F. CANCELLATION & PAYMENT POLICIES */}
-            {(hasDeposit ||
-              (tour.cancellation_policy &&
-                tour.cancellation_policy.length > 0)) && (
+            {/* F. CANCELLATION POLICY */}
+            {tour.cancellation_policy &&
+              tour.cancellation_policy.length > 0 && (
               <div id="policies" className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                     <ShieldCheck size={16} />
                   </span>
                   <h3 className="text-xl sm:text-2xl font-bold text-slate-950">
-                    Deposit &amp; Cancellation Policy
+                    Cancellation Policy
                   </h3>
                 </div>
 
                 <div className="space-y-3 text-xs">
-                  {hasDeposit && (
-                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/60">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-blue-700 flex items-center gap-1.5">
-                        <Wallet size={13} />
-                        <span>Deposit Terms</span>
-                      </p>
-                      <ul className="mt-2 space-y-1.5 text-slate-700 font-medium">
-                        <li>
-                          Deposit required:{" "}
-                          <b>
-                            {tour.deposit_type === "percentage" &&
-                            tour.deposit_percentage != null
-                              ? `${tour.deposit_percentage}% of the total tour booking price`
-                              : tour.booking_deposit != null
-                                ? format(tour.booking_deposit, tourCurrency)
-                                : "Contact for booking deposit"}
-                          </b>
-                        </li>
-                        {tour.deposit_cutoff_days != null && (
-                          <li>
-                            Deposit due within{" "}
-                            <b>{tour.deposit_cutoff_days} day(s)</b> of booking
-                            confirmation.
-                          </li>
-                        )}
-                        <li>
-                          Deposits are available when booking well ahead; the
-                          exact balance due date is shown at checkout for your
-                          travel date.
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-
-                  {tour.cancellation_policy.length > 0 && (
-                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/60">
+                  <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/60">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
                         <Check size={13} className="stroke-[3]" />
                         <span>Refund Schedule</span>
@@ -2233,11 +2256,10 @@ export default function TourDetailExperience({
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            )}
+              )}
 
             {/* G. REVIEWS (Rendered dynamically only when real reviews exist in backend) */}
             {tour.reviews && tour.reviews.length > 0 && (
@@ -2314,15 +2336,15 @@ export default function TourDetailExperience({
           {/* ── RIGHT COLUMN: HIGH-CONVERTING STICKY BOOKING WIDGET ── */}
           <aside
             id="booking-widget"
-            className="sticky top-20 rounded-2xl border border-blue-100 bg-white p-5 sm:p-6 shadow-xl ring-1 ring-slate-900/5"
+            className="sticky top-20 w-full rounded-2xl border border-blue-100 bg-white p-4 shadow-xl ring-1 ring-slate-900/5 sm:p-5 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto no-scrollbar"
           >
             {/* Price Header */}
             <div className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-950 p-4 text-white shadow-md mb-5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
                   {promoActive
-                    ? `Special Offer (${tour.discount_percentage}% OFF)`
-                    : "Official Rate"}
+                    ? `Starting from · ${tour.discount_percentage}% OFF`
+                    : "Starting from"}
                 </span>
                 {realDates.length > 0 && (
                   <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
@@ -2332,15 +2354,18 @@ export default function TourDetailExperience({
               </div>
               <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className="text-2xl sm:text-3xl font-black text-white whitespace-nowrap">
-                  {format(unitPrice, tourCurrency)}
+                  {format(startingUnitPrice, tourCurrency)}
                 </span>
                 <span className="text-xs text-slate-300 whitespace-nowrap">/ person</span>
               </div>
-              {promoActive && originalUnitPrice > unitPrice && (
-                <span className="text-xs text-slate-400 line-through">
-                  {format(originalUnitPrice, tourCurrency)}
-                </span>
-              )}
+              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px]">
+                {promoActive && startingOriginalPrice > startingUnitPrice && (
+                  <span className="font-semibold text-red-300 line-through decoration-red-300">
+                    {format(startingOriginalPrice, tourCurrency)}
+                  </span>
+                )}
+                {startingTierLabel && <span className="font-semibold text-emerald-300">for {startingTierLabel}</span>}
+              </div>
               <p className="text-[10px] text-slate-300 mt-1">
                 Taxes &amp; Service Fees Included
               </p>
@@ -2355,7 +2380,7 @@ export default function TourDetailExperience({
 
             {/* Month Departure Navigation */}
             {monthGroups.length > 0 && (
-              <div className="mt-4 flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="mt-4 flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <button
                   type="button"
                   disabled={safeMonthIndex <= 0}
@@ -2366,9 +2391,42 @@ export default function TourDetailExperience({
                 >
                   <ChevronLeft size={16} />
                 </button>
-                <span className="text-xs sm:text-sm font-bold text-slate-900">
-                  {currentMonth.name}
-                </span>
+                <div ref={monthMenuRef} className="relative min-w-0 flex-1">
+                  <button
+                    type="button"
+                    aria-label="Departure month and year"
+                    aria-haspopup="listbox"
+                    aria-expanded={monthMenuOpen}
+                    onClick={() => setMonthMenuOpen((open) => !open)}
+                    className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-xs outline-none transition hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <span className="flex-1 text-center">{currentMonth.name}</span>
+                    <ChevronDown size={14} className={`shrink-0 text-slate-500 transition-transform ${monthMenuOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {monthMenuOpen && (
+                    <div role="listbox" aria-label="Available departure months" className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl ring-1 ring-slate-900/5 no-scrollbar">
+                      {monthGroups.map((month, index) => {
+                        const selected = index === safeMonthIndex;
+                        return (
+                          <button
+                            key={month.key}
+                            type="button"
+                            role="option"
+                            aria-selected={selected}
+                            onClick={() => {
+                              setCurrentMonthIndex(index);
+                              setMonthMenuOpen(false);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition ${selected ? "bg-blue-600 font-bold text-white" : "font-medium text-slate-700 hover:bg-slate-100"}`}
+                          >
+                            <span>{month.name}</span>
+                            {selected && <Check size={13} className="shrink-0 stroke-[3]" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
                   disabled={safeMonthIndex >= monthGroups.length - 1}
@@ -2384,10 +2442,25 @@ export default function TourDetailExperience({
               </div>
             )}
 
-            {/* Departure Date Cards (3 cols x 2 rows) */}
+            {/* Three departure cards at a time, paged within the selected month. */}
             {currentMonth.dates.length > 0 && (
-              <div className="mt-3.5 grid grid-cols-3 gap-2">
-                {currentMonth.dates.slice(0, 6).map((dep) => {
+              <div className="mt-3.5 flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Previous available dates"
+                  disabled={safeDatePageIndex <= 0}
+                  onClick={() => {
+                    const nextPage = Math.max(0, safeDatePageIndex - 1);
+                    setDatePageIndex(nextPage);
+                    const firstDate = currentMonth.dates[nextPage * 3];
+                    if (firstDate) setSelectedDateId(firstDate.id);
+                  }}
+                  className="flex h-8 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:opacity-25"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <div className="grid min-w-0 flex-1 grid-cols-3 gap-2.5">
+                {visibleDepartureDates.map((dep) => {
                   const isSelected = selectedDateId === dep.id;
                   return (
                     <button
@@ -2415,6 +2488,32 @@ export default function TourDetailExperience({
                     </button>
                   );
                 })}
+                </div>
+                <button
+                  type="button"
+                  aria-label="Next available dates"
+                  disabled={safeDatePageIndex >= datePageCount - 1}
+                  onClick={() => {
+                    const nextPage = Math.min(datePageCount - 1, safeDatePageIndex + 1);
+                    setDatePageIndex(nextPage);
+                    const firstDate = currentMonth.dates[nextPage * 3];
+                    if (firstDate) setSelectedDateId(firstDate.id);
+                  }}
+                  className="flex h-8 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:opacity-25"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
+
+            {monthGroups.length > 0 && (
+              <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-600">
+                <p className="font-bold text-slate-700">Can&apos;t find a date that suits you?</p>
+                <p>
+                  <Link href="/contact" className="font-bold text-blue-600 hover:underline">Get in touch with us</Link>
+                  {", or discover "}
+                  <Link href="/tours" className="font-bold text-blue-600 hover:underline">similar tours available in {currentMonth.name}</Link>.
+                </p>
               </div>
             )}
 
@@ -2426,16 +2525,16 @@ export default function TourDetailExperience({
 
             {/* Group Rate Highlights from Backend Pricing Table */}
             {pricingRows.length > 0 && (
-              <div className="mt-4 border-t border-slate-100 pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+              <div className="mt-3 border-t border-slate-100 pt-2.5">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wide text-slate-700">
                     Group Rate Highlights
                   </h4>
-                  <span className="text-[10px] text-blue-600 font-bold">
-                    Auto-applied
+                  <span className="text-[9px] font-bold text-blue-600">
+                    Auto-applied discount
                   </span>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   {pricingRows.map((row, index) => {
                     const isSelected = selectedGroupTier === index;
                     // Group saving vs the solo tier, both after any supplier discount.
@@ -2464,37 +2563,36 @@ export default function TourDetailExperience({
                           setAdults(target);
                           setChildren(0);
                         }}
-                        className={`flex w-full items-center justify-between rounded-xl border p-2.5 transition cursor-pointer text-xs ${
+                        className={`grid min-h-9 w-full grid-cols-[minmax(90px,1fr)_auto] items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[10px] transition cursor-pointer ${
                           isSelected
                             ? "border-blue-600 bg-blue-50/70 ring-1 ring-blue-600/30 font-bold"
                             : "border-slate-200 bg-white hover:border-slate-300"
                         }`}
                       >
-                        <span className="flex items-center gap-1.5 font-bold text-slate-900">
+                        <span className="truncate text-left font-bold text-slate-900">
                           {groupTierLabel(row.persons_from, row.persons_to)}
                         </span>
-                        <span className="flex flex-col items-end leading-tight">
+                        <span className="flex min-w-0 items-center justify-end gap-1 whitespace-nowrap text-right leading-none">
                           {rowDiscounted && (
-                            <span className="text-[10px] font-semibold text-slate-400 line-through">
+                            <span className="text-[9px] font-semibold text-red-500 line-through decoration-red-500">
                               {format(
                                 rowOriginal,
                                 row.currency || tourCurrency,
-                              )}{" "}
-                              / pax
+                              )}
                             </span>
                           )}
-                          <span className="font-semibold text-blue-600">
+                          <span className="whitespace-nowrap font-semibold text-blue-600">
                             {format(
                               row.price_per_person,
                               row.currency || tourCurrency,
                             )}
-                            <span className="text-[10px] text-slate-400 font-normal">
+                            <span className="text-[9px] font-normal text-slate-400">
                               {" "}
                               / pax
                             </span>
                           </span>
                           {saveAmount > 0 && (
-                            <span className="text-[10px] font-bold text-emerald-600">
+                            <span className="whitespace-nowrap text-[9px] font-bold text-emerald-600">
                               (save{" "}
                               {format(saveAmount, row.currency || tourCurrency)}{" "}
                               pp)
@@ -2722,35 +2820,73 @@ export default function TourDetailExperience({
 
             {/* CTAs */}
             <div className="mt-5 space-y-2">
-              <button
-                type="button"
-                onClick={() => handleBookNow()}
-                disabled={!selectedDeparture || !unitPrice}
-                className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {!unitPrice ? (
-                  "Price Unavailable"
-                ) : selectedDeparture ? (
-                  <>
-                    <span>Book This Tour</span>
-                    <ArrowRight size={16} />
-                  </>
-                ) : (
-                  "Select Date"
-                )}
-              </button>
-
-              {depositDue != null && (
-                <button
-                  type="button"
-                  onClick={() => handleBookNow("reserve")}
-                  disabled={!selectedDeparture || !unitPrice}
-                  className="w-full rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 py-2.5 text-xs font-bold text-blue-800 transition cursor-pointer disabled:opacity-40"
-                >
-                  {agentBooking ? "Reserve Now" : "Secure with a Deposit"} ({format(depositDue, tourCurrency)} today)
-                </button>
+              {agentBooking ? (
+                <>
+                  <div className={`rounded-xl border p-2.5 ${agentReserveEligible ? "border-orange-200 bg-orange-50/60" : "border-slate-200 bg-slate-50"}`}>
+                      <button
+                        type="button"
+                        onClick={() => handleBookNow("reserve")}
+                        disabled={!agentReserveEligible || !selectedDeparture || !unitPrice}
+                        className="w-full rounded-lg bg-pub-accent py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-[#cf4b24] disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
+                      >
+                        Pay Deposit &amp; Reserve
+                      </button>
+                      <p className="mt-2 text-center text-[10px] font-medium leading-4 text-blue-900/75">
+                        {agentReserveEligible ? (
+                          <>Pay {depositPercent ?? 0}% ({format(depositDue ?? 0, tourCurrency)}) today
+                          {depositOffer?.dueDate
+                            ? `; balance due ${new Date(`${depositOffer.dueDate}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.`
+                            : "."}</>
+                        ) : "Unavailable for this departure because it is inside the Reserve Now cutoff."}
+                      </p>
+                    </div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleBookNow("full")}
+                      disabled={!selectedDeparture || !unitPrice}
+                      className="w-full rounded-lg bg-pub-accent py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-[#cf4b24] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Pay in Full Today
+                    </button>
+                    <p className="mt-2 text-center text-[10px] font-medium text-slate-500">
+                      Pay the full amount and confirm your booking.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleBookNow()}
+                    disabled={!selectedDeparture || !unitPrice}
+                    className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {!unitPrice ? "Price Unavailable" : selectedDeparture ? (
+                      <><span>Book This Tour</span><ArrowRight size={16} /></>
+                    ) : "Select Date"}
+                  </button>
+                  {depositDue != null && (
+                    <button
+                      type="button"
+                      onClick={() => handleBookNow("reserve")}
+                      disabled={!selectedDeparture || !unitPrice}
+                      className="w-full rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 py-2.5 text-xs font-bold text-blue-800 transition cursor-pointer disabled:opacity-40"
+                    >
+                      Secure with a Deposit ({format(depositDue, tourCurrency)} today)
+                    </button>
+                  )}
+                </>
               )}
             </div>
+
+            <Link
+              href="/contact"
+              className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-blue-600 transition hover:text-blue-800 hover:underline"
+            >
+              <MessageCircle size={13} />
+              <span>Ask a travel expert</span>
+            </Link>
 
             {/* Trust Assurances */}
             <div className="mt-4 pt-3 border-t border-slate-100 space-y-2 text-[11px] text-slate-500 font-medium">

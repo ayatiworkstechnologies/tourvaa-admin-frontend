@@ -213,6 +213,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
       }
       setEditing(null);
       setErrors({});
+      window.dispatchEvent(new CustomEvent("tourvaa:discounts-changed", { detail: { tourId } }));
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err));
     } finally {
@@ -233,6 +234,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
       const updated = await deactivateDiscount(tourId, item.id);
       setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
       toast.success("Discount deactivated.");
+      window.dispatchEvent(new CustomEvent("tourvaa:discounts-changed", { detail: { tourId } }));
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err));
     }
@@ -250,8 +252,10 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     if (!amending?.id) return;
     setAmendSaving(true);
     try {
-      const newEndDate = amendEndDate ? amendEndDate : undefined;
-      const newValue = amendValue !== "" ? parseNumberInput(amendValue) : undefined;
+      const currentEndDate = amending.end_date?.slice(0, 10) ?? "";
+      const newEndDate = amendEndDate && amendEndDate !== currentEndDate ? amendEndDate : undefined;
+      const parsedValue = amendValue !== "" ? parseNumberInput(amendValue) : undefined;
+      const newValue = parsedValue !== Number(amending.discount_value) ? parsedValue : undefined;
       const updated = await amendDiscount(tourId, amending.id, {
         new_end_date: newEndDate,
         new_discount_value: newValue,
@@ -260,6 +264,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
       setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
       toast.success("Discount extended/updated.");
       setAmending(null);
+      window.dispatchEvent(new CustomEvent("tourvaa:discounts-changed", { detail: { tourId } }));
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err));
     } finally {

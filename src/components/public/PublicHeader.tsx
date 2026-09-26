@@ -451,40 +451,7 @@ export default function PublicHeader() {
                   </div>
                 </div>
 
-                <div className="space-y-1.5 pt-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Partner & Business Portals
-                  </p>
-                  {partnerPortals.map((partner) => {
-                    const Icon = partner.icon;
-                    return (
-                      <div
-                        key={partner.label}
-                        className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-2.5"
-                      >
-                        <Link
-                          href={partner.href}
-                          onClick={() => setOpen(false)}
-                          className="flex flex-1 items-center gap-2.5 text-xs font-bold text-slate-700"
-                        >
-                          <span
-                            className={`flex h-7 w-7 items-center justify-center rounded-lg ${partner.accent}`}
-                          >
-                            <Icon size={15} />
-                          </span>
-                          <span>{partner.label}</span>
-                        </Link>
-                        <Link
-                          href={partner.registerHref}
-                          onClick={() => setOpen(false)}
-                          className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-bold text-pub-accent"
-                        >
-                          {partner.registerLabel}
-                        </Link>
-                      </div>
-                    );
-                  })}
-                </div>
+                <PortalNavigationLinks onClose={() => setOpen(false)} />
               </>
             )}
           </div>
@@ -496,15 +463,6 @@ export default function PublicHeader() {
 
 const partnerPortals = [
   {
-    label: "Travel Agent Portal",
-    note: "B2B wholesale rates & bookings",
-    href: "/agent-portal/login",
-    registerHref: "/agent-portal/login?tab=register",
-    registerLabel: "Register",
-    icon: Briefcase,
-    accent: "text-blue-600 bg-blue-50 group-hover:bg-blue-600",
-  },
-  {
     label: "Affiliate Partner",
     note: "Earn commissions on every referral",
     href: "/affiliate-portal/login",
@@ -512,15 +470,6 @@ const partnerPortals = [
     registerLabel: "Register",
     icon: Handshake,
     accent: "text-emerald-600 bg-emerald-50 group-hover:bg-emerald-600",
-  },
-  {
-    label: "Tour Operator / Supplier",
-    note: "List tours & manage departures",
-    href: "/supplier-portal/login",
-    registerHref: "/supplier/onboarding",
-    registerLabel: "Join",
-    icon: Building,
-    accent: "text-indigo-600 bg-indigo-50 group-hover:bg-indigo-600",
   },
 ].filter((portal) => AFFILIATE_ENABLED || !portal.href.startsWith("/affiliate"));
 
@@ -582,8 +531,10 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
+      <PortalNavigationLinks onClose={onClose} />
+
       {/* Partner Portals Section */}
-      <div className="mt-3">
+      {partnerPortals.length > 0 && <div className="mt-3">
         <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
           Partner & Business Portals
         </p>
@@ -628,7 +579,7 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
             );
           })}
         </div>
-      </div>
+      </div>}
 
       {/* Bottom Help & Trust */}
       <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between px-3 text-[11px] text-slate-500">
@@ -645,6 +596,29 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
           Verified Secure
         </span>
       </div>
+    </div>
+  );
+}
+
+const portalNavigation = [
+  { label: "Agent Portal", href: "/agent-portal", icon: Briefcase },
+  { label: "Supplier Portal", href: "/supplier-portal", icon: Building },
+];
+
+function PortalNavigationLinks({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      {portalNavigation.map(({ label, href, icon: Icon }) => (
+        <Link
+          key={href}
+          href={href}
+          onClick={onClose}
+          className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+        >
+          <Icon size={15} />
+          <span>{label}</span>
+        </Link>
+      ))}
     </div>
   );
 }

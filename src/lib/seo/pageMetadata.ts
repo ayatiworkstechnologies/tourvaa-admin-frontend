@@ -138,6 +138,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/supplier/profile": { title: "Supplier Profile & Verification", description: "Manage company information, vehicles, documents, and supplier verification.", index: false },
   "/supplier/invoices": { title: "Supplier Invoices", description: "Review and download invoices generated for bookings fulfilled by your supplier account.", index: false },
   "/supplier/tours": { title: "Supplier Tours", description: "Create and manage tour inventory submitted by your supplier account.", index: false },
+  "/supplier/discounts": { title: "Supplier Discounts", description: "Review discounts and discount history across your tours.", index: false },
   "/supplier/onboarding": { title: "Supplier Onboarding", description: "Complete your Tourvaa supplier onboarding to start listing and managing tours.", index: false },
   "/supplier/tours/create": { title: "Create Supplier Tour", description: "Build a tour with overview, itinerary, inclusions, pricing, availability, and media.", index: false },
   "/supplier/tours/[id]/edit": { title: "Edit Supplier Tour", description: "Update a supplier tour and submit changes for administrative approval.", index: false },
