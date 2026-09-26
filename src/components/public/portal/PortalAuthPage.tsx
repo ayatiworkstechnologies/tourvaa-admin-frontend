@@ -35,6 +35,7 @@ import { dialCodeForIso, validatePhoneForCountry } from "@/lib/utils/phoneCountr
 import { useCurrency } from "@/hooks/useCurrency";
 import { useGeoCountries } from "@/hooks/useGeo";
 import type { CountryCode } from "libphonenumber-js/min";
+import { FaApple, FaFacebookF, FaGoogle } from "react-icons/fa";
 
 export type PortalAuthConfig = {
   theme: PortalTheme;
@@ -163,10 +164,12 @@ function ErrorText({ message }: { message?: string }) {
 function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: PortalAuthConfig; safeRedirect: string | null; onSwitchToRegister: () => void }) {
   const t = THEME[config.theme];
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { loginWithToken, isLoggedIn, loading: sessionLoading, dashboard } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [socialProviders, setSocialProviders] = useState<Record<string, boolean>>({});
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({ defaultValues: { identifier: "", password: "" } });
 
   function redirectTarget() {
@@ -181,6 +184,19 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
     if (!sessionLoading && isLoggedIn && dashboard) router.replace(redirectTarget());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionLoading, isLoggedIn, dashboard, router, safeRedirect]);
+
+  useEffect(() => {
+    if (config.accountType !== "CUSTOMER") return;
+    api.get("/auth/oauth/providers")
+      .then((response) => setSocialProviders(response.data.data || {}))
+      .catch(() => setSocialProviders({}));
+  }, [config.accountType]);
+
+  useEffect(() => {
+    if (searchParams.get("oauth_error")) {
+      setError("Social sign-in could not be completed. Please try again or use your email and password.");
+    }
+  }, [searchParams]);
 
   const onSubmit = async (values: LoginFormValues) => {
     setLoading(true); setError("");
@@ -205,6 +221,30 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {config.accountType === "CUSTOMER" && (
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { key: "google", label: "Google", icon: FaGoogle },
+              { key: "facebook", label: "Facebook", icon: FaFacebookF },
+              { key: "apple", label: "Apple", icon: FaApple },
+            ].map(({ key, label, icon: Icon }) => {
+              const enabled = Boolean(socialProviders[key]);
+              const href = `/api/auth/oauth/${key}/start${safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ""}`;
+              return enabled ? (
+                <a key={key} href={href} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-3 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50">
+                  <Icon size={16} /> {label}
+                </a>
+              ) : (
+                <button key={key} type="button" disabled title={`${label} sign-in must be enabled in Admin Settings`} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-xs font-bold text-slate-400">
+                  <Icon size={16} /> {label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-3"><span className="h-px flex-1 bg-slate-200" /><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Or sign in manually</span><span className="h-px flex-1 bg-slate-200" /></div>
+        </>
+      )}
       <div>
         <FieldLabel>Email or mobile number</FieldLabel>
         <div className="relative">
