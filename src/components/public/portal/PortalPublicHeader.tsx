@@ -16,6 +16,9 @@ import {
   LuX as X,
 } from "react-icons/lu";
 import { AFFILIATE_ENABLED } from "@/lib/features";
+import { usePublicSettings } from "@/providers/PublicSettingsProvider";
+import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
+import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
 
 export type PortalTheme = "emerald" | "blue" | "indigo" | "purple";
 
@@ -40,7 +43,28 @@ const PORTALS = [
   },
 ].filter((portal) => AFFILIATE_ENABLED || !portal.path.startsWith("/affiliate"));
 
-export default function PortalPublicHeader({
+/**
+ * Portal-specific public header.
+ * Wrapped with PublicSettingsProvider + TravelStoreProvider so portal layouts
+ * (agent-portal, supplier-portal, affiliate-portal) don't need to supply them —
+ * identical pattern to PortalPublicFooter.
+ */
+export default function PortalPublicHeader(props: {
+  portalPath: string;
+  roleLabel: string;
+  icon: ReactNode;
+  theme?: PortalTheme;
+}) {
+  return (
+    <PublicSettingsProvider>
+      <TravelStoreProvider>
+        <PortalPublicHeaderInner {...props} />
+      </TravelStoreProvider>
+    </PublicSettingsProvider>
+  );
+}
+
+function PortalPublicHeaderInner({
   portalPath,
   roleLabel,
 }: {
@@ -49,6 +73,8 @@ export default function PortalPublicHeader({
   icon: ReactNode;
   theme?: PortalTheme;
 }) {
+  const { settings } = usePublicSettings();
+  const logoUrl = settings.logo?.trim() || "";
   const pathname = usePathname();
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -82,9 +108,18 @@ export default function PortalPublicHeader({
         <div className="flex items-center gap-3">
           <Link
             href={portalPath}
-            className="flex items-center gap-2 text-xl sm:text-2xl font-black tracking-tight text-pub-fg hover:opacity-95 transition"
+            className="flex shrink-0 items-center text-xl sm:text-2xl font-black tracking-tight text-pub-fg hover:opacity-95 transition"
           >
-            Tourvaa
+            {logoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element -- logo comes from an admin-uploaded external URL */
+              <img
+                src={logoUrl}
+                alt="Tourvaa"
+                className="h-8 w-auto object-contain sm:h-9"
+              />
+            ) : (
+              "Tourvaa"
+            )}
           </Link>
 
           {/* Switch Portal Dropdown (Desktop & Tablet) */}

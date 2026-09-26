@@ -100,6 +100,7 @@ export default function LanguageCurrencySelector({
   }, [countries, search]);
 
   const activeCountry = countries.find((c) => c.country_code === countryCode);
+  const displayCountry = countryCode || activeCountry?.country_code || "IN";
 
   return (
     <div ref={ref} className="relative">
@@ -122,12 +123,15 @@ export default function LanguageCurrencySelector({
         />
         <span className="flex items-center gap-0.5">
           <span className="flex items-center font-semibold">
-            {countryCode && (
-              <span className="mr-1 h-2.5 w-4 overflow-hidden rounded-[2px]">
-                <FlagIcon countryCode={countryCode} />
-              </span>
-            )}
-            {currCode}&thinsp;{symbol || ""}
+            <span className="mr-1 h-2.5 w-4 overflow-hidden rounded-[2px]">
+              <FlagIcon countryCode={displayCountry} />
+            </span>
+            <span>{displayCountry}</span>
+            <span className={`mx-1 ${inverse ? "text-white/40" : "text-slate-300"}`}>|</span>
+            <span>
+              {currCode}
+              {symbol && symbol !== currCode ? ` ${symbol}` : ""}
+            </span>
           </span>
           <ChevronDown
             size={10}

@@ -23,6 +23,7 @@ import {
 } from "@/lib/api/publicClient";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import { destinationUrl } from "@/lib/utils/tourUrl";
+import { AFFILIATE_ENABLED } from "@/lib/features";
 
 // Used only if the CMS-managed /cms/footer fetch fails or returns nothing,
 // so a backend hiccup never blanks the footer - see the useEffect below.
@@ -31,77 +32,32 @@ const FALLBACK_FOOTER_SECTIONS: CmsFooterSection[] = [
     id: -1,
     title: "Support",
     links: [
-      { id: -1, label: "Contact", url: "/contact", open_in_new_tab: false },
-      { id: -2, label: "Legal Notice", url: "/terms", open_in_new_tab: false },
-      {
-        id: -3,
-        label: "Privacy Policy.",
-        url: "/privacy-policy",
-        open_in_new_tab: false,
-      },
-      {
-        id: -4,
-        label: "General Terms and Conditions",
-        url: "/terms",
-        open_in_new_tab: false,
-      },
-      {
-        id: -5,
-        label: "Plan Your Trip",
-        url: "/contact",
-        open_in_new_tab: false,
-      },
+      { id: -1, label: "Help Centre", url: "/help-centre", open_in_new_tab: false },
+      { id: -2, label: "Contact Us", url: "/contact", open_in_new_tab: false },
+      { id: -3, label: "Cancellation Policy", url: "/cancellation-policy", open_in_new_tab: false },
+      { id: -4, label: "Privacy Policy", url: "/privacy-policy", open_in_new_tab: false },
+      { id: -5, label: "Terms & Conditions", url: "/terms", open_in_new_tab: false },
     ],
   },
   {
     id: -2,
     title: "Our Company",
     links: [
-      { id: -6, label: "About us", url: "/about", open_in_new_tab: false },
-      { id: -7, label: "Blog", url: "/blogs", open_in_new_tab: false },
-      {
-        id: -8,
-        label: "Explore Tourvaa",
-        url: "/destinations",
-        open_in_new_tab: false,
-      },
-      { id: -9, label: "Tours", url: "/tours", open_in_new_tab: false },
-      {
-        id: -10,
-        label: "Traveller's Choice",
-        url: "/tours?sort=rating_desc",
-        open_in_new_tab: false,
-      },
+      { id: -6, label: "About Us", url: "/about", open_in_new_tab: false },
+      { id: -7, label: "Blog & Travel Guides", url: "/blogs", open_in_new_tab: false },
+      { id: -8, label: "Explore Destinations", url: "/destinations", open_in_new_tab: false },
+      { id: -9, label: "All Tours", url: "/tours", open_in_new_tab: false },
+      { id: -10, label: "Special Deals", url: "/deals", open_in_new_tab: false },
     ],
   },
   {
     id: -3,
-    title: "Login",
+    title: "Portals",
     links: [
-      {
-        id: -11,
-        label: "Traveller Login",
-        url: "/login",
-        open_in_new_tab: false,
-      },
-      {
-        id: -12,
-        label: "Agent Portal",
-        url: "/agent-portal",
-        open_in_new_tab: false,
-      },
-      {
-        id: -13,
-        label: "Affiliate Portal",
-        url: "/affiliate-portal",
-        open_in_new_tab: false,
-      },
-      {
-        id: -14,
-        label: "Supplier Portal",
-        url: "/supplier-portal",
-        open_in_new_tab: false,
-      },
+      { id: -11, label: "Traveller Login", url: "/login", open_in_new_tab: false },
+      { id: -12, label: "Agent Portal", url: "/agent-portal", open_in_new_tab: false },
+      { id: -13, label: "Supplier Portal", url: "/supplier-portal", open_in_new_tab: false },
+      { id: -14, label: "Affiliate Portal", url: "/affiliate-portal", open_in_new_tab: false },
     ],
   },
 ];
@@ -115,8 +71,9 @@ function normalizeFooterSections(
     ...section,
     links: section.links.filter(
       (link) =>
-        !link.url.toLowerCase().includes("affiliate") &&
-        !link.label.toLowerCase().includes("affiliate"),
+        AFFILIATE_ENABLED ||
+        (!link.url.toLowerCase().includes("affiliate") &&
+          !link.label.toLowerCase().includes("affiliate")),
     ),
   }));
 }

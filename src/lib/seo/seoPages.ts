@@ -30,9 +30,7 @@ export const EDITABLE_SEO_PAGES: { path: string; label: string; group: string }[
   { path: "/supplier-portal", label: "Supplier Portal", group: "Partner pages" },
   { path: "/agent-portal", label: "Agent Portal", group: "Partner pages" },
   { path: "/affiliate-portal", label: "Affiliate Portal", group: "Partner pages" },
-  { path: "/join/supplier", label: "Supplier Sign Up", group: "Partner pages" },
-  { path: "/join/agent", label: "Agent Sign Up", group: "Partner pages" },
-  { path: "/join/affiliate", label: "Affiliate Sign Up", group: "Partner pages" },
+
 ];
 
 /** Collapses newlines/extra spaces so a pasted multi-line SEO text renders

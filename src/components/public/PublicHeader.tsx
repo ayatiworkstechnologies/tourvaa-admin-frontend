@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import RichText from "@/components/public/home/RichText";
 import { list, useSectionCopy } from "@/components/public/home/useSectionCopy";
 import { useSectionVisibility } from "@/components/public/home/sectionVisibility";
@@ -43,7 +44,9 @@ const TRUST_ICONS = [
   { Icon: HeartHandshake, color: "text-sky-400" },
 ];
 
+
 export default function PublicHeader() {
+  const pathname = usePathname();
   // CMS > Home Page > Top Bar replaces the default highlights when set.
   const customTrust = list(useSectionCopy("trust_bar").items);
   const showTopBar = useSectionVisibility()("top-bar");
@@ -116,6 +119,11 @@ export default function PublicHeader() {
       setVisible(true);
     }
   }, [open, profileOpen]);
+
+  useEffect(() => {
+    setOpen(false);
+    setProfileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
@@ -220,7 +228,8 @@ export default function PublicHeader() {
             "Tourvaa"
           )}
         </Link>
-        <nav
+
+                <nav
           aria-label="Account and trip tools"
           className="hidden shrink-0 items-center gap-5 lg:flex lg:gap-7"
         >
@@ -327,7 +336,7 @@ export default function PublicHeader() {
       </div>
       {open && (
         <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg lg:hidden">
-          <Link
+                    <Link
             href="/wishlist"
             onClick={() => setOpen(false)}
             className="flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"

@@ -8,8 +8,7 @@ export function isAffiliatePath(pathname: string) {
     pathname.startsWith("/affiliate/") ||
     pathname === "/affiliate-portal" ||
     pathname.startsWith("/affiliate-portal/") ||
-    pathname === "/join/affiliate" ||
-    pathname.startsWith("/join/affiliate/") ||
+
     pathname === "/admin/affiliates" ||
     pathname.startsWith("/admin/affiliates/") ||
     pathname === "/admin/cms/affiliate-portal" ||
