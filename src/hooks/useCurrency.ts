@@ -181,10 +181,21 @@ export async function setDisplayCountry(code: string, preferredCurrency?: string
   // the user wait on - or silently lose the change to - the /currency/context
   // round-trip below. The request still runs as the authoritative fallback.
   const preferred = (preferredCurrency || "").toUpperCase();
-  if (preferred && state.rates[preferred]) {
+  if (preferred && /^[A-Z]{3}$/.test(preferred)) {
     if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, preferred);
-    emit({ code: preferred });
-    return;
+    if (state.rates[preferred]) {
+      emit({ code: preferred });
+      return;
+    }
+    if (state.loading) {
+      // Country data can arrive before the rates request. Persist the
+      // country-implied currency now so loadCurrency's post-request storage
+      // re-read applies it instead of restoring the previous (usually USD)
+      // selection. Reflect it in the trigger immediately as well; price
+      // conversion begins as soon as its rate is available.
+      emit({ code: preferred });
+      return;
+    }
   }
   try {
     const res = await api.get("/currency/context", { params: { country: normalized } });
