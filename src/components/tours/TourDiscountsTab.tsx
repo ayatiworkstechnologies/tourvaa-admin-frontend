@@ -130,7 +130,10 @@ function AdminDiscountPricePreview({
   item: TourDiscount; supplierAdultPrice: number; supplierChildPrice: number; storefrontAdultPrice: number; storefrontChildPrice: number; currency: string;
 }) {
   if (supplierAdultPrice <= 0 && supplierChildPrice <= 0) return null;
-  const isTourvaa = item.added_by === "admin" || (!item.added_by && item.funded_by === "TOURVAA");
+  const isTourvaa = item.funded_by === "TOURVAA" || (item.funded_by !== "SUPPLIER" && (
+    (item.discount_name || "").toLowerCase().includes("tourvaa") ||
+    item.added_by === "admin"
+  ));
   const supplierAdultAfter = isTourvaa ? supplierAdultPrice : (discountedValue(item, supplierAdultPrice) ?? supplierAdultPrice);
   const adultMarkupFactor = supplierAdultPrice > 0 ? storefrontAdultPrice / supplierAdultPrice : 1;
   const publishableAdult = supplierAdultAfter * adultMarkupFactor;
@@ -178,6 +181,7 @@ const empty = (): TourDiscount => ({
   discount_name: "", discount_code: null, discount_type: "percentage",
   discount_value: 10, discount_scope: "tour", start_date: null, end_date: null,
   usage_limit: null, minimum_booking_amount: 0, status: "active",
+  funded_by: "SUPPLIER",
 });
 
 export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: string; role?: "admin" | "supplier" }) {
@@ -267,6 +271,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     try {
       const payload = {
         ...editing,
+        funded_by: isSupplier ? "SUPPLIER" : (editing.funded_by || "SUPPLIER"),
         discount_code: applicationMode === "automatic" ? null : editing.discount_code?.trim().toUpperCase(),
         discount_value: sanitizeNumber(editing.discount_value),
         minimum_booking_amount: sanitizeNumber(editing.minimum_booking_amount),
@@ -415,6 +420,17 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                         ) : (
                           <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">
                             <Sparkles size={12} /> Auto Applied
+                          </span>
+                        )}
+                        {!isSupplier && (
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            (item.funded_by === "TOURVAA" || (item.discount_name || "").toLowerCase().includes("tourvaa"))
+                              ? "bg-blue-50 text-dash-brand"
+                              : "bg-amber-50 text-amber-800"
+                          }`}>
+                            {(item.funded_by === "TOURVAA" || (item.discount_name || "").toLowerCase().includes("tourvaa"))
+                              ? "TourVaa Discount"
+                              : "Supplier Discount"}
                           </span>
                         )}
                         {item.discount_code && (
@@ -653,7 +669,44 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
             </div>
             <ErrorSummary errors={errors} />
             <div className="grid gap-4 md:grid-cols-2">
-              <FormField name="discount_name" label="Discount name" required error={errors.discount_name} hint="Shown to travellers, e.g. Early bird 10% off." className="md:col-span-2" counter={{ value: (editing.discount_name ?? "").length, max: 255 }}>
+              {!isSupplier && (
+              <div className="md:col-span-2">
+                <label className="mb-1.5 block text-xs font-bold uppercase text-dash-subtle">
+                  Discount Type &amp; Funding
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditing((p) => p ? { ...p, funded_by: "SUPPLIER" } : p)}
+                    className={`rounded-xl border p-3 text-left text-sm transition ${
+                      (editing.funded_by || "SUPPLIER") === "SUPPLIER"
+                        ? "border-amber-500 bg-amber-50/60 text-amber-900 ring-2 ring-amber-500/20"
+                        : "border-dash-border bg-white text-dash-body hover:bg-dash-bg"
+                    }`}
+                  >
+                    <span className="block font-bold text-amber-900">Supplier Discount</span>
+                    <span className="mt-1 block text-xs text-amber-800/80">
+                      Reduces the supplier base price paid to TourVaa. Reflected in Supplier Price table.
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditing((p) => p ? { ...p, funded_by: "TOURVAA" } : p)}
+                    className={`rounded-xl border p-3 text-left text-sm transition ${
+                      editing.funded_by === "TOURVAA"
+                        ? "border-dash-brand bg-blue-50/60 text-dash-brand ring-2 ring-dash-brand/20"
+                        : "border-dash-border bg-white text-dash-body hover:bg-dash-bg"
+                    }`}
+                  >
+                    <span className="block font-bold text-dash-brand">TourVaa Storefront Discount</span>
+                    <span className="mt-1 block text-xs text-dash-brand/80">
+                      Funded by TourVaa margin, reduces customer price on website without touching supplier payout.
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+            <FormField name="discount_name" label="Discount name" required error={errors.discount_name} hint="Shown to travellers, e.g. Early bird 10% off." className="md:col-span-2" counter={{ value: (editing.discount_name ?? "").length, max: 255 }}>
                 <input id="discount_name" name="discount_name" value={editing.discount_name}
                   onChange={(e) => { setEditing((p) => p ? { ...p, discount_name: e.target.value } : p); clearError("discount_name"); }}
                   className={fieldClass(errors.discount_name)} placeholder="e.g. Early Bird Offer" />

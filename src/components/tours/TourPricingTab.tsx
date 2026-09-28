@@ -37,36 +37,6 @@ function fmt(n: number | null | undefined, currency: string) {
   return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
-/** Strikes through the original price and shows the discounted price below
- * it when the tour has an active discount - same discount_percentage the
- * public storefront applies (Tour.active_discount, see services/cms.py
- * _active_discount), reused here so every price a supplier/admin sees
- * matches what the customer actually pays. */
-function PriceCell({
-  value,
-  currency,
-  discountPercent,
-  valueClassName,
-}: {
-  value: number | null | undefined;
-  currency: string;
-  discountPercent: number | null;
-  valueClassName: string;
-}) {
-  if (!discountPercent) {
-    return <span className={valueClassName}>{fmt(value, currency)}</span>;
-  }
-  const original = value ?? 0;
-  const discounted = original * (1 - discountPercent / 100);
-  return (
-    <div className="flex flex-col items-start gap-0.5 leading-tight">
-      <span className="text-xs font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{fmt(original, currency)}</span>
-      <span className={valueClassName}>{fmt(discounted, currency)}</span>
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Price after discount</span>
-    </div>
-  );
-}
-
 function SectionCard({
   icon: Icon,
   iconTone,
@@ -153,27 +123,42 @@ export default function TourPricingTab({
   // price shown to admin/supplier matches what the customer actually pays.
   const [supplierDiscountPercent, setSupplierDiscountPercent] = useState<number | null>(null);
   const [tourvaaDiscountPercent, setTourvaaDiscountPercent] = useState<number | null>(null);
+  const [supplierDiscountStart, setSupplierDiscountStart] = useState<string | null>(null);
+  const [tourvaaDiscountStart, setTourvaaDiscountStart] = useState<string | null>(null);
 
   const loadDiscountPreview = useCallback(async (startingPrice = 0) => {
     try {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const discounts = await getDiscounts(tourId);
+      // For preview in the admin/supplier editor: show active discounts configured
+      // for this tour (status active and not expired in the past).
       const active = discounts
         .filter((item) => {
           if (item.status !== "active") return false;
-          if (item.start_date && new Date(item.start_date) > now) return false;
           if (item.end_date && new Date(item.end_date) < today) return false;
           if (item.usage_limit != null && Number(item.used_count ?? 0) >= Number(item.usage_limit)) return false;
           return true;
         });
+
       const percent = (item: TourDiscount) => Math.min(90, item.discount_type === "percentage"
         ? Number(item.discount_value)
         : startingPrice > 0 ? (Number(item.discount_value) / startingPrice) * 100 : 0);
-      const supplier = active.filter((item) => item.added_by === "supplier" || (!item.added_by && item.funded_by !== "TOURVAA")).map(percent).filter((v) => Number.isFinite(v) && v > 0);
-      const tourvaa = active.filter((item) => item.added_by === "admin" || (!item.added_by && item.funded_by === "TOURVAA")).map(percent).filter((v) => Number.isFinite(v) && v > 0);
-      setSupplierDiscountPercent(supplier.length ? Math.max(...supplier) : null);
-      setTourvaaDiscountPercent(tourvaa.length ? Math.max(...tourvaa) : null);
+
+      const isTourvaaDiscount = (item: TourDiscount) => {
+        if (item.funded_by === "TOURVAA") return true;
+        if (item.funded_by === "SUPPLIER") return false;
+        const name = (item.discount_name || "").toLowerCase();
+        if (name.includes("tourvaa")) return true;
+        if (name.includes("supplier")) return false;
+        return item.added_by === "admin";
+      };
+
+      const supplierDiscounts = active.filter((item) => !isTourvaaDiscount(item)).map(percent).filter((v) => Number.isFinite(v) && v > 0);
+      const tourvaaDiscounts = active.filter((item) => isTourvaaDiscount(item)).map(percent).filter((v) => Number.isFinite(v) && v > 0);
+
+      setSupplierDiscountPercent(supplierDiscounts.length ? Math.max(...supplierDiscounts) : null);
+      setTourvaaDiscountPercent(tourvaaDiscounts.length ? Math.max(...tourvaaDiscounts) : null);
     } catch {
       // Non-fatal: pricing remains usable if discount preview loading fails.
     }
@@ -183,8 +168,12 @@ export default function TourPricingTab({
     try {
       const tourRes = await api.get(`/tours/${tourId}`);
       const activeDiscount = tourRes.data?.data?.active_discount;
-      setSupplierDiscountPercent(activeDiscount?.supplier_discount_percentage ?? null);
-      setTourvaaDiscountPercent(activeDiscount?.tourvaa_discount_percentage ?? null);
+      if (activeDiscount?.supplier_discount_percentage != null) {
+        setSupplierDiscountPercent(activeDiscount.supplier_discount_percentage);
+      }
+      if (activeDiscount?.tourvaa_discount_percentage != null) {
+        setTourvaaDiscountPercent(activeDiscount.tourvaa_discount_percentage);
+      }
       void loadDiscountPreview(Number(tourRes.data?.data?.price_start_per_person ?? 0));
       // Pricing is always entered in the tour's own currency (see the
       // per-slab currency field on TourItinerary/tours.currency) -- suppliers
@@ -271,6 +260,10 @@ export default function TourPricingTab({
   // The markup actually applied to a slab.
   const effectiveMarkup = (slab: PricingSlab) => (slab.admin_markup_value ?? inheritedMarkup);
   const afterSupplierDiscount = (price: number | null | undefined) => Number(price ?? 0) * (1 - Number(supplierDiscountPercent ?? 0) / 100);
+  const isScheduled = (start: string | null) => Boolean(start && new Date(start) > new Date());
+  const supplierDiscountScheduled = isScheduled(supplierDiscountStart);
+  const tourvaaDiscountScheduled = isScheduled(tourvaaDiscountStart);
+  const scheduledStart = tourvaaDiscountScheduled ? tourvaaDiscountStart : supplierDiscountScheduled ? supplierDiscountStart : null;
 
   const saveTourMarkup = async () => {
     const value = tourMarkupDraft.useDefault ? null : Number(tourMarkupDraft.value);
@@ -552,8 +545,19 @@ export default function TourPricingTab({
           <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
             <Percent size={16} className="mt-0.5 shrink-0" />
             <span>
-              An automatic {tourvaaDiscountPercent ? "TourVaa" : "supplier"} discount of {tourvaaDiscountPercent ?? supplierDiscountPercent}% is live on the storefront for its duration.
-              {isSupplier ? " See the Discounts section below for its effect on your price." : " Its effect is shown in the Publishable Price table below."}
+              {supplierDiscountPercent && tourvaaDiscountPercent ? (
+                <>
+                  Active discounts applied: <strong>{supplierDiscountPercent}% supplier discount</strong> (applied to supplier prices to TourVaa) and <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> (applied to publishable storefront prices).
+                </>
+              ) : supplierDiscountPercent ? (
+                <>
+                  An automatic <strong>supplier discount of {supplierDiscountPercent}%</strong> is applied to the supplier pricing table below.
+                </>
+              ) : (
+                <>
+                  An automatic <strong>TourVaa discount of {tourvaaDiscountPercent}%</strong> is applied to the publishable storefront pricing table below.
+                </>
+              )}
             </span>
           </div>
         )}
