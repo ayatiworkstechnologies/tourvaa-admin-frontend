@@ -146,19 +146,31 @@ export default function TourPricingTab({
         : startingPrice > 0 ? (Number(item.discount_value) / startingPrice) * 100 : 0);
 
       const isTourvaaDiscount = (item: TourDiscount) => {
+        // `added_by` comes from the immutable first history record and is
+        // therefore authoritative for legacy offers.  Older admin-created
+        // offers were saved with funded_by=SUPPLIER, which must not make an
+        // admin/TourVaa offer reduce the supplier price.
+        if (item.added_by === "admin") return true;
+        if (item.added_by === "supplier") return false;
         if (item.funded_by === "TOURVAA") return true;
         if (item.funded_by === "SUPPLIER") return false;
         const name = (item.discount_name || "").toLowerCase();
         if (name.includes("tourvaa")) return true;
         if (name.includes("supplier")) return false;
-        return item.added_by === "admin";
+        return false;
       };
 
-      const supplierDiscounts = active.filter((item) => !isTourvaaDiscount(item)).map(percent).filter((v) => Number.isFinite(v) && v > 0);
-      const tourvaaDiscounts = active.filter((item) => isTourvaaDiscount(item)).map(percent).filter((v) => Number.isFinite(v) && v > 0);
+      const bestOffer = (items: TourDiscount[]) => items
+        .map((item) => ({ item, value: percent(item) }))
+        .filter(({ value }) => Number.isFinite(value) && value > 0)
+        .sort((a, b) => b.value - a.value)[0];
+      const supplierOffer = bestOffer(active.filter((item) => !isTourvaaDiscount(item)));
+      const tourvaaOffer = bestOffer(active.filter(isTourvaaDiscount));
 
-      setSupplierDiscountPercent(supplierDiscounts.length ? Math.max(...supplierDiscounts) : null);
-      setTourvaaDiscountPercent(tourvaaDiscounts.length ? Math.max(...tourvaaDiscounts) : null);
+      setSupplierDiscountPercent(supplierOffer?.value ?? null);
+      setTourvaaDiscountPercent(tourvaaOffer?.value ?? null);
+      setSupplierDiscountStart(supplierOffer?.item.start_date ?? null);
+      setTourvaaDiscountStart(tourvaaOffer?.item.start_date ?? null);
     } catch {
       // Non-fatal: pricing remains usable if discount preview loading fails.
     }
@@ -401,7 +413,7 @@ export default function TourPricingTab({
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-dash-border-soft shadow-sm">
-        <table className="w-full min-w-[700px] border-collapse text-left">
+        <table className="w-full min-w-[860px] border-collapse text-left">
           <thead>
             <tr className="border-b border-dash-border-soft bg-dash-bg/75 text-[11px] font-black uppercase tracking-wider text-dash-subtle">
               <th rowSpan={2} className="px-4 py-3 align-middle">Pax Range</th>
@@ -412,6 +424,9 @@ export default function TourPricingTab({
               <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center text-emerald-800">
                 Customer Price (Storefront)
               </th>
+              <th colSpan={2} className="border-r border-dash-border-soft px-4 py-2 text-center text-dash-brand">
+                TourVaa Profit
+              </th>
               <th rowSpan={2} className="px-4 py-3 text-right align-middle">Actions</th>
             </tr>
             <tr className="border-b border-dash-border-soft bg-dash-bg/40 text-[10px] font-bold uppercase tracking-wider">
@@ -419,6 +434,8 @@ export default function TourPricingTab({
               <th className="border-r border-dash-border-soft px-4 py-1.5 text-violet-600">Child</th>
               <th className="border-l border-dash-border-soft px-4 py-1.5 text-emerald-700">Adult</th>
               <th className="border-r border-dash-border-soft px-4 py-1.5 text-emerald-600">Child</th>
+              <th className="px-4 py-1.5 text-dash-brand">Adult</th>
+              <th className="border-r border-dash-border-soft px-4 py-1.5 text-dash-brand">Child</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-dash-border-soft/70 bg-white">
@@ -433,6 +450,13 @@ export default function TourPricingTab({
               const tvDisc = Number(tourvaaDiscountPercent ?? 0) / 100;
               const adultFinal = adultStorefront * (1 - tvDisc);
               const childFinal = childStorefront * (1 - tvDisc);
+              // This is the markup remaining after TourVaa's storefront
+              // discount. It intentionally compares against the supplier's
+              // discounted price to TourVaa, never the original supplier
+              // price. Example: 100 -10% => 90; +50% => 135; -20% => 108;
+              // profit = 108 - 90 = 18.
+              const adultProfit = adultFinal - adultToTourvaa;
+              const childProfit = childFinal - childToTourvaa;
               return (
                 <tr key={r.id ?? idx} className="transition-colors hover:bg-dash-bg/40">
                   <td className="px-4 py-3.5 align-middle">
@@ -467,6 +491,17 @@ export default function TourPricingTab({
                         </span>
                       ) : null}
                     </div>
+                  </td>
+                  {/* Markup remaining after the TourVaa offer */}
+                  <td className="px-4 py-3.5 align-middle">
+                    <span className={`text-sm font-black ${adultProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>
+                      {fmt(adultProfit, r.currency)}
+                    </span>
+                  </td>
+                  <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                    <span className={`text-sm font-black ${childProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>
+                      {fmt(childProfit, r.currency)}
+                    </span>
                   </td>
                   {/* Markup */}
                   <td className="px-4 py-3.5 text-center align-middle">
@@ -545,17 +580,20 @@ export default function TourPricingTab({
           <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
             <Percent size={16} className="mt-0.5 shrink-0" />
             <span>
+              {scheduledStart ? (
+                <>Previewing a scheduled offer starting <strong>{new Date(scheduledStart).toLocaleDateString()}</strong>. </>
+              ) : null}
               {supplierDiscountPercent && tourvaaDiscountPercent ? (
                 <>
-                  Active discounts applied: <strong>{supplierDiscountPercent}% supplier discount</strong> (applied to supplier prices to TourVaa) and <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> (applied to publishable storefront prices).
+                  <strong>{supplierDiscountPercent}% supplier discount</strong> is applied to supplier prices to TourVaa, then <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> is applied only to publishable storefront prices.
                 </>
               ) : supplierDiscountPercent ? (
                 <>
-                  An automatic <strong>supplier discount of {supplierDiscountPercent}%</strong> is applied to the supplier pricing table below.
+                  A <strong>{supplierDiscountPercent}% supplier discount</strong> is applied to the supplier pricing table below.
                 </>
               ) : (
                 <>
-                  An automatic <strong>TourVaa discount of {tourvaaDiscountPercent}%</strong> is applied to the publishable storefront pricing table below.
+                  A <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> is applied only to the publishable storefront pricing table below.
                 </>
               )}
             </span>
