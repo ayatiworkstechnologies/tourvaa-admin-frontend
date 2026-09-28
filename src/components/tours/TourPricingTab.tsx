@@ -5,7 +5,7 @@ import { validatePricingSlab, type FieldErrors } from "@/lib/tours/tourValidatio
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { LuBadgeDollarSign as BadgeDollarSign, LuInfo as Info, LuPencil as Pencil, LuPercent as Percent, LuPlus as Plus, LuSave as Save, LuSparkles as Sparkles, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
-import { PricingSlab, getPricing, getDiscounts, createPricing, updatePricing, deletePricing } from "@/lib/api/services/tourDetailService";
+import { PricingSlab, TourDiscount, getPricing, getDiscounts, createPricing, updatePricing, deletePricing } from "@/lib/api/services/tourDetailService";
 import api from "@/lib/api/client";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
@@ -151,27 +151,29 @@ export default function TourPricingTab({
   // Same active_discount the public storefront computes (see
   // services/cms.py _active_discount) - reused here so the strikethrough
   // price shown to admin/supplier matches what the customer actually pays.
-  const [discountPercent, setDiscountPercent] = useState<number | null>(null);
+  const [supplierDiscountPercent, setSupplierDiscountPercent] = useState<number | null>(null);
+  const [tourvaaDiscountPercent, setTourvaaDiscountPercent] = useState<number | null>(null);
 
   const loadDiscountPreview = useCallback(async (startingPrice = 0) => {
     try {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const discounts = await getDiscounts(tourId);
-      const percentages = discounts
+      const active = discounts
         .filter((item) => {
           if (item.status !== "active") return false;
           if (item.start_date && new Date(item.start_date) > now) return false;
           if (item.end_date && new Date(item.end_date) < today) return false;
           if (item.usage_limit != null && Number(item.used_count ?? 0) >= Number(item.usage_limit)) return false;
           return true;
-        })
-        .map((item) => item.discount_type === "percentage"
-          ? Number(item.discount_value)
-          : startingPrice > 0 ? (Number(item.discount_value) / startingPrice) * 100 : 0)
-        .filter((value) => Number.isFinite(value) && value > 0)
-        .map((value) => Math.min(90, value));
-      setDiscountPercent(percentages.length ? Math.max(...percentages) : null);
+        });
+      const percent = (item: TourDiscount) => Math.min(90, item.discount_type === "percentage"
+        ? Number(item.discount_value)
+        : startingPrice > 0 ? (Number(item.discount_value) / startingPrice) * 100 : 0);
+      const supplier = active.filter((item) => item.added_by === "supplier" || (!item.added_by && item.funded_by !== "TOURVAA")).map(percent).filter((v) => Number.isFinite(v) && v > 0);
+      const tourvaa = active.filter((item) => item.added_by === "admin" || (!item.added_by && item.funded_by === "TOURVAA")).map(percent).filter((v) => Number.isFinite(v) && v > 0);
+      setSupplierDiscountPercent(supplier.length ? Math.max(...supplier) : null);
+      setTourvaaDiscountPercent(tourvaa.length ? Math.max(...tourvaa) : null);
     } catch {
       // Non-fatal: pricing remains usable if discount preview loading fails.
     }
@@ -181,7 +183,8 @@ export default function TourPricingTab({
     try {
       const tourRes = await api.get(`/tours/${tourId}`);
       const activeDiscount = tourRes.data?.data?.active_discount;
-      setDiscountPercent(activeDiscount?.discount_percentage ?? null);
+      setSupplierDiscountPercent(activeDiscount?.supplier_discount_percentage ?? null);
+      setTourvaaDiscountPercent(activeDiscount?.tourvaa_discount_percentage ?? null);
       void loadDiscountPreview(Number(tourRes.data?.data?.price_start_per_person ?? 0));
       // Pricing is always entered in the tour's own currency (see the
       // per-slab currency field on TourItinerary/tours.currency) -- suppliers
@@ -267,6 +270,7 @@ export default function TourPricingTab({
   const inheritedLabel = tourMarkup != null ? `tour markup (${tourMarkup}%)` : `default (${defaultMarkup}%)`;
   // The markup actually applied to a slab.
   const effectiveMarkup = (slab: PricingSlab) => (slab.admin_markup_value ?? inheritedMarkup);
+  const afterSupplierDiscount = (price: number | null | undefined) => Number(price ?? 0) * (1 - Number(supplierDiscountPercent ?? 0) / 100);
 
   const saveTourMarkup = async () => {
     const value = tourMarkupDraft.useDefault ? null : Number(tourMarkupDraft.value);
@@ -352,9 +356,6 @@ export default function TourPricingTab({
 
   if (loading) return <Loader label="Loading pricing..." />;
 
-  const supplierGridClass = "grid-cols-[1fr_1.2fr_1.2fr_1.2fr_1.2fr_0.9fr_0.65fr_auto]";
-  const publishableGridClass = "grid-cols-[1fr_1.2fr_1.2fr_1fr_1.2fr_1.2fr_0.6fr_auto]";
-
   const addButton = (
     <button type="button" onClick={openNewSlab}
       className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 ${accent.solidBtn}`}>
@@ -367,77 +368,166 @@ export default function TourPricingTab({
   // Suppliers never see this section -- the API strips markup and
   // storefront fields for supplier users.
   const publishableSection = !isSupplier && slabs.length > 0 && (
-        <SectionCard
-          icon={Percent}
-          iconTone="brand"
-          title="Publishable Price"
-          description="Admin-only markup added on top of the supplier's price to produce the storefront price. Suppliers never see this section."
-        >
-          {/* Tour-level markup: one % for every slab of this tour that has no
-              markup of its own. Order: slab > tour > platform default. */}
-          <div className="mb-4 rounded-xl border border-dash-border bg-dash-bg px-4 py-3">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="text-xs font-black uppercase tracking-wide text-dash-text">Markup for this tour</span>
-              <label className="flex items-center gap-2 text-xs font-semibold text-dash-body">
-                <input type="radio" name="tour-markup-mode" checked={tourMarkupDraft.useDefault}
-                  onChange={() => setTourMarkupDraft((d) => ({ ...d, useDefault: true }))} className="h-4 w-4" />
-                Use default ({defaultMarkup}%)
-              </label>
-              <label className="flex items-center gap-2 text-xs font-semibold text-dash-body">
-                <input type="radio" name="tour-markup-mode" checked={!tourMarkupDraft.useDefault}
-                  onChange={() => setTourMarkupDraft((d) => ({ useDefault: false, value: d.value || String(tourMarkup ?? defaultMarkup) }))} className="h-4 w-4" />
-                Custom for this tour
-              </label>
-              {!tourMarkupDraft.useDefault && (
-                <span className="relative">
-                  <input type="number" min={0} max={100} step="0.01" value={tourMarkupDraft.value} aria-label="Tour markup percentage"
-                    onChange={(e) => setTourMarkupDraft((d) => ({ ...d, value: e.target.value }))}
-                    className="w-28 rounded-lg border border-dash-border bg-white px-3 py-1.5 pr-7 text-sm outline-none focus:border-dash-brand" />
-                  <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-xs font-bold text-dash-muted">%</span>
-                </span>
-              )}
-              <button type="button" onClick={() => void saveTourMarkup()} disabled={tourMarkupSaving}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-black text-white disabled:opacity-60 ${accent.solidBtn}`}>
-                <Save size={13} /> {tourMarkupSaving ? "Saving..." : "Save"}
-              </button>
-            </div>
-            <p className="mt-2 text-[11px] text-dash-subtle">
-              Now applying: <strong className="text-dash-body">{tourMarkup != null ? `${tourMarkup}% (this tour)` : `${defaultMarkup}% (default)`}</strong> to every slab without its own markup.
-              {" "}Default is set in <Link href="/admin/settings#pricing" className="font-bold text-dash-brand hover:underline">Settings</Link>; use a row&apos;s edit button for a slab-only markup.
-            </p>
-          </div>
-          <div className="overflow-x-auto rounded-2xl border border-dash-border-soft">
-            <div className={`grid ${publishableGridClass} min-w-[980px] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3`}>
-              {["PAX RANGE", "SUPPLIER PRICE (ADULT)", "SUPPLIER PRICE (CHILD)", "TOURVAA MARKUP", "STOREFRONT PRICE (ADULT)", "STOREFRONT PRICE (CHILD)", "CURRENCY", "EDIT"].map((h) => (
-                <span key={h} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
-              ))}
-            </div>
-            {slabs.map((r, idx) => (
-              <div key={r.id ?? idx} className={`grid ${publishableGridClass} min-w-[980px] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0`}>
-                <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
-                  {r.passenger_from}–{r.passenger_to} pax
-                </span>
-                <PriceCell value={Number(r.adult_price)} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
-                <PriceCell value={Number(r.child_price)} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
-                <span className="flex flex-col items-start gap-0.5">
-                  <span className="inline-flex w-fit items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
-                    <Percent size={10} />{Number(effectiveMarkup(r))}
-                  </span>
-                  <span className={`text-[10px] font-semibold ${r.admin_markup_value != null ? "text-amber-600" : tourMarkup != null ? "text-dash-brand" : "text-dash-subtle"}`}>
-                    {r.admin_markup_value != null ? "This slab" : tourMarkup != null ? "Tour" : "Default"}
-                  </span>
-                </span>
-                <PriceCell value={Number(r.storefront_adult_price ?? withMarkup(r.adult_price, effectiveMarkup(r)))} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700 text-sm" />
-                <PriceCell value={Number(r.storefront_child_price ?? withMarkup(r.child_price, effectiveMarkup(r)))} currency={r.currency} discountPercent={discountPercent} valueClassName="font-black text-emerald-700 text-sm" />
-                <span className="text-xs font-semibold text-dash-subtle">{r.currency}</span>
-                <button type="button" onClick={() => setEditing({ ...r })} aria-label="Edit markup" title="Edit markup"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:border-dash-brand/40 hover:bg-sky-50 hover:text-dash-brand-hover">
-                  <Pencil size={15} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
+    <SectionCard
+      icon={Percent}
+      iconTone="brand"
+      title="Publishable Price"
+      description="Supplier discount is applied first, then TourVaa markup, then any TourVaa storefront discount. This section never changes the Supplier Price to Tourvaa table."
+    >
+      {/* Tour-level markup */}
+      <div className="mb-4 rounded-xl border border-dash-border bg-dash-bg px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="text-xs font-black uppercase tracking-wide text-dash-text">Markup for this tour</span>
+          <label className="flex items-center gap-2 text-xs font-semibold text-dash-body">
+            <input type="radio" name="tour-markup-mode" checked={tourMarkupDraft.useDefault}
+              onChange={() => setTourMarkupDraft((d) => ({ ...d, useDefault: true }))} className="h-4 w-4" />
+            Use default ({defaultMarkup}%)
+          </label>
+          <label className="flex items-center gap-2 text-xs font-semibold text-dash-body">
+            <input type="radio" name="tour-markup-mode" checked={!tourMarkupDraft.useDefault}
+              onChange={() => setTourMarkupDraft((d) => ({ useDefault: false, value: d.value || String(tourMarkup ?? defaultMarkup) }))} className="h-4 w-4" />
+            Custom for this tour
+          </label>
+          {!tourMarkupDraft.useDefault && (
+            <span className="relative">
+              <input type="number" min={0} max={100} step="0.01" value={tourMarkupDraft.value} aria-label="Tour markup percentage"
+                onChange={(e) => setTourMarkupDraft((d) => ({ ...d, value: e.target.value }))}
+                className="w-28 rounded-lg border border-dash-border bg-white px-3 py-1.5 pr-7 text-sm outline-none focus:border-dash-brand" />
+              <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-xs font-bold text-dash-muted">%</span>
+            </span>
+          )}
+          <button type="button" onClick={() => void saveTourMarkup()} disabled={tourMarkupSaving}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-black text-white disabled:opacity-60 ${accent.solidBtn}`}>
+            <Save size={13} /> {tourMarkupSaving ? "Saving..." : "Save"}
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] text-dash-subtle">
+          Now applying: <strong className="text-dash-body">{tourMarkup != null ? `${tourMarkup}% (this tour)` : `${defaultMarkup}% (default)`}</strong> to every slab without its own markup.
+          {" "}Default is set in <Link href="/admin/settings#pricing" className="font-bold text-dash-brand hover:underline">Settings</Link>; use a row&apos;s edit button for a slab-only markup.
+        </p>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-dash-border-soft shadow-sm">
+        <table className="w-full min-w-[700px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-dash-border-soft bg-dash-bg/75 text-[11px] font-black uppercase tracking-wider text-dash-subtle">
+              <th rowSpan={2} className="px-4 py-3 align-middle">Pax Range</th>
+              <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center">
+                Supplier Cost (To TourVaa)
+              </th>
+              <th rowSpan={2} className="px-4 py-3 text-center align-middle">Markup</th>
+              <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center text-emerald-800">
+                Customer Price (Storefront)
+              </th>
+              <th rowSpan={2} className="px-4 py-3 text-right align-middle">Actions</th>
+            </tr>
+            <tr className="border-b border-dash-border-soft bg-dash-bg/40 text-[10px] font-bold uppercase tracking-wider">
+              <th className="border-l border-dash-border-soft px-4 py-1.5 text-blue-600">Adult</th>
+              <th className="border-r border-dash-border-soft px-4 py-1.5 text-violet-600">Child</th>
+              <th className="border-l border-dash-border-soft px-4 py-1.5 text-emerald-700">Adult</th>
+              <th className="border-r border-dash-border-soft px-4 py-1.5 text-emerald-600">Child</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-dash-border-soft/70 bg-white">
+            {slabs.map((r, idx) => {
+              const adultOrig = Number(r.adult_price ?? 0);
+              const childOrig = Number(r.child_price ?? 0);
+              const adultToTourvaa = afterSupplierDiscount(adultOrig);
+              const childToTourvaa = afterSupplierDiscount(childOrig);
+              const mkp = effectiveMarkup(r);
+              const adultStorefront = withMarkup(adultToTourvaa, mkp);
+              const childStorefront = withMarkup(childToTourvaa, mkp);
+              const tvDisc = Number(tourvaaDiscountPercent ?? 0) / 100;
+              const adultFinal = adultStorefront * (1 - tvDisc);
+              const childFinal = childStorefront * (1 - tvDisc);
+              return (
+                <tr key={r.id ?? idx} className="transition-colors hover:bg-dash-bg/40">
+                  <td className="px-4 py-3.5 align-middle">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
+                      {r.passenger_from}–{r.passenger_to} pax
+                    </span>
+                  </td>
+                  {/* Adult Cost to TourVaa */}
+                  <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-dash-text">
+                        {fmt(adultToTourvaa, r.currency)}
+                      </span>
+                      {supplierDiscountPercent ? (
+                        <span className="flex items-center gap-1.5 text-[11px] text-dash-subtle">
+                          <span className="line-through">{fmt(adultOrig, r.currency)}</span>
+                          <span className="rounded bg-amber-50 px-1 py-0.5 text-[10px] font-bold text-amber-700">-{supplierDiscountPercent}%</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
+                  {/* Child Cost to TourVaa */}
+                  <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-dash-muted">
+                        {fmt(childToTourvaa, r.currency)}
+                      </span>
+                      {supplierDiscountPercent ? (
+                        <span className="flex items-center gap-1.5 text-[11px] text-dash-subtle">
+                          <span className="line-through">{fmt(childOrig, r.currency)}</span>
+                          <span className="rounded bg-amber-50 px-1 py-0.5 text-[10px] font-bold text-amber-700">-{supplierDiscountPercent}%</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
+                  {/* Markup */}
+                  <td className="px-4 py-3.5 text-center align-middle">
+                    <div className="inline-flex flex-col items-center">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-dash-border bg-dash-bg px-2.5 py-0.5 text-xs font-bold text-dash-body">
+                        <Percent size={10} />{Number(mkp)}%
+                      </span>
+                      <span className={`mt-0.5 text-[10px] font-semibold ${r.admin_markup_value != null ? "text-amber-600" : tourMarkup != null ? "text-dash-brand" : "text-dash-subtle"}`}>
+                        {r.admin_markup_value != null ? "This slab" : tourMarkup != null ? "Tour" : "Default"}
+                      </span>
+                    </div>
+                  </td>
+                  {/* Adult Final Customer Price */}
+                  <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-emerald-700">
+                        {fmt(adultFinal, r.currency)}
+                      </span>
+                      {tourvaaDiscountPercent ? (
+                        <span className="flex items-center gap-1.5 text-[11px] text-dash-subtle">
+                          <span className="line-through">{fmt(adultStorefront, r.currency)}</span>
+                          <span className="rounded bg-amber-50 px-1 py-0.5 text-[10px] font-bold text-amber-700">-{tourvaaDiscountPercent}%</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
+                  {/* Child Final Customer Price */}
+                  <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-emerald-600">
+                        {fmt(childFinal, r.currency)}
+                      </span>
+                      {tourvaaDiscountPercent ? (
+                        <span className="flex items-center gap-1.5 text-[11px] text-dash-subtle">
+                          <span className="line-through">{fmt(childStorefront, r.currency)}</span>
+                          <span className="rounded bg-amber-50 px-1 py-0.5 text-[10px] font-bold text-amber-700">-{tourvaaDiscountPercent}%</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
+                  {/* Edit Button */}
+                  <td className="px-4 py-3.5 text-right align-middle">
+                    <button type="button" onClick={() => setEditing({ ...r })} aria-label="Edit markup" title="Edit markup"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:border-dash-brand/40 hover:bg-sky-50 hover:text-dash-brand-hover">
+                      <Pencil size={14} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </SectionCard>
   );
 
   return (
@@ -445,10 +535,10 @@ export default function TourPricingTab({
       <SectionCard
         icon={BadgeDollarSign}
         iconTone={isSupplier ? "emerald" : "brand"}
-        title={isSupplier ? "Supplier Pricing" : "Supplier Price to Tourvaa"}
+        title={isSupplier ? "Your Price to TourVaa" : "Supplier Price to TourVaa"}
         description={isSupplier
-          ? "Tourvaa's adult/child price and the amount you receive after commission, per pax-range slab."
-          : "Tourvaa's adult/child price, the amount the supplier receives, and the agreed commission, per pax-range slab."}
+          ? "Your original price, offer discount, final price to TourVaa, commission, and resulting payout."
+          : "Supplier original price, supplier offer discount, final price to TourVaa, commission, and supplier payout."}
         action={addButton}
       >
         {isSupplier && isLiveTour && (
@@ -458,11 +548,11 @@ export default function TourPricingTab({
           </div>
         )}
 
-        {discountPercent != null && discountPercent > 0 && (
+        {(tourvaaDiscountPercent || supplierDiscountPercent) && (
           <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
             <Percent size={16} className="mt-0.5 shrink-0" />
             <span>
-              An automatic discount of {discountPercent}% is live on the storefront for its duration.
+              An automatic {tourvaaDiscountPercent ? "TourVaa" : "supplier"} discount of {tourvaaDiscountPercent ?? supplierDiscountPercent}% is live on the storefront for its duration.
               {isSupplier ? " See the Discounts section below for its effect on your price." : " Its effect is shown in the Publishable Price table below."}
             </span>
           </div>
@@ -479,48 +569,98 @@ export default function TourPricingTab({
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-dash-border-soft">
-            {/* Table header */}
-            <div className={`grid ${supplierGridClass} min-w-[1120px] gap-3 border-b border-dash-border-soft bg-dash-bg/60 px-5 py-3`}>
-              {["PAX RANGE", "ADULT PRICE (TOURVAA)", "SUPPLIER RECEIVES (YOU)", "CHILD PRICE (TOURVAA)", "SUPPLIER RECEIVES (YOU)", "TOURVAA COMMISSION", "CURRENCY", "ACTIONS"].map((h, columnIndex) => (
-                <span key={`${columnIndex}-${h}`} className="text-[10px] font-black uppercase tracking-wider text-dash-subtle">{h}</span>
-              ))}
-            </div>
-
-            {/* Rows */}
-            {slabs.map((r, idx) => (
-              <div key={r.id ?? idx}
-                className={`grid ${supplierGridClass} min-w-[1120px] items-center gap-3 border-b border-dash-border-soft/60 px-5 py-4 last:border-0 transition hover:bg-dash-bg/30`}
-              >
-                {/* Pax range badge */}
-                <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
-                  {r.passenger_from}–{r.passenger_to} pax
-                </span>
-
-                {/* Adult price (1-pax price to Tourvaa) */}
-                <PriceCell value={r.adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
-
-                {/* Amount the supplier receives after commission, with the
-                    active discount shown against the same amount. */}
-                <PriceCell value={r.supplier_final_adult_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700 text-sm" />
-
-                {/* Child price (1-pax price to Tourvaa) */}
-                <PriceCell value={r.child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-semibold text-dash-text text-sm" />
-
-                {/* Child amount the supplier receives after commission/discount. */}
-                <PriceCell value={r.supplier_final_child_price} currency={r.currency} discountPercent={discountPercent} valueClassName="font-bold text-emerald-700 text-sm" />
-
-                {/* Commission badge */}
-                <span className="inline-flex items-center gap-1 rounded-full border border-dash-border px-2 py-0.5 text-xs font-bold text-dash-body">
-                  <Percent size={10} />{r.commission_percentage ?? commissionFloor ?? "…"}
-                </span>
-
-                <span className="text-xs font-semibold text-dash-subtle">{r.currency}</span>
-
-                {/* Actions */}
-                <ActionButtons onEdit={() => setEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />
-              </div>
-            ))}
+          <div className="overflow-x-auto rounded-2xl border border-dash-border-soft shadow-sm">
+            <table className="w-full min-w-[700px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-dash-border-soft bg-dash-bg/75 text-[11px] font-black uppercase tracking-wider text-dash-subtle">
+                  <th rowSpan={2} className="px-4 py-3 align-middle">Pax Range</th>
+                  <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center">
+                    Supplier Price {supplierDiscountPercent ? "(Offer Applied)" : ""}
+                  </th>
+                  <th rowSpan={2} className="px-4 py-3 text-center align-middle">TourVaa Commission</th>
+                  <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center text-emerald-800">
+                    Supplier Receives
+                  </th>
+                  <th rowSpan={2} className="px-4 py-3 text-right align-middle">Actions</th>
+                </tr>
+                <tr className="border-b border-dash-border-soft bg-dash-bg/40 text-[10px] font-bold uppercase tracking-wider">
+                  <th className="border-l border-dash-border-soft px-4 py-1.5 text-blue-600">Adult</th>
+                  <th className="border-r border-dash-border-soft px-4 py-1.5 text-violet-600">Child</th>
+                  <th className="border-l border-dash-border-soft px-4 py-1.5 text-emerald-700">Adult</th>
+                  <th className="border-r border-dash-border-soft px-4 py-1.5 text-emerald-600">Child</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-dash-border-soft/70 bg-white">
+                {slabs.map((r, idx) => {
+                  const adultPrice = Number(r.adult_price ?? 0);
+                  const childPrice = Number(r.child_price ?? 0);
+                  const adultToTourvaa = afterSupplierDiscount(adultPrice);
+                  const childToTourvaa = afterSupplierDiscount(childPrice);
+                  const commission = Number(r.commission_percentage ?? commissionFloor ?? 0);
+                  const adultReceives = adultToTourvaa * (1 - commission / 100);
+                  const childReceives = childToTourvaa * (1 - commission / 100);
+                  return (
+                    <tr key={r.id ?? idx} className="transition-colors hover:bg-dash-bg/40">
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-black ${accent.chip}`}>
+                          {r.passenger_from}–{r.passenger_to} pax
+                        </span>
+                      </td>
+                      {/* Adult Price */}
+                      <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-dash-text">
+                            {fmt(supplierDiscountPercent ? adultToTourvaa : adultPrice, r.currency)}
+                          </span>
+                          {supplierDiscountPercent ? (
+                            <span className="flex items-center gap-1.5 text-[11px] text-dash-subtle">
+                              <span className="line-through">{fmt(adultPrice, r.currency)}</span>
+                              <span className="rounded bg-amber-50 px-1 py-0.5 text-[10px] font-bold text-amber-700">-{supplierDiscountPercent}%</span>
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      {/* Child Price */}
+                      <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-dash-muted">
+                            {fmt(supplierDiscountPercent ? childToTourvaa : childPrice, r.currency)}
+                          </span>
+                          {supplierDiscountPercent ? (
+                            <span className="flex items-center gap-1.5 text-[11px] text-dash-subtle">
+                              <span className="line-through">{fmt(childPrice, r.currency)}</span>
+                              <span className="rounded bg-amber-50 px-1 py-0.5 text-[10px] font-bold text-amber-700">-{supplierDiscountPercent}%</span>
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      {/* Commission */}
+                      <td className="px-4 py-3.5 text-center align-middle">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-dash-border bg-dash-bg px-2.5 py-0.5 text-xs font-bold text-dash-body">
+                          <Percent size={10} />{commission}%
+                        </span>
+                      </td>
+                      {/* Adult Receives */}
+                      <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                        <span className="text-sm font-black text-emerald-700">
+                          {fmt(adultReceives, r.currency)}
+                        </span>
+                      </td>
+                      {/* Child Receives */}
+                      <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                        <span className="text-sm font-black text-emerald-600">
+                          {fmt(childReceives, r.currency)}
+                        </span>
+                      </td>
+                      {/* Actions */}
+                      <td className="px-4 py-3.5 text-right align-middle">
+                        <ActionButtons onEdit={() => setEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
 

@@ -252,7 +252,7 @@ export default function RegisterPage() {
                 ].map(({ key, label, icon: Icon }) => {
                   const enabled = Boolean(socialProviders[key]);
                   return enabled ? (
-                    <a key={key} href={`/api/auth/oauth/${key}/start${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-3 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50">
+                    <a key={key} href={key === "google" ? "/api/auth/google" : `/api/auth/oauth/${key}/start${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-3 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50">
                       <Icon size={16} /> {label}
                     </a>
                   ) : (
