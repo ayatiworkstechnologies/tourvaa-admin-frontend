@@ -146,14 +146,10 @@ export default function TourPricingTab({
         : startingPrice > 0 ? (Number(item.discount_value) / startingPrice) * 100 : 0);
 
       const isTourvaaDiscount = (item: TourDiscount) => {
-        // `added_by` comes from the immutable first history record and is
-        // therefore authoritative for legacy offers.  Older admin-created
-        // offers were saved with funded_by=SUPPLIER, which must not make an
-        // admin/TourVaa offer reduce the supplier price.
-        if (item.added_by === "admin") return true;
-        if (item.added_by === "supplier") return false;
         if (item.funded_by === "TOURVAA") return true;
         if (item.funded_by === "SUPPLIER") return false;
+        if (item.added_by === "admin") return true;
+        if (item.added_by === "supplier") return false;
         const name = (item.discount_name || "").toLowerCase();
         if (name.includes("tourvaa")) return true;
         if (name.includes("supplier")) return false;
@@ -418,24 +414,24 @@ export default function TourPricingTab({
             <tr className="border-b border-dash-border-soft bg-dash-bg/75 text-[11px] font-black uppercase tracking-wider text-dash-subtle">
               <th rowSpan={2} className="px-4 py-3 align-middle">Pax Range</th>
               <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center">
-                Supplier Cost (To TourVaa)
+                Supplier Price to Tourvaa
               </th>
               <th rowSpan={2} className="px-4 py-3 text-center align-middle">Markup</th>
-              <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center text-emerald-800">
-                Customer Price (Storefront)
+              <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center text-dash-brand">
+                Tourvaa Profit
               </th>
-              <th colSpan={2} className="border-r border-dash-border-soft px-4 py-2 text-center text-dash-brand">
-                TourVaa Profit
+              <th colSpan={2} className="border-r border-dash-border-soft px-4 py-2 text-center text-emerald-800">
+                Customer Price (Storefront)
               </th>
               <th rowSpan={2} className="px-4 py-3 text-right align-middle">Actions</th>
             </tr>
             <tr className="border-b border-dash-border-soft bg-dash-bg/40 text-[10px] font-bold uppercase tracking-wider">
               <th className="border-l border-dash-border-soft px-4 py-1.5 text-blue-600">Adult</th>
               <th className="border-r border-dash-border-soft px-4 py-1.5 text-violet-600">Child</th>
+              <th className="border-l border-dash-border-soft px-4 py-1.5 text-dash-brand">Adult</th>
+              <th className="border-r border-dash-border-soft px-4 py-1.5 text-dash-brand">Child</th>
               <th className="border-l border-dash-border-soft px-4 py-1.5 text-emerald-700">Adult</th>
               <th className="border-r border-dash-border-soft px-4 py-1.5 text-emerald-600">Child</th>
-              <th className="px-4 py-1.5 text-dash-brand">Adult</th>
-              <th className="border-r border-dash-border-soft px-4 py-1.5 text-dash-brand">Child</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-dash-border-soft/70 bg-white">
@@ -450,13 +446,10 @@ export default function TourPricingTab({
               const tvDisc = Number(tourvaaDiscountPercent ?? 0) / 100;
               const adultFinal = adultStorefront * (1 - tvDisc);
               const childFinal = childStorefront * (1 - tvDisc);
-              // This is the markup remaining after TourVaa's storefront
-              // discount. It intentionally compares against the supplier's
-              // discounted price to TourVaa, never the original supplier
-              // price. Example: 100 -10% => 90; +50% => 135; -20% => 108;
-              // profit = 108 - 90 = 18.
-              const adultProfit = adultFinal - adultToTourvaa;
-              const childProfit = childFinal - childToTourvaa;
+              // Tourvaa markup profit is derived from the markup applied to supplier price.
+              // Tourvaa storefront discounts apply ONLY to the Customer Price (Storefront).
+              const adultProfit = adultStorefront - adultToTourvaa;
+              const childProfit = childStorefront - childToTourvaa;
               return (
                 <tr key={r.id ?? idx} className="transition-colors hover:bg-dash-bg/40">
                   <td className="px-4 py-3.5 align-middle">
@@ -464,7 +457,7 @@ export default function TourPricingTab({
                       {r.passenger_from}–{r.passenger_to} pax
                     </span>
                   </td>
-                  {/* Adult Cost to TourVaa */}
+                  {/* Adult Supplier Price to Tourvaa */}
                   <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-dash-text">
@@ -478,7 +471,7 @@ export default function TourPricingTab({
                       ) : null}
                     </div>
                   </td>
-                  {/* Child Cost to TourVaa */}
+                  {/* Child Supplier Price to Tourvaa */}
                   <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-dash-muted">
@@ -492,18 +485,7 @@ export default function TourPricingTab({
                       ) : null}
                     </div>
                   </td>
-                  {/* Markup remaining after the TourVaa offer */}
-                  <td className="px-4 py-3.5 align-middle">
-                    <span className={`text-sm font-black ${adultProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>
-                      {fmt(adultProfit, r.currency)}
-                    </span>
-                  </td>
-                  <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
-                    <span className={`text-sm font-black ${childProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>
-                      {fmt(childProfit, r.currency)}
-                    </span>
-                  </td>
-                  {/* Markup */}
+                  {/* Markup % */}
                   <td className="px-4 py-3.5 text-center align-middle">
                     <div className="inline-flex flex-col items-center">
                       <span className="inline-flex items-center gap-1 rounded-full border border-dash-border bg-dash-bg px-2.5 py-0.5 text-xs font-bold text-dash-body">
@@ -514,7 +496,19 @@ export default function TourPricingTab({
                       </span>
                     </div>
                   </td>
-                  {/* Adult Final Customer Price */}
+                  {/* Tourvaa Profit - Adult */}
+                  <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                    <span className={`text-sm font-black ${adultProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>
+                      {fmt(adultProfit, r.currency)}
+                    </span>
+                  </td>
+                  {/* Tourvaa Profit - Child */}
+                  <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
+                    <span className={`text-sm font-black ${childProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>
+                      {fmt(childProfit, r.currency)}
+                    </span>
+                  </td>
+                  {/* Adult Customer Price (Storefront) */}
                   <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
                     <div className="flex flex-col">
                       <span className="text-sm font-black text-emerald-700">
@@ -528,7 +522,7 @@ export default function TourPricingTab({
                       ) : null}
                     </div>
                   </td>
-                  {/* Child Final Customer Price */}
+                  {/* Child Customer Price (Storefront) */}
                   <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
                     <div className="flex flex-col">
                       <span className="text-sm font-black text-emerald-600">
@@ -583,18 +577,29 @@ export default function TourPricingTab({
               {scheduledStart ? (
                 <>Previewing a scheduled offer starting <strong>{new Date(scheduledStart).toLocaleDateString()}</strong>. </>
               ) : null}
-              {supplierDiscountPercent && tourvaaDiscountPercent ? (
-                <>
-                  <strong>{supplierDiscountPercent}% supplier discount</strong> is applied to supplier prices to TourVaa, then <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> is applied only to publishable storefront prices.
-                </>
-              ) : supplierDiscountPercent ? (
-                <>
-                  A <strong>{supplierDiscountPercent}% supplier discount</strong> is applied to the supplier pricing table below.
-                </>
+              {isSupplier ? (
+                // Suppliers only need to know about their own discount.
+                // TourVaa's internal storefront discount is never surfaced to the supplier.
+                supplierDiscountPercent ? (
+                  <>
+                    A supplier discount of <strong>{supplierDiscountPercent}%</strong> has been added to the price to Tourvaa.
+                  </>
+                ) : null
               ) : (
-                <>
-                  A <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> is applied only to the publishable storefront pricing table below.
-                </>
+                // Admin sees full detail of both discount layers.
+                supplierDiscountPercent && tourvaaDiscountPercent ? (
+                  <>
+                    <strong>{supplierDiscountPercent}% supplier discount</strong> is applied to supplier prices to TourVaa, then <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> is applied only to publishable storefront prices.
+                  </>
+                ) : supplierDiscountPercent ? (
+                  <>
+                    A <strong>{supplierDiscountPercent}% supplier discount</strong> is applied to the supplier pricing table below.
+                  </>
+                ) : (
+                  <>
+                    A <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> is applied only to the publishable storefront pricing table below.
+                  </>
+                )
               )}
             </span>
           </div>
@@ -617,11 +622,11 @@ export default function TourPricingTab({
                 <tr className="border-b border-dash-border-soft bg-dash-bg/75 text-[11px] font-black uppercase tracking-wider text-dash-subtle">
                   <th rowSpan={2} className="px-4 py-3 align-middle">Pax Range</th>
                   <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center">
-                    Supplier Price {supplierDiscountPercent ? "(Offer Applied)" : ""}
+                    Supplier Price to Tourvaa
                   </th>
                   <th rowSpan={2} className="px-4 py-3 text-center align-middle">TourVaa Commission</th>
                   <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center text-emerald-800">
-                    Supplier Receives
+                    Supplier (You) Will Receive
                   </th>
                   <th rowSpan={2} className="px-4 py-3 text-right align-middle">Actions</th>
                 </tr>

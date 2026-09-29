@@ -58,7 +58,9 @@ const publicContactSources = [
   "src/app/(public)/cancellation-policy/page.tsx",
   "src/app/(public)/privacy-policy/page.tsx",
   "src/app/(public)/terms/page.tsx",
-  "src/app/join/affiliate/page.tsx",
+  // Replaces the removed /join/affiliate landing page (project status T19):
+  // the affiliate portal's public auth page is now that entry point.
+  "src/app/affiliate-portal/login/page.tsx",
 ].map(read).join("\n");
 check("public layout loads settings once for all public contact surfaces", publicLayout.includes("<PublicSettingsProvider>") && publicSettings.includes("fetchPublicSettings()"));
 check("public contact surfaces use configured support details", publicContactSources.includes("usePublicSettings") || publicContactSources.includes("ConfiguredSupportEmail"));

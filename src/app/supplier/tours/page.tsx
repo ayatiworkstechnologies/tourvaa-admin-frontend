@@ -32,7 +32,14 @@ type Tour = {
   tour_code: string;
   title: string;
   status: string;
+  /** Storefront/admin price — do NOT show to supplier. */
   price_start_per_person: number;
+  /** Supplier's own lowest adult price (their price to TourVaa, before any discount). */
+  supplier_adult_price_start?: number | null;
+  /** Active supplier-funded discount percentage (0 if none). */
+  supplier_discount_percentage?: number | null;
+  /** Active supplier discount ID (for reference). */
+  active_supplier_discount_id?: number | null;
   currency: string;
   number_of_days: number;
   country_name?: string;
@@ -77,6 +84,12 @@ export default function SupplierToursPage() {
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<number | null>(null);
   const [exportingId, setExportingId] = useState<number | null>(null);
+  /**
+   * Per-tour supplier price data fetched separately from /pricing and /discounts.
+   * Keys are tour IDs. Values hold the cheapest supplier adult_price and the
+   * active supplier-funded discount percentage (0 if none).
+   */
+  const [priceMap, setPriceMap] = useState<Record<number, { basePrice: number; discPct: number }>>({});
   const limit = 12;
 
   async function downloadTour(tour: Tour) {
@@ -107,9 +120,60 @@ export default function SupplierToursPage() {
       if (status) params.status = status;
       const response = await api.get("/tours", { params });
       const data = response.data;
-      setTours(data?.items ?? data?.data ?? data ?? []);
+      const fetchedTours: Tour[] = data?.items ?? data?.data ?? data ?? [];
+      setTours(fetchedTours);
       setTotal(Number(data?.total ?? 0));
       setTotalPages(Number(data?.total_pages ?? Math.max(1, Math.ceil(Number(data?.total ?? 0) / limit))));
+
+      // Fetch real supplier prices from /pricing and /discounts for each tour
+      // in parallel so the card always shows the supplier's own price, not the
+      // admin storefront price (which includes markup).
+      if (fetchedTours.length > 0) {
+        const entries = await Promise.all(
+          fetchedTours.map(async (t) => {
+            try {
+              const [slabsRes, discountsRes] = await Promise.all([
+                api.get(`/tours/${t.id}/pricing`),
+                api.get(`/tours/${t.id}/discounts`),
+              ]);
+              const slabs: Array<{ adult_price?: number; passenger_from?: number }> =
+                slabsRes.data?.data ?? slabsRes.data ?? [];
+              const discounts: Array<{
+                funded_by?: string;
+                added_by?: string;
+                discount_type?: string;
+                discount_value?: number;
+                status?: string;
+              }> = discountsRes.data?.data ?? discountsRes.data ?? [];
+
+              // Lowest adult_price across all slabs = cheapest supplier price.
+              const sorted = [...slabs].sort(
+                (a, b) => (a.passenger_from ?? 0) - (b.passenger_from ?? 0),
+              );
+              const cheapest = sorted[0];
+              const basePrice = Number(cheapest?.adult_price ?? t.price_start_per_person ?? 0);
+
+              // Active supplier-funded discount percentage.
+              const activeSupplierDiscount = discounts.find(
+                (d) =>
+                  d.status === "active" &&
+                  (d.funded_by === "SUPPLIER" ||
+                    (!d.funded_by && d.added_by === "supplier")),
+              );
+              const discPct =
+                activeSupplierDiscount?.discount_type === "percentage"
+                  ? Number(activeSupplierDiscount.discount_value ?? 0)
+                  : 0;
+
+              return [t.id, { basePrice, discPct }] as const;
+            } catch {
+              // If pricing fetch fails, fall back to the list price.
+              return [t.id, { basePrice: Number(t.price_start_per_person ?? 0), discPct: 0 }] as const;
+            }
+          }),
+        );
+        setPriceMap(Object.fromEntries(entries));
+      }
     } catch {
       setError("Tours could not be loaded. Please try again.");
     } finally {
@@ -237,10 +301,46 @@ export default function SupplierToursPage() {
                     </div>
 
                     <div className="mt-4 flex items-end justify-between gap-3 border-t border-[#E8F0EB] pt-4">
-                      <span>
-                        <span className="block text-[9px] text-[#788C80]">Starting from</span>
-                        <b className="mt-0.5 block text-lg text-[#123024]">{format(tour.price_start_per_person || 0, tour.currency)}</b>
-                      </span>
+                      {(() => {
+                        // Read from priceMap which is populated by /pricing + /discounts
+                        // fetched after the tour list loads. This gives the real supplier
+                        // adult_price (never the admin storefront price with markup).
+                        const priceData = priceMap[tour.id];
+                        if (!priceData) {
+                          // Still loading pricing data for this tour.
+                          return (
+                            <span>
+                              <span className="block text-[9px] text-[#788C80]">Your price to TourVaa</span>
+                              <span className="mt-0.5 block h-5 w-20 animate-pulse rounded bg-[#E8F0EB]" />
+                            </span>
+                          );
+                        }
+                        const { basePrice, discPct } = priceData;
+                        const hasDiscount = discPct > 0;
+                        const discountedPrice = hasDiscount ? basePrice * (1 - discPct / 100) : null;
+                        return (
+                          <span>
+                            <span className="block text-[9px] text-[#788C80]">Your price to TourVaa</span>
+                            {hasDiscount && discountedPrice !== null ? (
+                              <span className="flex items-baseline gap-1.5">
+                                <b className="mt-0.5 block text-lg text-[#123024]">
+                                  {format(discountedPrice, tour.currency)}
+                                </b>
+                                <span className="text-xs font-semibold text-[#788C80] line-through">
+                                  {format(basePrice, tour.currency)}
+                                </span>
+                                <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black text-emerald-700">
+                                  -{discPct}%
+                                </span>
+                              </span>
+                            ) : (
+                              <b className="mt-0.5 block text-lg text-[#123024]">
+                                {format(basePrice, tour.currency)}
+                              </b>
+                            )}
+                          </span>
+                        );
+                      })()}
                       {isPending && <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700"><Clock size={11} /> Admin review</span>}
                     </div>
 

@@ -2497,8 +2497,15 @@ export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
   {
     key: "destinations",
     label: "Country Pages",
-    description: "The dynamic per-country tour listing and destination guide pages.",
+    description: "The dynamic per-country tour listing, destination guides, and country-based currency availability.",
     tabs: ["country-pages"],
+    external: [
+      {
+        label: "Countries & Currencies",
+        href: "/admin/settings/countries",
+        description: "Manage every country, its currency and phone code. Use the Active switch to show or hide it in the public header and footer.",
+      },
+    ],
   },
   {
     key: "content",

@@ -48,6 +48,8 @@ export type PublicTour = {
   tourvaa_discount_percentage?: number | null;
   supplier_discount_name?: string | null;
   tourvaa_discount_name?: string | null;
+  storefront_original_price_per_person?: number | null;
+  supplier_discounted_price_per_person?: number | null;
   original_price_per_person?: number | null;
   discounted_price_per_person?: number | null;
   country_name: string;
@@ -164,6 +166,10 @@ export type PublicTourDetail = PublicTour & {
     currency: string;
     original_price_per_person?: number;
     original_child_price_per_person?: number;
+    storefront_original_price_per_person?: number;
+    storefront_original_child_price_per_person?: number;
+    supplier_discounted_price_per_person?: number;
+    supplier_discounted_child_price_per_person?: number;
   }[];
   optional_activities: { id: number; name: string; description: string; price: number | null; child_price?: number | null; infant_price?: number | null; pricing_mode?: string; currency: string; category: string; image?: string | null }[];
   accommodations: { id: number; name: string; description: string; price: number | null; category: string; image?: string | null }[];

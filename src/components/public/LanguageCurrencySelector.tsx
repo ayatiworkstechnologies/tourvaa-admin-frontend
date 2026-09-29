@@ -9,7 +9,7 @@ import {
   LuX as X,
   LuSparkles as Sparkles,
 } from "react-icons/lu";
-import { useCurrency } from "@/hooks/useCurrency";
+import { PUBLIC_HEADER_COUNTRY_CODES, useCurrency } from "@/hooks/useCurrency";
 import { fetchPublicCountries, PublicCountry } from "@/lib/api/publicClient";
 import FlagIcon from "@/components/ui/FlagIcon";
 
@@ -21,6 +21,13 @@ import FlagIcon from "@/components/ui/FlagIcon";
 // Country leads: picking one sets the currency automatically, so it is the
 // more useful entry point of the two.
 type Tab = "country" | "currency";
+
+// The public header intentionally offers a focused, business-approved set of
+// countries and their matching display currencies rather than every ISO entry
+// returned by the master-country API.
+const HEADER_COUNTRY_ORDER = new Map<string, number>(
+  PUBLIC_HEADER_COUNTRY_CODES.map((code, index) => [code, index]),
+);
 
 export default function LanguageCurrencySelector({
   inverse = false,
@@ -82,21 +89,34 @@ export default function LanguageCurrencySelector({
           { code: "TRY", symbol: "₺" },
           { code: "ZAR", symbol: "R" },
         ];
-    if (!search.trim()) return list;
+    const activeCurrencyCodes = new Set(
+      countries.map((country) => country.currency_code?.toUpperCase()).filter(Boolean),
+    );
+    const allowed = activeCurrencyCodes.size
+      ? list.filter((currency) => activeCurrencyCodes.has(currency.code.toUpperCase()))
+      : list;
+    if (!search.trim()) return allowed;
     const q = search.toLowerCase();
-    return list.filter(
+    return allowed.filter(
       (c) =>
         c.code.toLowerCase().includes(q) ||
         (c.symbol && c.symbol.toLowerCase().includes(q))
     );
-  }, [currencies, search]);
+  }, [countries, currencies, search]);
 
   // Country list - real countries once loaded, IP-detected by default (see
   // useCurrency.ts), manually changeable here.
   const countryList = useMemo(() => {
-    if (!search.trim()) return countries;
+    const allowed = [...countries]
+      .sort(
+        (a, b) =>
+          (HEADER_COUNTRY_ORDER.get(a.country_code.toUpperCase()) ?? 10000) -
+            (HEADER_COUNTRY_ORDER.get(b.country_code.toUpperCase()) ?? 10000) ||
+          a.country_name.localeCompare(b.country_name),
+      );
+    if (!search.trim()) return allowed;
     const q = search.toLowerCase();
-    return countries.filter((c) => c.country_name.toLowerCase().includes(q) || c.country_code.toLowerCase().includes(q));
+    return allowed.filter((c) => c.country_name.toLowerCase().includes(q) || c.country_code.toLowerCase().includes(q));
   }, [countries, search]);
 
   const activeCountry = countries.find((c) => c.country_code === countryCode);
@@ -321,4 +341,3 @@ export default function LanguageCurrencySelector({
     </div>
   );
 }
-

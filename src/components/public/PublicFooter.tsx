@@ -12,7 +12,7 @@ import {
   FaYoutube,
 } from "react-icons/fa6";
 import { LuChevronDown as ChevronDown } from "react-icons/lu";
-import { useCurrency } from "@/hooks/useCurrency";
+import { PUBLIC_HEADER_COUNTRY_CODES, useCurrency } from "@/hooks/useCurrency";
 import {
   CmsFooterSection,
   PublicCountry,
@@ -61,6 +61,10 @@ const FALLBACK_FOOTER_SECTIONS: CmsFooterSection[] = [
     ],
   },
 ];
+
+const FOOTER_COUNTRY_ORDER = new Map<string, number>(
+  PUBLIC_HEADER_COUNTRY_CODES.map((countryCode, index) => [countryCode, index]),
+);
 
 function normalizeFooterSections(
   sections: CmsFooterSection[],
@@ -191,21 +195,36 @@ export default function PublicFooter() {
 
   const countryOptions = useMemo(() => {
     if (countries.length) {
-      return countries.map((item) => ({
-        code: item.country_code,
-        name: item.country_name.toUpperCase(),
-      }));
+      return countries
+        .sort(
+          (a, b) =>
+            (FOOTER_COUNTRY_ORDER.get(a.country_code.toUpperCase()) ?? 10000) -
+              (FOOTER_COUNTRY_ORDER.get(b.country_code.toUpperCase()) ?? 10000) ||
+            a.country_name.localeCompare(b.country_name),
+        )
+        .map((item) => ({
+          code: item.country_code,
+          name: item.country_name.toUpperCase(),
+          currencyCode: item.currency_code,
+        }));
     }
     return [
-      { code: "IN", name: "INDIA" },
-      { code: "GB", name: "UNITED KINGDOM" },
-      { code: "US", name: "UNITED STATES" },
-      { code: "AE", name: "UAE" },
-      { code: "AU", name: "AUSTRALIA" },
-      { code: "SG", name: "SINGAPORE" },
-      { code: "NZ", name: "NEW ZEALAND" },
+      { code: "IN", name: "INDIA", currencyCode: "INR" },
+      { code: "US", name: "UNITED STATES", currencyCode: "USD" },
+      { code: "GB", name: "UNITED KINGDOM", currencyCode: "GBP" },
     ];
   }, [countries]);
+  const footerCurrencies = useMemo(
+    () => {
+      const activeCurrencyCodes = new Set(
+        countries.map((country) => country.currency_code?.toUpperCase()).filter(Boolean),
+      );
+      return activeCurrencyCodes.size
+        ? currencies.filter((currency) => activeCurrencyCodes.has(currency.code.toUpperCase()))
+        : currencies;
+    },
+    [countries, currencies],
+  );
   const countryName =
     countryOptions.find((item) => item.code === countryCode)?.name ||
     countryCode ||
@@ -291,8 +310,8 @@ export default function PublicFooter() {
                         Select Currency
                       </div>
                       <div className="mt-1 max-h-48 overflow-y-auto space-y-0.5 no-scrollbar">
-                        {currencies.length ? (
-                          currencies.map((item) => (
+                        {footerCurrencies.length ? (
+                          footerCurrencies.map((item) => (
                             <button
                               key={item.code}
                               type="button"
@@ -353,7 +372,7 @@ export default function PublicFooter() {
                             key={item.code}
                             type="button"
                             onClick={() => {
-                              void setCountry(item.code);
+                              void setCountry(item.code, item.currencyCode);
                               setCountryOpen(false);
                               router.push(destinationUrl(item.name));
                             }}

@@ -20,8 +20,22 @@ function check(label, condition) {
 
 console.log("\n=== Agent Portal Flow ===\n");
 
-const join = read("src/app/join/agent/page.tsx");
-check("onboarding continues to agent profile", join.includes("%2Fagent%2Fprofile"));
+// The former /join/agent landing page was removed (project status T19): agent
+// signup now lives in the agent portal's own auth page, which shows the inline
+// RegisterPanel instead of navigating to a separate marketing page.
+const register = read("src/app/(public)/register/page.tsx");
+check(
+  "public registration is traveller-only and points partners at their own portals",
+  register.includes("Traveller (customer) accounts only") &&
+    register.includes("/agent-portal/login") &&
+    register.includes("/supplier-portal/login"),
+);
+
+const agentPortal = read("src/app/agent-portal/login/page.tsx");
+check(
+  "agent portal keeps its own inline registration tab (no registerHref override)",
+  agentPortal.includes("registerNamePlaceholder") && !agentPortal.includes("registerHref"),
+);
 
 const tours = read("src/app/agent/tours/page.tsx");
 check("catalogue uses published tour API", tours.includes('api.get("/public/tours"'));

@@ -10,6 +10,7 @@ import {
   LuX as X,
 } from "react-icons/lu";
 import { useCurrency } from "@/hooks/useCurrency";
+import { fetchPublicCountries, type PublicCountry } from "@/lib/api/publicClient";
 
 // Language switching lives in the Elfsight Website Translator widget now
 // (see ElfsightTranslator.tsx) - it renders its own floating language
@@ -27,6 +28,7 @@ export default function CurrencySelector({
   const { code, symbol, currencies, setCode, isStale } = useCurrency();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [activeCountries, setActiveCountries] = useState<PublicCountry[]>([]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +40,20 @@ export default function CurrencySelector({
     };
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  // Admin's top-bar selector uses the same CMS-controlled public country
+  // set as the storefront header and footer.
+  useEffect(() => {
+    let active = true;
+    fetchPublicCountries()
+      .then((items) => {
+        if (active) setActiveCountries(items);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, []);
 
   const filteredCurrencies = useMemo(() => {
@@ -63,14 +79,20 @@ export default function CurrencySelector({
           { code: "TRY", symbol: "₺" },
           { code: "ZAR", symbol: "R" },
         ];
-    if (!search.trim()) return list;
+    const activeCurrencyCodes = new Set(
+      activeCountries.map((country) => country.currency_code?.toUpperCase()).filter(Boolean),
+    );
+    const allowed = activeCurrencyCodes.size
+      ? list.filter((currency) => activeCurrencyCodes.has(currency.code.toUpperCase()))
+      : list;
+    if (!search.trim()) return allowed;
     const q = search.toLowerCase();
-    return list.filter(
+    return allowed.filter(
       (c) =>
         c.code.toLowerCase().includes(q) ||
         (c.symbol && c.symbol.toLowerCase().includes(q))
     );
-  }, [currencies, search]);
+  }, [activeCountries, currencies, search]);
 
   return (
     <div ref={dropdownRef} className="relative">

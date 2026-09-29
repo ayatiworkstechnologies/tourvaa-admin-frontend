@@ -756,12 +756,8 @@ export default function TourDetailExperience({
   // Supplier-discount saving on the selected tier: that tier's own pre-discount
   // total minus what is charged. Group-size saving is separate: how much less
   // the selected tier costs than the first (solo) tier, both after discount.
-  const tierOriginalTotal =
-    adults * originalUnitPrice + children * originalChildUnitPrice;
-  // The API gives the two calculation stages separately. When a TourVaa
-  // offer exists, the row's comparison price is already after the supplier
-  // offer, so reconstruct the raw storefront reference only for this clear
-  // customer-facing breakdown.
+  // The API exposes the raw storefront and supplier-discounted stages. The
+  // percentage fallback keeps older API deployments compatible.
   const supplierDiscountPercent = Number(tour.supplier_discount_percentage ?? 0);
   const tourvaaDiscountPercent = Number(tour.tourvaa_discount_percentage ?? 0);
   const activeDiscountLabels = [
@@ -772,10 +768,29 @@ export default function TourDetailExperience({
       ? `${tour.tourvaa_discount_name || "TourVaa discount"} (${tourvaaDiscountPercent}%)`
       : null,
   ].filter((label): label is string => Boolean(label));
-  const rawTourPrice = tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
-    ? tierOriginalTotal / (1 - supplierDiscountPercent / 100)
-    : tierOriginalTotal;
-  const afterSupplierTotal = rawTourPrice * (1 - supplierDiscountPercent / 100);
+  const rawAdultUnitPrice = Number(
+    selectedRow?.storefront_original_price_per_person ??
+      (tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
+        ? originalUnitPrice / (1 - supplierDiscountPercent / 100)
+        : originalUnitPrice),
+  );
+  const rawChildUnitPrice = Number(
+    selectedRow?.storefront_original_child_price_per_person ??
+      (tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
+        ? originalChildUnitPrice / (1 - supplierDiscountPercent / 100)
+        : originalChildUnitPrice),
+  );
+  const supplierAdultUnitPrice = Number(
+    selectedRow?.supplier_discounted_price_per_person ??
+      rawAdultUnitPrice * (1 - supplierDiscountPercent / 100),
+  );
+  const supplierChildUnitPrice = Number(
+    selectedRow?.supplier_discounted_child_price_per_person ??
+      rawChildUnitPrice * (1 - supplierDiscountPercent / 100),
+  );
+  const rawTourPrice = adults * rawAdultUnitPrice + children * rawChildUnitPrice;
+  const afterSupplierTotal =
+    adults * supplierAdultUnitPrice + children * supplierChildUnitPrice;
   const supplierDiscountAmount = Math.max(0, rawTourPrice - afterSupplierTotal);
   const tourvaaDiscountAmount = Math.max(0, afterSupplierTotal - tourPrice);
   const totalDiscountSaving = Math.max(0, rawTourPrice - tourPrice);
@@ -804,12 +819,12 @@ export default function TourDetailExperience({
   const startingOriginalPrice = Number(
     cheapestRow?.original_price_per_person ?? startingUnitPrice,
   );
-  // A price row compares against the amount after the supplier discount when
-  // a TourVaa offer is also active. Rebuild the raw storefront reference.
-  const startingRawOriginalPrice =
-    tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
-      ? startingOriginalPrice / (1 - supplierDiscountPercent / 100)
-      : startingOriginalPrice;
+  const startingRawOriginalPrice = Number(
+    cheapestRow?.storefront_original_price_per_person ??
+      (tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
+        ? startingOriginalPrice / (1 - supplierDiscountPercent / 100)
+        : startingOriginalPrice),
+  );
   const startingDiscountSaving = Math.max(
     0,
     startingRawOriginalPrice - startingUnitPrice,
@@ -2602,10 +2617,12 @@ export default function TourDetailExperience({
                     const rowOriginal = Number(
                       row.original_price_per_person ?? row.price_per_person,
                     );
-                    const rowRawOriginal =
-                      tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
-                        ? rowOriginal / (1 - supplierDiscountPercent / 100)
-                        : rowOriginal;
+                    const rowRawOriginal = Number(
+                      row.storefront_original_price_per_person ??
+                        (tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
+                          ? rowOriginal / (1 - supplierDiscountPercent / 100)
+                          : rowOriginal),
+                    );
                     const rowDiscounted =
                       promoActive && rowRawOriginal > row.price_per_person;
                     return (

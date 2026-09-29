@@ -12,6 +12,7 @@ import LoadingState from "@/components/common/LoadingState";
 import StatusBadge from "@/components/operations/StatusBadge";
 import TourExcelImportButton from "@/components/tours/TourExcelImportButton";
 import { CmsRecord, deleteCms, listCms, updateCmsStatus } from "@/lib/api/services/cmsService";
+import api from "@/lib/api/client";
 import { exportTourExcel } from "@/lib/api/services/tourImportExportService";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -39,6 +40,13 @@ export default function ToursPage() {
   const [togglingId, setTogglingId] = useState<number | string | null>(null);
   const [exportingId, setExportingId] = useState<number | string | null>(null);
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
+  /**
+   * Per-tour: TourVaa's real cost from the supplier.
+   * basePrice = cheapest supplier adult_price (what supplier charges TourVaa)
+   * discPct   = active supplier-funded discount % (0 if none)
+   * Displayed as: discountedPrice ~~basePrice~~ -X%
+   */
+  const [priceMap, setPriceMap] = useState<Record<string | number, { basePrice: number; discPct: number }>>({}); 
 
   const debouncedSearch = useDebounce(search, 350);
   const canCreate = hasPermission("tours.create");
@@ -69,9 +77,51 @@ export default function ToursPage() {
       if (supplierId) params.supplier_id = supplierId;
       if (statusFilter) params.status = statusFilter;
       const response = await listCms("/tours", params);
-      setRows(response.items || response.data || []);
+      const fetchedRows: CmsRecord[] = response.items || response.data || [];
+      setRows(fetchedRows);
       setTotal(response.total || 0);
       setTotalPages(response.total_pages || 1);
+
+      // Fetch real supplier pricing for each tour in parallel.
+      // This gives TourVaa's actual cost from the supplier (adult_price)
+      // after any supplier-funded discount — never the storefront price.
+      if (fetchedRows.length > 0) {
+        const entries = await Promise.all(
+          fetchedRows.map(async (r) => {
+            try {
+              const [slabsRes, discountsRes] = await Promise.all([
+                api.get(`/tours/${r.id}/pricing`),
+                api.get(`/tours/${r.id}/discounts`),
+              ]);
+              const slabs: Array<{ adult_price?: number; passenger_from?: number }> =
+                slabsRes.data?.data ?? slabsRes.data ?? [];
+              const discounts: Array<{
+                funded_by?: string;
+                added_by?: string;
+                discount_type?: string;
+                discount_value?: number;
+                status?: string;
+              }> = discountsRes.data?.data ?? discountsRes.data ?? [];
+
+              const sorted = [...slabs].sort((a, b) => (a.passenger_from ?? 0) - (b.passenger_from ?? 0));
+              const basePrice = Number(sorted[0]?.adult_price ?? r.price_start_per_person ?? 0);
+
+              const activeSupplierDiscount = discounts.find(
+                (d) => d.status === "active" &&
+                  (d.funded_by === "SUPPLIER" || (!d.funded_by && d.added_by === "supplier")),
+              );
+              const discPct = activeSupplierDiscount?.discount_type === "percentage"
+                ? Number(activeSupplierDiscount.discount_value ?? 0)
+                : 0;
+
+              return [r.id, { basePrice, discPct }] as const;
+            } catch {
+              return [r.id, { basePrice: Number(r.price_start_per_person ?? 0), discPct: 0 }] as const;
+            }
+          }),
+        );
+        setPriceMap(Object.fromEntries(entries));
+      }
     } catch {
       toast.error("Could not load tours.");
     } finally {
@@ -308,71 +358,102 @@ export default function ToursPage() {
                       Supplier: <span className="text-dash-body">{String(row.supplier_name || "-")}</span>
                     </p>
 
-                    <div className="mt-auto flex items-center justify-between border-t border-[#F0F3F8] pt-3">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-dash-subtle">From</p>
-                        <p className="text-lg font-black text-dash-text">
-                          {format(row.price_start_per_person as number, row.currency as string)}
-                        </p>
+                    <div className="mt-auto flex flex-col gap-2.5 border-t border-[#F0F3F8] pt-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-dash-subtle">TourVaa gets</p>
+                          {(() => {
+                            const priceData = priceMap[row.id];
+                            if (!priceData) {
+                              return <span className="mt-0.5 block h-5 w-24 animate-pulse rounded bg-dash-bg" />;
+                            }
+                            const { basePrice, discPct } = priceData;
+                            const hasDiscount = discPct > 0;
+                            const discountedPrice = hasDiscount ? basePrice * (1 - discPct / 100) : null;
+                            return hasDiscount && discountedPrice !== null ? (
+                              <span className="flex items-baseline gap-1.5">
+                                <span className="truncate text-lg font-black text-dash-text">
+                                  {format(discountedPrice, row.currency as string)}
+                                </span>
+                                <span className="text-xs font-semibold text-dash-subtle line-through">
+                                  {format(basePrice, row.currency as string)}
+                                </span>
+                                <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black text-emerald-700">
+                                  -{discPct}%
+                                </span>
+                              </span>
+                            ) : (
+                              <p className="truncate text-lg font-black text-dash-text">
+                                {format(basePrice, row.currency as string)}
+                              </p>
+                            );
+                          })()}
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {(row.status === "published" || row.status === "active") && row.slug && (
+                            <a
+                              href={`/tours/${row.id}/${row.slug}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label={`View ${row.title || "tour"} live`}
+                              title="View live"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-dash-bg"
+                            >
+                              <ExternalLink size={14} />
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            disabled={exportingId === row.id}
+                            onClick={() => void downloadTour(row)}
+                            aria-label={`Download ${row.title || "tour"} details`}
+                            title="Download tour details"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-dash-bg disabled:opacity-60"
+                          >
+                            <Download size={14} />
+                          </button>
+                          {canDelete && (
+                            <button
+                              type="button"
+                              disabled={deletingId === row.id}
+                              onClick={() => void deleteTour(row)}
+                              aria-label={`Delete ${row.title || "tour"}`}
+                              title="Delete tour"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#FFCDD2] text-red-500 transition-colors hover:bg-[#FFF0F0] disabled:opacity-60"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        {(row.status === "published" || row.status === "active") && row.slug && (
-                          <a
-                            href={`/tours/${row.id}/${row.slug}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label={`View ${row.title || "tour"} live`}
-                            title="View live"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-muted hover:bg-dash-bg"
-                          >
-                            <ExternalLink size={14} />
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          disabled={exportingId === row.id}
-                          onClick={() => void downloadTour(row)}
-                          aria-label={`Download ${row.title || "tour"} details`}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-muted hover:bg-dash-bg disabled:opacity-60"
-                        >
-                          <Download size={14} />
-                        </button>
-                        {canEdit && (
-                          <Link
-                            href={`/admin/tours/${row.id}/edit`}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]"
-                          >
-                            <Edit size={14} /> Edit
-                          </Link>
-                        )}
-                        {canToggle && (
-                          <button
-                            type="button"
-                            disabled={togglingId === row.id}
-                            onClick={() => void toggleStatus(row)}
-                            className="rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-muted hover:bg-dash-bg disabled:opacity-60"
-                          >
-                            {togglingId === row.id
-                              ? "Saving…"
-                              : row.status === "published"
-                              ? "Disable"
-                              : "Publish"}
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            type="button"
-                            disabled={deletingId === row.id}
-                            onClick={() => void deleteTour(row)}
-                            aria-label={`Delete ${row.title || "tour"}`}
-                            title="Delete tour"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#FFCDD2] px-3 py-2 text-xs font-bold text-red-500 hover:bg-[#FFF0F0] disabled:opacity-60"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
+                      {(canEdit || canToggle) && (
+                        <div className="flex items-center gap-2">
+                          {canEdit && (
+                            <Link
+                              href={`/admin/tours/${row.id}/edit`}
+                              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover transition-colors hover:bg-[#E7F5FF]"
+                            >
+                              <Edit size={14} /> Edit
+                            </Link>
+                          )}
+                          {canToggle && (
+                            <button
+                              type="button"
+                              disabled={togglingId === row.id}
+                              onClick={() => void toggleStatus(row)}
+                              className="inline-flex flex-1 items-center justify-center rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-muted transition-colors hover:bg-dash-bg disabled:opacity-60"
+                            >
+                              {togglingId === row.id
+                                ? "Saving…"
+                                : row.status === "published"
+                                ? "Disable"
+                                : "Publish"}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </article>

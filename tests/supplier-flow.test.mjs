@@ -20,8 +20,22 @@ function check(label, condition) {
 
 console.log("\n=== Supplier Portal Flow ===\n");
 
-const join = read("src/app/join/supplier/page.tsx");
-check("onboarding continues to supplier profile", join.includes("%2Fsupplier%2Fprofile"));
+// The former /join/supplier landing page was removed (project status T19):
+// supplier signup now lives in the supplier portal's own auth page, which shows
+// the inline RegisterPanel instead of navigating to a separate marketing page.
+const register = read("src/app/(public)/register/page.tsx");
+check(
+  "public registration is traveller-only and points partners at their own portals",
+  register.includes("Traveller (customer) accounts only") &&
+    register.includes("/agent-portal/login") &&
+    register.includes("/supplier-portal/login"),
+);
+
+const supplierPortal = read("src/app/supplier-portal/login/page.tsx");
+check(
+  "supplier portal keeps its own inline registration tab (no registerHref override)",
+  supplierPortal.includes("registerNamePlaceholder") && !supplierPortal.includes("registerHref"),
+);
 
 const bookingList = read("src/app/supplier/bookings/page.tsx");
 check("booking filter uses backend booking_status contract", bookingList.includes("params.booking_status = statusFilter"));

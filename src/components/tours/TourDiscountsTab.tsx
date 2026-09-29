@@ -47,12 +47,12 @@ function discountedValue(item: TourDiscount, basePrice: number): number | null {
   return discounted < basePrice ? discounted : null;
 }
 
-/** The immutable creator is authoritative for legacy offers. */
+/** The funded_by field or immutable creator determines offer ownership. */
 function isTourvaaOwnedDiscount(item: TourDiscount): boolean {
-  if (item.added_by === "admin") return true;
-  if (item.added_by === "supplier") return false;
   if (item.funded_by === "TOURVAA") return true;
   if (item.funded_by === "SUPPLIER") return false;
+  if (item.added_by === "admin") return true;
+  if (item.added_by === "supplier") return false;
   return (item.discount_name || "").toLowerCase().includes("tourvaa");
 }
 
@@ -151,37 +151,48 @@ function AdminDiscountPricePreview({
   const publishableAdult = supplierAdultAfter * adultMarkupFactor;
   const finalStorefrontAdult = isTourvaa ? (discountedValue(item, publishableAdult) ?? publishableAdult) : publishableAdult;
 
+  if (isTourvaa) {
+    return (
+      <div className="mt-3 rounded-xl border border-dash-border-soft bg-dash-bg/70 p-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <span className="block text-[10px] font-black uppercase tracking-wider text-dash-subtle">
+              Customer Price (Storefront)
+            </span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-sm font-bold text-dash-text">{fmt(publishableAdult, currency)}</span>
+            </div>
+          </div>
+          <div>
+            <span className="block text-[10px] font-black uppercase tracking-wider text-emerald-800">
+              Discounted Price
+            </span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-sm font-black text-emerald-700">{fmt(finalStorefrontAdult, currency)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-3 rounded-xl border border-dash-border-soft bg-dash-bg/70 p-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <span className="block text-[10px] font-black uppercase tracking-wider text-dash-subtle">
-            Supplier Price (1 pax)
+            Supplier Price to Tourvaa (1 Pax)
           </span>
           <div className="mt-1 flex items-baseline gap-1.5">
-            {supplierStageOffer && discountedValue(supplierStageOffer, supplierAdultPrice) != null ? (
-              <>
-                <span className="text-xs text-dash-subtle line-through">{fmt(supplierAdultPrice, currency)}</span>
-                <span className="text-sm font-bold text-dash-text">{fmt(supplierAdultAfter, currency)}</span>
-              </>
-            ) : (
-              <span className="text-sm font-bold text-dash-text">{fmt(supplierAdultPrice, currency)}</span>
-            )}
+            <span className="text-sm font-bold text-dash-text">{fmt(supplierAdultPrice, currency)}</span>
           </div>
         </div>
         <div>
           <span className="block text-[10px] font-black uppercase tracking-wider text-emerald-800">
-            Customer Pays (1 pax)
+            Discounted Price to Tourvaa
           </span>
           <div className="mt-1 flex items-baseline gap-1.5">
-            {isTourvaa && discountedValue(item, publishableAdult) != null ? (
-              <>
-                <span className="text-xs text-dash-subtle line-through">{fmt(publishableAdult, currency)}</span>
-                <span className="text-sm font-black text-emerald-700">{fmt(finalStorefrontAdult, currency)}</span>
-              </>
-            ) : (
-              <span className="text-sm font-black text-emerald-700">{fmt(publishableAdult, currency)}</span>
-            )}
+            <span className="text-sm font-black text-emerald-700">{fmt(supplierAdultAfter, currency)}</span>
           </div>
         </div>
       </div>
@@ -193,7 +204,8 @@ const empty = (): TourDiscount => ({
   discount_name: "", discount_code: null, discount_type: "percentage",
   discount_value: 10, discount_scope: "tour", start_date: null, end_date: null,
   usage_limit: null, minimum_booking_amount: 0, status: "active",
-  funded_by: "SUPPLIER",
+  // Admin always creates TourVaa storefront discounts; supplier creates supplier discounts.
+  funded_by: "TOURVAA",
 });
 
 export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: string; role?: "admin" | "supplier" }) {
@@ -286,7 +298,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     try {
       const payload = {
         ...editing,
-        funded_by: isSupplier ? "SUPPLIER" : (editing.funded_by || "SUPPLIER"),
+        funded_by: isSupplier ? "SUPPLIER" : (editing.funded_by || "TOURVAA"),
         discount_code: applicationMode === "automatic" ? null : editing.discount_code?.trim().toUpperCase(),
         discount_value: sanitizeNumber(editing.discount_value),
         minimum_booking_amount: sanitizeNumber(editing.minimum_booking_amount),
@@ -398,7 +410,12 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
         }
         action={addButton}
       >
-        {items.length === 0 && !editing ? (
+        {(() => {
+          // Suppliers must only see their own discounts — Tourvaa-funded offers are hidden.
+          const visibleItems = isSupplier
+            ? items.filter((d) => !isTourvaaOwnedDiscount(d))
+            : items;
+          return visibleItems.length === 0 && !editing ? (
           <div className="rounded-2xl border border-dashed border-dash-border bg-dash-bg/30 p-10 text-center">
             <Tag size={28} className="mx-auto mb-2 text-dash-subtle opacity-60" />
             <p className="text-sm font-bold text-dash-text">No active discounts or promo codes</p>
@@ -413,7 +430,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {items.map((item) => {
+            {visibleItems.map((item) => {
               const supplierOffer = items.find((offer) =>
                 !isTourvaaOwnedDiscount(offer) && offer.status === "active" && !offer.discount_code,
               );
@@ -543,7 +560,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                             <TrendingUp size={13} /> Extend / Increase
                           </button>
                         )
-                      ) : (
+                      ) : isTourvaaOwnedDiscount(item) ? (
                         <>
                           <button
                             type="button"
@@ -567,6 +584,10 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                             </button>
                           )}
                         </>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border bg-dash-bg px-3 py-1.5 text-xs font-bold text-dash-subtle">
+                          Supplier Offer · Read-only
+                        </span>
                       )}
                     </div>
                   </div>
@@ -574,7 +595,8 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
               );
             })}
           </div>
-        )}
+        );
+        })()}
       </SectionCard>
 
       {/* Discount History Table */}
@@ -591,7 +613,11 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
           </div>
         </div>
 
-        {items.length === 0 ? (
+        {(() => {
+          const historyItems = isSupplier
+            ? items.filter((d) => !isTourvaaOwnedDiscount(d))
+            : items;
+          return historyItems.length === 0 ? (
           <div className="p-8 text-center text-xs text-dash-subtle">No discount records found.</div>
         ) : (
           <div className="overflow-x-auto">
@@ -608,7 +634,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                 </tr>
               </thead>
               <tbody className="divide-y divide-dash-border-soft/70 bg-white text-sm">
-                {[...items]
+                {[...historyItems]
                   .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
                   .map((item) => (
                     <tr key={item.id} className="transition hover:bg-dash-bg/40">
@@ -664,7 +690,8 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
               </tbody>
             </table>
           </div>
-        )}
+        );
+        })()}
       </div>
 
       {/* Edit Modal */}
@@ -693,35 +720,16 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                 <label className="mb-1.5 block text-xs font-bold uppercase text-dash-subtle">
                   Discount Type &amp; Funding
                 </label>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditing((p) => p ? { ...p, funded_by: "SUPPLIER" } : p)}
-                    className={`rounded-xl border p-3 text-left text-sm transition ${
-                      (editing.funded_by || "SUPPLIER") === "SUPPLIER"
-                        ? "border-amber-500 bg-amber-50/60 text-amber-900 ring-2 ring-amber-500/20"
-                        : "border-dash-border bg-white text-dash-body hover:bg-dash-bg"
-                    }`}
-                  >
-                    <span className="block font-bold text-amber-900">Supplier Discount</span>
-                    <span className="mt-1 block text-xs text-amber-800/80">
-                      Reduces the supplier base price paid to TourVaa. Reflected in Supplier Price table.
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditing((p) => p ? { ...p, funded_by: "TOURVAA" } : p)}
-                    className={`rounded-xl border p-3 text-left text-sm transition ${
-                      editing.funded_by === "TOURVAA"
-                        ? "border-dash-brand bg-blue-50/60 text-dash-brand ring-2 ring-dash-brand/20"
-                        : "border-dash-border bg-white text-dash-body hover:bg-dash-bg"
-                    }`}
-                  >
-                    <span className="block font-bold text-dash-brand">TourVaa Storefront Discount</span>
-                    <span className="mt-1 block text-xs text-dash-brand/80">
-                      Funded by TourVaa margin, reduces customer price on website without touching supplier payout.
-                    </span>
-                  </button>
+                {/* Admin can only add TourVaa-funded storefront discounts.
+                    Supplier discounts are managed exclusively by the supplier. */}
+                <div
+                  className="rounded-xl border-2 border-dash-brand bg-blue-50/60 p-3 text-left text-sm"
+                  onClick={() => setEditing((p) => p ? { ...p, funded_by: "TOURVAA" } : p)}
+                >
+                  <span className="block font-bold text-dash-brand">TourVaa Storefront Discount</span>
+                  <span className="mt-1 block text-xs text-dash-brand/80">
+                    Funded by TourVaa margin, reduces customer price on website without touching supplier payout.
+                  </span>
                 </div>
               </div>
             )}

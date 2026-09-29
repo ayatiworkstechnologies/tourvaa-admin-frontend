@@ -26,6 +26,13 @@ type CurrencyState = {
 
 const STORAGE_KEY = "tourvaa_display_currency";
 const COUNTRY_STORAGE_KEY = "tourvaa_display_country";
+/** Initial countries enabled for the public selector. CMS country status is
+ * authoritative after setup: enabling another country makes it available. */
+export const PUBLIC_HEADER_COUNTRY_CODES = [
+  "LU", "SG", "IE", "QA", "CH", "NO", "AE", "US", "DK", "NL", "IS",
+  "AU", "SE", "AT", "BE", "DE", "CA", "FI", "IL", "GB", "NZ", "FR",
+  "JP", "KR", "IN", "CN",
+] as const;
 const listeners = new Set<(state: CurrencyState) => void>();
 let state: CurrencyState = { code: "USD", baseCode: "USD", rates: { USD: 1 }, loading: true, isStale: false, forced: false, countryCode: "" };
 let loadPromise: Promise<void> | null = null;
