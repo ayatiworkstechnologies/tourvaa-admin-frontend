@@ -35,6 +35,8 @@ type ActiveDiscount = {
   discount_percentage: number;
   original_price_per_person: number;
   discounted_price_per_person: number;
+  supplier_discount_percentage?: number | null;
+  tourvaa_discount_percentage?: number | null;
 };
 
 type Section = "basic-core" | "settings" | "location" | "media" | "seo";
@@ -1425,8 +1427,21 @@ export default function TourFormPage({
               // discount; an active discount adds the struck-through original
               // and the "% OFF" badge.
               const original = Number((isSupplier ? onePaxSlab.adult_price : onePaxSlab.storefront_adult_price ?? onePaxSlab.adult_price) ?? 0);
-              const discountPercent = activeDiscount?.discount_percentage ?? 0;
-              const discounted = original * (1 - discountPercent / 100);
+              // Discounts have two stages. The supplier offer reduces the
+              // supplier price before markup (percentage-wise this is the
+              // same factor on the storefront). TourVaa's offer then reduces
+              // the resulting storefront price. Do not apply only the
+              // TourVaa percentage to the raw storefront price: 100 -10%,
+              // +50%, -20% must show 108, not 120.
+              const supplierDiscountPercent = activeDiscount?.supplier_discount_percentage
+                ?? (activeDiscount?.tourvaa_discount_percentage ? 0 : activeDiscount?.discount_percentage ?? 0);
+              const tourvaaDiscountPercent = isSupplier ? 0 : (activeDiscount?.tourvaa_discount_percentage ?? 0);
+              const afterSupplierDiscount = original * (1 - supplierDiscountPercent / 100);
+              const discounted = afterSupplierDiscount * (1 - tourvaaDiscountPercent / 100);
+              const comparisonPrice = tourvaaDiscountPercent > 0 ? afterSupplierDiscount : original;
+              const discountPercent = isSupplier
+                ? supplierDiscountPercent
+                : (tourvaaDiscountPercent || supplierDiscountPercent);
               const money = (n: number) => `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${onePaxSlab.currency}`;
               return (
                 <div className="sm:col-span-2">
@@ -1435,7 +1450,7 @@ export default function TourFormPage({
                   </span>
                   <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dash-border bg-[#F7F9FC] px-4 py-3">
                     {discountPercent > 0 && (
-                      <span className="text-sm font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{money(original)}</span>
+                      <span className="text-sm font-medium text-dash-subtle line-through decoration-red-400 decoration-2">{money(comparisonPrice)}</span>
                     )}
                     <span className="text-lg font-black text-dash-text">{money(discounted)}</span>
                     {discountPercent > 0 && (
@@ -1446,9 +1461,9 @@ export default function TourFormPage({
                   </div>
                   <p className="mt-1 text-[11px] text-dash-subtle">
                     {isSupplier
-                      ? (discountPercent > 0 ? "Your 1-pax adult price from the Pricing step, with your active discount applied." : "Your 1-pax adult price from the Pricing step.")
+                      ? (discountPercent > 0 ? "Your 1-pax adult price from the Pricing step, with your active supplier discount applied." : "Your 1-pax adult price from the Pricing step.")
                       : (discountPercent > 0
-                        ? "Supplier price + Tourvaa markup, with the active discount applied -- what customers see on the storefront right now."
+                        ? "Supplier discount is applied first, then TourVaa markup and any TourVaa storefront discount -- what customers see on the storefront right now."
                         : "Supplier price + Tourvaa markup -- what customers see on the storefront right now.")}
                   </p>
                 </div>

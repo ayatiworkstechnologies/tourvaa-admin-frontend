@@ -44,6 +44,10 @@ export type PublicTour = {
   price_start_per_person: number | null;
   currency: string;
   discount_percentage?: number | null;
+  supplier_discount_percentage?: number | null;
+  tourvaa_discount_percentage?: number | null;
+  supplier_discount_name?: string | null;
+  tourvaa_discount_name?: string | null;
   original_price_per_person?: number | null;
   discounted_price_per_person?: number | null;
   country_name: string;
@@ -259,11 +263,11 @@ export async function fetchFeaturedTours(limit = 6) {
   return res.data.items as PublicTour[];
 }
 
-export async function fetchPublicTourDetail(idOrSlug: number | string, countrySlug?: string) {
+export async function fetchPublicTourDetail(idOrSlug: number | string, countrySlug?: string, travelDate?: string) {
   const path = countrySlug
     ? `/tours/${encodeURIComponent(countrySlug)}/${encodeURIComponent(String(idOrSlug))}`
     : `/tours/${encodeURIComponent(String(idOrSlug))}`;
-  const res = await publicApi.get(path);
+  const res = await publicApi.get(path, { params: travelDate ? { travel_date: travelDate } : undefined });
   return res.data.data as PublicTourDetail;
 }
 

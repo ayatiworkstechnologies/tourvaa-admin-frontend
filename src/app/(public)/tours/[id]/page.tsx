@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -221,6 +221,12 @@ export default function TourDetailPage() {
   const [retryKey, setRetryKey] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [pendingBookingPath, setPendingBookingPath] = useState("");
+  const requestedTravelDate = searchParams.get("travel_date") ?? "";
+  const [priceTravelDate, setPriceTravelDate] = useState(requestedTravelDate);
+  useEffect(() => { setPriceTravelDate(requestedTravelDate); }, [requestedTravelDate]);
+  const handleTravelDateChange = useCallback((travelDate: string) => {
+    setPriceTravelDate((current) => current === travelDate ? current : travelDate);
+  }, []);
   const countryOnlySlug =
     params?.id && !params.slug && !/^\d+$/.test(params.id) ? params.id : null;
 
@@ -243,7 +249,7 @@ export default function TourDetailPage() {
     setLoading(true);
     setNotFound(false);
     setLoadError(false);
-    fetchPublicTourDetail(tourKey, routeSlug ? routeId : undefined)
+    fetchPublicTourDetail(tourKey, routeSlug ? routeId : undefined, priceTravelDate || undefined)
       .then((data) => {
         if (!active) return;
         if (routeId && /^\d+$/.test(routeId))
@@ -279,7 +285,7 @@ export default function TourDetailPage() {
     return () => {
       active = false;
     };
-  }, [params?.id, params?.slug, retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [params?.id, params?.slug, priceTravelDate, retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (countryOnlySlug) {
     return <CountryTourListing countrySlug={countryOnlySlug} />;
@@ -416,9 +422,10 @@ export default function TourDetailPage() {
     <TourDetailExperience
       tour={tour}
       images={allImages}
-      initialTravelDate={initialTravelDate}
+      initialTravelDate={priceTravelDate || initialTravelDate}
       initialAdults={initialAdults}
       initialChildren={initialChildren}
+      onTravelDateChange={handleTravelDateChange}
       agentBooking={isAgent}
       onBook={handleBookClick}
       onWishlist={() => toggleWishlist(travelItem)}

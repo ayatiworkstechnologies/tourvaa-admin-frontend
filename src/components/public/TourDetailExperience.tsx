@@ -59,6 +59,7 @@ type Props = {
   initialTravelDate: string;
   initialAdults: number;
   initialChildren: number;
+  onTravelDateChange?: (travelDate: string) => void;
   onBook: (selection: {
     travelDate: string;
     adults: number;
@@ -372,6 +373,7 @@ export default function TourDetailExperience({
   initialTravelDate,
   initialAdults,
   initialChildren,
+  onTravelDateChange,
   onBook,
   agentBooking = false,
   onWishlist,
@@ -671,6 +673,14 @@ export default function TourDetailExperience({
   const selectedDeparture = currentMonth.dates.find(
     (d) => d.id === selectedDateId,
   );
+  const selectedDepartureIso = selectedDeparture?.isoDate || toIsoDate(selectedDeparture?.date);
+
+  // The price is date-sensitive. Notify the owning page whenever the
+  // traveller changes departure so it reloads the server-authoritative
+  // seasonal discount and pricing rows.
+  useEffect(() => {
+    if (selectedDepartureIso) onTravelDateChange?.(selectedDepartureIso);
+  }, [selectedDepartureIso, onTravelDateChange]);
   const maxTravellers = Math.max(
     1,
     selectedDeparture?.slotsRemaining ?? (tour.max_group_size || MAX_TRAVELLERS_CEILING),
@@ -748,9 +758,27 @@ export default function TourDetailExperience({
   // the selected tier costs than the first (solo) tier, both after discount.
   const tierOriginalTotal =
     adults * originalUnitPrice + children * originalChildUnitPrice;
-  const promoSaving = promoActive
-    ? Math.max(0, Math.round(tierOriginalTotal - tourPrice))
-    : 0;
+  // The API gives the two calculation stages separately. When a TourVaa
+  // offer exists, the row's comparison price is already after the supplier
+  // offer, so reconstruct the raw storefront reference only for this clear
+  // customer-facing breakdown.
+  const supplierDiscountPercent = Number(tour.supplier_discount_percentage ?? 0);
+  const tourvaaDiscountPercent = Number(tour.tourvaa_discount_percentage ?? 0);
+  const activeDiscountLabels = [
+    supplierDiscountPercent > 0
+      ? `${tour.supplier_discount_name || "Supplier discount"} (${supplierDiscountPercent}%)`
+      : null,
+    tourvaaDiscountPercent > 0
+      ? `${tour.tourvaa_discount_name || "TourVaa discount"} (${tourvaaDiscountPercent}%)`
+      : null,
+  ].filter((label): label is string => Boolean(label));
+  const rawTourPrice = tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
+    ? tierOriginalTotal / (1 - supplierDiscountPercent / 100)
+    : tierOriginalTotal;
+  const afterSupplierTotal = rawTourPrice * (1 - supplierDiscountPercent / 100);
+  const supplierDiscountAmount = Math.max(0, rawTourPrice - afterSupplierTotal);
+  const tourvaaDiscountAmount = Math.max(0, afterSupplierTotal - tourPrice);
+  const totalDiscountSaving = Math.max(0, rawTourPrice - tourPrice);
   const baseUnitPrice = Number(baseRow?.price_per_person ?? unitPrice);
   const baseChildUnitPrice = Number(
     baseRow?.child_price_per_person ?? childUnitPrice,
@@ -775,6 +803,16 @@ export default function TourDetailExperience({
   const startingUnitPrice = Number(cheapestRow?.price_per_person ?? unitPrice);
   const startingOriginalPrice = Number(
     cheapestRow?.original_price_per_person ?? startingUnitPrice,
+  );
+  // A price row compares against the amount after the supplier discount when
+  // a TourVaa offer is also active. Rebuild the raw storefront reference.
+  const startingRawOriginalPrice =
+    tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
+      ? startingOriginalPrice / (1 - supplierDiscountPercent / 100)
+      : startingOriginalPrice;
+  const startingDiscountSaving = Math.max(
+    0,
+    startingRawOriginalPrice - startingUnitPrice,
   );
   const startingTierLabel = cheapestRow
     ? groupTierLabel(cheapestRow.persons_from, cheapestRow.persons_to)
@@ -1328,7 +1366,9 @@ export default function TourDetailExperience({
                 {promoActive && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-3 py-1 text-xs font-semibold text-slate-950 uppercase tracking-wider shadow-sm">
                     <Flame size={14} className="fill-slate-950" />
-                    Special Promotion · Save {tour.discount_percentage}%
+                    {activeDiscountLabels.length > 0
+                      ? `Offers applied · ${activeDiscountLabels.join(" + ")}`
+                      : `Special Promotion · Save ${tour.discount_percentage}%`}
                   </span>
                 )}
                 {pricingRows.length > 1 && (
@@ -1352,12 +1392,16 @@ export default function TourDetailExperience({
                     / person
                   </span>
                 </div>
-                {promoActive && startingOriginalPrice > startingUnitPrice && (
+                {promoActive && startingRawOriginalPrice > startingUnitPrice && (
                   <span className="text-base sm:text-lg text-slate-400 line-through font-semibold">
-                    {format(startingOriginalPrice, tourCurrency)}
+                    {format(startingRawOriginalPrice, tourCurrency)}
                   </span>
                 )}
-                {groupDiscount > 0 && (
+                {promoActive && startingDiscountSaving > 0 ? (
+                  <span className="rounded-lg bg-emerald-500/20 border border-emerald-400/30 px-2 py-0.5 text-xs font-bold text-emerald-300">
+                    Save {format(startingDiscountSaving, tourCurrency)} per person
+                  </span>
+                ) : groupDiscount > 0 && (
                   <span className="rounded-lg bg-emerald-500/20 border border-emerald-400/30 px-2 py-0.5 text-xs font-bold text-emerald-300">
                     Save {format(groupDiscount, tourCurrency)} for your party
                   </span>
@@ -2343,7 +2387,9 @@ export default function TourDetailExperience({
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
                   {promoActive
-                    ? `Starting from · ${tour.discount_percentage}% OFF`
+                    ? activeDiscountLabels.length > 1
+                      ? `Starting from · ${activeDiscountLabels.length} offers applied`
+                      : `Starting from · ${activeDiscountLabels[0] || `${tour.discount_percentage}% OFF`}`
                     : "Starting from"}
                 </span>
                 {realDates.length > 0 && (
@@ -2359,13 +2405,18 @@ export default function TourDetailExperience({
                 <span className="text-xs text-slate-300 whitespace-nowrap">/ person</span>
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px]">
-                {promoActive && startingOriginalPrice > startingUnitPrice && (
+                {promoActive && startingRawOriginalPrice > startingUnitPrice && (
                   <span className="font-semibold text-red-300 line-through decoration-red-300">
-                    {format(startingOriginalPrice, tourCurrency)}
+                    {format(startingRawOriginalPrice, tourCurrency)}
                   </span>
                 )}
                 {startingTierLabel && <span className="font-semibold text-emerald-300">for {startingTierLabel}</span>}
               </div>
+              {promoActive && activeDiscountLabels.length > 0 && (
+                <p className="mt-1 text-[10px] font-semibold text-emerald-300">
+                  {activeDiscountLabels.join(" + ")}
+                </p>
+              )}
               <p className="text-[10px] text-slate-300 mt-1">
                 Taxes &amp; Service Fees Included
               </p>
@@ -2719,25 +2770,37 @@ export default function TourDetailExperience({
                         {travellerCount > 1 ? "s" : ""})
                       </span>
                       <span className="font-bold text-slate-500 line-through">
-                        {format(tierOriginalTotal, tourCurrency)}
+                        {format(rawTourPrice, tourCurrency)}
                       </span>
                     </div>
+                    {supplierDiscountPercent > 0 && supplierDiscountAmount > 0 && (
+                      <div className="flex justify-between text-amber-700 font-medium">
+                        <span>{tour.supplier_discount_name || "Supplier discount"} ({supplierDiscountPercent}%)</span>
+                        <span className="font-bold">-{format(supplierDiscountAmount, tourCurrency)}</span>
+                      </div>
+                    )}
+                    {tourvaaDiscountPercent > 0 && tourvaaDiscountAmount > 0 && (
+                      <div className="flex justify-between text-blue-700 font-medium">
+                        <span>{tour.tourvaa_discount_name || "TourVaa discount"} ({tourvaaDiscountPercent}%)</span>
+                        <span className="font-bold">-{format(tourvaaDiscountAmount, tourCurrency)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-slate-600 font-medium">
-                      <span>Discounted Price</span>
+                      <span>Customer price after discounts</span>
                       <span className="font-bold text-slate-900">
                         {format(tourPrice, tourCurrency)}
                       </span>
                     </div>
-                    {promoSaving > 0 && (
+                    {totalDiscountSaving > 0 && (
                       <div className="flex items-center justify-between rounded-md bg-emerald-50 px-2 py-1 text-emerald-700 font-bold">
                         <span>You Save</span>
                         <span>
-                          {format(promoSaving, tourCurrency)}
+                          {format(totalDiscountSaving, tourCurrency)}
                           <span className="ml-1 text-[10px] font-semibold">
                             (
                             {format(
                               Math.round(
-                                promoSaving / Math.max(1, travellerCount),
+                                totalDiscountSaving / Math.max(1, travellerCount),
                               ),
                               tourCurrency,
                             )}{" "}

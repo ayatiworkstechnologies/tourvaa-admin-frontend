@@ -47,6 +47,15 @@ function discountedValue(item: TourDiscount, basePrice: number): number | null {
   return discounted < basePrice ? discounted : null;
 }
 
+/** The immutable creator is authoritative for legacy offers. */
+function isTourvaaOwnedDiscount(item: TourDiscount): boolean {
+  if (item.added_by === "admin") return true;
+  if (item.added_by === "supplier") return false;
+  if (item.funded_by === "TOURVAA") return true;
+  if (item.funded_by === "SUPPLIER") return false;
+  return (item.discount_name || "").toLowerCase().includes("tourvaa");
+}
+
 function SectionCard({
   icon: Icon,
   iconTone,
@@ -125,16 +134,19 @@ function DiscountPricePreview({ item, adultPrice, childPrice, currency }: { item
 }
 
 function AdminDiscountPricePreview({
-  item, supplierAdultPrice, supplierChildPrice, storefrontAdultPrice, storefrontChildPrice, currency,
+  item, supplierOffer, supplierAdultPrice, supplierChildPrice, storefrontAdultPrice, storefrontChildPrice, currency,
 }: {
-  item: TourDiscount; supplierAdultPrice: number; supplierChildPrice: number; storefrontAdultPrice: number; storefrontChildPrice: number; currency: string;
+  item: TourDiscount; supplierOffer?: TourDiscount; supplierAdultPrice: number; supplierChildPrice: number; storefrontAdultPrice: number; storefrontChildPrice: number; currency: string;
 }) {
   if (supplierAdultPrice <= 0 && supplierChildPrice <= 0) return null;
-  const isTourvaa = item.funded_by === "TOURVAA" || (item.funded_by !== "SUPPLIER" && (
-    (item.discount_name || "").toLowerCase().includes("tourvaa") ||
-    item.added_by === "admin"
-  ));
-  const supplierAdultAfter = isTourvaa ? supplierAdultPrice : (discountedValue(item, supplierAdultPrice) ?? supplierAdultPrice);
+  const isTourvaa = isTourvaaOwnedDiscount(item);
+  // A TourVaa card must start from the supplier's already-discounted amount,
+  // not from the raw supplier price. This makes the preview show the actual
+  // stack: 100 -> 90 supplier offer -> 135 markup -> 108 TourVaa offer.
+  const supplierStageOffer = isTourvaa ? supplierOffer : item;
+  const supplierAdultAfter = supplierStageOffer
+    ? (discountedValue(supplierStageOffer, supplierAdultPrice) ?? supplierAdultPrice)
+    : supplierAdultPrice;
   const adultMarkupFactor = supplierAdultPrice > 0 ? storefrontAdultPrice / supplierAdultPrice : 1;
   const publishableAdult = supplierAdultAfter * adultMarkupFactor;
   const finalStorefrontAdult = isTourvaa ? (discountedValue(item, publishableAdult) ?? publishableAdult) : publishableAdult;
@@ -147,7 +159,7 @@ function AdminDiscountPricePreview({
             Supplier Price (1 pax)
           </span>
           <div className="mt-1 flex items-baseline gap-1.5">
-            {!isTourvaa && discountedValue(item, supplierAdultPrice) != null ? (
+            {supplierStageOffer && discountedValue(supplierStageOffer, supplierAdultPrice) != null ? (
               <>
                 <span className="text-xs text-dash-subtle line-through">{fmt(supplierAdultPrice, currency)}</span>
                 <span className="text-sm font-bold text-dash-text">{fmt(supplierAdultAfter, currency)}</span>
@@ -219,13 +231,16 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     setLoading(true);
     try {
       const discounts = await getDiscounts(tourId);
-      setItems(discounts);
+      // The server enforces this too. Keeping this client-side guard means a
+      // supplier cannot briefly see a TourVaa storefront offer during a
+      // rolling deployment with an older API instance.
+      setItems(isSupplier ? discounts.filter((item) => !isTourvaaOwnedDiscount(item)) : discounts);
     } catch {
       toast.error("Failed to load discounts.");
     } finally {
       setLoading(false);
     }
-  }, [tourId, toast]);
+  }, [tourId, toast, isSupplier]);
 
   useEffect(() => {
     void load();
@@ -399,6 +414,9 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {items.map((item) => {
+              const supplierOffer = items.find((offer) =>
+                !isTourvaaOwnedDiscount(offer) && offer.status === "active" && !offer.discount_code,
+              );
               const isInactive = item.status === "inactive";
               return (
                 <div
@@ -424,11 +442,11 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                         )}
                         {!isSupplier && (
                           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            (item.funded_by === "TOURVAA" || (item.discount_name || "").toLowerCase().includes("tourvaa"))
+                            isTourvaaOwnedDiscount(item)
                               ? "bg-blue-50 text-dash-brand"
                               : "bg-amber-50 text-amber-800"
                           }`}>
-                            {(item.funded_by === "TOURVAA" || (item.discount_name || "").toLowerCase().includes("tourvaa"))
+                            {isTourvaaOwnedDiscount(item)
                               ? "TourVaa Discount"
                               : "Supplier Discount"}
                           </span>
@@ -477,6 +495,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                     ) : (
                       <AdminDiscountPricePreview
                         item={item}
+                        supplierOffer={supplierOffer}
                         supplierAdultPrice={onePaxAdultPrice}
                         supplierChildPrice={onePaxChildPrice}
                         storefrontAdultPrice={storefrontAdultPrice}
