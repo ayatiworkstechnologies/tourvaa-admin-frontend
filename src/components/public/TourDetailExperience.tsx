@@ -2582,7 +2582,9 @@ export default function TourDetailExperience({
                     Group Rate Highlights
                   </h4>
                   <span className="text-[9px] font-bold text-blue-600">
-                    Auto-applied discount
+                    {activeDiscountLabels.length > 0
+                      ? activeDiscountLabels.join(" + ")
+                      : "Auto-applied discount"}
                   </span>
                 </div>
                 <div className="space-y-1">
@@ -2600,8 +2602,12 @@ export default function TourDetailExperience({
                     const rowOriginal = Number(
                       row.original_price_per_person ?? row.price_per_person,
                     );
+                    const rowRawOriginal =
+                      tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
+                        ? rowOriginal / (1 - supplierDiscountPercent / 100)
+                        : rowOriginal;
                     const rowDiscounted =
-                      promoActive && rowOriginal > row.price_per_person;
+                      promoActive && rowRawOriginal > row.price_per_person;
                     return (
                       <button
                         key={`${row.persons_from}-${row.persons_to ?? "plus"}`}
@@ -2627,7 +2633,7 @@ export default function TourDetailExperience({
                           {rowDiscounted && (
                             <span className="text-[9px] font-semibold text-red-500 line-through decoration-red-500">
                               {format(
-                                rowOriginal,
+                                rowRawOriginal,
                                 row.currency || tourCurrency,
                               )}
                             </span>
