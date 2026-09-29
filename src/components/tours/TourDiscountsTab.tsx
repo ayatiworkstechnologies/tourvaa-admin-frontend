@@ -18,6 +18,7 @@ import {
   LuUsers as Users,
   LuEye as Eye,
   LuEyeOff as EyeOff,
+  LuPower as Power,
 } from "react-icons/lu";
 import { TourDiscount, DiscountHistoryEntry, getDiscounts, createDiscount, updateDiscount, amendDiscount, deactivateDiscount, getDiscountHistory, getPricing } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
@@ -341,6 +342,30 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     }
   };
 
+  const activate = async (item: TourDiscount) => {
+    if (!item.id) return;
+    const ok = await confirm({
+      title: "Activate discount",
+      message: `Activate "${item.discount_name}" for new bookings?`,
+      confirmLabel: "Activate",
+    });
+    if (!ok) return;
+    try {
+      const updated = await updateDiscount(tourId, item.id, {
+        ...item,
+        status: "active",
+        // The server also enforces this. Sending it explicitly prevents an
+        // old client response from accidentally changing calculation stage.
+        funded_by: isSupplier ? "SUPPLIER" : (item.funded_by || "TOURVAA"),
+      });
+      setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+      toast.success("Discount activated.");
+      window.dispatchEvent(new CustomEvent("tourvaa:discounts-changed", { detail: { tourId } }));
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err));
+    }
+  };
+
   const openAmend = (item: TourDiscount) => {
     setAmending(item);
     setAmendEndDate(item.end_date?.slice(0, 10) ?? "");
@@ -551,15 +576,45 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                     </button>
                     <div className="flex items-center gap-2">
                       {isSupplier ? (
-                        item.status !== "inactive" && (
+                        <>
                           <button
                             type="button"
-                            onClick={() => openAmend(item)}
+                            onClick={() => {
+                              setApplicationMode(item.discount_code ? "code" : "automatic");
+                              setEditing({ ...item });
+                            }}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-[#16833A] px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#117331]"
                           >
-                            <TrendingUp size={13} /> Extend / Increase
+                            <Pencil size={13} /> Edit
                           </button>
-                        )
+                          {!isInactive && (
+                            <button
+                              type="button"
+                              onClick={() => openAmend(item)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50"
+                            >
+                              <TrendingUp size={13} /> Extend
+                            </button>
+                          )}
+                          {isInactive ? (
+                            <button
+                              type="button"
+                              onClick={() => activate(item)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50"
+                            >
+                              <Power size={13} /> Activate
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => deactivate(item)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50"
+                              title="Deactivate / delete this offer from new bookings"
+                            >
+                              <Trash2 size={13} /> Deactivate
+                            </button>
+                          )}
+                        </>
                       ) : isTourvaaOwnedDiscount(item) ? (
                         <>
                           <button
