@@ -8,7 +8,6 @@ import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerPortalHeader from "@/components/customer/CustomerPortalHeader";
 import ElfsightTranslator from "@/components/public/ElfsightTranslator";
-import PublicFooter from "@/components/public/PublicFooter";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
 import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
@@ -80,7 +79,6 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
               <Menu size={20} />
             </button>
             <main id="main-content" tabIndex={-1} className="min-w-0 flex-1">{children}</main>
-            <PublicFooter />
           </div>
         </div>
         </div>
