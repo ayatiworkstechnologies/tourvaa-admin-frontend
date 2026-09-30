@@ -250,6 +250,8 @@ export type CmsBlog = {
   excerpt: string | null;
   content: string | null;
   featured_image: string | null;
+  banner_title?: string | null;
+  banner_alt?: string | null;
   author: string | null;
   tags: string[] | null;
   seo_title: string | null;

@@ -158,7 +158,19 @@ check("supplier and agent uploads share AVIF acceptance", [supplierDocuments, su
 const notificationInbox = read("src/components/ui/NotificationInbox.tsx");
 const notificationAdmin = read("src/app/admin/notifications/page.tsx");
 const notificationWorker = read("public/sw.js");
-check("header notifications load once without polling or duplicate requests", !notificationInbox.includes("setInterval") && notificationInbox.includes("inboxCache") && notificationInbox.includes("inboxRequests"));
+// NotificationInbox no longer loads exactly once: a 20s visibility-gated poll
+// plus focus/visibilitychange listeners were added so the bell stays dependable
+// when Web Push is unavailable. The guarantees that still matter are the
+// in-flight de-duplication, the per-user cache, and that the timer is torn down
+// and is not a tight loop.
+check(
+  "header notifications de-duplicate requests and poll only when visible",
+  notificationInbox.includes("inboxCache") &&
+    notificationInbox.includes("inboxRequests") &&
+    notificationInbox.includes('document.visibilityState === "visible"') &&
+    notificationInbox.includes("window.setInterval(refreshWhenVisible, 20_000)") &&
+    notificationInbox.includes("window.clearInterval(timer)"),
+);
 check("admin notifications no longer poll on a timer", !notificationAdmin.includes("setInterval") && !notificationAdmin.includes("POLL_INTERVAL_MS"));
 check("notification refresh is driven by explicit app and push events", [notificationInbox, notificationAdmin].every((source) => source.includes("NOTIFICATION_REFRESH_EVENT") && source.includes("isNotificationPushMessage")));
 check("push worker tells open pages when a notification arrives", notificationWorker.includes("client.postMessage") && notificationWorker.includes("tourvaa:notification-received"));

@@ -6,6 +6,7 @@ import { LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
+import { requestNotificationRefresh } from "@/lib/notifications/events";
 import {
   ChatMessage,
   Conversation,
@@ -113,6 +114,7 @@ export default function AdminMessagesPage() {
       (event) => {
         if (event.type === "new_message") {
           const { conversation, message } = event;
+          if (message.sender_role !== "admin") requestNotificationRefresh();
           const isOpenThread = selectedId === conversation.id;
           const displayedConversation = isOpenThread ? { ...conversation, admin_unread_count: 0 } : conversation;
 

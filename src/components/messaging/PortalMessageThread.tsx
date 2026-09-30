@@ -5,13 +5,14 @@ import { LuLoaderCircle as Loader2, LuSend as Send, LuTrash2 as Trash2 } from "r
 import Loader from "@/components/ui/Loader";
 
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
+import { requestNotificationRefresh } from "@/lib/notifications/events";
 import { ChatMessage, ConversationThread, ParticipantType, deleteOwnMessage, getOwnConversation, sendOwnMessage } from "@/lib/api/services/messagingService";
 
-function timeAgo(value?: string | null) {
+function timeAgo(value?: string | null, now = Date.now()) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  const diffMs = Date.now() - date.getTime();
+  const diffMs = now - date.getTime();
   const minutes = Math.floor(diffMs / 60000);
   if (minutes < 1) return "just now";
   if (minutes < 60) return `${minutes}m ago`;
@@ -29,6 +30,7 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const endRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -49,13 +51,26 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
   }, [load]);
 
   useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [thread?.messages.length]);
 
   useMessagingSocket(
     useCallback((event) => {
       if (event.type === "new_message") {
-        setThread((prev) => (prev && prev.id === event.conversation.id ? { ...event.conversation, messages: [...prev.messages, event.message] } : prev));
+        if (event.message.sender_role === "admin") requestNotificationRefresh();
+        setThread((prev) => {
+          if (!prev || prev.id !== event.conversation.id) return prev;
+          const exists = prev.messages.some((message) => message.id === event.message.id);
+          return {
+            ...event.conversation,
+            messages: exists ? prev.messages : [...prev.messages, event.message],
+          };
+        });
         return;
       }
       if (event.type === "message_deleted") {
@@ -84,7 +99,10 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
     try {
       const message: ChatMessage = await sendOwnMessage(portal, draft.trim());
       setDraft("");
-      setThread((prev) => (prev ? { ...prev, messages: [...prev.messages, message] } : prev));
+      setThread((prev) => {
+        if (!prev || prev.messages.some((item) => item.id === message.id)) return prev;
+        return { ...prev, messages: [...prev.messages, message] };
+      });
     } catch {
       setError("Could not send your message.");
     } finally {
@@ -95,15 +113,23 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
   return (
     <div className="flex h-[560px] flex-col rounded-2xl border border-[#DDE7F3] bg-white shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
       <div className="border-b border-[#E6EDF6] px-6 py-4">
-        <h2 className="font-black text-dash-text">Messages with Tourvaa support</h2>
-        <p className="mt-1 text-xs text-dash-subtle">Replies from our team appear here in real time.</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="font-black text-dash-text">Conversation with Tourvaa Admin</h2>
+            <p className="mt-1 text-xs text-dash-subtle">Send a message to the Tourvaa team. Replies appear here in real time.</p>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Admin support
+          </span>
+        </div>
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-6 py-4">
         {loading ? (
           <Loader label="Loading messages..." compact />
         ) : thread?.messages.length === 0 ? (
-          <p className="py-4 text-center text-sm text-dash-muted">No messages yet. Send one below to get started.</p>
+          <p className="py-4 text-center text-sm text-dash-muted">No messages yet. Start a conversation with the Tourvaa admin team below.</p>
         ) : (
           thread?.messages.map((msg) => (
             <div key={msg.id} className={`group flex items-end gap-1.5 ${msg.sender_role === "admin" ? "justify-start" : "justify-end"}`}>
@@ -121,7 +147,7 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
               )}
               <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "admin" ? "bg-dash-bg text-dash-text" : "bg-dash-brand text-white"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
                 <p className="whitespace-pre-wrap">{msg.is_deleted ? "This message was deleted." : msg.body}</p>
-                <p className={`mt-1 text-[10px] ${msg.sender_role === "admin" ? "text-dash-subtle" : "text-white/70"}`}>{timeAgo(msg.created_at)}</p>
+                <p className={`mt-1 text-[10px] ${msg.sender_role === "admin" ? "text-dash-subtle" : "text-white/70"}`}>{timeAgo(msg.created_at, now)}</p>
               </div>
             </div>
           ))

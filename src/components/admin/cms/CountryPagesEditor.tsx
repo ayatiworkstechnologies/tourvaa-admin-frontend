@@ -36,7 +36,7 @@ export default function CountryPagesEditor() {
           value={country}
           onChange={(e) => setCountry(e.target.value)}
           aria-label="Preview country"
-          className="rounded-lg border border-dash-border bg-white px-2 py-1 text-xs font-bold text-dash-text"
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-2xs outline-none focus:border-slate-800 cursor-pointer"
         >
           {countries.map((c) => (
             <option key={c.id} value={slugifyTourSegment(c.country_name)}>{c.country_name}</option>

@@ -180,27 +180,27 @@ export default function CountryDestinationInfoPanel() {
   return (
     <div className="space-y-6">
       {/* ── Top Header & Country Picker ── */}
-      <section className="rounded-xl border border-dash-border bg-white p-5 shadow-xs">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <section className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-2 rounded-lg bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">
-              <Compass size={14} />
-              <span>Country-wise Destination Information</span>
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-600/20">
+              <Compass size={13} className="text-blue-600" />
+              <span>Country Destination Guide</span>
             </div>
-            <h3 className="mt-2 text-xl font-bold text-dash-text">
-              Destination Guide CMS (On The Go Tours Standard)
+            <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-900">
+              Destination Guide CMS
             </h3>
-            <p className="mt-1 text-xs text-dash-muted max-w-2xl">
+            <p className="mt-1 text-xs text-slate-500 leading-relaxed max-w-2xl">
               Dynamically manage climate matrices, monsoon advisories, best places to visit, why visit highlights, quick facts, and travel info for any country.
             </p>
           </div>
 
           {/* Action Toolbar */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
               href={liveUrl}
               target="_blank"
-              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-lg border border-dash-border bg-white px-3.5 py-2 text-xs font-bold text-dash-text shadow-xs hover:border-dash-brand hover:text-dash-brand transition"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
             >
               <span>View Public Page</span>
               <ExternalLink size={13} />
@@ -209,7 +209,7 @@ export default function CountryDestinationInfoPanel() {
             <button
               type="button"
               onClick={handleResetToDefaults}
-              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 transition"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 transition shadow-2xs cursor-pointer"
               title="Reset fields to curated baseline"
             >
               <Undo2 size={13} />
@@ -220,7 +220,7 @@ export default function CountryDestinationInfoPanel() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-lg bg-[#0284C7] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#0369A1] transition disabled:opacity-50"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-slate-800 transition disabled:opacity-50 cursor-pointer"
             >
               {saving ? (
                 <>
@@ -238,15 +238,15 @@ export default function CountryDestinationInfoPanel() {
         </div>
 
         {/* Country Selector Dropdown Strip */}
-        <div className="mt-5 pt-4 border-t border-dash-border flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="text-xs font-bold uppercase tracking-wider text-dash-muted">
-            Select Country to Manage:
+        <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            Selected Country:
           </label>
           <div className="relative max-w-xs w-full">
             <select
               value={selectedCountryName}
               onChange={(e) => setSelectedCountryName(e.target.value)}
-              className="w-full rounded-xl border border-dash-border bg-dash-bg/50 px-3.5 py-2.5 text-sm font-bold text-dash-text outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/20"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white px-3.5 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-slate-800 focus:bg-white focus:ring-2 focus:ring-slate-900/10 shadow-2xs cursor-pointer"
             >
               {countries.map((c) => (
                 <option key={c.id} value={c.name}>
@@ -255,8 +255,8 @@ export default function CountryDestinationInfoPanel() {
               ))}
             </select>
           </div>
-          <span className="text-xs text-dash-muted font-medium">
-            Slug: <code className="bg-dash-bg px-1.5 py-0.5 rounded text-[11px] font-bold">{currentSlug}</code>
+          <span className="text-xs text-slate-500 font-medium">
+            URL: <code className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold">{liveUrl}</code>
           </span>
         </div>
       </section>
@@ -374,45 +374,45 @@ export default function CountryDestinationInfoPanel() {
 
       {/* TAB 1: HERO & QUICK FACTS */}
       {activeSubTab === "hero" && (
-        <section className="rounded-xl border border-dash-border bg-white p-6 space-y-6">
-          <h4 className="text-base font-bold text-dash-text border-b border-dash-border pb-3">
-            Panoramic Hero & Quick Facts Snapshot
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-6">
+          <h4 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Panoramic Hero &amp; Quick Facts Snapshot
           </h4>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Hero Title
               </label>
               <input
                 type="text"
                 value={info.hero_title}
                 onChange={(e) => setInfo({ ...info, hero_title: e.target.value })}
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Hero Tagline
               </label>
               <input
                 type="text"
                 value={info.tagline}
                 onChange={(e) => setInfo({ ...info, tagline: e.target.value })}
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Hero Subtitle / Summary
               </label>
               <textarea
                 rows={3}
                 value={info.hero_subtitle}
                 onChange={(e) => setInfo({ ...info, hero_subtitle: e.target.value })}
-                className="w-full resize-none rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
@@ -425,13 +425,13 @@ export default function CountryDestinationInfoPanel() {
             </div>
           </div>
 
-          <h5 className="text-sm font-bold text-dash-text pt-4 border-t border-dash-border">
+          <h5 className="text-sm font-bold text-slate-900 pt-4 border-t border-slate-100">
             Quick Facts Strip (Rendered at base of Hero)
           </h5>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Capital City
               </label>
               <input
@@ -443,12 +443,12 @@ export default function CountryDestinationInfoPanel() {
                     quick_facts: { ...info.quick_facts, capital: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Currency
               </label>
               <input
@@ -460,12 +460,12 @@ export default function CountryDestinationInfoPanel() {
                     quick_facts: { ...info.quick_facts, currency: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Official Languages
               </label>
               <input
@@ -477,12 +477,12 @@ export default function CountryDestinationInfoPanel() {
                     quick_facts: { ...info.quick_facts, languages: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Timezone
               </label>
               <input
@@ -494,12 +494,12 @@ export default function CountryDestinationInfoPanel() {
                     quick_facts: { ...info.quick_facts, timezone: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Ideal Trip Duration
               </label>
               <input
@@ -511,12 +511,12 @@ export default function CountryDestinationInfoPanel() {
                     quick_facts: { ...info.quick_facts, ideal_duration: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Electrical Plugs
               </label>
               <input
@@ -528,12 +528,12 @@ export default function CountryDestinationInfoPanel() {
                     quick_facts: { ...info.quick_facts, plug_types: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Dialing Code
               </label>
               <input
@@ -545,12 +545,12 @@ export default function CountryDestinationInfoPanel() {
                     quick_facts: { ...info.quick_facts, dialing_code: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Driving Side
               </label>
               <input
@@ -562,7 +562,7 @@ export default function CountryDestinationInfoPanel() {
                     quick_facts: { ...info.quick_facts, driving_side: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
           </div>
@@ -571,20 +571,20 @@ export default function CountryDestinationInfoPanel() {
 
       {/* TAB 2: OVERVIEW */}
       {activeSubTab === "overview" && (
-        <section className="rounded-xl border border-dash-border bg-white p-6 space-y-4">
-          <h4 className="text-base font-bold text-dash-text border-b border-dash-border pb-3">
-            Destination Overview & Narrative
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <h4 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Destination Overview &amp; Narrative
           </h4>
 
           <div>
-            <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Overview Narrative (Use double newlines for separate paragraphs)
             </label>
             <textarea
-              rows={12}
+              rows={10}
               value={info.overview_narrative}
               onChange={(e) => setInfo({ ...info, overview_narrative: e.target.value })}
-              className="w-full rounded-xl border border-dash-border p-3 text-sm leading-relaxed outline-none focus:border-[#0284C7]"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white p-3.5 text-sm leading-relaxed text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               placeholder="Enter rich destination editorial introduction..."
             />
           </div>
@@ -593,9 +593,9 @@ export default function CountryDestinationInfoPanel() {
 
       {/* TAB 3: WHY VISIT */}
       {activeSubTab === "why_visit" && (
-        <section className="rounded-xl border border-dash-border bg-white p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-dash-border pb-3">
-            <h4 className="text-base font-bold text-dash-text">
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h4 className="text-base font-bold text-slate-900">
               Why Visit {info.country_name} (Core Reason Pillars)
             </h4>
             <button
@@ -615,7 +615,7 @@ export default function CountryDestinationInfoPanel() {
                   },
                 });
               }}
-              className="inline-flex items-center gap-1 rounded-lg bg-dash-bg px-3 py-1.5 text-xs font-bold text-dash-text hover:bg-dash-border"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition"
             >
               <Plus size={13} />
               <span>Add Reason</span>
@@ -624,7 +624,7 @@ export default function CountryDestinationInfoPanel() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Section Title
               </label>
               <input
@@ -636,11 +636,11 @@ export default function CountryDestinationInfoPanel() {
                     why_visit: { ...info.why_visit, title: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Section Subtitle
               </label>
               <input
@@ -652,7 +652,7 @@ export default function CountryDestinationInfoPanel() {
                     why_visit: { ...info.why_visit, subtitle: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
           </div>
@@ -662,7 +662,7 @@ export default function CountryDestinationInfoPanel() {
             {info.why_visit.reasons?.map((reason, idx) => (
               <div
                 key={reason.id || idx}
-                className="rounded-xl border border-dash-border bg-dash-bg/30 p-4 relative"
+                className="rounded-2xl border border-slate-200/90 bg-slate-50/40 p-4 sm:p-5 relative space-y-3 shadow-2xs transition hover:border-slate-300"
               >
                 <button
                   type="button"
@@ -673,15 +673,15 @@ export default function CountryDestinationInfoPanel() {
                       why_visit: { ...info.why_visit, reasons: filtered },
                     });
                   }}
-                  className="absolute top-3 right-3 text-red-500 hover:text-red-700"
+                  className="absolute top-3.5 right-3.5 p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
                   title="Remove reason"
                 >
                   <Trash2 size={16} />
                 </button>
 
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-xs font-bold text-dash-muted">
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                       Card Title
                     </label>
                     <input
@@ -695,12 +695,12 @@ export default function CountryDestinationInfoPanel() {
                           why_visit: { ...info.why_visit, reasons: updated },
                         });
                       }}
-                      className="w-full rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs font-bold"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-bold text-dash-muted">
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                       Badge Pill (e.g. UNESCO, Wildlife, Cuisine)
                     </label>
                     <input
@@ -714,12 +714,12 @@ export default function CountryDestinationInfoPanel() {
                           why_visit: { ...info.why_visit, reasons: updated },
                         });
                       }}
-                      className="w-full rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
-                    <label className="mb-1 block text-xs font-bold text-dash-muted">
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                       Description
                     </label>
                     <textarea
@@ -733,7 +733,7 @@ export default function CountryDestinationInfoPanel() {
                           why_visit: { ...info.why_visit, reasons: updated },
                         });
                       }}
-                      className="w-full resize-none rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs"
+                      className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                     />
                   </div>
                 </div>
@@ -745,13 +745,13 @@ export default function CountryDestinationInfoPanel() {
 
       {/* TAB 4: BEST TIME & SEASONS */}
       {activeSubTab === "seasons" && (
-        <section className="rounded-xl border border-dash-border bg-white p-6 space-y-6">
-          <h4 className="text-base font-bold text-dash-text border-b border-dash-border pb-3">
-            Best Time to Visit (Peak, Shoulder & Low Seasons)
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-6">
+          <h4 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Best Time to Visit (Peak, Shoulder &amp; Low Seasons)
           </h4>
 
           <div>
-            <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Overall Season Summary
             </label>
             <textarea
@@ -766,18 +766,18 @@ export default function CountryDestinationInfoPanel() {
                   },
                 })
               }
-              className="w-full resize-none rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
             />
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
             {/* Peak Season */}
-            <div className="rounded-xl border border-emerald-300 bg-emerald-50/40 p-4 space-y-3">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 space-y-3 shadow-2xs">
               <span className="font-bold text-xs uppercase tracking-wider text-emerald-800">
                 Peak Season
               </span>
               <div>
-                <label className="block text-[11px] font-bold text-dash-muted">Months</label>
+                <label className="mb-1 block text-[11px] font-bold text-slate-600">Months</label>
                 <input
                   type="text"
                   value={info.best_time_to_visit.peak_season.months}
@@ -793,11 +793,11 @@ export default function CountryDestinationInfoPanel() {
                       },
                     })
                   }
-                  className="w-full rounded-lg border border-dash-border bg-white px-2.5 py-1.5 text-xs font-bold"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-dash-muted">Weather Note</label>
+                <label className="mb-1 block text-[11px] font-bold text-slate-600">Weather Note</label>
                 <input
                   type="text"
                   value={info.best_time_to_visit.peak_season.weather}
@@ -813,11 +813,11 @@ export default function CountryDestinationInfoPanel() {
                       },
                     })
                   }
-                  className="w-full rounded-lg border border-dash-border bg-white px-2.5 py-1.5 text-xs"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-dash-muted">Description</label>
+                <label className="mb-1 block text-[11px] font-bold text-slate-600">Description</label>
                 <textarea
                   rows={4}
                   value={info.best_time_to_visit.peak_season.description}
@@ -833,18 +833,18 @@ export default function CountryDestinationInfoPanel() {
                       },
                     })
                   }
-                  className="w-full resize-none rounded-lg border border-dash-border bg-white px-2.5 py-1.5 text-xs"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                 />
               </div>
             </div>
 
             {/* Shoulder Season */}
-            <div className="rounded-xl border border-amber-300 bg-amber-50/40 p-4 space-y-3">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 space-y-3 shadow-2xs">
               <span className="font-bold text-xs uppercase tracking-wider text-amber-800">
                 Shoulder Season
               </span>
               <div>
-                <label className="block text-[11px] font-bold text-dash-muted">Months</label>
+                <label className="mb-1 block text-[11px] font-bold text-slate-600">Months</label>
                 <input
                   type="text"
                   value={info.best_time_to_visit.shoulder_season.months}
@@ -860,11 +860,11 @@ export default function CountryDestinationInfoPanel() {
                       },
                     })
                   }
-                  className="w-full rounded-lg border border-dash-border bg-white px-2.5 py-1.5 text-xs font-bold"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-dash-muted">Weather Note</label>
+                <label className="mb-1 block text-[11px] font-bold text-slate-600">Weather Note</label>
                 <input
                   type="text"
                   value={info.best_time_to_visit.shoulder_season.weather}
@@ -880,11 +880,11 @@ export default function CountryDestinationInfoPanel() {
                       },
                     })
                   }
-                  className="w-full rounded-lg border border-dash-border bg-white px-2.5 py-1.5 text-xs"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-dash-muted">Description</label>
+                <label className="mb-1 block text-[11px] font-bold text-slate-600">Description</label>
                 <textarea
                   rows={4}
                   value={info.best_time_to_visit.shoulder_season.description}
@@ -900,18 +900,18 @@ export default function CountryDestinationInfoPanel() {
                       },
                     })
                   }
-                  className="w-full resize-none rounded-lg border border-dash-border bg-white px-2.5 py-1.5 text-xs"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                 />
               </div>
             </div>
 
             {/* Low Season */}
-            <div className="rounded-xl border border-sky-300 bg-sky-50/40 p-4 space-y-3">
+            <div className="rounded-2xl border border-sky-200 bg-sky-50/40 p-4 space-y-3 shadow-2xs">
               <span className="font-bold text-xs uppercase tracking-wider text-sky-800">
                 Low / Off-Peak Season
               </span>
               <div>
-                <label className="block text-[11px] font-bold text-dash-muted">Months</label>
+                <label className="mb-1 block text-[11px] font-bold text-slate-600">Months</label>
                 <input
                   type="text"
                   value={info.best_time_to_visit.low_season.months}
@@ -927,11 +927,11 @@ export default function CountryDestinationInfoPanel() {
                       },
                     })
                   }
-                  className="w-full rounded-lg border border-dash-border bg-white px-2.5 py-1.5 text-xs font-bold"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-dash-muted">Weather Note</label>
+                <label className="mb-1 block text-[11px] font-bold text-slate-600">Weather Note</label>
                 <input
                   type="text"
                   value={info.best_time_to_visit.low_season.weather}
@@ -947,11 +947,11 @@ export default function CountryDestinationInfoPanel() {
                       },
                     })
                   }
-                  className="w-full rounded-lg border border-dash-border bg-white px-2.5 py-1.5 text-xs"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-dash-muted">Description</label>
+                <label className="mb-1 block text-[11px] font-bold text-slate-600">Description</label>
                 <textarea
                   rows={4}
                   value={info.best_time_to_visit.low_season.description}
@@ -967,7 +967,7 @@ export default function CountryDestinationInfoPanel() {
                       },
                     })
                   }
-                  className="w-full resize-none rounded-lg border border-dash-border bg-white px-2.5 py-1.5 text-xs"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                 />
               </div>
             </div>
@@ -977,14 +977,14 @@ export default function CountryDestinationInfoPanel() {
 
       {/* TAB 5: MONSOON & RAIN */}
       {activeSubTab === "monsoon" && (
-        <section className="rounded-xl border border-dash-border bg-white p-6 space-y-6">
-          <h4 className="text-base font-bold text-dash-text border-b border-dash-border pb-3">
-            Monsoon & Season Information
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-6">
+          <h4 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Monsoon &amp; Season Information
           </h4>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Monsoon Headline
               </label>
               <input
@@ -996,12 +996,12 @@ export default function CountryDestinationInfoPanel() {
                     monsoon_info: { ...info.monsoon_info, headline: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Rainfall Schedule (e.g. June to September)
               </label>
               <input
@@ -1016,12 +1016,12 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Monsoon Overview Narrative
               </label>
               <textarea
@@ -1036,12 +1036,12 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full resize-none rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Extreme Weather / Cyclone / Travel Safety Note (Optional)
               </label>
               <input
@@ -1056,7 +1056,7 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
           </div>
@@ -1065,14 +1065,14 @@ export default function CountryDestinationInfoPanel() {
 
       {/* TAB 6: 12-MONTH CLIMATE MATRIX */}
       {activeSubTab === "temperature" && (
-        <section className="rounded-xl border border-dash-border bg-white p-6 space-y-6">
-          <h4 className="text-base font-bold text-dash-text border-b border-dash-border pb-3">
-            Temperature & 12-Month Climate Matrix
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-6">
+          <h4 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Temperature &amp; 12-Month Climate Matrix
           </h4>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Climate Headline
               </label>
               <input
@@ -1087,12 +1087,12 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Climate Overview
               </label>
               <input
@@ -1107,138 +1107,140 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border border-dash-border rounded-xl overflow-hidden">
-              <thead className="bg-dash-bg font-bold text-dash-text">
-                <tr>
-                  <th className="p-2.5">Month</th>
-                  <th className="p-2.5">Avg High (°C)</th>
-                  <th className="p-2.5">Avg Low (°C)</th>
-                  <th className="p-2.5">Rainy Days</th>
-                  <th className="p-2.5">Rating Pill</th>
-                  <th className="p-2.5">Monthly Highlight</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-dash-border">
-                {info.temperature_info.monthly_weather?.map((m, idx) => (
-                  <tr key={m.month} className="hover:bg-slate-50">
-                    <td className="p-2.5 font-bold text-dash-text">{m.full_month}</td>
-                    <td className="p-2.5">
-                      <input
-                        type="number"
-                        value={m.avg_high_c}
-                        onChange={(e) => {
-                          const updated = [...info.temperature_info.monthly_weather];
-                          const highC = Number(e.target.value);
-                          updated[idx].avg_high_c = highC;
-                          updated[idx].avg_high_f = Math.round((highC * 9) / 5 + 32);
-                          setInfo({
-                            ...info,
-                            temperature_info: {
-                              ...info.temperature_info,
-                              monthly_weather: updated,
-                            },
-                          });
-                        }}
-                        className="w-16 rounded border border-dash-border p-1 text-center font-bold"
-                      />
-                    </td>
-                    <td className="p-2.5">
-                      <input
-                        type="number"
-                        value={m.avg_low_c}
-                        onChange={(e) => {
-                          const updated = [...info.temperature_info.monthly_weather];
-                          const lowC = Number(e.target.value);
-                          updated[idx].avg_low_c = lowC;
-                          updated[idx].avg_low_f = Math.round((lowC * 9) / 5 + 32);
-                          setInfo({
-                            ...info,
-                            temperature_info: {
-                              ...info.temperature_info,
-                              monthly_weather: updated,
-                            },
-                          });
-                        }}
-                        className="w-16 rounded border border-dash-border p-1 text-center font-bold"
-                      />
-                    </td>
-                    <td className="p-2.5">
-                      <input
-                        type="number"
-                        value={m.rainfall_days}
-                        onChange={(e) => {
-                          const updated = [...info.temperature_info.monthly_weather];
-                          updated[idx].rainfall_days = Number(e.target.value);
-                          setInfo({
-                            ...info,
-                            temperature_info: {
-                              ...info.temperature_info,
-                              monthly_weather: updated,
-                            },
-                          });
-                        }}
-                        className="w-16 rounded border border-dash-border p-1 text-center"
-                      />
-                    </td>
-                    <td className="p-2.5">
-                      <select
-                        value={m.recommendation}
-                        onChange={(e) => {
-                          const updated = [...info.temperature_info.monthly_weather];
-                          updated[idx].recommendation = e.target.value as MonthlyWeather["recommendation"];
-                          setInfo({
-                            ...info,
-                            temperature_info: {
-                              ...info.temperature_info,
-                              monthly_weather: updated,
-                            },
-                          });
-                        }}
-                        className="rounded border border-dash-border p-1 text-xs font-semibold"
-                      >
-                        <option value="Peak">Peak</option>
-                        <option value="Good">Good</option>
-                        <option value="Shoulder">Shoulder</option>
-                        <option value="Monsoon / Low">Monsoon / Low</option>
-                      </select>
-                    </td>
-                    <td className="p-2.5">
-                      <input
-                        type="text"
-                        value={m.highlight}
-                        onChange={(e) => {
-                          const updated = [...info.temperature_info.monthly_weather];
-                          updated[idx].highlight = e.target.value;
-                          setInfo({
-                            ...info,
-                            temperature_info: {
-                              ...info.temperature_info,
-                              monthly_weather: updated,
-                            },
-                          });
-                        }}
-                        className="w-full rounded border border-dash-border p-1 text-xs"
-                      />
-                    </td>
+          <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-2xs">
+            <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
+              <table className="w-full min-w-[760px] text-left text-xs border-collapse">
+                <thead className="bg-slate-50/90 border-b border-slate-200/90 text-slate-500 font-bold uppercase tracking-wider text-[11px] select-none">
+                  <tr>
+                    <th className="px-4 py-3">Month</th>
+                    <th className="px-4 py-3">Avg High (°C)</th>
+                    <th className="px-4 py-3">Avg Low (°C)</th>
+                    <th className="px-4 py-3">Rainy Days</th>
+                    <th className="px-4 py-3">Rating Pill</th>
+                    <th className="px-4 py-3">Monthly Highlight</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
+                  {info.temperature_info.monthly_weather?.map((m, idx) => (
+                    <tr key={m.month} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="px-4 py-3 font-bold text-slate-900">{m.full_month}</td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          value={m.avg_high_c}
+                          onChange={(e) => {
+                            const updated = [...info.temperature_info.monthly_weather];
+                            const highC = Number(e.target.value);
+                            updated[idx].avg_high_c = highC;
+                            updated[idx].avg_high_f = Math.round((highC * 9) / 5 + 32);
+                            setInfo({
+                              ...info,
+                              temperature_info: {
+                                ...info.temperature_info,
+                                monthly_weather: updated,
+                              },
+                            });
+                          }}
+                          className="w-18 rounded-lg border border-slate-200 bg-white px-2 py-1 text-center font-bold text-xs shadow-2xs outline-none focus:border-slate-800"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          value={m.avg_low_c}
+                          onChange={(e) => {
+                            const updated = [...info.temperature_info.monthly_weather];
+                            const lowC = Number(e.target.value);
+                            updated[idx].avg_low_c = lowC;
+                            updated[idx].avg_low_f = Math.round((lowC * 9) / 5 + 32);
+                            setInfo({
+                              ...info,
+                              temperature_info: {
+                                ...info.temperature_info,
+                                monthly_weather: updated,
+                              },
+                            });
+                          }}
+                          className="w-18 rounded-lg border border-slate-200 bg-white px-2 py-1 text-center font-bold text-xs shadow-2xs outline-none focus:border-slate-800"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          value={m.rainfall_days}
+                          onChange={(e) => {
+                            const updated = [...info.temperature_info.monthly_weather];
+                            updated[idx].rainfall_days = Number(e.target.value);
+                            setInfo({
+                              ...info,
+                              temperature_info: {
+                                ...info.temperature_info,
+                                monthly_weather: updated,
+                              },
+                            });
+                          }}
+                          className="w-18 rounded-lg border border-slate-200 bg-white px-2 py-1 text-center text-xs shadow-2xs outline-none focus:border-slate-800"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={m.recommendation}
+                          onChange={(e) => {
+                            const updated = [...info.temperature_info.monthly_weather];
+                            updated[idx].recommendation = e.target.value as MonthlyWeather["recommendation"];
+                            setInfo({
+                              ...info,
+                              temperature_info: {
+                                ...info.temperature_info,
+                                monthly_weather: updated,
+                              },
+                            });
+                          }}
+                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-2xs cursor-pointer outline-none focus:border-slate-800"
+                        >
+                          <option value="Peak">Peak</option>
+                          <option value="Good">Good</option>
+                          <option value="Shoulder">Shoulder</option>
+                          <option value="Monsoon / Low">Monsoon / Low</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="text"
+                          value={m.highlight}
+                          onChange={(e) => {
+                            const updated = [...info.temperature_info.monthly_weather];
+                            updated[idx].highlight = e.target.value;
+                            setInfo({
+                              ...info,
+                              temperature_info: {
+                                ...info.temperature_info,
+                                monthly_weather: updated,
+                              },
+                            });
+                          }}
+                          className="w-full min-w-[180px] rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-2xs outline-none focus:border-slate-800"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       )}
 
       {/* TAB 7: BEST PLACES TO VISIT */}
       {activeSubTab === "places" && (
-        <section className="rounded-xl border border-dash-border bg-white p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-dash-border pb-3">
-            <h4 className="text-base font-bold text-dash-text">
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h4 className="text-base font-bold text-slate-900">
               Best Places to Visit in {info.country_name}
             </h4>
             <button
@@ -1262,18 +1264,18 @@ export default function CountryDestinationInfoPanel() {
                   },
                 });
               }}
-              className="inline-flex items-center gap-1 rounded-lg bg-dash-bg px-3 py-1.5 text-xs font-bold text-dash-text hover:bg-dash-border"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition"
             >
               <Plus size={13} />
               <span>Add Place</span>
             </button>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-5">
             {info.best_places_to_visit.places?.map((place, idx) => (
               <div
                 key={place.id || idx}
-                className="rounded-xl border border-dash-border bg-dash-bg/30 p-4 relative space-y-3"
+                className="rounded-2xl border border-slate-200/90 bg-slate-50/40 p-4 sm:p-5 relative space-y-3.5 shadow-2xs transition hover:border-slate-300"
               >
                 <button
                   type="button"
@@ -1289,15 +1291,17 @@ export default function CountryDestinationInfoPanel() {
                       },
                     });
                   }}
-                  className="absolute top-3 right-3 text-red-500 hover:text-red-700"
+                  className="absolute top-3.5 right-3.5 p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
                   title="Remove place"
                 >
                   <Trash2 size={16} />
                 </button>
 
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-dash-muted">Place Name</label>
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Place Name
+                    </label>
                     <input
                       type="text"
                       value={place.name}
@@ -1312,12 +1316,14 @@ export default function CountryDestinationInfoPanel() {
                           },
                         });
                       }}
-                      className="w-full rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs font-bold"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-dash-muted">Region Tag</label>
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Region Tag
+                    </label>
                     <input
                       type="text"
                       value={place.tag}
@@ -1332,12 +1338,14 @@ export default function CountryDestinationInfoPanel() {
                           },
                         });
                       }}
-                      className="w-full rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-dash-muted">Best For Pill</label>
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Best For Pill (e.g. Wildlife Safari, History, Romance)
+                    </label>
                     <input
                       type="text"
                       value={place.best_for || ""}
@@ -1352,11 +1360,11 @@ export default function CountryDestinationInfoPanel() {
                           },
                         });
                       }}
-                      className="w-full rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-2">
                     <AdminAssetUpload
                       label={`Photo of ${place.name}`}
                       value={place.image}
@@ -1374,8 +1382,10 @@ export default function CountryDestinationInfoPanel() {
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
-                    <label className="block text-xs font-bold text-dash-muted">Description</label>
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Description
+                    </label>
                     <textarea
                       rows={2}
                       value={place.description}
@@ -1390,12 +1400,12 @@ export default function CountryDestinationInfoPanel() {
                           },
                         });
                       }}
-                      className="w-full resize-none rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs"
+                      className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
-                    <label className="block text-xs font-bold text-dash-muted">
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                       Must-See Highlights (comma-separated, e.g. Taj Mahal, Agra Fort, Mehtab Bagh)
                     </label>
                     <input
@@ -1415,7 +1425,7 @@ export default function CountryDestinationInfoPanel() {
                           },
                         });
                       }}
-                      className="w-full rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 shadow-2xs outline-none focus:border-slate-800"
                     />
                   </div>
                 </div>
@@ -1427,15 +1437,15 @@ export default function CountryDestinationInfoPanel() {
 
       {/* TAB 8: TRAVEL INFORMATION */}
       {activeSubTab === "travel_info" && (
-        <section className="rounded-xl border border-dash-border bg-white p-6 space-y-6">
-          <h4 className="text-base font-bold text-dash-text border-b border-dash-border pb-3">
-            Practical Travel Information & Advice
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-6">
+          <h4 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Practical Travel Information &amp; Advice
           </h4>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
-                Visas & Passports Advice
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Visas &amp; Passports Advice
               </label>
               <textarea
                 rows={3}
@@ -1449,13 +1459,13 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full resize-none rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
-                Money, Currency & Tipping
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Money, Currency &amp; Tipping
               </label>
               <textarea
                 rows={3}
@@ -1469,13 +1479,13 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full resize-none rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
-                Health, Vaccines & Water
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Health, Vaccines &amp; Water
               </label>
               <textarea
                 rows={3}
@@ -1489,13 +1499,13 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full resize-none rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
-                Local Customs, Culture & Etiquette
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Local Customs, Culture &amp; Etiquette
               </label>
               <textarea
                 rows={3}
@@ -1509,13 +1519,13 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full resize-none rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
-                Getting Around & Transport
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Getting Around &amp; Transport
               </label>
               <textarea
                 rows={3}
@@ -1529,13 +1539,13 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full resize-none rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
-                Packing Essentials & Dress Code
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Packing Essentials &amp; Dress Code
               </label>
               <textarea
                 rows={3}
@@ -1549,12 +1559,12 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full resize-none rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Emergency Numbers (Optional)
               </label>
               <input
@@ -1569,7 +1579,7 @@ export default function CountryDestinationInfoPanel() {
                     },
                   })
                 }
-                className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
               />
             </div>
           </div>

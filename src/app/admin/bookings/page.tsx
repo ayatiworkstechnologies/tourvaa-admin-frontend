@@ -186,7 +186,7 @@ export default function BookingsPage() {
             <button
               type="button"
               onClick={() => void handleExport()}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body shadow-sm transition hover:bg-dash-bg disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-60 cursor-pointer"
               disabled={exporting}
             >
               <Download size={16} />
@@ -195,7 +195,7 @@ export default function BookingsPage() {
             <button
               type="button"
               onClick={() => void refreshAll(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body shadow-sm transition hover:bg-dash-bg disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-60 cursor-pointer"
               disabled={isRefreshing}
             >
               <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
@@ -213,12 +213,19 @@ export default function BookingsPage() {
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {statCards.map(({ label, value, icon: Icon, accent }) => (
-            <div key={label} className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${accent}`}>
+            <div
+              key={label}
+              className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_1px_3px_0_rgba(15,23,42,0.04)] transition hover:shadow-xs"
+            >
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-2xs ${accent}`}>
                 <Icon size={18} />
               </div>
-              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-dash-subtle">{label}</p>
-              <p className="mt-1 text-xl font-black text-dash-text">{value}</p>
+              <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                {label}
+              </p>
+              <p className="mt-1 text-2xl font-black tracking-tight text-slate-900">
+                {value}
+              </p>
             </div>
           ))}
         </section>

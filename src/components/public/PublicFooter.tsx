@@ -244,10 +244,11 @@ export default function PublicFooter() {
   return (
     <footer className="w-full bg-pub-primary text-white pt-12 sm:pt-16 pb-8 sm:pb-10 transition-colors">
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.72fr)] lg:gap-14 xl:gap-20">
-          {/* CMS groups use an independent 2-column grid. New groups wrap
-              into a clean new row without moving the utility column. */}
-          <div className="grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2 sm:gap-x-14">
+        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(360px,1fr)] lg:gap-14 xl:gap-20">
+          {/* The CMS menu area is always independent from Tourvaa's utility
+              column: three menu columns on desktop, then additional CMS
+              sections wrap beneath them without shifting the right panel. */}
+          <div className="grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-8 xl:gap-x-12">
           {footerSections.map((section) => (
             <nav key={section.id} aria-label={`${section.title} footer links`} className="min-w-0">
               <h3 className="text-lg sm:text-xl font-bold text-white mb-4 tracking-tight">

@@ -50,14 +50,31 @@ check("public booking uses live server-calculated pricing", publicBooking.includ
 check("booking continues to the payment step", publicBooking.includes("setStep(3)"));
 check("success copy explains pending payment confirmation", publicBooking.includes("pending payment confirmation"));
 check("traveller fields follow selected adult and child counts", publicBooking.includes("adultCount + childCount") && publicBooking.includes('i < adultCount ? "adult" : "child"'));
-check("every traveller submits a normalized age", publicBooking.includes("age: calcAge(p.birthDay, p.birthMonth, p.birthYear)"));
+// Traveller ages are collected directly as a numeric field, validated, then
+// submitted as a Number. The earlier birthDay/birthMonth/birthYear + calcAge()
+// derivation has been replaced by the direct age input.
+check(
+  "every traveller submits a numeric age",
+  publicBooking.includes("age: Number(p.age)"),
+);
 check("adult and child ages are validated", publicBooking.includes("age < 12 || age > 120") && publicBooking.includes("age < 3 || age > 11"));
 check("optional activities selection feeds price and checkout data", publicBooking.includes("optionalActivitiesPayload") && publicBooking.includes("optional_activities: optionalActivitiesPayload"));
 
 const customerBooking = read("src/app/customer/bookings/[id]/page.tsx");
 check("new booking opens payment UI", customerBooking.includes('searchParams.get("pay") === "1"'));
-check("payment copy remains pending supplier acceptance", customerBooking.includes("Final confirmation is pending supplier acceptance"));
-check("pending supplier banner is rendered", customerBooking.includes("Pending supplier acceptance"));
+// The "pending supplier acceptance" wording was reworded to "Booking Request
+// Received", but the gate is unchanged: the banner still renders only while
+// supplier_acceptance_status is "pending".
+check(
+  "pending supplier banner is rendered",
+  customerBooking.includes('booking.supplier_acceptance_status === "pending"') &&
+    customerBooking.includes("Booking Request Received"),
+);
+check(
+  "payment is not presented as a confirmed booking",
+  customerBooking.includes('return "Booking Request Received"') &&
+    customerBooking.includes('["confirmed", "ready_to_travel", "upcoming", "postponed"]'),
+);
 check("gateway charges the selected payment amount", customerBooking.includes("amount: paymentAmount"));
 check("gateway modal offers deposit and full balance", customerBooking.includes("Pay ${depositConfig.deposit_percentage}% deposit") && customerBooking.includes("Pay in full"));
 check("partial payment uses the backend-configured deposit percentage", customerBooking.includes("totalAmount * (depositConfig.deposit_percentage / 100)"));
@@ -74,12 +91,21 @@ check("dashboard request links apply the bookings tab filter", customerBookings.
 const publicHeader = read("src/components/public/PublicHeader.tsx");
 const customerHeader = read("src/components/customer/CustomerPortalHeader.tsx");
 const customerLayout = read("src/app/customer/layout.tsx");
+const portalPublicFooter = read("src/components/public/portal/PortalPublicFooter.tsx");
 const wishlist = read("src/app/customer/wishlist/page.tsx");
 const wishlistStore = read("src/providers/TravelStoreProvider.tsx");
 const legacyWishlist = read("src/app/(public)/wishlist/page.tsx");
 const retiredCart = read("src/app/(public)/cart/page.tsx");
 check("public and customer headers no longer expose cart", !publicHeader.includes('href="/cart"') && !customerHeader.includes('href="/cart"'));
-check("customer footer receives public settings context", customerLayout.includes("<PublicSettingsProvider>") && customerLayout.includes("<PublicFooter />"));
+// The customer portal renders its own sidebar + header chrome, so it deliberately
+// does NOT include the marketing <PublicFooter />. It must still be wrapped in
+// PublicSettingsProvider so support/settings-driven UI keeps working.
+check(
+  "customer portal gets public settings context without the marketing footer",
+  customerLayout.includes("<PublicSettingsProvider>") &&
+    !customerLayout.includes("<PublicFooter />") &&
+    portalPublicFooter.includes("<PublicFooter />"),
+);
 check("wishlist books tours directly", wishlist.includes("href: w.href || `/booking/${w.id}`") && !wishlist.includes("addToCart"));
 // The public nav links to the public /wishlist page (works for guests too);
 // the customer-portal header/sidebar link to /customer/wishlist for signed-in

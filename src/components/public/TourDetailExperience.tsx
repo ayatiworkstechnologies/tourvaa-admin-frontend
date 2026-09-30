@@ -3011,6 +3011,24 @@ export default function TourDetailExperience({
                 </>
               ) : (
                 <>
+                  {depositDue != null && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleBookNow("reserve")}
+                        disabled={!selectedDeparture || !unitPrice}
+                        className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <span>Secure with a Deposit ({format(depositDue, tourCurrency)} today)</span>
+                        <ArrowRight size={16} />
+                      </button>
+                      <div className="flex items-center gap-3 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400" aria-hidden="true">
+                        <span className="h-px flex-1 bg-slate-200" />
+                        <span>or</span>
+                        <span className="h-px flex-1 bg-slate-200" />
+                      </div>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleBookNow()}
@@ -3021,16 +3039,6 @@ export default function TourDetailExperience({
                       <><span>Book This Tour</span><ArrowRight size={16} /></>
                     ) : "Select Date"}
                   </button>
-                  {depositDue != null && (
-                    <button
-                      type="button"
-                      onClick={() => handleBookNow("reserve")}
-                      disabled={!selectedDeparture || !unitPrice}
-                      className="w-full rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 py-2.5 text-xs font-bold text-blue-800 transition cursor-pointer disabled:opacity-40"
-                    >
-                      Secure with a Deposit ({format(depositDue, tourCurrency)} today)
-                    </button>
-                  )}
                 </>
               )}
             </div>

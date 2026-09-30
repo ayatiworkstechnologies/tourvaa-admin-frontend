@@ -8,11 +8,14 @@ import {
   LuClock as Clock,
   LuCompass as Compass,
   LuCreditCard as CreditCard,
+  LuMapPinned as MapPinned,
   LuLoaderCircle as Loader2,
+  LuMessageSquare as MessageSquare,
   LuMinus as Minus,
   LuPlus as Plus,
   LuSend as Send,
   LuShieldCheck as ShieldCheck,
+  LuBackpack as Backpack,
   LuSparkles as Sparkles,
   LuTag as Tag,
   LuThumbsDown as ThumbsDown,
@@ -23,7 +26,9 @@ import {
 } from "react-icons/lu";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useAuthContext } from "@/providers/AuthProvider";
+import type { AuthUser } from "@/types/auth";
 import api from "@/lib/api/client";
 import {
   streamChat,
@@ -51,31 +56,41 @@ type Message = {
 const INITIAL_MESSAGE: Message = {
   role: "assistant",
   content:
-    "Hello! I am Scout, your Tourvaa AI concierge. I can recommend top-rated tours, check live availability, explain cancellation rules, and help you book your adventure directly here.",
+    "Hello! I am Scout, your Tourvaa travel guide. Tell me where you would like to go, when you plan to travel, and who is joining you. I can suggest tours, help shape an itinerary, check availability, explain booking rules, and help you book.",
 };
 
 const QUICK_QUESTIONS = [
   {
-    text: "Show me trending tours",
-    icon: Compass,
+    text: "Help me plan a trip",
+    icon: MapPinned,
     badgeBg: "bg-amber-50 text-amber-600 border-amber-200/80",
   },
   {
-    text: "How do I book a tour?",
-    icon: Calendar,
+    text: "Best tours for families",
+    icon: Users,
     badgeBg: "bg-sky-50 text-sky-600 border-sky-200/80",
   },
   {
-    text: "Cancellation policy?",
-    icon: ShieldCheck,
+    text: "What should I pack?",
+    icon: Backpack,
     badgeBg: "bg-emerald-50 text-emerald-600 border-emerald-200/80",
   },
   {
-    text: "Available payment methods?",
-    icon: CreditCard,
+    text: "Show me top tours",
+    icon: Compass,
     badgeBg: "bg-violet-50 text-violet-600 border-violet-200/80",
   },
 ];
+
+function adminSupportRoute(user: AuthUser | null): string | null {
+  if (!user) return null;
+  const userType = user.user_type?.toLowerCase();
+  const role = user.role?.slug?.toLowerCase() ?? "";
+  if (userType === "customer" || role.includes("customer")) return "/customer/support";
+  if (userType === "supplier" || role.includes("supplier")) return "/supplier/messages";
+  if (userType === "agent" || role.includes("agent")) return "/agent/messages";
+  return null;
+}
 
 function TourCards({
   tours,
@@ -255,6 +270,7 @@ function BookingConfirm({
 
 export default function ChatWidget() {
   const { user } = useAuthContext();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
@@ -268,6 +284,7 @@ export default function ChatWidget() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [launcherVisible, setLauncherVisible] = useState(true);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const supportRoute = adminSupportRoute(user);
 
   useEffect(() => {
     if (cooldownSeconds <= 0) return;
@@ -713,6 +730,27 @@ export default function ChatWidget() {
 
           {/* Input Footer */}
           <div className="border-t border-slate-200/80 bg-white p-3">
+            {supportRoute && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  router.push(supportRoute);
+                }}
+                className="mb-2.5 flex w-full items-center justify-between rounded-xl border border-sky-100 bg-sky-50/70 px-3 py-2 text-left text-xs font-semibold text-sky-950 transition hover:border-sky-200 hover:bg-sky-100/70"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white text-pub-secondary shadow-2xs">
+                    <MessageSquare size={13} className="stroke-[2.2]" />
+                  </span>
+                  <span>
+                    <span className="block">Need a person?</span>
+                    <span className="font-medium text-sky-700">Message the Tourvaa admin team</span>
+                  </span>
+                </span>
+                <ArrowRight size={15} className="shrink-0 text-pub-secondary" />
+              </button>
+            )}
             <div className="flex items-center gap-2">
               <div className="relative flex-1 flex items-center">
                 <span className="absolute left-3 text-slate-400 pointer-events-none">

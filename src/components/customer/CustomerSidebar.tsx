@@ -6,6 +6,7 @@ import type { IconType } from "react-icons";
 import {
   LuClock as Clock,
   LuHeart as Heart,
+  LuHeadphones as Headphones,
   LuLock as Lock,
   LuLogOut as LogOut,
   LuShieldCheck as ShieldCheck,
@@ -42,6 +43,7 @@ const customerNavigation: PortalNavItem[] = [
   { label: "My Profile", href: "/customer/dashboard", icon: UserRound, alsoActiveFor: ["/customer/profile"] },
   { label: "My Bookings", href: "/customer/bookings", icon: Ticket },
   { label: "Wishlist", href: "/customer/wishlist", icon: Heart },
+  { label: "Support", href: "/customer/support", icon: Headphones },
 ];
 
 /** Left-hand portal navigation (profile card + links) shared by the customer

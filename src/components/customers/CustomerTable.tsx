@@ -45,68 +45,94 @@ export default function CustomerTable({
     {
       key: "no",
       header: "No",
-      className: "w-20 font-bold text-dash-muted",
-      render: (_, index) => (page - 1) * limit + index + 1,
+      className: "w-16 font-bold text-slate-400 text-center",
+      render: (_, index) => (
+        <span className="font-mono text-xs text-slate-500">
+          {(page - 1) * limit + index + 1}
+        </span>
+      ),
     },
     {
       key: "customer",
       header: "Customer",
       render: (customer) => (
-        <>
-          <Link href={`/admin/customers/${customer.id}`} className="font-bold text-dash-text hover:text-dash-brand-hover">
-            {customer.customer_code || `CUS-${customer.id}`} - {customer.full_name}
-          </Link>
-          <p className="mt-1 text-xs text-dash-muted">{customer.email}</p>
-        </>
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
+            {(customer.full_name || "C").charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <Link
+              href={`/admin/customers/${customer.id}`}
+              className="font-bold text-slate-900 hover:text-blue-600 transition block truncate"
+            >
+              {customer.full_name || "Unnamed"}
+            </Link>
+            <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
+              <span className="font-mono text-[11px] text-slate-400 font-medium">
+                {customer.customer_code || `CUS-${customer.id}`}
+              </span>
+              {customer.email && (
+                <>
+                  <span className="text-slate-300">·</span>
+                  <span className="truncate max-w-[180px]">{customer.email}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       ),
     },
     {
       key: "phone",
       header: "Phone",
-      className: "text-dash-muted",
-      render: (customer) => customer.phone || "-",
+      className: "text-slate-600 font-mono text-xs whitespace-nowrap",
+      render: (customer) => customer.phone || "—",
     },
     {
       key: "country",
       header: "Country",
-      className: "text-dash-muted",
-      render: (customer) => customer.country_name || customer.country || "-",
+      className: "text-slate-700 whitespace-nowrap",
+      render: (customer) => customer.country_name || customer.country || "—",
     },
     {
       key: "status",
       header: "Status",
+      className: "whitespace-nowrap",
       render: (customer) => <StatusBadge value={customer.status} />,
     },
     {
       key: "tours",
-      header: "Tours",
-      className: "text-dash-muted",
+      header: "Bookings",
+      className: "whitespace-nowrap",
       render: (customer) => (
-        <>
-          <span className="font-bold text-dash-text">{customer.total_bookings}</span>
-          <span className="ml-2 text-xs">
-            C {customer.completed_tours} / X {customer.cancelled_tours} / U {customer.upcoming_tours}
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-slate-900 tabular-nums">
+            {customer.total_bookings ?? 0}
           </span>
-        </>
+          <span className="text-[11px] font-medium text-slate-500">
+            ({customer.completed_tours ?? 0} done · {customer.upcoming_tours ?? 0} up)
+          </span>
+        </div>
       ),
     },
     {
       key: "paid",
       header: "Paid",
-      className: "font-bold text-emerald-600",
+      className: "font-bold text-emerald-600 tabular-nums whitespace-nowrap",
       render: (customer) => money(customer.amount_paid || 0),
     },
     {
       key: "pending",
       header: "Pending",
-      className: "font-bold text-amber-700",
+      className: "font-bold text-amber-700 tabular-nums whitespace-nowrap",
       render: (customer) => money(customer.amount_pending || 0),
     },
     {
       key: "created",
       header: "Created",
-      className: "text-dash-muted",
-      render: (customer) => customer.created_at ? new Date(customer.created_at).toLocaleDateString() : "-",
+      className: "text-slate-500 text-xs whitespace-nowrap tabular-nums",
+      render: (customer) =>
+        customer.created_at ? new Date(customer.created_at).toLocaleDateString() : "—",
     },
   ];
 
@@ -122,55 +148,56 @@ export default function CustomerTable({
       totalPages={totalPages}
       onPageChange={onPageChange}
       emptyTitle="No customers found."
-        actions={(customer) => (
-          <div className="flex items-center justify-end gap-2">
-            <Link
-              href={`/admin/customers/${customer.id}`}
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-dash-border px-3 text-xs font-bold text-dash-brand-hover transition-colors hover:bg-[#E7F5FF]"
-              aria-label="View customer"
-              title="View customer"
+      actions={(customer) => (
+        <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+          <Link
+            href={`/admin/customers/${customer.id}`}
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 transition"
+            aria-label="View customer"
+            title="View customer"
+          >
+            <Eye size={13} className="text-slate-400" />
+            <span>View</span>
+          </Link>
+          {canReset && (
+            <button
+              type="button"
+              disabled={savingId === customer.id}
+              onClick={() => onReset(customer)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-2xs hover:bg-sky-50 hover:border-sky-200 hover:text-sky-600 transition disabled:opacity-50"
+              aria-label="Reset password"
+              title="Reset password"
             >
-              <Eye size={14} /> View
-            </Link>
-            {canReset && (
-              <button
-                type="button"
-                disabled={savingId === customer.id}
-                onClick={() => onReset(customer)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover disabled:opacity-60"
-                aria-label="Reset password"
-                title="Reset password"
-              >
-                <KeyRound size={15} />
-              </button>
-            )}
-            {customer.is_blocked
-              ? canUnblock && (
-                  <button
-                    type="button"
-                    disabled={savingId === customer.id}
-                    onClick={() => onUnblock(customer)}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-emerald-600 transition-colors hover:bg-emerald-50"
-                    aria-label="Unblock customer"
-                    title="Unblock customer"
-                  >
-                    <Unlock size={15} />
-                  </button>
-                )
-              : canBlock && (
-                  <button
-                    type="button"
-                    disabled={savingId === customer.id}
-                    onClick={() => onBlock(customer)}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-red-600 transition-colors hover:bg-red-50"
-                    aria-label="Block customer"
-                    title="Block customer"
-                  >
-                    <Lock size={15} />
-                  </button>
-                )}
-          </div>
-        )}
+              <KeyRound size={14} />
+            </button>
+          )}
+          {customer.is_blocked
+            ? canUnblock && (
+                <button
+                  type="button"
+                  disabled={savingId === customer.id}
+                  onClick={() => onUnblock(customer)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-2xs hover:bg-emerald-100 transition"
+                  aria-label="Unblock customer"
+                  title="Unblock customer"
+                >
+                  <Unlock size={14} />
+                </button>
+              )
+            : canBlock && (
+                <button
+                  type="button"
+                  disabled={savingId === customer.id}
+                  onClick={() => onBlock(customer)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-2xs hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 transition"
+                  aria-label="Block customer"
+                  title="Block customer"
+                >
+                  <Lock size={14} />
+                </button>
+              )}
+        </div>
+      )}
     />
   );
 }

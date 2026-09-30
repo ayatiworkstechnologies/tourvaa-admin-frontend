@@ -1768,9 +1768,7 @@ export function FooterPanel() {
           </button>
         </div>
       </section>
-
-      <section className="rounded-xl border border-dash-border bg-white p-3">
-        <DataTable
+      <DataTable
           ariaLabel="Footer Sections"
           columns={columns}
           rows={sections}
@@ -1818,7 +1816,6 @@ export function FooterPanel() {
             ) : null
           }
         />
-      </section>
 
       <ActionModal
         open={showForm}
@@ -2401,48 +2398,46 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
         )}
       </ActionModal>
 
-      <section className="rounded-xl border border-dash-border bg-white p-4">
-        <DataTable
-          ariaLabel={`${tab.label} table`}
-          columns={columns}
-          rows={paginatedItems}
-          loading={loading}
-          page={page}
-          pageSize={pageSize}
-          total={items.length}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          emptyTitle={`No ${tab.label.toLowerCase()} yet`}
-          emptyDescription={`Add ${tab.label.toLowerCase()} to publish content into this website section.`}
-          actions={(item) => (
-            <div className="flex items-center justify-end gap-2">
-              {tab.canEdit !== false && (
-                <button
-                  type="button"
-                  onClick={() => openEdit(item)}
-                  aria-label="Edit"
-                  title="Edit"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-sky-50 hover:text-dash-brand-hover"
-                >
-                  <Pencil size={15} />
-                </button>
-              )}
-              {tab.canDelete !== false && (
-                <button
-                  type="button"
-                  disabled={deletingId === item.id}
-                  onClick={() => void deleteItem(item.id)}
-                  aria-label="Delete"
-                  title="Delete"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
-                >
-                  <Trash2 size={15} />
-                </button>
-              )}
-            </div>
-          )}
-        />
-      </section>
+      <DataTable
+        ariaLabel={`${tab.label} table`}
+        columns={columns}
+        rows={paginatedItems}
+        loading={loading}
+        page={page}
+        pageSize={pageSize}
+        total={items.length}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        emptyTitle={`No ${tab.label.toLowerCase()} yet`}
+        emptyDescription={`Add ${tab.label.toLowerCase()} to publish content into this website section.`}
+        actions={(item) => (
+          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+            {tab.canEdit !== false && (
+              <button
+                type="button"
+                onClick={() => openEdit(item)}
+                aria-label="Edit"
+                title="Edit"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs hover:bg-slate-50 hover:text-blue-700 transition"
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+            {tab.canDelete !== false && (
+              <button
+                type="button"
+                disabled={deletingId === item.id}
+                onClick={() => void deleteItem(item.id)}
+                aria-label="Delete"
+                title="Delete"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 transition disabled:opacity-50"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+        )}
+      />
       {dialog}
     </div>
   );

@@ -209,7 +209,7 @@ const TYPE_ICONS: Record<ExtraSectionType, IconType> = {
 // section editor).
 export function SectionTypePicker({ value, onChange, compact = false }: { value: ExtraSectionType; onChange: (type: ExtraSectionType) => void; compact?: boolean }) {
   return (
-    <div className={`grid gap-2 ${compact ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-6" : "grid-cols-2 sm:grid-cols-3"}`}>
+    <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-3">
       {EXTRA_SECTION_TYPES.map(({ type, label, description }) => {
         const Icon = TYPE_ICONS[type];
         const selected = value === type;

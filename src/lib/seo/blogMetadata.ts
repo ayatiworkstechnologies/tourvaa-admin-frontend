@@ -3,11 +3,16 @@ import { DEFAULT_DESCRIPTION, DEFAULT_SOCIAL_IMAGE, SITE_NAME, SITE_URL, metadat
 import { cleanMetaText } from "./seoPages";
 
 export type ServerBlog = {
+  id?: number;
   title: string;
+  slug?: string;
   excerpt: string | null;
   content: string | null;
   featured_image: string | null;
+  banner_title?: string | null;
+  banner_alt?: string | null;
   author: string | null;
+  tags?: string[] | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -35,6 +40,20 @@ export async function fetchBlogForServer(slug: string): Promise<ServerBlog | nul
     return items[0] ?? null;
   } catch {
     return null;
+  }
+}
+
+/** Server-side blog list lookup for public listing page */
+export async function fetchBlogsListForServer(): Promise<ServerBlog[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/cms/blogs?active_only=true&limit=100`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json?.items || json?.data || []) as ServerBlog[];
+  } catch {
+    return [];
   }
 }
 

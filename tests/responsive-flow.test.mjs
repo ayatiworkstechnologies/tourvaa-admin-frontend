@@ -70,7 +70,16 @@ const customerDashboard = read("src/app/customer/dashboard/page.tsx");
 // The bookings list is a <table> (not a card grid) - like DataTable.tsx
 // elsewhere in this file, it reflows on narrow screens via horizontal
 // scroll rather than a stacking grid.
-check("customer bookings table scrolls horizontally on narrow screens", customerDashboard.includes("overflow-x-auto") && customerDashboard.includes("min-w-[640px]"));
+// The customer dashboard "My Bookings" list is no longer a <table>: it was
+// rebuilt as a card list that stacks vertically on narrow screens and becomes a
+// row on sm+, with min-w-0 guards so long tour names truncate instead of forcing
+// horizontal overflow. A table-scroll assertion no longer applies.
+check(
+  "customer bookings list stacks on narrow screens without horizontal overflow",
+  customerDashboard.includes('className="flex flex-col gap-4 p-3 sm:flex-row') &&
+    customerDashboard.includes("min-w-0") &&
+    !customerDashboard.includes("<table"),
+);
 
 console.log(`\nResponsive flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

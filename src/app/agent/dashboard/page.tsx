@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
-import { useCurrency } from "@/hooks/useCurrency";
+import { formatCurrencyCompact } from "@/lib/utils/currency";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import DatePicker from "@/components/ui/DatePicker";
 import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
@@ -22,6 +22,8 @@ type Summary = {
   upcoming_bookings?: number;
   completed_bookings?: number;
   currency?: string;
+  has_mixed_currencies?: boolean;
+  currencies?: string[];
 };
 
 type Booking = {
@@ -70,7 +72,6 @@ function statusColors(s: string) {
 
 export default function AgentDashboardPage() {
   const { user } = useAuthContext();
-  const { formatCompact } = useCurrency();
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [agentProfile, setAgentProfile] = useState<AgentProfile | null>(null);
@@ -168,12 +169,25 @@ export default function AgentDashboardPage() {
     }
   };
 
+  const summaryCurrency = summary.currency?.toUpperCase();
+  const summaryHasMixedCurrencies = Boolean(summary.has_mixed_currencies);
+  // Summary revenue/commission are monetary facts, not browsing prices. Do
+  // not use the visitor's FX display preference here: an agent must see the
+  // exact booked currency. If a filter contains more than one currency, the
+  // backend deliberately withholds a single amount rather than presenting an
+  // invalid combined total.
+  const financialValue = (amount: number | undefined) =>
+    summaryHasMixedCurrencies ? "Multiple currencies" : formatCurrencyCompact(amount ?? 0, summaryCurrency || "USD");
+  const financialNote = summaryHasMixedCurrencies
+    ? "Open bookings to view exact totals"
+    : summaryCurrency ? `${summaryCurrency} · Filtered` : "Filtered";
+
   const stats = [
     { label: "Total Bookings", value: summary.total_bookings ?? 0, icon: CalendarCheck, sub: "Filtered", href: "/agent/bookings" },
     { label: "Active Customers", value: summary.active_customers ?? 0, icon: Users, sub: "Filtered", href: "/agent/customers" },
     { label: "Active Bookings", value: summary.upcoming_bookings ?? 0, icon: PackageCheck, sub: "In progress", href: "/agent/bookings" },
-    { label: "Paid Revenue", value: formatCompact(summary.monthly_revenue), icon: CircleDollarSign, sub: "Filtered", href: "/agent/bookings" },
-    { label: "Est. Commission", value: formatCompact(summary.commission_earned), icon: CircleDollarSign, sub: "Filtered", href: "/agent/invoices" },
+    { label: "Paid Revenue", value: financialValue(summary.monthly_revenue), icon: CircleDollarSign, sub: financialNote, href: "/agent/bookings" },
+    { label: "Est. Commission", value: financialValue(summary.commission_earned), icon: CircleDollarSign, sub: financialNote, href: "/agent/invoices" },
     { label: "Completed", value: summary.completed_bookings ?? 0, icon: PackageCheck, sub: "Finished", href: "/agent/bookings" },
   ];
 

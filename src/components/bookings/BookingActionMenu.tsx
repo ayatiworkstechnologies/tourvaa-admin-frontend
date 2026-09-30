@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { LuCircleCheckBig as CheckCircle2, LuEye as Eye, LuCircleX as XCircle } from "react-icons/lu";
+import {
+  LuCircleCheckBig as CheckCircle2,
+  LuEye as Eye,
+  LuCircleX as XCircle,
+} from "react-icons/lu";
 
 type BookingActionMenuProps = {
   bookingId: number;
@@ -19,37 +23,44 @@ export default function BookingActionMenu({
   onConfirm,
   busy,
 }: BookingActionMenuProps) {
-  const canConfirm = bookingStatus && !["confirmed", "cancelled"].includes(bookingStatus);
+  const canConfirm =
+    bookingStatus && !["confirmed", "cancelled"].includes(bookingStatus);
   const canCancel = bookingStatus !== "cancelled";
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2">
+    <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
       <Link
-        className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-1.5 text-xs font-bold text-dash-brand-hover hover:bg-[#E7F5FF]"
         href={`/admin/bookings/${bookingId}`}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs transition hover:border-slate-300 hover:bg-slate-50 hover:text-blue-700"
+        title="View booking details"
       >
-        <Eye size={13} /> View
+        <Eye size={13} className="shrink-0 text-slate-500" />
+        <span>View</span>
       </Link>
 
       {canConfirm && onConfirm ? (
         <button
-          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
           disabled={busy}
           onClick={() => onConfirm(bookingId)}
+          title="Confirm booking"
+          className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <CheckCircle2 size={13} /> Confirm
+          <CheckCircle2 size={13} className="shrink-0" />
+          <span>Confirm</span>
         </button>
       ) : null}
 
       {canCancel && onCancel ? (
         <button
-          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
           disabled={busy}
           onClick={() => onCancel(bookingId)}
+          title="Cancel booking"
+          className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <XCircle size={13} /> Cancel
+          <XCircle size={13} className="shrink-0" />
+          <span>Cancel</span>
         </button>
       ) : null}
     </div>

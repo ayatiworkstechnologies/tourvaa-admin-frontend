@@ -61,9 +61,11 @@ describe("TourCalendarTab pagination and filters", () => {
     expect(screen.getByLabelText(/Status:/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Available Only/i })).toBeInTheDocument();
 
-    // Check pagination exists (12 total items with pageSize 10 = 2 pages)
+    // Check pagination exists (12 total items with pageSize 10 = 2 pages).
+    // The table is rendered by the shared DataTable, whose footer shows
+    // "Page N of M" plus a "Showing X to Y of Z results" range.
     expect(screen.getByTestId("calendar-dates-count")).toHaveTextContent("Showing 12 of 12 dates");
-    expect(screen.getByText("1 / 2")).toBeInTheDocument();
+    expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
   });
 
   it("filters by Month (September)", async () => {
@@ -136,7 +138,7 @@ describe("TourCalendarTab pagination and filters", () => {
       expect(screen.queryByText("Loading calendar...")).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText("1 / 2")).toBeInTheDocument();
+    expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
 
     // Page 1 has 2026-09-20, does not have 11th item 2027-02-10
     expect(screen.getByText("2026-09-20")).toBeInTheDocument();
@@ -147,6 +149,7 @@ describe("TourCalendarTab pagination and filters", () => {
     fireEvent.click(nextBtn);
 
     // Page 2 shows items 11 and 12
+    expect(screen.getByText("Page 2 of 2")).toBeInTheDocument();
     expect(screen.getByText("2027-02-15")).toBeInTheDocument();
     expect(screen.queryByText("2026-09-20")).not.toBeInTheDocument();
   });

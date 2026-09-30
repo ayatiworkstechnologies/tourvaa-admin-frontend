@@ -98,6 +98,24 @@ export default function NotificationInbox() {
     };
   }, [fetchNotifications]);
 
+  // Web Push can be unavailable (permissions denied, sleeping devices, or a
+  // temporary network outage). A lightweight refresh while the tab is open
+  // keeps the bell dependable for messages and other in-app notifications.
+  useEffect(() => {
+    if (!userId) return;
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void fetchNotifications();
+    };
+    const timer = window.setInterval(refreshWhenVisible, 20_000);
+    window.addEventListener("focus", refreshWhenVisible);
+    window.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshWhenVisible);
+      window.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [fetchNotifications, userId]);
+
   // Browser push: silently (re)subscribe when permission was already given,
   // otherwise the panel offers an "Enable" button (permission prompts must
   // come from a click).

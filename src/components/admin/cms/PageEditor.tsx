@@ -72,23 +72,23 @@ function SectionNavButton({ sec, number, active, onSelect }: { sec: PageEditorSe
           onSelect();
         }
       }}
-      className={`group flex min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 transition ${
+      className={`group flex min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border p-3 transition ${
         active
-          ? "border-[#0284C7] bg-[#EDF5FF] shadow-[0_0_0_3px_rgba(2,132,199,0.12)]"
+          ? "border-blue-600/80 bg-blue-50/70 shadow-2xs ring-2 ring-blue-600/15"
           : sec.custom
             ? "border-dashed border-violet-300 bg-violet-50/40 hover:border-violet-400 hover:bg-violet-50"
-            : "border-dash-border bg-white hover:border-[#9CCFF0] hover:bg-[#F7FBFF]"
+            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80"
       }`}
     >
       <span
-        className={`flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md px-1 text-[11px] font-bold ${
-          active ? "bg-[#0284C7] text-white" : sec.custom ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-dash-muted"
+        className={`flex h-6 min-w-6 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold ${
+          active ? "bg-blue-600 text-white" : sec.custom ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-600"
         }`}
       >
         {number}
       </span>
       <span className="min-w-0 flex-1">
-        <span title={sec.label} className={`block truncate text-xs font-bold ${hidden ? "text-dash-subtle" : active ? "text-[#0284C7]" : "text-dash-text"}`}>
+        <span title={sec.label} className={`block truncate text-xs font-bold ${hidden ? "text-slate-400" : active ? "text-blue-950" : "text-slate-800"}`}>
           {sec.label}
         </span>
         {(hidden || sec.badge) && (
@@ -204,18 +204,18 @@ export default function PageEditor({
   return (
     <div className="space-y-4">
       {/* Top View Mode Switcher bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dash-border bg-white px-4 py-2.5 shadow-2xs">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wider text-dash-muted mr-1 hidden sm:inline">
-            View:
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white px-4 py-2.5 shadow-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1 hidden sm:inline">
+            View Mode
           </span>
-          <div className="inline-flex items-center rounded-lg border border-dash-border bg-slate-50 p-0.5">
+          <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/70 p-1 shadow-2xs">
             <button
               type="button"
               onClick={() => setViewMode("split")}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-bold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 viewMode === "split"
-                  ? "bg-white text-[#0284C7] shadow-xs"
+                  ? "bg-white text-slate-900 shadow-2xs font-bold"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -225,9 +225,9 @@ export default function PageEditor({
             <button
               type="button"
               onClick={() => setViewMode("editor")}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-bold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 viewMode === "editor"
-                  ? "bg-white text-[#0284C7] shadow-xs"
+                  ? "bg-white text-slate-900 shadow-2xs font-bold"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -237,9 +237,9 @@ export default function PageEditor({
             <button
               type="button"
               onClick={() => setViewMode("preview")}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-bold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 viewMode === "preview"
-                  ? "bg-white text-[#0284C7] shadow-xs"
+                  ? "bg-white text-slate-900 shadow-2xs font-bold"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -263,21 +263,21 @@ export default function PageEditor({
         {/* Editor Column */}
         {showEditor && (
           <div className="min-w-0 space-y-4">
-            <div className="rounded-xl border border-dash-border bg-white p-4 shadow-2xs">
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-0.5">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wide text-dash-muted">Page sections</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Page sections</span>
                   {toggles.length > 0 && (
-                    <p className="mt-0.5 text-xs text-dash-subtle">
+                    <p className="mt-0.5 text-xs text-slate-500">
                       <strong className="text-emerald-600 font-bold">{shownCount}</strong> of {toggles.length} shown · use the switch to show/hide a section
                     </p>
                   )}
                 </div>
               </div>
               <div
-                className={`grid gap-2 grid-cols-1 sm:grid-cols-2 ${
-                  viewMode === "editor" ? "xl:grid-cols-3 2xl:grid-cols-4" : ""
-                }`}
+                className={`grid gap-2.5 grid-cols-1 ${
+                  sections.length <= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"
+                } ${viewMode === "editor" ? "xl:grid-cols-3 2xl:grid-cols-4" : ""}`}
               >
                 {sections.map((sec, i) => (
                   <SectionNavButton key={sec.key} sec={sec} number={String(i + 1)} active={active === sec.key} onSelect={() => setActive(sec.key)} />
@@ -294,11 +294,11 @@ export default function PageEditor({
         {/* Live Preview Column */}
         {showPreview && (
           <div className={`min-w-0 ${viewMode === "split" ? "xl:sticky xl:top-4" : ""}`}>
-            <div className="overflow-hidden rounded-xl border border-dash-border bg-white shadow-2xs">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dash-border px-4 py-2.5 bg-slate-50/60">
+            <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/90 px-4 py-2.5 bg-slate-50/90">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-dash-text">{previewTitle}</span>
-                  <span className="text-[11px] font-semibold text-dash-muted hidden sm:inline">
+                  <span className="text-sm font-bold text-slate-900">{previewTitle}</span>
+                  <span className="text-[11px] font-semibold text-slate-500 hidden sm:inline">
                     ({targetWidth}px)
                   </span>
                 </div>
