@@ -49,6 +49,20 @@ type Booking = {
   total_travellers?: number;
   payment_type?: "partial" | "full";
   agent_payment_method?: string | null;
+  agent_payment_summary?: {
+    transaction_type: "Full Payment" | "Booking Reserved";
+    is_reserved: boolean;
+    amount_paid: string;
+    total_booking_amount: string;
+    commission_percentage: string;
+    commission_amount: string;
+    commission_payable: string;
+    commission_status: string;
+    commission_payment_date?: string | null;
+    agent_price: string;
+    invoice_status: string;
+    payment_due_date?: string | null;
+  } | null;
   agent_reference?: string | null;
   agent_net_price?: string | number;
   agent_markup?: string | number;
@@ -375,31 +389,27 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
 
-          <div className="rounded-2xl border border-indigo-100 bg-linear-to-br from-white to-indigo-50/40 p-6 shadow-[0_10px_35px_-24px_rgba(49,46,129,0.35)]">
-            <h2 className="text-base font-black text-dash-text">Payment</h2>
+          {booking.agent_payment_summary && <div className="rounded-2xl border border-indigo-100 bg-linear-to-br from-white to-indigo-50/40 p-6 shadow-[0_10px_35px_-24px_rgba(49,46,129,0.35)]">
+            <h2 className="text-base font-black text-dash-text">Agent Payments</h2>
             <div className="mt-4">
-              <InfoRow label="Total Amount" value={money(booking.final_amount, booking.currency)} />
-              <InfoRow label="Amount Paid" value={money(booking.amount_paid, booking.currency)} />
-              <InfoRow
-                label="Balance Due"
-                value={
-                  <span className={Number(booking.amount_pending) > 0 ? "text-amber-700" : "text-emerald-700"}>
-                    {money(booking.amount_pending, booking.currency)}
-                  </span>
-                }
-              />
-              <InfoRow label="Payment Status" value={<Pill status={booking.payment_status}>{booking.payment_status.replaceAll("_", " ")}</Pill>} />
-              <InfoRow label="Payment Method" value={booking.agent_payment_method?.replaceAll("_", " ") ?? "Online"} />
-              <InfoRow
-                label="Payment Plan"
-                value={
-                  booking.payment_type === "partial"
-                    ? `${Math.round((Number(booking.amount_paid) / Number(booking.final_amount || 1)) * 100)}% deposit`
-                    : "Full payment"
-                }
-              />
+              <InfoRow label="Agent Transaction Type" value={booking.agent_payment_summary.transaction_type} />
+              {booking.agent_payment_summary.is_reserved ? <>
+                <InfoRow label="Total Booking Amount" value={money(booking.agent_payment_summary.total_booking_amount, booking.currency)} />
+                <InfoRow label="Agent Commission / Markup" value={`${booking.agent_payment_summary.commission_percentage}%`} />
+                <InfoRow label="Agent Price" value={money(booking.agent_payment_summary.agent_price, booking.currency)} />
+                <InfoRow label="Invoice Status" value={<Pill status={booking.agent_payment_summary.invoice_status}>{booking.agent_payment_summary.invoice_status.replaceAll("_", " ")}</Pill>} />
+                <InfoRow label="Payment Due Date" value={dateText(booking.agent_payment_summary.payment_due_date)} />
+                <InfoRow label="Amount Paid by Agent" value={money(booking.agent_payment_summary.amount_paid, booking.currency)} />
+              </> : <>
+                <InfoRow label="Amount Paid by Agent" value={money(booking.agent_payment_summary.amount_paid, booking.currency)} />
+                <InfoRow label="Agent Commission" value={`${booking.agent_payment_summary.commission_percentage}%`} />
+                <InfoRow label="Commission Amount" value={money(booking.agent_payment_summary.commission_amount, booking.currency)} />
+                <InfoRow label="Commission Payable to Agent" value={money(booking.agent_payment_summary.commission_payable, booking.currency)} />
+                <InfoRow label="Commission Status" value={<Pill status={booking.agent_payment_summary.commission_status}>{booking.agent_payment_summary.commission_status.replaceAll("_", " ")}</Pill>} />
+                <InfoRow label="Commission Payment Date" value={dateText(booking.agent_payment_summary.commission_payment_date)} />
+              </>}
             </div>
-          </div>
+          </div>}
 
           {booking.price_breakdown && (
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_35px_-24px_rgba(15,23,42,0.4)]">

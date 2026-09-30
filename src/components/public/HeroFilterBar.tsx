@@ -128,23 +128,27 @@ export default function HeroFilterBar({
     onPanelOpenChange?.(open !== null);
   }, [open, onPanelOpenChange]);
 
+  const openViatorExperiences = () => {
+    // Open synchronously so the browser does not block the partner tab while
+    // the backend records the outbound click and builds the destination URL.
+    setDuration(VIATOR_OPTION);
+    setOpen(null);
+    const tab = window.open("about:blank", "_blank");
+    if (tab) tab.opener = null;
+    fetchViatorDestinationUrl({ country: destination || undefined, source: "home" })
+      .then((url) => {
+        if (tab) tab.location.href = url;
+        else window.location.href = url;
+      })
+      .catch(() => {
+        tab?.close();
+      });
+  };
+
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (duration === VIATOR_OPTION && dayToursExternal) {
-      // Straight to Viator's own affiliate page for the destination (new
-      // tab). The tab is opened synchronously in the click so browsers don't
-      // block it, then pointed at the URL once the backend returns it.
-      setOpen(null);
-      const tab = window.open("about:blank", "_blank");
-      if (tab) tab.opener = null;
-      fetchViatorDestinationUrl({ country: destination || undefined, source: "home" })
-        .then((url) => {
-          if (tab) tab.location.href = url;
-          else window.location.href = url;
-        })
-        .catch(() => {
-          tab?.close();
-        });
+      openViatorExperiences();
       return;
     }
     // Day Tours and every multi-day duration use Tourvaa's own tour search
@@ -318,6 +322,7 @@ export default function HeroFilterBar({
                 setDuration(val);
                 setOpen(null);
               }}
+              onViatorSelect={openViatorExperiences}
               onClear={() => setDuration("")}
             />
           )}
@@ -840,6 +845,7 @@ function DurationPanel({
   dayToursExternal,
   selected,
   onSelect,
+  onViatorSelect,
   onClear,
 }: {
   tourDays: number[] | null;
@@ -847,6 +853,7 @@ function DurationPanel({
   dayToursExternal: boolean;
   selected: string;
   onSelect: (value: string) => void;
+  onViatorSelect: () => void;
   onClear: () => void;
 }) {
   // Same min/max rule the tours API applies to number_of_days.
@@ -911,7 +918,8 @@ function DurationPanel({
       {dayToursExternal && (
         <button
           type="button"
-          onClick={() => onSelect(VIATOR_OPTION)}
+          onClick={onViatorSelect}
+          aria-label="Open Viator Day Tours and Experiences"
           className={`mt-1.5 flex w-full items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left transition ${
             selected === VIATOR_OPTION
               ? "border-pub-accent bg-white text-pub-primary shadow-sm"
@@ -1077,5 +1085,3 @@ function PassengerRow({
     </div>
   );
 }
-
-

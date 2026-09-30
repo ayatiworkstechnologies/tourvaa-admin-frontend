@@ -221,6 +221,7 @@ export default function TourDetailPage() {
   const [retryKey, setRetryKey] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [pendingBookingPath, setPendingBookingPath] = useState("");
+  const loadedTourKeyRef = useRef<string | null>(null);
   const requestedTravelDate = searchParams.get("travel_date") ?? "";
   const [priceTravelDate, setPriceTravelDate] = useState(requestedTravelDate);
   useEffect(() => { setPriceTravelDate(requestedTravelDate); }, [requestedTravelDate]);
@@ -246,7 +247,8 @@ export default function TourDetailPage() {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    const isInitialTourLoad = loadedTourKeyRef.current !== tourKey;
+    setLoading(isInitialTourLoad);
     setNotFound(false);
     setLoadError(false);
     fetchPublicTourDetail(tourKey, routeSlug ? routeId : undefined, priceTravelDate || undefined)
@@ -272,12 +274,15 @@ export default function TourDetailPage() {
           cancellation_policy: data.cancellation_policy ?? [],
           reviews: data.reviews ?? [],
         });
+        loadedTourKeyRef.current = tourKey;
       })
       .catch((error: unknown) => {
         if (!active) return;
-        if (axios.isAxiosError(error) && error.response?.status === 404)
-          setNotFound(true);
-        else setLoadError(true);
+        if (isInitialTourLoad) {
+          if (axios.isAxiosError(error) && error.response?.status === 404)
+            setNotFound(true);
+          else setLoadError(true);
+        }
       })
       .finally(() => {
         if (active) setLoading(false);

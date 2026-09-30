@@ -63,21 +63,27 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
           {sidebarOpen && (
             <div className="fixed inset-x-0 bottom-0 top-20 z-50 lg:hidden">
               <button type="button" className="absolute inset-0 bg-slate-950/35 backdrop-blur-[2px]" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" />
-              <div className="relative h-full w-[240px] bg-white shadow-2xl p-4">
+              <div className="relative h-full w-[min(86vw,320px)] rounded-r-3xl bg-[#F8FBFF] p-3 shadow-2xl sm:p-4">
                 <CustomerSidebar mobile onNavigate={() => setSidebarOpen(false)} />
               </div>
             </div>
           )}
 
           <div className="flex min-h-[calc(100vh-84px)] min-w-0 flex-col lg:ml-[250px]">
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open navigation"
-              className="fixed left-4 top-[88px] z-30 flex h-11 w-11 items-center justify-center rounded-xl border border-[#DDE7F4] bg-white text-[#15315A] shadow-sm sm:top-[92px] lg:hidden"
-            >
-              <Menu size={20} />
-            </button>
+            <div className="sticky top-20 z-30 flex h-14 items-center gap-3 border-b border-[#DDE7F4] bg-white/95 px-3 shadow-sm backdrop-blur-md sm:px-6 lg:hidden">
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open navigation"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#DDE7F4] bg-[#F8FBFF] text-[#15315A]"
+              >
+                <Menu size={20} />
+              </button>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[.14em] text-[#2475E8]">Traveller Portal</p>
+                <p className="text-sm font-black text-[#0C2043]">My Tourvaa</p>
+              </div>
+            </div>
             <main id="main-content" tabIndex={-1} className="min-w-0 flex-1">{children}</main>
           </div>
         </div>

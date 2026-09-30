@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
@@ -36,7 +36,6 @@ import {
   LuTicket as Ticket,
   LuDownload as Download,
   LuCheckCheck as CheckCheck,
-  LuLock as Lock,
   LuCar as Car,
   LuArrowLeftRight as ArrowLeftRight,
   LuSun as Sun,
@@ -365,6 +364,27 @@ function LightboxModal({
 
 // Upper bound for the traveller steppers only when the tour publishes neither a
 // group size nor departure seats; availability is still enforced by the server.
+function StyleFact({ icon, label, value, detail }: { icon: ReactNode; label: string; value: string; detail?: string }) {
+  return <div className="flex gap-3 px-0 py-4 text-[#173f70] sm:px-5 lg:px-4">
+    <span className="mt-0.5 shrink-0 text-[#ef6b36]">{icon}</span>
+    <div><p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 font-extrabold">{value}</p>{detail && <p className="mt-1 text-sm text-slate-600">{detail}</p>}</div>
+  </div>;
+}
+
+function RatingGuide({ title, value, steps, multi = false }: { title: string; value: string; steps: string[]; multi?: boolean }) {
+  const normalizedValue = value.replace(/modreate/gi, "moderate").replace(/\s*,\s*/g, ", ").trim();
+  const selectedValues = normalizedValue.toLowerCase().split(/[,&/]+/).map((item) => item.trim()).filter(Boolean);
+  const isSelected = (step: string) => {
+    const normalizedStep = step.toLowerCase();
+    return selectedValues.some((item) => item === normalizedStep || (normalizedStep === "medium" && ["moderate", "balanced"].includes(item)) || (normalizedStep === "relaxed" && ["easy", "relaxing"].includes(item)));
+  };
+  return <div>
+    <div className="flex items-center justify-between"><h3 className="font-extrabold text-[#173f70]">{title}</h3><span className="text-sm font-bold text-[#ef6b36]">{normalizedValue}</span></div>
+    <div className="mt-4 flex gap-2">{steps.map((step, index) => <span key={step} className={`h-3 flex-1 rounded-full ${isSelected(step) ? "bg-[#ef6b36] ring-4 ring-[#ef6b36]/20" : multi ? ["bg-blue-300", "bg-green-500", "bg-amber-400", "bg-red-500"][index] : "bg-blue-200"}`} />)}</div>
+    <div className="mt-3 flex justify-between text-xs text-slate-500">{steps.map((step) => <span key={step} className={isSelected(step) ? "font-bold text-[#173f70]" : ""}>{step}</span>)}</div>
+  </div>;
+}
+
 const MAX_TRAVELLERS_CEILING = 99;
 
 export default function TourDetailExperience({
@@ -408,6 +428,13 @@ export default function TourDetailExperience({
     startLocation && finishLocation && startLocation !== finishLocation
       ? `${startLocation} → ${finishLocation}`
       : startLocation;
+  const tourPace = tour.overview?.tour_pace?.trim() || "";
+  const physicalRating = tour.overview?.physical_rating?.trim() || "";
+  const groupSizeLabel = tour.min_booking_size && tour.max_group_size
+    ? `${tour.min_booking_size}–${tour.max_group_size} travellers`
+    : tour.max_group_size
+      ? `Up to ${tour.max_group_size} travellers`
+      : tour.overview?.group_size?.trim() || "";
 
   // 100% Dynamic Photo Gallery from Backend
   const galleryItems = useMemo(() => {
@@ -760,6 +787,10 @@ export default function TourDetailExperience({
   // percentage fallback keeps older API deployments compatible.
   const supplierDiscountPercent = Number(tour.supplier_discount_percentage ?? 0);
   const tourvaaDiscountPercent = Number(tour.tourvaa_discount_percentage ?? 0);
+  const todaysSpecialOfferPercent =
+    supplierDiscountPercent + tourvaaDiscountPercent ||
+    Number(tour.discount_percentage ?? 0);
+  const todaysSpecialOfferLabel = `Todays Special Offer (${todaysSpecialOfferPercent}% Discount)`;
   const activeDiscountLabels = [
     supplierDiscountPercent > 0
       ? `${tour.supplier_discount_name || "Supplier discount"} (${supplierDiscountPercent}%)`
@@ -780,19 +811,7 @@ export default function TourDetailExperience({
         ? originalChildUnitPrice / (1 - supplierDiscountPercent / 100)
         : originalChildUnitPrice),
   );
-  const supplierAdultUnitPrice = Number(
-    selectedRow?.supplier_discounted_price_per_person ??
-      rawAdultUnitPrice * (1 - supplierDiscountPercent / 100),
-  );
-  const supplierChildUnitPrice = Number(
-    selectedRow?.supplier_discounted_child_price_per_person ??
-      rawChildUnitPrice * (1 - supplierDiscountPercent / 100),
-  );
   const rawTourPrice = adults * rawAdultUnitPrice + children * rawChildUnitPrice;
-  const afterSupplierTotal =
-    adults * supplierAdultUnitPrice + children * supplierChildUnitPrice;
-  const supplierDiscountAmount = Math.max(0, rawTourPrice - afterSupplierTotal);
-  const tourvaaDiscountAmount = Math.max(0, afterSupplierTotal - tourPrice);
   const totalDiscountSaving = Math.max(0, rawTourPrice - tourPrice);
   const baseUnitPrice = Number(baseRow?.price_per_person ?? unitPrice);
   const baseChildUnitPrice = Number(
@@ -831,6 +850,9 @@ export default function TourDetailExperience({
   );
   const startingTierLabel = cheapestRow
     ? groupTierLabel(cheapestRow.persons_from, cheapestRow.persons_to)
+    : "";
+  const selectedTierLabel = selectedRow
+    ? groupTierLabel(selectedRow.persons_from, selectedRow.persons_to)
     : "";
 
   // Live deposit offer for the selected date, from the same eligibility
@@ -1011,8 +1033,6 @@ export default function TourDetailExperience({
     }
   };
 
-  // Sticky Bottom Bar Visibility on Scroll
-  const [showStickyBottom, setShowStickyBottom] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
   const { isCompared, toggleCompare, compareCount } = useTravelStore();
   const [compareNotice, setCompareNotice] = useState<string | null>(null);
@@ -1062,14 +1082,6 @@ export default function TourDetailExperience({
     }
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrolled = window.scrollY > 480;
-      setShowStickyBottom(scrolled);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {
@@ -1099,7 +1111,7 @@ export default function TourDetailExperience({
   };
 
   return (
-    <main className="min-h-screen bg-white pb-28 pt-3 text-slate-900 font-sans antialiased">
+    <main className="min-h-screen bg-[#eff5fb] pb-28 pt-3 text-slate-900 font-sans antialiased">
       {modal}
 
       {/* Fullscreen Lightbox Modal */}
@@ -1229,37 +1241,51 @@ export default function TourDetailExperience({
         </div>
 
         {/* ── 2. TOUR TITLE & REAL BADGES ── */}
-        <section className="mt-2">
+        <section className="mt-2 rounded-[28px] border border-slate-100 bg-white px-5 py-6 shadow-[0_16px_45px_-30px_rgba(15,36,57,0.35)] sm:px-8 sm:py-8">
           <div className="flex flex-wrap items-center gap-2">
+            {promoActive && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ef6242] px-3.5 py-1.5 text-xs font-extrabold text-white shadow-sm sm:text-sm">
+                <Flame size={15} className="fill-white shrink-0" />
+                {activeDiscountLabels.length > 0
+                  ? `Save with ${activeDiscountLabels.join(" + ")}`
+                  : `Save up to ${tour.discount_percentage ?? 0}% today`}
+              </span>
+            )}
             {tour.category_name && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700 uppercase tracking-wider">
-                <Sparkles size={12} className="text-blue-600" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 uppercase tracking-wider">
+                <Sparkles size={14} className="text-blue-600 shrink-0" />
                 {tour.category_name}
               </span>
             )}
             {countryFlag && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700">
-                <span>{countryFlag}</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-bold text-slate-700">
+                <span className="text-sm shrink-0">{countryFlag}</span>
                 <span>{destination}</span>
               </span>
             )}
             {realDates.length > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-800">
-                <Ticket size={12} className="text-amber-600" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3.5 py-1.5 text-xs font-bold text-amber-800">
+                <Ticket size={14} className="text-amber-600 shrink-0" />
                 {realDates.length} Bookable Departures
               </span>
             )}
           </div>
 
-          <h1 className="mt-2.5 text-2xl sm:text-3xl md:text-4xl font-semibold text-slate-950 tracking-tight leading-tight">
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight leading-tight text-pub-primary sm:text-4xl md:text-5xl">
             {title}
           </h1>
 
-          <div className="mt-3 flex flex-wrap items-center gap-y-2 gap-x-4 text-xs sm:text-sm text-slate-600">
+          <div className="mt-4 flex flex-wrap items-center gap-y-2 gap-x-5 text-sm sm:text-base text-slate-600">
+            {durationLabel && (
+              <div className="flex items-center gap-2 font-extrabold text-pub-primary">
+                <Clock size={18} className="text-pub-primary shrink-0" />
+                <span>{durationLabel}</span>
+              </div>
+            )}
             {tour.rating_average != null && tour.rating_average > 0 ? (
-              <div className="flex items-center gap-1 text-amber-500 font-bold">
-                <Star size={16} className="fill-amber-400 text-amber-400" />
-                <span className="text-slate-900 font-semibold">
+              <div className="flex items-center gap-2 text-amber-500 font-bold">
+                <Star size={18} className="fill-amber-400 text-amber-400 shrink-0" />
+                <span className="text-pub-primary font-extrabold">
                   {tour.rating_average}
                 </span>
                 {tour.rating_count ? (
@@ -1270,25 +1296,38 @@ export default function TourDetailExperience({
               </div>
             ) : null}
             {routeSummary && (
-              <div className="flex items-center gap-1 font-semibold text-slate-700">
-                <MapPin size={15} className="text-blue-600" />
+              <div className="flex items-center gap-2 font-semibold text-slate-700">
+                <MapPin size={18} className="text-pub-primary shrink-0" />
                 <span>{routeSummary}</span>
               </div>
             )}
-            {durationLabel && (
-              <div className="flex items-center gap-1 font-medium text-slate-600">
-                <Clock size={15} className="text-blue-600" />
-                <span>{durationLabel}</span>
-              </div>
-            )}
-            {tour.cancellation_policy &&
+            {false && tour.cancellation_policy &&
               tour.cancellation_policy.length > 0 && (
-                <div className="flex items-center gap-1 font-medium text-emerald-600">
-                  <Check size={14} className="stroke-[3]" />
+                <div className="flex items-center gap-2 font-medium text-emerald-600">
+                  <Check size={16} className="stroke-[3] shrink-0" />
                   <span>Cancellation policy available</span>
                 </div>
               )}
           </div>
+
+          {tour.short_description && (
+            <TextParagraphs
+              text={tour.short_description}
+              className="mt-5 max-w-6xl text-[15px] leading-7 text-slate-700 sm:text-base sm:leading-7"
+            />
+          )}
+
+          {tour.brochure_pdf && (
+            <a
+              href={mediaUrl(tour.brochure_pdf)}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 flex max-w-4xl items-center gap-3 rounded-2xl border border-blue-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 sm:px-5"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#173f70] shadow-sm"><Download size={16} /></span>
+              <span>For a detailed itinerary and practical travel information, <span className="font-bold text-blue-700 underline">download the trip notes</span>.</span>
+            </a>
+          )}
         </section>
 
         {/* ── 3. DYNAMIC PHOTO GALLERY (Unified 5-Photo Mosaic Layout for ALL Tours) ── */}
@@ -1381,16 +1420,13 @@ export default function TourDetailExperience({
                 {promoActive && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-3 py-1 text-xs font-semibold text-slate-950 uppercase tracking-wider shadow-sm">
                     <Flame size={14} className="fill-slate-950" />
-                    {activeDiscountLabels.length > 0
-                      ? `Offers applied · ${activeDiscountLabels.join(" + ")}`
-                      : `Special Promotion · Save ${tour.discount_percentage}%`}
+                    Offers Applied – {todaysSpecialOfferLabel}
                   </span>
                 )}
                 {pricingRows.length > 1 && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-md">
                     <BadgePercent size={14} className="text-amber-300" />
-                    {pricingRows.length} Group Pricing Tiers
-                    {startingTierLabel ? ` · Best rate: ${startingTierLabel}` : ""}
+                    {startingTierLabel ? `Lowest Price for ${startingTierLabel}` : "Lowest Price"}
                   </span>
                 )}
               </div>
@@ -1466,10 +1502,6 @@ export default function TourDetailExperience({
                 <span>Check Availability &amp; Book</span>
                 <ArrowRight size={16} />
               </button>
-              <p className="text-[11px] text-blue-200 flex items-center gap-1">
-                <Lock size={12} className="text-amber-400" />
-                <span>All Taxes &amp; Fees Included · Secure Booking</span>
-              </p>
             </div>
           </div>
         </section>
@@ -1479,27 +1511,25 @@ export default function TourDetailExperience({
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-10 min-w-0">
             {/* A. OVERVIEW SECTION */}
-            <div id="overview" className="space-y-3.5">
-              <div className="flex items-center gap-2 pb-1">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Compass size={17} />
+            <div id="overview" className="space-y-3.5 rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_14px_40px_-32px_rgba(15,36,57,0.4)] sm:p-7">
+              <div className="flex items-center gap-3 pb-1">
+                <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
+                  <Compass size={22} className="text-pub-primary" />
                 </span>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-950">
+                <h2 className="text-xl sm:text-2xl font-bold text-pub-primary">
                   Tour Overview
                 </h2>
+                {tour.overview?.tour_type && (
+                  <span className="rounded-full border border-pub-primary/20 bg-pub-primary/5 px-3 py-1 text-xs font-bold text-pub-primary">
+                    {tour.overview.tour_type}
+                  </span>
+                )}
               </div>
 
               {tour.subtitle && (
                 <p className="text-base sm:text-lg font-semibold text-black leading-relaxed">
                   {tour.subtitle}
                 </p>
-              )}
-
-              {tour.short_description && (
-                <TextParagraphs
-                  text={tour.short_description}
-                  className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
-                />
               )}
 
               {tour.long_description && (
@@ -1567,7 +1597,7 @@ export default function TourDetailExperience({
               )}
 
               {/* Download Brochure & Map links */}
-              {(tour.map_image || tour.tour_video_url || tour.brochure_pdf) && (
+              {(tour.map_image || tour.tour_video_url) && (
                 <div className="mt-5 flex flex-wrap gap-2.5 pt-4 border-t border-slate-100">
                   {tour.map_image && (
                     <a
@@ -1580,22 +1610,42 @@ export default function TourDetailExperience({
                       <span>View Route Map</span>
                     </a>
                   )}
-                  {tour.brochure_pdf && (
-                    <a
-                      href={mediaUrl(tour.brochure_pdf)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition"
-                    >
-                      <Download size={14} />
-                      <span>Download Brochure</span>
-                    </a>
-                  )}
                 </div>
               )}
             </div>
 
             {/* ── TRAVEL ESSENTIALS / KEY FACTS (Moved directly after Tour Overview) ── */}
+            {(groupSizeLabel || tour.overview?.tour_type || tourPace || physicalRating || tour.tour_language) && (
+              <section id="tour-style" className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_14px_40px_-32px_rgba(15,36,57,0.4)] sm:p-7">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
+                      <Gauge size={22} className="text-pub-primary" />
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-bold text-pub-primary">
+                      Tour Style
+                    </h2>
+                    {tour.overview?.tour_type && (
+                      <span className="rounded-full border border-pub-primary/20 bg-pub-primary/5 px-3 py-1 text-xs font-bold text-pub-primary">
+                        {tour.overview.tour_type}
+                      </span>
+                    )}
+                  </div>
+                  <Link href={destinationUrl(destination)} className="text-sm font-bold text-blue-600 transition hover:text-blue-800">
+                    Explore other {destination} tours <ArrowRight size={14} className="ml-1 inline" />
+                  </Link>
+                </div>
+                <div className="mt-6 grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
+                  {groupSizeLabel && <StyleFact icon={<Users size={20} />} label="Group size" value={groupSizeLabel} detail={tour.min_booking_size && tour.max_group_size ? `Min ${tour.min_booking_size} / Max ${tour.max_group_size}` : undefined} />}
+                  {tour.overview?.tour_type && <StyleFact icon={<Compass size={20} />} label="Trip type" value={tour.overview.tour_type} />}
+                  {tourPace && <StyleFact icon={<Gauge size={20} />} label="Travel style" value={tourPace} />}
+                  {tour.tour_language && <StyleFact icon={<User size={20} />} label="Guiding style" value={`Guided in ${tour.tour_language}`} />}
+                </div>
+                {(tourPace || physicalRating) && <div className="mt-6 grid gap-6 border-t border-slate-200 pt-6 sm:grid-cols-2">{tourPace && <RatingGuide title="Tour pace" value={tourPace} steps={["Relaxed", "Medium", "Fast"]} />}{physicalRating && <RatingGuide title="Physical rating" value={physicalRating} steps={["Relaxed", "Easy", "Moderate", "Serious"]} multi />}</div>}
+                <div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#eff8ff] px-4 py-3 text-sm text-[#173f70]"><Sparkles size={16} className="shrink-0 text-blue-600" />These ratings are a general guide and may vary from tour to tour.</div>
+              </section>
+            )}
+
             {(durationLabel ||
               tour.max_group_size ||
               tour.min_booking_size ||
@@ -1609,21 +1659,24 @@ export default function TourDetailExperience({
               tour.overview?.best_season ||
               tour.overview?.tour_pace ||
               tour.suitable_age_range) && (
-              <div id="key-facts" className="space-y-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                    <Clock size={16} />
+              <div id="key-facts" className="space-y-5 rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_14px_40px_-32px_rgba(15,36,57,0.4)] sm:p-7">
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
+                    <Clock size={22} className="text-pub-primary" />
                   </span>
-                  <h3 className="text-xl sm:text-2xl font-bold text-slate-950">
-                    Travel Essentials
-                  </h3>
+                  <div>
+                    <h3 className="text-xl sm:text-2xl font-bold text-pub-primary">
+                      Travel Essentials
+                    </h3>
+                    <span className="text-xs text-slate-500">Practical details for planning your trip</span>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-3.5">
+                <div className="grid grid-cols-1 gap-x-10 gap-y-1 sm:grid-cols-2">
                   {durationLabel && (
-                    <div className="group flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:border-sky-300 hover:shadow-md">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-sky-600 group-hover:text-white shadow-xs">
-                        <Clock size={19} />
+                    <div className="group flex items-center gap-3 border-b border-slate-100 py-3.5 transition-colors hover:bg-slate-50/70">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                        <Clock size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
@@ -1636,12 +1689,12 @@ export default function TourDetailExperience({
                     </div>
                   )}
 
-                  {(tour.max_group_size ||
+                  {false && (tour.max_group_size ||
                     tour.min_booking_size ||
                     tour.overview?.group_size) && (
-                    <div className="group flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:border-emerald-300 hover:shadow-md">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white shadow-xs">
-                        <Users size={19} />
+                    <div className="group flex items-center gap-3 border-b border-slate-100 py-3.5 transition-colors hover:bg-slate-50/70">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                        <Users size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
@@ -1658,10 +1711,10 @@ export default function TourDetailExperience({
                     </div>
                   )}
 
-                  {(tour.tour_language || tour.overview?.tour_type) && (
-                    <div className="group flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:border-amber-300 hover:shadow-md">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-amber-600 group-hover:text-white shadow-xs">
-                        <User size={19} />
+                  {false && (tour.tour_language || tour.overview?.tour_type) && (
+                    <div className="group flex items-center gap-3 border-b border-slate-100 py-3.5 transition-colors hover:bg-slate-50/70">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                        <User size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
@@ -1677,9 +1730,9 @@ export default function TourDetailExperience({
                   )}
 
                   {(startLocation || finishLocation) && (
-                    <div className="group flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:border-violet-300 hover:shadow-md">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-violet-600 group-hover:text-white shadow-xs">
-                        <Car size={19} />
+                    <div className="group flex items-center gap-3 border-b border-slate-100 py-3.5 transition-colors hover:bg-slate-50/70">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                        <Car size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
@@ -1695,9 +1748,9 @@ export default function TourDetailExperience({
                   {(tour.overview?.meal_summary ||
                     (tour.itineraries &&
                       tour.itineraries.some((it) => it.meals))) && (
-                    <div className="group flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:border-rose-300 hover:shadow-md">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-rose-600 group-hover:text-white shadow-xs">
-                        <Utensils size={19} />
+                    <div className="group flex items-center gap-3 border-b border-slate-100 py-3.5 transition-colors hover:bg-slate-50/70">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                        <Utensils size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
@@ -1712,9 +1765,9 @@ export default function TourDetailExperience({
                   )}
 
                   {tour.overview?.best_season && (
-                    <div className="group flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:border-orange-300 hover:shadow-md">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-orange-600 group-hover:text-white shadow-xs">
-                        <Sun size={19} />
+                    <div className="group flex items-center gap-3 border-b border-slate-100 py-3.5 transition-colors hover:bg-slate-50/70">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                        <Sun size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
@@ -1727,26 +1780,26 @@ export default function TourDetailExperience({
                     </div>
                   )}
 
-                  {tour.overview?.tour_pace && (
+                  {false && tour.overview?.tour_pace && (
                     <div className="group flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:border-indigo-300 hover:shadow-md">
                       <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-indigo-600 group-hover:text-white shadow-xs">
-                        <Gauge size={19} />
+                        <Gauge size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
                           Tour Pace
                         </p>
                         <p className="mt-0.5 text-xs sm:text-sm font-extrabold text-slate-900 truncate">
-                          {tour.overview.tour_pace}
+                          {tour.overview?.tour_pace}
                         </p>
                       </div>
                     </div>
                   )}
 
                   {tour.suitable_age_range && (
-                    <div className="group flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:border-teal-300 hover:shadow-md">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-teal-600 group-hover:text-white shadow-xs">
-                        <Ticket size={19} />
+                    <div className="group flex items-center gap-3 border-b border-slate-100 py-3.5 transition-colors hover:bg-slate-50/70">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                        <Ticket size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
@@ -1763,23 +1816,23 @@ export default function TourDetailExperience({
             )}
 
             {/* B. TOUR HIGHLIGHTS (Rendered dynamically if present) */}
-            {highlightsList.length > 0 && (
-              <div id="highlights" className="space-y-4">
+            <div id="highlights" className="space-y-4 rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_14px_40px_-32px_rgba(15,36,57,0.4)] sm:p-7">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                      <Star size={16} className="fill-amber-400" />
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
+                      <Star size={22} className="text-pub-primary" />
                     </span>
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-950">
+                    <h3 className="text-xl sm:text-2xl font-bold text-pub-primary">
                       Tour Highlights
                     </h3>
                   </div>
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                  <span className="rounded-full border border-pub-primary/20 bg-pub-primary/5 px-3 py-1 text-xs font-bold text-pub-primary">
                     {highlightsList.length} Highlights
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {highlightsList.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {highlightsList.map((h, i) => (
                     <div
                       key={i}
@@ -1822,19 +1875,22 @@ export default function TourDetailExperience({
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-7 text-center text-sm text-slate-500">
+                    Tour highlights are being prepared. Check the itinerary below for the day-by-day experience.
+                  </div>
+                )}
+            </div>
 
             {/* C. DETAILED ITINERARY TIMELINE */}
-            {itineraryList.length > 0 && (
-              <div id="itinerary" className="space-y-4">
+            <div id="itinerary" className="space-y-4 rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_14px_40px_-32px_rgba(15,36,57,0.4)] sm:p-7">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                      <MapIcon size={16} />
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
+                      <MapIcon size={22} className="text-pub-primary" />
                     </span>
                     <div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-slate-950">
+                      <h3 className="text-xl sm:text-2xl font-bold text-pub-primary">
                         Itinerary Timeline
                       </h3>
                       {durationLabel && (
@@ -1881,6 +1937,7 @@ export default function TourDetailExperience({
                   </div>
                 </div>
 
+                {itineraryList.length > 0 ? (
                 <div className="space-y-3 sm:space-y-4">
                   {itineraryList.map((day, dIdx) => {
                     const isOpen = Boolean(openDays[day.day]);
@@ -1896,7 +1953,7 @@ export default function TourDetailExperience({
                           className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-slate-50/70 cursor-pointer"
                         >
                           <div className="flex items-center gap-3.5">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-xs font-semibold text-white shadow-xs">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold text-white shadow-xs">
                               {day.day}
                             </span>
                             <div>
@@ -2090,39 +2147,45 @@ export default function TourDetailExperience({
                     );
                   })}
                 </div>
-              </div>
-            )}
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-7 text-center">
+                    <MapIcon size={22} className="mx-auto mb-2 text-blue-500" />
+                    <p className="text-sm font-semibold text-slate-700">Detailed itinerary coming soon</p>
+                    <p className="mt-1 text-xs text-slate-500">The tour operator has not added day-by-day details yet.</p>
+                  </div>
+                )}
+            </div>
 
             {/* D. WHAT'S INCLUDED & NOT INCLUDED (Rendered if either exists) */}
-            {(inclusionsList.length > 0 || exclusionsList.length > 0) && (
-              <div id="inclusions" className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                    <Box size={16} />
+            {(inclusionsList.length > 0 || exclusionsList.length > 0 || (tour.cancellation_policy && tour.cancellation_policy.length > 0)) && (
+              <section id="policies" className="space-y-5 rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_14px_40px_-32px_rgba(15,36,57,0.4)] sm:p-7">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
+                    <Box size={22} className="text-pub-primary" />
                   </span>
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-950">
-                      What&apos;s Included &amp; Excluded
+                    <h3 className="text-xl sm:text-2xl font-bold text-pub-primary">
+                      Before You Book
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Package details for this tour
+                      Cancellation terms and package details for this tour
                     </p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x md:divide-slate-200/80 pt-1">
+                <div id="inclusions" className="grid items-start grid-cols-1 gap-4 pt-1 md:grid-cols-2">
                   {/* INCLUSIONS */}
                   {inclusionsList.length > 0 && (
-                    <div className="md:pr-6">
+                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 p-5">
                       <div className="flex items-center gap-2 mb-4">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs font-black">
-                          ✓
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                          <Check size={14} className="stroke-[3]" />
                         </span>
                         <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800">
                           What&apos;s Included
                         </h4>
                       </div>
-                      <ul className="space-y-3.5 text-sm sm:text-[15px] text-black">
+                      <ul className="space-y-3.5 text-sm sm:text-[15px] text-slate-800">
                         {inclusionsList.map((inc, i) => (
                           <li key={i} className="flex items-start gap-2.5">
                             {renderItemIcon(
@@ -2131,11 +2194,11 @@ export default function TourDetailExperience({
                               "text-emerald-600",
                             )}
                             <div>
-                              <p className="font-bold text-black">
+                              <p className="font-semibold text-slate-900">
                                 {inc.text}
                               </p>
                               {inc.description && (
-                                <p className="text-xs sm:text-sm text-black/80 mt-0.5 font-normal">
+                                <p className="mt-0.5 text-xs font-normal text-slate-600 sm:text-sm">
                                   {inc.description}
                                 </p>
                               )}
@@ -2148,25 +2211,25 @@ export default function TourDetailExperience({
 
                   {/* EXCLUSIONS */}
                   {exclusionsList.length > 0 && (
-                    <div className="pt-6 md:pt-0 md:pl-6">
+                    <div className="rounded-2xl border border-rose-100 bg-rose-50/45 p-5">
                       <div className="flex items-center gap-2 mb-4">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-700 text-xs font-black">
-                          ✕
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-700">
+                          <X size={14} className="stroke-[3]" />
                         </span>
                         <h4 className="text-xs font-bold uppercase tracking-wider text-rose-800">
                           What&apos;s Not Included
                         </h4>
                       </div>
-                      <ul className="space-y-3.5 text-sm sm:text-[15px] text-black">
+                      <ul className="space-y-3.5 text-sm sm:text-[15px] text-slate-800">
                         {exclusionsList.map((exc, i) => (
                           <li key={i} className="flex items-start gap-2.5">
                             {renderItemIcon(exc.icon, X, "text-rose-500")}
                             <div>
-                              <p className="font-bold text-black">
+                              <p className="font-semibold text-slate-900">
                                 {exc.text}
                               </p>
                               {exc.description && (
-                                <p className="text-xs sm:text-sm text-black/80 mt-0.5 font-normal">
+                                <p className="mt-0.5 text-xs font-normal text-slate-600 sm:text-sm">
                                   {exc.description}
                                 </p>
                               )}
@@ -2177,7 +2240,29 @@ export default function TourDetailExperience({
                     </div>
                   )}
                 </div>
-              </div>
+                {tour.cancellation_policy && tour.cancellation_policy.length > 0 && (
+                  <div className="border-t border-slate-200 pt-5">
+                    <div className="mb-3 flex items-center gap-3">
+                      <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
+                        <ShieldCheck size={22} className="text-pub-primary" />
+                      </span>
+                      <div>
+                        <h4 className="font-bold text-pub-primary text-base">Cancellation Policy</h4>
+                        <p className="text-xs text-slate-500">Your refund depends on when you cancel before departure.</p>
+                      </div>
+                    </div>
+                    <div className="overflow-hidden rounded-2xl border border-blue-100 bg-blue-50/40">
+                      <div className="border-b border-blue-100 bg-white/55 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-blue-700">Refund schedule</div>
+                      {tour.cancellation_policy.map((rule, index) => (
+                        <div key={index} className="flex items-center justify-between gap-4 border-b border-blue-100 px-4 py-3.5 last:border-0">
+                          <div><p className="text-sm font-semibold text-slate-800">{rule.days_before_max == null ? `${rule.days_before_min}+ days before departure` : `${rule.days_before_min}–${rule.days_before_max} days before departure`}</p><p className="mt-0.5 text-xs text-slate-500">Cancellation window</p></div>
+                          <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-extrabold text-emerald-700">{rule.refund_percentage}% refund</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
             )}
 
             {/* E. ENHANCE YOUR TOUR (Accommodations / Activities / Extensions) */}
@@ -2185,9 +2270,9 @@ export default function TourDetailExperience({
               tour.optional_activities.length > 0 ||
               tour.extensions.length > 0) && (
               <div className="space-y-4">
-                <h3 className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-slate-950">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                    <Sparkles size={16} />
+                <h3 className="flex items-center gap-3 text-xl sm:text-2xl font-bold text-pub-primary">
+                  <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
+                    <Sparkles size={22} className="text-pub-primary" />
                   </span>
                   <span>Enhance Your Tour</span>
                 </h3>
@@ -2279,8 +2364,8 @@ export default function TourDetailExperience({
               </div>
             )}
 
-            {/* F. CANCELLATION POLICY */}
-            {tour.cancellation_policy &&
+            {/* Legacy standalone policy is intentionally omitted: the policy lives in Before You Book. */}
+            {false && tour.cancellation_policy &&
               tour.cancellation_policy.length > 0 && (
               <div id="policies" className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -2401,11 +2486,7 @@ export default function TourDetailExperience({
             <div className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-950 p-4 text-white shadow-md mb-5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
-                  {promoActive
-                    ? activeDiscountLabels.length > 1
-                      ? `Starting from · ${activeDiscountLabels.length} offers applied`
-                      : `Starting from · ${activeDiscountLabels[0] || `${tour.discount_percentage}% OFF`}`
-                    : "Starting from"}
+                  Starting from
                 </span>
                 {realDates.length > 0 && (
                   <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
@@ -2415,21 +2496,21 @@ export default function TourDetailExperience({
               </div>
               <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className="text-2xl sm:text-3xl font-black text-white whitespace-nowrap">
-                  {format(startingUnitPrice, tourCurrency)}
+                  {format(unitPrice, tourCurrency)}
                 </span>
                 <span className="text-xs text-slate-300 whitespace-nowrap">/ person</span>
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px]">
-                {promoActive && startingRawOriginalPrice > startingUnitPrice && (
+                {promoActive && rawAdultUnitPrice > unitPrice && (
                   <span className="font-semibold text-red-300 line-through decoration-red-300">
-                    {format(startingRawOriginalPrice, tourCurrency)}
+                    {format(rawAdultUnitPrice, tourCurrency)}
                   </span>
                 )}
-                {startingTierLabel && <span className="font-semibold text-emerald-300">for {startingTierLabel}</span>}
+                {selectedTierLabel && <span className="font-semibold text-emerald-300">for {selectedTierLabel}</span>}
               </div>
-              {promoActive && activeDiscountLabels.length > 0 && (
+              {promoActive && (
                 <p className="mt-1 text-[10px] font-semibold text-emerald-300">
-                  {activeDiscountLabels.join(" + ")}
+                  {todaysSpecialOfferLabel}
                 </p>
               )}
               <p className="text-[10px] text-slate-300 mt-1">
@@ -2597,8 +2678,8 @@ export default function TourDetailExperience({
                     Group Rate Highlights
                   </h4>
                   <span className="text-[9px] font-bold text-blue-600">
-                    {activeDiscountLabels.length > 0
-                      ? activeDiscountLabels.join(" + ")
+                    {promoActive
+                      ? todaysSpecialOfferLabel
                       : "Auto-applied discount"}
                   </span>
                 </div>
@@ -2796,18 +2877,6 @@ export default function TourDetailExperience({
                         {format(rawTourPrice, tourCurrency)}
                       </span>
                     </div>
-                    {supplierDiscountPercent > 0 && supplierDiscountAmount > 0 && (
-                      <div className="flex justify-between text-amber-700 font-medium">
-                        <span>{tour.supplier_discount_name || "Supplier discount"} ({supplierDiscountPercent}%)</span>
-                        <span className="font-bold">-{format(supplierDiscountAmount, tourCurrency)}</span>
-                      </div>
-                    )}
-                    {tourvaaDiscountPercent > 0 && tourvaaDiscountAmount > 0 && (
-                      <div className="flex justify-between text-blue-700 font-medium">
-                        <span>{tour.tourvaa_discount_name || "TourVaa discount"} ({tourvaaDiscountPercent}%)</span>
-                        <span className="font-bold">-{format(tourvaaDiscountAmount, tourCurrency)}</span>
-                      </div>
-                    )}
                     <div className="flex justify-between text-slate-600 font-medium">
                       <span>Customer price after discounts</span>
                       <span className="font-bold text-slate-900">
@@ -2860,7 +2929,7 @@ export default function TourDetailExperience({
                   <span className="font-bold text-emerald-600">Included</span>
                 </div>
                 <div className="flex justify-between text-slate-600 font-medium">
-                  <span>Booking Fee</span>
+                  <span>Booking Fees</span>
                   <span className="font-bold text-emerald-600">Free</span>
                 </div>
 
@@ -2987,8 +3056,10 @@ export default function TourDetailExperience({
         {/* ── 7. SIMILAR TOURS (Rendered only if backend provides them) ── */}
         {tour.similar_tours && tour.similar_tours.length > 0 && (
           <section className="mt-16 border-t border-slate-200 pt-10">
-            <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-              <Compass size={20} className="text-blue-600" />
+            <h3 className="flex items-center gap-3 text-xl sm:text-2xl font-bold text-pub-primary">
+              <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
+                <Compass size={22} className="text-pub-primary" />
+              </span>
               <span>Similar Tours You May Like</span>
             </h3>
 
@@ -3080,65 +3151,6 @@ export default function TourDetailExperience({
             </div>
           </section>
         )}
-      </div>
-
-      {/* ── 8. FLOATING BOTTOM BOOKING BAR (ON SCROLL) ── */}
-      <div
-        className={`fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-3.5 px-4 sm:px-8 shadow-2xl transition-all duration-300 ${
-          showStickyBottom
-            ? "translate-y-0 opacity-100"
-            : "translate-y-full opacity-0 pointer-events-none"
-        }`}
-      >
-        <div className="mx-auto max-w-[1400px] flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            {galleryItems[0]?.url && (
-              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-slate-100 hidden sm:block">
-                <MarketingImage
-                  src={galleryItems[0].url}
-                  alt=""
-                  fill
-                  sizes="44px"
-                  className="object-cover"
-                />
-              </div>
-            )}
-            <div className="min-w-0">
-              <h4 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
-                {title}
-              </h4>
-              <p className="text-[11px] text-slate-500 flex items-center gap-2">
-                {durationLabel && <span>{durationLabel}</span>}
-                {destination && <span>• {destination}</span>}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="text-right">
-              <div className="flex items-baseline gap-1.5 justify-end">
-                <span className="text-base sm:text-xl font-black text-slate-950">
-                  {format(totalAmount, tourCurrency)}
-                </span>
-                <span className="text-[10px] text-slate-500 font-medium">
-                  total
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400">
-                {adults} Adult{adults > 1 ? "s" : ""}
-                {children > 0 ? `, ${children} Child` : ""}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={scrollToBooking}
-              className="rounded-xl bg-pub-accent hover:bg-[#cf4b24] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-orange-500/20 transition active:scale-[0.99] cursor-pointer"
-            >
-              Book Now
-            </button>
-          </div>
-        </div>
       </div>
     </main>
   );

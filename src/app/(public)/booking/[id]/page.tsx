@@ -75,9 +75,8 @@ type PassengerData = {
   phoneCountry: string;
   phone: string;
   email: string;
-  birthDay: string;
-  birthMonth: string;
-  birthYear: string;
+  age: string;
+  gender: string;
 };
 
 type PriceEstimate = {
@@ -114,9 +113,8 @@ function emptyPassenger(type: PassengerType): PassengerData {
     phoneCountry: "+91",
     phone: "",
     email: "",
-    birthDay: "",
-    birthMonth: "",
-    birthYear: "",
+    age: "",
+    gender: "",
   };
 }
 
@@ -150,19 +148,6 @@ function formatDate(isoDate: string): string {
   const parsed = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return isoDate;
   return parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function calcAge(day: string, month: string, year: string): number | null {
-  if (!day || !month || !year) return null;
-  const dob = new Date(Number(year), Number(month) - 1, Number(day));
-  if (Number.isNaN(dob.getTime())) return null;
-  // Date() silently rolls impossible dates over (31 Feb -> 3 Mar); reject them.
-  if (dob.getDate() !== Number(day) || dob.getMonth() !== Number(month) - 1) return null;
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  const monthDiff = today.getMonth() - dob.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
-  return age;
 }
 
 type AgentPaymentMethod = "card" | "pay_later";
@@ -578,9 +563,14 @@ export default function DynamicTourBookingPage() {
   }, [travelDate, selectedCalendar]);
 
   useEffect(() => {
-    const maxAdults = Math.max(1, Math.min(10, (selectedCalendar?.slots ?? 10) - childCount));
+    if (!tour) return;
+    const bookingCapacity = Math.max(
+      1,
+      selectedCalendar?.slots ?? tour.max_group_size ?? 10,
+    );
+    const maxAdults = Math.max(1, bookingCapacity - childCount);
     if (adultCount > maxAdults) setAdultCount(maxAdults);
-  }, [selectedCalendar, childCount, adultCount]);
+  }, [tour, selectedCalendar, childCount, adultCount]);
 
   useEffect(() => {
     if (!tour?.id || !selectedCalendar?.date) {
@@ -732,9 +722,12 @@ export default function DynamicTourBookingPage() {
   tourDetailsQuery.set("children", String(childCount));
   const tourDetailsHref = `${tourDetailsPath}?${tourDetailsQuery.toString()}`;
   const totalTravellers = adultCount + childCount;
-  const maxAdults = Math.max(1, Math.min(10, (selectedCalendar?.slots ?? 10) - childCount));
-  // Seats left on the departure after adults (same 10-traveller cap as adults).
-  const maxChildren = Math.max(0, Math.min(10, selectedCalendar?.slots ?? 10) - adultCount);
+  const bookingCapacity = Math.max(
+    1,
+    selectedCalendar?.slots ?? tour?.max_group_size ?? 10,
+  );
+  const maxAdults = Math.max(1, bookingCapacity - childCount);
+  const maxChildren = Math.max(0, bookingCapacity - adultCount);
 
   const pricingSlab = useMemo(
     () =>
@@ -799,12 +792,10 @@ export default function DynamicTourBookingPage() {
     });
   };
 
-  // Offers come only from the public tour payload (tour.discounts, built by
-  // services.discounts.list_public_offers): automatic discounts
-  // (requires_code=false) and promo codes the admin marked "show on
-  // website" (requires_code=true, with discount_code). Private codes are
-  // never listed but still work when typed.
-  const { availableCoupons, automaticDiscounts } = useMemo(() => {
+  // Promo offers come only from the public tour payload (tour.discounts,
+  // built by services.discounts.list_public_offers). Private codes are never
+  // listed but still work when typed.
+  const availableCoupons = useMemo(() => {
     const couponMap = new Map<string, {
       code: string;
       name: string;
@@ -813,12 +804,6 @@ export default function DynamicTourBookingPage() {
       validUntil?: string | null;
       minAmount?: number | null;
     }>();
-
-    const autoList: Array<{
-      label: string;
-      type: "percentage" | "fixed";
-      value: number;
-    }> = [];
 
     (tour?.discounts ?? []).forEach((d) => {
       const name = d.label || d.discount_name || "Special Tour Deal";
@@ -838,15 +823,10 @@ export default function DynamicTourBookingPage() {
             minAmount: d.minimum_booking_amount ? Number(d.minimum_booking_amount) : null,
           });
         }
-      } else if (val > 0) {
-        autoList.push({ label: name, type, value: val });
       }
     });
 
-    return {
-      availableCoupons: Array.from(couponMap.values()),
-      automaticDiscounts: autoList,
-    };
+    return Array.from(couponMap.values());
   }, [tour?.discounts]);
 
   const handleCopyCode = (code: string) => {
@@ -1003,16 +983,16 @@ export default function DynamicTourBookingPage() {
         if (!firstError) firstError = `Last name for ${label} is too short.`;
       }
 
-      // --- Date of birth validation ---
-      const age = calcAge(p.birthDay, p.birthMonth, p.birthYear);
-      if (age === null) {
-        newErrors[i].birthDay = "Enter a valid date of birth.";
-        if (!firstError) firstError = `Enter a valid date of birth for ${label}.`;
+      // --- Age validation ---
+      const age = Number(p.age);
+      if (!p.age.trim() || !Number.isInteger(age)) {
+        newErrors[i].age = "Enter a valid age.";
+        if (!firstError) firstError = `Enter a valid age for ${label}.`;
       } else if (p.type === "adult" && (age < 12 || age > 120)) {
-        newErrors[i].birthDay = "Adult must be 12 years or older.";
+        newErrors[i].age = "Adult age must be between 12 and 120.";
         if (!firstError) firstError = `${label} must be 12 years or older.`;
       } else if (p.type === "child" && (age < 3 || age > 11)) {
-        newErrors[i].birthDay = "Child must be between 3 and 11 years old.";
+        newErrors[i].age = "Child age must be between 3 and 11.";
         if (!firstError) firstError = `${label} must be between 3 and 11 years old.`;
       }
 
@@ -1056,8 +1036,8 @@ export default function DynamicTourBookingPage() {
       first_name: p.firstName.trim(),
       last_name: p.lastName.trim(),
       full_name: `${p.firstName} ${p.middleName} ${p.lastName}`.replace(/\s+/g, " ").trim(),
-      date_of_birth: `${p.birthYear}-${p.birthMonth}-${p.birthDay}`,
-      age: calcAge(p.birthDay, p.birthMonth, p.birthYear),
+      age: Number(p.age),
+      gender: p.gender || undefined,
       email: idx === 0 ? p.email.trim() : undefined,
       phone: idx === 0 ? `${p.phoneCountry}${p.phone}`.trim() : undefined,
       is_primary_contact: idx === 0,
@@ -2218,102 +2198,55 @@ export default function DynamicTourBookingPage() {
                             </div>
                           )}
 
-                          <div className="pt-2 border-t border-slate-100">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                              <Calendar size={13} className="text-slate-400" />
-                              <span>Date of Birth <span className="text-rose-500">*</span></span>
-                            </label>
-                            <div className="grid grid-cols-3 gap-2.5 max-w-md">
-                              <div className="relative">
-                                <select
-                                  required
-                                  value={passenger.birthDay}
-                                  onChange={(e) => {
-                                    handlePassengerChange(idx, "birthDay", e.target.value);
-                                    clearPassengerFieldError(idx, "birthDay");
-                                  }}
-                                  className={`w-full appearance-none rounded-xl border bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:bg-white ${
-                                    passengerErrors[idx]?.birthDay
-                                      ? "border-rose-400 focus:border-rose-500"
-                                      : "border-slate-200 focus:border-pub-primary"
-                                  }`}
-                                >
-                                  <option value="">Day</option>
-                                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                                    <option key={d} value={String(d).padStart(2, "0")}>
-                                      {String(d).padStart(2, "0")}
-                                    </option>
-                                  ))}
-                                </select>
-                                <ChevronDown
-                                  size={12}
-                                  className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
-                                />
-                              </div>
+                          <div className="grid gap-4 border-t border-slate-100 pt-2 sm:grid-cols-2">
+                            <div>
+                              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+                                Age <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="number"
+                                required
+                                min={passenger.type === "child" ? 3 : 12}
+                                max={passenger.type === "child" ? 11 : 120}
+                                inputMode="numeric"
+                                value={passenger.age}
+                                onChange={(e) => {
+                                  handlePassengerChange(idx, "age", e.target.value);
+                                  clearPassengerFieldError(idx, "age");
+                                }}
+                                placeholder={passenger.type === "child" ? "3–11" : "12–120"}
+                                className={`w-full rounded-xl border bg-slate-50/50 px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none transition focus:bg-white ${
+                                  passengerErrors[idx]?.age
+                                    ? "border-rose-400 focus:border-rose-500"
+                                    : "border-slate-200 focus:border-pub-primary"
+                                }`}
+                              />
+                              {passengerErrors[idx]?.age && (
+                                <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-rose-600">
+                                  <CircleAlert size={11} className="shrink-0" />
+                                  {passengerErrors[idx].age}
+                                </p>
+                              )}
+                            </div>
 
+                            <div>
+                              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+                                Sex <span className="font-normal text-slate-400">(optional)</span>
+                              </label>
                               <div className="relative">
                                 <select
-                                  required
-                                  value={passenger.birthMonth}
-                                  onChange={(e) => {
-                                    handlePassengerChange(idx, "birthMonth", e.target.value);
-                                    clearPassengerFieldError(idx, "birthDay");
-                                  }}
-                                  className={`w-full appearance-none rounded-xl border bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:bg-white ${
-                                    passengerErrors[idx]?.birthDay
-                                      ? "border-rose-400 focus:border-rose-500"
-                                      : "border-slate-200 focus:border-pub-primary"
-                                  }`}
+                                  value={passenger.gender}
+                                  onChange={(e) => handlePassengerChange(idx, "gender", e.target.value)}
+                                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3.5 pr-8 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
                                 >
-                                  <option value="">Month</option>
-                                  {[
-                                    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-                                  ].map((m, mIdx) => (
-                                    <option key={m} value={String(mIdx + 1).padStart(2, "0")}>
-                                      {m}
-                                    </option>
-                                  ))}
+                                  <option value="">Select an option</option>
+                                  <option value="male">Male</option>
+                                  <option value="female">Female</option>
+                                  <option value="prefer_not_to_answer">Prefer not to answer</option>
                                 </select>
-                                <ChevronDown
-                                  size={12}
-                                  className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
-                                />
-                              </div>
-
-                              <div className="relative">
-                                <select
-                                  required
-                                  value={passenger.birthYear}
-                                  onChange={(e) => {
-                                    handlePassengerChange(idx, "birthYear", e.target.value);
-                                    clearPassengerFieldError(idx, "birthDay");
-                                  }}
-                                  className={`w-full appearance-none rounded-xl border bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:bg-white ${
-                                    passengerErrors[idx]?.birthDay
-                                      ? "border-rose-400 focus:border-rose-500"
-                                      : "border-slate-200 focus:border-pub-primary"
-                                  }`}
-                                >
-                                  <option value="">Year</option>
-                                  {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-                                    <option key={y} value={String(y)}>
-                                      {y}
-                                    </option>
-                                  ))}
-                                </select>
-                                <ChevronDown
-                                  size={12}
-                                  className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
-                                />
+                                <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
                               </div>
                             </div>
-                            {passengerErrors[idx]?.birthDay && (
-                              <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-rose-600">
-                                <CircleAlert size={11} className="shrink-0" />
-                                {passengerErrors[idx].birthDay}
-                              </p>
-                            )}
                           </div>
                         </div>
                       
@@ -2379,7 +2312,7 @@ export default function DynamicTourBookingPage() {
                     </span>
                     <div>
                       <span className="text-xs sm:text-sm font-bold text-slate-600">2. Passenger Details</span>
-                      <p className="text-[11px] text-slate-400">Add passenger names, contact information and date of birth</p>
+                      <p className="text-[11px] text-slate-400">Add passenger names, contact information, age and optional sex</p>
                     </div>
                   </div>
                 </div>
@@ -2776,13 +2709,6 @@ export default function DynamicTourBookingPage() {
                       </span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="text-xs font-bold text-pub-primary hover:underline"
-                  >
-                    Edit
-                  </button>
                 </div>
 
                 <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
@@ -2795,13 +2721,6 @@ export default function DynamicTourBookingPage() {
                       </span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="text-xs font-bold text-pub-primary hover:underline"
-                  >
-                    Edit
-                  </button>
                 </div>
               </div>
 
@@ -2931,25 +2850,6 @@ export default function DynamicTourBookingPage() {
                   </div>
                 )}
 
-                {/* Automatic discounts overview if present */}
-                {automaticDiscounts.length > 0 && (
-                  <div className="pt-2.5 border-t border-slate-100 space-y-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Automatic Savings Included
-                    </span>
-                    {automaticDiscounts.map((ad, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-xs text-emerald-700 bg-emerald-50/70 border border-emerald-100 rounded-lg px-2.5 py-1.5">
-                        <span className="font-medium flex items-center gap-1.5">
-                          <CheckCircle size={12} className="text-emerald-600 shrink-0" />
-                          <span>{ad.label}</span>
-                        </span>
-                        <span className="font-bold">
-                          {ad.type === "percentage" ? `${ad.value}% OFF` : `${format(ad.value, tourCurrency)} OFF`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Price Breakdown */}

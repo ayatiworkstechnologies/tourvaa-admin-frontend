@@ -41,6 +41,7 @@ export type Booking = {
   amount_paid: string;
   amount_pending: string;
   payment_due_date?: string | null;
+  balance_due_date?: string | null;
   booking_status: string;
   supplier_acceptance_status: string;
   payment_status: string;
@@ -62,6 +63,8 @@ export type Booking = {
   // for agent/supplier/customer views of the same booking.
   supplier_breakdown?: SupplierBreakdown | null;
   booking_source?: "admin" | "agent" | "customer" | null;
+  agent_payment_method?: string | null;
+  agent_payment_summary?: AgentPaymentSummary | null;
   // Immutable commission snapshot captured once at booking creation (see
   // Booking model / serialize_booking in the backend). Admin-only, same
   // gate as supplier_breakdown -- null/undefined for older bookings or
@@ -71,6 +74,8 @@ export type Booking = {
   supplier_net_payable?: string | null;
   agent_commission_percentage?: string | null;
   agent_commission_amount?: string | null;
+  admin_markup_percentage?: string | null;
+  tourvaa_gross_revenue?: string | null;
   affiliate_commission_percentage?: string | null;
   affiliate_commission_amount?: string | null;
   tourvaa_net_revenue?: string | null;
@@ -90,6 +95,23 @@ export type SupplierBreakdown = {
   customer_price: string;
   customer_price_currency: string;
   tourvaa_margin: string;
+  payment_status?: string | null;
+  payment_date?: string | null;
+};
+
+export type AgentPaymentSummary = {
+  transaction_type: "Full Payment" | "Booking Reserved";
+  is_reserved: boolean;
+  amount_paid: string;
+  total_booking_amount: string;
+  commission_percentage: string;
+  commission_amount: string;
+  commission_payable: string;
+  commission_status: string;
+  commission_payment_date?: string | null;
+  agent_price: string;
+  invoice_status: string;
+  payment_due_date?: string | null;
 };
 
 export type PaymentAttempt = {

@@ -5,6 +5,8 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  LuArrowRight as ArrowRight,
+  LuGlobe as Globe2,
   LuMapPin as MapPin,
   LuSquareCheckBig as SquareCheckBig,
 } from "react-icons/lu";
@@ -164,6 +166,17 @@ export default function FavouriteCountriesSection({
               </div>
             </Link>
           ))}
+        </div>
+
+        <div className="mt-8 flex justify-center sm:mt-10">
+          <Link
+            href="/destinations"
+            className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-900 shadow-[0_8px_24px_-14px_rgba(15,23,42,0.45)] transition duration-300 hover:-translate-y-0.5 hover:border-pub-accent hover:bg-pub-accent hover:text-white hover:shadow-[0_12px_28px_-14px_rgba(217,93,44,0.65)] focus:outline-none focus-visible:ring-2 focus-visible:ring-pub-accent focus-visible:ring-offset-2"
+          >
+            <Globe2 size={17} />
+            View All Countries
+            <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+          </Link>
         </div>
       </div>
     </section>

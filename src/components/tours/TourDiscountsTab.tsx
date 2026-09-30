@@ -12,7 +12,6 @@ import {
   LuTrendingUp as TrendingUp,
   LuX as X,
   LuTag as Tag,
-  LuPercent as Percent,
   LuSparkles as Sparkles,
   LuCalendar as Calendar,
   LuUsers as Users,
@@ -135,7 +134,7 @@ function DiscountPricePreview({ item, adultPrice, childPrice, currency }: { item
 }
 
 function AdminDiscountPricePreview({
-  item, supplierOffer, supplierAdultPrice, supplierChildPrice, storefrontAdultPrice, storefrontChildPrice, currency,
+  item, supplierOffer, supplierAdultPrice, supplierChildPrice, storefrontAdultPrice, currency,
 }: {
   item: TourDiscount; supplierOffer?: TourDiscount; supplierAdultPrice: number; supplierChildPrice: number; storefrontAdultPrice: number; storefrontChildPrice: number; currency: string;
 }) {

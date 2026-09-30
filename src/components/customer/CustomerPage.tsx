@@ -21,7 +21,7 @@ type CustomerPageHeaderProps = {
 
 export function CustomerPageShell({ children, className = "" }: CustomerPageShellProps) {
   return (
-    <div className={`min-h-screen min-w-0 bg-[#F8FBFF] px-4 py-4 text-[#0C2043] sm:px-6 sm:py-6 xl:px-8 ${className}`}>
+    <div className={`min-h-screen min-w-0 bg-[#F8FBFF] px-3 py-4 text-[#0C2043] sm:px-6 sm:py-6 xl:px-8 ${className}`}>
       <div className="mx-auto max-w-[1440px]">{children}</div>
     </div>
   );
@@ -38,16 +38,16 @@ export function CustomerPageHeader({
   const ActionIcon = action?.icon ?? ArrowRight;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#DCE7F5] bg-white px-5 py-5 shadow-[0_12px_40px_-32px_rgba(21,77,151,.55)] sm:px-6">
+    <div className="relative overflow-hidden rounded-2xl border border-[#DCE7F5] bg-white px-4 py-4 shadow-[0_12px_40px_-32px_rgba(21,77,151,.55)] sm:px-6 sm:py-5">
       <div className="pointer-events-none absolute -right-12 -top-20 h-52 w-52 rounded-full bg-[#E9F3FF] blur-2xl" />
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-[#0D73F6] to-[#0757D6] text-white shadow-lg shadow-blue-200">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-[#0D73F6] to-[#0757D6] text-white shadow-lg shadow-blue-200 sm:h-14 sm:w-14 sm:rounded-2xl">
             <Icon size={24} />
           </span>
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#2475E8]">{eyebrow}</p>
-            <h1 className="mt-1 text-[24px] font-black leading-tight tracking-tight text-[#0C2043]">{title}</h1>
+            <h1 className="mt-1 text-xl font-black leading-tight tracking-tight text-[#0C2043] sm:text-[24px]">{title}</h1>
             <p className="mt-1 max-w-2xl text-[13px] leading-5 text-[#5D7292]">{description}</p>
           </div>
         </div>

@@ -61,7 +61,7 @@ export default function CustomerSidebar({
   const displayEmail = user?.email || "explorer@tourvaa.com";
 
   return (
-    <aside className={`${mobile ? "relative flex h-full" : "fixed inset-y-0 top-20 sm:top-[84px] left-0 hidden lg:flex"} z-40 w-[240px] flex-col overflow-y-auto p-4 bg-transparent`}>
+    <aside className={`${mobile ? "relative flex h-full w-full" : "fixed inset-y-0 top-20 sm:top-[84px] left-0 hidden lg:flex"} z-40 w-[240px] flex-col overflow-y-auto p-3 sm:p-4 bg-transparent`}>
       {/* Top User Profile Card */}
       <div className="flex flex-col items-center rounded-2xl border border-slate-200/90 bg-white p-5 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
         <div className="relative mb-3">
@@ -116,7 +116,7 @@ export default function CustomerSidebar({
               key={href}
               href={href}
               onClick={onNavigate}
-              className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
+                className={`flex min-h-11 items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition lg:min-h-0 lg:text-xs ${
                 active
                   ? "bg-[#EEF4FE] text-[#1464F4]"
                   : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
@@ -134,7 +134,7 @@ export default function CustomerSidebar({
         <button
           type="button"
           onClick={() => logout()}
-          className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-rose-50 hover:text-rose-600 mt-1"
+          className="mt-1 flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-rose-50 hover:text-rose-600 lg:min-h-0 lg:text-xs"
         >
           <LogOut size={16} className="text-slate-500" />
           <span>Logout</span>

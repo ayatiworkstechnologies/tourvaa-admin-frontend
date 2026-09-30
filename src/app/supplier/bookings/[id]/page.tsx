@@ -5,14 +5,12 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuPlay as Play, LuSend as Send, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
-import DatePicker from "@/components/ui/DatePicker";
 import {
   SupplierPageHeader,
   SupplierPageShell,
 } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/useToast";
-import { todayLocalDateStr } from "@/lib/utils/date";
 
 type Traveller = {
   id?: number;
@@ -51,22 +49,10 @@ type Communication = {
   replies?: MessageReply[];
 };
 
-type PaymentAttempt = {
-  id: number;
-  payment_code: string;
-  payment_method: string;
-  gateway: string;
-  total_amount: string;
-  payment_status: string;
-  failure_reason?: string | null;
-  created_at?: string | null;
-};
-
 type Booking = {
   id: number;
   booking_code: string;
   communications?: Communication[];
-  payments?: PaymentAttempt[];
   tour_name?: string;
   tour_title?: string;
   tour_id?: number;
@@ -91,9 +77,18 @@ type Booking = {
   travellers?: Traveller[];
   created_at?: string;
   cancellation_reason?: string;
+  supplier_payment_summary?: {
+    currency: string;
+    gross_amount: string;
+    commission_percentage: string;
+    commission_amount: string;
+    net_payable: string;
+    payment_status: string;
+    payment_date?: string | null;
+  } | null;
 };
 
-type ActionType = "confirm" | "decline" | "ongoing" | "complete" | "cancel" | "postpone";
+type ActionType = "confirm" | "decline" | "ongoing" | "complete" | "cancel";
 
 function statusDot(s: string) {
   const v = (s || "").toLowerCase();
@@ -140,23 +135,19 @@ function ActionBanner({
 }) {
   const [showCancel, setShowCancel] = useState(false);
   const [showDecline, setShowDecline] = useState(false);
-  const [showPostpone, setShowPostpone] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [declineReason, setDeclineReason] = useState("");
-  const [postponeReason, setPostponeReason] = useState("");
-  const [newDate, setNewDate] = useState("");
 
   useEffect(() => {
-    if (!showCancel && !showDecline && !showPostpone) return;
+    if (!showCancel && !showDecline) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setShowCancel(false);
       setShowDecline(false);
-      setShowPostpone(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showCancel, showDecline, showPostpone]);
+  }, [showCancel, showDecline]);
 
   const v = status.toLowerCase();
   const payment = (paymentStatus || "").toLowerCase();
@@ -249,14 +240,6 @@ function ActionBanner({
             <button
               type="button"
               disabled={busy !== null}
-              onClick={() => setShowPostpone(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-white/70 disabled:opacity-60 transition-all"
-            >
-              <CalendarDays size={15} /> Postpone
-            </button>
-            <button
-              type="button"
-              disabled={busy !== null}
               onClick={() => setShowCancel(true)}
               className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-60 transition-all"
             >
@@ -274,21 +257,6 @@ function ActionBanner({
               {busy === "decline" ? "Declining..." : "Confirm Decline"}
             </button>
             <button type="button" onClick={() => setShowDecline(false)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-body">Close</button>
-          </div>
-        </div>
-      )}
-
-      {showPostpone && (
-        <div className="mt-4 rounded-xl border border-[#D9ECFF] bg-white p-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <DatePicker value={newDate} onChange={setNewDate} minDate={todayLocalDateStr()} placeholder="Select new tour date" />
-            <input value={postponeReason} onChange={(e) => setPostponeReason(e.target.value)} placeholder="Reason for postponement" className="rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-dash-brand" />
-          </div>
-          <div className="mt-3 flex gap-2">
-            <button type="button" disabled={!postponeReason.trim() || busy !== null} onClick={() => onAction("postpone", { reason: postponeReason, new_tour_date: newDate })} className="rounded-xl bg-dash-text px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
-              {busy === "postpone" ? "Postponing..." : "Confirm Postpone"}
-            </button>
-            <button type="button" onClick={() => setShowPostpone(false)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-body">Close</button>
           </div>
         </div>
       )}
@@ -482,12 +450,6 @@ export default function SupplierBookingDetailPage() {
       } else if (type === "cancel") {
         await api.patch(`/supplier/bookings/${bookingId}/cancel`, { reason: payload?.reason });
         toast.success("Booking cancelled. Customer has been notified.");
-      } else if (type === "postpone") {
-        await api.patch(`/supplier/bookings/${bookingId}/postpone`, {
-          reason: payload?.reason,
-          new_tour_date: payload?.new_tour_date || undefined,
-        });
-        toast.success("Booking postponed. Customer and agent have been notified.");
       }
       void load();
     } catch (e: unknown) {
@@ -659,31 +621,18 @@ export default function SupplierBookingDetailPage() {
           <InfoRow label="Booked On" value={dateStr(booking.created_at)} />
         </div>
 
-        {/* Payment Info */}
+        {/* Supplier settlement information */}
         <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <span className="text-emerald-600 font-black text-lg">$</span>
-            <h2 className="font-black text-dash-text">Payment Information</h2>
+            <h2 className="font-black text-dash-text">Supplier Payment</h2>
           </div>
-          <InfoRow
-            label="Total Amount"
-            value={format(booking.final_amount ?? booking.total_amount ?? 0, booking.currency)}
-          />
-          <InfoRow label="Payment Status" value={booking.payment_status ?? "-"} />
-          {(booking.payments?.length ?? 0) > 0 && (
-            <div className="mt-3 space-y-2">
-              <p className="text-xs font-bold uppercase text-dash-muted">Payment Attempts</p>
-              {booking.payments!.map((p) => (
-                <div key={p.id} className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-xs ${p.payment_status === "failed" ? "bg-red-50" : "bg-dash-bg"}`}>
-                  <span className="font-semibold text-dash-body">
-                    {p.payment_code} · {p.payment_method}
-                    {p.payment_status === "failed" && p.failure_reason ? ` · ${p.failure_reason}` : ""}
-                  </span>
-                  <span className={`font-bold capitalize ${p.payment_status === "failed" ? "text-red-600" : "text-dash-text"}`}>{p.payment_status.replace(/_/g, " ")}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <InfoRow label="Supplier Payment" value={format(booking.supplier_payment_summary?.gross_amount ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
+          <InfoRow label="Commission to Tourvaa" value={booking.supplier_payment_summary ? `${booking.supplier_payment_summary.commission_percentage}%` : "-"} />
+          <InfoRow label="Commission Amount" value={format(booking.supplier_payment_summary?.commission_amount ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
+          <InfoRow label="Supplier Net Payable" value={format(booking.supplier_payment_summary?.net_payable ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
+          <InfoRow label="Supplier Payment Status" value={booking.supplier_payment_summary?.payment_status.replace(/_/g, " ") ?? "pending"} />
+          <InfoRow label="Supplier Payment Date" value={dateStr(booking.supplier_payment_summary?.payment_date)} />
           {booking.cancellation_reason && (
             <div className="mt-3 rounded-xl bg-red-50 border border-red-100 p-3">
               <p className="text-xs font-bold text-red-600">Cancellation Reason</p>

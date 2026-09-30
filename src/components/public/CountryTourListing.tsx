@@ -44,6 +44,7 @@ type TourItem = {
   maxGroup: number | null;
   minAge?: number;
   maxAge?: number;
+  ageRange?: string;
   cities: string;
   departures: { date: string; price: string; slots?: number }[];
   originalPrice?: string;
@@ -386,7 +387,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                   ? format(t.price_start_per_person, t.currency)
                   : "Price on request",
             }));
-          const realMaxGroup = parseMaxGroup(t.group_size);
+          const realMaxGroup = t.max_group_size ?? parseMaxGroup(t.group_size);
           return {
             id: t.id,
             title: t.title || "Untitled tour",
@@ -406,6 +407,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             maxGroup: realMaxGroup,
             minAge: undefined,
             maxAge: undefined,
+            ageRange: t.suitable_age_range || undefined,
             cities: t.city_name || t.country_name || "Location to be confirmed",
             departures: realDepartures || [],
             originalPrice: t.original_price_per_person != null ? format(t.original_price_per_person, t.currency) : undefined,
@@ -1127,30 +1129,26 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                             <MapPin size={12} className="text-sky-500 shrink-0" />
                             <span className="truncate">{tour.route}</span>
                           </p>
-                          <p className="flex items-center gap-1.5 truncate">
+                          {tour.guideType && <p className="flex items-center gap-1.5 truncate">
                             <Compass size={12} className="text-sky-500 shrink-0" />
-                            <span>{tour.guideType || "Full Guided"}</span>
-                          </p>
-                          <p className="flex items-center gap-1.5 truncate">
+                            <span>{tour.guideType}</span>
+                          </p>}
+                          {tour.maxGroup != null && <p className="flex items-center gap-1.5 truncate">
                             <Users size={12} className="text-sky-500 shrink-0" />
-                            <span>Max Group Size: {tour.maxGroup != null ? String(tour.maxGroup).replace(/^Max\s*/i, "") : "16"}</span>
-                          </p>
+                            <span>Max group: {String(tour.maxGroup).replace(/^Max\s*/i, "")}</span>
+                          </p>}
                         </div>
 
                         {/* Right Column */}
                         <div className="space-y-1.5">
-                          <p className="flex items-center gap-1.5 truncate">
+                          {tour.ageRange && <p className="flex items-center gap-1.5 truncate">
                             <User size={12} className="text-sky-500 shrink-0" />
-                            <span>Minimum age: 16</span>
-                          </p>
-                          <p className="flex items-center gap-1.5 truncate">
-                            <User size={12} className="text-sky-500 shrink-0" />
-                            <span>Maximum age: 65</span>
-                          </p>
-                          <p className="flex items-center gap-1.5 truncate">
+                            <span>Age: {tour.ageRange}</span>
+                          </p>}
+                          {tour.cities && <p className="flex items-center gap-1.5 truncate">
                             <MapPin size={12} className="text-sky-500 shrink-0" />
-                            <span className="truncate">{tour.cities || tour.location} +3 More</span>
-                          </p>
+                            <span className="truncate">{tour.cities}</span>
+                          </p>}
                         </div>
                       </div>
 
@@ -1175,26 +1173,9 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                             </Link>
                           </>
                         ) : (
-                          <>
-                            <div className="rounded-lg border border-slate-200/90 bg-white py-1 px-1 text-center shadow-2xs">
-                              <p className="text-[9px] font-medium text-slate-500">5 Oct &apos;26</p>
-                              <p className="text-[11px] font-bold text-slate-900 leading-tight">{tour.price}</p>
-                            </div>
-                            <div className="rounded-lg border border-slate-200/90 bg-white py-1 px-1 text-center shadow-2xs">
-                              <p className="text-[9px] font-medium text-slate-500">12 Oct &apos;26</p>
-                              <p className="text-[11px] font-bold text-slate-900 leading-tight">{tour.price}</p>
-                            </div>
-                            <div className="rounded-lg border border-slate-200/90 bg-white py-1 px-1 text-center shadow-2xs">
-                              <p className="text-[9px] font-medium text-slate-500">19 Oct &apos;26</p>
-                              <p className="text-[11px] font-bold text-slate-900 leading-tight">{tour.price}</p>
-                            </div>
-                            <Link
-                              href={tourLink}
-                              className="rounded-lg border border-slate-200/90 bg-slate-50/70 hover:bg-slate-100 py-1 px-1 text-center shadow-2xs flex items-center justify-center text-[11px] font-bold text-slate-800 transition"
-                            >
-                              +More
-                            </Link>
-                          </>
+                          <Link href={tourLink} className="col-span-4 rounded-lg border border-dashed border-slate-200 bg-slate-50/70 px-3 py-2 text-center text-xs font-semibold text-slate-600 transition hover:bg-slate-100">
+                            View available dates and live pricing
+                          </Link>
                         )}
                       </div>
                     </div>

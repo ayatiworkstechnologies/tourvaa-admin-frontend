@@ -29,7 +29,7 @@ function DetailPanel({ title, children }: DetailPanelProps) {
 function DetailField({ label, value }: DetailFieldProps) {
   const displayValue = value === null || value === undefined || value === "" ? "-" : value;
   return (
-    <div>
+    <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-3.5 py-3">
       <p className="text-xs font-bold uppercase text-dash-subtle">{label}</p>
       <p className="mt-1 text-sm font-semibold text-dash-text">{displayValue}</p>
     </div>
@@ -80,12 +80,6 @@ const BOOKING_STATUS_TRANSITIONS: Record<string, string[]> = {
   completed: [],
   refunded: [],
 };
-
-function isNonZeroAmount(value?: string | null) {
-  if (value === null || value === undefined) return false;
-  const n = parseFloat(value);
-  return !Number.isNaN(n) && n !== 0;
-}
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -227,29 +221,12 @@ export default function BookingDetailPage() {
   const travellers = booking?.travellers || [];
   const communications = booking?.communications || [];
 
-  // Commission snapshot -- immutable fields captured once at booking
-  // creation (see Booking model / serialize_booking's admin-only block in
-  // the backend). Only populated for bookings priced after that snapshot
-  // was introduced, so every row below is opt-in based on data presence.
-  const showSupplierCommissionRow =
-    booking?.supplier_breakdown?.gross_amount !== undefined && booking?.supplier_breakdown?.gross_amount !== null;
-  const hasSupplierSection =
-    showSupplierCommissionRow ||
-    booking?.tourvaa_commission_percentage != null ||
-    booking?.tourvaa_commission_amount != null ||
-    booking?.supplier_net_payable != null;
-  const hasTourvaaSection = booking?.tourvaa_commission_amount != null || booking?.tourvaa_net_revenue != null;
-  const carveOutAmount = booking?.agent_commission_amount ?? booking?.affiliate_commission_amount ?? null;
-  const carveOutLabel = booking?.agent_commission_amount != null ? "Less: Agent Commission" : "Less: Affiliate Commission";
-  const hasAgentCommission =
-    booking?.booking_source === "agent" &&
-    (booking?.agent_commission_percentage != null || booking?.agent_commission_amount != null);
-  const hasAffiliateCommission = booking?.affiliate_commission_percentage != null || booking?.affiliate_commission_amount != null;
-  const hasDiscountFunding = Boolean(booking?.group_discount_funded_by || booking?.promo_discount_funded_by);
-  const hasNonCommissionableAddon = isNonZeroAmount(booking?.non_commissionable_addon_amount);
-  const hasCostPlusAddon = isNonZeroAmount(booking?.cost_plus_supplier_payable);
-  const hasFinancialBreakdown =
-    hasSupplierSection || hasTourvaaSection || hasAgentCommission || hasAffiliateCommission || hasDiscountFunding || hasNonCommissionableAddon || hasCostPlusAddon;
+  const hasFinancialBreakdown = booking?.final_amount != null;
+  const latestPayment = [...(booking?.payments || [])].sort((a, b) => b.id - a.id)[0];
+  const paymentMethod = latestPayment
+    ? latestPayment.gateway || latestPayment.payment_method
+    : booking?.agent_payment_method;
+  const nextPaymentDate = booking?.balance_due_date || booking?.payment_due_date;
 
   return (
     <ModuleWrapper title="Booking Detail" requiredPermission="bookings.view">
@@ -405,24 +382,53 @@ export default function BookingDetailPage() {
               </div>
             </DetailPanel>
 
-            <DetailPanel title="Money">
+            <DetailPanel title="Booking Payment Status">
               <div className="grid gap-4">
-                <DetailField label="Final" value={formatExact(booking.final_amount, booking.currency)} />
-                <DetailField label="Paid" value={formatExact(booking.amount_paid, booking.currency)} />
-                <DetailField label="Pending" value={formatExact(booking.amount_pending, booking.currency)} />
+                <DetailField label="Total Booking Amount" value={formatExact(booking.final_amount, booking.currency)} />
+                <DetailField label="Paid Amount" value={formatExact(booking.amount_paid, booking.currency)} />
+                <DetailField label="Pending Amount" value={formatExact(booking.amount_pending, booking.currency)} />
                 <DetailField label="Payment Type" value={booking.payment_type} />
+                <DetailField label="Payment Method" value={paymentMethod?.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())} />
+                <DetailField label="Next Payment Date" value={nextPaymentDate ? new Date(nextPaymentDate).toLocaleDateString() : null} />
               </div>
             </DetailPanel>
 
             {booking.supplier_breakdown && canViewSupplierFinancials && (
-              <DetailPanel title="Supplier">
+              <DetailPanel title="Supplier Payments">
                 <div className="grid gap-4">
-                  <DetailField label="Supplier Gross Amount" value={formatExact(booking.supplier_breakdown.gross_amount, booking.supplier_breakdown.currency)} />
-                  <DetailField label="Commission %" value={`${booking.supplier_breakdown.commission_percentage}%`} />
+                  <DetailField label="Supplier Payment" value={formatExact(booking.supplier_breakdown.gross_amount, booking.supplier_breakdown.currency)} />
+                  <DetailField label="Commission to Tourvaa" value={`${booking.supplier_breakdown.commission_percentage}%`} />
                   <DetailField label="Commission Amount" value={formatExact(booking.supplier_breakdown.commission_amount, booking.supplier_breakdown.currency)} />
                   <DetailField label="Supplier Net Payable" value={formatExact(booking.supplier_breakdown.net_payable, booking.supplier_breakdown.currency)} />
-                  <DetailField label="Customer / Display Price" value={formatExact(booking.supplier_breakdown.customer_price, booking.supplier_breakdown.customer_price_currency)} />
-                  <DetailField label="Tourvaa Margin" value={formatExact(booking.supplier_breakdown.tourvaa_margin, booking.supplier_breakdown.currency)} />
+                  <DetailField label="Supplier Payment Status" value={booking.supplier_breakdown.payment_status?.replaceAll("_", " ")} />
+                  <DetailField label="Supplier Payment Date" value={booking.supplier_breakdown.payment_date ? new Date(booking.supplier_breakdown.payment_date).toLocaleDateString() : null} />
+                </div>
+              </DetailPanel>
+            )}
+
+            {booking.agent_payment_summary && (
+              <DetailPanel title="Agent Payments">
+                <div className="grid gap-4">
+                  <DetailField label="Agent Transaction Type" value={booking.agent_payment_summary.transaction_type} />
+                  {booking.agent_payment_summary.is_reserved ? (
+                    <>
+                      <DetailField label="Total Booking Amount" value={formatExact(booking.agent_payment_summary.total_booking_amount, booking.currency)} />
+                      <DetailField label="Agent Commission / Markup" value={`${booking.agent_payment_summary.commission_percentage}%`} />
+                      <DetailField label="Agent Price" value={formatExact(booking.agent_payment_summary.agent_price, booking.currency)} />
+                      <DetailField label="Invoice Status" value={booking.agent_payment_summary.invoice_status.replaceAll("_", " ")} />
+                      <DetailField label="Payment Due Date" value={booking.agent_payment_summary.payment_due_date ? new Date(booking.agent_payment_summary.payment_due_date).toLocaleDateString() : null} />
+                      <DetailField label="Amount Paid by Agent" value={formatExact(booking.agent_payment_summary.amount_paid, booking.currency)} />
+                    </>
+                  ) : (
+                    <>
+                      <DetailField label="Amount Paid by Agent" value={formatExact(booking.agent_payment_summary.amount_paid, booking.currency)} />
+                      <DetailField label="Agent Commission" value={`${booking.agent_payment_summary.commission_percentage}%`} />
+                      <DetailField label="Commission Amount" value={formatExact(booking.agent_payment_summary.commission_amount, booking.currency)} />
+                      <DetailField label="Commission Payable to Agent" value={formatExact(booking.agent_payment_summary.commission_payable, booking.currency)} />
+                      <DetailField label="Commission Status" value={booking.agent_payment_summary.commission_status.replaceAll("_", " ")} />
+                      <DetailField label="Commission Payment Date" value={booking.agent_payment_summary.commission_payment_date ? new Date(booking.agent_payment_summary.commission_payment_date).toLocaleDateString() : null} />
+                    </>
+                  )}
                 </div>
               </DetailPanel>
             )}
@@ -441,101 +447,14 @@ export default function BookingDetailPage() {
 
           {canViewSupplierFinancials && hasFinancialBreakdown && (
             <DetailPanel title="Financial Breakdown">
-              <div className="space-y-5">
-                {hasSupplierSection && (
-                  <div>
-                    <p className="mb-2 text-xs font-bold uppercase text-dash-subtle">Supplier</p>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      {showSupplierCommissionRow && (
-                        <DetailField label="Gross Amount" value={formatExact(booking.supplier_breakdown!.gross_amount, booking.supplier_breakdown!.currency)} />
-                      )}
-                      {booking.tourvaa_commission_percentage != null && (
-                        <DetailField label="Tourvaa Commission %" value={`${booking.tourvaa_commission_percentage}%`} />
-                      )}
-                      {booking.tourvaa_commission_amount != null && (
-                        <DetailField label="Tourvaa Commission Amount" value={formatExact(booking.tourvaa_commission_amount, booking.currency)} />
-                      )}
-                      {booking.supplier_net_payable != null && (
-                        <DetailField label="Supplier Net Payable" value={formatExact(booking.supplier_net_payable, booking.currency)} />
-                      )}
-                    </div>
-                  </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <DetailField label="Total Booking Amount" value={formatExact(booking.final_amount, booking.currency)} />
+                <DetailField label="Tourvaa Markup" value={booking.admin_markup_percentage != null ? `${booking.admin_markup_percentage}%` : "0%"} />
+                <DetailField label="Supplier Net Payable" value={formatExact(booking.supplier_net_payable, booking.currency)} />
+                {booking.booking_source === "agent" && (
+                  <DetailField label="Agent Commission Payable" value={formatExact(booking.agent_commission_amount, booking.currency)} />
                 )}
-
-                {hasTourvaaSection && (
-                  <div>
-                    <p className="mb-2 text-xs font-bold uppercase text-dash-subtle">Tourvaa</p>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      {booking.tourvaa_commission_amount != null && (
-                        <DetailField label="Commission Amount" value={formatExact(booking.tourvaa_commission_amount, booking.currency)} />
-                      )}
-                      {carveOutAmount != null && (
-                        <DetailField label={carveOutLabel} value={`- ${formatExact(carveOutAmount, booking.currency)}`} />
-                      )}
-                      {booking.tourvaa_net_revenue != null && (
-                        <DetailField label="Net Revenue" value={formatExact(booking.tourvaa_net_revenue, booking.currency)} />
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {hasAgentCommission && (
-                  <div>
-                    <p className="mb-2 text-xs font-bold uppercase text-dash-subtle">Agent Commission</p>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      {booking.agent_commission_percentage != null && (
-                        <DetailField label="Commission %" value={`${booking.agent_commission_percentage}%`} />
-                      )}
-                      {booking.agent_commission_amount != null && (
-                        <DetailField label="Commission Amount" value={formatExact(booking.agent_commission_amount, booking.currency)} />
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {hasAffiliateCommission && (
-                  <div>
-                    <p className="mb-2 text-xs font-bold uppercase text-dash-subtle">Affiliate Commission</p>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      {booking.affiliate_commission_percentage != null && (
-                        <DetailField label="Commission %" value={`${booking.affiliate_commission_percentage}%`} />
-                      )}
-                      {booking.affiliate_commission_amount != null && (
-                        <DetailField label="Commission Amount" value={formatExact(booking.affiliate_commission_amount, booking.currency)} />
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {hasDiscountFunding && (
-                  <div className="flex flex-wrap gap-2">
-                    {booking.group_discount_funded_by && (
-                      <span className="inline-flex items-center rounded-full bg-dash-bg px-3 py-1 text-xs font-bold text-dash-body">
-                        Group discount funded by: {booking.group_discount_funded_by}
-                      </span>
-                    )}
-                    {booking.promo_discount_funded_by && (
-                      <span className="inline-flex items-center rounded-full bg-dash-bg px-3 py-1 text-xs font-bold text-dash-body">
-                        Promo discount funded by: {booking.promo_discount_funded_by}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {(hasNonCommissionableAddon || hasCostPlusAddon) && (
-                  <div className="space-y-1.5">
-                    {hasNonCommissionableAddon && (
-                      <p className="text-xs text-dash-muted">
-                        Non-commissionable addons: <span className="font-bold text-dash-text">{formatExact(booking.non_commissionable_addon_amount!, booking.currency)}</span> (paid to supplier in full, no commission)
-                      </p>
-                    )}
-                    {hasCostPlusAddon && (
-                      <p className="text-xs text-dash-muted">
-                        Cost-plus addons: <span className="font-bold text-dash-text">{formatExact(booking.cost_plus_supplier_payable!, booking.currency)}</span> (supplier&apos;s exact cost, no commission)
-                      </p>
-                    )}
-                  </div>
-                )}
+                <DetailField label="Tourvaa Gross Revenue" value={formatExact(booking.tourvaa_gross_revenue, booking.currency)} />
               </div>
             </DetailPanel>
           )}

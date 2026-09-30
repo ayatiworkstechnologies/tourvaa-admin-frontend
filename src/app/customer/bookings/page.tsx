@@ -13,6 +13,7 @@ import api from "@/lib/api/client";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import DatePicker from "@/components/ui/DatePicker";
+import { publicTourUrl } from "@/lib/utils/tourUrl";
 
 type Booking = {
   id: number | string;
@@ -24,6 +25,7 @@ type Booking = {
   status: "Confirmed" | "Completed" | "Upcoming" | "Cancelled" | string;
   total_amount: string | number;
   image: string;
+  tour_href?: string;
   payment_due_date?: string | null;
   amount_paid?: string | number;
   amount_pending?: string | number;
@@ -35,6 +37,8 @@ type ApiBooking = {
   id: number | string;
   booking_code?: string;
   tour_name?: string;
+  tour_slug?: string | null;
+  tour_country_name?: string | null;
   tour_date?: string;
   tour_image?: string;
   created_at?: string;
@@ -50,10 +54,17 @@ type ApiBooking = {
 
 function statusBadge(status: string) {
   const s = status.toLowerCase();
+  if (s.includes("request received")) {
+    return (
+      <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">
+        Booking Request Received
+      </span>
+    );
+  }
   if (s.includes("confirm")) {
     return (
       <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-600">
-        Confirmed
+        Booking Confirmed
       </span>
     );
   }
@@ -64,10 +75,10 @@ function statusBadge(status: string) {
       </span>
     );
   }
-  if (s.includes("upcoming") || s.includes("transit") || s.includes("ongoing")) {
+  if (s.includes("ongoing")) {
     return (
       <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-600">
-        Upcoming
+        Ongoing
       </span>
     );
   }
@@ -83,6 +94,15 @@ function statusBadge(status: string) {
       {status}
     </span>
   );
+}
+
+function customerBookingStatus(status?: string): string {
+  const value = (status || "").toLowerCase();
+  if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(value)) return "Booking Confirmed";
+  if (value === "ongoing") return "Ongoing";
+  if (value === "completed") return "Completed";
+  if (["cancelled", "declined", "refunded", "cancellation_requested"].includes(value)) return "Cancelled";
+  return "Booking Request Received";
 }
 
 export default function CustomerBookingsPage() {
@@ -128,9 +148,12 @@ export default function CustomerBookingsPage() {
                 : "Unavailable",
               travel_dates: dateStr,
               guests: guestsStr,
-              status: b.booking_status || "pending",
+              status: customerBookingStatus(b.booking_status),
               total_amount: b.final_amount ?? 0,
               image: b.tour_image ? mediaUrl(b.tour_image) : "/images/compare-nz.jpg",
+              tour_href: b.tour_slug
+                ? publicTourUrl({ country_name: b.tour_country_name || undefined, title: b.tour_name || "Tour", slug: b.tour_slug })
+                : undefined,
               payment_due_date: b.payment_due_date ?? null,
               amount_paid: b.amount_paid,
               amount_pending: b.amount_pending,
@@ -222,9 +245,10 @@ export default function CustomerBookingsPage() {
                 className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none shadow-2xs focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
               >
                 <option value="All">Status: All</option>
-                <option value="Confirmed">Confirmed</option>
+                <option value="Booking Request Received">Booking Request Received</option>
+                <option value="Booking Confirmed">Booking Confirmed</option>
+                <option value="Ongoing">Ongoing</option>
                 <option value="Completed">Completed</option>
-                <option value="Upcoming">Upcoming</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
             </div>
@@ -249,17 +273,22 @@ export default function CustomerBookingsPage() {
             >
               {/* Left: Thumbnail & Details */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="h-20 w-32 sm:h-24 sm:w-36 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+                {b.tour_href ? <Link href={b.tour_href} className="h-20 w-32 sm:h-24 sm:w-36 rounded-xl overflow-hidden shrink-0 bg-slate-100" aria-label={`View ${b.tour_name}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={b.image}
                     alt={b.tour_name}
                     className="h-full w-full object-cover transition duration-300 hover:scale-105"
                   />
-                </div>
+                </Link> : <div className="h-20 w-32 sm:h-24 sm:w-36 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={b.image} alt={b.tour_name} className="h-full w-full object-cover" />
+                </div>}
 
                 <div>
-                  <h3 className="text-sm font-bold text-[#0B1527] leading-snug">{b.tour_name}</h3>
+                  <h3 className="text-sm font-bold text-[#0B1527] leading-snug">
+                    {b.tour_href ? <Link href={b.tour_href} className="transition hover:text-blue-600 hover:underline">{b.tour_name}</Link> : b.tour_name}
+                  </h3>
                   <p className="mt-1 text-[11px] text-slate-400 font-medium">
                     Booking ID: <span className="font-bold text-slate-600">#{b.booking_code}</span>
                     <span className="mx-1.5 text-slate-300">•</span>

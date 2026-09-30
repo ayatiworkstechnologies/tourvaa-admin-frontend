@@ -7,7 +7,6 @@ import {
   LuCalendarDays as CalendarDays,
   LuCheck as Check,
   LuCircleAlert as AlertCircle,
-  LuCircleCheckBig as CheckCircle2,
   LuCircleDollarSign as CircleDollarSign,
   LuClock3 as Clock,
   LuCopy as Copy,
@@ -692,6 +691,7 @@ export default function SupplierDiscountsPage() {
                   <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#E3EFE7] bg-[#F7FAF8] p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-center gap-3">
                       {row.bannerImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={mediaUrl(row.bannerImage)}
                           alt=""
@@ -899,7 +899,7 @@ export default function SupplierDiscountsPage() {
 
                               {entry.reason && (
                                 <p className="mt-2 rounded-lg border border-[#DDEBE2] bg-white p-2.5 text-[11px] text-[#476052] italic">
-                                  "{entry.reason}"
+                                  &ldquo;{entry.reason}&rdquo;
                                 </p>
                               )}
                             </div>

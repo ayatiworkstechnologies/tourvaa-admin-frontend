@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  LuArrowRight as ArrowRight,
+  LuCalendarDays as CalendarDays,
   LuCompass as Compass,
   LuCreditCard as CreditCard,
   LuFileText as FileText,
@@ -51,6 +53,7 @@ type Booking = {
   final_amount?: string | number;
   amount_pending?: string | number;
   currency?: string;
+  tour_image?: string | null;
 };
 
 const DEFAULT_BOOKINGS: Booking[] = [
@@ -102,19 +105,19 @@ function formatDate(value?: string | null) {
 
 function formatStatus(status: string) {
   const s = status.toLowerCase();
-  if (s.includes("confirm")) {
-    return <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-600">Confirmed</span>;
+  if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(s)) {
+    return <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-600">Booking Confirmed</span>;
   }
-  if (s.includes("transit") || s.includes("ongoing") || s.includes("upcoming") || s.includes("pending")) {
-    return <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-600">In Transit</span>;
+  if (s === "ongoing") {
+    return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">Ongoing</span>;
   }
-  if (s.includes("complete")) {
+  if (s === "completed") {
     return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-600">Completed</span>;
   }
-  if (s.includes("cancel") || s.includes("declin")) {
+  if (["cancelled", "declined", "refunded", "cancellation_requested"].includes(s)) {
     return <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[11px] font-bold text-red-500">Cancelled</span>;
   }
-  return <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">{status}</span>;
+  return <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">Booking Request Received</span>;
 }
 
 function formatPrice(amount?: number | string) {
@@ -413,50 +416,49 @@ export default function CustomerDashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    <th className="pb-3 pt-1">BOOKING ID</th>
-                    <th className="pb-3 pt-1">DATE</th>
-                    <th className="pb-3 pt-1">TOUR</th>
-                    <th className="pb-3 pt-1 text-center">STATUS</th>
-                    <th className="pb-3 pt-1 text-right">TOTAL</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {bookings.map((b) => (
-                    <tr key={b.id} className="hover:bg-slate-50/60 transition">
-                      <td className="py-4">
-                        <Link
-                          href={`/customer/bookings/${b.id}`}
-                          className="text-xs font-bold text-[#1B64F2] hover:underline"
-                        >
-                          #{b.booking_code.replace(/^#/, "")}
-                        </Link>
-                      </td>
-                      <td className="py-4 text-xs font-medium text-slate-500">
-                        {formatDate(b.tour_date)}
-                      </td>
-                      <td className="py-4 text-xs font-bold text-slate-800">
-                        {b.tour_name || "Tour Package"}
-                      </td>
-                      <td className="py-4 text-center">
-                        {formatStatus(b.booking_status)}
-                      </td>
-                      <td className="py-4 text-right text-xs font-bold text-slate-900">
-                        {Number(b.amount_pending || 0) > 0 ? (
-                          <Link href={`/customer/bookings/${b.id}?action=pay`} className="text-amber-600 hover:underline">
-                            {formatPrice(b.amount_pending)} due
-                          </Link>
+            <div className="space-y-3">
+              {bookings.map((b) => {
+                const hasBalance = Number(b.amount_pending || 0) > 0;
+                return (
+                  <article key={b.id} className="group overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_8px_28px_-22px_rgba(15,23,42,0.45)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_14px_34px_-22px_rgba(37,99,235,0.38)]">
+                    <div className="flex flex-col gap-4 p-3 sm:flex-row sm:items-center sm:p-4">
+                      <Link href={`/customer/bookings/${b.id}`} className="relative h-36 w-full shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-slate-100 sm:h-24 sm:w-32" aria-label={`View ${b.tour_name || "tour booking"}`}>
+                        {b.tour_image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={mediaUrl(b.tour_image)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                         ) : (
-                          formatPrice(b.final_amount)
+                          <div className="flex h-full w-full items-center justify-center"><MapPin size={24} className="text-blue-300" /></div>
                         )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-blue-700 shadow-sm">#{b.booking_code.replace(/^#/, "")}</span>
+                      </Link>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <Link href={`/customer/bookings/${b.id}`} className="line-clamp-2 text-sm font-black leading-snug text-slate-900 transition hover:text-blue-600 sm:text-[15px]">
+                              {b.tour_name || "Tour Package"}
+                            </Link>
+                            <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                              <CalendarDays size={14} className="text-blue-500" /> {formatDate(b.tour_date)}
+                            </p>
+                          </div>
+                          {formatStatus(b.booking_status)}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-3 sm:min-w-[145px] sm:flex-col sm:items-end sm:border-l sm:border-t-0 sm:py-1 sm:pl-5 sm:pt-1">
+                        <div className="sm:text-right">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">{hasBalance ? "Amount due" : "Total paid"}</p>
+                          <p className={`mt-1 text-lg font-black ${hasBalance ? "text-amber-600" : "text-slate-900"}`}>{formatPrice(hasBalance ? b.amount_pending : b.final_amount)}</p>
+                        </div>
+                        <Link href={`/customer/bookings/${b.id}${hasBalance ? "?action=pay" : ""}`} className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-bold transition ${hasBalance ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "bg-blue-50 text-blue-700 hover:bg-blue-100"}`}>
+                          {hasBalance ? "Pay now" : "View booking"} <ArrowRight size={12} />
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
           </div>
