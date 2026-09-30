@@ -15,5 +15,5 @@ export default function LoadingState({ label = "Loading...", fullPage, table }: 
     return <Loader label={label} fullScreen />;
   }
 
-  return <p className="text-sm text-dash-muted">{label}</p>;
+  return <Loader label={label} />;
 }

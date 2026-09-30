@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import PageSectionsBuilder from "@/components/admin/cms/PageSectionsBuilder";
 import type { CmsPageBlock } from "@/components/public/CmsPageSections";
+import Loader from "@/components/ui/Loader";
 
 // ---- generic item type ---------------------------------------------------
 type CmsItem = Record<string, unknown> & { id: number };
@@ -1361,7 +1362,7 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
 
       <section className="rounded-xl border border-dash-border bg-white p-5">
         {loading ? (
-          <p className="text-sm text-dash-muted">Loading...</p>
+          <Loader label="Loading content..." compact />
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -1619,7 +1620,7 @@ function FooterLinksTable({ sectionId }: { sectionId: number }) {
       </div>
 
       {loading ? (
-        <p className="text-xs text-dash-muted">Loading...</p>
+        <Loader label="Loading footer links..." compact />
       ) : links.length === 0 ? (
         <p className="text-xs text-dash-muted">No links in this section yet.</p>
       ) : (

@@ -4,15 +4,12 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { LuClock3, LuRefreshCw } from "react-icons/lu";
 import { fetchPublicSettings } from "@/lib/api/publicClient";
+import Loader from "@/components/ui/Loader";
 
 type MaintenanceState = "checking" | "enabled" | "disabled";
 
 function LoadingScreen() {
-  return (
-    <main className="flex min-h-dvh items-center justify-center bg-[#FBF7F5]" aria-label="Loading Tourvaa">
-      <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#146EF5]/20 border-t-[#146EF5]" />
-    </main>
-  );
+  return <Loader label="Checking Tourvaa availability..." fullScreen />;
 }
 
 function MaintenanceScreen({ onRetry }: { onRetry: () => void }) {

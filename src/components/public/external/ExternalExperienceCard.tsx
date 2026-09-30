@@ -12,6 +12,7 @@ import {
 import { useCurrency } from "@/hooks/useCurrency";
 import type { ExternalCampaignSource, ExternalExperience } from "@/lib/api/externalTours";
 import { trackExternalClick } from "@/lib/externalTours/tracking";
+import Loader from "@/components/ui/Loader";
 
 const FALLBACK_IMAGE = "/images/tour-card-fallback.jpg";
 
@@ -107,12 +108,5 @@ export default function ExternalExperienceCard({
 }
 
 export function ExternalExperienceCardSkeleton() {
-  return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-2.5">
-      <div className="h-48 animate-pulse rounded-xl bg-slate-200 sm:h-52" />
-      <div className="mt-3 h-4 w-4/5 animate-pulse rounded bg-slate-200" />
-      <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-100" />
-      <div className="mt-6 h-8 w-full animate-pulse rounded bg-slate-100" />
-    </div>
-  );
+  return <div className="rounded-2xl border border-slate-200/80 bg-white p-4"><Loader label="Loading experience..." compact /></div>;
 }

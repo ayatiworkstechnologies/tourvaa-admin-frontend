@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
+import Loader from "@/components/ui/Loader";
 import { LuArrowRight as ArrowRight } from "react-icons/lu";
 
 export type RevealVariant =
@@ -125,16 +126,7 @@ export function RevealStagger({
 }
 
 export function TourCardSkeleton() {
-  return (
-    <div className="w-[285px] sm:w-[305px] lg:w-[315px] shrink-0 animate-pulse overflow-hidden rounded-2xl border border-slate-100 bg-white p-3.5">
-      <div className="h-44 sm:h-48 rounded-xl bg-slate-100" />
-      <div className="pt-3">
-        <div className="h-4 w-3/4 rounded-full bg-slate-100" />
-        <div className="mt-3 h-3 w-1/2 rounded-full bg-slate-100" />
-        <div className="mt-4 h-8 w-2/3 rounded-full bg-slate-100" />
-      </div>
-    </div>
-  );
+  return <div className="w-[285px] shrink-0 rounded-2xl border border-slate-100 bg-white p-4 sm:w-[305px] lg:w-[315px]"><Loader label="Loading tour..." compact /></div>;
 }
 
 export function EmptyCollection({
@@ -159,4 +151,3 @@ export function EmptyCollection({
     </div>
   );
 }
-

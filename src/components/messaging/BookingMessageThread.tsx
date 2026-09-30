@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuLoaderCircle as Loader2, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
+import Loader from "@/components/ui/Loader";
 
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import { BookingConversationThread, BookingMessage, deleteOwnBookingMessage, getBookingConversation, sendBookingConversationMessage } from "@/lib/api/services/messagingService";
@@ -110,7 +111,7 @@ export default function BookingMessageThread({ bookingId }: { bookingId: number 
 
       <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
         {loading ? (
-          <div className="flex justify-center py-8"><Loader2 className="animate-spin text-dash-subtle" size={22} /></div>
+          <Loader label="Loading booking messages..." compact />
         ) : thread?.messages.length === 0 ? (
           <p className="py-4 text-center text-sm text-dash-muted">No messages yet. Send one below to get started.</p>
         ) : (

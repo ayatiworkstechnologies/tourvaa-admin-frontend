@@ -9,6 +9,7 @@ import {
   IMAGE_AND_PDF_EXTENSIONS_ACCEPT,
 } from "@/lib/uploads/imageFormats";
 import { useToast } from "@/hooks/useToast";
+import Loader from "@/components/ui/Loader";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 
 type Vehicle = {
@@ -232,9 +233,7 @@ export default function VehiclesTab() {
 
       {/* Vehicle list */}
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 size={28} className="animate-spin text-emerald-500" />
-        </div>
+        <Loader label="Loading vehicles..." />
       ) : vehicles.length === 0 && expandedId !== "new" ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dash-border bg-white py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">

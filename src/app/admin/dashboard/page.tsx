@@ -10,6 +10,7 @@ import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
 import { ReportSnapshot } from "@/lib/api/services/reportService";
 import DatePicker from "@/components/ui/DatePicker";
+import Loader from "@/components/ui/Loader";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line,
@@ -383,7 +384,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
             <h2 className="text-base font-black">Booking Analytics</h2>
           </div>
           {loading ? (
-            <div className="flex h-55 items-center justify-center text-sm text-dash-muted">Loading...</div>
+            <div className="h-55"><Loader label="Loading booking analytics..." compact /></div>
           ) : (!charts.booking_status_chart || charts.booking_status_chart.length === 0) ? (
             <div className="flex h-55 items-center justify-center text-sm text-dash-muted">No booking data yet.</div>
           ) : (
@@ -407,7 +408,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
             <h2 className="text-base font-black">Payment Status</h2>
           </div>
           {loading ? (
-            <div className="flex h-55 items-center justify-center text-sm text-dash-muted">Loading...</div>
+            <div className="h-55"><Loader label="Loading payment status..." compact /></div>
           ) : (!charts.payment_status_chart || charts.payment_status_chart.length === 0) ? (
             <div className="flex h-55 items-center justify-center text-sm text-dash-muted">No payment data yet.</div>
           ) : (
@@ -435,7 +436,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
             <h2 className="text-base font-black">Monthly Booking Trend</h2>
           </div>
           {loading ? (
-            <div className="flex h-55 items-center justify-center text-sm text-dash-muted">Loading...</div>
+            <div className="h-55"><Loader label="Loading booking trends..." compact /></div>
           ) : (!charts.monthly_booking_trend || charts.monthly_booking_trend.length === 0) ? (
             <div className="flex h-55 items-center justify-center text-sm text-dash-muted">No monthly data yet.</div>
           ) : (
@@ -459,7 +460,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
             <h2 className="text-base font-black">Top Destinations</h2>
           </div>
           {loading ? (
-            <div className="flex h-55 items-center justify-center text-sm text-dash-muted">Loading...</div>
+            <div className="h-55"><Loader label="Loading destinations..." compact /></div>
           ) : (!charts.top_destinations || charts.top_destinations.length === 0) ? (
             <div className="flex h-55 items-center justify-center text-sm text-dash-muted">No destination data yet.</div>
           ) : (
@@ -879,11 +880,7 @@ function AdminDashboardShell() {
   const { dashboard, loading, error, refetch } = useDashboard();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-dash-bg">
-        <p className="text-sm text-gray-500">Loading...</p>
-      </div>
-    );
+    return <Loader label="Loading admin dashboard..." fullScreen />;
   }
 
   if (!dashboard) {

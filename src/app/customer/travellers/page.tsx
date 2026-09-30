@@ -5,6 +5,7 @@ import { LuLoaderCircle as Loader2, LuPlus as Plus, LuTrash2 as Trash2, LuUsersR
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
 import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
+import Loader from "@/components/ui/Loader";
 
 type Traveller = {
   id: number;
@@ -119,7 +120,7 @@ export default function CustomerTravellersPage() {
         <div className="rounded-2xl border border-[#DDE7F3] bg-white shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)]">
           <div className="border-b border-[#E6EDF6] px-5 py-4"><p className="font-black text-[#0C2043]">Saved Travellers</p><p className="mt-1 text-[10px] text-[#6B7F9D]">{rows.length} reusable profile{rows.length === 1 ? "" : "s"}</p></div>
           {loading ? (
-            <div className="flex justify-center py-16"><Loader2 className="animate-spin text-dash-brand" /></div>
+            <Loader label="Loading saved travellers..." />
           ) : rows.length === 0 ? (
             <div className="py-16 text-center text-sm text-dash-muted"><UsersRound className="mx-auto mb-3 text-dash-subtle" />No saved travellers yet.</div>
           ) : (

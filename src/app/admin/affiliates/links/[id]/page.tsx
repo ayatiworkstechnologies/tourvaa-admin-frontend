@@ -15,6 +15,7 @@ import {
   type AffiliateLink,
 } from "@/lib/api/services/affiliateService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import Loader from "@/components/ui/Loader";
 
 const inputCls = "w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-dash-brand";
 const labelCls = "mb-1.5 block text-xs font-bold uppercase tracking-wide text-dash-muted";
@@ -129,7 +130,7 @@ export default function AdminAffiliateLinkDetailPage() {
   return (
     <ModuleWrapper title="Affiliate Link Details" requiredPermission="affiliate_links.view">
       <div className="mx-auto max-w-3xl">
-        {loading && <p className="text-sm text-dash-muted">Loading…</p>}
+        {loading && <Loader label="Loading affiliate link..." compact />}
         {error && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
             <AlertCircle size={16} /> {error}

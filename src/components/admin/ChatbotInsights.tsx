@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api/client";
+import Loader from "@/components/ui/Loader";
 
 type Insights = {
   days: number;
@@ -53,7 +54,7 @@ export default function ChatbotInsights() {
       </div>
 
       {error && <p className="text-sm text-red-600">Could not load insights.</p>}
-      {!data && !error && <p className="text-sm text-dash-muted">Loading...</p>}
+      {!data && !error && <Loader label="Loading chatbot insights..." compact />}
 
       {data && (
         <>

@@ -2,11 +2,12 @@
 
 import { diffTourSnapshots, summarizeChanges, type SectionChange } from "@/lib/tours/tourDiff";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuGitCompare as GitCompare, LuLoaderCircle as Loader2, LuX as X } from "react-icons/lu";
+import { LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuGitCompare as GitCompare, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import { useToast } from "@/hooks/useToast";
 import { useCurrency } from "@/hooks/useCurrency";
+import Loader from "@/components/ui/Loader";
 
 type TourVersion = {
   id: number;
@@ -334,7 +335,7 @@ export default function TourApprovalPage() {
             </div>
             <div className="flex-1 overflow-y-auto p-6">
               {compareLoading ? (
-                <div className="flex items-center gap-2 text-sm text-dash-muted"><Loader2 className="animate-spin" size={16} /> Loading comparison...</div>
+                <Loader label="Loading comparison..." compact />
               ) : !compareDiff || compareDiff.length === 0 ? (
                 <p className="text-sm text-dash-muted">No data changes detected against {comparePrevLabel}.</p>
               ) : (

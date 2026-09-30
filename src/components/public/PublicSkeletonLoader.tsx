@@ -1,40 +1,11 @@
 import React from "react";
 import Link from "next/link";
 import { LuCompass as Compass, LuRefreshCw as RefreshCw, LuFolderOpen as FolderOpen } from "react-icons/lu";
+import Loader from "@/components/ui/Loader";
 
 // Single Tour Card Shimmer Skeleton
 export function PublicTourCardSkeleton() {
-  return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white p-3 shadow-xs">
-      {/* Image container shimmer */}
-      <div className="animate-shimmer relative aspect-[4/3] w-full rounded-xl bg-slate-200" />
-
-      {/* Content lines shimmer */}
-      <div className="mt-3.5 space-y-2.5 px-1 pb-2">
-        {/* Destination & Duration pills */}
-        <div className="flex items-center gap-2">
-          <div className="animate-shimmer h-4 w-20 rounded-md bg-slate-200" />
-          <div className="animate-shimmer h-4 w-16 rounded-md bg-slate-200" />
-        </div>
-
-        {/* Title */}
-        <div className="animate-shimmer h-5 w-4/5 rounded-md bg-slate-200" />
-        <div className="animate-shimmer h-4 w-3/5 rounded-md bg-slate-200" />
-
-        {/* Stars & Rating */}
-        <div className="animate-shimmer h-3.5 w-24 rounded bg-slate-200 mt-2" />
-
-        {/* Pricing & CTA Button */}
-        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-          <div className="space-y-1">
-            <div className="animate-shimmer h-3 w-12 rounded bg-slate-200" />
-            <div className="animate-shimmer h-5 w-24 rounded bg-slate-200" />
-          </div>
-          <div className="animate-shimmer h-9 w-24 rounded-xl bg-slate-200" />
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="rounded-2xl border border-slate-100 bg-white p-4"><Loader label="Loading tour..." compact /></div>;
 }
 
 // Grid of Tour Card Skeletons
@@ -50,9 +21,7 @@ export function PublicTourGridSkeleton({ count = 8 }: { count?: number }) {
 
 // Destination Card Skeleton
 export function PublicDestinationCardSkeleton() {
-  return (
-    <div className="animate-shimmer relative h-[340px] sm:h-[370px] w-full overflow-hidden rounded-2xl bg-slate-200 shadow-sm" />
-  );
+  return <div className="flex h-[340px] items-center justify-center rounded-2xl border border-slate-100 bg-white sm:h-[370px]"><Loader label="Loading destination..." compact /></div>;
 }
 
 // Universal Empty State Component with Modern Aesthetic

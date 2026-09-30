@@ -28,6 +28,7 @@ import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 import WishlistButton from "@/components/public/WishlistButton";
 import ExternalExperiencesSection from "@/components/public/external/ExternalExperiencesSection";
+import Loader from "@/components/ui/Loader";
 
 type TourItem = {
   id: number | string;
@@ -1018,10 +1019,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
 
         {/* ── 6. 3-Column Tour Card Grid or Empty State ── */}
         {loading ? (
-          <div className="mt-12 flex flex-col items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-12 text-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-pub-primary" />
-            <p className="text-xs font-bold text-slate-500">Loading tours...</p>
-          </div>
+          <div className="mt-12"><Loader label="Loading tours..." /></div>
         ) : loadError ? (
           <div className="mt-12 flex flex-col items-center justify-center rounded-3xl border border-red-200 bg-red-50 p-12 text-center">
             <MapPin size={36} className="text-red-400" />

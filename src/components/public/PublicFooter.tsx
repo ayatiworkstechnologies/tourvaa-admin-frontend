@@ -244,13 +244,12 @@ export default function PublicFooter() {
   return (
     <footer className="w-full bg-pub-primary text-white pt-12 sm:pt-16 pb-8 sm:pb-10 transition-colors">
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="grid grid-cols-2 lg:grid-cols-[1.1fr_1.1fr_0.9fr_1.6fr] gap-8 sm:gap-10">
-          {/* Columns 1-3: CMS-managed footer sections (Support / Our Company / Login by default - see Admin > CMS > Footer) */}
-          {footerSections.map((section, idx) => (
-            <div
-              key={section.id}
-              className={idx === 2 ? "col-span-2 lg:col-span-1" : "col-span-1"}
-            >
+        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.72fr)] lg:gap-14 xl:gap-20">
+          {/* CMS groups use an independent 2-column grid. New groups wrap
+              into a clean new row without moving the utility column. */}
+          <div className="grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2 sm:gap-x-14">
+          {footerSections.map((section) => (
+            <nav key={section.id} aria-label={`${section.title} footer links`} className="min-w-0">
               <h3 className="text-lg sm:text-xl font-bold text-white mb-4 tracking-tight">
                 {section.title}
               </h3>
@@ -261,21 +260,22 @@ export default function PublicFooter() {
                       href={link.url}
                       target={link.open_in_new_tab ? "_blank" : undefined}
                       rel={link.open_in_new_tab ? "noreferrer" : undefined}
-                      className="group flex items-center gap-2 text-xs sm:text-sm text-slate-300 transition-colors hover:text-white"
+                      className="group flex items-start gap-2 text-xs sm:text-sm text-slate-300 transition-colors hover:text-white"
                     >
                       <span className="text-slate-400 group-hover:text-white transition-colors">
                         •
                       </span>
-                      <span>{link.label}</span>
+                      <span className="min-w-0 break-words">{link.label}</span>
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           ))}
+          </div>
 
-          {/* Column 4: Brand & Utilities */}
-          <div className="col-span-2 lg:col-span-1 flex flex-col justify-between">
+          {/* Fixed right column: CMS menu additions cannot move this block. */}
+          <div className="flex min-w-0 flex-col justify-between border-t border-white/10 pt-8 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0 xl:pl-14">
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 tracking-tight">
                 {siteName}

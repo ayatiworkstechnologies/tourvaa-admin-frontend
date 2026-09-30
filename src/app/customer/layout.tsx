@@ -11,6 +11,7 @@ import ElfsightTranslator from "@/components/public/ElfsightTranslator";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
 import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
+import Loader from "@/components/ui/Loader";
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -38,12 +39,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   if (loading) {
     return (
       <TravelStoreProvider>
-        <div className="flex min-h-screen items-center justify-center bg-[#F7FAFF]" style={portalThemeStyles.customer}>
-            <div className="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-sm font-semibold text-dash-muted shadow-lg ring-1 ring-dash-border">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-dash-brand border-t-transparent" />
-              Loading your trips...
-            </div>
-        </div>
+        <div style={portalThemeStyles.customer}><Loader label="Loading your trips..." fullScreen /></div>
       </TravelStoreProvider>
     );
   }

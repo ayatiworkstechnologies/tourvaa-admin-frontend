@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown as ChevronDown,
-  LuLoaderCircle as LoaderCircle,
   LuMapPin as MapPin,
   LuSearch as Search,
   LuShieldCheck as ShieldCheck,
@@ -25,6 +24,7 @@ import {
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import WishlistButton from "@/components/public/WishlistButton";
+import Loader from "@/components/ui/Loader";
 import {
   MAX_COMPARE_ITEMS,
   TravelItem,
@@ -635,12 +635,7 @@ export default function ComparePage() {
 
         {/* COMPARISON CONTENT AREA */}
         {busy && activeItems.length === 0 ? (
-          <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
-            <LoaderCircle size={22} className="animate-spin text-slate-400" />
-            <p className="text-xs sm:text-sm text-slate-500">
-              Loading tours...
-            </p>
-          </div>
+          <div className="min-h-[40vh]"><Loader label="Loading tours for comparison..." /></div>
         ) : activeItems.length === 0 ? (
           <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
             <h2 className="text-xl font-black text-slate-900">

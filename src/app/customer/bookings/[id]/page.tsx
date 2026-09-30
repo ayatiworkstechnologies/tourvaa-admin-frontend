@@ -12,6 +12,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { formatCurrency } from "@/lib/utils/currency";
 import { StripeWordmark, PayPalLogo } from "@/components/common/PaymentLogos";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
+import Loader from "@/components/ui/Loader";
 
 type Traveller = {
   id: number;
@@ -289,9 +290,7 @@ function PayNowModal({
         </div>
 
         {gwLoading ? (
-          <div className="flex items-center justify-center py-6">
-            <Loader2 size={20} className="animate-spin text-dash-subtle" />
-          </div>
+          <Loader label="Loading secure payment options..." compact />
         ) : (
         <div className="space-y-3">
           {/* Stripe */}
@@ -523,9 +522,7 @@ export default function CustomerBookingDetailPage() {
       )}
 
       {loading && (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="animate-spin text-dash-brand" size={32} />
-        </div>
+        <Loader label="Loading your booking..." />
       )}
 
       {!loading && error && (

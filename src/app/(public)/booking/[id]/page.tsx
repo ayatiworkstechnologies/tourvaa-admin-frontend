@@ -55,6 +55,7 @@ import { fetchPublicTourDetail, PublicTourDetail } from "@/lib/api/publicClient"
 import publicApi from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
+import Loader from "@/components/ui/Loader";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { combinePhone } from "@/lib/utils/validators";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -1270,19 +1271,11 @@ export default function DynamicTourBookingPage() {
   };
 
   if (authLoading || !canBook) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <LoaderCircle size={28} className="animate-spin text-slate-400" />
-      </main>
-    );
+    return <Loader label="Preparing secure booking..." fullScreen />;
   }
 
   if (tourLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <LoaderCircle size={28} className="animate-spin text-slate-400" />
-      </main>
-    );
+    return <Loader label="Loading tour availability..." fullScreen />;
   }
 
   if (tourError || !tour) {
@@ -2863,10 +2856,7 @@ export default function DynamicTourBookingPage() {
                 </div>
 
                 {priceLoading && !priceEstimate ? (
-                  <div className="flex items-center justify-center gap-2 py-6 text-xs text-slate-500 bg-slate-50 rounded-xl">
-                    <LoaderCircle size={15} className="animate-spin text-pub-primary" />
-                    <span>Calculating real-time rates...</span>
-                  </div>
+                  <div className="rounded-xl bg-slate-50"><Loader label="Calculating real-time rates..." compact /></div>
                 ) : priceEstimate ? (
                   <>
                     <div className="space-y-2 text-xs">

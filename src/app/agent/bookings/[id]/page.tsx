@@ -12,6 +12,7 @@ import BookingPaymentModal from "@/components/bookings/BookingPaymentModal";
 import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
 import BookingMessageThread from "@/components/messaging/BookingMessageThread";
 import { useCurrency } from "@/hooks/useCurrency";
+import Loader from "@/components/ui/Loader";
 
 type Traveller = {
   id: number;
@@ -253,7 +254,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
     return (
       <AgentPageShell className="flex min-h-[60vh] items-center justify-center">
         <div className="flex items-center gap-2 text-sm text-dash-muted">
-          <Loader2 size={18} className="animate-spin text-dash-brand" /> Loading booking…
+          <Loader label="Loading booking..." />
         </div>
       </AgentPageShell>
     );

@@ -13,6 +13,7 @@ import api from "@/lib/api/client";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useAuthContext } from "@/providers/AuthProvider";
+import Loader from "@/components/ui/Loader";
 
 type Status = {
   provider_name: string;
@@ -467,7 +468,7 @@ export default function ViatorIntegrationPage() {
               </thead>
               <tbody>
                 {mappings === null ? (
-                  <tr><td colSpan={5} className="py-6 text-center text-dash-muted">Loading…</td></tr>
+                  <tr><td colSpan={5}><Loader label="Loading destinations..." compact /></td></tr>
                 ) : mappings.items.length === 0 ? (
                   <tr><td colSpan={5} className="py-6 text-center text-dash-muted">No destinations found{status?.destination_count ? "" : " - run Sync Destinations first"}.</td></tr>
                 ) : (

@@ -22,6 +22,7 @@ import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import CountryTourListing from "@/components/public/CountryTourListing";
 import TourDetailExperience from "@/components/public/TourDetailExperience";
+import Loader from "@/components/ui/Loader";
 
 const PLACEHOLDER =
   "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=80";
@@ -297,16 +298,7 @@ export default function TourDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-[3px] border-zinc-200 border-t-blue-600" />
-          <p className="text-sm font-bold text-zinc-500 uppercase tracking-widest">
-            Loading tour…
-          </p>
-        </div>
-      </div>
-    );
+    return <Loader label="Loading your tour..." fullScreen />;
   }
 
   if (loadError) {

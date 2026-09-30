@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
+import Loader from "@/components/ui/Loader";
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import {
   ChatMessage,
@@ -228,7 +229,7 @@ export default function AdminMessagesPage() {
               Select a conversation to view messages.
             </div>
           ) : loadingThread ? (
-            <div className="flex flex-1 items-center justify-center"><Loader2 size={22} className="animate-spin text-dash-subtle" /></div>
+            <div className="flex flex-1 items-center justify-center"><Loader label="Loading messages..." compact /></div>
           ) : (
             <>
               <div className="border-b border-dash-border-soft px-5 py-3">

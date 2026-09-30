@@ -12,6 +12,7 @@ import { canAccessAffiliateRoute, isApprovedAffiliate, isAffiliateOperationalRou
 import api from "@/lib/api/client";
 import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
 import CommissionCheckFailed from "@/components/common/CommissionCheckFailed";
+import Loader from "@/components/ui/Loader";
 
 const NAV = [
   { href: "/affiliate/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -101,14 +102,7 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
   }, [loading, pathname, router, user]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-dash-bg">
-        <div className="flex items-center gap-3 rounded-xl bg-white px-5 py-4 text-sm font-semibold text-dash-muted shadow ring-1 ring-dash-border">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-dash-brand border-t-transparent" />
-          Loading…
-        </div>
-      </div>
-    );
+    return <Loader label="Loading affiliate portal..." fullScreen />;
   }
 
   if (!isLoggedIn || !user) return null;
@@ -118,14 +112,7 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
   }
 
   if (commissionAccepted === null) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-dash-bg">
-        <div className="flex items-center gap-3 rounded-xl bg-white px-5 py-4 text-sm font-semibold text-dash-muted shadow ring-1 ring-dash-border">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-dash-brand border-t-transparent" />
-          Loading…
-        </div>
-      </div>
-    );
+    return <Loader label="Preparing your affiliate workspace..." fullScreen />;
   }
 
   if (!commissionAccepted) {

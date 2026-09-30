@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import { LuSquarePen as Edit, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
+import { LuSquarePen as Edit, LuMessageSquare as MessageSquare, LuPlus as Plus, LuTrash2 as Trash2, LuX as X } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -411,7 +411,7 @@ export default function ChatbotFAQPage() {
                         <td colSpan={sessionColumns.length + 1} className="px-4 py-4">
                           {messagesLoading ? (
                             <div className="flex items-center gap-2 text-sm text-dash-muted">
-                              <Loader2 className="animate-spin" size={15} /> Loading messages...
+                              <Loader label="Loading messages..." compact />
                             </div>
                           ) : sessionMessages.length === 0 ? (
                             <p className="text-sm text-dash-muted">No messages recorded for this session.</p>
