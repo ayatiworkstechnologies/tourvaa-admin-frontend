@@ -1066,6 +1066,117 @@ export default function TourDetailExperience({
   const { isCompared, toggleCompare, compareCount } = useTravelStore();
   const [compareNotice, setCompareNotice] = useState<string | null>(null);
 
+  // Enhance Your Tour state & data preparation
+  const [enhancementTab, setEnhancementTab] = useState<string>("all");
+
+  const allEnhancements = useMemo(() => {
+    const list: {
+      id: string;
+      kind: "accommodation" | "activity" | "extension";
+      categoryGroup: "stays" | "experiences" | "dining" | "transport" | "other";
+      categoryLabel: string;
+      title: string;
+      description?: string | null;
+      price: number | null;
+      childPrice?: number | null;
+      currency: string;
+      pricingMode?: string | null;
+      image?: string | null;
+    }[] = [];
+
+    (tour.accommodations || []).forEach((acc) => {
+      list.push({
+        id: `acc-${acc.id}`,
+        kind: "accommodation",
+        categoryGroup: "stays",
+        categoryLabel: acc.category === "room_upgrade" ? "Room Upgrade" : "Stay Upgrade",
+        title: acc.name,
+        description: acc.description,
+        price: acc.price,
+        currency: tourCurrency,
+        image: acc.image,
+      });
+    });
+
+    (tour.optional_activities || []).forEach((act) => {
+      const cat = (act.category || "").toLowerCase();
+      let group: "stays" | "experiences" | "dining" | "transport" | "other" = "experiences";
+      let label = "Experience";
+
+      if (["room_upgrade", "additional_night", "room", "accommodation"].includes(cat)) {
+        group = "stays";
+        label = cat === "additional_night" ? "Extra Night" : "Room Upgrade";
+      } else if (["dining", "meal", "food", "lunch", "dinner", "breakfast"].includes(cat)) {
+        group = "dining";
+        label = cat === "dining" ? "Dining Upgrade" : "Dietary Option";
+      } else if (["pickup", "transport", "transfer", "flight", "insurance"].includes(cat)) {
+        group = "transport";
+        label = cat === "pickup" ? "Airport Transfer" : cat === "insurance" ? "Travel Protection" : "Transport Extra";
+      } else if (["extra_activity", "activity", "tour", "sightseeing", "excursion"].includes(cat)) {
+        group = "experiences";
+        label = "Curated Excursion";
+      } else {
+        group = "experiences";
+        label = cat ? cat.replace(/_/g, " ") : "Optional Activity";
+      }
+
+      list.push({
+        id: `act-${act.id}`,
+        kind: "activity",
+        categoryGroup: group,
+        categoryLabel: label,
+        title: act.name,
+        description: act.description,
+        price: act.price,
+        childPrice: act.child_price,
+        currency: act.currency || tourCurrency,
+        pricingMode: act.pricing_mode,
+        image: act.image,
+      });
+    });
+
+    (tour.extensions || []).forEach((ext) => {
+      list.push({
+        id: `ext-${ext.id}`,
+        kind: "extension",
+        categoryGroup: "experiences",
+        categoryLabel: "Tour Extension",
+        title: ext.title,
+        description: ext.description,
+        price: ext.price,
+        currency: tourCurrency,
+        image: ext.image,
+      });
+    });
+
+    return list;
+  }, [tour.accommodations, tour.optional_activities, tour.extensions, tourCurrency]);
+
+  const enhancementTabs = useMemo(() => {
+    if (allEnhancements.length <= 1) return [];
+    const counts = {
+      stays: allEnhancements.filter((x) => x.categoryGroup === "stays").length,
+      experiences: allEnhancements.filter((x) => x.categoryGroup === "experiences").length,
+      dining: allEnhancements.filter((x) => x.categoryGroup === "dining").length,
+      transport: allEnhancements.filter((x) => x.categoryGroup === "transport").length,
+    };
+
+    const tabs: { id: string; label: string; count: number; icon: React.ElementType }[] = [
+      { id: "all", label: "All Upgrades", count: allEnhancements.length, icon: Sparkles },
+    ];
+    if (counts.stays > 0) tabs.push({ id: "stays", label: "Stays & Rooms", count: counts.stays, icon: Hotel });
+    if (counts.experiences > 0) tabs.push({ id: "experiences", label: "Activities & Excursions", count: counts.experiences, icon: Compass });
+    if (counts.dining > 0) tabs.push({ id: "dining", label: "Dining & Meals", count: counts.dining, icon: Utensils });
+    if (counts.transport > 0) tabs.push({ id: "transport", label: "Transport & Protection", count: counts.transport, icon: Car });
+
+    return tabs.length > 2 ? tabs : [];
+  }, [allEnhancements]);
+
+  const visibleEnhancements = useMemo(() => {
+    if (enhancementTab === "all") return allEnhancements;
+    return allEnhancements.filter((item) => item.categoryGroup === enhancementTab);
+  }, [allEnhancements, enhancementTab]);
+
   const travelItem: TravelItem = useMemo(
     () => ({
       id: tour.id,
@@ -2296,95 +2407,206 @@ export default function TourDetailExperience({
             )}
 
             {/* E. ENHANCE YOUR TOUR (Accommodations / Activities / Extensions) */}
-            {(tour.accommodations.length > 0 ||
-              tour.optional_activities.length > 0 ||
-              tour.extensions.length > 0) && (
-              <section className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
-                <div className="relative overflow-hidden border-b border-slate-100 bg-gradient-to-br from-sky-50 via-white to-violet-50 px-5 py-5 sm:px-6 sm:py-6">
-                  <div className="absolute -right-8 -top-10 h-32 w-32 rounded-full bg-violet-200/35 blur-2xl" />
-                  <div className="relative flex items-start gap-3.5">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary text-white shadow-lg shadow-sky-900/15">
-                      <Sparkles size={21} />
-                    </span>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-pub-primary/75">Make it yours</p>
-                      <h3 className="mt-0.5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Enhance Your Tour</h3>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-sm">Personalise your trip with carefully selected stays, experiences and extensions.</p>
+            {allEnhancements.length > 0 && (
+              <section id="enhance-your-tour" className="space-y-6 pt-2">
+                {/* Header Container */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-slate-100 pb-5">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-blue-50/90 border border-blue-200/60 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-blue-700 shadow-2xs">
+                      <Sparkles size={13} className="text-blue-600" />
+                      <span>Customise Your Journey</span>
                     </div>
+                    <h3 className="mt-2.5 text-2xl sm:text-3xl font-black tracking-tight text-slate-950">
+                      Enhance Your Tour
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500 leading-relaxed max-w-2xl font-normal">
+                      Personalise your travel with handpicked accommodation upgrades, curated excursions, dining enhancements, and seamless airport transfers.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <span className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm">
+                      <Sparkles size={13} className="text-amber-300" />
+                      <span>{allEnhancements.length} Upgrades Available</span>
+                    </span>
                   </div>
                 </div>
-                <div className="grid gap-3 p-4 sm:grid-cols-2 sm:gap-4 sm:p-5">
-                  {tour.accommodations.map((item) => (
-                    <div
-                      key={`accommodation-${item.id}`}
-                      className="group relative overflow-hidden rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50/80 via-white to-white p-4 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-lg hover:shadow-sky-900/5"
-                    >
-                      <div className="mb-3 flex items-center justify-between gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-sky-700"><Hotel size={18} /></span>
-                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-sky-700">Stay upgrade</span>
+
+                {/* Filter Tabs if multiple categories exist */}
+                {enhancementTabs.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {enhancementTabs.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = enhancementTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setEnhancementTab(tab.id)}
+                          className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20 scale-[1.02]"
+                              : "bg-slate-100/90 text-slate-600 hover:bg-slate-200/90 hover:text-slate-900"
+                          }`}
+                        >
+                          <Icon size={14} className={isActive ? "text-white" : "text-slate-500"} />
+                          <span>{tab.label}</span>
+                          <span
+                            className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
+                              isActive
+                                ? "bg-white/20 text-white"
+                                : "bg-slate-200 text-slate-700"
+                            }`}
+                          >
+                            {tab.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Enhanced Cards Grid */}
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  {visibleEnhancements.map((item) => {
+                    const CategoryIcon =
+                      item.categoryGroup === "stays"
+                        ? Hotel
+                        : item.categoryGroup === "dining"
+                          ? Utensils
+                          : item.categoryGroup === "transport"
+                            ? (item.categoryLabel.toLowerCase().includes("protection") || item.categoryLabel.toLowerCase().includes("insurance") ? ShieldCheck : Car)
+                            : Compass;
+
+                    const iconColor =
+                      item.categoryGroup === "stays"
+                        ? "text-blue-600"
+                        : item.categoryGroup === "dining"
+                          ? "text-amber-600"
+                          : item.categoryGroup === "transport"
+                            ? "text-emerald-600"
+                            : "text-violet-600";
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 bg-white transition-all duration-300 hover:-translate-y-1.5 hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-900/10"
+                      >
+                        {/* Media Cover */}
+                        <div className="relative h-48 w-full overflow-hidden bg-slate-950 sm:h-52">
+                          {item.image ? (
+                            <img
+                              src={mediaUrl(item.image)}
+                              alt={item.title}
+                              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 text-white/20 overflow-hidden">
+                              <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+                              <CategoryIcon size={46} className="text-white/20 transition-transform duration-500 group-hover:scale-110" />
+                            </div>
+                          )}
+
+                          {/* Dark Vignette Gradient Overlay */}
+                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-slate-950/20" />
+
+                          {/* Floating Top Badges */}
+                          <div className="absolute left-3.5 right-3.5 top-3.5 flex items-center justify-between gap-2">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[11px] font-extrabold text-slate-900 shadow-md backdrop-blur-md">
+                              <CategoryIcon size={13} className={iconColor} />
+                              <span>{item.categoryLabel}</span>
+                            </span>
+                            <span className="rounded-full bg-slate-950/70 border border-white/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white backdrop-blur-md shadow-xs">
+                              Add-on
+                            </span>
+                          </div>
+
+                          {/* Floating Price Over Image */}
+                          <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between text-white">
+                            <div>
+                              <span className="block text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                                Upgrade From
+                              </span>
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="text-2xl font-black tracking-tight text-white drop-shadow-sm sm:text-3xl">
+                                  +{format(item.price ?? 0, item.currency)}
+                                </span>
+                                <span className="text-xs font-semibold text-blue-200">
+                                  {item.pricingMode === "flat" ? "flat rate" : "/ adult"}
+                                </span>
+                              </div>
+                            </div>
+                            {item.childPrice != null && (
+                              <span className="rounded-lg border border-white/25 bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-md shadow-2xs">
+                                Child: +{format(item.childPrice, item.currency)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Card Content */}
+                        <div className="flex flex-1 flex-col justify-between gap-4 p-5 sm:p-6">
+                          <div className="space-y-1.5">
+                            <h4 className="text-base font-extrabold text-slate-950 transition-colors group-hover:text-blue-600 sm:text-lg line-clamp-1">
+                              {item.title}
+                            </h4>
+                            <p className="text-xs font-normal leading-relaxed text-slate-500 line-clamp-2">
+                              {item.description || "Personalise and enhance your itinerary with this curated upgrade."}
+                            </p>
+                          </div>
+
+                          {/* Card Footer Actions */}
+                          <div className="flex items-center justify-between border-t border-slate-100 pt-3.5">
+                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
+                              <Check size={14} className="stroke-[3] text-emerald-500" />
+                              <span>Select at Checkout</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (selectedDeparture) {
+                                  handleBookNow();
+                                } else {
+                                  scrollToBooking();
+                                }
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 px-3.5 py-1.5 text-xs font-extrabold text-blue-700 transition hover:bg-blue-600 hover:text-white cursor-pointer shadow-2xs group/btn"
+                            >
+                              <span>{selectedDeparture ? "Select in Booking" : "Choose Date & Book"}</span>
+                              <ArrowRight size={13} className="transition-transform group-hover/btn:translate-x-0.5" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <h4 className="text-sm font-extrabold text-slate-950">
-                        {item.name}
-                      </h4>
-                      {item.description && (
-                        <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
-                          {item.description}
+                    );
+                  })}
+                </div>
+
+                {/* Bottom Assurance Banner */}
+                <div className="rounded-3xl border border-blue-100/90 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-white p-5 sm:p-6 shadow-xs">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/25">
+                        <Sparkles size={20} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm sm:text-base font-extrabold text-slate-950">
+                          Tailor Your Experience During Checkout
+                        </h4>
+                        <p className="mt-0.5 text-xs text-slate-600 leading-relaxed max-w-xl font-normal">
+                          All optional accommodations, excursions, and transfers are selectable in Step 2 of your booking. Pricing, taxes, and vouchers are itemised with instant confirmation.
                         </p>
-                      )}
-                      {item.price != null && (
-                        <p className="mt-4 inline-flex rounded-lg bg-white px-2.5 py-1.5 text-xs font-extrabold text-slate-900 shadow-sm ring-1 ring-slate-100">+ {format(item.price, tourCurrency)}</p>
-                      )}
+                      </div>
                     </div>
-                  ))}
-                  {tour.optional_activities.map((item) => (
-                    <div
-                      key={`activity-${item.id}`}
-                      className="group relative overflow-hidden rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50/80 via-white to-white p-4 transition duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-lg hover:shadow-violet-900/5"
+                    <button
+                      type="button"
+                      onClick={scrollToBooking}
+                      className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 transition cursor-pointer"
                     >
-                      <div className="mb-3 flex items-center justify-between gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700"><Ticket size={18} /></span>
-                        <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-violet-700">Experience</span>
-                      </div>
-                      <h4 className="text-sm font-extrabold text-slate-950">
-                        {item.name}
-                      </h4>
-                      {item.description && (
-                        <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
-                          {item.description}
-                        </p>
-                      )}
-                      <div className="mt-4 flex flex-wrap gap-1.5 text-xs font-extrabold text-slate-800">
-                        {item.price != null && (
-                          <p className="rounded-lg bg-white px-2.5 py-1.5 shadow-sm ring-1 ring-violet-100">+ {format(item.price, item.currency || tourCurrency)} / adult</p>
-                        )}
-                        {item.child_price != null && (
-                          <p className="rounded-lg bg-white px-2.5 py-1.5 text-slate-600 shadow-sm ring-1 ring-violet-100">+ {format(item.child_price, item.currency || tourCurrency)} / child</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {tour.extensions.map((item) => (
-                    <div
-                      key={`extension-${item.id}`}
-                      className="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-white p-4 transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-900/5"
-                    >
-                      <div className="mb-3 flex items-center justify-between gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><Compass size={18} /></span>
-                        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-700">Extend your trip</span>
-                      </div>
-                      <h4 className="text-sm font-extrabold text-slate-950">
-                        {item.title}
-                      </h4>
-                      {item.description && (
-                        <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
-                          {item.description}
-                        </p>
-                      )}
-                      {item.price != null && (
-                        <p className="mt-4 inline-flex rounded-lg bg-white px-2.5 py-1.5 text-xs font-extrabold text-slate-900 shadow-sm ring-1 ring-emerald-100">+ {format(item.price, tourCurrency)}</p>
-                      )}
-                    </div>
-                  ))}
+                      <span>Check Available Dates</span>
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
                 </div>
               </section>
             )}

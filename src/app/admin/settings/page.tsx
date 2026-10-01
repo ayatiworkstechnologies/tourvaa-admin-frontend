@@ -835,7 +835,7 @@ export default function SettingsPage() {
               <div className="overflow-hidden rounded-xl border border-dash-border divide-y divide-dash-border">
                 {Object.entries(securityStatus.jwt_secrets).map(([portal, status]) => (
                   <div key={portal} className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm font-bold capitalize text-dash-text">{portal} JWT Secret</span>
+                    <span className="text-sm font-bold capitalize text-dash-text">{portal === "platform" ? "JWT Signing Key" : `${portal} JWT Status`}</span>
                     <StatusBadge status={status} />
                   </div>
                 ))}

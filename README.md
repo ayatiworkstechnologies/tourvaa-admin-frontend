@@ -179,7 +179,6 @@ Its domains must stay allowed by the Content-Security-Policy in `next.config.ts`
 
 That last one is the easy one to miss - it is `elfsightcompute.com`, not `elfsight.com`. Allowing only the CDN domains produces a widget that loads, renders its language picker and accepts a selection while every translate request is blocked, so the page just stays in English. Check the CSP first whenever translation appears to do nothing; the browser console will name the blocked domain.
 
-A previous Google Translate integration (`components/public/GoogleTranslateLoader.tsx`, plus the `googtrans` cookie logic in `LanguageCurrencySelector`/`LanguageSwitcher` and the `.goog-te-*` rules in `globals.css`) is still present but no longer mounted.
 
 ---
 

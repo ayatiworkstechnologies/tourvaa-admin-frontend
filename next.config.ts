@@ -29,8 +29,6 @@ if (process.env.NEXT_PUBLIC_WS_URL && !/^wss?:\/\//.test(process.env.NEXT_PUBLIC
 // and is where the widget fetches its supported-language list (/v1/supportedLanguages).
 // Without it the widget loads, renders its shell, and then silently produces an
 // empty language list - so picking a language did nothing at all.
-const googleTranslateHosts =
-  "https://translate.google.com https://translate.googleapis.com https://translate-pa.googleapis.com https://*.gstatic.com";
 const googleFontHosts =
   "https://fonts.googleapis.com https://fonts.gstatic.com";
 // Elfsight Website Translator: platform.js is served from elfsightcdn.com,
@@ -47,8 +45,8 @@ const elfsightHosts =
   "https://elfsightcdn.com https://*.elfsightcdn.com https://static.elfsight.com https://*.elfsight.com https://core.service.elfsight.com https://*.elfsightcompute.com";
 const scriptSrc =
   process.env.NODE_ENV === "production"
-    ? `script-src 'self' 'unsafe-inline' ${googleTranslateHosts} ${elfsightHosts};`
-    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${googleTranslateHosts} ${elfsightHosts};`;
+    ? `script-src 'self' 'unsafe-inline' ${elfsightHosts};`
+    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${elfsightHosts};`;
 
 // The Turbopack/webpack dev-mode HMR client connects back over its own
 // ws://<host>:<port>/_next/webpack-hmr socket. 'self' in connect-src is
@@ -65,8 +63,8 @@ const devHmrHosts = "ws://localhost:* ws://127.0.0.1:*";
 const publicWsUrl = (process.env.NEXT_PUBLIC_WS_URL || apiProxyOrigin.replace(/^http/, "ws")).replace(/\/$/, "");
 const connectSrc =
   process.env.NODE_ENV === "production"
-    ? `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${googleTranslateHosts} ${elfsightHosts};`
-    : `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${googleTranslateHosts} ${elfsightHosts} ${devHmrHosts};`;
+    ? `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${elfsightHosts};`
+    : `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${elfsightHosts} ${devHmrHosts};`;
 
 const apiProxyUrl = new URL(apiProxyTarget);
 
@@ -115,7 +113,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${googleTranslateHosts} ${googleFontHosts} ${elfsightHosts}; img-src 'self' data: blob: https: http://translate.google.com ${apiProxyOrigin}; media-src 'self' blob: https: ${apiProxyOrigin}; ${connectSrc} font-src 'self' data: ${googleFontHosts} ${googleTranslateHosts} ${elfsightHosts}; frame-src 'self' ${elfsightHosts}; frame-ancestors 'self';`,
+              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${googleFontHosts} ${elfsightHosts}; img-src 'self' data: blob: https: ${apiProxyOrigin}; media-src 'self' blob: https: ${apiProxyOrigin}; ${connectSrc} font-src 'self' data: ${googleFontHosts} ${elfsightHosts}; frame-src 'self' ${elfsightHosts}; frame-ancestors 'self';`,
           },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },
