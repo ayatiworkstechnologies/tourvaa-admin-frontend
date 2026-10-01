@@ -13,6 +13,7 @@ import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import CurrencySelect from "@/components/ui/CurrencySelect";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
+import { isTourvaaDiscount } from "@/lib/tours/discountSource";
 
 const STATUSES = ["active", "inactive"];
 
@@ -144,17 +145,6 @@ export default function TourPricingTab({
       const percent = (item: TourDiscount) => Math.min(90, item.discount_type === "percentage"
         ? Number(item.discount_value)
         : startingPrice > 0 ? (Number(item.discount_value) / startingPrice) * 100 : 0);
-
-      const isTourvaaDiscount = (item: TourDiscount) => {
-        if (item.funded_by === "TOURVAA") return true;
-        if (item.funded_by === "SUPPLIER") return false;
-        if (item.added_by === "admin") return true;
-        if (item.added_by === "supplier") return false;
-        const name = (item.discount_name || "").toLowerCase();
-        if (name.includes("tourvaa")) return true;
-        if (name.includes("supplier")) return false;
-        return false;
-      };
 
       const bestOffer = (items: TourDiscount[]) => items
         .map((item) => ({ item, value: percent(item) }))

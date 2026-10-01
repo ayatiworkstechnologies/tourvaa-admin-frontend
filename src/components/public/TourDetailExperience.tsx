@@ -45,6 +45,7 @@ import publicApi, { PublicTourDetail } from "@/lib/api/publicClient";
 import { destinationUrl } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { combinedDiscountPercent } from "@/lib/tours/discountSource";
 import MarketingImage from "@/components/public/MarketingImage";
 import ExternalExperiencesSection from "@/components/public/external/ExternalExperiencesSection";
 import {
@@ -843,9 +844,9 @@ export default function TourDetailExperience({
   const supplierDiscountPercent = Number(tour.supplier_discount_percentage ?? 0);
   const tourvaaDiscountPercent = Number(tour.tourvaa_discount_percentage ?? 0);
   const todaysSpecialOfferPercent =
-    supplierDiscountPercent + tourvaaDiscountPercent ||
+    combinedDiscountPercent(supplierDiscountPercent, tourvaaDiscountPercent) ||
     Number(tour.discount_percentage ?? 0);
-  const todaysSpecialOfferLabel = `Todays Special Offer (${todaysSpecialOfferPercent}% Discount)`;
+  const todaysSpecialOfferLabel = `Today's Special Offer (${todaysSpecialOfferPercent}% Discount)`;
   const activeDiscountLabels = [
     supplierDiscountPercent > 0
       ? `${tour.supplier_discount_name || "Supplier discount"} (${supplierDiscountPercent}%)`
@@ -865,6 +866,9 @@ export default function TourDetailExperience({
     undefined,
   );
   const startingUnitPrice = Number(cheapestRow?.price_per_person ?? unitPrice);
+  const startingChildUnitPrice = Number(
+    cheapestRow?.child_price_per_person ?? childUnitPrice,
+  );
   const startingOriginalPrice = Number(
     cheapestRow?.original_price_per_person ?? startingUnitPrice,
   );
@@ -1487,11 +1491,12 @@ export default function TourDetailExperience({
 
               {/* Highlights from Real Data */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-xs text-blue-100 font-medium">
-                {selectedRow?.child_price_per_person != null && (
+                {cheapestRow?.child_price_per_person != null && (
                   <span className="flex items-center gap-1.5">
                     <Check size={14} className="text-emerald-400 stroke-[3]" />
                     <span>
-                      <b>Child Rate:</b> {format(childUnitPrice, tourCurrency)}{" "}
+                      <b>Child Rate{startingTierLabel ? ` (${startingTierLabel})` : ""}:</b>{" "}
+                      {format(startingChildUnitPrice, tourCurrency)}{" "}
                       / child
                     </span>
                   </span>
@@ -2676,15 +2681,6 @@ export default function TourDetailExperience({
                 <div className="space-y-1">
                   {pricingRows.map((row, index) => {
                     const isSelected = selectedGroupTier === index;
-                    // Group saving vs the solo tier, both after any supplier discount.
-                    const saveAmount =
-                      index > 0 &&
-                      baseRow &&
-                      row.price_per_person < baseRow.price_per_person
-                        ? Math.round(
-                            baseRow.price_per_person - row.price_per_person,
-                          )
-                        : 0;
                     const rowOriginal = Number(
                       row.original_price_per_person ?? row.price_per_person,
                     );
@@ -2696,6 +2692,15 @@ export default function TourDetailExperience({
                     );
                     const rowDiscounted =
                       promoActive && rowRawOriginal > row.price_per_person;
+                    // Keep the saving next to the crossed-out price internally
+                    // consistent: it is the reduction from that same original
+                    // row price, not the separate group-tier saving vs solo.
+                    const saveAmount = Math.max(
+                      0,
+                      Math.round(
+                        (rowRawOriginal - row.price_per_person) * 100,
+                      ) / 100,
+                    );
                     return (
                       <button
                         key={`${row.persons_from}-${row.persons_to ?? "plus"}`}
@@ -2740,7 +2745,7 @@ export default function TourDetailExperience({
                             <span className="whitespace-nowrap text-[10px] font-bold text-emerald-600">
                               (save{" "}
                               {format(saveAmount, row.currency || tourCurrency)}{" "}
-                              pp)
+                              per person)
                             </span>
                           )}
                         </span>

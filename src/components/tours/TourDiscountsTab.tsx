@@ -28,6 +28,7 @@ import DatePicker from "@/components/ui/DatePicker";
 import api from "@/lib/api/client";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 import { todayLocalDateStr } from "@/lib/utils/date";
+import { isTourvaaDiscount as isTourvaaOwnedDiscount } from "@/lib/tours/discountSource";
 
 function fmt(n: number, currency: string) {
   return `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
@@ -45,15 +46,6 @@ function discountedValue(item: TourDiscount, basePrice: number): number | null {
     ? basePrice * (1 - item.discount_value / 100)
     : Math.max(0, basePrice - item.discount_value);
   return discounted < basePrice ? discounted : null;
-}
-
-/** The funded_by field or immutable creator determines offer ownership. */
-function isTourvaaOwnedDiscount(item: TourDiscount): boolean {
-  if (item.funded_by === "TOURVAA") return true;
-  if (item.funded_by === "SUPPLIER") return false;
-  if (item.added_by === "admin") return true;
-  if (item.added_by === "supplier") return false;
-  return (item.discount_name || "").toLowerCase().includes("tourvaa");
 }
 
 function SectionCard({
