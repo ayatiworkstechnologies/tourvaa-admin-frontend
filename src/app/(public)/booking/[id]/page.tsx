@@ -422,6 +422,10 @@ export default function DynamicTourBookingPage() {
   const initialChildren = Math.max(0, Number(searchParams.get("children") || 0));
   const rawParamDate = searchParams.get("travel_date") || "";
   const initialTravelDate = normalizeDateStringToIso(rawParamDate) || rawParamDate;
+  const preselectedAddOns = (searchParams.get("add_ons") || "").split(",").map((value) => {
+    const [kind, rawId] = value.split(":");
+    return { kind, id: Number(rawId) };
+  }).filter((addOn) => ["activity", "accommodation", "extension"].includes(addOn.kind) && Number.isInteger(addOn.id) && addOn.id > 0);
 
   const [adultCount, setAdultCount] = useState(initialAdults);
   const [childCount, setChildCount] = useState(initialChildren);
@@ -430,6 +434,7 @@ export default function DynamicTourBookingPage() {
   const [nightAddonQty, setNightAddonQty] = useState<Record<number, number>>({});
   const [selectedActivityIds, setSelectedActivityIds] = useState<number[]>([]);
   const [selectedAccommodationExtraIds, setSelectedAccommodationExtraIds] = useState<number[]>([]);
+  const appliedPreselectedAddOnRef = useRef<string | null>(null);
 
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
   // Per-passenger, per-field inline validation errors shown beneath each input
@@ -634,6 +639,25 @@ export default function DynamicTourBookingPage() {
   // additional_night pair above -- both are real, independently priced and
   // independently submitted (accommodations vs extensions) per the backend.
   const availableAccommodationExtras = useMemo(() => tour?.accommodations || [], [tour]);
+
+  // An enhancement picked on the tour page arrives here ready-selected. The
+  // catalogue remains the source of truth: ignore stale or forged IDs rather
+  // than adding an item that does not belong to this tour.
+  useEffect(() => {
+    if (!tour || preselectedAddOns.length === 0) return;
+    const key = preselectedAddOns.map((addOn) => `${addOn.kind}:${addOn.id}`).join(",");
+    if (appliedPreselectedAddOnRef.current === key) return;
+    preselectedAddOns.forEach((addOn) => {
+      if (addOn.kind === "activity" && (tour.optional_activities || []).some((item) => item.id === addOn.id)) setSelectedActivityIds((current) => current.includes(addOn.id) ? current : [...current, addOn.id]);
+      if (addOn.kind === "accommodation" && (tour.accommodations || []).some((item) => item.id === addOn.id)) setSelectedAccommodationExtraIds((current) => current.includes(addOn.id) ? current : [...current, addOn.id]);
+      if (addOn.kind === "extension") {
+        const extension = (tour.extensions || []).find((item) => item.id === addOn.id);
+        if (extension?.category === "room_upgrade") setSelectedRoomUpgradeId(extension.id);
+        if (extension?.category === "additional_night") setNightAddonQty((current) => ({ ...current, [extension.id]: Math.max(1, current[extension.id] || 0) }));
+      }
+    });
+    appliedPreselectedAddOnRef.current = key;
+  }, [tour, preselectedAddOns]);
 
   const toggleAccommodationExtra = (id: number) => {
     setSelectedAccommodationExtraIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -1797,38 +1821,43 @@ export default function DynamicTourBookingPage() {
 
                   {/* Optional Activities */}
                   {availableActivities.length > 0 && (
-                    <div className="mt-8 pt-6 border-t border-slate-100">
-                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                        <Sparkles size={16} className="text-pub-primary" />
-                        <span>Optional Activities</span>
-                      </h3>
-                      <p className="mt-1 text-xs text-slate-500 leading-relaxed max-w-2xl">
-                        Add curated extra experiences to your itinerary. Priced per adult traveller.
-                      </p>
+                    <div className="mt-8 border-t border-slate-100 pt-6">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-pub-primary"><Sparkles size={16} /></span>
+                            <h3 className="text-sm font-black text-slate-900">Optional activities</h3>
+                          </div>
+                          <p className="mt-2 text-xs leading-relaxed text-slate-500 max-w-2xl">
+                            Make the trip your own. Select any experience and it will be included in your live booking total.
+                          </p>
+                        </div>
+                        {selectedActivityIds.length > 0 && (
+                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
+                            {selectedActivityIds.length} added
+                          </span>
+                        )}
+                      </div>
 
-                      <div className="mt-4 space-y-3">
+                      <div className="mt-5 grid gap-3">
                         {availableActivities.map((activity) => {
                           const checked = selectedActivityIds.includes(activity.id);
                           return (
                             <div
                               key={activity.id}
                               onClick={() => toggleActivity(activity.id)}
-                              className={`flex items-center justify-between gap-3.5 rounded-xl border-2 p-4 cursor-pointer transition ${
+                              className={`group flex items-center justify-between gap-4 rounded-2xl border p-4 sm:p-4.5 cursor-pointer transition-all ${
                                 checked
-                                  ? "border-pub-primary bg-blue-50/20 shadow-2xs ring-2 ring-pub-primary/10"
-                                  : "border-slate-200 bg-white hover:border-slate-300"
+                                  ? "border-pub-primary bg-blue-50/60 shadow-sm ring-2 ring-pub-primary/10"
+                                  : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-sm"
                               }`}
                             >
                               <div className="flex items-start gap-3.5">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() => toggleActivity(activity.id)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-pub-primary focus:ring-pub-primary accent-pub-primary"
-                                />
+                                <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${checked ? "border-pub-primary bg-pub-primary text-white" : "border-slate-300 bg-white group-hover:border-blue-400"}`}>
+                                  {checked && <Check size={13} className="stroke-[3]" />}
+                                </span>
                                 <div>
-                                  <p className="text-xs sm:text-sm font-bold text-slate-900">{activity.name}</p>
+                                  <p className="text-sm font-bold text-slate-900">{activity.name}</p>
                                   {activity.description && (
                                     <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-md leading-relaxed">
                                       {activity.description}
@@ -1836,11 +1865,11 @@ export default function DynamicTourBookingPage() {
                                   )}
                                 </div>
                               </div>
-                              <div className="text-right shrink-0">
-                                <p className="text-xs sm:text-sm font-black text-slate-900">
+                              <div className="shrink-0 text-right">
+                                <p className="text-sm font-black text-slate-900">
                                   {format(activity.price ?? 0, activity.currency || tourCurrency)}
                                 </p>
-                                <p className="text-[10px] text-slate-400">Per adult</p>
+                                <p className={`mt-0.5 text-[10px] font-semibold ${checked ? "text-blue-700" : "text-slate-400"}`}>{checked ? "Added" : "Per adult"}</p>
                               </div>
                             </div>
                           );

@@ -64,6 +64,7 @@ type Props = {
     adults: number;
     children: number;
     agentAction?: "reserve" | "full";
+    addOns?: Array<{ kind: "accommodation" | "activity" | "extension"; id: number }>;
   }) => void;
   agentBooking?: boolean;
   onWishlist: () => void;
@@ -789,59 +790,81 @@ export default function TourDetailExperience({
   );
   const fallbackTotalAmount = Math.max(0, tourPrice);
 
-  // The selector's total is always calculated by the booking service. This
-  // prevents the public card drifting from checkout when a tour has fixed
-  // discounts, group tiers, a date override, tax, or fees.
+  // The selector's total is refined by the server booking quote preview.
+  // When available, it accounts for server-side dates/taxes/fees; when loading
+  // or offline, local slab calculation acts as an immediate seamless fallback.
   const [priceQuote, setPriceQuote] = useState<PublicPriceQuote | null>(null);
-  const [quoteStatus, setQuoteStatus] = useState<"idle" | "loading" | "failed">("idle");
-  const [quoteAttempt, setQuoteAttempt] = useState(0);
+  const [isQuoting, setIsQuoting] = useState<boolean>(false);
+  const quoteRequestIdRef = useRef(0);
+  const [selectedEnhancementIds, setSelectedEnhancementIds] = useState<string[]>([]);
+
   useEffect(() => {
     if (!tour.id || !selectedDepartureIso) {
       setPriceQuote(null);
-      setQuoteStatus("idle");
+      setIsQuoting(false);
       return;
     }
-    let active = true;
-    // Never leave the previous date or traveller count's quote on screen
-    // while the current selection is being repriced.
-    setPriceQuote(null);
-    setQuoteStatus("loading");
+    const requestId = ++quoteRequestIdRef.current;
+    setIsQuoting(true);
+
     const timer = window.setTimeout(() => {
-      publicApi.post(`/tours/${tour.id}/price-quote`, {
-        travel_date: selectedDepartureIso,
-        adults,
-        children,
-      })
+      publicApi
+        .post(`/tours/${tour.id}/price-quote`, {
+          travel_date: selectedDepartureIso,
+          adults,
+          children,
+          optional_activity_ids: selectedEnhancementIds
+            .filter((id) => id.startsWith("act-"))
+            .map((id) => Number(id.slice(4)))
+            .filter(Number.isSafeInteger),
+          tour_extension_ids: selectedEnhancementIds
+            .filter((id) => id.startsWith("ext-"))
+            .map((id) => Number(id.slice(4)))
+            .filter(Number.isSafeInteger),
+        })
         .then((res) => {
-          if (!active) return;
-          const quote = res.data?.data ?? null;
-          setPriceQuote(quote);
-          setQuoteStatus(quote ? "idle" : "failed");
+          if (requestId === quoteRequestIdRef.current) {
+            setPriceQuote(res.data?.data ?? null);
+            setIsQuoting(false);
+          }
         })
         .catch(() => {
-          // Do not let a transient proxy, network, or rate-limit failure look
-          // like an endless loading state. Checkout remains disabled until a
-          // server-authoritative quote has been obtained.
-          if (!active) return;
-          setPriceQuote(null);
-          setQuoteStatus("failed");
+          if (requestId === quoteRequestIdRef.current) {
+            setIsQuoting(false);
+          }
         });
     }, 200);
+
     return () => {
-      active = false;
       window.clearTimeout(timer);
     };
-  }, [tour.id, selectedDepartureIso, adults, children, quoteAttempt]);
+  }, [tour.id, selectedDepartureIso, adults, children, selectedEnhancementIds]);
 
   const quotedTotal = Number(priceQuote?.final_amount);
-  const totalAmount = Number.isFinite(quotedTotal)
-    ? quotedTotal
-    : fallbackTotalAmount;
+  const hasQuote = Boolean(priceQuote && Number.isFinite(quotedTotal) && quotedTotal > 0);
+  const totalAmount = hasQuote ? quotedTotal : fallbackTotalAmount;
   const pricingCurrency = priceQuote?.currency || tourCurrency;
-  const quoteBaseAmount = Number(priceQuote?.base_amount || 0);
-  const quoteGroupDiscount = Number(priceQuote?.group_discount_amount || 0);
-  const quotePromotionDiscount = Number(priceQuote?.discount_amount || 0);
-  const quoteTaxAndFees = Number(priceQuote?.tax_amount || 0) + Number(priceQuote?.surcharge_amount || 0);
+
+  const fallbackPromoDiscount = promoActive
+    ? Math.max(0, originalTourPrice - tourPrice - groupDiscount)
+    : 0;
+
+  const quoteBaseAmount = hasQuote
+    ? Number(priceQuote?.base_amount || 0)
+    : (originalTourPrice > 0 ? originalTourPrice : tourPrice);
+
+  const quoteGroupDiscount = hasQuote
+    ? Number(priceQuote?.group_discount_amount || 0)
+    : groupDiscount;
+
+  const quotePromotionDiscount = hasQuote
+    ? Number(priceQuote?.discount_amount || 0)
+    : fallbackPromoDiscount;
+
+  const quoteTaxAndFees = hasQuote
+    ? (Number(priceQuote?.tax_amount || 0) + Number(priceQuote?.surcharge_amount || 0))
+    : 0;
+
   const displayedPerPersonPrice = Math.round(totalAmount / Math.max(1, travellerCount));
 
   // Supplier-discount saving on the selected tier: that tier's own pre-discount
@@ -1081,6 +1104,7 @@ export default function TourDetailExperience({
   const allEnhancements = useMemo(() => {
     const list: {
       id: string;
+      sourceId: number;
       kind: "accommodation" | "activity" | "extension";
       categoryGroup: "stays" | "experiences" | "dining" | "transport" | "other";
       categoryLabel: string;
@@ -1096,6 +1120,7 @@ export default function TourDetailExperience({
     (tour.accommodations || []).forEach((acc) => {
       list.push({
         id: `acc-${acc.id}`,
+        sourceId: acc.id,
         kind: "accommodation",
         categoryGroup: "stays",
         categoryLabel: acc.category === "room_upgrade" ? "Room Upgrade" : "Stay Upgrade",
@@ -1131,6 +1156,7 @@ export default function TourDetailExperience({
 
       list.push({
         id: `act-${act.id}`,
+        sourceId: act.id,
         kind: "activity",
         categoryGroup: group,
         categoryLabel: label,
@@ -1147,6 +1173,7 @@ export default function TourDetailExperience({
     (tour.extensions || []).forEach((ext) => {
       list.push({
         id: `ext-${ext.id}`,
+        sourceId: ext.id,
         kind: "extension",
         categoryGroup: "experiences",
         categoryLabel: "Tour Extension",
@@ -1180,6 +1207,18 @@ export default function TourDetailExperience({
 
     return tabs.length > 2 ? tabs : [];
   }, [allEnhancements]);
+  const selectedEnhancements = useMemo(
+    () => allEnhancements.filter((item) => selectedEnhancementIds.includes(item.id)),
+    [allEnhancements, selectedEnhancementIds],
+  );
+  const selectedEnhancementTotal = useMemo(
+    () => selectedEnhancements.reduce((total, item) => {
+      const adultAmount = (item.price ?? 0) * (item.pricingMode === "flat" ? 1 : adults);
+      const childAmount = (item.childPrice ?? 0) * children;
+      return total + adultAmount + childAmount;
+    }, 0),
+    [selectedEnhancements, adults, children],
+  );
 
   const visibleEnhancements = useMemo(() => {
     if (enhancementTab === "all") return allEnhancements;
@@ -1240,7 +1279,9 @@ export default function TourDetailExperience({
     }
   };
 
-  const handleBookNow = (agentAction?: "reserve" | "full") => {
+  const handleBookNow = (
+    agentAction?: "reserve" | "full",
+  ) => {
     const chosen = currentMonth.dates.find((d) => d.id === selectedDateId);
     const chosenDate = chosen?.isoDate || toIsoDate(chosen?.date) || toIsoDate(initialTravelDate);
     if (!chosenDate) return;
@@ -1249,6 +1290,9 @@ export default function TourDetailExperience({
       adults,
       children,
       agentAction,
+      addOns: allEnhancements
+        .filter((item) => selectedEnhancementIds.includes(item.id))
+        .map((item) => ({ kind: item.kind, id: item.sourceId })),
     });
   };
 
@@ -2573,15 +2617,15 @@ export default function TourDetailExperience({
                             <button
                               type="button"
                               onClick={() => {
-                                if (selectedDeparture) {
-                                  handleBookNow();
-                                } else {
-                                  scrollToBooking();
-                                }
+                                setSelectedEnhancementIds((selected) =>
+                                  selected.includes(item.id)
+                                    ? selected.filter((id) => id !== item.id)
+                                    : [...selected, item.id],
+                                );
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 px-3.5 py-1.5 text-xs font-extrabold text-blue-700 transition hover:bg-blue-600 hover:text-white cursor-pointer shadow-2xs group/btn"
+                              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-extrabold transition cursor-pointer shadow-2xs group/btn ${selectedEnhancementIds.includes(item.id) ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white"}`}
                             >
-                              <span>{selectedDeparture ? "Select in Booking" : "Choose Date & Book"}</span>
+                              <span>{selectedEnhancementIds.includes(item.id) ? "Added" : "Add"}</span>
                               <ArrowRight size={13} className="transition-transform group-hover/btn:translate-x-0.5" />
                             </button>
                           </div>
@@ -3073,7 +3117,7 @@ export default function TourDetailExperience({
                 Booking Summary
               </h4>
 
-              {priceQuote && quoteGroupDiscount > 0 && (
+              {quoteGroupDiscount > 0 && (
                 <div className="mb-2 flex items-center justify-between rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-1.5 text-[11px] font-semibold text-blue-800">
                   <span>
                     🎉 Group rate applied ({travellerCount} travellers) vs.
@@ -3085,41 +3129,47 @@ export default function TourDetailExperience({
                 </div>
               )}
 
+              {selectedEnhancements.length > 0 && (
+                <div className="mb-3 rounded-lg border border-blue-100 bg-blue-50/70 p-2.5">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-blue-800">Added to your tour</p>
+                  <div className="mt-1.5 space-y-1">
+                    {selectedEnhancements.map((item) => (
+                      <div key={item.id} className="flex justify-between gap-3 text-xs text-slate-700">
+                        <span className="truncate">{item.title}</span>
+                        <span className="shrink-0 font-semibold">+{format((item.price ?? 0) * (item.pricingMode === "flat" ? 1 : adults) + (item.childPrice ?? 0) * children, item.currency)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex justify-between border-t border-blue-100 pt-1.5 text-xs font-bold text-blue-900">
+                    <span>Add-ons total</span>
+                    <span>+{format(selectedEnhancementTotal, pricingCurrency)}</span>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2 text-sm">
-                {priceQuote ? (
-                  <>
-                    <div className="flex justify-between text-slate-600 font-medium">
-                      <span>Tour price ({travellerCount} guest{travellerCount > 1 ? "s" : ""})</span>
-                      <span className="font-bold text-slate-900">{format(quoteBaseAmount, pricingCurrency)}</span>
-                    </div>
-                    {quoteGroupDiscount > 0 && (
-                      <div className="flex justify-between text-emerald-700 font-semibold">
-                        <span>Group discount</span>
-                        <span>-{format(quoteGroupDiscount, pricingCurrency)}</span>
-                      </div>
-                    )}
-                    {quotePromotionDiscount > 0 && (
-                      <div className="flex justify-between text-emerald-700 font-semibold">
-                        <span>Offer discount</span>
-                        <span>-{format(quotePromotionDiscount, pricingCurrency)}</span>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className={`py-1 text-sm font-medium ${quoteStatus === "failed" ? "text-amber-700" : "text-slate-400"}`} role={quoteStatus === "failed" ? "alert" : undefined}>
-                    {quoteStatus === "failed" ? "We couldn't confirm the current price. Please try again." : "Confirming the current price…"}
+                <div className="flex justify-between text-slate-600 font-medium">
+                  <span>Tour price ({travellerCount} guest{travellerCount > 1 ? "s" : ""})</span>
+                  <span className="font-bold text-slate-900">{format(quoteBaseAmount, pricingCurrency)}</span>
+                </div>
+                {quoteGroupDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-700 font-semibold">
+                    <span>Group discount</span>
+                    <span>-{format(quoteGroupDiscount, pricingCurrency)}</span>
+                  </div>
+                )}
+                {quotePromotionDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-700 font-semibold">
+                    <span>Offer discount</span>
+                    <span>-{format(quotePromotionDiscount, pricingCurrency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-slate-600 font-medium">
                   <span>Taxes &amp; fees</span>
-                  {priceQuote ? (
-                    quoteTaxAndFees > 0 ? (
-                      <span className="font-bold text-slate-900">+{format(quoteTaxAndFees, pricingCurrency)}</span>
-                    ) : (
-                      <span className="font-bold text-emerald-600">Included</span>
-                    )
+                  {quoteTaxAndFees > 0 ? (
+                    <span className="font-bold text-slate-900">+{format(quoteTaxAndFees, pricingCurrency)}</span>
                   ) : (
-                    <span className={`font-medium ${quoteStatus === "failed" ? "text-amber-700" : "text-slate-400"}`}>{quoteStatus === "failed" ? "Unavailable" : "Calculating…"}</span>
+                    <span className="font-bold text-emerald-600">Included</span>
                   )}
                 </div>
 
@@ -3127,18 +3177,29 @@ export default function TourDetailExperience({
 
                 <div className="flex items-center justify-between pt-1">
                   <div>
-                    <p className="text-sm font-bold text-slate-900">
-                      Total Price
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-bold text-slate-900">
+                        Total Price
+                      </p>
+                      {isQuoting && (
+                        <span className="inline-flex items-center text-[10px] text-blue-600 font-medium">
+                          (updating…)
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 font-normal">
+                      {totalAmount > 0
+                        ? `${format(displayedPerPersonPrice, pricingCurrency)} per traveller`
+                        : "Select date & travellers"}
                     </p>
-                    <p className="text-xs text-slate-500 font-normal">{priceQuote ? `${format(displayedPerPersonPrice, pricingCurrency)} per traveller` : quoteStatus === "failed" ? "Price confirmation failed" : "Calculating…"}</p>
                   </div>
                   <strong className="text-2xl font-black text-slate-950">
-                    {priceQuote ? format(totalAmount, pricingCurrency) : "—"}
+                    {totalAmount > 0 ? format(totalAmount, pricingCurrency) : "—"}
                   </strong>
                 </div>
 
                 {/* Deposit Option in Summary */}
-                {priceQuote && depositDue != null && (
+                {depositDue != null && depositDue > 0 && (
                   <div className="mt-3 rounded-lg bg-blue-50 border border-blue-200/60 p-3 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-blue-900 flex items-center gap-1">
@@ -3169,7 +3230,7 @@ export default function TourDetailExperience({
                       <button
                         type="button"
                         onClick={() => handleBookNow("reserve")}
-                        disabled={!agentReserveEligible || !selectedDeparture || !unitPrice || !priceQuote}
+                        disabled={!agentReserveEligible || !selectedDeparture || !unitPrice || totalAmount <= 0}
                         className="w-full rounded-lg bg-pub-accent py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-[#cf4b24] disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
                       >
                         Pay Deposit &amp; Reserve
@@ -3187,7 +3248,7 @@ export default function TourDetailExperience({
                     <button
                       type="button"
                       onClick={() => handleBookNow("full")}
-                      disabled={!selectedDeparture || !unitPrice || !priceQuote}
+                      disabled={!selectedDeparture || !unitPrice || totalAmount <= 0}
                       className="w-full rounded-lg bg-pub-accent py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-[#cf4b24] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Pay in Full Today
@@ -3199,12 +3260,12 @@ export default function TourDetailExperience({
                 </>
               ) : (
                 <>
-                  {priceQuote && depositDue != null && (
+                  {depositDue != null && depositDue > 0 && (
                     <>
                       <button
                         type="button"
                         onClick={() => handleBookNow("reserve")}
-                        disabled={!selectedDeparture || !unitPrice || !priceQuote}
+                        disabled={!selectedDeparture || !unitPrice || totalAmount <= 0}
                         className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <span>Secure with a Deposit ({format(depositDue, pricingCurrency)} today)</span>
@@ -3219,19 +3280,13 @@ export default function TourDetailExperience({
                   )}
                   <button
                     type="button"
-                    onClick={() => {
-                      if (quoteStatus === "failed") {
-                        setQuoteAttempt((attempt) => attempt + 1);
-                        return;
-                      }
-                      handleBookNow();
-                    }}
-                    disabled={!selectedDeparture || !unitPrice || (!priceQuote && quoteStatus !== "failed")}
+                    onClick={() => handleBookNow()}
+                    disabled={!selectedDeparture || !unitPrice || totalAmount <= 0}
                     className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {!unitPrice ? "Price Unavailable" : quoteStatus === "failed" ? "Retry Price Check" : !priceQuote ? "Confirming Price…" : selectedDeparture ? (
+                    {!unitPrice ? "Price Unavailable" : !selectedDeparture ? "Select Date" : (
                       <><span>Book This Tour</span><ArrowRight size={16} /></>
-                    ) : "Select Date"}
+                    )}
                   </button>
                 </>
               )}

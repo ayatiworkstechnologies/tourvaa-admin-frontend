@@ -366,6 +366,7 @@ export default function TourDetailPage() {
     adults: number;
     children: number;
     agentAction?: "reserve" | "full";
+    addOns?: Array<{ kind: "accommodation" | "activity" | "extension"; id: number }>;
   }) => {
     const bookingQuery = new URLSearchParams(searchParams.toString());
     if (selection?.travelDate)
@@ -375,6 +376,9 @@ export default function TourDetailPage() {
       bookingQuery.set("children", String(selection.children));
       if (selection.agentAction)
         bookingQuery.set("agent_action", selection.agentAction);
+      if (selection.addOns?.length) {
+        bookingQuery.set("add_ons", selection.addOns.map((addOn) => `${addOn.kind}:${addOn.id}`).join(","));
+      }
     }
     const query = bookingQuery.toString();
     const bookingPath = `/booking/${tour.id}${query ? `?${query}` : ""}`;
