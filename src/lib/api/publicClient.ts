@@ -2,6 +2,17 @@ import axios from "axios";
 
 const publicApi = axios.create({ baseURL: "/api/public", timeout: 30_000 });
 const cmsApi = axios.create({ baseURL: "/api/cms", timeout: 30_000 });
+const UNSAFE_METHODS = new Set(["post", "put", "patch", "delete"]);
+
+// A signed-in visitor has an httponly auth cookie plus this readable token.
+// Echoing it on writes provides the backend's double-submit CSRF protection.
+// Public endpoints such as price-quote are still writes at the HTTP layer,
+// so they must carry the header when the visitor is signed in.
+function csrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const token = document.cookie.match(/(?:^|; )tourvaa_csrf=([^;]*)/)?.[1];
+  return token ? decodeURIComponent(token) : null;
+}
 
 // Ensure CMS GET responses are never served from the browser or proxy cache.
 // Without this, changes saved in the admin CMS panel are not visible on the
@@ -23,11 +34,19 @@ cmsApi.interceptors.request.use((config) => {
 // Same cache-busting for public tour/category data — ensures admin changes
 // to tour prices, availability and descriptions show immediately.
 publicApi.interceptors.request.use((config) => {
-  if (!config.method || config.method.toLowerCase() === "get") {
+  const method = (config.method || "get").toLowerCase();
+  if (method === "get") {
     config.headers = config.headers ?? {};
     config.headers["Cache-Control"] = "no-store";
     config.headers["Pragma"] = "no-cache";
     config.params = { ...config.params, _t: Date.now() };
+  }
+  if (UNSAFE_METHODS.has(method)) {
+    const token = csrfToken();
+    if (token) {
+      config.headers = config.headers ?? {};
+      config.headers["X-CSRF-Token"] = token;
+    }
   }
   return config;
 });

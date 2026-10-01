@@ -793,15 +793,19 @@ export default function TourDetailExperience({
   // prevents the public card drifting from checkout when a tour has fixed
   // discounts, group tiers, a date override, tax, or fees.
   const [priceQuote, setPriceQuote] = useState<PublicPriceQuote | null>(null);
+  const [quoteStatus, setQuoteStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [quoteAttempt, setQuoteAttempt] = useState(0);
   useEffect(() => {
     if (!tour.id || !selectedDepartureIso) {
       setPriceQuote(null);
+      setQuoteStatus("idle");
       return;
     }
     let active = true;
     // Never leave the previous date or traveller count's quote on screen
     // while the current selection is being repriced.
     setPriceQuote(null);
+    setQuoteStatus("loading");
     const timer = window.setTimeout(() => {
       publicApi.post(`/tours/${tour.id}/price-quote`, {
         travel_date: selectedDepartureIso,
@@ -809,20 +813,25 @@ export default function TourDetailExperience({
         children,
       })
         .then((res) => {
-          if (active) setPriceQuote(res.data?.data ?? null);
+          if (!active) return;
+          const quote = res.data?.data ?? null;
+          setPriceQuote(quote);
+          setQuoteStatus(quote ? "idle" : "failed");
         })
         .catch(() => {
-          // The booking page will still fetch an authoritative quote before
-          // payment. Keep the basic tour amount as a temporary fallback if
-          // this non-blocking preview request cannot be completed.
-          if (active) setPriceQuote(null);
+          // Do not let a transient proxy, network, or rate-limit failure look
+          // like an endless loading state. Checkout remains disabled until a
+          // server-authoritative quote has been obtained.
+          if (!active) return;
+          setPriceQuote(null);
+          setQuoteStatus("failed");
         });
     }, 200);
     return () => {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [tour.id, selectedDepartureIso, adults, children]);
+  }, [tour.id, selectedDepartureIso, adults, children, quoteAttempt]);
 
   const quotedTotal = Number(priceQuote?.final_amount);
   const totalAmount = Number.isFinite(quotedTotal)
@@ -3097,7 +3106,9 @@ export default function TourDetailExperience({
                     )}
                   </>
                 ) : (
-                  <div className="py-1 text-sm font-medium text-slate-400">Confirming the current price…</div>
+                  <div className={`py-1 text-sm font-medium ${quoteStatus === "failed" ? "text-amber-700" : "text-slate-400"}`} role={quoteStatus === "failed" ? "alert" : undefined}>
+                    {quoteStatus === "failed" ? "We couldn't confirm the current price. Please try again." : "Confirming the current price…"}
+                  </div>
                 )}
                 <div className="flex justify-between text-slate-600 font-medium">
                   <span>Taxes &amp; fees</span>
@@ -3108,7 +3119,7 @@ export default function TourDetailExperience({
                       <span className="font-bold text-emerald-600">Included</span>
                     )
                   ) : (
-                    <span className="font-medium text-slate-400">Calculating…</span>
+                    <span className={`font-medium ${quoteStatus === "failed" ? "text-amber-700" : "text-slate-400"}`}>{quoteStatus === "failed" ? "Unavailable" : "Calculating…"}</span>
                   )}
                 </div>
 
@@ -3119,7 +3130,7 @@ export default function TourDetailExperience({
                     <p className="text-sm font-bold text-slate-900">
                       Total Price
                     </p>
-                    <p className="text-xs text-slate-500 font-normal">{priceQuote ? `${format(displayedPerPersonPrice, pricingCurrency)} per traveller` : "Calculating…"}</p>
+                    <p className="text-xs text-slate-500 font-normal">{priceQuote ? `${format(displayedPerPersonPrice, pricingCurrency)} per traveller` : quoteStatus === "failed" ? "Price confirmation failed" : "Calculating…"}</p>
                   </div>
                   <strong className="text-2xl font-black text-slate-950">
                     {priceQuote ? format(totalAmount, pricingCurrency) : "—"}
@@ -3208,11 +3219,17 @@ export default function TourDetailExperience({
                   )}
                   <button
                     type="button"
-                    onClick={() => handleBookNow()}
-                    disabled={!selectedDeparture || !unitPrice || !priceQuote}
+                    onClick={() => {
+                      if (quoteStatus === "failed") {
+                        setQuoteAttempt((attempt) => attempt + 1);
+                        return;
+                      }
+                      handleBookNow();
+                    }}
+                    disabled={!selectedDeparture || !unitPrice || (!priceQuote && quoteStatus !== "failed")}
                     className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {!unitPrice ? "Price Unavailable" : !priceQuote ? "Confirming Price…" : selectedDeparture ? (
+                    {!unitPrice ? "Price Unavailable" : quoteStatus === "failed" ? "Retry Price Check" : !priceQuote ? "Confirming Price…" : selectedDeparture ? (
                       <><span>Book This Tour</span><ArrowRight size={16} /></>
                     ) : "Select Date"}
                   </button>
