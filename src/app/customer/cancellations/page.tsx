@@ -14,6 +14,10 @@ type Cancellation = {
   tour_name?: string;
   reason?: string;
   status?: string;
+  refund_percentage?: string | number;
+  refund_amount?: string | number;
+  currency?: string;
+  refund_processed_at?: string;
   admin_notes?: string;
   created_at?: string;
 };
@@ -22,6 +26,16 @@ function dateText(value?: string) {
   if (!value) return "-";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function refundText(value?: string | number, currency = "USD") {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "-";
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 2 }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
 }
 
 function statusClass(status?: string) {
@@ -61,7 +75,23 @@ export default function CustomerCancellationsPage() {
     { key: "booking", header: "Booking", render: (c) => <Link className="font-bold text-dash-brand hover:underline" href={`/customer/bookings/${c.booking_id}`}>{c.booking_code || `Booking #${c.booking_id}`}</Link> },
     { key: "tour", header: "Tour", render: (c) => c.tour_name || "-", className: "text-dash-muted" },
     { key: "reason", header: "Reason", render: (c) => c.reason || "-", className: "hidden max-w-xs truncate text-dash-muted md:table-cell" },
+    {
+      key: "refund",
+      header: "Refund",
+      className: "text-dash-muted",
+      render: (c) => {
+        const amount = Number(c.refund_amount);
+        if (Number.isFinite(amount) && amount === 0 && c.status === "refund_processed") return <span className="font-medium">No refund</span>;
+        return (
+          <div>
+            <p className="font-semibold text-dash-text">{refundText(c.refund_amount, c.currency)}</p>
+            {c.refund_percentage != null && <p className="text-xs">{c.refund_percentage}% of amount paid</p>}
+          </div>
+        );
+      },
+    },
     { key: "status", header: "Status", render: (c) => <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold capitalize ${statusClass(c.status)}`}>{(c.status || "pending").replaceAll("_", " ")}</span> },
+    { key: "processed", header: "Processed", render: (c) => dateText(c.refund_processed_at), className: "hidden text-dash-muted lg:table-cell" },
     { key: "date", header: "Requested", render: (c) => dateText(c.created_at), className: "hidden text-dash-muted sm:table-cell" },
   ];
 

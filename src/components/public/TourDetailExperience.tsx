@@ -71,6 +71,16 @@ type Props = {
   modal?: React.ReactNode;
 };
 
+type PublicPriceQuote = {
+  currency: string;
+  base_amount: string;
+  group_discount_amount: string;
+  discount_amount: string;
+  tax_amount: string;
+  surcharge_amount: string;
+  final_amount: string;
+};
+
 function renderItemIcon(
   icon: string | null | undefined,
   FallbackIcon: typeof Check,
@@ -777,8 +787,53 @@ export default function TourDetailExperience({
     tour.discount_percentage > 0 &&
     (originalUnitPrice > unitPrice || originalChildUnitPrice > childUnitPrice),
   );
-  const totalAmount = Math.max(0, tourPrice);
-  const perPersonPrice = Math.round(tourPrice / Math.max(1, travellerCount));
+  const fallbackTotalAmount = Math.max(0, tourPrice);
+
+  // The selector's total is always calculated by the booking service. This
+  // prevents the public card drifting from checkout when a tour has fixed
+  // discounts, group tiers, a date override, tax, or fees.
+  const [priceQuote, setPriceQuote] = useState<PublicPriceQuote | null>(null);
+  useEffect(() => {
+    if (!tour.id || !selectedDepartureIso) {
+      setPriceQuote(null);
+      return;
+    }
+    let active = true;
+    // Never leave the previous date or traveller count's quote on screen
+    // while the current selection is being repriced.
+    setPriceQuote(null);
+    const timer = window.setTimeout(() => {
+      publicApi.post(`/tours/${tour.id}/price-quote`, {
+        travel_date: selectedDepartureIso,
+        adults,
+        children,
+      })
+        .then((res) => {
+          if (active) setPriceQuote(res.data?.data ?? null);
+        })
+        .catch(() => {
+          // The booking page will still fetch an authoritative quote before
+          // payment. Keep the basic tour amount as a temporary fallback if
+          // this non-blocking preview request cannot be completed.
+          if (active) setPriceQuote(null);
+        });
+    }, 200);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [tour.id, selectedDepartureIso, adults, children]);
+
+  const quotedTotal = Number(priceQuote?.final_amount);
+  const totalAmount = Number.isFinite(quotedTotal)
+    ? quotedTotal
+    : fallbackTotalAmount;
+  const pricingCurrency = priceQuote?.currency || tourCurrency;
+  const quoteBaseAmount = Number(priceQuote?.base_amount || 0);
+  const quoteGroupDiscount = Number(priceQuote?.group_discount_amount || 0);
+  const quotePromotionDiscount = Number(priceQuote?.discount_amount || 0);
+  const quoteTaxAndFees = Number(priceQuote?.tax_amount || 0) + Number(priceQuote?.surcharge_amount || 0);
+  const displayedPerPersonPrice = Math.round(totalAmount / Math.max(1, travellerCount));
 
   // Supplier-discount saving on the selected tier: that tier's own pre-discount
   // total minus what is charged. Group-size saving is separate: how much less
@@ -799,31 +854,6 @@ export default function TourDetailExperience({
       ? `${tour.tourvaa_discount_name || "TourVaa discount"} (${tourvaaDiscountPercent}%)`
       : null,
   ].filter((label): label is string => Boolean(label));
-  const rawAdultUnitPrice = Number(
-    selectedRow?.storefront_original_price_per_person ??
-      (tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
-        ? originalUnitPrice / (1 - supplierDiscountPercent / 100)
-        : originalUnitPrice),
-  );
-  const rawChildUnitPrice = Number(
-    selectedRow?.storefront_original_child_price_per_person ??
-      (tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
-        ? originalChildUnitPrice / (1 - supplierDiscountPercent / 100)
-        : originalChildUnitPrice),
-  );
-  const rawTourPrice = adults * rawAdultUnitPrice + children * rawChildUnitPrice;
-  const totalDiscountSaving = Math.max(0, rawTourPrice - tourPrice);
-  const baseUnitPrice = Number(baseRow?.price_per_person ?? unitPrice);
-  const baseChildUnitPrice = Number(
-    baseRow?.child_price_per_person ?? childUnitPrice,
-  );
-  const groupSaving = Math.max(
-    0,
-    Math.round(
-      adults * baseUnitPrice + children * baseChildUnitPrice - tourPrice,
-    ),
-  );
-
   // "Starting from" is the cheapest tier (after discount), not the selected one.
   const cheapestRow = pricingRows.reduce<
     (typeof pricingRows)[number] | undefined
@@ -851,10 +881,6 @@ export default function TourDetailExperience({
   const startingTierLabel = cheapestRow
     ? groupTierLabel(cheapestRow.persons_from, cheapestRow.persons_to)
     : "";
-  const selectedTierLabel = selectedRow
-    ? groupTierLabel(selectedRow.persons_from, selectedRow.persons_to)
-    : "";
-
   // Live deposit offer for the selected date, from the same eligibility
   // rule checkout and booking creation enforce (GET
   // /tours/{id}/deposit-options -> tour_availability._deposit_window): a
@@ -1507,7 +1533,7 @@ export default function TourDetailExperience({
         </section>
 
         {/* ── 5. MAIN 2-COLUMN SECTION (DYNAMIC CONTENT + STICKY BOOKING WIDGET) ── */}
-        <div className="mt-10 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_410px] xl:grid-cols-[minmax(0,1fr)_440px] xl:gap-8">
+        <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_460px] xl:grid-cols-[minmax(0,1fr)_520px] xl:gap-8">
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-10 min-w-0">
             {/* A. OVERVIEW SECTION */}
@@ -2480,48 +2506,12 @@ export default function TourDetailExperience({
           {/* ── RIGHT COLUMN: HIGH-CONVERTING STICKY BOOKING WIDGET ── */}
           <aside
             id="booking-widget"
-            className="sticky top-20 w-full rounded-2xl border border-blue-100 bg-white p-4 shadow-xl ring-1 ring-slate-900/5 sm:p-5 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto no-scrollbar"
+            className="sticky top-10 w-full rounded-2xl border border-blue-100 bg-white p-5 shadow-xl ring-1 ring-slate-900/5 sm:p-6"
           >
-            {/* Price Header */}
-            <div className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-950 p-4 text-white shadow-md mb-5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
-                  Starting from
-                </span>
-                {realDates.length > 0 && (
-                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                    {realDates.length} Dates Available
-                  </span>
-                )}
-              </div>
-              <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span className="text-2xl sm:text-3xl font-black text-white whitespace-nowrap">
-                  {format(unitPrice, tourCurrency)}
-                </span>
-                <span className="text-xs text-slate-300 whitespace-nowrap">/ person</span>
-              </div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px]">
-                {promoActive && rawAdultUnitPrice > unitPrice && (
-                  <span className="font-semibold text-red-300 line-through decoration-red-300">
-                    {format(rawAdultUnitPrice, tourCurrency)}
-                  </span>
-                )}
-                {selectedTierLabel && <span className="font-semibold text-emerald-300">for {selectedTierLabel}</span>}
-              </div>
-              {promoActive && (
-                <p className="mt-1 text-[10px] font-semibold text-emerald-300">
-                  {todaysSpecialOfferLabel}
-                </p>
-              )}
-              <p className="text-[10px] text-slate-300 mt-1">
-                Taxes &amp; Service Fees Included
-              </p>
-            </div>
-
-            <h3 className="text-base font-bold text-slate-950">
+            <h3 className="text-lg font-bold text-slate-950">
               Select Date &amp; Travellers
             </h3>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mt-1 text-sm text-slate-600">
               {destination} Tour Experience
             </p>
 
@@ -2614,17 +2604,17 @@ export default function TourDetailExperience({
                       key={dep.id}
                       type="button"
                       onClick={() => setSelectedDateId(dep.id)}
-                      className={`rounded-xl border p-2 text-center transition cursor-pointer ${
+                      className={`rounded-xl border p-2.5 text-center transition cursor-pointer ${
                         isSelected
                           ? "border-blue-600 bg-blue-50/80 ring-2 ring-blue-600/30 font-bold"
                           : "border-slate-200 bg-white hover:border-slate-300"
                       }`}
                     >
-                      <span className="block text-[11px] font-bold text-slate-900 leading-tight">
+                      <span className="block text-xs font-bold text-slate-900 leading-tight">
                         {dep.date}
                       </span>
                       <span
-                        className={`mt-0.5 block text-[9px] ${
+                        className={`mt-1 block text-[11px] ${
                           dep.urgent
                             ? "font-bold text-amber-600"
                             : "text-emerald-600 font-semibold"
@@ -2654,7 +2644,7 @@ export default function TourDetailExperience({
             )}
 
             {monthGroups.length > 0 && (
-              <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-600">
+              <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2.5 text-xs leading-5 text-slate-600">
                 <p className="font-bold text-slate-700">Can&apos;t find a date that suits you?</p>
                 <p>
                   <Link href="/contact" className="font-bold text-blue-600 hover:underline">Get in touch with us</Link>
@@ -2674,10 +2664,10 @@ export default function TourDetailExperience({
             {pricingRows.length > 0 && (
               <div className="mt-3 border-t border-slate-100 pt-2.5">
                 <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <h4 className="text-[10px] font-bold uppercase tracking-wide text-slate-700">
+                  <h4 className="text-xs font-bold uppercase tracking-wide text-slate-700">
                     Group Rate Highlights
                   </h4>
-                  <span className="text-[9px] font-bold text-blue-600">
+                  <span className="text-[11px] font-bold text-blue-600">
                     {promoActive
                       ? todaysSpecialOfferLabel
                       : "Auto-applied discount"}
@@ -2718,7 +2708,7 @@ export default function TourDetailExperience({
                           setAdults(target);
                           setChildren(0);
                         }}
-                        className={`grid min-h-9 w-full grid-cols-[minmax(90px,1fr)_auto] items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[10px] transition cursor-pointer ${
+                        className={`grid min-h-10 w-full grid-cols-[minmax(90px,1fr)_auto] items-center gap-2 rounded-lg border px-3 py-2 text-xs transition cursor-pointer ${
                           isSelected
                             ? "border-blue-600 bg-blue-50/70 ring-1 ring-blue-600/30 font-bold"
                             : "border-slate-200 bg-white hover:border-slate-300"
@@ -2729,7 +2719,7 @@ export default function TourDetailExperience({
                         </span>
                         <span className="flex min-w-0 items-center justify-end gap-1 whitespace-nowrap text-right leading-none">
                           {rowDiscounted && (
-                            <span className="text-[9px] font-semibold text-red-500 line-through decoration-red-500">
+                            <span className="text-[10px] font-semibold text-red-500 line-through decoration-red-500">
                               {format(
                                 rowRawOriginal,
                                 row.currency || tourCurrency,
@@ -2741,13 +2731,13 @@ export default function TourDetailExperience({
                               row.price_per_person,
                               row.currency || tourCurrency,
                             )}
-                            <span className="text-[9px] font-normal text-slate-400">
+                            <span className="text-[10px] font-normal text-slate-400">
                               {" "}
                               / pax
                             </span>
                           </span>
                           {saveAmount > 0 && (
-                            <span className="whitespace-nowrap text-[9px] font-bold text-emerald-600">
+                            <span className="whitespace-nowrap text-[10px] font-bold text-emerald-600">
                               (save{" "}
                               {format(saveAmount, row.currency || tourCurrency)}{" "}
                               pp)
@@ -2764,22 +2754,22 @@ export default function TourDetailExperience({
             {/* Traveller Steppers */}
             <div className="mt-4 border-t border-slate-100 pt-3">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
                   Who&apos;s Travelling?
                 </h4>
                 {(selectedDeparture?.slotsRemaining != null || tour.max_group_size) && (
-                  <span className="text-[10px] font-medium text-slate-400">
+                  <span className="text-xs font-medium text-slate-500">
                     Max {maxTravellers} guests
                   </span>
                 )}
               </div>
 
-              <div className="space-y-3 text-xs">
+              <div className="space-y-3 text-sm">
                 {/* Adults */}
                 <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                   <div>
                     <p className="font-bold text-slate-900">Adults</p>
-                    <p className="text-[10px] text-slate-500 font-normal">
+                    <p className="text-xs text-slate-600 font-normal">
                       Ages 18+ ({format(unitPrice, tourCurrency)}/pax)
                     </p>
                   </div>
@@ -2788,9 +2778,9 @@ export default function TourDetailExperience({
                       type="button"
                       disabled={adults <= 1}
                       onClick={() => setAdults((a) => Math.max(1, a - 1))}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
                     >
-                      <Minus size={13} />
+                      <Minus size={15} />
                     </button>
                     <span className="w-5 text-center font-black text-slate-950">
                       {adults}
@@ -2803,9 +2793,9 @@ export default function TourDetailExperience({
                           Math.min(maxTravellers - children, a + 1),
                         )
                       }
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
                     >
-                      <Plus size={13} />
+                      <Plus size={15} />
                     </button>
                   </div>
                 </div>
@@ -2814,7 +2804,7 @@ export default function TourDetailExperience({
                 <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                   <div>
                     <p className="font-bold text-slate-900">Children</p>
-                    <p className="text-[10px] text-slate-500 font-normal">
+                    <p className="text-xs text-slate-600 font-normal">
                       Ages 3–17 ({format(childUnitPrice, tourCurrency)}/pax)
                     </p>
                   </div>
@@ -2823,9 +2813,9 @@ export default function TourDetailExperience({
                       type="button"
                       disabled={children <= 0}
                       onClick={() => setChildren((c) => Math.max(0, c - 1))}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
                     >
-                      <Minus size={13} />
+                      <Minus size={15} />
                     </button>
                     <span className="w-5 text-center font-black text-slate-950">
                       {children}
@@ -2838,9 +2828,9 @@ export default function TourDetailExperience({
                           Math.min(maxTravellers - adults, c + 1),
                         )
                       }
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
                     >
-                      <Plus size={13} />
+                      <Plus size={15} />
                     </button>
                   </div>
                 </div>
@@ -2849,122 +2839,88 @@ export default function TourDetailExperience({
 
             {/* Live Pricing Summary */}
             <div className="mt-4 border-t border-slate-100 pt-3">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                 Booking Summary
               </h4>
 
-              {groupSaving > 0 && (
+              {priceQuote && quoteGroupDiscount > 0 && (
                 <div className="mb-2 flex items-center justify-between rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-1.5 text-[11px] font-semibold text-blue-800">
                   <span>
                     🎉 Group rate applied ({travellerCount} travellers) vs.
                     standard rate
                   </span>
                   <span className="font-bold">
-                    -{format(groupSaving, tourCurrency)} total
+                    -{format(quoteGroupDiscount, pricingCurrency)} total
                   </span>
                 </div>
               )}
 
-              <div className="space-y-1.5 text-xs">
-                {promoActive ? (
+              <div className="space-y-2 text-sm">
+                {priceQuote ? (
                   <>
                     <div className="flex justify-between text-slate-600 font-medium">
-                      <span>
-                        Tour Price ({travellerCount} Guest
-                        {travellerCount > 1 ? "s" : ""})
-                      </span>
-                      <span className="font-bold text-slate-500 line-through">
-                        {format(rawTourPrice, tourCurrency)}
-                      </span>
+                      <span>Tour price ({travellerCount} guest{travellerCount > 1 ? "s" : ""})</span>
+                      <span className="font-bold text-slate-900">{format(quoteBaseAmount, pricingCurrency)}</span>
                     </div>
-                    <div className="flex justify-between text-slate-600 font-medium">
-                      <span>Customer price after discounts</span>
-                      <span className="font-bold text-slate-900">
-                        {format(tourPrice, tourCurrency)}
-                      </span>
-                    </div>
-                    {totalDiscountSaving > 0 && (
-                      <div className="flex items-center justify-between rounded-md bg-emerald-50 px-2 py-1 text-emerald-700 font-bold">
-                        <span>You Save</span>
-                        <span>
-                          {format(totalDiscountSaving, tourCurrency)}
-                          <span className="ml-1 text-[10px] font-semibold">
-                            (
-                            {format(
-                              Math.round(
-                                totalDiscountSaving / Math.max(1, travellerCount),
-                              ),
-                              tourCurrency,
-                            )}{" "}
-                            / person)
-                          </span>
-                        </span>
+                    {quoteGroupDiscount > 0 && (
+                      <div className="flex justify-between text-emerald-700 font-semibold">
+                        <span>Group discount</span>
+                        <span>-{format(quoteGroupDiscount, pricingCurrency)}</span>
+                      </div>
+                    )}
+                    {quotePromotionDiscount > 0 && (
+                      <div className="flex justify-between text-emerald-700 font-semibold">
+                        <span>Offer discount</span>
+                        <span>-{format(quotePromotionDiscount, pricingCurrency)}</span>
                       </div>
                     )}
                   </>
                 ) : (
-                  <>
-                    <div className="flex justify-between text-slate-600 font-medium">
-                      <span>
-                        {adults} Adult{adults > 1 ? "s" : ""}
-                      </span>
-                      <span className="font-bold text-slate-900">
-                        {format(adults * unitPrice, tourCurrency)}
-                      </span>
-                    </div>
-                    {children > 0 && (
-                      <div className="flex justify-between text-slate-600 font-medium">
-                        <span>
-                          {children} Child{children > 1 ? "ren" : ""}
-                        </span>
-                        <span className="font-bold text-slate-900">
-                          {format(children * childUnitPrice, tourCurrency)}
-                        </span>
-                      </div>
-                    )}
-                  </>
+                  <div className="py-1 text-sm font-medium text-slate-400">Confirming the current price…</div>
                 )}
                 <div className="flex justify-between text-slate-600 font-medium">
-                  <span>Taxes &amp; Fees</span>
-                  <span className="font-bold text-emerald-600">Included</span>
-                </div>
-                <div className="flex justify-between text-slate-600 font-medium">
-                  <span>Booking Fees</span>
-                  <span className="font-bold text-emerald-600">Free</span>
+                  <span>Taxes &amp; fees</span>
+                  {priceQuote ? (
+                    quoteTaxAndFees > 0 ? (
+                      <span className="font-bold text-slate-900">+{format(quoteTaxAndFees, pricingCurrency)}</span>
+                    ) : (
+                      <span className="font-bold text-emerald-600">Included</span>
+                    )
+                  ) : (
+                    <span className="font-medium text-slate-400">Calculating…</span>
+                  )}
                 </div>
 
                 <div className="my-2 border-b border-dashed border-slate-200" />
 
                 <div className="flex items-center justify-between pt-1">
                   <div>
-                    <p className="text-xs font-bold text-slate-900">
+                    <p className="text-sm font-bold text-slate-900">
                       Total Price
                     </p>
-                    <p className="text-[10px] text-slate-400 font-normal">
-                      {format(perPersonPrice, tourCurrency)} per traveller
-                    </p>
+                    <p className="text-xs text-slate-500 font-normal">{priceQuote ? `${format(displayedPerPersonPrice, pricingCurrency)} per traveller` : "Calculating…"}</p>
                   </div>
-                  <strong className="text-xl font-black text-slate-950">
-                    {format(totalAmount, tourCurrency)}
+                  <strong className="text-2xl font-black text-slate-950">
+                    {priceQuote ? format(totalAmount, pricingCurrency) : "—"}
                   </strong>
                 </div>
 
                 {/* Deposit Option in Summary */}
-                {depositDue != null && (
-                  <div className="mt-2 rounded-lg bg-blue-50 border border-blue-200/60 p-2.5 text-xs">
+                {priceQuote && depositDue != null && (
+                  <div className="mt-3 rounded-lg bg-blue-50 border border-blue-200/60 p-3 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-blue-900 flex items-center gap-1">
-                        <Wallet size={13} className="text-blue-600" />
+                        <Wallet size={15} className="text-blue-600" />
                         Or pay a deposit today
                         {depositPercent != null ? ` (${depositPercent}%)` : ""}:
                       </span>
                       <span className="font-black text-blue-700">
-                        {format(depositDue, tourCurrency)}
+                        {format(depositDue, pricingCurrency)}
                       </span>
                     </div>
                     {depositOffer?.dueDate && (
-                      <p className="mt-1 text-[10px] font-medium text-blue-800/80">
-                        Balance of {format(Math.max(0, totalAmount - depositDue), tourCurrency)} due by{" "}
+                      <p className="mt-1.5 text-xs font-medium leading-5 text-blue-800/80">
+                        Balance of {format(Math.max(0, totalAmount - depositDue), pricingCurrency)} due by{" "}
                         {new Date(`${depositOffer.dueDate}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
                     )}
@@ -2981,14 +2937,14 @@ export default function TourDetailExperience({
                       <button
                         type="button"
                         onClick={() => handleBookNow("reserve")}
-                        disabled={!agentReserveEligible || !selectedDeparture || !unitPrice}
+                        disabled={!agentReserveEligible || !selectedDeparture || !unitPrice || !priceQuote}
                         className="w-full rounded-lg bg-pub-accent py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-[#cf4b24] disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
                       >
                         Pay Deposit &amp; Reserve
                       </button>
                       <p className="mt-2 text-center text-[10px] font-medium leading-4 text-blue-900/75">
                         {agentReserveEligible ? (
-                          <>Pay {depositPercent ?? 0}% ({format(depositDue ?? 0, tourCurrency)}) today
+                          <>Pay {depositPercent ?? 0}% ({format(depositDue ?? 0, pricingCurrency)}) today
                           {depositOffer?.dueDate
                             ? `; balance due ${new Date(`${depositOffer.dueDate}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.`
                             : "."}</>
@@ -2999,7 +2955,7 @@ export default function TourDetailExperience({
                     <button
                       type="button"
                       onClick={() => handleBookNow("full")}
-                      disabled={!selectedDeparture || !unitPrice}
+                      disabled={!selectedDeparture || !unitPrice || !priceQuote}
                       className="w-full rounded-lg bg-pub-accent py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-[#cf4b24] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Pay in Full Today
@@ -3011,15 +2967,15 @@ export default function TourDetailExperience({
                 </>
               ) : (
                 <>
-                  {depositDue != null && (
+                  {priceQuote && depositDue != null && (
                     <>
                       <button
                         type="button"
                         onClick={() => handleBookNow("reserve")}
-                        disabled={!selectedDeparture || !unitPrice}
+                        disabled={!selectedDeparture || !unitPrice || !priceQuote}
                         className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        <span>Secure with a Deposit ({format(depositDue, tourCurrency)} today)</span>
+                        <span>Secure with a Deposit ({format(depositDue, pricingCurrency)} today)</span>
                         <ArrowRight size={16} />
                       </button>
                       <div className="flex items-center gap-3 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400" aria-hidden="true">
@@ -3032,10 +2988,10 @@ export default function TourDetailExperience({
                   <button
                     type="button"
                     onClick={() => handleBookNow()}
-                    disabled={!selectedDeparture || !unitPrice}
+                    disabled={!selectedDeparture || !unitPrice || !priceQuote}
                     className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {!unitPrice ? "Price Unavailable" : selectedDeparture ? (
+                    {!unitPrice ? "Price Unavailable" : !priceQuote ? "Confirming Price…" : selectedDeparture ? (
                       <><span>Book This Tour</span><ArrowRight size={16} /></>
                     ) : "Select Date"}
                   </button>
