@@ -45,7 +45,6 @@ import publicApi, { PublicTourDetail } from "@/lib/api/publicClient";
 import { destinationUrl } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
-import { combinedDiscountPercent } from "@/lib/tours/discountSource";
 import MarketingImage from "@/components/public/MarketingImage";
 import ExternalExperiencesSection from "@/components/public/external/ExternalExperiencesSection";
 import {
@@ -844,7 +843,7 @@ export default function TourDetailExperience({
   const supplierDiscountPercent = Number(tour.supplier_discount_percentage ?? 0);
   const tourvaaDiscountPercent = Number(tour.tourvaa_discount_percentage ?? 0);
   const todaysSpecialOfferPercent =
-    combinedDiscountPercent(supplierDiscountPercent, tourvaaDiscountPercent) ||
+    supplierDiscountPercent + tourvaaDiscountPercent ||
     Number(tour.discount_percentage ?? 0);
   const todaysSpecialOfferLabel = `Today's Special Offer (${todaysSpecialOfferPercent}% Discount)`;
   const activeDiscountLabels = [
@@ -2300,70 +2299,66 @@ export default function TourDetailExperience({
             {(tour.accommodations.length > 0 ||
               tour.optional_activities.length > 0 ||
               tour.extensions.length > 0) && (
-              <div className="space-y-4">
-                <h3 className="flex items-center gap-3 text-xl sm:text-2xl font-bold text-pub-primary">
-                  <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
-                    <Sparkles size={22} className="text-pub-primary" />
-                  </span>
-                  <span>Enhance Your Tour</span>
-                </h3>
-                <div className="grid gap-4 sm:grid-cols-2">
+              <section className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+                <div className="relative overflow-hidden border-b border-slate-100 bg-gradient-to-br from-sky-50 via-white to-violet-50 px-5 py-5 sm:px-6 sm:py-6">
+                  <div className="absolute -right-8 -top-10 h-32 w-32 rounded-full bg-violet-200/35 blur-2xl" />
+                  <div className="relative flex items-start gap-3.5">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary text-white shadow-lg shadow-sky-900/15">
+                      <Sparkles size={21} />
+                    </span>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-pub-primary/75">Make it yours</p>
+                      <h3 className="mt-0.5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Enhance Your Tour</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-sm">Personalise your trip with carefully selected stays, experiences and extensions.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-3 p-4 sm:grid-cols-2 sm:gap-4 sm:p-5">
                   {tour.accommodations.map((item) => (
                     <div
                       key={`accommodation-${item.id}`}
-                      className="rounded-xl border border-slate-200 bg-white p-4"
+                      className="group relative overflow-hidden rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50/80 via-white to-white p-4 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-lg hover:shadow-sky-900/5"
                     >
-                      <p className="text-[10px] font-black uppercase tracking-wider text-blue-600">
-                        Accommodation
-                      </p>
-                      <h4 className="mt-1 text-sm font-bold text-slate-900">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-sky-700"><Hotel size={18} /></span>
+                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-sky-700">Stay upgrade</span>
+                      </div>
+                      <h4 className="text-sm font-extrabold text-slate-950">
                         {item.name}
                       </h4>
                       {item.description && (
-                        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                        <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
                           {item.description}
                         </p>
                       )}
                       {item.price != null && (
-                        <p className="mt-3 text-xs font-bold text-slate-800">
-                          + {format(item.price, tourCurrency)}
-                        </p>
+                        <p className="mt-4 inline-flex rounded-lg bg-white px-2.5 py-1.5 text-xs font-extrabold text-slate-900 shadow-sm ring-1 ring-slate-100">+ {format(item.price, tourCurrency)}</p>
                       )}
                     </div>
                   ))}
                   {tour.optional_activities.map((item) => (
                     <div
                       key={`activity-${item.id}`}
-                      className="rounded-xl border border-slate-200 bg-white p-4"
+                      className="group relative overflow-hidden rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50/80 via-white to-white p-4 transition duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-lg hover:shadow-violet-900/5"
                     >
-                      <p className="text-[10px] font-black uppercase tracking-wider text-violet-600">
-                        Optional activity
-                      </p>
-                      <h4 className="mt-1 text-sm font-bold text-slate-900">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700"><Ticket size={18} /></span>
+                        <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-violet-700">Experience</span>
+                      </div>
+                      <h4 className="text-sm font-extrabold text-slate-950">
                         {item.name}
                       </h4>
                       {item.description && (
-                        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                        <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
                           {item.description}
                         </p>
                       )}
-                      <div className="mt-3 space-y-0.5 text-xs font-bold text-slate-800">
+                      <div className="mt-4 flex flex-wrap gap-1.5 text-xs font-extrabold text-slate-800">
                         {item.price != null && (
-                          <p>
-                            +{" "}
-                            {format(item.price, item.currency || tourCurrency)}{" "}
-                            / adult
-                          </p>
+                          <p className="rounded-lg bg-white px-2.5 py-1.5 shadow-sm ring-1 ring-violet-100">+ {format(item.price, item.currency || tourCurrency)} / adult</p>
                         )}
                         {item.child_price != null && (
-                          <p className="text-slate-600">
-                            +{" "}
-                            {format(
-                              item.child_price,
-                              item.currency || tourCurrency,
-                            )}{" "}
-                            / child
-                          </p>
+                          <p className="rounded-lg bg-white px-2.5 py-1.5 text-slate-600 shadow-sm ring-1 ring-violet-100">+ {format(item.child_price, item.currency || tourCurrency)} / child</p>
                         )}
                       </div>
                     </div>
@@ -2371,28 +2366,27 @@ export default function TourDetailExperience({
                   {tour.extensions.map((item) => (
                     <div
                       key={`extension-${item.id}`}
-                      className="rounded-xl border border-slate-200 bg-white p-4"
+                      className="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-white p-4 transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-900/5"
                     >
-                      <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600">
-                        Tour extension
-                      </p>
-                      <h4 className="mt-1 text-sm font-bold text-slate-900">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><Compass size={18} /></span>
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-700">Extend your trip</span>
+                      </div>
+                      <h4 className="text-sm font-extrabold text-slate-950">
                         {item.title}
                       </h4>
                       {item.description && (
-                        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                        <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
                           {item.description}
                         </p>
                       )}
                       {item.price != null && (
-                        <p className="mt-3 text-xs font-bold text-slate-800">
-                          + {format(item.price, tourCurrency)}
-                        </p>
+                        <p className="mt-4 inline-flex rounded-lg bg-white px-2.5 py-1.5 text-xs font-extrabold text-slate-900 shadow-sm ring-1 ring-emerald-100">+ {format(item.price, tourCurrency)}</p>
                       )}
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
             {/* Legacy standalone policy is intentionally omitted: the policy lives in Before You Book. */}

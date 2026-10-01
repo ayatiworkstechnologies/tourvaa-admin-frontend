@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { combinedDiscountPercent, isTourvaaDiscount } from "@/lib/tours/discountSource";
+import { isTourvaaDiscount } from "@/lib/tours/discountSource";
 import type { TourDiscount } from "@/lib/api/services/tourDetailService";
 
 const discount = (overrides: Partial<TourDiscount>): TourDiscount => ({
@@ -21,11 +21,5 @@ describe("discount pricing source", () => {
   it("falls back to funded_by for rows without creator history", () => {
     expect(isTourvaaDiscount(discount({ funded_by: "TOURVAA" }))).toBe(true);
     expect(isTourvaaDiscount(discount({ funded_by: "SUPPLIER" }))).toBe(false);
-  });
-
-  it("reports the effective reduction for sequential discounts", () => {
-    expect(combinedDiscountPercent(10, 10)).toBe(19);
-    expect(combinedDiscountPercent(10, 0)).toBe(10);
-    expect(combinedDiscountPercent(0, 0)).toBe(0);
   });
 });

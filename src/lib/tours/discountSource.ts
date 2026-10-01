@@ -18,13 +18,3 @@ export function isTourvaaDiscount(discount: TourDiscount): boolean {
   if (name.includes("supplier")) return false;
   return false;
 }
-
-/** Combine sequential supplier and Tourvaa percentage reductions. */
-export function combinedDiscountPercent(
-  supplierPercent: number,
-  tourvaaPercent: number,
-): number {
-  const supplierFactor = 1 - Math.max(0, supplierPercent) / 100;
-  const tourvaaFactor = 1 - Math.max(0, tourvaaPercent) / 100;
-  return Math.round((1 - supplierFactor * tourvaaFactor) * 10000) / 100;
-}
