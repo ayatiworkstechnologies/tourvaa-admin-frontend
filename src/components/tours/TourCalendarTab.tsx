@@ -887,7 +887,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
         <div className="flex flex-wrap gap-3 mb-4">
           <DatePicker value={newBlockStart} onChange={setNewBlockStart} minDate={todayStr()} placeholder="Start date" className="min-w-40 flex-1" />
           <DatePicker value={newBlockEnd} onChange={setNewBlockEnd} minDate={newBlockStart || todayStr()} placeholder="End date (optional)" clearable className="min-w-40 flex-1" />
-          <input placeholder="Reason" value={newBlockReason} onChange={(e) => setNewBlockReason(e.target.value)}
+          <input placeholder="Reason (e.g. Maintenance, Public holiday)" value={newBlockReason} onChange={(e) => setNewBlockReason(e.target.value)}
             className="min-w-40 flex-1 rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
           <button type="button" onClick={addBlock} disabled={blocking}
             className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-600 disabled:opacity-60">

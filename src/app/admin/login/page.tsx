@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
           label="Email Id"
           icon={Mail}
           type="email"
-          placeholder="Enter email address"
+          placeholder="name@company.com"
           autoComplete="email"
           {...register("email", {
             required: "Email is required.",
@@ -57,7 +57,7 @@ export default function AdminLoginPage() {
             label="Password"
             icon={Lock}
             type={showPassword ? "text" : "password"}
-            placeholder="Password"
+            placeholder="Enter your password"
             autoComplete="current-password"
             {...register("password", { required: "Password is required." })}
           />

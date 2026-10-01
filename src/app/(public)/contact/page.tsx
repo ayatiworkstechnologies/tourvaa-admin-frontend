@@ -611,7 +611,7 @@ export default function ContactPage() {
                           type="tel"
                           value={form.phone}
                           onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                          placeholder="+1 (555) 000-0000"
+                          placeholder="e.g. +1 (555) 234-5678"
                           className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3.5 text-xs sm:text-sm outline-none focus:border-pub-secondary focus:ring-1 focus:ring-pub-secondary/20 transition"
                         />
                       </div>
@@ -628,7 +628,7 @@ export default function ContactPage() {
                           required
                           value={form.email}
                           onChange={(e) => setForm({ ...form, email: e.target.value })}
-                          placeholder="alex@example.com"
+                          placeholder="alex.henderson@example.com"
                           className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3.5 text-xs sm:text-sm outline-none focus:border-pub-secondary focus:ring-1 focus:ring-pub-secondary/20 transition"
                         />
                       </div>
@@ -1068,7 +1068,7 @@ export default function ContactPage() {
                         required
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
-                        placeholder="Your name"
+                        placeholder="e.g. Alex Henderson"
                         className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-pub-secondary"
                       />
                     </div>
@@ -1080,7 +1080,7 @@ export default function ContactPage() {
                         type="tel"
                         value={form.phone}
                         onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                        placeholder="+1 (555) 000-0000"
+                        placeholder="e.g. +1 (555) 234-5678"
                         className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-pub-secondary"
                       />
                     </div>
@@ -1095,7 +1095,7 @@ export default function ContactPage() {
                       required
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      placeholder="you@example.com"
+                      placeholder="alex.henderson@example.com"
                       className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-pub-secondary"
                     />
                   </div>

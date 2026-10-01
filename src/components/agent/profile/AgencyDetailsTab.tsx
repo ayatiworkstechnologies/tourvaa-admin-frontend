@@ -219,7 +219,7 @@ export default function AgencyDetailsTab() {
           <label className="block">
             <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Agency Name <span className="text-red-500">*</span></span>
             <input required value={form.agent_name} onChange={e => set("agent_name", e.target.value)}
-              placeholder="Your agency name"
+              placeholder="e.g. Horizon Travel Ltd"
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all" />
           </label>
 
@@ -245,7 +245,7 @@ export default function AgencyDetailsTab() {
           <label className="block">
             <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Agency Address <span className="text-red-500">*</span></span>
             <input required value={form.address} onChange={e => set("address", e.target.value)}
-              placeholder="Full business address"
+              placeholder="e.g. Suite 400, 100 Bay Street, Toronto, ON"
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all" />
           </label>
 
@@ -275,14 +275,14 @@ export default function AgencyDetailsTab() {
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">IATA Number</span>
               <input value={form.iata_registration_number} onChange={e => set("iata_registration_number", e.target.value)}
-                placeholder="IATA registration number"
+                placeholder="e.g. 12345678"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
 
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">GST / Tax Number</span>
               <input value={form.gst_tax_number} onChange={e => set("gst_tax_number", e.target.value)}
-                placeholder="Tax ID"
+                placeholder="e.g. TAX-8921-9481"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
 

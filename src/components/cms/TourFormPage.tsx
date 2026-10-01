@@ -488,7 +488,7 @@ function LanguageMultiSelect({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search Indian or World languages (e.g. Hindi, Tamil, French)..."
+              placeholder="Search languages (e.g. English, French, Spanish, Hindi)..."
               autoFocus
               className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-9 pr-8 py-2 text-xs sm:text-sm outline-none focus:border-dash-brand focus:bg-white focus:ring-2 focus:ring-dash-brand/10 transition"
             />
@@ -1910,7 +1910,7 @@ export default function TourFormPage({
                   if (errors.tax_percentage) clearError("tax_percentage");
                 }}
                 className={getInputClass("tax_percentage")}
-                placeholder="0"
+                placeholder="0.00"
               />
               {errors.tax_percentage ? (
                 <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
@@ -1935,7 +1935,7 @@ export default function TourFormPage({
                   if (errors.service_fee) clearError("service_fee");
                 }}
                 className={getInputClass("service_fee")}
-                placeholder="0"
+                placeholder="0.00"
               />
               {errors.service_fee ? (
                 <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">

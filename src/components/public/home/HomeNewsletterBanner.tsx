@@ -110,7 +110,7 @@ export default function HomeNewsletterBanner({
                   <input
                     type="email"
                     required
-                    placeholder="Enter Your email address"
+                    placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="h-11 sm:h-12 w-full rounded-lg border border-pub-accent/25 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-pub-accent transition-colors"

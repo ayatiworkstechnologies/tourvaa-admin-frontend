@@ -249,7 +249,7 @@ function AgentCustomerSelector({
           type="email"
           value={linkEmail}
           onChange={(e) => onLinkEmailChange(e.target.value)}
-          placeholder="customer@example.com"
+          placeholder="alex.smith@example.com"
           className="min-w-[220px] flex-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
         />
         <button
@@ -277,28 +277,28 @@ function AgentCustomerSelector({
               type="text"
               value={newCustomer.fullName}
               onChange={(e) => onNewCustomerChange("fullName", e.target.value)}
-              placeholder="Full name"
+              placeholder="Full name (e.g. Alex Smith)"
               className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
             />
             <input
               type="email"
               value={newCustomer.email}
               onChange={(e) => onNewCustomerChange("email", e.target.value)}
-              placeholder="Email address"
+              placeholder="alex.smith@example.com"
               className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
             />
             <input
               type="text"
               value={newCustomer.phoneCountry}
               onChange={(e) => onNewCustomerChange("phoneCountry", e.target.value)}
-              placeholder="+91"
+              placeholder="+1 / +91"
               className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
             />
             <input
               type="tel"
               value={newCustomer.phone}
               onChange={(e) => onNewCustomerChange("phone", e.target.value)}
-              placeholder="Phone number"
+              placeholder="e.g. 555 019 2834"
               className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
             />
           </div>
@@ -371,7 +371,7 @@ function AgentCommercialFields({
             type="text"
             value={agentReference}
             onChange={(e) => onAgentReferenceChange(e.target.value)}
-            placeholder="e.g. internal booking ref"
+            placeholder="e.g. AGT-REF-1042"
             className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
           />
         </div>
@@ -2076,7 +2076,7 @@ export default function DynamicTourBookingPage() {
                                   handlePassengerChange(idx, "firstName", e.target.value);
                                   clearPassengerFieldError(idx, "firstName");
                                 }}
-                                placeholder="e.g. Srinath"
+                                placeholder="e.g. Alex"
                                 className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
                                   passengerErrors[idx]?.firstName
                                     ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100"
@@ -2100,7 +2100,7 @@ export default function DynamicTourBookingPage() {
                                 type="text"
                                 value={passenger.middleName}
                                 onChange={(e) => handlePassengerChange(idx, "middleName", e.target.value)}
-                                placeholder="Optional"
+                                placeholder="Middle name (optional)"
                                 className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-primary focus:ring-2 focus:ring-pub-primary/10"
                               />
                             </div>
@@ -2118,7 +2118,7 @@ export default function DynamicTourBookingPage() {
                                   handlePassengerChange(idx, "lastName", e.target.value);
                                   clearPassengerFieldError(idx, "lastName");
                                 }}
-                                placeholder="e.g. Garu"
+                                placeholder="e.g. Smith"
                                 className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
                                   passengerErrors[idx]?.lastName
                                     ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100"
@@ -2168,7 +2168,7 @@ export default function DynamicTourBookingPage() {
                                       handlePassengerChange(idx, "phone", e.target.value);
                                       clearPassengerFieldError(idx, "phone");
                                     }}
-                                    placeholder="e.g. 9876543210"
+                                    placeholder="e.g. 98765 43210"
                                     maxLength={15}
                                     className={`flex-1 rounded-xl border bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
                                       passengerErrors[idx]?.phone
@@ -2201,7 +2201,7 @@ export default function DynamicTourBookingPage() {
                                     handlePassengerChange(idx, "email", e.target.value);
                                     clearPassengerFieldError(idx, "email");
                                   }}
-                                  placeholder="e.g. srinath@example.com"
+                                  placeholder="alex.smith@example.com"
                                   className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
                                     passengerErrors[idx]?.email
                                       ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100"
@@ -2236,7 +2236,7 @@ export default function DynamicTourBookingPage() {
                                   handlePassengerChange(idx, "age", e.target.value);
                                   clearPassengerFieldError(idx, "age");
                                 }}
-                                placeholder={passenger.type === "child" ? "3–11" : "12–120"}
+                                placeholder={passenger.type === "child" ? "e.g. 8" : "e.g. 28"}
                                 className={`w-full rounded-xl border bg-slate-50/50 px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none transition focus:bg-white ${
                                   passengerErrors[idx]?.age
                                     ? "border-rose-400 focus:border-rose-500"
@@ -2261,7 +2261,7 @@ export default function DynamicTourBookingPage() {
                                   onChange={(e) => handlePassengerChange(idx, "gender", e.target.value)}
                                   className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3.5 pr-8 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
                                 >
-                                  <option value="">Select an option</option>
+                                  <option value="">Select gender</option>
                                   <option value="male">Male</option>
                                   <option value="female">Female</option>
                                   <option value="prefer_not_to_answer">Prefer not to answer</option>

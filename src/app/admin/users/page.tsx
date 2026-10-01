@@ -475,7 +475,7 @@ export default function UsersPage() {
                     <input
                       value={form.name}
                       onChange={(e) => updateForm("name", e.target.value)}
-                      placeholder="Full name"
+                      placeholder="e.g. Alex Smith"
                       className={fieldInputClass(Boolean(fieldErrors.name))}
                       required
                       aria-invalid={Boolean(fieldErrors.name)}
@@ -492,7 +492,7 @@ export default function UsersPage() {
                       type="email"
                       value={form.email}
                       onChange={(e) => updateForm("email", e.target.value)}
-                      placeholder="user@example.com"
+                      placeholder="alex.smith@example.com"
                       className={fieldInputClass(Boolean(fieldErrors.email))}
                       required
                       aria-invalid={Boolean(fieldErrors.email)}

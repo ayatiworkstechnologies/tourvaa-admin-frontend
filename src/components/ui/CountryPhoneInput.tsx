@@ -20,6 +20,7 @@ type CountryPhoneInputProps = {
   helpText?: string;
   errorMessage?: string;
   className?: string;
+  placeholder?: string;
 };
 
 /** The one country + phone number pair of fields used everywhere a phone
@@ -42,6 +43,7 @@ export default function CountryPhoneInput({
   helpText,
   errorMessage,
   className = "",
+  placeholder = "e.g. 98765 43210",
 }: CountryPhoneInputProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -178,7 +180,7 @@ export default function CountryPhoneInput({
             inputMode="numeric"
             value={formatted}
             onChange={(event) => onNumberChange(digitsOnly(event.target.value))}
-            placeholder="9876543210"
+            placeholder={placeholder}
             className="min-w-0 flex-1 rounded-r-xl px-3 py-2.5 text-sm text-dash-text outline-none placeholder:text-dash-subtle disabled:cursor-not-allowed disabled:bg-slate-50"
             required={required}
             disabled={!selected}

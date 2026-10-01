@@ -175,12 +175,12 @@ export default function AdminAffiliateCommissionRulesPage() {
               {form.commission_type === "percentage" ? (
                 <div>
                   <label className={labelCls}>Percentage</label>
-                  <input value={form.percentage} onChange={(e) => setForm((f) => ({ ...f, percentage: e.target.value }))} placeholder="8" className={inputCls} />
+                  <input value={form.percentage} onChange={(e) => setForm((f) => ({ ...f, percentage: e.target.value }))} placeholder="e.g. 8" className={inputCls} />
                 </div>
               ) : (
                 <div>
                   <label className={labelCls}>Fixed Amount</label>
-                  <input value={form.fixed_amount} onChange={(e) => setForm((f) => ({ ...f, fixed_amount: e.target.value }))} placeholder="40" className={inputCls} />
+                  <input value={form.fixed_amount} onChange={(e) => setForm((f) => ({ ...f, fixed_amount: e.target.value }))} placeholder="e.g. 40" className={inputCls} />
                 </div>
               )}
               <div>

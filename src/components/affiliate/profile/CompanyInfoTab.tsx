@@ -182,7 +182,7 @@ export default function CompanyInfoTab() {
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Full Name <span className="text-red-500">*</span></span>
               <input required value={form.name} onChange={e => set("name", e.target.value)}
-                placeholder="Your legal name"
+                placeholder="e.g. Alex Henderson"
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all" />
             </label>
 
@@ -196,13 +196,13 @@ export default function CompanyInfoTab() {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Phone</span>
-                <input value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="+971 or +91"
+                <input value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="e.g. +1 555 234 5678"
                   className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
               </label>
 
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Website / Blog</span>
-                <input value={form.website_url} onChange={e => set("website_url", e.target.value)} placeholder="https://yourblog.com"
+                <input value={form.website_url} onChange={e => set("website_url", e.target.value)} placeholder="https://example.com"
                   className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
               </label>
 
@@ -252,7 +252,7 @@ export default function CompanyInfoTab() {
             <label className="block sm:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Social Media Profiles</span>
               <input value={marketing.social_media_profiles} onChange={e => setM("social_media_profiles", e.target.value)}
-                placeholder="Links to your profiles"
+                placeholder="e.g. instagram.com/profile, youtube.com/@channel"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
             </label>
             <label className="block sm:col-span-2">

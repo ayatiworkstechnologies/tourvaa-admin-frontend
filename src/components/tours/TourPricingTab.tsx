@@ -736,12 +736,12 @@ export default function TourPricingTab({
               <FormField name="passenger_from" label="Travellers from" required error={errors.passenger_from} hint="Smallest group this price applies to.">
                 <input id="passenger_from" name="passenger_from" type="number" min={1} value={numberInputValue(editing.passenger_from)}
                   onChange={(e) => { setEditing((p) => p ? { ...p, passenger_from: parseNumberInput(e.target.value) } : p); clearError("passenger_from"); }}
-                  className={fieldClass(errors.passenger_from)} placeholder="1" />
+                  className={fieldClass(errors.passenger_from)} placeholder="e.g. 1" />
               </FormField>
               <FormField name="passenger_to" label="Travellers to" required error={errors.passenger_to} hint="Largest group this price applies to.">
                 <input id="passenger_to" name="passenger_to" type="number" min={1} value={numberInputValue(editing.passenger_to)}
                   onChange={(e) => { setEditing((p) => p ? { ...p, passenger_to: parseNumberInput(e.target.value) } : p); clearError("passenger_to"); }}
-                  className={fieldClass(errors.passenger_to)} placeholder="4" />
+                  className={fieldClass(errors.passenger_to)} placeholder="e.g. 4" />
               </FormField>
               {isSupplier ? (
                 <div>

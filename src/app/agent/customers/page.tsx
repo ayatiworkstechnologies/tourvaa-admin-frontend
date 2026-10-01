@@ -259,18 +259,18 @@ export default function AgentCustomersPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">First name *</label>
-                  <input required value={form.first_name} onChange={field("first_name")} placeholder="Jane"
+                  <input required value={form.first_name} onChange={field("first_name")} placeholder="e.g. Jane"
                     className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Last name</label>
-                  <input value={form.last_name} onChange={field("last_name")} placeholder="Smith"
+                  <input value={form.last_name} onChange={field("last_name")} placeholder="e.g. Smith"
                     className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Email *</label>
-                <input required type="email" value={form.email} onChange={field("email")} placeholder="jane@example.com"
+                <input required type="email" value={form.email} onChange={field("email")} placeholder="jane.smith@example.com"
                   className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
               </div>
               <div className="flex gap-3">
@@ -281,7 +281,7 @@ export default function AgentCustomersPage() {
                 </div>
                 <div className="flex flex-col gap-1.5 flex-1">
                   <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Phone</label>
-                  <input value={form.phone} onChange={field("phone")} placeholder="555 000 0000"
+                  <input value={form.phone} onChange={field("phone")} placeholder="e.g. 555 019 2834"
                     className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
                 </div>
               </div>

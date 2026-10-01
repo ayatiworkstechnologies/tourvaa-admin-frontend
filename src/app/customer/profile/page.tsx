@@ -298,7 +298,7 @@ export default function CustomerProfilePage() {
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Sarah"
+                      placeholder="e.g. Sarah"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
@@ -310,7 +310,7 @@ export default function CustomerProfilePage() {
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Mitchell"
+                      placeholder="e.g. Mitchell"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
@@ -339,7 +339,7 @@ export default function CustomerProfilePage() {
                       type="text"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+1 (555) 743-2190"
+                      placeholder="e.g. +1 (555) 743-2190"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
@@ -351,7 +351,7 @@ export default function CustomerProfilePage() {
                       type="text"
                       value={dob}
                       onChange={(e) => setDob(e.target.value)}
-                      placeholder="November 14, 1994"
+                      placeholder="e.g. 14 Nov 1994"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
@@ -402,7 +402,7 @@ export default function CustomerProfilePage() {
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="58 Sunset Blvd, Los Angeles, CA 90028"
+                    placeholder="e.g. 58 Sunset Blvd, Los Angeles, CA 90028"
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                   />
                 </div>
@@ -430,7 +430,7 @@ export default function CustomerProfilePage() {
                       type="text"
                       value={passportNumber}
                       onChange={(e) => setPassportNumber(e.target.value)}
-                      placeholder="US-X4829301"
+                      placeholder="e.g. A12345678"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
@@ -442,7 +442,7 @@ export default function CustomerProfilePage() {
                       type="text"
                       value={passportExpiry}
                       onChange={(e) => setPassportExpiry(e.target.value)}
-                      placeholder="March 2029"
+                      placeholder="e.g. Mar 2029"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
@@ -457,7 +457,7 @@ export default function CustomerProfilePage() {
                       type="text"
                       value={frequentFlyer}
                       onChange={(e) => setFrequentFlyer(e.target.value)}
-                      placeholder="AA-8827341"
+                      placeholder="e.g. FF-12345678"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
@@ -502,7 +502,7 @@ export default function CustomerProfilePage() {
                       type="text"
                       value={emergencyName}
                       onChange={(e) => setEmergencyName(e.target.value)}
-                      placeholder="David Mitchell"
+                      placeholder="e.g. David Mitchell"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
@@ -514,7 +514,7 @@ export default function CustomerProfilePage() {
                       type="text"
                       value={emergencyRelation}
                       onChange={(e) => setEmergencyRelation(e.target.value)}
-                      placeholder="Spouse"
+                      placeholder="e.g. Spouse, Parent, Sibling"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
@@ -529,7 +529,7 @@ export default function CustomerProfilePage() {
                       type="text"
                       value={emergencyPhone}
                       onChange={(e) => setEmergencyPhone(e.target.value)}
-                      placeholder="+1 (555) 901-3382"
+                      placeholder="e.g. +1 (555) 901-3382"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
@@ -541,7 +541,7 @@ export default function CustomerProfilePage() {
                       type="email"
                       value={emergencyEmail}
                       onChange={(e) => setEmergencyEmail(e.target.value)}
-                      placeholder="david.mitchell@email.com"
+                      placeholder="e.g. emergency@example.com"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     />
                   </div>

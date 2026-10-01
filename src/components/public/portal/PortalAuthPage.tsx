@@ -253,7 +253,7 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
           <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <FieldInput
             autoComplete="username"
-            placeholder="you@example.com or +919876543210"
+            placeholder="name@example.com or mobile number"
             {...register("identifier", {
               required: "Email or mobile number is required.",
               validate: (v) => v.includes("@")
@@ -273,7 +273,7 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
           <FieldInput
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
-            placeholder="Your password"
+            placeholder="Enter your password"
             {...register("password", { required: "Password is required." })}
             className={`pl-10 pr-11 ${t.focusBorder} ${t.focusRing}`}
           />
@@ -448,7 +448,7 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
             required autoComplete="given-name"
             value={form.first_name}
             onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-            placeholder="Your name"
+            placeholder={config.accountType === "SUPPLIER" ? "e.g. Alex Henderson" : "e.g. Alex Smith"}
             className={`pl-10 ${t.focusBorder} ${t.focusRing}`}
           />
         </div>
@@ -463,7 +463,7 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
             required autoComplete="email" type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            placeholder="you@example.com"
+            placeholder={config.accountType === "SUPPLIER" ? "partner@company.com" : "alex.smith@example.com"}
             className={`pl-10 ${t.focusBorder} ${t.focusRing}`}
           />
         </div>

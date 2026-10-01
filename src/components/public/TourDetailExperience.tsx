@@ -1117,20 +1117,9 @@ export default function TourDetailExperience({
       image?: string | null;
     }[] = [];
 
-    (tour.accommodations || []).forEach((acc) => {
-      list.push({
-        id: `acc-${acc.id}`,
-        sourceId: acc.id,
-        kind: "accommodation",
-        categoryGroup: "stays",
-        categoryLabel: acc.category === "room_upgrade" ? "Room Upgrade" : "Stay Upgrade",
-        title: acc.name,
-        description: acc.description,
-        price: acc.price,
-        currency: tourCurrency,
-        image: acc.image,
-      });
-    });
+    // Accommodation extras are not yet bookable end-to-end. Keep them out of
+    // the selectable list until checkout supports them, rather than showing a
+    // price that the booking service must reject.
 
     (tour.optional_activities || []).forEach((act) => {
       const cat = (act.category || "").toLowerCase();
@@ -1186,7 +1175,7 @@ export default function TourDetailExperience({
     });
 
     return list;
-  }, [tour.accommodations, tour.optional_activities, tour.extensions, tourCurrency]);
+  }, [tour.optional_activities, tour.extensions, tourCurrency]);
 
   const enhancementTabs = useMemo(() => {
     if (allEnhancements.length <= 1) return [];
@@ -2547,11 +2536,12 @@ export default function TourDetailExperience({
                         {/* Media Cover */}
                         <div className="relative h-48 w-full overflow-hidden bg-slate-950 sm:h-52">
                           {item.image ? (
-                            <img
+                            <MarketingImage
                               src={mediaUrl(item.image)}
                               alt={item.title}
+                              fill
+                              sizes="(max-width: 640px) 100vw, 50vw"
                               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
-                              loading="lazy"
                             />
                           ) : (
                             <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 text-white/20 overflow-hidden">

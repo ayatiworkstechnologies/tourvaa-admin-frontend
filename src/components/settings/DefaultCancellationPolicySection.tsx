@@ -201,6 +201,7 @@ export default function DefaultCancellationPolicySection() {
                 max={100}
                 value={form.refund_percentage}
                 onChange={(e) => setForm((f) => ({ ...f, refund_percentage: e.target.value }))}
+                placeholder="e.g. 50"
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
               />
             </label>
@@ -209,6 +210,7 @@ export default function DefaultCancellationPolicySection() {
               <input
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Optional rule description"
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
               />
             </label>

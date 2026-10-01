@@ -104,7 +104,7 @@ function ErrorState({ text }: { text: string }) {
     <p className="mt-3 text-sm text-red-700">{text}</p>
     <form onSubmit={resend} className="mt-6">
       <label htmlFor="registration-email" className="block text-left text-xs font-bold text-slate-700">Supplier registration email</label>
-      <input id="registration-email" name="email" autoComplete="email" required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-blue-600" />
+      <input id="registration-email" name="email" autoComplete="email" required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="alex.smith@example.com" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-blue-600" />
       <button disabled={sending} className="mt-3 w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white disabled:opacity-60">{sending ? "Sending…" : "Send a new verification link"}</button>
     </form>
     {feedback && <p className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">{feedback}</p>}

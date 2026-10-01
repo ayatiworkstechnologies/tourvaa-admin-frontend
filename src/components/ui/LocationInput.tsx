@@ -120,13 +120,13 @@ export default function LocationInput({
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Pincode</span>
+          <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Postal / ZIP Code</span>
           <input
             type="tel"
             inputMode="numeric"
             value={pincode}
             onChange={(event) => onPincodeChange(event.target.value)}
-            placeholder="Pincode"
+            placeholder="Postal / ZIP code"
             className={`w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:ring-2 ${themeCls(theme)}`}
             required={required}
           />

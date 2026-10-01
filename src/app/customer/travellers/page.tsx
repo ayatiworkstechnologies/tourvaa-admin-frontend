@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { LuLoaderCircle as Loader2, LuPlus as Plus, LuTrash2 as Trash2, LuUsersRound as UsersRound } from "react-icons/lu";
@@ -98,19 +98,19 @@ export default function CustomerTravellersPage() {
             <span><h2 className="font-black text-[#0C2043]">Add Traveller</h2><p className="mt-0.5 text-[10px] text-[#6B7F9D]">Create a reusable passenger profile</p></span>
           </div>
           <div className="space-y-3">
-            <input required value={form.traveller_name} onChange={(e) => setForm((f) => ({ ...f, traveller_name: e.target.value }))} placeholder="Full name" className="customer-input w-full" />
+            <input required value={form.traveller_name} onChange={(e) => setForm((f) => ({ ...f, traveller_name: e.target.value }))} placeholder="Full name (e.g. Alex Smith)" className="customer-input w-full" />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               <select value={form.traveller_type} onChange={(e) => setForm((f) => ({ ...f, traveller_type: e.target.value }))} className="customer-input">
                 <option value="adult">Adult</option>
                 <option value="child">Child</option>
                 <option value="infant">Infant</option>
               </select>
-              <input value={form.age} onChange={(e) => setForm((f) => ({ ...f, age: e.target.value.replace(/\D/g, "") }))} placeholder="Age" className="customer-input" />
+              <input value={form.age} onChange={(e) => setForm((f) => ({ ...f, age: e.target.value.replace(/\D/g, "") }))} placeholder="Age (e.g. 28)" className="customer-input" />
             </div>
-            <input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="Email" className="customer-input w-full" />
-            <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="Phone" className="customer-input w-full" />
-            <input value={form.passport_number} onChange={(e) => setForm((f) => ({ ...f, passport_number: e.target.value }))} placeholder="Passport number" className="customer-input w-full" />
-            <textarea value={form.special_notes} onChange={(e) => setForm((f) => ({ ...f, special_notes: e.target.value }))} placeholder="Special notes" rows={3} className="customer-input w-full resize-none" />
+            <input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="Email address (e.g. alex.smith@example.com)" className="customer-input w-full" />
+            <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="Mobile number (e.g. +1 555 234 5678)" className="customer-input w-full" />
+            <input value={form.passport_number} onChange={(e) => setForm((f) => ({ ...f, passport_number: e.target.value }))} placeholder="Passport number (e.g. A12345678)" className="customer-input w-full" />
+            <textarea value={form.special_notes} onChange={(e) => setForm((f) => ({ ...f, special_notes: e.target.value }))} placeholder="Special requests, dietary preferences, or accessibility needs (optional)" rows={3} className="customer-input w-full resize-none" />
             <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0868E8] px-4 py-3 text-sm font-bold text-white shadow-md shadow-blue-100 hover:bg-[#075AC9] disabled:opacity-60">
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Save Traveller
             </button>

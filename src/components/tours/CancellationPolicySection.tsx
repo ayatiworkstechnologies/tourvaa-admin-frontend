@@ -252,6 +252,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
               <input
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Optional rule description"
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
               />
             </label>

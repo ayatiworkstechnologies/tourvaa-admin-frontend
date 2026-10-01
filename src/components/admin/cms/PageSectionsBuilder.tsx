@@ -157,9 +157,9 @@ export default function PageSectionsBuilder({ value, onChange }: { value: CmsPag
                   return (
                     <div key={ii} className="space-y-2 rounded-lg border border-dash-border bg-dash-bg/60 p-3">
                       <AdminAssetUpload label="Image" kind="asset" value={item.image ?? ""} onChange={(v) => setItems(items.map((it, i) => (i === ii ? { ...it, image: v } : it)))} />
-                      <input placeholder="Title" className={inputClass} value={item.title ?? ""} onChange={(e) => setItems(items.map((it, i) => (i === ii ? { ...it, title: e.target.value } : it)))} />
-                      <textarea placeholder="Description" rows={2} className={`${inputClass} resize-none`} value={item.description ?? ""} onChange={(e) => setItems(items.map((it, i) => (i === ii ? { ...it, description: e.target.value } : it)))} />
-                      <input placeholder="Link (optional)" className={inputClass} value={item.link ?? ""} onChange={(e) => setItems(items.map((it, i) => (i === ii ? { ...it, link: e.target.value } : it)))} />
+                      <input placeholder="Card title" className={inputClass} value={item.title ?? ""} onChange={(e) => setItems(items.map((it, i) => (i === ii ? { ...it, title: e.target.value } : it)))} />
+                      <textarea placeholder="Brief description..." rows={2} className={`${inputClass} resize-none`} value={item.description ?? ""} onChange={(e) => setItems(items.map((it, i) => (i === ii ? { ...it, description: e.target.value } : it)))} />
+                      <input placeholder="e.g. /tours or https://... (optional)" className={inputClass} value={item.link ?? ""} onChange={(e) => setItems(items.map((it, i) => (i === ii ? { ...it, link: e.target.value } : it)))} />
                       <button type="button" onClick={() => setItems(items.filter((_, i) => i !== ii))} className="rounded-lg border border-dash-border px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-50">
                         Remove Card
                       </button>

@@ -228,7 +228,7 @@ export default function CompanyInfoTab() {
           <label className="block">
             <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Company Name <span className="text-red-500">*</span></span>
             <input required value={form.supplier_name} onChange={e => set("supplier_name", e.target.value)}
-              placeholder="Your company name"
+              placeholder="e.g. Alpine Expeditions Ltd"
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all" />
           </label>
 
@@ -254,7 +254,7 @@ export default function CompanyInfoTab() {
           <label className="block">
             <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Company Address <span className="text-red-500">*</span></span>
             <input required value={form.address} onChange={e => set("address", e.target.value)}
-              placeholder="Full business address"
+              placeholder="e.g. 14 Glacier Way, Queenstown 9300"
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all" />
           </label>
 
@@ -281,14 +281,14 @@ export default function CompanyInfoTab() {
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Registration Number</span>
               <input value={form.business_registration_number} onChange={e => set("business_registration_number", e.target.value)}
-                placeholder="Trade licence / company reg. no."
+                placeholder="e.g. REG-4920194"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
             </label>
 
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">GST / Tax Number</span>
               <input value={form.gst_tax_number} onChange={e => set("gst_tax_number", e.target.value)}
-                placeholder="Tax ID"
+                placeholder="e.g. TAX-8921-9481"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
             </label>
 

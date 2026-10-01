@@ -273,7 +273,7 @@ export default function RegisterPage() {
                     required autoComplete="given-name"
                     value={form.first_name}
                     onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-                    placeholder="Your first name"
+                    placeholder="e.g. Alex"
                     className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
@@ -288,7 +288,7 @@ export default function RegisterPage() {
                     required autoComplete="email" type="email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="you@example.com"
+                    placeholder="alex.smith@example.com"
                     className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                   />
                 </div>

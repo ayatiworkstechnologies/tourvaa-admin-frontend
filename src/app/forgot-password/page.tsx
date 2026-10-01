@@ -78,7 +78,7 @@ function ForgotPasswordForm() {
           label="Email Id"
           icon={Mail}
           type="email"
-          placeholder="you@company.com"
+          placeholder="name@company.com"
           {...register("email", {
             required: "Email is required.",
             validate: (value) => validateEmail(value) || "Enter a valid email address.",

@@ -142,7 +142,7 @@ export default function SmtpSettingsSection() {
           When disabled (or left empty), the platform falls back to its default environment-configured mail server.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
-          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Host</span><input value={host} onChange={(e) => setHost(e.target.value)} placeholder="smtp.example.com" className={inputClass} /></label>
+          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Host</span><input value={host} onChange={(e) => setHost(e.target.value)} placeholder="e.g. smtp.mailgun.org" className={inputClass} /></label>
           <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Port</span><input type="number" value={port} onChange={(e) => setPort(e.target.value)} className={inputClass} /></label>
           <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Username</span><input value={username} onChange={(e) => setUsername(e.target.value)} className={inputClass} /></label>
           <label>
@@ -184,7 +184,7 @@ export default function SmtpSettingsSection() {
         <div className="flex flex-wrap items-end gap-3">
           <label className="min-w-56 flex-1">
             <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Send to</span>
-            <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="you@example.com" className={inputClass} />
+            <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="name@company.com" className={inputClass} />
           </label>
           <button
             type="button"

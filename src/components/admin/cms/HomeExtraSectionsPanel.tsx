@@ -261,7 +261,7 @@ function CardsEditor({ value, onChange }: { value: ExtraSectionCard[]; onChange:
             </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
-            <input placeholder="Title" value={card.title} onChange={(e) => setCard(idx, { title: e.target.value })} className={INPUT} />
+            <input placeholder="Card title" value={card.title} onChange={(e) => setCard(idx, { title: e.target.value })} className={INPUT} />
             <input placeholder="Link (optional), e.g. /tours?country=Egypt" value={card.link} onChange={(e) => setCard(idx, { link: e.target.value })} className={INPUT} />
             <textarea placeholder="Short description" rows={2} value={card.description} onChange={(e) => setCard(idx, { description: e.target.value })} className={`${INPUT} resize-none sm:col-span-2`} />
             <div className="sm:col-span-2">
