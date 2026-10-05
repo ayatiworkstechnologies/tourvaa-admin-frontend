@@ -18,6 +18,7 @@ type BookingTableProps = {
   onPageChange: (page: number) => void;
   onCancel?: (bookingId: number) => void;
   onConfirm?: (bookingId: number) => void;
+  onApproveCancellation?: (bookingId: number) => void;
   busyBookingId?: number | null;
 };
 
@@ -49,6 +50,7 @@ function getInitials(name?: string | null): string {
 export default function BookingTable({
   onCancel,
   onConfirm,
+  onApproveCancellation,
   busyBookingId,
   ...tableProps
 }: BookingTableProps) {
@@ -197,6 +199,7 @@ export default function BookingTable({
           paymentStatus={booking.payment_status}
           onCancel={onCancel}
           onConfirm={onConfirm}
+          onApproveCancellation={onApproveCancellation}
           busy={busyBookingId === booking.id}
         />
       ),

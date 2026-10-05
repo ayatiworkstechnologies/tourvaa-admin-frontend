@@ -56,11 +56,23 @@ check("dashboard provides loading and filtered empty states", dashboard.includes
 const bookingDetail = read("src/app/supplier/bookings/[id]/page.tsx");
 check("acceptance waits for payment readiness", bookingDetail.includes("paymentReady") && bookingDetail.includes("isAwaitingPayment"));
 check("decline includes a required reason", bookingDetail.includes('{ reason: declineReason }'));
+check("supplier cancellation confirms the applicable liability", ["supplier_cancellation_terms", "Confirm booking cancellation", "no cancellation charge", "liability_percentage", "Yes, continue"].every((text) => bookingDetail.includes(text)));
+check("supplier withdrawal stays internal to Tourvaa", bookingDetail.includes("awaiting internal supplier reassignment") && !bookingDetail.includes("Booking cancelled. Customer has been notified."));
 check("supplier acceptance status is displayed", bookingDetail.includes("Supplier Decision"));
 check("accept endpoint is connected", bookingDetail.includes("/accept"));
 check("decline endpoint is connected", bookingDetail.includes("/decline"));
 check("supplier can move confirmed tours to ongoing", bookingDetail.includes("/ongoing") && bookingDetail.includes("Start Tour"));
 check("only ongoing tours show the completion action", bookingDetail.includes("isOngoing") && bookingDetail.includes("Mark Completed"));
+check(
+  "supplier cannot postpone or resume a tour",
+  !bookingDetail.includes('"/postpone"') &&
+    !bookingDetail.includes("Resume Tour") &&
+    bookingDetail.includes("contact Tourvaa support for the next steps"),
+);
+check(
+  "supplier sees only supplier settlement details",
+  ["Supplier Payment", "Commission to Tourvaa", "Supplier Net Payable", "Supplier Payment Status"].every((label) => bookingDetail.includes(label)),
+);
 
 const tours = read("src/app/supplier/tours/page.tsx");
 const tourCreate = read("src/app/supplier/tours/create/page.tsx");
@@ -130,6 +142,28 @@ check("payout requests validate the available ledger balance", payouts.includes(
 
 const documents = read("src/components/supplier/profile/DocumentsTab.tsx");
 check("supplier documents expose retryable loading failures", documents.includes("Documents could not be loaded") && documents.includes("Retry"));
+
+const supplierProfile = read("src/components/supplier/profile/CompanyInfoTab.tsx");
+const adminSupplierDetail = read("src/app/admin/suppliers/[id]/page.tsx");
+const tourPricing = read("src/components/tours/TourPricingTab.tsx");
+check(
+  "supplier business years are persisted in business information",
+  supplierProfile.includes("years_in_business: parseInt(form.years_in_operation) || 0"),
+);
+check(
+  "admin supplier detail exposes registration contact and business address",
+  adminSupplierDetail.includes("Supplier information") &&
+    adminSupplierDetail.includes("Business address") &&
+    adminSupplierDetail.includes("Person in charge") &&
+    adminSupplierDetail.includes("Years in business"),
+);
+check(
+  "supplier pricing distinguishes the offer price from the post-commission payout",
+  tourPricing.includes("Your offer price to TourVaa - adult") &&
+    tourPricing.includes("Your offer price to TourVaa - child") &&
+    tourPricing.includes("You will receive (adult)") &&
+    tourPricing.includes("You will receive (child)"),
+);
 
 const supplierInnerPages = [
   bookingList,

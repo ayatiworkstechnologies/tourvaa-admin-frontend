@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LuArrowLeft as ArrowLeft, LuCreditCard as CreditCard, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuCreditCard as CreditCard, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
@@ -60,7 +60,7 @@ type Booking = {
     commission_payable: string;
     commission_status: string;
     commission_payment_date?: string | null;
-    agent_price: string;
+    agent_price_after_commission: string;
     invoice_status: string;
     payment_due_date?: string | null;
   } | null;
@@ -90,6 +90,7 @@ type Booking = {
     booking_deposit: string | null;
     still_available: boolean;
   } | null;
+  cancellation_eligibility?: { is_free_cancellation_eligible: boolean; refund_percentage: string };
 };
 
 type Invoice = {
@@ -143,6 +144,10 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const [invoiceError, setInvoiceError] = useState("");
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [showCancellationConfirm, setShowCancellationConfirm] = useState(false);
+  const [showCancellationForm, setShowCancellationForm] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [paymentBanner, setPaymentBanner] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null);
   const returnHandled = useRef(false);
@@ -250,6 +255,23 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
     }
   }
 
+  async function submitCancellation(event: React.FormEvent) {
+    event.preventDefault();
+    if (!cancellationReason.trim()) return;
+    setCancelling(true);
+    try {
+      await api.post(`/bookings/${id}/cancel-request`, { reason: cancellationReason.trim() });
+      setShowCancellationForm(false);
+      setCancellationReason("");
+      setPaymentBanner({ type: "success", message: "Cancellation request submitted. Tourvaa will review it shortly." });
+      setRefreshKey((value) => value + 1);
+    } catch (exception) {
+      setPaymentBanner({ type: "error", message: "Cancellation request could not be submitted. Please contact Tourvaa for assistance." });
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   if (loading) {
     return (
       <AgentPageShell className="flex min-h-[60vh] items-center justify-center">
@@ -279,6 +301,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const paymentValidationPending = ["credit_approval_pending", "bank_transfer_pending"].includes((booking.payment_status || "").toLowerCase());
   const supplierAccepted = booking.supplier_acceptance_status === "accepted";
   const bookingConfirmed = ["confirmed", "ongoing", "completed"].includes((booking.booking_status || "").toLowerCase());
+  const canRequestCancellation = Number(booking.amount_paid ?? 0) > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
+  const freeCancellationEligible = booking.cancellation_eligibility?.is_free_cancellation_eligible === true;
   const workflow = [
     { label: "Payment / credit", detail: paymentComplete ? "Payment validated" : paymentValidationPending ? booking.payment_status.replaceAll("_", " ") : `${booking.payment_type === "partial" ? "Deposit" : "Full payment"} pending`, done: paymentComplete, active: !paymentComplete },
     { label: "Supplier decision", detail: supplierAccepted ? "Supplier accepted" : (booking.supplier_acceptance_status ?? "not assigned").replaceAll("_", " "), done: supplierAccepted, active: paymentComplete && !supplierAccepted },
@@ -329,6 +353,13 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
                 Download Invoice
               </button>
             )}
+            {canRequestCancellation && (
+              <button type="button" onClick={() => freeCancellationEligible && setShowCancellationConfirm(true)} disabled={!freeCancellationEligible}
+                title={!freeCancellationEligible ? "The free cancellation period has ended. Contact Tourvaa for assistance." : undefined}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-bold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400">
+                <XCircle size={15} /> Request Cancellation
+              </button>
+            )}
           </div>
         </div>
       </AgentPageHeader>
@@ -338,6 +369,9 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         <div className={`mt-4 rounded-xl border px-4 py-3 text-sm font-bold ${paymentBanner.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : paymentBanner.type === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-blue-200 bg-blue-50 text-blue-700"}`}>
           {paymentBanner.message}
         </div>
+      )}
+      {canRequestCancellation && !freeCancellationEligible && (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">The free cancellation period has finished. Please contact Tourvaa for cancellation assistance. For any travel-date modification, please contact Tourvaa.</div>
       )}
 
       <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_35px_-24px_rgba(15,23,42,0.45)]">
@@ -396,15 +430,18 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
               <InfoRow label="Agent Transaction Type" value={booking.agent_payment_summary.transaction_type} />
               {booking.agent_payment_summary.is_reserved ? <>
                 <InfoRow label="Total Booking Amount" value={money(booking.agent_payment_summary.total_booking_amount, booking.currency)} />
-                <InfoRow label="Agent Commission / Markup" value={`${booking.agent_payment_summary.commission_percentage}%`} />
-                <InfoRow label="Agent Price" value={money(booking.agent_payment_summary.agent_price, booking.currency)} />
+                <InfoRow label="Approved Agent Commission" value={`${booking.agent_payment_summary.commission_percentage}%`} />
+                <InfoRow label="Agent Price After Commission" value={money(booking.agent_payment_summary.agent_price_after_commission, booking.currency)} />
+                <InfoRow label="Agent Commission Amount" value={money(booking.agent_payment_summary.commission_amount, booking.currency)} />
                 <InfoRow label="Invoice Status" value={<Pill status={booking.agent_payment_summary.invoice_status}>{booking.agent_payment_summary.invoice_status.replaceAll("_", " ")}</Pill>} />
                 <InfoRow label="Payment Due Date" value={dateText(booking.agent_payment_summary.payment_due_date)} />
                 <InfoRow label="Amount Paid by Agent" value={money(booking.agent_payment_summary.amount_paid, booking.currency)} />
               </> : <>
+                <InfoRow label="Total Booking Amount" value={money(booking.agent_payment_summary.total_booking_amount, booking.currency)} />
                 <InfoRow label="Amount Paid by Agent" value={money(booking.agent_payment_summary.amount_paid, booking.currency)} />
-                <InfoRow label="Agent Commission" value={`${booking.agent_payment_summary.commission_percentage}%`} />
-                <InfoRow label="Commission Amount" value={money(booking.agent_payment_summary.commission_amount, booking.currency)} />
+                <InfoRow label="Approved Agent Commission" value={`${booking.agent_payment_summary.commission_percentage}%`} />
+                <InfoRow label="Agent Price After Commission" value={money(booking.agent_payment_summary.agent_price_after_commission, booking.currency)} />
+                <InfoRow label="Agent Commission Amount" value={money(booking.agent_payment_summary.commission_amount, booking.currency)} />
                 <InfoRow label="Commission Payable to Agent" value={money(booking.agent_payment_summary.commission_payable, booking.currency)} />
                 <InfoRow label="Commission Status" value={<Pill status={booking.agent_payment_summary.commission_status}>{booking.agent_payment_summary.commission_status.replaceAll("_", " ")}</Pill>} />
                 <InfoRow label="Commission Payment Date" value={dateText(booking.agent_payment_summary.commission_payment_date)} />
@@ -412,21 +449,6 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>}
 
-          {booking.price_breakdown && (
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_35px_-24px_rgba(15,23,42,0.4)]">
-              <h2 className="text-base font-black text-dash-text">Price Breakdown</h2>
-              <div className="mt-4">
-                <InfoRow label="Base tour" value={money(booking.price_breakdown.base_amount, booking.currency)} />
-                <InfoRow label="Activities" value={money(booking.price_breakdown.optional_activity_amount, booking.currency)} />
-                <InfoRow label="Accommodation" value={money(booking.price_breakdown.accommodation_amount, booking.currency)} />
-                <InfoRow label="Extensions" value={money(booking.price_breakdown.extension_amount, booking.currency)} />
-                <InfoRow label="Discount" value={money(booking.price_breakdown.discount_amount, booking.currency)} />
-                <InfoRow label="Agent net price" value={money(booking.agent_net_price, booking.currency)} />
-                <InfoRow label="Agent markup" value={money(booking.agent_markup, booking.currency)} />
-                <InfoRow label="Customer selling price" value={money(booking.customer_selling_price ?? booking.price_breakdown.final_amount, booking.currency)} />
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -468,6 +490,33 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {showCancellationConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="agent-cancel-confirm-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h3 id="agent-cancel-confirm-title" className="text-lg font-black text-dash-text">Confirm cancellation request</h3>
+            <p className="mt-3 text-sm leading-6 text-dash-muted">In accordance with the cancellation policy for this tour, you are eligible for a full refund, less any applicable transaction fees. Do you want to continue with the cancellation?</p>
+            <p className="mt-3 text-xs font-medium text-dash-muted">For any travel-date modification, please contact Tourvaa.</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowCancellationConfirm(false)} className="rounded-xl border border-dash-border bg-white px-4 py-2 text-sm font-bold text-dash-body hover:bg-dash-bg">No</button>
+              <button type="button" onClick={() => { setShowCancellationConfirm(false); setShowCancellationForm(true); }} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-700">Yes, continue</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCancellationForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="agent-cancel-reason-title">
+          <form onSubmit={submitCancellation} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h3 id="agent-cancel-reason-title" className="text-lg font-black text-dash-text">Request cancellation</h3>
+            <textarea required value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} rows={4} placeholder="Please explain why you want to cancel this booking..." className="mt-4 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-rose-400" />
+            <div className="mt-4 flex justify-end gap-3">
+              <button type="button" onClick={() => { setShowCancellationForm(false); setCancellationReason(""); }} className="rounded-xl border border-dash-border bg-white px-4 py-2 text-sm font-bold text-dash-body hover:bg-dash-bg">Cancel</button>
+              <button type="submit" disabled={cancelling || !cancellationReason.trim()} className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-60">{cancelling && <Loader2 size={14} className="animate-spin" />} Submit Request</button>
+            </div>
+          </form>
         </div>
       )}
 

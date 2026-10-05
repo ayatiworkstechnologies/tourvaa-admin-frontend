@@ -32,7 +32,7 @@ export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionP
             </span>
 
             <h2 className="mt-3.5 text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
-              {info.tagline || "An Ancient Land of Contrasts & Wonder"}
+              {info.why_visit?.title || info.tagline || "Why visit this destination"}
             </h2>
 
             <p className="mt-2 text-xs sm:text-sm text-white/85 font-medium leading-relaxed max-w-xl">

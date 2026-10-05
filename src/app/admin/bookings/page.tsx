@@ -9,7 +9,7 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import BookingFilters from "@/components/bookings/BookingFilters";
 import BookingTable from "@/components/bookings/BookingTable";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Booking, getBookings, updateBookingStatus, cancelBooking, exportBookingsCsv } from "@/lib/api/services/bookingService";
+import { Booking, getBookings, updateBookingStatus, cancelBooking, approveBookingCancellation, exportBookingsCsv } from "@/lib/api/services/bookingService";
 
 const PAGE_SIZE = 10;
 const AUTO_REFRESH_MS = 10000;
@@ -162,6 +162,19 @@ export default function BookingsPage() {
     }
   }
 
+  async function approveCancellationRequest(bookingId: number) {
+    if (busyBookingId) return;
+    setBusyBookingId(bookingId);
+    try {
+      await approveBookingCancellation(bookingId);
+      await refreshAll(true);
+    } catch {
+      setErrorMessage("Could not approve the cancellation request.");
+    } finally {
+      setBusyBookingId(null);
+    }
+  }
+
   const statCards = useMemo(
     () => [
       { label: "Total Bookings", value: stats.total, icon: CalendarCheck, accent: "text-dash-brand-hover bg-[#EDF5FF]" },
@@ -251,6 +264,7 @@ export default function BookingsPage() {
           onPageChange={setCurrentPage}
           onCancel={cancelSelectedBooking}
           onConfirm={confirmBooking}
+          onApproveCancellation={approveCancellationRequest}
           busyBookingId={busyBookingId}
         />
       </div>

@@ -675,7 +675,7 @@ function PortalAuthContent({ config, heroIcon }: { config: PortalAuthConfig; her
                   <div className="flex flex-wrap items-center gap-6 border-t border-white/10 pt-5">
                     {config.heroStats.map(({ value, label }) => (
                       <div key={label}>
-                        <p className="text-2xl font-black">{value}</p>
+                        <p className="text-2xl font-black text-white">{value}</p>
                         <p className="text-xs text-white/60">{label}</p>
                       </div>
                     ))}

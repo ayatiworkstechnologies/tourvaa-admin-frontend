@@ -82,6 +82,13 @@ function statusBadge(status: string) {
       </span>
     );
   }
+  if (s.includes("cancellation requested")) {
+    return (
+      <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
+        Cancellation Requested
+      </span>
+    );
+  }
   if (s.includes("cancel") || s.includes("declin")) {
     return (
       <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[11px] font-bold text-red-500">
@@ -98,10 +105,12 @@ function statusBadge(status: string) {
 
 function customerBookingStatus(status?: string): string {
   const value = (status || "").toLowerCase();
+  if (["draft", "pending_payment", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required"].includes(value)) return "Booking Request Received";
   if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(value)) return "Booking Confirmed";
   if (value === "ongoing") return "Ongoing";
   if (value === "completed") return "Completed";
-  if (["cancelled", "declined", "refunded", "cancellation_requested"].includes(value)) return "Cancelled";
+  if (value === "cancellation_requested") return "Cancellation Requested";
+  if (["cancelled", "declined", "refunded"].includes(value)) return "Cancelled";
   return "Booking Request Received";
 }
 
@@ -249,6 +258,7 @@ export default function CustomerBookingsPage() {
                 <option value="Booking Confirmed">Booking Confirmed</option>
                 <option value="Ongoing">Ongoing</option>
                 <option value="Completed">Completed</option>
+                <option value="Cancellation Requested">Cancellation Requested</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
             </div>

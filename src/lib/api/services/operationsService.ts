@@ -20,6 +20,12 @@ export type ReviewRecord = {
   country_name?: string;
   city_name?: string;
   years_in_operation?: number;
+  business_address?: string;
+  registration_contact?: {
+    full_name?: string;
+    email?: string;
+    phone?: string;
+  } | null;
   status: string;
   approval_status: string;
   rejection_reason?: string | null;

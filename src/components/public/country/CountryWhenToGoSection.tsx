@@ -27,6 +27,11 @@ export default function CountryWhenToGoSection({
   const [showMonthlyMatrix, setShowMonthlyMatrix] = useState<boolean>(false);
 
   const monthlyData = info.temperature_info?.monthly_weather || [];
+  const seasons = [
+    info.best_time_to_visit?.peak_season,
+    info.best_time_to_visit?.shoulder_season,
+    info.best_time_to_visit?.low_season,
+  ].filter((season): season is NonNullable<typeof season> => Boolean(season));
 
   return (
     <section id="section-when-to-go" className="bg-white text-slate-900 py-10 sm:py-16">
@@ -98,6 +103,33 @@ export default function CountryWhenToGoSection({
           </p>
         </div>
 
+        {seasons.length > 0 && (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {seasons.map((season) => (
+              <article key={season.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-pub-accent">{season.label}</p>
+                <h3 className="mt-2 text-lg font-bold text-slate-900">{season.months}</h3>
+                <p className="mt-3 text-sm font-medium leading-relaxed text-slate-700">{season.weather}</p>
+                <p className="mt-3 text-xs leading-relaxed text-slate-500">{season.description}</p>
+                <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-xs">
+                  <div><dt className="font-semibold text-slate-400">Crowds</dt><dd className="mt-0.5 text-slate-700">{season.crowds}</dd></div>
+                  <div><dt className="font-semibold text-slate-400">Price level</dt><dd className="mt-0.5 text-slate-700">{season.price_level}</dd></div>
+                </dl>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {info.monsoon_info?.headline && (
+          <section className="mt-8 rounded-2xl border border-sky-100 bg-sky-50/60 p-5 sm:p-6">
+            <h2 className="text-xl font-bold text-slate-900">{info.monsoon_info.headline}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-700">{info.monsoon_info.monsoon_overview}</p>
+            {info.monsoon_info.rainfall_schedule && <p className="mt-3 text-xs leading-relaxed text-slate-600"><span className="font-bold">Rainfall schedule: </span>{info.monsoon_info.rainfall_schedule}</p>}
+          </section>
+        )}
+
+        {/* Legacy fixed season mock-up is suppressed; the CMS seasons above are the public source of truth. */}
+        {false && <>
         {/* 4 Quarterly Season Cards matching Figma layout */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Spring */}
@@ -252,6 +284,8 @@ export default function CountryWhenToGoSection({
             </span>
           </div>
         </div>
+
+        </>}
 
         {/* Disclaimer Note Box matching Figma screenshot */}
         <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4 text-xs text-slate-500 font-normal leading-relaxed">

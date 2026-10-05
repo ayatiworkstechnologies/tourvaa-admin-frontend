@@ -109,7 +109,7 @@ export type AgentPaymentSummary = {
   commission_payable: string;
   commission_status: string;
   commission_payment_date?: string | null;
-  agent_price: string;
+  agent_price_after_commission: string;
   invoice_status: string;
   payment_due_date?: string | null;
 };
@@ -265,6 +265,14 @@ export async function cancelBooking(bookingId: number | string, reason?: string)
     reason: reason ?? "Cancelled by admin",
   });
 
+  return response.data.data;
+}
+
+export async function approveBookingCancellation(bookingId: number | string) {
+  const response = await api.patch<ApiDataResponse<Booking>>(
+    `/bookings/${bookingId}/cancellation-request/approve`,
+    {},
+  );
   return response.data.data;
 }
 

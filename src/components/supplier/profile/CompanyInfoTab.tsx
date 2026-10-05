@@ -103,7 +103,9 @@ export default function CompanyInfoTab() {
           phone: p.phone || "",
           address: p.address || "",
           supplier_type: s.supplier_type || "",
-          years_in_operation: String(s.years_in_operation || ""),
+          years_in_operation: String(
+            s.business_info?.years_in_business ?? s.years_in_operation ?? "",
+          ),
           business_registration_number: s.business_info?.business_registration_number || "",
           gst_tax_number: s.business_info?.gst_tax_number || "",
           target_market: s.business_info?.target_market || "",
@@ -142,6 +144,7 @@ export default function CompanyInfoTab() {
           city_id: parseInt(form.city_id) || null,
           currency: form.currency || null,
           business_info: {
+            years_in_business: parseInt(form.years_in_operation) || 0,
             business_registration_number: form.business_registration_number,
             gst_tax_number: form.gst_tax_number,
             target_market: form.target_market,

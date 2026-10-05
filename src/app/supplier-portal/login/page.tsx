@@ -23,7 +23,7 @@ const config: PortalAuthConfig = {
   ],
   signInCta: "Sign in as Supplier",
   wrongRoleMessage: "This login is for supplier accounts. Use the correct portal for other account types.",
-  registerNamePlaceholder: "Business contact name",
+  registerNamePlaceholder: "Business name",
 };
 
 export default function SupplierPortalLoginPage() {

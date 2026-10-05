@@ -10,7 +10,7 @@ import { CustomerPageShell } from "@/components/customer/CustomerPage";
 import BookingMessageThread from "@/components/messaging/BookingMessageThread";
 import { useCurrency } from "@/hooks/useCurrency";
 import { formatCurrency } from "@/lib/utils/currency";
-import { StripeWordmark, PayPalLogo } from "@/components/common/PaymentLogos";
+import { StripeBadge, PayPalLogo } from "@/components/common/PaymentLogos";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import Loader from "@/components/ui/Loader";
 
@@ -42,13 +42,8 @@ type Booking = {
   tour_country_name?: string | null;
   tour_date?: string;
   country?: string;
-  // Never sent to the customer portal (see services.bookings.serialize_booking's
-  // hide_supplier_identity) - suppliers are a Tourvaa back-office
-  // relationship, not something a customer sees. supplier_id is still sent,
-  // purely as an unrendered "has a supplier been assigned" signal.
   supplier_id?: number | null;
   booking_status: string;
-  supplier_acceptance_status?: string;
   payment_status?: string;
   payment_type?: "partial" | "full";
   final_amount?: string | number;
@@ -73,6 +68,10 @@ type Booking = {
   created_at?: string;
   travellers?: Traveller[];
   status_history?: StatusHistory[];
+  cancellation_eligibility?: {
+    is_free_cancellation_eligible: boolean;
+    refund_percentage: string;
+  };
 };
 
 function StatusIcon({ status }: { status: string }) {
@@ -84,10 +83,12 @@ function StatusIcon({ status }: { status: string }) {
 
 function customerBookingStatus(status?: string): string {
   const value = (status || "").toLowerCase();
+  if (["draft", "pending_payment", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required"].includes(value)) return "Booking Request Received";
   if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(value)) return "Booking Confirmed";
   if (value === "ongoing") return "Ongoing";
   if (value === "completed") return "Completed";
-  if (["cancelled", "declined", "refunded", "cancellation_requested"].includes(value)) return "Cancelled";
+  if (value === "cancellation_requested") return "Cancellation Requested";
+  if (["cancelled", "declined", "refunded"].includes(value)) return "Cancelled";
   return "Booking Request Received";
 }
 
@@ -128,7 +129,7 @@ function Panel({
   );
 }
 
-type GatewayStatus = { stripe: boolean; paypal: boolean; test_mode_available: boolean } | null;
+type GatewayStatus = { stripe: boolean; paypal: boolean } | null;
 
 function PayNowModal({
   bookingId,
@@ -139,7 +140,6 @@ function PayNowModal({
   currency,
   depositConfig,
   onClose,
-  onSuccess,
 }: {
   bookingId: number;
   amount: number;
@@ -149,7 +149,6 @@ function PayNowModal({
   currency: string;
   depositConfig?: Booking["deposit_config"];
   onClose: () => void;
-  onSuccess: () => void;
 }) {
   // The deposit option only makes sense before any payment has been made -
   // once a deposit is already on the booking, this modal is collecting the
@@ -162,7 +161,7 @@ function PayNowModal({
     return Math.min(amount, Math.max(0, Math.round(raw * 100) / 100));
   })();
   const partialAvailable = depositDue > 0 && depositDue < amount;
-  const [loading, setLoading] = useState<"stripe" | "paypal" | "test" | null>(null);
+  const [loading, setLoading] = useState<"stripe" | "paypal" | null>(null);
   const [err, setErr] = useState("");
   const [gw, setGw] = useState<GatewayStatus>(null);
   const [gwLoading, setGwLoading] = useState(true);
@@ -174,8 +173,8 @@ function PayNowModal({
 
   useEffect(() => {
     api.get("/payments/gateways/status")
-      .then(r => setGw(r.data?.data ?? { stripe: false, paypal: false, test_mode_available: false }))
-      .catch(() => setGw({ stripe: false, paypal: false, test_mode_available: true }))
+      .then(r => setGw(r.data?.data ?? { stripe: false, paypal: false }))
+      .catch(() => setGw({ stripe: false, paypal: false }))
       .finally(() => setGwLoading(false));
   }, []);
 
@@ -195,8 +194,9 @@ function PayNowModal({
         success_url: `${origin}/customer/bookings/${bookingId}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/customer/bookings/${bookingId}?payment=cancelled`,
       });
-      const { checkout_url } = res.data?.data ?? {};
+      const { checkout_url, payment_id } = res.data?.data ?? {};
       if (!checkout_url) throw new Error("No checkout URL returned");
+      if (payment_id) sessionStorage.setItem(`stripe_pid_${bookingId}`, String(payment_id));
       window.location.href = checkout_url;
     } catch (e: unknown) {
       setErr(axios.isAxiosError(e) ? (e.response?.data?.detail || e.response?.data?.message || "Could not start Stripe payment.") : "Could not start Stripe payment.");
@@ -219,18 +219,6 @@ function PayNowModal({
       window.location.href = approve_url;
     } catch (e: unknown) {
       setErr(axios.isAxiosError(e) ? (e.response?.data?.detail || e.response?.data?.message || "Could not start PayPal payment.") : "Could not start PayPal payment.");
-      setLoading(null);
-    }
-  }
-
-  async function payWithTest() {
-    setLoading("test"); setErr("");
-    try {
-      await api.post("/payments/test/simulate", { booking_id: bookingId, amount: paymentAmount, note: `${paymentType} test payment from UI` });
-      onClose();
-      onSuccess();
-    } catch (e: unknown) {
-      setErr(axios.isAxiosError(e) ? (e.response?.data?.detail || "Test payment failed.") : "Test payment failed.");
       setLoading(null);
     }
   }
@@ -299,7 +287,7 @@ function PayNowModal({
             className="flex w-full items-center justify-center gap-2.5 rounded-2xl border-2 border-[#635BFF] bg-[#635BFF] px-5 py-3.5 text-sm font-bold text-white hover:bg-[#4f49cc] disabled:cursor-not-allowed disabled:opacity-40 transition-colors shadow-sm">
             {loading === "stripe" ? <Loader2 size={18} className="animate-spin" /> : <CreditCard size={18} />}
             <span>Pay {formatCurrency(paymentAmount, currency)} with</span>
-            <StripeWordmark className="h-4 w-auto text-white" />
+            <StripeBadge className="bg-white/15 ring-1 ring-white/30" />
             {!gw?.stripe && <span className="ml-auto text-[10px] font-bold opacity-70">Not configured</span>}
           </button>
 
@@ -315,34 +303,11 @@ function PayNowModal({
             {!gw?.paypal && <span className="ml-auto text-[10px] font-bold opacity-70">Not configured</span>}
           </button>
 
-          {/* Test mode -- backend only exposes test_mode_available outside production (see payments_gateway.py) */}
-          {gw?.test_mode_available && (
-            <>
-              <div className="flex items-center gap-2 py-1">
-                <div className="h-px flex-1 bg-amber-200" />
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-700">
-                  Test Mode
-                </span>
-                <div className="h-px flex-1 bg-amber-200" />
-              </div>
-              <button type="button" onClick={payWithTest} disabled={!!loading}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50 px-5 py-3.5 text-sm font-bold text-amber-800 hover:bg-amber-100 disabled:opacity-60 transition-colors">
-                {loading === "test" ? <Loader2 size={18} className="animate-spin" /> : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
-                  </svg>
-                )}
-                Simulate {formatCurrency(paymentAmount, currency)} Payment
-              </button>
-            </>
-          )}
         </div>
         )}
 
         <p className="mt-4 text-center text-xs text-dash-subtle">
-          {gw?.test_mode_available
-            ? "Test mode active - no real money will be charged."
-            : "Payment is secured and your booking request will be reviewed for confirmation."}
+          Payment is secured and your booking request will be reviewed for confirmation.
         </p>
       </div>
     </div>
@@ -359,8 +324,10 @@ export default function CustomerBookingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancelling, setCancelling] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [showCancel, setShowCancel] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
   const [paymentBanner, setPaymentBanner] = useState<{ type: "success" | "error" | "info"; msg: string } | null>(null);
@@ -410,7 +377,7 @@ export default function CustomerBookingDetailPage() {
         session_id: sessionId || undefined,
       })
         .then(() => {
-          setPaymentBanner({ type: "success", msg: "Payment received. Your booking request is being reviewed for confirmation." });
+          setPaymentBanner({ type: "success", msg: "Payment received. Your booking request has been received successfully. We will review the details and be in touch shortly with your booking confirmation." });
           void load();
         })
         .catch(() => {
@@ -418,7 +385,17 @@ export default function CustomerBookingDetailPage() {
           void load();
         });
     } else if (payment === "cancelled") {
-      setPaymentBanner({ type: "info", msg: "Payment was cancelled. You can try again when ready." });
+      setPaymentBanner({ type: "info", msg: "Payment Required: Your booking has not yet been confirmed. Please complete your payment to secure your booking." });
+      const stripeKey = `stripe_pid_${params.id}`;
+      const paypalKey = `paypal_pid_${params.id}`;
+      const paymentId = sessionStorage.getItem(stripeKey) || sessionStorage.getItem(paypalKey);
+      void api.post("/payments/abandon-pending", {
+        booking_id: Number(params.id),
+        payment_id: paymentId ? Number(paymentId) : undefined,
+      }).finally(() => {
+        sessionStorage.removeItem(stripeKey);
+        sessionStorage.removeItem(paypalKey);
+      });
     } else if (payment === "paypal_approved" && token) {
       // Capture the PayPal order
       const pidKey = `paypal_pid_${params.id}`;
@@ -428,7 +405,7 @@ export default function CustomerBookingDetailPage() {
         api.post("/payments/paypal/capture", { order_id: token, payment_id: parseInt(savedPid) })
           .then(() => {
             sessionStorage.removeItem(pidKey);
-            setPaymentBanner({ type: "success", msg: "PayPal payment received. Your booking request is being reviewed for confirmation." });
+            setPaymentBanner({ type: "success", msg: "PayPal payment received. Your booking request has been received successfully. We will review the details and be in touch shortly with your booking confirmation." });
             void load();
           })
           .catch(() => {
@@ -459,7 +436,37 @@ export default function CustomerBookingDetailPage() {
     }
   }
 
-  const canCancel = booking && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
+  async function handleRemoveUnpaidBooking() {
+    if (!window.confirm("Remove this unpaid booking from My Bookings?")) return;
+    setRemoving(true);
+    setError("");
+    try {
+      await api.post(`/customer/bookings/${params.id}/remove-unpaid`);
+      router.replace("/customer/bookings?removed=1");
+    } catch (exception) {
+      setError(
+        axios.isAxiosError(exception)
+          ? exception.response?.data?.detail || "Could not remove this unpaid booking."
+          : "Could not remove this unpaid booking.",
+      );
+      setRemoving(false);
+    }
+  }
+
+  const amountPaid = Number(booking?.amount_paid ?? 0);
+  const isUnpaidBooking = Boolean(
+    booking &&
+      booking.booking_status === "pending_payment" &&
+      ["unpaid", "pending"].includes((booking.payment_status || "").toLowerCase()) &&
+      amountPaid <= 0,
+  );
+  const isBookingRequestReceived = Boolean(
+    booking &&
+      !isUnpaidBooking &&
+      ["draft", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required"].includes(booking.booking_status),
+  );
+  const canCancel = booking && amountPaid > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
+  const freeCancellationEligible = booking?.cancellation_eligibility?.is_free_cancellation_eligible === true;
   const pendingAmount = Number(booking?.amount_pending ?? 0);
   const canPay = booking && pendingAmount > 0 && !["cancelled", "declined", "completed", "cancellation_requested", "postponed"].includes(booking.booking_status);
   const canReview = booking && booking.booking_status === "completed" && !booking.has_review && !reviewSubmitted;
@@ -557,7 +564,9 @@ export default function CustomerBookingDetailPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
                     <StatusIcon status={booking.booking_status} />
-                    {customerBookingStatus(booking.booking_status)}
+                    {isUnpaidBooking
+                      ? "Payment Required"
+                      : customerBookingStatus(booking.booking_status)}
                   </span>
                   {booking.payment_status && (
                     <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600">
@@ -577,11 +586,24 @@ export default function CustomerBookingDetailPage() {
                     Pay Now ({format(pendingAmount, booking.currency)})
                   </button>
                 )}
+                {isUnpaidBooking && (
+                  <button
+                    type="button"
+                    onClick={() => void handleRemoveUnpaidBooking()}
+                    disabled={removing}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-2.5"
+                  >
+                    {removing ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />}
+                    Remove from Bookings
+                  </button>
+                )}
                 {canCancel && !showCancel && (
                   <button
                     type="button"
-                    onClick={() => setShowCancel(true)}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-xs font-bold text-rose-600 transition hover:bg-rose-50 sm:w-auto sm:py-2.5"
+                    onClick={() => freeCancellationEligible && setShowCancelConfirm(true)}
+                    disabled={!freeCancellationEligible}
+                    title={!freeCancellationEligible ? "The free cancellation period has ended. Contact Tourvaa for assistance." : undefined}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:w-auto sm:py-2.5"
                   >
                     <XCircle size={15} /> Request Cancellation
                   </button>
@@ -635,12 +657,32 @@ export default function CustomerBookingDetailPage() {
             </form>
           )}
 
-          {booking.supplier_acceptance_status === "pending" && (
+          {isBookingRequestReceived && (
             <div className="mb-5 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-blue-900 sm:px-5 md:mb-6">
               <Clock size={18} className="mt-0.5 shrink-0" />
               <div>
                 <p className="font-bold">Booking Request Received</p>
                 <p className="mt-1 text-sm leading-6">Your booking request has been received successfully. We will review the details and be in touch shortly with your booking confirmation.</p>
+              </div>
+            </div>
+          )}
+
+          {canCancel && !freeCancellationEligible && (
+            <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              The free cancellation period has finished. Please contact Tourvaa for cancellation assistance. For any travel-date modification, please contact Tourvaa.
+            </div>
+          )}
+
+          {showCancelConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="cancel-confirm-title">
+              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                <h3 id="cancel-confirm-title" className="text-lg font-black text-slate-900">Confirm cancellation request</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">In accordance with the cancellation policy for this tour, you are eligible for a full refund, less any applicable transaction fees. Do you want to continue with the cancellation?</p>
+                <p className="mt-3 text-xs font-medium text-slate-500">For any travel-date modification, please contact Tourvaa.</p>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button type="button" onClick={() => setShowCancelConfirm(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">No</button>
+                  <button type="button" onClick={() => { setShowCancelConfirm(false); setShowCancel(true); }} className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700">Yes, continue</button>
+                </div>
               </div>
             </div>
           )}
@@ -797,11 +839,6 @@ export default function CustomerBookingDetailPage() {
           currency={booking.currency || "USD"}
           depositConfig={booking.deposit_config}
           onClose={() => setShowPayModal(false)}
-          onSuccess={() => {
-            setShowPayModal(false);
-            setPaymentBanner({ type: "success", msg: "Test payment recorded. Your booking request is being reviewed for confirmation." });
-            void load();
-          }}
         />
       )}
     </CustomerPageShell>

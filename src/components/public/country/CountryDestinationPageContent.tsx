@@ -4,12 +4,14 @@ import React, { useState } from "react";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 import { PublicTour } from "@/lib/api/publicClient";
 import CountryDestinationHero from "@/components/public/country/CountryDestinationHero";
+import CountryOverviewSection from "@/components/public/country/CountryOverviewSection";
 import CountryPlacesToVisitSection from "@/components/public/country/CountryPlacesToVisitSection";
 import CountryWhyVisitSection from "@/components/public/country/CountryWhyVisitSection";
 import CountryDurationGuidingStyles from "@/components/public/country/CountryDurationGuidingStyles";
 import CountryWhenToGoSection from "@/components/public/country/CountryWhenToGoSection";
 import CountryToursSection from "@/components/public/country/CountryToursSection";
 import CountryExploreFaqSection from "@/components/public/country/CountryExploreFaqSection";
+import CountryTravelInfoSection from "@/components/public/country/CountryTravelInfoSection";
 import ExternalExperiencesSection from "@/components/public/external/ExternalExperiencesSection";
 
 export interface CountryDestinationPageContentProps {
@@ -40,6 +42,9 @@ export default function CountryDestinationPageContent({
       {/* ── 1, 2, 3: Hero Banner, Breadcrumbs & Split Overview Card ── */}
       <CountryDestinationHero info={info} tourCount={initialTours?.length || 24} />
 
+      {/* CMS: Overview and quick facts */}
+      <CountryOverviewSection info={info} />
+
       {/* ── 4: Places to Visit in {Country} (4 Horizontal Cards) ── */}
       <CountryPlacesToVisitSection
         info={info}
@@ -64,6 +69,9 @@ export default function CountryDestinationPageContent({
           setSelectedPlaceFilter(season);
         }}
       />
+
+      {/* CMS: Practical travel information */}
+      <CountryTravelInfoSection info={info} />
 
       {/* ── 10: All Tours in {Country} (Filter Pills & 6-Tour Grid) ── */}
       <CountryToursSection

@@ -86,6 +86,11 @@ type Booking = {
     payment_status: string;
     payment_date?: string | null;
   } | null;
+  supplier_cancellation_terms?: {
+    tier: "no_charge" | "full_liability" | "partial_liability";
+    liability_percentage: string;
+    refund_percentage: string;
+  };
 };
 
 type ActionType = "confirm" | "decline" | "ongoing" | "complete" | "cancel";
@@ -124,30 +129,34 @@ function ActionBanner({
   status,
   paymentStatus,
   supplierAcceptanceStatus,
+  cancellationTerms,
   onAction,
   busy,
 }: {
   status: string;
   paymentStatus?: string;
   supplierAcceptanceStatus?: string;
+  cancellationTerms?: Booking["supplier_cancellation_terms"];
   onAction: (type: ActionType, payload?: Record<string, string>) => void;
   busy: ActionType | null;
 }) {
   const [showCancel, setShowCancel] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDecline, setShowDecline] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [declineReason, setDeclineReason] = useState("");
 
   useEffect(() => {
-    if (!showCancel && !showDecline) return;
+    if (!showCancel && !showCancelConfirm && !showDecline) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setShowCancel(false);
+      setShowCancelConfirm(false);
       setShowDecline(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showCancel, showDecline]);
+  }, [showCancel, showCancelConfirm, showDecline]);
 
   const v = status.toLowerCase();
   const payment = (paymentStatus || "").toLowerCase();
@@ -157,7 +166,16 @@ function ActionBanner({
   const isAwaitingPayment = acceptance === "pending" && !paymentReady && v === "pending_payment";
   const isConfirmed = v === "confirmed";
   const isOngoing = v === "ongoing";
-  const isPostponed = v === "postponed";
+
+  if (v === "postponed") {
+    return (
+      <div className="mb-5 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+        <p className="flex items-center gap-2 text-sm font-bold text-blue-800">
+          <Clock size={16} /> This booking has been postponed. Please contact Tourvaa support for the next steps.
+        </p>
+      </div>
+    );
+  }
 
   if (v === "completed") {
     return (
@@ -180,12 +198,12 @@ function ActionBanner({
     );
   }
 
-  if (!isPending && !isConfirmed && !isOngoing && !isPostponed) return null;
+  if (!isPending && !isConfirmed && !isOngoing) return null;
 
   return (
     <div className="mb-5 rounded-2xl border border-[#D9ECFF] bg-[#F0F7FF] p-5">
       <p className="mb-4 text-sm font-bold text-dash-text">
-        {isPending ? "This booking requires your action:" : isPostponed ? "This booking is postponed - resume it when the tour starts:" : isOngoing ? "This tour is ongoing:" : "This booking is confirmed and ready to start:"}
+        {isPending ? "This booking requires your action:" : isOngoing ? "This tour is ongoing:" : "This booking is confirmed and ready to start:"}
       </p>
 
       <div className="flex flex-wrap gap-3">
@@ -211,7 +229,7 @@ function ActionBanner({
           </>
         )}
 
-        {(isConfirmed || isPostponed) && (
+        {isConfirmed && (
           <button
             type="button"
             disabled={busy !== null}
@@ -219,7 +237,7 @@ function ActionBanner({
             className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-60 transition-all"
           >
             {busy === "ongoing" ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
-            {isPostponed ? "Resume Tour" : "Start Tour"}
+            Start Tour
           </button>
         )}
 
@@ -235,12 +253,12 @@ function ActionBanner({
             </button>
         )}
 
-        {(isConfirmed || isOngoing || isPostponed) && (
+        {(isConfirmed || isOngoing) && (
           <>
             <button
               type="button"
               disabled={busy !== null}
-              onClick={() => setShowCancel(true)}
+              onClick={() => setShowCancelConfirm(true)}
               className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-60 transition-all"
             >
               <Ban size={15} /> Cancel
@@ -269,6 +287,25 @@ function ActionBanner({
               {busy === "cancel" ? "Cancelling..." : "Confirm Cancellation"}
             </button>
             <button type="button" onClick={() => setShowCancel(false)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-bold text-dash-body">Close</button>
+          </div>
+        </div>
+      )}
+
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="supplier-cancel-confirm-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h3 id="supplier-cancel-confirm-title" className="text-lg font-black text-dash-text">Confirm booking cancellation</h3>
+            <p className="mt-3 text-sm leading-6 text-dash-muted">
+              {cancellationTerms?.tier === "no_charge"
+                ? "In accordance with the terms and conditions, no cancellation charge will apply to this booking. Do you want to continue with the cancellation?"
+                : cancellationTerms?.tier === "partial_liability"
+                  ? `In accordance with the terms and conditions, cancelling this booking will result in a charge equivalent to ${cancellationTerms.liability_percentage}% of the applicable booking amount, less any applicable transaction fees. Do you want to continue with the cancellation?`
+                  : "In accordance with the terms and conditions, cancelling this booking will result in a charge equivalent to 100% of the applicable booking amount, less any applicable transaction fees. Do you want to continue with the cancellation?"}
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowCancelConfirm(false)} className="rounded-xl border border-dash-border bg-white px-4 py-2 text-sm font-bold text-dash-body hover:bg-dash-bg">No</button>
+              <button type="button" onClick={() => { setShowCancelConfirm(false); setShowCancel(true); }} className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700">Yes, continue</button>
+            </div>
           </div>
         </div>
       )}
@@ -449,7 +486,7 @@ export default function SupplierBookingDetailPage() {
         toast.success("Booking marked as completed. Customer has been notified.");
       } else if (type === "cancel") {
         await api.patch(`/supplier/bookings/${bookingId}/cancel`, { reason: payload?.reason });
-        toast.success("Booking cancelled. Customer has been notified.");
+        toast.success("Tourvaa has been notified. The booking is awaiting internal supplier reassignment.");
       }
       void load();
     } catch (e: unknown) {
@@ -600,7 +637,7 @@ export default function SupplierBookingDetailPage() {
       </SupplierPageHeader>
 
       {/* Action banner */}
-      <ActionBanner status={booking.booking_status} paymentStatus={booking.payment_status} supplierAcceptanceStatus={booking.supplier_acceptance_status} onAction={handleAction} busy={busy} />
+      <ActionBanner status={booking.booking_status} paymentStatus={booking.payment_status} supplierAcceptanceStatus={booking.supplier_acceptance_status} cancellationTerms={booking.supplier_cancellation_terms} onAction={handleAction} busy={busy} />
 
       {/* Details grid */}
       <div className="grid gap-5 lg:grid-cols-2">

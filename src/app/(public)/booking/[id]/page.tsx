@@ -784,7 +784,7 @@ export default function DynamicTourBookingPage() {
           extensions: extensionsPayload,
           optional_activities: optionalActivitiesPayload,
           accommodations: accommodationsPayload,
-          promo_code: promoApplied ? promoCode.trim() : undefined,
+          promo_code: !isAgent && promoApplied ? promoCode.trim() : undefined,
         })
         .then((res) => {
           if (!active) return;
@@ -1115,7 +1115,7 @@ export default function DynamicTourBookingPage() {
       try {
         await api.patch(`/checkout/session/${sessionKey}`, {
           step: "payment",
-          data: { travellers: buildTravellersPayload(), promo_code: promoApplied ? promoCode.trim() : null },
+          data: { travellers: buildTravellersPayload(), promo_code: !isAgent && promoApplied ? promoCode.trim() : null },
         });
       } catch (submitErr) {
         setStepError(getApiErrorMessage(submitErr));
@@ -1238,7 +1238,7 @@ export default function DynamicTourBookingPage() {
           optional_activities: optionalActivitiesPayload,
           accommodations: accommodationsPayload,
           extensions: extensionsPayload,
-          promo_code: promoApplied ? promoCode.trim() : undefined,
+          promo_code: !isAgent && promoApplied ? promoCode.trim() : undefined,
           ...(isAgent ? {
             agent_markup: Number(agentMarkup) || 0,
             agent_reference: agentReference.trim() || undefined,
@@ -1277,7 +1277,7 @@ export default function DynamicTourBookingPage() {
     setPaymentSubmitting(true);
     try {
       const res = await api.post(`/checkout/session/${sessionKey}/confirm`, {
-        promo_code: promoApplied ? promoCode.trim() : undefined,
+        promo_code: !isAgent && promoApplied ? promoCode.trim() : undefined,
         agreed_terms: acceptTerms,
         agreed_cancellation_policy: acceptTerms,
       });
@@ -1984,8 +1984,9 @@ export default function DynamicTourBookingPage() {
                     </div>
                   </div>
 
-                  {/* Promo Voucher */}
-                  <div className="pt-6">
+                  {/* Promo vouchers are customer-only: agents receive their
+                      approved commercial rate instead. */}
+                  {!isAgent && <div className="pt-6">
                     <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5">
                       <label className="block text-xs font-bold text-slate-800 mb-2 flex items-center gap-2">
                         <Tag size={15} className="text-pub-primary" />
@@ -2023,7 +2024,7 @@ export default function DynamicTourBookingPage() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </div>}
 
                   {/* Passengers Inputs */}
                   {passengers.map((passenger, idx) => {
@@ -2746,9 +2747,8 @@ export default function DynamicTourBookingPage() {
                 </div>
               </div>
 
-              {/* Cart-side promo entry; automatic discounts need no action and
-                  are shown in the price breakdown below. */}
-              <div className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-3">
+              {/* Cart-side promo entry is intentionally unavailable to agents. */}
+              {!isAgent && <div className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-3">
                 <div>
                   <label htmlFor="cart-promo-code" className="mb-2 flex items-center justify-between text-xs font-bold text-slate-800">
                     <span className="flex items-center gap-1.5">
@@ -2872,7 +2872,7 @@ export default function DynamicTourBookingPage() {
                   </div>
                 )}
 
-              </div>
+              </div>}
 
               {/* Price Breakdown */}
               <div className="pt-2 border-t border-slate-100">

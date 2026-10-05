@@ -34,6 +34,38 @@ check("login return path preserves booking context", detail.includes("encodeURIC
 check("tour CTA opens dedicated public booking flow", detail.includes('`/booking/${tour.id}'));
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
 check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
+const customerBookingDetail = read("src/app/customer/bookings/[id]/page.tsx");
+check(
+  "unpaid customer bookings show payment required and can be removed",
+  customerBookingDetail.includes("Payment Required: Your booking has not yet been confirmed") &&
+    customerBookingDetail.includes("Remove from Bookings") &&
+    customerBookingDetail.includes("/remove-unpaid") &&
+    customerBookingDetail.includes("amountPaid > 0"),
+);
+check(
+  "cancelled gateway checkout releases its pending amount for a retry",
+  customerBookingDetail.includes('"/payments/abandon-pending"') &&
+    customerBookingDetail.includes("stripe_pid_${bookingId}") &&
+    customerBookingDetail.includes("<StripeBadge"),
+);
+check(
+  "customer payment dialog exposes only real payment gateways",
+  !customerBookingDetail.includes("/payments/test/simulate") &&
+    !customerBookingDetail.includes("Test mode active - no real money will be charged."),
+);
+check(
+  "tour detail uses one combined special-offer badge and an authoritative quote summary",
+  detailExperience.includes("Offers Applied – {todaysSpecialOfferLabel}") &&
+    detailExperience.includes("supplier_offer_discount_amount") &&
+    detailExperience.includes("Customer price after discounts") &&
+    detailExperience.includes("You save") &&
+    !detailExperience.includes("Group discount"),
+);
+check(
+  "date and month navigation does not change the selected departure",
+  !detailExperience.includes("if (firstDate) setSelectedDateId(firstDate.id);") &&
+    detailExperience.includes("const allDates = monthGroups.flatMap"),
+);
 
 // The booking form was moved off the tour detail page into a dedicated
 // checkout-session flow at /booking/[id] (see HeroFilterBar/customer-flow
@@ -62,18 +94,20 @@ check("optional activities selection feeds price and checkout data", publicBooki
 
 const customerBooking = read("src/app/customer/bookings/[id]/page.tsx");
 check("new booking opens payment UI", customerBooking.includes('searchParams.get("pay") === "1"'));
-// The "pending supplier acceptance" wording was reworded to "Booking Request
-// Received", but the gate is unchanged: the banner still renders only while
-// supplier_acceptance_status is "pending".
 check(
-  "pending supplier banner is rendered",
-  customerBooking.includes('booking.supplier_acceptance_status === "pending"') &&
-    customerBooking.includes("Booking Request Received"),
+  "customer request states use customer-safe booking language",
+  customerBooking.includes("isBookingRequestReceived") &&
+    customerBooking.includes("Booking Request Received") &&
+    !customerBooking.includes("Pending supplier acceptance"),
 );
 check(
-  "payment is not presented as a confirmed booking",
+  "customer status lifecycle is explicit",
   customerBooking.includes('return "Booking Request Received"') &&
-    customerBooking.includes('["confirmed", "ready_to_travel", "upcoming", "postponed"]'),
+    ["Booking Confirmed", "Ongoing", "Completed", "Cancellation Requested", "Cancelled"].every((status) => customerBooking.includes(status)),
+);
+check(
+  "cancellation requires free-period eligibility and explicit confirmation",
+  ["is_free_cancellation_eligible", "Confirm cancellation request", "Yes, continue", "free cancellation period has finished"].every((text) => customerBooking.includes(text)),
 );
 check("gateway charges the selected payment amount", customerBooking.includes("amount: paymentAmount"));
 check("gateway modal offers deposit and full balance", customerBooking.includes("Pay ${depositConfig.deposit_percentage}% deposit") && customerBooking.includes("Pay in full"));

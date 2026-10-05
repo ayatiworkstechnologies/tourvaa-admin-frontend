@@ -112,10 +112,32 @@ check("admin can approve and reject individual agent documents", agents.includes
 const bookingService = read("src/lib/api/services/bookingService.ts");
 check("admin booking create contract uses backend traveller counts", bookingService.includes("no_of_adults: number") && bookingService.includes("no_of_children?: number"));
 check("booking filters use backend booking_status", bookingService.includes("booking_status?: string"));
+const bookingActions = read("src/components/bookings/BookingActionMenu.tsx");
+const bookingList = read("src/app/admin/bookings/page.tsx");
+check(
+  "admin confirms cancellation requests through the cancellation workflow",
+  bookingActions.includes('bookingStatus === "cancellation_requested"') &&
+    bookingActions.includes("onApproveCancellation") &&
+    bookingList.includes("approveBookingCancellation") &&
+    bookingService.includes("/cancellation-request/approve"),
+);
 
 const bookingDetail = read("src/app/admin/bookings/[id]/page.tsx");
 check("admin booking detail renders serialized add-on snapshots", bookingDetail.includes("activity_name_snapshot") && bookingDetail.includes("accommodation_name_snapshot") && bookingDetail.includes("extension_name_snapshot"));
 check("admin booking detail exposes all note channels", bookingDetail.includes("booking.customer_notes") && bookingDetail.includes("booking.admin_notes"));
+check("admin booking detail separates booking, supplier, and agent payment blocks", ["Booking Payment Status", "Supplier Payments", "Agent Payments", "Agent Price After Commission"].every((label) => bookingDetail.includes(label)));
+check(
+  "admin financial breakdown excludes markup and deducts partner commission from Tourvaa revenue",
+  !bookingDetail.includes('label="Tourvaa Markup"') &&
+    bookingDetail.includes('label="Tourvaa Gross Revenue"') &&
+    bookingDetail.includes("formatExact(booking.tourvaa_net_revenue, booking.currency)"),
+);
+check(
+  "admin can make a customer-requested travel date change with calendar validation",
+  bookingDetail.includes("Change Travel Date") &&
+    bookingDetail.includes("/travel-date") &&
+    bookingDetail.includes("Seat availability is checked"),
+);
 
 const payments = read("src/lib/api/services/paymentService.ts");
 check("payment operations use capture, void, refund, and status contracts", ["/capture", "/void", "/refund", "/status"].every((path) => payments.includes(path)));

@@ -366,6 +366,13 @@ export default function SupplierDetailPage() {
   const contacts = (record?.contacts ?? []) as SupplierContact[];
   const primaryContact =
     contacts.find((contact) => contact.is_primary) ?? contacts[0];
+  const registrationContact = record?.registration_contact;
+  const storedBusinessYears = record?.business_info?.years_in_business;
+  const yearsInBusiness: DetailValue =
+    typeof storedBusinessYears === "string" ||
+    typeof storedBusinessYears === "number"
+      ? storedBusinessYears
+      : record?.years_in_operation;
 
   const missingRequiredDocs = documentTypes.filter(
     (docType) =>
@@ -567,6 +574,33 @@ export default function SupplierDetailPage() {
           />
 
           <CompletionCard record={record} />
+
+          <section className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+            <h2 className="font-black text-dash-text">Supplier information</h2>
+            <p className="mt-1 text-sm text-dash-muted">
+              Details submitted by the supplier during registration and in their company profile.
+            </p>
+            <div className="mt-4 space-y-5">
+              <InfoGrid
+                rows={[
+                  ["Years in business", yearsInBusiness],
+                  ["Business address", record.business_address],
+                ]}
+              />
+              <div>
+                <h3 className="text-sm font-bold text-dash-text">Person in charge</h3>
+                <div className="mt-3">
+                  <InfoGrid
+                    rows={[
+                      ["Full name", registrationContact?.full_name],
+                      ["Email", registrationContact?.email],
+                      ["Mobile number", registrationContact?.phone],
+                    ]}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
 
           <section className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
             <div className="flex flex-wrap items-center justify-between gap-3">

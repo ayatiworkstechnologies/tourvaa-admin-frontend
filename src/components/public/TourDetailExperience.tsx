@@ -76,6 +76,7 @@ type PublicPriceQuote = {
   currency: string;
   base_amount: string;
   group_discount_amount: string;
+  supplier_offer_discount_amount: string;
   discount_amount: string;
   tax_amount: string;
   surcharge_amount: string;
@@ -691,15 +692,14 @@ export default function TourDetailExperience({
   }, [initialTravelDate, monthGroups]);
 
   useEffect(() => {
-    if (currentMonth && currentMonth.dates.length > 0) {
-      if (
-        !selectedDateId ||
-        !currentMonth.dates.some((d) => d.id === selectedDateId)
-      ) {
-        setSelectedDateId(currentMonth.dates[0].id);
-      }
+    const allDates = monthGroups.flatMap((month) => month.dates);
+    if (
+      allDates.length > 0 &&
+      (!selectedDateId || !allDates.some((date) => date.id === selectedDateId))
+    ) {
+      setSelectedDateId(allDates[0].id);
     }
-  }, [currentMonth, selectedDateId]);
+  }, [monthGroups, selectedDateId]);
 
   // Dynamic Pricing Tiers directly from Backend
   const pricingRows = useMemo(
@@ -708,9 +708,9 @@ export default function TourDetailExperience({
     [tour.pricing],
   );
 
-  const selectedDeparture = currentMonth.dates.find(
-    (d) => d.id === selectedDateId,
-  );
+  const selectedDeparture = monthGroups
+    .flatMap((month) => month.dates)
+    .find((date) => date.id === selectedDateId);
   const selectedDepartureIso = selectedDeparture?.isoDate || toIsoDate(selectedDeparture?.date);
 
   // The price is date-sensitive. Notify the owning page whenever the
@@ -770,19 +770,12 @@ export default function TourDetailExperience({
   const originalChildUnitPrice = Number(
     selectedRow?.original_child_price_per_person ?? childUnitPrice,
   );
-  const baseOriginalUnitPrice = Number(
-    baseRow?.original_price_per_person ??
-      baseRow?.price_per_person ??
-      originalUnitPrice,
-  );
-  const baseOriginalChildUnitPrice = Number(
-    baseRow?.original_child_price_per_person ??
-      baseRow?.child_price_per_person ??
-      originalChildUnitPrice,
-  );
+  // A selected group tier is its own price, not a discount from the first
+  // tier. Comparing every tier with the first one made the local summary
+  // invent a "group discount" and disagree with the checkout quote.
   const originalTourPrice =
-    adults * baseOriginalUnitPrice + children * baseOriginalChildUnitPrice;
-  const groupDiscount = Math.max(0, Math.round(originalTourPrice - tourPrice));
+    adults * originalUnitPrice + children * originalChildUnitPrice;
+  const groupDiscount = 0;
   const promoActive = Boolean(
     tour.discount_percentage &&
     tour.discount_percentage > 0 &&
@@ -845,13 +838,7 @@ export default function TourDetailExperience({
   const totalAmount = hasQuote ? quotedTotal : fallbackTotalAmount;
   const pricingCurrency = priceQuote?.currency || tourCurrency;
 
-  const fallbackPromoDiscount = promoActive
-    ? Math.max(0, originalTourPrice - tourPrice - groupDiscount)
-    : 0;
-
-  const quoteBaseAmount = hasQuote
-    ? Number(priceQuote?.base_amount || 0)
-    : (originalTourPrice > 0 ? originalTourPrice : tourPrice);
+  const fallbackPromoDiscount = Math.max(0, originalTourPrice - tourPrice);
 
   const quoteGroupDiscount = hasQuote
     ? Number(priceQuote?.group_discount_amount || 0)
@@ -861,9 +848,24 @@ export default function TourDetailExperience({
     ? Number(priceQuote?.discount_amount || 0)
     : fallbackPromoDiscount;
 
-  const quoteTaxAndFees = hasQuote
-    ? (Number(priceQuote?.tax_amount || 0) + Number(priceQuote?.surcharge_amount || 0))
+  const quoteSupplierOfferDiscount = hasQuote
+    ? Number(priceQuote?.supplier_offer_discount_amount || 0)
     : 0;
+
+  const quoteTaxAmount = hasQuote ? Number(priceQuote?.tax_amount || 0) : 0;
+  const quoteBookingFeeAmount = hasQuote
+    ? Number(priceQuote?.surcharge_amount || 0)
+    : 0;
+  const totalDiscountAmount =
+    quoteSupplierOfferDiscount + quoteGroupDiscount + quotePromotionDiscount;
+  // This is the chargeable tour/add-on amount after discounts and before
+  // customer-side taxes and booking fees. Deriving it from the authoritative
+  // final quote keeps it correct for every group tier and add-on selection.
+  const customerPriceAfterDiscounts = Math.max(
+    0,
+    totalAmount - quoteTaxAmount - quoteBookingFeeAmount,
+  );
+  const summaryTotalBeforeDiscounts = customerPriceAfterDiscounts + totalDiscountAmount;
 
   const displayedPerPersonPrice = Math.round(totalAmount / Math.max(1, travellerCount));
 
@@ -878,14 +880,7 @@ export default function TourDetailExperience({
     supplierDiscountPercent + tourvaaDiscountPercent ||
     Number(tour.discount_percentage ?? 0);
   const todaysSpecialOfferLabel = `Today's Special Offer (${todaysSpecialOfferPercent}% Discount)`;
-  const activeDiscountLabels = [
-    supplierDiscountPercent > 0
-      ? `${tour.supplier_discount_name || "Supplier discount"} (${supplierDiscountPercent}%)`
-      : null,
-    tourvaaDiscountPercent > 0
-      ? `${tour.tourvaa_discount_name || "TourVaa discount"} (${tourvaaDiscountPercent}%)`
-      : null,
-  ].filter((label): label is string => Boolean(label));
+  const hasSpecialOffer = todaysSpecialOfferPercent > 0;
   // "Starting from" is the cheapest tier (after discount), not the selected one.
   const cheapestRow = pricingRows.reduce<
     (typeof pricingRows)[number] | undefined
@@ -1271,7 +1266,9 @@ export default function TourDetailExperience({
   const handleBookNow = (
     agentAction?: "reserve" | "full",
   ) => {
-    const chosen = currentMonth.dates.find((d) => d.id === selectedDateId);
+    const chosen = monthGroups
+      .flatMap((month) => month.dates)
+      .find((date) => date.id === selectedDateId);
     const chosenDate = chosen?.isoDate || toIsoDate(chosen?.date) || toIsoDate(initialTravelDate);
     if (!chosenDate) return;
     onBook({
@@ -1425,12 +1422,10 @@ export default function TourDetailExperience({
         {/* ── 2. TOUR TITLE & REAL BADGES ── */}
         <section className="mt-2 rounded-[28px] border border-slate-100 bg-white px-5 py-6 shadow-[0_16px_45px_-30px_rgba(15,36,57,0.35)] sm:px-8 sm:py-8">
           <div className="flex flex-wrap items-center gap-2">
-            {promoActive && (
+            {hasSpecialOffer && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ef6242] px-3.5 py-1.5 text-xs font-extrabold text-white shadow-sm sm:text-sm">
                 <Flame size={15} className="fill-white shrink-0" />
-                {activeDiscountLabels.length > 0
-                  ? `Save with ${activeDiscountLabels.join(" + ")}`
-                  : `Save up to ${tour.discount_percentage ?? 0}% today`}
+                Offers Applied – {todaysSpecialOfferLabel}
               </span>
             )}
             {tour.category_name && (
@@ -1599,7 +1594,7 @@ export default function TourDetailExperience({
             {/* Left: Dynamic Price Breakdown */}
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2.5">
-                {promoActive && (
+                {hasSpecialOffer && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-3 py-1 text-xs font-semibold text-slate-950 uppercase tracking-wider shadow-sm">
                     <Flame size={14} className="fill-slate-950" />
                     Offers Applied – {todaysSpecialOfferLabel}
@@ -2853,8 +2848,6 @@ export default function TourDetailExperience({
                   onClick={() => {
                     const nextPage = Math.max(0, safeDatePageIndex - 1);
                     setDatePageIndex(nextPage);
-                    const firstDate = currentMonth.dates[nextPage * 3];
-                    if (firstDate) setSelectedDateId(firstDate.id);
                   }}
                   className="flex h-8 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:opacity-25"
                 >
@@ -2897,8 +2890,6 @@ export default function TourDetailExperience({
                   onClick={() => {
                     const nextPage = Math.min(datePageCount - 1, safeDatePageIndex + 1);
                     setDatePageIndex(nextPage);
-                    const firstDate = currentMonth.dates[nextPage * 3];
-                    if (firstDate) setSelectedDateId(firstDate.id);
                   }}
                   className="flex h-8 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:opacity-25"
                 >
@@ -2932,7 +2923,7 @@ export default function TourDetailExperience({
                     Group Rate Highlights
                   </h4>
                   <span className="text-[11px] font-bold text-blue-600">
-                    {promoActive
+                    {hasSpecialOffer
                       ? todaysSpecialOfferLabel
                       : "Auto-applied discount"}
                   </span>
@@ -2949,8 +2940,7 @@ export default function TourDetailExperience({
                           ? rowOriginal / (1 - supplierDiscountPercent / 100)
                           : rowOriginal),
                     );
-                    const rowDiscounted =
-                      promoActive && rowRawOriginal > row.price_per_person;
+                    const rowDiscounted = rowRawOriginal > row.price_per_person;
                     // Keep the saving next to the crossed-out price internally
                     // consistent: it is the reduction from that same original
                     // row price, not the separate group-tier saving vs solo.
@@ -3107,18 +3097,6 @@ export default function TourDetailExperience({
                 Booking Summary
               </h4>
 
-              {quoteGroupDiscount > 0 && (
-                <div className="mb-2 flex items-center justify-between rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-1.5 text-[11px] font-semibold text-blue-800">
-                  <span>
-                    🎉 Group rate applied ({travellerCount} travellers) vs.
-                    standard rate
-                  </span>
-                  <span className="font-bold">
-                    -{format(quoteGroupDiscount, pricingCurrency)} total
-                  </span>
-                </div>
-              )}
-
               {selectedEnhancements.length > 0 && (
                 <div className="mb-3 rounded-lg border border-blue-100 bg-blue-50/70 p-2.5">
                   <p className="text-[11px] font-bold uppercase tracking-wide text-blue-800">Added to your tour</p>
@@ -3139,27 +3117,35 @@ export default function TourDetailExperience({
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-slate-600 font-medium">
-                  <span>Tour price ({travellerCount} guest{travellerCount > 1 ? "s" : ""})</span>
-                  <span className="font-bold text-slate-900">{format(quoteBaseAmount, pricingCurrency)}</span>
+                  <span>Total price ({travellerCount} guest{travellerCount > 1 ? "s" : ""})</span>
+                  <span className="font-bold text-slate-900">{format(summaryTotalBeforeDiscounts, pricingCurrency)}</span>
                 </div>
-                {quoteGroupDiscount > 0 && (
+                {totalDiscountAmount > 0 && (
                   <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>Group discount</span>
-                    <span>-{format(quoteGroupDiscount, pricingCurrency)}</span>
+                    <span>Customer price after discounts</span>
+                    <span>{format(customerPriceAfterDiscounts, pricingCurrency)}</span>
                   </div>
                 )}
-                {quotePromotionDiscount > 0 && (
+                {totalDiscountAmount > 0 && (
                   <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>Offer discount</span>
-                    <span>-{format(quotePromotionDiscount, pricingCurrency)}</span>
+                    <span>You save</span>
+                    <span>-{format(totalDiscountAmount, pricingCurrency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-slate-600 font-medium">
                   <span>Taxes &amp; fees</span>
-                  {quoteTaxAndFees > 0 ? (
-                    <span className="font-bold text-slate-900">+{format(quoteTaxAndFees, pricingCurrency)}</span>
+                  {quoteTaxAmount > 0 ? (
+                    <span className="font-bold text-slate-900">+{format(quoteTaxAmount, pricingCurrency)}</span>
                   ) : (
                     <span className="font-bold text-emerald-600">Included</span>
+                  )}
+                </div>
+                <div className="flex justify-between text-slate-600 font-medium">
+                  <span>Booking fees</span>
+                  {quoteBookingFeeAmount > 0 ? (
+                    <span className="font-bold text-slate-900">+{format(quoteBookingFeeAmount, pricingCurrency)}</span>
+                  ) : (
+                    <span className="font-bold text-emerald-600">Free</span>
                   )}
                 </div>
 

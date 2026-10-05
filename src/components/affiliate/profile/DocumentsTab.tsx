@@ -15,8 +15,11 @@ type DocRequirement = { key: string; label: string };
 // Fallback only - the source of truth is GET /affiliates/document-requirements
 // (app/services/affiliates.py AFFILIATE_DOCUMENT_TYPES), used if that call fails.
 const FALLBACK_DOC_TYPES: DocRequirement[] = [
-  { key: "identity_proof", label: "Identity Proof (Passport / National ID)" },
-  { key: "bank_details", label: "Bank Account Details / Cheque" },
+  { key: "company_registration", label: "Business Registration Certificate" },
+  { key: "iata_accreditation", label: "IATA Accreditation" },
+  { key: "industry_certification", label: "Industry Certification" },
+  { key: "other_licences", label: "Other Licences" },
+  { key: "supporting_documents", label: "Additional Supporting Documents" },
 ];
 
 function statusCls(s: string) {

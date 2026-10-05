@@ -30,11 +30,10 @@ type AgentDocument = {
 
 const FALLBACK_REQUIREMENTS: DocumentRequirement[] = [
   { document_type: "company_registration", label: "Business Registration Certificate", required: true },
-  { document_type: "tax_certificate", label: "Tax Registration (GST / VAT / TIN)", required: true },
-  { document_type: "identity_proof", label: "Owner / Authorized Signatory ID", required: true },
-  { document_type: "bank_details", label: "Bank Proof / Cancelled Cheque", required: true },
-  { document_type: "travel_license", label: "Travel License / IATA Accreditation", required: false },
-  { document_type: "address_proof", label: "Business Address Proof", required: false },
+  { document_type: "iata_accreditation", label: "IATA Accreditation", required: true },
+  { document_type: "industry_certification", label: "Industry Certification", required: true },
+  { document_type: "other_licences", label: "Other Licences", required: true },
+  { document_type: "supporting_documents", label: "Additional Supporting Documents", required: true },
 ];
 
 function errorMessage(error: unknown, fallback: string) {

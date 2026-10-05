@@ -36,6 +36,21 @@ type AgencyForm = {
   destinations_sold: string;
   country_id: string;
   city_id: string;
+  primary_contact_name: string;
+  primary_contact_designation: string;
+  primary_contact_email: string;
+  primary_contact_phone: string;
+  preferred_payment_method: string;
+  invoice_contact_name: string;
+  invoice_email: string;
+  invoice_phone: string;
+  account_name: string;
+  account_number: string;
+  bank_name: string;
+  bank_branch: string;
+  swift_code: string;
+  iban: string;
+  billing_address: string;
 };
 
 const AGENT_TYPES = [
@@ -60,6 +75,8 @@ export default function AgencyDetailsTab() {
     destinations_sold: "",
     country_id: "",
     city_id: "",
+    primary_contact_name: "", primary_contact_designation: "", primary_contact_email: "", primary_contact_phone: "",
+    preferred_payment_method: "", invoice_contact_name: "", invoice_email: "", invoice_phone: "", account_name: "", account_number: "", bank_name: "", bank_branch: "", swift_code: "", iban: "", billing_address: "",
   });
   const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>("IN");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -96,6 +113,8 @@ export default function AgencyDetailsTab() {
           setPhoneNumber(p.phone.startsWith(dial) ? p.phone.slice(dial.length) : p.phone.replace(/^\+/, ""));
         }
         const bi = (a.business_info ?? {}) as Record<string, unknown>;
+        const primary = Array.isArray(a.contacts) ? a.contacts.find((contact: { is_primary?: boolean }) => contact.is_primary) ?? a.contacts[0] : {};
+        const invoice = (a.invoicing ?? {}) as Record<string, unknown>;
         setForm({
           profile_image: p.profile_image || "",
           agent_name: String(a.agent_name || a.name || ""),
@@ -109,6 +128,8 @@ export default function AgencyDetailsTab() {
           destinations_sold: String(bi.destinations_sold || ""),
           country_id: String(a.country_id || ""),
           city_id: String(a.city_id || ""),
+          primary_contact_name: String(primary?.contact_name || ""), primary_contact_designation: String(primary?.designation || ""), primary_contact_email: String(primary?.email || ""), primary_contact_phone: String(primary?.phone || ""),
+          preferred_payment_method: String(invoice.preferred_payment_method || ""), invoice_contact_name: String(invoice.contact_name || ""), invoice_email: String(invoice.email || ""), invoice_phone: String(invoice.phone || ""), account_name: String(invoice.account_name || ""), account_number: String(invoice.account_number || ""), bank_name: String(invoice.bank_name || ""), bank_branch: String(invoice.bank_branch || ""), swift_code: String(invoice.swift_code || ""), iban: String(invoice.iban || ""), billing_address: String(invoice.billing_address || ""),
         });
       })
       .catch(() => setLoadError("Agency details could not be loaded. Please retry before editing."));
@@ -141,6 +162,8 @@ export default function AgencyDetailsTab() {
             target_market: form.target_market,
             destinations_sold: form.destinations_sold,
           },
+          contact: { contact_name: form.primary_contact_name, designation: form.primary_contact_designation, email: form.primary_contact_email, phone: form.primary_contact_phone },
+          invoicing: { preferred_payment_method: form.preferred_payment_method, contact_name: form.invoice_contact_name, email: form.invoice_email, phone: form.invoice_phone, account_name: form.account_name, account_number: form.account_number, bank_name: form.bank_name, bank_branch: form.bank_branch, swift_code: form.swift_code, iban: form.iban, billing_address: form.billing_address },
         }),
       ]);
       await refreshSession();
@@ -331,6 +354,32 @@ export default function AgencyDetailsTab() {
                 placeholder="e.g. UAE, India, Europe"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
+          </div>
+
+          <div className="mt-6 border-t border-dash-border pt-5">
+            <h4 className="text-sm font-black text-dash-text">Primary Contact</h4>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">First / Full Name</span><input value={form.primary_contact_name} onChange={e => set("primary_contact_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Job Title / Position</span><input value={form.primary_contact_designation} onChange={e => set("primary_contact_designation", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Email Address</span><input type="email" value={form.primary_contact_email} onChange={e => set("primary_contact_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Phone / Mobile</span><input value={form.primary_contact_phone} onChange={e => set("primary_contact_phone", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+            </div>
+          </div>
+
+          <div className="mt-6 border-t border-dash-border pt-5">
+            <h4 className="text-sm font-black text-dash-text">Bank, Invoicing & Billing Details</h4>
+            <p className="mt-1 text-xs text-dash-muted">All invoices will be emailed to the invoicing contact below.</p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Payment Method</span><select value={form.preferred_payment_method} onChange={e => set("preferred_payment_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm"><option value="">Select method</option><option value="bank_transfer">Bank Transfer</option><option value="paypal">PayPal</option></select></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Invoice Contact Name</span><input value={form.invoice_contact_name} onChange={e => set("invoice_contact_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Invoice Email</span><input type="email" value={form.invoice_email} onChange={e => set("invoice_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Invoice Phone</span><input value={form.invoice_phone} onChange={e => set("invoice_phone", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Name</span><input value={form.account_name} onChange={e => set("account_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Number / IBAN</span><input value={form.iban || form.account_number} onChange={e => set("iban", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Name</span><input value={form.bank_name} onChange={e => set("bank_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Branch / SWIFT / BIC</span><input value={form.swift_code || form.bank_branch} onChange={e => set("swift_code", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Billing / Invoice Address</span><input value={form.billing_address} onChange={e => set("billing_address", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+            </div>
           </div>
         </div>
       </form>

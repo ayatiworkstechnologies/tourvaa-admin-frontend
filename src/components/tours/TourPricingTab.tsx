@@ -547,7 +547,7 @@ export default function TourPricingTab({
       <SectionCard
         icon={BadgeDollarSign}
         iconTone={isSupplier ? "emerald" : "brand"}
-        title={isSupplier ? "Your Price to TourVaa" : "Supplier Price to TourVaa"}
+        title={isSupplier ? "Your Offer Price to TourVaa" : "Supplier Price to TourVaa"}
         description={isSupplier
           ? "Your original price, offer discount, final price to TourVaa, commission, and resulting payout."
           : "Supplier original price, supplier offer discount, final price to TourVaa, commission, and supplier payout."}
@@ -759,12 +759,12 @@ export default function TourPricingTab({
                 </FormField>
               )}
 
-              <FormField name="adult_price" label={`Supplier price - adult (${editing.currency})`} required error={errors.adult_price} hint="Tourvaa commission is deducted from this amount for settlement.">
+              <FormField name="adult_price" label={isSupplier ? `Your offer price to TourVaa - adult (${editing.currency})` : `Supplier price - adult (${editing.currency})`} required error={errors.adult_price} hint="Tourvaa commission is deducted from this amount for settlement.">
                 <input id="adult_price" name="adult_price" type="number" min={0} step="0.01" value={numberInputValue(editing.adult_price)}
                   onChange={(e) => { setEditing((p) => p ? { ...p, adult_price: parseNumberInput(e.target.value) } : p); clearError("adult_price"); }}
                   className={fieldClass(errors.adult_price)} placeholder="0.00" />
               </FormField>
-              <FormField name="child_price" label={`Supplier price - child (${editing.currency})`} error={errors.child_price} hint="Leave 0 if children are free.">
+              <FormField name="child_price" label={isSupplier ? `Your offer price to TourVaa - child (${editing.currency})` : `Supplier price - child (${editing.currency})`} error={errors.child_price} hint="Leave 0 if children are free.">
                 <input id="child_price" name="child_price" type="number" min={0} step="0.01" value={numberInputValue(editing.child_price)}
                   onChange={(e) => { setEditing((p) => p ? { ...p, child_price: parseNumberInput(e.target.value) } : p); clearError("child_price"); }}
                   className={fieldClass(errors.child_price)} placeholder="0.00" />
@@ -807,7 +807,7 @@ export default function TourPricingTab({
 
             <div className={`mt-4 grid gap-3 rounded-xl bg-dash-bg p-4 ${isSupplier ? "sm:grid-cols-2" : "sm:grid-cols-4"}`}>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier get price (adult)</p>
+                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">You will receive (adult)</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
                   {fmt(sanitizeNumber(editing.adult_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
                 </p>
@@ -829,7 +829,7 @@ export default function TourPricingTab({
                 </div>
               )}
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Supplier get price (child)</p>
+                <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">You will receive (child)</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
                   {fmt(sanitizeNumber(editing.child_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
                 </p>

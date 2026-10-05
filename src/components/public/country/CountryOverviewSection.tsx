@@ -18,6 +18,15 @@ export interface CountryOverviewSectionProps {
 export default function CountryOverviewSection({
   info,
 }: CountryOverviewSectionProps) {
+  const quickFacts = [
+    ["Capital", info.quick_facts.capital],
+    ["Currency", info.quick_facts.currency],
+    ["Languages", info.quick_facts.languages],
+    ["Time zone", info.quick_facts.timezone],
+    ["Ideal trip", info.quick_facts.ideal_duration],
+    ["Dialling code", info.quick_facts.dialing_code],
+  ].filter(([, value]) => Boolean(value));
+
   return (
     <section
       id="section-overview"
@@ -29,16 +38,27 @@ export default function CountryOverviewSection({
           <div className="text-left">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-pub-accent">
               <Sparkles size={12} className="fill-pub-accent" />
-              <span>Destination Overview</span>
+              <span>Overview</span>
             </div>
 
             <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-950 tracking-tight leading-tight">
-              Discover the Essence of {info.country_name}
+              {info.hero_title || `Discover ${info.country_name}`}
             </h2>
 
             <div className="mt-4 space-y-4 text-sm sm:text-base leading-relaxed text-slate-600 font-medium">
               <p>{info.overview_narrative}</p>
             </div>
+
+            {quickFacts.length > 0 && (
+              <dl className="mt-6 grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2">
+                {quickFacts.map(([label, value]) => (
+                  <div key={label} className="border-b border-slate-100 pb-2">
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</dt>
+                    <dd className="mt-0.5 text-xs font-semibold text-slate-700">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
 
             {/* Travel Value Highlights */}
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -114,7 +114,10 @@ function formatStatus(status: string) {
   if (s === "completed") {
     return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-600">Completed</span>;
   }
-  if (["cancelled", "declined", "refunded", "cancellation_requested"].includes(s)) {
+  if (s === "cancellation_requested") {
+    return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">Cancellation Requested</span>;
+  }
+  if (["cancelled", "declined", "refunded"].includes(s)) {
     return <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[11px] font-bold text-red-500">Cancelled</span>;
   }
   return <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">Booking Request Received</span>;

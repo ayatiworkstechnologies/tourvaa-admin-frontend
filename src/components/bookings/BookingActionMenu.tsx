@@ -13,6 +13,7 @@ type BookingActionMenuProps = {
   paymentStatus?: string;
   onCancel?: (bookingId: number) => void;
   onConfirm?: (bookingId: number) => void;
+  onApproveCancellation?: (bookingId: number) => void;
   busy?: boolean;
 };
 
@@ -21,11 +22,12 @@ export default function BookingActionMenu({
   bookingStatus,
   onCancel,
   onConfirm,
+  onApproveCancellation,
   busy,
 }: BookingActionMenuProps) {
-  const canConfirm =
-    bookingStatus && !["confirmed", "cancelled"].includes(bookingStatus);
-  const canCancel = bookingStatus !== "cancelled";
+  const isCancellationRequested = bookingStatus === "cancellation_requested";
+  const canConfirm = bookingStatus && !["confirmed", "cancelled", "cancellation_requested"].includes(bookingStatus);
+  const canCancel = bookingStatus !== "cancelled" && !isCancellationRequested;
 
   return (
     <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
@@ -44,6 +46,19 @@ export default function BookingActionMenu({
           disabled={busy}
           onClick={() => onConfirm(bookingId)}
           title="Confirm booking"
+          className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <CheckCircle2 size={13} className="shrink-0" />
+          <span>Confirm</span>
+        </button>
+      ) : null}
+
+      {isCancellationRequested && onApproveCancellation ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onApproveCancellation(bookingId)}
+          title="Approve cancellation request"
           className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CheckCircle2 size={13} className="shrink-0" />

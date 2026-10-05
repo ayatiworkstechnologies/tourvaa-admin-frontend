@@ -29,16 +29,24 @@ type InvoicingForm = {
   contact_name: string;
   email: string;
   phone: string;
+  preferred_payment_method: string;
   account_name: string;
   account_number: string;
   bank_name: string;
+  bank_branch: string;
+  swift_code: string;
+  iban: string;
   country_id: string;
   tax_number: string;
+  billing_address: string;
+  billing_city: string;
+  billing_state: string;
+  billing_postal_code: string;
 };
 
 const EMPTY_PROFILE: ProfileForm = { name: "", phone: "", website_url: "", country_id: "", city_id: "" };
 const EMPTY_MARKETING: MarketingForm = { promotion_methods: "", estimated_monthly_bookings: "", existing_audience_size: "", social_media_profiles: "", existing_travel_platforms_used: "" };
-const EMPTY_INVOICING: InvoicingForm = { contact_name: "", email: "", phone: "", account_name: "", account_number: "", bank_name: "", country_id: "", tax_number: "" };
+const EMPTY_INVOICING: InvoicingForm = { contact_name: "", email: "", phone: "", preferred_payment_method: "", account_name: "", account_number: "", bank_name: "", bank_branch: "", swift_code: "", iban: "", country_id: "", tax_number: "", billing_address: "", billing_city: "", billing_state: "", billing_postal_code: "" };
 
 export default function CompanyInfoTab() {
   const toast = useToast();
@@ -76,11 +84,19 @@ export default function CompanyInfoTab() {
           contact_name: d.invoicing.contact_name || "",
           email: d.invoicing.email || "",
           phone: d.invoicing.phone || "",
+          preferred_payment_method: d.invoicing.preferred_payment_method || "",
           account_name: d.invoicing.account_name || "",
           account_number: d.invoicing.account_number || "",
           bank_name: d.invoicing.bank_name || "",
+          bank_branch: d.invoicing.bank_branch || "",
+          swift_code: d.invoicing.swift_code || "",
+          iban: d.invoicing.iban || "",
           country_id: String(d.invoicing.country_id || ""),
           tax_number: d.invoicing.tax_number || "",
+          billing_address: d.invoicing.billing_address || "",
+          billing_city: d.invoicing.billing_city || "",
+          billing_state: d.invoicing.billing_state || "",
+          billing_postal_code: d.invoicing.billing_postal_code || "",
         });
       }
     }).catch(() => toast.error("Failed to load profile details."));
@@ -112,11 +128,19 @@ export default function CompanyInfoTab() {
           contact_name: invoicing.contact_name,
           email: invoicing.email,
           phone: invoicing.phone,
+          preferred_payment_method: invoicing.preferred_payment_method,
           account_name: invoicing.account_name,
           account_number: invoicing.account_number,
           bank_name: invoicing.bank_name,
+          bank_branch: invoicing.bank_branch,
+          swift_code: invoicing.swift_code,
+          iban: invoicing.iban,
           country_id: parseInt(invoicing.country_id) || null,
           tax_number: invoicing.tax_number,
+          billing_address: invoicing.billing_address,
+          billing_city: invoicing.billing_city,
+          billing_state: invoicing.billing_state,
+          billing_postal_code: invoicing.billing_postal_code,
         },
       });
       await refreshSession();
@@ -288,6 +312,12 @@ export default function CompanyInfoTab() {
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
             </label>
             <label className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Payment Method</span>
+              <select value={invoicing.preferred_payment_method} onChange={e => setI("preferred_payment_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500">
+                <option value="">Select method</option><option value="bank_transfer">Bank Transfer</option><option value="paypal">PayPal</option>
+              </select>
+            </label>
+            <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Name</span>
               <input value={invoicing.account_name} onChange={e => setI("account_name", e.target.value)}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
@@ -302,6 +332,9 @@ export default function CompanyInfoTab() {
               <input value={invoicing.bank_name} onChange={e => setI("bank_name", e.target.value)}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
             </label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Branch</span><input value={invoicing.bank_branch} onChange={e => setI("bank_branch", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">SWIFT / BIC</span><input value={invoicing.swift_code} onChange={e => setI("swift_code", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Number / IBAN</span><input value={invoicing.iban || invoicing.account_number} onChange={e => setI("iban", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country</span>
               <select value={invoicing.country_id} onChange={e => setI("country_id", e.target.value)}
@@ -315,6 +348,10 @@ export default function CompanyInfoTab() {
               <input value={invoicing.tax_number} onChange={e => setI("tax_number", e.target.value)}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
             </label>
+            <label className="block sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Billing / Invoice Address</span><input value={invoicing.billing_address} onChange={e => setI("billing_address", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Billing City</span><input value={invoicing.billing_city} onChange={e => setI("billing_city", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">State / Province</span><input value={invoicing.billing_state} onChange={e => setI("billing_state", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Postcode / ZIP</span><input value={invoicing.billing_postal_code} onChange={e => setI("billing_postal_code", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
           </div>
           <button type="submit" disabled={saving}
             className="mt-5 inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-700 disabled:opacity-60 transition-colors">

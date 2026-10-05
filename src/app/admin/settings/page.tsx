@@ -33,6 +33,7 @@ const groupLabels: Record<string, string> = {
   smtp: "Email / SMTP",
   currency: "Currency",
   security: "Security Status",
+  invoice_pdf: "Invoice PDF Template",
 };
 
 const booleanSettingKeys = new Set([

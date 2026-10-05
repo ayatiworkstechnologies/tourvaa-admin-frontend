@@ -56,6 +56,7 @@ check("shared booking page keeps agent-only customer and commercial controls gat
 check("public agent booking uses the selected customer as primary traveller", publicBooking.includes("const leadName = isAgent ? agentCustomerName : selfBookingName") && publicBooking.includes("passenger.firstName = first"));
 check("public agent booking never prefills the agent as the traveller", publicBooking.includes('const selfBookingName = isCustomer ? user?.name || "" : ""'));
 check("agent booking submits commercial controls only through the agent payload branch", publicBooking.includes("...(isAgent ? {") && publicBooking.includes("agent_markup:") && publicBooking.includes("agent_reference:") && publicBooking.includes("agent_payment_method:"));
+check("agent checkout excludes promo controls and promo payloads", publicBooking.includes("!isAgent && <div") && publicBooking.includes("promo_code: !isAgent && promoApplied"));
 check("existing customer email can be linked to the agent", publicBooking.includes('api.post("/customers/link"'));
 
 const customers = read("src/app/agent/customers/page.tsx");
@@ -81,7 +82,8 @@ const detail = read("src/app/agent/bookings/[id]/page.tsx");
 check("detail uses serialized traveller counts", detail.includes("booking.no_of_adults") && detail.includes("booking.no_of_children"));
 check("detail exposes supplier decision", detail.includes("Supplier decision") && detail.includes("supplier_acceptance_status"));
 check("detail explains payment to confirmation execution", detail.includes("Booking Execution Flow") && detail.includes("Supplier decision") && detail.includes("Confirmed"));
-check("detail renders price breakdown and status timeline", detail.includes("Price Breakdown") && detail.includes("Status Timeline"));
+check("detail shows the settlement summary without a duplicate price breakdown", detail.includes("Agent Payments") && detail.includes("Approved Agent Commission") && !detail.includes("Price Breakdown") && detail.includes("Status Timeline"));
+check("agent cancellation requires eligibility and confirmation", ["Request Cancellation", "is_free_cancellation_eligible", "Confirm cancellation request", "Yes, continue", "contact Tourvaa"].every((text) => detail.includes(text)));
 check("agent can reopen payment for an unpaid booking", detail.includes("BookingPaymentModal") && detail.includes("Pay Now"));
 check("agent booking handles Stripe and PayPal returns", detail.includes('/payments/stripe/confirm-return') && detail.includes('/payments/paypal/capture'));
 check("booking detail failures can be retried", detail.includes("setRefreshKey") && detail.includes("Retry"));
@@ -101,7 +103,7 @@ check("agent support compose is connected", portalMessageThread.includes("sendOw
 const profile = read("src/app/agent/profile/page.tsx");
 const verificationDocuments = read("src/components/agent/profile/VerificationDocumentsTab.tsx");
 check("agent profile exposes verification documents", profile.includes("VerificationDocumentsTab") && profile.includes("Verification Documents"));
-check("agent verification lists four required document categories", ["company_registration", "tax_certificate", "identity_proof", "bank_details"].every((type) => verificationDocuments.includes(type)));
+check("agent verification lists the required business document categories", ["company_registration", "iata_accreditation", "industry_certification", "other_licences", "supporting_documents"].every((type) => verificationDocuments.includes(type)));
 check("agent verification waits for all required non-rejected uploads", verificationDocuments.includes("allRequiredReady") && verificationDocuments.includes('document.status !== "rejected"') && verificationDocuments.includes("Submit for verification"));
 check("rejected agent documents show re-upload instructions", verificationDocuments.includes("Re-upload required") && verificationDocuments.includes("rejection_reason"));
 

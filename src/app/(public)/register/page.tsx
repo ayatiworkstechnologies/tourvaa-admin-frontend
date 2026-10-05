@@ -394,11 +394,11 @@ export default function RegisterPage() {
                 {/* Stats */}
                 <div className="mt-2 flex items-center gap-6 border-t border-white/10 pt-5">
                   <div>
-                    <p className="text-2xl font-black">10,000+</p>
+                    <p className="text-2xl font-black text-white">10,000+</p>
                     <p className="text-xs text-white/60">Tours available</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-black">4.9 / 5</p>
+                    <p className="text-2xl font-black text-white">4.9 / 5</p>
                     <p className="text-xs text-white/60">Average rating</p>
                   </div>
                 </div>

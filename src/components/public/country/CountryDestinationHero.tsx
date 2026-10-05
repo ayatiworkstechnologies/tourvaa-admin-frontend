@@ -51,7 +51,7 @@ export default function CountryDestinationHero({
           {/* Floating Dark Card in the Center/Left */}
           <div className="absolute inset-x-5 bottom-6 sm:bottom-10 sm:left-10 sm:right-auto max-w-lg rounded-[22px] border border-white/20 bg-black/60 p-6 sm:p-7 text-white backdrop-blur-md shadow-2xl">
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
-              {info.country_name} Tours
+              {info.hero_title || `${info.country_name} Tours`}
             </h1>
             <p className="mt-2.5 text-xs sm:text-sm text-white/90 leading-relaxed font-medium">
               {info.hero_subtitle ||
@@ -102,7 +102,7 @@ export default function CountryDestinationHero({
         {/* ── 3. Country Title & Split Overview Card ── */}
         <div className="mt-6">
           <h2 className="text-2xl sm:text-3xl font-semibold text-slate-950 tracking-tight mb-4">
-            {info.country_name}
+            {info.hero_title || info.country_name}
           </h2>
 
           <div className="rounded-[24px] border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs">

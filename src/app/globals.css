@@ -629,6 +629,12 @@ button {
   color: #000000;
 }
 
+/* Ensure text inside dark containers or elements styled with text-white keeps light/white text */
+.public-site .text-white p:not([class*="text-slate-900"]):not([class*="text-slate-950"]):not([class*="text-black"]),
+.public-site [class*="text-white"] p:not([class*="text-slate-900"]):not([class*="text-slate-950"]):not([class*="text-black"]) {
+  color: inherit;
+}
+
 /* Force pure black on all public paragraphs that previously used washed-out grays */
 .public-site p.text-slate-600,
 .public-site p.text-slate-700,
