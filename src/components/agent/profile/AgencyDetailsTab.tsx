@@ -29,6 +29,10 @@ type AgencyForm = {
   email: string;
   address: string;
   agent_type: string;
+  trading_name: string;
+  business_email: string;
+  website_url: string;
+  business_registration_number: string;
   years_in_operation: string;
   iata_registration_number: string;
   gst_tax_number: string;
@@ -37,9 +41,12 @@ type AgencyForm = {
   country_id: string;
   city_id: string;
   primary_contact_name: string;
+  primary_contact_first_name: string;
+  primary_contact_last_name: string;
   primary_contact_designation: string;
   primary_contact_email: string;
   primary_contact_phone: string;
+  primary_contact_method: string;
   preferred_payment_method: string;
   invoice_contact_name: string;
   invoice_email: string;
@@ -54,7 +61,7 @@ type AgencyForm = {
 };
 
 const AGENT_TYPES = [
-  "travel_agency", "tour_operator", "corporate_travel", "online_travel_agency", "dmc", "other",
+  "travel_agency", "online_travel_agency", "tour_operator", "corporate_travel", "dmc", "affiliate", "other",
 ];
 
 export default function AgencyDetailsTab() {
@@ -68,6 +75,7 @@ export default function AgencyDetailsTab() {
     email: "",
     address: "",
     agent_type: "",
+    trading_name: "", business_email: "", website_url: "", business_registration_number: "",
     years_in_operation: "",
     iata_registration_number: "",
     gst_tax_number: "",
@@ -75,7 +83,7 @@ export default function AgencyDetailsTab() {
     destinations_sold: "",
     country_id: "",
     city_id: "",
-    primary_contact_name: "", primary_contact_designation: "", primary_contact_email: "", primary_contact_phone: "",
+    primary_contact_name: "", primary_contact_first_name: "", primary_contact_last_name: "", primary_contact_designation: "", primary_contact_email: "", primary_contact_phone: "", primary_contact_method: "",
     preferred_payment_method: "", invoice_contact_name: "", invoice_email: "", invoice_phone: "", account_name: "", account_number: "", bank_name: "", bank_branch: "", swift_code: "", iban: "", billing_address: "",
   });
   const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>("IN");
@@ -121,6 +129,7 @@ export default function AgencyDetailsTab() {
           email: String(p.email || ""),
           address: String(p.address || ""),
           agent_type: String(a.agent_type || ""),
+          trading_name: String(bi.trading_name || ""), business_email: String(bi.business_email || ""), website_url: String(bi.website_url || ""), business_registration_number: String(bi.business_registration_number || ""),
           years_in_operation: String(a.years_in_operation || ""),
           iata_registration_number: String(bi.iata_registration_number || ""),
           gst_tax_number: String(bi.gst_tax_number || ""),
@@ -128,7 +137,7 @@ export default function AgencyDetailsTab() {
           destinations_sold: String(bi.destinations_sold || ""),
           country_id: String(a.country_id || ""),
           city_id: String(a.city_id || ""),
-          primary_contact_name: String(primary?.contact_name || ""), primary_contact_designation: String(primary?.designation || ""), primary_contact_email: String(primary?.email || ""), primary_contact_phone: String(primary?.phone || ""),
+          primary_contact_name: String(primary?.contact_name || ""), primary_contact_first_name: String(primary?.first_name || ""), primary_contact_last_name: String(primary?.last_name || ""), primary_contact_designation: String(primary?.designation || ""), primary_contact_email: String(primary?.email || ""), primary_contact_phone: String(primary?.phone || ""), primary_contact_method: String(primary?.preferred_contact_method || ""),
           preferred_payment_method: String(invoice.preferred_payment_method || ""), invoice_contact_name: String(invoice.contact_name || ""), invoice_email: String(invoice.email || ""), invoice_phone: String(invoice.phone || ""), account_name: String(invoice.account_name || ""), account_number: String(invoice.account_number || ""), bank_name: String(invoice.bank_name || ""), bank_branch: String(invoice.bank_branch || ""), swift_code: String(invoice.swift_code || ""), iban: String(invoice.iban || ""), billing_address: String(invoice.billing_address || ""),
         });
       })
@@ -141,6 +150,14 @@ export default function AgencyDetailsTab() {
     e.preventDefault();
     const phone = combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber);
     if (!validateMobile(phone, true)) { toast.error(mobileHelp); return; }
+    if (!form.agent_type || !form.primary_contact_first_name || !form.primary_contact_last_name || !form.primary_contact_designation || !form.primary_contact_email || !form.primary_contact_phone || !form.primary_contact_method) {
+      toast.error("Complete the required business type and primary contact details.");
+      return;
+    }
+    if (!form.preferred_payment_method || !form.invoice_contact_name || !form.invoice_email || !form.invoice_phone) {
+      toast.error("Complete the required invoicing contact and payment method details.");
+      return;
+    }
     setSaving(true);
     try {
       await Promise.all([
@@ -157,12 +174,13 @@ export default function AgencyDetailsTab() {
           country_id: parseInt(form.country_id) || null,
           city_id: parseInt(form.city_id) || null,
           business_info: {
+            trading_name: form.trading_name, business_email: form.business_email, website_url: form.website_url, business_registration_number: form.business_registration_number,
             iata_registration_number: form.iata_registration_number,
             gst_tax_number: form.gst_tax_number,
             target_market: form.target_market,
             destinations_sold: form.destinations_sold,
           },
-          contact: { contact_name: form.primary_contact_name, designation: form.primary_contact_designation, email: form.primary_contact_email, phone: form.primary_contact_phone },
+          contact: { contact_name: form.primary_contact_name, first_name: form.primary_contact_first_name, last_name: form.primary_contact_last_name, designation: form.primary_contact_designation, email: form.primary_contact_email, phone: form.primary_contact_phone, preferred_contact_method: form.primary_contact_method },
           invoicing: { preferred_payment_method: form.preferred_payment_method, contact_name: form.invoice_contact_name, email: form.invoice_email, phone: form.invoice_phone, account_name: form.account_name, account_number: form.account_number, bank_name: form.bank_name, bank_branch: form.bank_branch, swift_code: form.swift_code, iban: form.iban, billing_address: form.billing_address },
         }),
       ]);
@@ -254,6 +272,12 @@ export default function AgencyDetailsTab() {
             <p className="mt-1 text-xs text-dash-subtle">Email cannot be changed here. Contact support to update.</p>
           </label>
 
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Trading / Business Name</span><input value={form.trading_name} onChange={e => set("trading_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Email</span><input type="email" value={form.business_email} onChange={e => set("business_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+            <label className="block sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Website <span className="text-dash-subtle">(optional)</span></span><input type="url" value={form.website_url} onChange={e => set("website_url", e.target.value)} placeholder="https://example.com" className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+          </div>
+
           {/* Mobile */}
           <CountryPhoneInput
             countryIso={phoneCountryIso}
@@ -275,8 +299,8 @@ export default function AgencyDetailsTab() {
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Agency Type */}
             <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Agency Type</span>
-              <select value={form.agent_type} onChange={e => set("agent_type", e.target.value)}
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Type <span className="text-red-500">*</span></span>
+              <select required value={form.agent_type} onChange={e => set("agent_type", e.target.value)}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand">
                 <option value="">Select type</option>
                 {AGENT_TYPES.map(t => (
@@ -354,15 +378,22 @@ export default function AgencyDetailsTab() {
                 placeholder="e.g. UAE, India, Europe"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
+
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Registration Number</span>
+              <input value={form.business_registration_number} onChange={e => set("business_registration_number", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" />
+            </label>
           </div>
 
           <div className="mt-6 border-t border-dash-border pt-5">
             <h4 className="text-sm font-black text-dash-text">Primary Contact</h4>
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">First / Full Name</span><input value={form.primary_contact_name} onChange={e => set("primary_contact_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Job Title / Position</span><input value={form.primary_contact_designation} onChange={e => set("primary_contact_designation", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Email Address</span><input type="email" value={form.primary_contact_email} onChange={e => set("primary_contact_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Phone / Mobile</span><input value={form.primary_contact_phone} onChange={e => set("primary_contact_phone", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">First Name <span className="text-red-500">*</span></span><input required value={form.primary_contact_first_name} onChange={e => set("primary_contact_first_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Last Name <span className="text-red-500">*</span></span><input required value={form.primary_contact_last_name} onChange={e => set("primary_contact_last_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Job Title / Position <span className="text-red-500">*</span></span><input required value={form.primary_contact_designation} onChange={e => set("primary_contact_designation", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Email Address <span className="text-red-500">*</span></span><input required type="email" value={form.primary_contact_email} onChange={e => set("primary_contact_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Phone / Mobile <span className="text-red-500">*</span></span><input required value={form.primary_contact_phone} onChange={e => set("primary_contact_phone", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Contact Method <span className="text-red-500">*</span></span><select required value={form.primary_contact_method} onChange={e => set("primary_contact_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm"><option value="">Select method</option><option value="email">Email</option><option value="phone">Phone</option><option value="whatsapp">WhatsApp</option></select></label>
             </div>
           </div>
 
