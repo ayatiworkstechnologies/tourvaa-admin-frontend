@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
+import DatePicker from "@/components/ui/DatePicker";
 import { Booking, getBookingDetail, getBookingPaymentLink } from "@/lib/api/services/bookingService";
 import BookingStatusBadge from "@/components/bookings/BookingStatusBadge";
 import SupplierPicker from "@/components/bookings/SupplierPicker";
@@ -1543,12 +1544,12 @@ export default function BookingDetailPage() {
                     <label className="block text-xs font-bold uppercase tracking-wider text-dash-muted mb-1.5">
                       New Travel Date
                     </label>
-                    <input
-                      type="date"
-                      required
+                    <DatePicker
                       value={newTravelDate}
-                      onChange={(e) => setNewTravelDate(e.target.value)}
-                      className="w-full rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
+                      onChange={setNewTravelDate}
+                      required
+                      placeholder="Select new travel date"
+                      buttonClassName="w-full rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
                     />
                   </div>
 
