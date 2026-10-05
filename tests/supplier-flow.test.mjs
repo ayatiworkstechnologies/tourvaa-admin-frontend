@@ -165,6 +165,18 @@ check(
     tourPricing.includes("You will receive (child)"),
 );
 
+const commissionTab = read("src/components/supplier/profile/CommissionTab.tsx");
+check(
+  "supplier profile permits an increase-only commission update",
+  commissionTab.includes('api.put("/suppliers/me", { commission_percentage: nextRate })') &&
+    commissionTab.includes("nextRate <= currentRate") &&
+    commissionTab.includes("Increase your commission rate"),
+);
+check(
+  "supplier profile shows the marketplace pricing agreement",
+  commissionTab.includes("Marketplace pricing agreement") && commissionTab.includes("final booking price shown to an end consumer"),
+);
+
 const supplierInnerPages = [
   bookingList,
   bookingDetail,

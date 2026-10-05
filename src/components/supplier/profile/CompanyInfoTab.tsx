@@ -29,6 +29,9 @@ type CompanyForm = {
   phone: string;
   address: string;
   supplier_type: string;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
   years_in_operation: string;
   business_registration_number: string;
   gst_tax_number: string;
@@ -39,7 +42,18 @@ type CompanyForm = {
   currency: string;
 };
 
-const BUSINESS_TYPES = ["dmc", "tour_operator", "transport_provider", "hotel", "activity_provider", "other"];
+const BUSINESS_TYPES = [
+  "dmc",
+  "tour_operator",
+  "travel_agency",
+  "transport_provider",
+  "hotel",
+  "restaurant",
+  "activity_provider",
+  "attraction",
+  "tour_guide",
+  "other",
+];
 
 export default function CompanyInfoTab() {
   const toast = useToast();
@@ -53,6 +67,9 @@ export default function CompanyInfoTab() {
     phone: "",
     address: "",
     supplier_type: "",
+    contact_name: "",
+    contact_email: "",
+    contact_phone: "",
     years_in_operation: "",
     business_registration_number: "",
     gst_tax_number: "",
@@ -103,6 +120,9 @@ export default function CompanyInfoTab() {
           phone: p.phone || "",
           address: p.address || "",
           supplier_type: s.supplier_type || "",
+          contact_name: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.contact_name || s.contacts?.[0]?.contact_name || "",
+          contact_email: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.email || s.contacts?.[0]?.email || "",
+          contact_phone: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.phone || s.contacts?.[0]?.phone || "",
           years_in_operation: String(
             s.business_info?.years_in_business ?? s.years_in_operation ?? "",
           ),
@@ -127,6 +147,10 @@ export default function CompanyInfoTab() {
       toast.error(mobileHelp);
       return;
     }
+    if (!form.supplier_type) {
+      toast.error("Select a business type.");
+      return;
+    }
     setSaving(true);
     try {
       await Promise.all([
@@ -143,6 +167,11 @@ export default function CompanyInfoTab() {
           country_id: parseInt(form.country_id) || null,
           city_id: parseInt(form.city_id) || null,
           currency: form.currency || null,
+          contact: (form.contact_name || form.contact_email || form.contact_phone) ? {
+            contact_name: form.contact_name || null,
+            email: form.contact_email || null,
+            phone: form.contact_phone || null,
+          } : undefined,
           business_info: {
             years_in_business: parseInt(form.years_in_operation) || 0,
             business_registration_number: form.business_registration_number,
@@ -237,10 +266,10 @@ export default function CompanyInfoTab() {
 
           {/* Email */}
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Company Email</span>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Email</span>
             <input type="email" value={form.email} readOnly
               className="w-full cursor-not-allowed rounded-xl border border-dash-border bg-[#F9FAFB] px-4 py-2.5 text-sm text-dash-muted outline-none" />
-            <p className="mt-1 text-xs text-dash-subtle">Email cannot be changed here. Contact support to update.</p>
+            <p className="mt-1 text-xs text-dash-subtle">Used to sign in. To change it, contact support.</p>
           </label>
 
           {/* Mobile */}
@@ -255,7 +284,7 @@ export default function CompanyInfoTab() {
 
           {/* Address */}
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Company Address <span className="text-red-500">*</span></span>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Registered Business Address <span className="text-red-500">*</span></span>
             <input required value={form.address} onChange={e => set("address", e.target.value)}
               placeholder="e.g. 14 Glacier Way, Queenstown 9300"
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all" />
@@ -264,8 +293,8 @@ export default function CompanyInfoTab() {
           {/* Business Type */}
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Type</span>
-              <select value={form.supplier_type} onChange={e => set("supplier_type", e.target.value)}
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Type <span className="text-red-500">*</span></span>
+              <select required value={form.supplier_type} onChange={e => set("supplier_type", e.target.value)}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500">
                 <option value="">Select type</option>
                 {BUSINESS_TYPES.map(t => (
@@ -361,6 +390,28 @@ export default function CompanyInfoTab() {
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
             </label>
           </div>
+
+          <fieldset className="rounded-xl border border-dash-border bg-dash-bg/45 p-4">
+            <legend className="px-1 text-xs font-bold uppercase text-dash-muted">Booking contact</legend>
+            <p className="mb-3 text-xs text-dash-subtle">Used by Tourvaa for booking and operational communication. This can differ from the account email.</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Contact Name</span>
+                <input value={form.contact_name} onChange={e => set("contact_name", e.target.value)} placeholder="e.g. Priya Sharma"
+                  className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Booking Contact Email</span>
+                <input type="email" value={form.contact_email} onChange={e => set("contact_email", e.target.value)} placeholder="operations@example.com"
+                  className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Booking Contact Phone</span>
+                <input type="tel" value={form.contact_phone} onChange={e => set("contact_phone", e.target.value)} placeholder="e.g. +91 98765 43210"
+                  className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
+              </label>
+            </div>
+          </fieldset>
         </div>
       </form>
 
