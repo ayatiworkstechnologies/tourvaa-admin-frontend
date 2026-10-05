@@ -78,11 +78,10 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
             />
 
-            {/* Wishlist Button (top-right) with frosted backdrop */}
+            {/* Wishlist button (top-right), without a circular background */}
             <div className="absolute right-3 top-3 z-10">
               <WishlistButton
                 item={travelItem}
-                className="bg-white/85 backdrop-blur-md rounded-full shadow-md hover:bg-white transition"
               />
             </div>
 
@@ -192,7 +191,7 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
           {/* Just Arrow Button Only */}
           <span
             aria-label="Explore tour"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0B1F3A] text-white shadow-xs transition-all duration-300 group-hover:bg-pub-accent group-hover:shadow-md group-hover:scale-105"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#0B1F3A] text-white shadow-xs transition-all duration-300 group-hover:bg-pub-accent group-hover:shadow-md group-hover:scale-105"
           >
             <ArrowRight
               size={17}

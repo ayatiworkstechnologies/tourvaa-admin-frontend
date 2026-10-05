@@ -6,17 +6,13 @@ import { useTravelStore, type TravelItem } from "@/providers/TravelStoreProvider
 /**
  * The one wishlist control used everywhere.
  *
- * Card heart buttons had drifted into five different looks (icon sizes 15/18/20,
- * some bare on the image, some in a circular badge, different fill colours),
- * so they are centralised here - change the look once and every card follows.
- *
- * `overlay` is the default: a bare heart sitting on a card image, which is what
- * the tour/deal/trending cards use. `badge` puts it in a translucent circle for
- * placements where the heart would otherwise sit on busy or light artwork.
+ * Card heart buttons had drifted into several different looks. This is the
+ * single, deliberately background-free overlay treatment used on every card.
+ * `badge` remains accepted temporarily for existing callers, but no longer
+ * renders a white circular background.
  */
 export default function WishlistButton({
   item,
-  variant = "overlay",
   className = "",
   wishlisted: wishlistedProp,
   onToggle,
@@ -32,10 +28,7 @@ export default function WishlistButton({
   const { isWishlisted, toggleWishlist } = useTravelStore();
   const wishlisted = wishlistedProp ?? isWishlisted(item.id);
 
-  const shell =
-    variant === "badge"
-      ? "flex h-7 w-7 items-center justify-center rounded-full bg-white/85 backdrop-blur-xs shadow-xs hover:bg-white"
-      : "flex h-7 w-7 items-center justify-center";
+  const shell = "flex h-7 w-7 items-center justify-center";
 
   return (
     <button
@@ -57,15 +50,11 @@ export default function WishlistButton({
       className={`z-10 ${shell} transition-transform duration-200 hover:scale-120 active:scale-90 focus:outline-none cursor-pointer ${className}`}
     >
       <Heart
-        size={variant === "badge" ? 15 : 18}
+        size={18}
         className={`transition-colors duration-200 ${
-          variant === "badge"
-            ? wishlisted
-              ? "fill-red-500 text-red-500"
-              : "fill-none text-slate-700 hover:text-red-500"
-            : wishlisted
-              ? "fill-red-500 text-red-500 drop-shadow-md"
-              : "fill-white text-white drop-shadow-md hover:fill-red-400 hover:text-red-400"
+          wishlisted
+            ? "fill-red-500 text-red-500 drop-shadow-md"
+            : "fill-white text-white drop-shadow-md hover:fill-red-400 hover:text-red-400"
         }`}
       />
     </button>

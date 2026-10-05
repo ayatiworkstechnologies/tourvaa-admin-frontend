@@ -48,8 +48,8 @@ export default function CountryDestinationHero({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/25 to-black/20" />
 
-          {/* Floating Dark Card in the Center/Left */}
-          <div className="absolute inset-x-5 bottom-6 sm:bottom-10 sm:left-10 sm:right-auto max-w-lg rounded-[22px] border border-white/20 bg-black/60 p-6 sm:p-7 text-white backdrop-blur-md shadow-2xl">
+          {/* Transparent content overlay: the hero image remains the visual background. */}
+          <div className="absolute inset-x-5 bottom-6 sm:bottom-10 sm:left-10 sm:right-auto max-w-lg p-6 sm:p-7 text-white">
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
               {info.hero_title || `${info.country_name} Tours`}
             </h1>

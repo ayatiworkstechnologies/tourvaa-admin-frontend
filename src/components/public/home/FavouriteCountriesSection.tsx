@@ -5,7 +5,6 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  LuArrowRight as ArrowRight,
   LuGlobe as Globe2,
   LuMapPin as MapPin,
   LuSquareCheckBig as SquareCheckBig,
@@ -23,6 +22,7 @@ import {
   PLACEHOLDER_IMAGE,
 } from "./homeTypes";
 import { destinationUrl } from "@/lib/utils/tourUrl";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 
 const DEFAULT_TITLE = "Favourite Countries for Travellers from UK";
 const DEFAULT_SUBTITLE = "Explore the destinations our UK travellers love most from sun-soaked coastlines to iconic cultural gems.";
@@ -169,14 +169,9 @@ export default function FavouriteCountriesSection({
         </div>
 
         <div className="mt-8 flex justify-center sm:mt-10">
-          <Link
-            href="/destinations"
-            className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-900 shadow-[0_8px_24px_-14px_rgba(15,23,42,0.45)] transition duration-300 hover:-translate-y-0.5 hover:border-pub-accent hover:bg-pub-accent hover:text-white hover:shadow-[0_12px_28px_-14px_rgba(217,93,44,0.65)] focus:outline-none focus-visible:ring-2 focus-visible:ring-pub-accent focus-visible:ring-offset-2"
-          >
-            <Globe2 size={17} />
+          <PrimaryCtaButton href="/destinations" size="md" leadingIcon={<Globe2 size={18} />}>
             View All Countries
-            <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
-          </Link>
+          </PrimaryCtaButton>
         </div>
       </div>
     </section>
