@@ -24,6 +24,7 @@ import {
 } from "react-icons/lu";
 import { CmsCountryPage, fetchCountryPages, fetchPublicCategories, fetchPublicCountries, fetchPublicSubcategories, fetchPublicTours, PublicCategory, PublicSubcategory } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useContentBlock } from "@/hooks/useContentBlock";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 import WishlistButton from "@/components/public/WishlistButton";
@@ -59,6 +60,38 @@ type TourItem = {
 };
 
 const DEFAULT_TOUR_FALLBACK_IMAGE = "/images/tour-card-fallback.jpg";
+
+type ToursListingContent = {
+  hero_title?: string;
+  hero_description?: string;
+  hero_image?: string;
+  hero_rating?: string;
+  hero_reviews?: string;
+  hero_group_tours?: string;
+  hero_private_tours?: string;
+  hero_destinations?: string;
+  results_heading?: string;
+  results_context?: string;
+  showcase_title?: string;
+  showcase_description?: string;
+  showcase_image?: string;
+};
+
+const DEFAULT_TOURS_LISTING_CONTENT: Required<ToursListingContent> = {
+  hero_title: "Explore the World's Best Tours",
+  hero_description: "Discover handpicked tour packages across the world's most incredible destinations - from the alpine peaks of Switzerland and New Zealand to the rich heritage of India and the tropical islands of Bali. Guided journeys, scenic road trips, and memorable adventures crafted for every traveller.",
+  hero_image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80",
+  hero_rating: "4.9",
+  hero_reviews: "12,400+ reviews",
+  hero_group_tours: "250+ Group Tours",
+  hero_private_tours: "180+ Private Tours",
+  hero_destinations: "95+ Destinations",
+  results_heading: "Discover World Tours",
+  results_context: "Across Worldwide Destinations",
+  showcase_title: "World Best Group & Private Tours",
+  showcase_description: "Travel together, share unforgettable experiences, and explore incredible destinations with expertly planned tours across 50+ countries. Meet like-minded travellers, enjoy seamless itineraries, and create lasting memories along the way.",
+  showcase_image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80",
+};
 
 const DEPARTURE_DATE_FORMAT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "2-digit" });
 
@@ -128,6 +161,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const queryAvailableOnly = searchParams.get("available_only") === "true";
   const querySort = (searchParams.get("sort") as "newest" | "price_asc" | "price_desc" | "duration_asc") || "newest";
   const { format } = useCurrency();
+  const toursListingContent = useContentBlock<ToursListingContent>("tours_listing", DEFAULT_TOURS_LISTING_CONTENT);
 
   const [searchTerm, setSearchTerm] = useState(querySearch);
   useEffect(() => {
@@ -298,10 +332,25 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         const categoryList = await fetchPublicCategories(resolvedCountry || undefined);
         if (!active) return;
         setCategories(categoryList);
-        if (queryCategory && !categoryList.some((cat) => cat.slug === queryCategory)) {
+        if (queryCategory) {
+          // Public links created before slugs were standard may still contain
+          // the category name. Resolve both forms to the current canonical
+          // slug, otherwise the selected filter appears blank and is removed
+          // even when it refers to a valid category.
+          const normalizedCategory = slugifyTourSegment(queryCategory);
+          const matchedCategory = categoryList.find((cat) => (
+            cat.slug === queryCategory
+            || cat.slug === normalizedCategory
+            || cat.category_name.toLocaleLowerCase() === queryCategory.toLocaleLowerCase()
+          ));
           const params = new URLSearchParams(searchParams.toString());
-          params.delete("category");
-          router.replace(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+          if (!matchedCategory) {
+            params.delete("category");
+            router.replace(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+          } else if (matchedCategory.slug !== queryCategory) {
+            params.set("category", matchedCategory.slug);
+            router.replace(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`);
+          }
         }
       })
       .catch(() => {
@@ -576,31 +625,31 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   // (see admin/cms > Country Pages) overrides these on a per-field basis;
   // anything it doesn't set falls back to the algorithmically generated
   // copy below.
-  const heroTitle = countryPage?.hero_title?.trim() || (hasSpecificCountry ? `${destinationTitle} Tours` : "Explore the World's Best Tours");
+  const heroTitle = countryPage?.hero_title?.trim() || (hasSpecificCountry ? `${destinationTitle} Tours` : toursListingContent.hero_title || DEFAULT_TOURS_LISTING_CONTENT.hero_title);
 
   const heroDescription = countryPage?.hero_description?.trim() || (hasSpecificCountry
     ? isIndia
       ? "India tours bring together breathtaking heritage palaces, vibrant cultural festivals, golden desert landscapes, and tranquil coastal backwaters, making every journey packed with unforgettable experiences. Explore iconic destinations such as Delhi, Agra, Jaipur, Kerala, and Varanasi."
       : `${destinationTitle} tours bring together breathtaking mountains, pristine lakes, dramatic coastlines and vibrant cities, making every journey packed with unforgettable experiences. Explore iconic destinations with scenic road trips, guided adventures and plenty of time to discover the natural beauty.`
-    : "Discover handpicked tour packages across the world's most incredible destinations — from the alpine peaks of Switzerland and New Zealand to the rich heritage of India and the tropical islands of Bali. Guided journeys, scenic road trips, and memorable adventures crafted for every traveller.");
+    : toursListingContent.hero_description || DEFAULT_TOURS_LISTING_CONTENT.hero_description);
 
   const heroBannerImage = countryPage?.hero_image ? mediaUrl(countryPage.hero_image) : (hasSpecificCountry
     ? isIndia
       ? "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1600&q=80"
       : "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80"
-    : "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80");
+    : toursListingContent.hero_image || DEFAULT_TOURS_LISTING_CONTENT.hero_image);
 
-  const showcaseTitle = countryPage?.showcase_title?.trim() || (hasSpecificCountry ? `${destinationTitle} Group Tours` : "World Best Group & Private Tours");
+  const showcaseTitle = countryPage?.showcase_title?.trim() || (hasSpecificCountry ? `${destinationTitle} Group Tours` : toursListingContent.showcase_title || DEFAULT_TOURS_LISTING_CONTENT.showcase_title);
 
   const showcaseDescription = countryPage?.showcase_description?.trim() || (hasSpecificCountry
     ? "Travel together, share unforgettable experiences, and explore incredible destinations with expertly planned group tours. Meet like-minded travellers, enjoy seamless itineraries, and create lasting memories along the way."
-    : "Travel together, share unforgettable experiences, and explore incredible destinations with expertly planned tours across 50+ countries. Meet like-minded travellers, enjoy seamless itineraries, and create lasting memories along the way.");
+    : toursListingContent.showcase_description || DEFAULT_TOURS_LISTING_CONTENT.showcase_description);
 
   const showcaseImage = countryPage?.showcase_image ? mediaUrl(countryPage.showcase_image) : (hasSpecificCountry
     ? isIndia
       ? "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80"
       : "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80"
-    : "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80");
+    : toursListingContent.showcase_image || DEFAULT_TOURS_LISTING_CONTENT.showcase_image);
 
   return (
     <main className="min-h-screen bg-white pb-24 pt-3 text-slate-950 overflow-x-clip">
@@ -633,19 +682,19 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-white/90">
                 <span className="flex items-center gap-1">
                   <Star size={13} className="fill-amber-400 text-amber-400" />
-                  4.9 <span className="text-white/70 font-normal">12,400+ reviews</span>
+                  {hasSpecificCountry ? "4.9" : toursListingContent.hero_rating} <span className="text-white/70 font-normal">{hasSpecificCountry ? "12,400+ reviews" : toursListingContent.hero_reviews}</span>
                 </span>
                 <span className="flex items-center gap-1 text-white/80">
                   <Users size={13} />
-                  250+ Group Tours
+                  {hasSpecificCountry ? "250+ Group Tours" : toursListingContent.hero_group_tours}
                 </span>
                 <span className="flex items-center gap-1 text-white/80">
                   <User size={13} />
-                  180+ Private Tours
+                  {hasSpecificCountry ? "180+ Private Tours" : toursListingContent.hero_private_tours}
                 </span>
                 <span className="flex items-center gap-1 text-white/80">
                   <Compass size={13} />
-                  95+ Destinations
+                  {hasSpecificCountry ? "95+ Destinations" : toursListingContent.hero_destinations}
                 </span>
               </div>
 
@@ -704,13 +753,13 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-pub-primary">
-              {hasSpecificCountry ? destinationTitle : "Discover World Tours"}
+              {hasSpecificCountry ? destinationTitle : toursListingContent.results_heading}
             </h2>
             <p className="mt-1 text-xs sm:text-sm font-semibold text-slate-500">
               <span className="font-black text-slate-900">
                 {selectedDestination || selectedRating ? filteredTours.length : totalCount} Tour{(selectedDestination || selectedRating ? filteredTours.length : totalCount) === 1 ? "" : "s"} Found
               </span>{" "}
-              {hasSpecificCountry ? `in ${destinationTitle}` : "Across Worldwide Destinations"}
+              {hasSpecificCountry ? `in ${destinationTitle}` : toursListingContent.results_context}
               {totalPages > 1 && <span className="ml-1 text-slate-400">(page {page} of {totalPages})</span>}
               {activeFiltersCount > 0 && (
                 <span className="ml-2 text-xs text-blue-600 font-bold">

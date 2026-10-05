@@ -169,7 +169,10 @@ function buildColumns(reportType: ReportType, money: FormatMoney): DataTableColu
       return [
         { key: "agent_name", header: "Agent", className: "font-semibold text-dash-text" },
         { key: "bookings", header: "Bookings" },
-        { key: "amount", header: "Revenue", render: (r) => money(r.amount) },
+        { key: "amount", header: "Booking Value", render: (r) => money(r.amount) },
+        { key: "commission_earned", header: "Commission Earned", className: "font-semibold text-dash-text", render: (r) => money(r.commission_earned) },
+        { key: "commission_paid", header: "Commission Paid", className: "text-emerald-700", render: (r) => money(r.commission_paid) },
+        { key: "commission_outstanding", header: "Commission Outstanding", className: "font-semibold text-amber-700", render: (r) => money(r.commission_outstanding) },
       ];
     case "customers":
       return [
@@ -609,6 +612,31 @@ export default function ReportsPage() {
                   <Bar dataKey="sales" fill="#43A9F6" radius={[4, 4, 0, 0]} barSize={28} />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+          )}
+
+          {reportType === "agents" && !rowsLoading && (
+            <div className="mb-5 rounded-xl border border-dash-border bg-dash-bg p-4 print:border-none print:p-0">
+              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-black text-dash-text">Agent booking & commission summary</h3>
+                  <p className="mt-0.5 text-xs text-dash-muted">Booking and commission amounts are converted to USD for a consistent cross-currency report.</p>
+                </div>
+                <span className="text-xs font-semibold text-dash-muted">{rows.length} agents</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {[
+                  { label: "Agent bookings", value: rows.reduce((total, row) => total + Number(row.bookings || 0), 0).toLocaleString("en-US") },
+                  { label: "Booking value", value: money(rows.reduce((total, row) => total + Number(row.amount || 0), 0)) },
+                  { label: "Commission paid", value: money(rows.reduce((total, row) => total + Number(row.commission_paid || 0), 0)) },
+                  { label: "Commission outstanding", value: money(rows.reduce((total, row) => total + Number(row.commission_outstanding || 0), 0)) },
+                ].map((summary) => (
+                  <div key={summary.label} className="rounded-lg border border-dash-border-soft bg-white p-3">
+                    <p className="text-xs font-semibold text-dash-muted">{summary.label}</p>
+                    <p className="mt-1 text-lg font-black text-dash-text">{summary.value}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

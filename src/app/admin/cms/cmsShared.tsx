@@ -236,6 +236,7 @@ export const TAB_DESCRIPTIONS: Record<string, string> = {
   seo: "Meta title and description for each public page (Home, Tours, About, Contact, legal pages and more).",
   "destination-styles": "The travel style cards on the Destinations page (e.g. Alpine & Mountain Expeditions).",
   "destination-seasons": "The best-time-to-travel season cards on the Destinations page.",
+  "tours-listing": "The global /tours page hero and results heading. Country-specific /tours/{country} content stays in Country Pages.",
   "trust-bar": "The dark bar at the very top of every page (e.g. Shop 2,500+ handpicked operators). Add, edit or remove highlights.",
   slogans: "The slogan line under the hero search box that rotates one at a time. Add as many slogans as you like.",
   "top-bar": "An optional announcement strip with a link. Leave the text blank to hide it.",
@@ -567,6 +568,26 @@ export const FAVOURITE_COUNTRIES_HEADING_BLOCK: ContentBlockTabConfig = {
 };
 
 export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
+  {
+    key: "tours-listing",
+    label: "Tours Listing Page",
+    blockKey: "tours_listing",
+    fields: [
+      { key: "hero_title", label: "Hero Title", type: "text" },
+      { key: "hero_description", label: "Hero Description", type: "textarea" },
+      { key: "hero_image", label: "Hero Background Image", type: "asset" },
+      { key: "hero_rating", label: "Hero Rating", type: "text" },
+      { key: "hero_reviews", label: "Hero Review Text", type: "text" },
+      { key: "hero_group_tours", label: "Hero Group Tours Text", type: "text" },
+      { key: "hero_private_tours", label: "Hero Private Tours Text", type: "text" },
+      { key: "hero_destinations", label: "Hero Destinations Text", type: "text" },
+      { key: "results_heading", label: "Results Heading", type: "text", hint: "Shown above the live tour count and category filters." },
+      { key: "results_context", label: "Results Context", type: "text", hint: "Shown after the live result count." },
+      { key: "showcase_title", label: "Showcase Title", type: "text" },
+      { key: "showcase_description", label: "Showcase Description", type: "textarea" },
+      { key: "showcase_image", label: "Showcase Image", type: "asset" },
+    ],
+  },
   {
     key: "destination-styles",
     label: "Destinations: Travel Styles",
@@ -2493,8 +2514,8 @@ export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
   {
     key: "destinations",
     label: "Country Pages",
-    description: "The dynamic per-country tour listing, destination guides, and country-based currency availability.",
-    tabs: ["country-pages"],
+    description: "The global tours listing, dynamic per-country tour pages, destination guides, and country-based currency availability.",
+    tabs: ["tours-listing", "country-pages"],
     external: [
       {
         label: "Countries & Currencies",

@@ -24,7 +24,19 @@ export type OverduePaymentRow = { booking_id: number; booking_code: string; tour
 export type CountryWiseRow = { country: string; bookings: number; amount: string };
 export type CancellationRow = { booking_id: number; booking_code: string; reason: string | null; cancelled_at: string | null; amount: string };
 export type SupplierReportRow = { supplier_id: number; supplier_name: string; bookings: number; amount: string };
-export type AgentReportRow = { agent_id: number; agent_name: string; bookings: number; amount: string };
+export type AgentReportRow = {
+  agent_id: number;
+  agent_name: string;
+  bookings: number;
+  /** Total customer-facing value of the agent's bookings. */
+  amount: string;
+  /** Commission recorded in the agent ledger, excluding reversed entries. */
+  commission_earned: string;
+  /** Commission that Tourvaa has already paid to the agent. */
+  commission_paid: string;
+  /** Commission still recorded as payable to the agent. */
+  commission_outstanding: string;
+};
 export type CustomerReportRow = { customer_id: number; customer_name: string; bookings: number; amount: string; pending: string };
 
 // -- row-level "first release" reports --

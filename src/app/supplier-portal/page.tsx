@@ -336,7 +336,7 @@ export default function SupplierPortalLandingPage() {
                 <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
                   {m.label}
                 </div>
-                <div className="mt-0.5 text-xs text-slate-400 font-normal">
+                <div className="mt-0.5 text-xs text-white/70 font-normal">
                   {m.sub}
                 </div>
               </div>
@@ -436,20 +436,20 @@ export default function SupplierPortalLandingPage() {
             {/* Right Result Card (Dark Navy) */}
             <div className="flex flex-col justify-between rounded-2xl bg-pub-primary p-6 sm:p-8 text-white shadow-xl">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/75 text-center">
                   Projected Monthly Supplier Payout
                 </p>
                 <div className="mt-2 text-4xl sm:text-5xl font-bold text-white tracking-tight text-center">
                   ${Math.round(netEarnings).toLocaleString()}
                 </div>
-                <p className="mt-1 text-[11px] text-slate-400 text-center font-normal">
+                <p className="mt-1 text-[11px] text-white/75 text-center font-normal">
                   *Net earnings transferred directly to your bank account
                 </p>
 
                 {/* Two Mini Metrics */}
                 <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/10 pt-6 text-center">
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                    <span className="block text-[10px] uppercase tracking-wider text-white/70 font-semibold">
                       Gross Ticket Value
                     </span>
                     <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
@@ -457,7 +457,7 @@ export default function SupplierPortalLandingPage() {
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                    <span className="block text-[10px] uppercase tracking-wider text-white/70 font-semibold">
                       Annual Revenue
                     </span>
                     <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
@@ -475,7 +475,7 @@ export default function SupplierPortalLandingPage() {
                 >
                   Start Selling on Tourvaa &rarr;
                 </Link>
-                <p className="mt-2 text-[11px] text-slate-400 text-center font-normal">
+                <p className="mt-2 text-[11px] text-white/70 text-center font-normal">
                   Calculated based on standard 10% marketplace commission. Zero fixed fees.
                 </p>
               </div>
@@ -570,7 +570,7 @@ export default function SupplierPortalLandingPage() {
                     </h3>
                     <p
                       className={`mt-2 text-xs font-normal leading-relaxed ${
-                        isDark ? "text-slate-300" : "text-pub-muted"
+                        isDark ? "text-white/75" : "text-pub-muted"
                       }`}
                     >
                       {description}
@@ -718,7 +718,7 @@ export default function SupplierPortalLandingPage() {
           <h2 className="text-2xl sm:text-4xl font-bold text-white tracking-tight">
             {cta.heading || DEFAULT_CTA.heading}
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-xs sm:text-sm leading-relaxed text-slate-300 font-normal">
+          <p className="mx-auto mt-3 max-w-xl text-xs sm:text-sm leading-relaxed text-white/80 font-normal">
             {cta.subtitle || DEFAULT_CTA.subtitle}
           </p>
 
@@ -737,7 +737,7 @@ export default function SupplierPortalLandingPage() {
             </Link>
           </div>
 
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-5 sm:gap-6 text-xs text-slate-400 font-medium">
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-5 sm:gap-6 text-xs text-white/70 font-medium">
             <span>✓ No setup cost</span>
             <span>✓ Real-time bookings</span>
             <span>✓ Verified payouts</span>
