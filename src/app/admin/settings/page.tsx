@@ -43,6 +43,13 @@ const booleanSettingKeys = new Set([
 
 const imageSettingKeys = new Set(["logo", "favicon"]);
 
+const invoicePdfSettingFields = [
+  { key: "invoice_brand_name", label: "Brand name", helper: "Shown at the top-left of every invoice." },
+  { key: "invoice_brand_tagline", label: "Brand tagline", helper: "Shown directly below the brand name." },
+  { key: "invoice_footer_thanks", label: "Footer thank-you", helper: "Shown above the contact line." },
+  { key: "invoice_footer_legal", label: "Footer legal notice", helper: "Shown as the final line on every invoice." },
+] as const;
+
 // Two AppSetting rows whose values are fixed in Python code (money rounding
 // is hardcoded, not actually driven by these settings) -- the backend now
 // hard-rejects any PUT that changes them, so the UI must show them as
@@ -397,7 +404,7 @@ export default function SettingsPage() {
   }
   if (!dashboard) return null;
 
-  const activeGenericGroup = grouped[activeGroup];
+  const activeGenericGroup = activeGroup === "invoice_pdf" ? undefined : grouped[activeGroup];
 
   return (
     <ProtectedRoute requiredPermission="settings.view">
@@ -857,6 +864,61 @@ export default function SettingsPage() {
               <p className="text-sm text-dash-muted">Could not load security status.</p>
             )}
           </section>
+        )}
+
+        {activeGroup === "invoice_pdf" && (
+          <form onSubmit={saveSettings}>
+            <section className="rounded-2xl border border-dash-border bg-white p-6">
+              <h3 className="mb-1 text-lg font-bold text-dash-text">Invoice PDF Template</h3>
+              <p className="mb-6 text-sm text-dash-muted">
+                Update the approved copy below. Booking, customer, payment, tax and total values are always populated from the invoice record and cannot be edited here.
+              </p>
+              <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="space-y-4">
+                  {invoicePdfSettingFields.map(({ key, label, helper }) => (
+                    <label key={key} className="block">
+                      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-dash-muted">{label}</span>
+                      <textarea
+                        rows={key.includes("footer") ? 3 : 2}
+                        value={form[key] || ""}
+                        onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value }))}
+                        className="w-full resize-y rounded-xl border border-dash-border px-4 py-2.5 text-sm text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
+                      />
+                      <span className="mt-1.5 block text-xs text-dash-subtle">{helper}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <aside className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                  <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-dash-muted">PDF preview</p>
+                  <div className="bg-white p-5 shadow-sm">
+                    <div className="flex items-start justify-between gap-3 border-b border-[#123F31] pb-3">
+                      <div>
+                        <p className="text-base font-black text-[#123F31]">{form.invoice_brand_name || "Tourvaa"}</p>
+                        <p className="mt-0.5 text-[8px] text-slate-500">{form.invoice_brand_tagline || "Curated journeys, effortlessly booked."}</p>
+                      </div>
+                      <div className="text-right"><p className="text-xs font-black text-slate-900">INVOICE</p><p className="text-[8px] text-slate-500">#TVAA-11</p></div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 bg-[#F1F6F3] p-3 text-[8px] text-slate-600">
+                      <div><strong className="block text-[#123F31]">BILLED TO</strong>Customer details</div>
+                      <div><strong className="block text-[#123F31]">TRIP DETAILS</strong>Tour and payment details</div>
+                    </div>
+                    <div className="mt-4 text-[8px]">
+                      <div className="grid grid-cols-[1fr_32px_54px] bg-[#123F31] px-2 py-1.5 font-bold text-white"><span>Description</span><span>Qty</span><span className="text-right">Total</span></div>
+                      <div className="grid grid-cols-[1fr_32px_54px] border-b border-slate-100 px-2 py-2 text-slate-600"><span>Booking tour</span><span>1</span><span className="text-right">USD 0.00</span></div>
+                      <div className="ml-auto mt-3 w-36 space-y-1.5 text-right text-slate-600"><p>Total <strong className="ml-4 text-[#123F31]">USD 0.00</strong></p><p>Amount Due <strong className="ml-1 text-red-700">USD 0.00</strong></p></div>
+                    </div>
+                    <div className="mt-6 border-t border-slate-100 pt-3 text-center text-[7px] text-slate-500"><p>{form.invoice_footer_thanks || "Thank you for booking with Tourvaa."}</p><p className="mt-1">{form.invoice_footer_legal || "This is a system-generated invoice and does not require a signature."}</p></div>
+                  </div>
+                </aside>
+              </div>
+            </section>
+            <div className="mt-6 flex justify-end">
+              <button disabled={saving} className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60">
+                {saving ? "Saving..." : "Save Invoice PDF Template"}
+              </button>
+            </div>
+          </form>
         )}
 
         {activeGenericGroup && (
