@@ -702,11 +702,21 @@ export default function TourDetailExperience({
   }, [monthGroups, selectedDateId]);
 
   // Dynamic Pricing Tiers directly from Backend
-  const pricingRows = useMemo(
-    () =>
-      [...(tour.pricing || [])].sort((a, b) => a.persons_from - b.persons_from),
-    [tour.pricing],
-  );
+  const pricingRows = useMemo(() => {
+    const maxGroupSize = tour.max_group_size ?? null;
+
+    return [...(tour.pricing || [])]
+      .sort((a, b) => a.persons_from - b.persons_from)
+      // Do not present a group-price tier that cannot be selected for this
+      // tour.  The booking service enforces this same maximum.
+      .filter((row) => !maxGroupSize || row.persons_from <= maxGroupSize)
+      .map((row) => {
+        if (!maxGroupSize || (row.persons_to != null && row.persons_to <= maxGroupSize)) {
+          return row;
+        }
+        return { ...row, persons_to: maxGroupSize };
+      });
+  }, [tour.pricing, tour.max_group_size]);
 
   const selectedDeparture = monthGroups
     .flatMap((month) => month.dates)
@@ -882,12 +892,13 @@ export default function TourDetailExperience({
   // percentage fallback keeps older API deployments compatible.
   const supplierDiscountPercent = Number(tour.supplier_discount_percentage ?? 0);
   const tourvaaDiscountPercent = Number(tour.tourvaa_discount_percentage ?? 0);
-  // Supplier and Tourvaa offers are applied one after the other. Display the
-  // actual combined saving (10% then 15% is 23.5%), matching the card price.
-  const combinedOfferPercent =
-    100 * (1 - (1 - supplierDiscountPercent / 100) * (1 - tourvaaDiscountPercent / 100));
+  // The promotion badge communicates the advertised offer components, not
+  // the compounded price calculation. For example, a 10% supplier offer
+  // plus a 15% Tourvaa offer is presented as “25% Discount”; checkout still
+  // applies the two stages sequentially and remains authoritative.
+  const advertisedOfferPercent = supplierDiscountPercent + tourvaaDiscountPercent;
   const todaysSpecialOfferPercent = Number(
-    (Number(tour.discount_percentage ?? 0) || combinedOfferPercent).toFixed(2),
+    (advertisedOfferPercent || Number(tour.discount_percentage ?? 0)).toFixed(2),
   );
   const todaysSpecialOfferLabel = `Today's Special Offer (${todaysSpecialOfferPercent}% Discount)`;
   const hasSpecialOffer = todaysSpecialOfferPercent > 0;

@@ -32,6 +32,12 @@ const detail = read("src/app/(public)/tours/[id]/page.tsx");
 check("tour links preserve booking query", detail.includes("bookingQuery"));
 check("login return path preserves booking context", detail.includes("encodeURIComponent(returnPath)"));
 check("tour CTA opens dedicated public booking flow", detail.includes('`/booking/${tour.id}'));
+check(
+  "open public tours refresh approved availability without a manual reload",
+  detail.includes("PUBLIC_TOUR_REFRESH_INTERVAL_MS") &&
+    detail.includes('document.addEventListener("visibilitychange", refreshTour)') &&
+    detail.includes("window.setInterval(refreshTour, PUBLIC_TOUR_REFRESH_INTERVAL_MS)"),
+);
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
 check("public itinerary opens in overview mode by default", detailExperience.includes('useState<"detailed" | "overview">(\n    "overview"'));
 check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
@@ -40,6 +46,11 @@ check(
   detailExperience.includes("Math.min(") &&
     detailExperience.includes("selectedDeparture?.slotsRemaining ?? MAX_TRAVELLERS_CEILING") &&
     detailExperience.includes("tour.max_group_size || MAX_TRAVELLERS_CEILING"),
+);
+check(
+  "tour detail hides unreachable price tiers and caps the final visible tier at the group limit",
+  detailExperience.includes(".filter((row) => !maxGroupSize || row.persons_from <= maxGroupSize)") &&
+    detailExperience.includes("return { ...row, persons_to: maxGroupSize };"),
 );
 const customerBookingDetail = read("src/app/customer/bookings/[id]/page.tsx");
 check(
@@ -63,6 +74,7 @@ check(
 check(
   "tour detail uses one combined special-offer badge and an authoritative quote summary",
   detailExperience.includes("Offers Applied – {todaysSpecialOfferLabel}") &&
+    detailExperience.includes("const advertisedOfferPercent = supplierDiscountPercent + tourvaaDiscountPercent;") &&
     detailExperience.includes("supplier_offer_discount_amount") &&
     detailExperience.includes("Customer price after discounts") &&
     detailExperience.includes("You save") &&

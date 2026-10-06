@@ -26,6 +26,7 @@ import Loader from "@/components/ui/Loader";
 
 const PLACEHOLDER =
   "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=80";
+const PUBLIC_TOUR_REFRESH_INTERVAL_MS = 15_000;
 
 // Upgraded Luxury Guest Booking Prompt Modal
 function GuestPrompt({
@@ -229,6 +230,25 @@ export default function TourDetailPage() {
   const handleTravelDateChange = useCallback((travelDate: string) => {
     setPriceTravelDate((current) => current === travelDate ? current : travelDate);
   }, []);
+
+  // A supplier/admin can approve calendar and availability changes while a
+  // customer already has this public tour open. Re-fetch while the tab is
+  // visible (and immediately on return to the tab) so bookable dates and
+  // seat counts reflect the approved backend state without a manual reload.
+  useEffect(() => {
+    const refreshTour = () => {
+      if (document.visibilityState === "visible") {
+        setRetryKey((current) => current + 1);
+      }
+    };
+    const intervalId = window.setInterval(refreshTour, PUBLIC_TOUR_REFRESH_INTERVAL_MS);
+    document.addEventListener("visibilitychange", refreshTour);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", refreshTour);
+    };
+  }, []);
+
   const countryOnlySlug =
     params?.id && !params.slug && !/^\d+$/.test(params.id) ? params.id : null;
 

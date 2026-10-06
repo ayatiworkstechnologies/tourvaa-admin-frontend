@@ -18,7 +18,7 @@ import type { StepStatus, WizardStepDef } from "./steps";
 const STATUS_BADGE: Record<StepStatus, { label: string; className: string; icon: React.ElementType | null }> = {
   complete: { label: "Complete", className: "border-emerald-200 bg-emerald-50 text-emerald-700", icon: Check },
   missing: { label: "Missing information", className: "border-amber-200 bg-amber-50 text-amber-700", icon: AlertTriangle },
-  optional: { label: "Optional · not added", className: "border-dash-border bg-dash-bg text-dash-subtle", icon: null },
+  optional: { label: "Optional", className: "border-dash-border bg-dash-bg text-dash-subtle", icon: null },
   "not-started": { label: "Not started", className: "border-dash-border bg-dash-bg text-dash-subtle", icon: null },
 };
 
