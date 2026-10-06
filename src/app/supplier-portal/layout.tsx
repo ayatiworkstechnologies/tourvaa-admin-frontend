@@ -7,5 +7,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function SupplierPortalLayout({ children }: { children: React.ReactNode }) {
-  return <PublicLayout>{children}</PublicLayout>;
+  return <PublicLayout showFooter={false}>{children}</PublicLayout>;
 }

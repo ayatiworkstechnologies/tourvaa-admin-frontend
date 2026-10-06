@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import PartnerPortalFooter from "@/components/public/portal/PartnerPortalFooter";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -284,6 +285,7 @@ export default function AgentPortalLandingPage() {
     : DEFAULT_FAQS;
 
   return (
+    <>
     <main className="overflow-x-hidden bg-white text-pub-fg">
       {/* ── 1. HERO SECTION ── */}
       <section className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-4 sm:pt-6">
@@ -745,6 +747,8 @@ export default function AgentPortalLandingPage() {
         </div>
       </section>
     </main>
+    <PartnerPortalFooter portal="agent" />
+    </>
   );
 }
 

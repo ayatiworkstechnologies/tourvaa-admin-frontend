@@ -17,8 +17,10 @@ const fontVars = {
 
 export default function PublicLayout({
   children,
+  showFooter = true,
 }: {
   children: React.ReactNode;
+  showFooter?: boolean;
 }) {
   return (
     <PublicSettingsProvider>
@@ -31,7 +33,7 @@ export default function PublicLayout({
           <div className="print:hidden"><AnnouncementBar /></div>
           <PublicHeader />
           <div id="main-content" tabIndex={-1} className="public-page-enter">{children}</div>
-          <div className="print:hidden"><PublicFooter /></div>
+          {showFooter && <div className="print:hidden"><PublicFooter /></div>}
           <div className="print:hidden"><ChatWidget /></div>
           <div className="print:hidden"><CookieConsentBanner /></div>
           <div className="print:hidden"><NetworkStatusBanner /></div>

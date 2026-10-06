@@ -52,6 +52,9 @@ const publicLayout = read("src/components/public/PublicLayout.tsx");
 const publicSettings = read("src/providers/PublicSettingsProvider.tsx");
 const publicFooter = read("src/components/public/PublicFooter.tsx");
 const portalPublicFooter = read("src/components/public/portal/PortalPublicFooter.tsx");
+const agentPortalLayout = read("src/app/agent-portal/layout.tsx");
+const supplierPortalLayout = read("src/app/supplier-portal/layout.tsx");
+const partnerPortalFooter = read("src/components/public/portal/PartnerPortalFooter.tsx");
 const publicContactSources = [
   "src/app/(public)/contact/page.tsx",
   "src/app/(public)/account-status/page.tsx",
@@ -72,8 +75,8 @@ check("legacy seeded contact placeholders are suppressed", publicSettings.includ
 // and links without a code change - PublicFooter fetches and renders them
 // dynamically, with the old hardcoded content kept only as an offline
 // fallback if that fetch fails.
-check("public footer fetches its link sections from the CMS", publicFooter.includes("fetchFooterSections") && publicFooter.includes("footerSections.map") && !publicFooter.includes("aboutSupportLinks") && !publicFooter.includes("aboutCompanyLinks") && !publicFooter.includes("aboutLoginLinks"));
-check("partner landing pages reuse the canonical public footer", portalPublicFooter.includes("<PublicFooter />") && portalPublicFooter.includes("<PublicSettingsProvider>") && portalPublicFooter.includes("<TravelStoreProvider>"));
+check("public footer fetches its link sections from the CMS", publicFooter.includes("fetchFooterSections") && publicFooter.includes("activeFooterSections.map") && !publicFooter.includes("aboutSupportLinks") && !publicFooter.includes("aboutCompanyLinks") && !publicFooter.includes("aboutLoginLinks"));
+check("agent and supplier landing pages use complete independently editable public footers", agentPortalLayout.includes("showFooter={false}") && supplierPortalLayout.includes("showFooter={false}") && partnerPortalFooter.includes("contentBlockKey") && publicFooter.includes("portalSections") && publicFooter.includes("fetchFooterSections"));
 
 const tracker = read("src/components/public/AffiliateReferralTracker.tsx");
 check("public pages capture affiliate referral codes", tracker.includes('get("ref")'));

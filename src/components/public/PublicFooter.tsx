@@ -101,7 +101,27 @@ function safePublicText(
   return normalized;
 }
 
-export default function PublicFooter() {
+type PortalFooterContent = {
+  site_name?: string;
+  description?: string;
+  sections?: { title?: string; link_lines?: string }[];
+  facebook?: string; instagram?: string; youtube?: string; whatsapp?: string; twitter?: string; linkedin?: string;
+};
+
+function portalSections(value?: PortalFooterContent["sections"]): CmsFooterSection[] | null {
+  if (!value?.length) return null;
+  const sections = value.map((section, sectionIndex) => ({
+    id: -(sectionIndex + 100),
+    title: section.title?.trim() || "Links",
+    links: (section.link_lines || "").split("\n").map((line, linkIndex) => {
+      const [label, ...urlParts] = line.split("|");
+      return { id: -((sectionIndex + 100) * 100 + linkIndex), label: label?.trim() || "Link", url: urlParts.join("|").trim() || "/", open_in_new_tab: false };
+    }).filter((link) => link.label && link.url),
+  })).filter((section) => section.links.length);
+  return sections.length ? sections : null;
+}
+
+export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: string }) {
   const router = useRouter();
   const { settings } = usePublicSettings();
   const { code, symbol, currencies, setCode, forced, countryCode, setCountry } =
@@ -123,6 +143,7 @@ export default function PublicFooter() {
     twitter: "https://twitter.com",
     linkedin: "https://linkedin.com",
   });
+  const [portalContent, setPortalContent] = useState<PortalFooterContent | null>(null);
 
   const currencyRef = useRef<HTMLDivElement>(null);
   const countryRef = useRef<HTMLDivElement>(null);
@@ -140,6 +161,15 @@ export default function PublicFooter() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!contentBlockKey) { setPortalContent(null); return; }
+    let active = true;
+    fetchContentBlock<PortalFooterContent>(contentBlockKey)
+      .then((res) => { if (active && res?.data && Object.keys(res.data).length) setPortalContent(res.data); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [contentBlockKey]);
 
   useEffect(() => {
     let active = true;
@@ -230,13 +260,16 @@ export default function PublicFooter() {
     countryCode ||
     "INDIA";
 
+  const portalFooterSections = portalSections(portalContent?.sections);
+  const activeFooterSections = portalFooterSections ?? footerSections;
+  const activeSocialLinks = portalContent ? { ...socialLinks, ...portalContent } : socialLinks;
   const siteName = safePublicText(
-    settings.site_name || settings.app_name,
+    portalContent?.site_name || settings.site_name || settings.app_name,
     "Tourvaa",
     80,
   );
   const tagline = safePublicText(
-    settings.site_tagline || settings.footer_description,
+    portalContent?.description || settings.site_tagline || settings.footer_description,
     "Explore more, travel better, and create memories with Tourvaa.",
     500,
   );
@@ -249,7 +282,7 @@ export default function PublicFooter() {
               column: three menu columns on desktop, then additional CMS
               sections wrap beneath them without shifting the right panel. */}
           <div className="grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-8 xl:gap-x-12">
-          {footerSections.map((section) => (
+          {activeFooterSections.map((section) => (
             <nav key={section.id} aria-label={`${section.title} footer links`} className="min-w-0">
               <h3 className="text-lg sm:text-xl font-bold text-white mb-4 tracking-tight">
                 {section.title}
@@ -396,7 +429,7 @@ export default function PublicFooter() {
             {/* Social Media Icons */}
             <div className="flex flex-wrap items-center gap-3.5 sm:gap-4 text-white/90">
               <a
-                href={socialLinks.facebook || "https://facebook.com"}
+                href={activeSocialLinks.facebook || "https://facebook.com"}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Facebook"
@@ -405,7 +438,7 @@ export default function PublicFooter() {
                 <FaFacebookF size={16} />
               </a>
               <a
-                href={socialLinks.instagram || "https://instagram.com"}
+                href={activeSocialLinks.instagram || "https://instagram.com"}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Instagram"
@@ -414,7 +447,7 @@ export default function PublicFooter() {
                 <FaInstagram size={16} />
               </a>
               <a
-                href={socialLinks.youtube || "https://youtube.com"}
+                href={activeSocialLinks.youtube || "https://youtube.com"}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="YouTube"
@@ -423,7 +456,7 @@ export default function PublicFooter() {
                 <FaYoutube size={16} />
               </a>
               <a
-                href={socialLinks.whatsapp || "https://whatsapp.com"}
+                href={activeSocialLinks.whatsapp || "https://whatsapp.com"}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="WhatsApp"
@@ -432,7 +465,7 @@ export default function PublicFooter() {
                 <FaWhatsapp size={16} />
               </a>
               <a
-                href={socialLinks.twitter || "https://twitter.com"}
+                href={activeSocialLinks.twitter || "https://twitter.com"}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="X Twitter"
@@ -441,7 +474,7 @@ export default function PublicFooter() {
                 <FaXTwitter size={16} />
               </a>
               <a
-                href={socialLinks.linkedin || "https://linkedin.com"}
+                href={activeSocialLinks.linkedin || "https://linkedin.com"}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="LinkedIn"

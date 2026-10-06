@@ -305,6 +305,7 @@ export const TAB_DESCRIPTIONS: Record<string, string> = {
   "supplier-portal-expectations": "The \"What we expect from partners\" cards on the Supplier Portal page.",
   "supplier-portal-faqs": "The FAQs on the Supplier Portal page.",
   "supplier-portal-cta": "The bottom call-to-action banner on the Supplier Portal page.",
+  "supplier-portal-footer": "The full Supplier Portal footer. Each link uses one line: Link label | /link-url.",
   "agent-portal-hero": "The Agent Portal hero banner and publish toggle.",
   "agent-portal-metrics": "The metrics strip on the Agent Portal page.",
   "agent-portal-features": "The tool cards on the Agent Portal page.",
@@ -313,6 +314,7 @@ export const TAB_DESCRIPTIONS: Record<string, string> = {
   "agent-portal-expectations": "The \"What we expect from partners\" cards on the Agent Portal page.",
   "agent-portal-faqs": "The FAQs on the Agent Portal page.",
   "agent-portal-cta": "The bottom call-to-action banner on the Agent Portal page.",
+  "agent-portal-footer": "The full Agent Portal footer. Each link uses one line: Link label | /link-url.",
   "affiliate-portal-hero": "The Affiliate Portal hero banner and publish toggle.",
   "affiliate-portal-stats": "The stats strip on the Affiliate Portal page.",
   "affiliate-portal-perks": "The \"Why join as an affiliate\" perk cards on the Affiliate Portal page.",
@@ -1247,7 +1249,20 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "cta_text", label: "Button Text", type: "text" as const },
     ],
   })),
-
+  ...(["supplier", "agent"] as const).map((portal) => ({
+    key: `${portal}-portal-footer`, label: "Portal Footer", blockKey: `${portal}_portal_footer`,
+    fields: [
+      { key: "site_name", label: "Brand Heading", type: "text" as const },
+      { key: "description", label: "Brand Description", type: "textarea" as const },
+      { key: "sections", label: "Footer Link Columns", type: "records" as const, hint: "Each link goes on a separate line as: Link label | /link-url", subfields: [
+        { key: "title", label: "Column Heading", type: "text" as const },
+        { key: "link_lines", label: "Links", type: "textarea" as const },
+      ] },
+      { key: "facebook", label: "Facebook URL", type: "url" as const }, { key: "instagram", label: "Instagram URL", type: "url" as const },
+      { key: "youtube", label: "YouTube URL", type: "url" as const }, { key: "whatsapp", label: "WhatsApp URL", type: "url" as const },
+      { key: "twitter", label: "X URL", type: "url" as const }, { key: "linkedin", label: "LinkedIn URL", type: "url" as const },
+    ],
+  })),
   // ---- Affiliate Portal (see AffiliatePortalPageEditor) --------------------
   {
     key: "affiliate-portal-hero",
