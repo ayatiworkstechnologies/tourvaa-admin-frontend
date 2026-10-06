@@ -150,11 +150,6 @@ export default function TourItemsTab({ tourId, segment, label }: { tourId: strin
                 onChange={(e) => { setEditing((prev) => prev ? { ...prev, title: e.target.value } : prev); setErrors((previous) => { const next = { ...previous }; delete next.title; return next; }); }}
                 className={fieldClass(errors.title)} />
             </FormField>
-            <FormField name="icon" label="Icon" hint="An emoji (e.g. 🚌) or an image URL. Shown next to the title.">
-              <input id="icon" name="icon" type="text" value={editing.icon ?? ""}
-                onChange={(e) => setEditing((prev) => prev ? { ...prev, icon: e.target.value } : prev)}
-                className={fieldClass()} />
-            </FormField>
             <FormField name="display_order" label="Order" error={errors.display_order} hint="Lower numbers show first.">
               <input id="display_order" name="display_order" type="number" min={0} value={numberInputValue(editing.display_order as number)}
                 onChange={(e) => { setEditing((prev) => prev ? { ...prev, display_order: parseNumberInput(e.target.value) } : prev); setErrors((previous) => { const next = { ...previous }; delete next.display_order; return next; }); }}

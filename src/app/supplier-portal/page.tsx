@@ -99,50 +99,66 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
   {
     badge: "MANDATORY",
     badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
-    title: "Company Registration Certificate",
+    title: "Business Registration Certificate",
     description:
       "Official legal entity registration document from your country or state commerce registry.",
     footer: "Accepted: PDF, JPG, PNG",
   },
   {
-    badge: "MANDATORY",
-    badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
-    title: "Trade / Tourism Operator License",
+    badge: "OPTIONAL",
+    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    title: "Relevant Operating Licence",
     description:
-      "Current valid license authorizing commercial tourism, guiding, or passenger transfer operations.",
-    footer: "Accepted: PDF, JPG, PNG",
-  },
-  {
-    badge: "MANDATORY",
-    badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
-    title: "Tax Registration Certificate",
-    description:
-      "Valid tax identification certificate (e.g., GST, VAT, EIN, or national corporate tax registration).",
-    footer: "Accepted: PDF, JPG, PNG",
-  },
-  {
-    badge: "MANDATORY",
-    badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
-    title: "Authorized Signatory Identification",
-    description:
-      "Government-issued passport or national photo ID of the business owner or legal representative.",
-    footer: "Accepted: PDF, JPG, PNG",
-  },
-  {
-    badge: "MANDATORY",
-    badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
-    title: "Corporate Bank Account Proof",
-    description:
-      "Official bank statement header or cancelled business cheque matching registered company name for payouts.",
-    footer: "Accepted: PDF, JPG, PNG",
+      "Current licence authorising your tourism, guiding, transport, or tour-operating activities, where applicable.",
+    footer: "Optional — accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
     badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
-    title: "Previous Reviews & Accreditations",
+    title: "Public Liability Insurance Certificate",
     description:
-      "TripAdvisor ratings, trade association memberships, or tourism board quality badges.",
-    footer: "Optional for faster review",
+      "Evidence of active public liability cover, where required for your business or local operations.",
+    footer: "Optional — accepted: PDF, JPG, PNG",
+  },
+  {
+    badge: "OPTIONAL",
+    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    title: "Tourism Accreditation",
+    description:
+      "Tourism-board or recognised tourism accreditation supporting your supplier profile.",
+    footer: "Optional — accepted: PDF, JPG, PNG",
+  },
+  {
+    badge: "OPTIONAL",
+    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    title: "Industry Certification",
+    description:
+      "Relevant industry qualifications or professional certifications held by your business or team.",
+    footer: "Optional — accepted: PDF, JPG, PNG",
+  },
+  {
+    badge: "OPTIONAL",
+    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    title: "Safety Certification",
+    description:
+      "Safety, first-aid, risk-management, or other operational safety certificates.",
+    footer: "Optional — accepted: PDF, JPG, PNG",
+  },
+  {
+    badge: "OPTIONAL",
+    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    title: "Other Licences",
+    description:
+      "Any additional licences relevant to the experiences, activities, or transport you provide.",
+    footer: "Optional — accepted: PDF, JPG, PNG",
+  },
+  {
+    badge: "OPTIONAL",
+    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    title: "Additional Supporting Documents",
+    description:
+      "Extra documents that help our onboarding team validate your business more quickly.",
+    footer: "Optional — accepted: PDF, JPG, PNG",
   },
 ] as const;
 
@@ -630,7 +646,7 @@ export default function SupplierPortalLandingPage() {
             </p>
           </div>
           <Link
-            href="/contact"
+            href="/contact?context=supplier#contact-form-section"
             className="inline-flex items-center justify-center shrink-0 rounded-xl bg-pub-primary hover:bg-pub-primary/90 text-white text-xs font-bold px-6 py-3 transition whitespace-nowrap"
           >
             Contact Supplier Desk &rarr;

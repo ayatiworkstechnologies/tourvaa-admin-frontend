@@ -32,6 +32,8 @@ check(
 );
 
 const supplierPortal = read("src/app/supplier-portal/login/page.tsx");
+const supplierLayout = read("src/app/supplier/layout.tsx");
+const supplierLanding = read("src/app/supplier-portal/page.tsx");
 check(
   "supplier portal keeps its own inline registration tab (no registerHref override)",
   supplierPortal.includes("registerNamePlaceholder") && !supplierPortal.includes("registerHref"),
@@ -48,7 +50,7 @@ const dashboard = read("src/app/supplier/dashboard/page.tsx");
 check("dashboard exposes recoverable partial-load errors", dashboard.includes("Promise.allSettled") && dashboard.includes("setError(") && dashboard.includes("Retry"));
 check("dashboard excludes reserved ledger rows from available payout", dashboard.includes('=== "reserved"') && dashboard.includes('["pending", "partial"]'));
 check("dashboard loads supplier-scoped tour totals instead of missing summary fields", dashboard.includes('api.get("/tours", { params: { limit: 1 } })') && dashboard.includes('status: "published"'));
-check("dashboard prioritizes supplier actions", ["Create New Tour", "Review Bookings", "View Earnings", "Request Payout"].every((label) => dashboard.includes(label)));
+check("dashboard shows the monthly payout schedule without a request action", dashboard.includes("Next payout date") && dashboard.includes("end of every month") && !dashboard.includes("Request Payout"));
 check("dashboard highlights bookings awaiting supplier decisions", dashboard.includes("Booking decisions are waiting") && dashboard.includes("/supplier/bookings?status=pending_supplier_acceptance"));
 check("dashboard retains date and status filtering", dashboard.includes("<DatePicker") && dashboard.includes("bookingParams.booking_status = filters.status"));
 check("dashboard provides loading and filtered empty states", dashboard.includes("BookingSkeleton") && dashboard.includes("No bookings match these filters"));
@@ -58,7 +60,10 @@ check("acceptance waits for payment readiness", bookingDetail.includes("paymentR
 check("decline includes a required reason", bookingDetail.includes('{ reason: declineReason }'));
 check("supplier cancellation confirms the applicable liability", ["supplier_cancellation_terms", "Confirm booking cancellation", "no cancellation charge", "liability_percentage", "Yes, continue"].every((text) => bookingDetail.includes(text)));
 check("supplier withdrawal stays internal to Tourvaa", bookingDetail.includes("awaiting internal supplier reassignment") && !bookingDetail.includes("Booking cancelled. Customer has been notified."));
+check("submitted supplier withdrawal returns to the supplier booking queue", bookingDetail.includes('router.replace("/supplier/bookings")'));
 check("supplier acceptance status is displayed", bookingDetail.includes("Supplier Decision"));
+check("supplier booking messages use the backend-supported update type", bookingDetail.includes('message_type: "supplier_update"') && !bookingDetail.includes('message_type: "supplier_message"'));
+check("supplier booking message errors show the API detail", bookingDetail.includes("response?.data?.detail") && bookingDetail.includes("toast.error(message || \"Could not send message.\")"));
 check("accept endpoint is connected", bookingDetail.includes("/accept"));
 check("decline endpoint is connected", bookingDetail.includes("/decline"));
 check("supplier can move confirmed tours to ongoing", bookingDetail.includes("/ongoing") && bookingDetail.includes("Start Tour"));
@@ -69,6 +74,34 @@ check(
     !bookingDetail.includes("Resume Tour") &&
     bookingDetail.includes("contact Tourvaa support for the next steps"),
 );
+const portalAuth = read("src/components/public/portal/PortalAuthPage.tsx");
+check(
+  "supplier registration accepts every phone-country even when it is absent from the admin geo catalogue",
+  portalAuth.includes("country_id: selectedCountry?.id") &&
+    !portalAuth.includes('return setError("Select a valid country.")') &&
+    !portalAuth.includes('return setError("Countries are still loading. Please try again.")'),
+);
+check(
+  "supplier verification checklist matches the supplier document requirements and contact desk opens the form",
+  ["Business Registration Certificate", "Relevant Operating Licence", "Public Liability Insurance Certificate", "Tourism Accreditation", "Industry Certification", "Safety Certification", "Other Licences", "Additional Supporting Documents"].every((label) => supplierLanding.includes(label)) &&
+    supplierLanding.includes('href="/contact?context=supplier#contact-form-section"'),
+);
+const contactPage = read("src/app/(public)/contact/page.tsx");
+check(
+  "supplier desk opens supplier-specific onboarding questions instead of booking questions",
+  contactPage.includes('get("context") === "supplier"') &&
+    contactPage.includes("Do you already have a supplier account?") &&
+    contactPage.includes("Supplier Verification Documents") &&
+    contactPage.includes("Send Message to Supplier Desk"),
+);
+const supplierDocuments = read("src/components/supplier/profile/DocumentsTab.tsx");
+check(
+  "supplier document uploads preserve optional document status",
+  supplierDocuments.includes("required: false") &&
+    supplierDocuments.includes("docTypes.filter((type) => type.required)") &&
+    supplierDocuments.includes("(Optional)"),
+);
+check("supplier portal mounts the shared language translator", supplierLayout.includes("ElfsightTranslator") && supplierLayout.includes("<ElfsightTranslator />"));
 check(
   "supplier sees only supplier settlement details",
   ["Supplier Payment", "Commission to Tourvaa", "Supplier Net Payable", "Supplier Payment Status"].every((label) => bookingDetail.includes(label)),
@@ -129,6 +162,8 @@ check(
 );
 check("preview uses backend tour field names", preview.includes("price_start_per_person") && preview.includes("banner_image"));
 check("preview loads structured tour sections", preview.includes("/highlights") && preview.includes("/inclusions") && preview.includes("/exclusions"));
+const tourItems = read("src/components/tours/TourItemsTab.tsx");
+check("supplier inclusion and exclusion editor does not expose an icon URL field", !tourItems.includes('name="icon"'));
 
 const messages = read("src/app/supplier/messages/page.tsx");
 const portalMessageThread = read("src/components/messaging/PortalMessageThread.tsx");
@@ -138,17 +173,41 @@ check("supplier support compose is connected", portalMessageThread.includes("sen
 
 const payouts = read("src/app/supplier/payouts/page.tsx");
 check("payout payload omits unsupported bank fields", !payouts.includes("bank_name:") && !payouts.includes("account_number:"));
-check("payout requests validate the available ledger balance", payouts.includes("availableBalance") && payouts.includes("cannot exceed the available balance"));
+check("supplier payout history is read-only and shows the month-end schedule", payouts.includes("Next payout date") && payouts.includes("end of every month") && !payouts.includes("Request Payout") && !payouts.includes('api.post("/supplier-payouts"'));
+const homeExtraSections = read("src/components/public/home/HomeExtraSections.tsx");
+check("published Adventure Tours appear in an automatic homepage carousel", homeExtraSections.includes("AUTOMATIC_ADVENTURE_SECTION_ID") && homeExtraSections.includes("Adventure Tours") && homeExtraSections.includes("fetchPublicCategories"));
 
 const documents = read("src/components/supplier/profile/DocumentsTab.tsx");
 check("supplier documents expose retryable loading failures", documents.includes("Documents could not be loaded") && documents.includes("Retry"));
 
 const supplierProfile = read("src/components/supplier/profile/CompanyInfoTab.tsx");
+const supplierBilling = read("src/components/supplier/profile/BankAndInvoicingTab.tsx");
 const adminSupplierDetail = read("src/app/admin/suppliers/[id]/page.tsx");
 const tourPricing = read("src/components/tours/TourPricingTab.tsx");
 check(
   "supplier business years are persisted in business information",
   supplierProfile.includes("years_in_business: parseInt(form.years_in_operation) || 0"),
+);
+check(
+  "supplier profile collects locked bank, accounts, and billing details",
+  supplierBilling.includes("Bank Details") &&
+    supplierBilling.includes("Invoicing & Accounts Details") &&
+    supplierBilling.includes("Business Billing Address") &&
+    supplierBilling.includes("bank_details_locked") &&
+    supplierBilling.includes("Use Primary Contact"),
+);
+check(
+  "supplier tour editor cannot view or submit checkout tax and service fees",
+  sharedTourForm.includes("const canManageCheckoutCharges = !isSupplier") &&
+    sharedTourForm.includes("{canManageCheckoutCharges && (") &&
+    sharedTourForm.includes("if (canManageCheckoutCharges) {\n        payload.tax_percentage"),
+);
+check(
+  "supplier tour editor excludes the SEO step and preserves SEO metadata on other saves",
+  tourWizard.includes('WIZARD_STEPS.filter((step) => step.id !== "seo")') &&
+    tourWizard.includes("steps={wizardSteps}") &&
+    sharedTourForm.includes("const metadataFields = isSupplier") &&
+    sharedTourForm.includes("if (!isSupplier) {\n        payload.open_graph_image"),
 );
 check(
   "admin supplier detail exposes registration contact and business address",
@@ -160,10 +219,15 @@ check(
 check(
   "supplier pricing distinguishes the offer price from the post-commission payout",
   tourPricing.includes("Your offer price to TourVaa - adult") &&
-    tourPricing.includes("Your offer price to TourVaa - child") &&
-    tourPricing.includes("You will receive (adult)") &&
-    tourPricing.includes("You will receive (child)"),
+  tourPricing.includes("Your offer price to TourVaa - child") &&
+  tourPricing.includes("You will receive (adult)") &&
+  tourPricing.includes("You will receive (child)"),
 );
+check(
+  "supplier pricing displays and edits USD-normalized slabs in the operating currency",
+  tourPricing.includes("useCurrency") && tourPricing.includes("convert(slab.adult_price, slab.currency)") && tourPricing.includes("outputCode(slab.currency || \"USD\")"),
+);
+check("TourVaa storefront discounts reduce the admin profit preview", tourPricing.includes("const adultProfit = adultFinal - adultToTourvaa") && tourPricing.includes("const childProfit = childFinal - childToTourvaa") && tourPricing.includes("deducted from TourVaa profit"));
 
 const commissionTab = read("src/components/supplier/profile/CommissionTab.tsx");
 check(

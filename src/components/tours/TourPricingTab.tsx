@@ -14,6 +14,7 @@ import Loader from "@/components/ui/Loader";
 import CurrencySelect from "@/components/ui/CurrencySelect";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 import { isTourvaaDiscount } from "@/lib/tours/discountSource";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const STATUSES = ["active", "inactive"];
 
@@ -100,6 +101,14 @@ export default function TourPricingTab({
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const isSupplier = role === "supplier";
+  // TourPricing is normalized to USD for accounting by the API. The supplier
+  // portal must nevertheless read and edit it in the supplier's operating
+  // currency, which AuthProvider pins as the portal display currency.
+  const { code: portalCurrency, convert, outputCode } = useCurrency();
+  const fmt = (value: number | null | undefined, currency: string) => {
+    const converted = convert(value, currency);
+    return `${converted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${outputCode(currency)}`;
+  };
   const isLiveTour = ["active", "published"].includes((tourStatus ?? "").toLowerCase());
   const accent = isSupplier
     ? { solidBtn: "bg-[#16833A] hover:bg-[#117331] shadow-emerald-100", ring: "border-[#16833A]", chip: "bg-emerald-50 text-emerald-700" }
@@ -181,6 +190,8 @@ export default function TourPricingTab({
 
       if (isSupplier) {
         const res = await api.get("/suppliers/me");
+        const operatingCurrency = String(res.data?.data?.currency || portalCurrency || "USD").toUpperCase();
+        setDefaultCurrency(operatingCurrency);
         const own = res.data?.data?.commission_percentage;
         if (own != null) { setCommissionFloor(Number(own)); return; }
       } else {
@@ -197,7 +208,7 @@ export default function TourPricingTab({
     } catch {
       // Non-fatal -- the price form itself is the primary content of this tab.
     }
-  }, [tourId, isSupplier, loadDiscountPreview]);
+  }, [tourId, isSupplier, loadDiscountPreview, portalCurrency]);
 
   useEffect(() => { void loadCommissionFloor(); }, [loadCommissionFloor]);
 
@@ -251,7 +262,19 @@ export default function TourPricingTab({
   // instead of a misleading "0" in that brief window.
   const resolvedFloor = commissionFloor ?? 0;
 
-  const openNewSlab = () => setEditing(emptySlab({ currency: defaultCurrency, commission: resolvedFloor }));
+  const openNewSlab = () => setEditing(emptySlab({ currency: isSupplier ? portalCurrency || defaultCurrency : defaultCurrency, commission: resolvedFloor }));
+  const editSlab = (slab: PricingSlab): PricingSlab => {
+    if (!isSupplier) return { ...slab };
+    const currency = outputCode(slab.currency || "USD");
+    return {
+      ...slab,
+      currency,
+      adult_price: convert(slab.adult_price, slab.currency),
+      child_price: convert(slab.child_price, slab.currency),
+      supplier_final_adult_price: convert(slab.supplier_final_adult_price, slab.currency),
+      supplier_final_child_price: convert(slab.supplier_final_child_price, slab.currency),
+    };
+  };
   // What a slab without its own markup inherits: the tour's, else the default.
   const inheritedMarkup = tourMarkup ?? defaultMarkup;
   const inheritedLabel = tourMarkup != null ? `tour markup (${tourMarkup}%)` : `default (${defaultMarkup}%)`;
@@ -363,7 +386,7 @@ export default function TourPricingTab({
       icon={Percent}
       iconTone="brand"
       title="Publishable Price"
-      description="Supplier discount is applied first, then TourVaa markup, then any TourVaa storefront discount. This section never changes the Supplier Price to Tourvaa table."
+      description="Supplier discount is applied first, then TourVaa markup, then any TourVaa storefront discount. A TourVaa discount is deducted from TourVaa profit; it never changes the Supplier Price to Tourvaa table."
     >
       {/* Tour-level markup */}
       <div className="mb-4 rounded-xl border border-dash-border bg-dash-bg px-4 py-3">
@@ -436,10 +459,11 @@ export default function TourPricingTab({
               const tvDisc = Number(tourvaaDiscountPercent ?? 0) / 100;
               const adultFinal = adultStorefront * (1 - tvDisc);
               const childFinal = childStorefront * (1 - tvDisc);
-              // Tourvaa markup profit is derived from the markup applied to supplier price.
-              // Tourvaa storefront discounts apply ONLY to the Customer Price (Storefront).
-              const adultProfit = adultStorefront - adultToTourvaa;
-              const childProfit = childStorefront - childToTourvaa;
+              // Profit is the actual customer price after a TourVaa-funded
+              // discount less the supplier price to TourVaa. The discount is
+              // therefore absorbed by TourVaa, never by the supplier.
+              const adultProfit = adultFinal - adultToTourvaa;
+              const childProfit = childFinal - childToTourvaa;
               return (
                 <tr key={r.id ?? idx} className="transition-colors hover:bg-dash-bg/40">
                   <td className="px-4 py-3.5 align-middle">
@@ -528,7 +552,7 @@ export default function TourPricingTab({
                   </td>
                   {/* Edit Button */}
                   <td className="px-4 py-3.5 text-right align-middle">
-                    <button type="button" onClick={() => setEditing({ ...r })} aria-label="Edit markup" title="Edit markup"
+                    <button type="button" onClick={() => setEditing(editSlab(r))} aria-label="Edit markup" title="Edit markup"
                       className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:border-dash-brand/40 hover:bg-sky-50 hover:text-dash-brand-hover">
                       <Pencil size={14} />
                     </button>
@@ -579,7 +603,7 @@ export default function TourPricingTab({
                 // Admin sees full detail of both discount layers.
                 supplierDiscountPercent && tourvaaDiscountPercent ? (
                   <>
-                    <strong>{supplierDiscountPercent}% supplier discount</strong> is applied to supplier prices to TourVaa, then <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> is applied only to publishable storefront prices.
+                    <strong>{supplierDiscountPercent}% supplier discount</strong> is applied to supplier prices to TourVaa, then <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> is applied to the storefront price and deducted from TourVaa profit.
                   </>
                 ) : supplierDiscountPercent ? (
                   <>
@@ -587,7 +611,7 @@ export default function TourPricingTab({
                   </>
                 ) : (
                   <>
-                    A <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> is applied only to the publishable storefront pricing table below.
+                    A <strong>{tourvaaDiscountPercent}% TourVaa discount</strong> is applied to the storefront price and deducted from TourVaa profit.
                   </>
                 )
               )}
@@ -691,7 +715,7 @@ export default function TourPricingTab({
                       </td>
                       {/* Actions */}
                       <td className="px-4 py-3.5 text-right align-middle">
-                        <ActionButtons onEdit={() => setEditing({ ...r })} onDelete={() => removeSlab(r.id!)} />
+                        <ActionButtons onEdit={() => setEditing(editSlab(r))} onDelete={() => removeSlab(r.id!)} />
                       </td>
                     </tr>
                   );

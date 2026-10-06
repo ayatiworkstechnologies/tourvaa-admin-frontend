@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck, LuPercent as Percent } from "react-icons/lu";
+import { LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck, LuLandmark as Landmark, LuPercent as Percent } from "react-icons/lu";
+import BankAndInvoicingTab from "@/components/supplier/profile/BankAndInvoicingTab";
 import CompanyInfoTab from "@/components/supplier/profile/CompanyInfoTab";
 import DocumentsTab from "@/components/supplier/profile/DocumentsTab";
 import VehiclesTab from "@/components/supplier/profile/VehiclesTab";
@@ -11,6 +12,7 @@ import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/Sup
 
 const TABS = [
   { id: "company", label: "Company & Security", icon: Building },
+  { id: "billing", label: "Bank & Invoicing", icon: Landmark },
   { id: "vehicles", label: "My Vehicles", icon: Bus },
   { id: "documents", label: "Verification Documents", icon: FileCheck },
   { id: "commission", label: "Commission %", icon: Percent },
@@ -58,6 +60,7 @@ export default function UnifiedSupplierProfilePage() {
         {/* Every tab stays mounted (hidden via CSS, not unmounted) so
             in-progress form edits on inactive tabs survive switching. */}
         <div className={activeTab === "company" ? "" : "hidden"}><CompanyInfoTab /></div>
+        <div className={activeTab === "billing" ? "" : "hidden"}><BankAndInvoicingTab /></div>
         <div className={activeTab === "vehicles" ? "" : "hidden"}><VehiclesTab /></div>
         <div className={activeTab === "documents" ? "" : "hidden"}><DocumentsTab /></div>
         <div className={activeTab === "commission" ? "" : "hidden"}><CommissionTab /></div>

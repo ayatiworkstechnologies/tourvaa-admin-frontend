@@ -20,17 +20,27 @@
  * `border-dash`, `bg-dash-subtle`, etc. instead of inventing new hex values.
  */
 @theme {
-  /* Public marketing site brand palette (midnight navy + burnt orange +
-   * vivid blue), distinct from the --color-dash-* dashboard tokens above. */
+  /* =========================================================================
+   * Public Marketing Site Brand Palette
+   * Midnight Navy (#0B1F3A) + Vivid Royal Blue (#146EF5) + Burnt Orange (#E16B2D)
+   * ========================================================================= */
   --color-pub-primary: #0B1F3A;
+  --color-pub-primary-hover: #071527;
   --color-pub-primary-dark: #0B1F3A;
   --color-pub-secondary: #146EF5;
+  --color-pub-secondary-hover: #0B63CE;
+  --color-pub-secondary-soft: #EFF6FF;
   --color-pub-accent: #E16B2D;
+  --color-pub-accent-hover: #C5581F;
   --color-pub-bg: #FBF7F5;
   --color-pub-fg: #000000;
   --color-pub-muted: #475569;
   --color-pub-border: #E2E8F0;
 
+  /* =========================================================================
+   * Unified Dashboard Portal Brand & Semantic Tokens
+   * Admin / Supplier / Agent / Customer / Affiliate Portals
+   * ========================================================================= */
   --color-dash-text: #121826;
   --color-dash-body: #344054;
   --color-dash-muted: #667085;
@@ -39,28 +49,88 @@
   --color-dash-border-soft: #E9EDF3;
   --color-dash-bg: #F7F9FC;
   --color-dash-bg-muted: #F5F7FA;
-  --color-dash-brand: #43A9F6;
-  --color-dash-brand-hover: #2F9FE9;
-  --color-dash-brand-dark: #238DD7;
+  --color-dash-brand: #1D3A6D;
+  --color-dash-brand-hover: #17315D;
+  --color-dash-brand-dark: #102649;
+
+  /* Dedicated Portal Accent Utilities */
+  --color-portal-admin: #1D3A6D;
+  --color-portal-admin-hover: #17315D;
+  --color-portal-admin-dark: #102649;
+  --color-portal-admin-bg: #F5F7FB;
+  --color-portal-admin-soft: #EDF2FA;
+
+  --color-portal-supplier: #16833A;
+  --color-portal-supplier-hover: #117331;
+  --color-portal-supplier-dark: #0D5C29;
+  --color-portal-supplier-bg: #F5FAF7;
+  --color-portal-supplier-soft: #EAF7EF;
+
+  --color-portal-agent: #2563EB;
+  --color-portal-agent-hover: #1D4ED8;
+  --color-portal-agent-dark: #1E3A8A;
+  --color-portal-agent-bg: #F6F8FC;
+  --color-portal-agent-soft: #EFF6FF;
+
+  --color-portal-customer: #1478F2;
+  --color-portal-customer-hover: #0B63CE;
+  --color-portal-customer-dark: #0A4FA8;
+  --color-portal-customer-bg: #F7FAFF;
+  --color-portal-customer-soft: #EFF6FF;
+
+  --color-portal-affiliate: #7E22CE;
+  --color-portal-affiliate-hover: #6B21A8;
+  --color-portal-affiliate-dark: #4C1D95;
+  --color-portal-affiliate-bg: #FAF7FE;
+  --color-portal-affiliate-soft: #F3E8FD;
 }
 
 :root {
+  /* Typography Stacks */
   --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-onest: "Onest Variable", "Segoe UI", sans-serif;
   --font-body: var(--font-inter);
   --font-heading: "Onest Variable", "Segoe UI", sans-serif;
-  --primary: #4f46e5;
-  --primary-dark: #3730a3;
-  --accent: #8b5cf6;
-  --bg-main: #fafafa;
-  --bg-sidebar: #ffffff;
+
+  /* Global Core Brand Tokens */
+  --primary: #146EF5;
+  --primary-dark: #0B63CE;
+  --accent: #E16B2D;
+  --bg-main: #FBF7F5;
+  --bg-sidebar: #FFFFFF;
   --text-main: #000000;
   --text-muted: #52525b;
-  --border: #e4e4e7;
-  --admin-color: #00FFFF;
-  --supplier-color: #FF00FF;
-  --agent-color: #FFFF00;
-  --customer-color: #4f46e5;
+  --border: #E2E8F0;
+
+  /* Standardized Role & Portal Accent Identifiers */
+  --admin-color: #1D3A6D;
+  --admin-color-hover: #17315D;
+  --admin-color-dark: #102649;
+  --supplier-color: #16833A;
+  --supplier-color-hover: #117331;
+  --supplier-color-dark: #0D5C29;
+  --agent-color: #2563EB;
+  --agent-color-hover: #1D4ED8;
+  --agent-color-dark: #1E3A8A;
+  --customer-color: #1478F2;
+  --customer-color-hover: #0B63CE;
+  --customer-color-dark: #0A4FA8;
+  --affiliate-color: #7E22CE;
+  --affiliate-color-hover: #6B21A8;
+  --affiliate-color-dark: #4C1D95;
+
+  /* Baseline Portal Theme CSS Variables (overridden dynamically per portal layout) */
+  --color-dash-brand: #1D3A6D;
+  --color-dash-brand-hover: #17315D;
+  --color-dash-brand-dark: #102649;
+  --color-dash-bg: #F5F7FB;
+  --color-dash-bg-muted: #EEF2F7;
+  --color-dash-border: #DDE4EE;
+  --color-dash-border-soft: #E9EDF3;
+  --portal-hero-from: #101A33;
+  --portal-hero-via: #1D3A6D;
+  --portal-hero-to: #315B92;
+  --portal-soft: #EDF2FA;
 }
 
 * {
@@ -403,9 +473,9 @@ button {
   }
 }
 
-/* Aurora CTA gradient - sky blue to adventure orange */
+/* Aurora CTA gradient - brand blue to adventure orange */
 .cta-gradient {
-  background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 45%, #EA580C 100%);
+  background: linear-gradient(135deg, var(--color-pub-secondary, #146EF5) 0%, #0284C7 45%, var(--color-pub-accent, #E16B2D) 100%);
 }
 
 /* CTA section dot grid */
@@ -442,13 +512,13 @@ button {
 }
 
 .cta-btn-primary {
-  background: linear-gradient(135deg, #0EA5E9 0%, #EA580C 100%);
+  background: linear-gradient(135deg, var(--color-pub-secondary, #146EF5) 0%, var(--color-pub-accent, #E16B2D) 100%);
   color: #ffffff !important;
-  box-shadow: 0 8px 32px rgba(14, 165, 233, 0.4);
+  box-shadow: 0 8px 32px rgba(20, 110, 245, 0.4);
   transition: all 0.3s ease;
 }
 .cta-btn-primary:hover {
-  box-shadow: 0 12px 48px rgba(14, 165, 233, 0.6);
+  box-shadow: 0 12px 48px rgba(20, 110, 245, 0.6);
   transform: translateY(-2px) scale(1.02);
 }
 
@@ -465,7 +535,7 @@ button {
 
 .cta-white-btn {
   background-color: #ffffff;
-  color: #0EA5E9 !important;
+  color: var(--color-pub-secondary, #146EF5) !important;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15);
   transition: all 0.3s ease;
 }
@@ -587,23 +657,23 @@ button {
 /* Public booking funnel form primitives */
 .counter {
   display: inline-flex; height: 2.25rem; width: 2.25rem; align-items: center; justify-content: center;
-  border: 1px solid #e2e8f0; border-radius: 9999px; background: #fff;
+  border: 1px solid var(--color-pub-border, #e2e8f0); border-radius: 9999px; background: #fff;
 }
 .counter:disabled { opacity: .4; }
-.field-label { display: block; font-size: .75rem; font-weight: 700; color: #475569; }
+.field-label { display: block; font-size: .75rem; font-weight: 700; color: var(--color-pub-muted, #475569); }
 .field {
-  margin-top: .5rem; width: 100%; border: 1px solid #e2e8f0; border-radius: .75rem;
+  margin-top: .5rem; width: 100%; border: 1px solid var(--color-pub-border, #e2e8f0); border-radius: .75rem;
   background: #f8fafc; padding: .75rem; font-size: .875rem; outline: none;
 }
-.field:focus { border-color: #0f766e; background: #fff; box-shadow: 0 0 0 4px rgb(15 118 110 / .1); }
+.field:focus { border-color: var(--public-primary, #146EF5); background: #fff; box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-pub-secondary, #146EF5) 10%, transparent); }
 .nav-primary, .nav-secondary {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   border-radius: .75rem; padding: .75rem 1.25rem; font-size: .875rem; font-weight: 800;
 }
-.nav-primary { background: #0f766e; color: #fff; }
-.nav-primary:hover { background: #115e59; }
+.nav-primary { background: var(--public-primary, #146EF5); color: #fff; }
+.nav-primary:hover { background: var(--public-primary-hover, #0B63CE); }
 .nav-primary:disabled { opacity: .5; }
-.nav-secondary { border: 1px solid #cbd5e1; background: #fff; color: #334155; }
+.nav-secondary { border: 1px solid var(--color-pub-border, #cbd5e1); background: #fff; color: var(--color-dash-body, #334155); }
 
 /* Shared public theme: keeps every marketing route visually connected to the homepage. */
 .public-site {
@@ -911,5 +981,5 @@ body.lightbox-open [class*="eapp-website-translator"] {
 }
 
 
-.skip-link { position: fixed; top: 8px; left: 8px; z-index: 9999; transform: translateY(-200%); padding: 12px 18px; background: white; color: #0b1527; border: 2px solid #1478f2; border-radius: 8px; }
+.skip-link { position: fixed; top: 8px; left: 8px; z-index: 9999; transform: translateY(-200%); padding: 12px 18px; background: white; color: var(--color-pub-primary, #0B1F3A); border: 2px solid var(--color-pub-secondary, #146EF5); border-radius: 8px; }
 .skip-link:focus { transform: translateY(0); }

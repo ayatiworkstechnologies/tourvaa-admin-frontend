@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuPlay as Play, LuSend as Send, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
@@ -436,6 +436,7 @@ function StatusHistory({ history }: { history: StatusHistory[] }) {
 
 export default function SupplierBookingDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const bookingId = params.id as string;
   const { formatExact: format } = useCurrency();
 
@@ -487,6 +488,10 @@ export default function SupplierBookingDetailPage() {
       } else if (type === "cancel") {
         await api.patch(`/supplier/bookings/${bookingId}/cancel`, { reason: payload?.reason });
         toast.success("Tourvaa has been notified. The booking is awaiting internal supplier reassignment.");
+        // The record remains in the Operations queue, but leaves this
+        // supplier's work queue immediately after the withdrawal is filed.
+        router.replace("/supplier/bookings");
+        return;
       }
       void load();
     } catch (e: unknown) {
@@ -533,12 +538,16 @@ export default function SupplierBookingDetailPage() {
         message: newMessage.trim(),
         subject: "Message from supplier",
         visibility: "internal",
-        message_type: "supplier_message",
+        // Must use the server's BookingCommunicationCreate enum. The old
+        // supplier_message value was rejected as a 422 before saving.
+        message_type: "supplier_update",
       });
       setNewMessage("");
       await load();
-    } catch {
-      toast.error("Could not send message.");
+    } catch (error: unknown) {
+      const detail = (error as { response?: { data?: { detail?: string | Array<{ msg?: string }> } } })?.response?.data?.detail;
+      const message = Array.isArray(detail) ? detail.map((item) => item.msg).filter(Boolean).join(" ") : detail;
+      toast.error(message || "Could not send message.");
     } finally {
       setSendingMessage(false);
     }

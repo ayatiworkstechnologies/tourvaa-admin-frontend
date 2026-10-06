@@ -1,8 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { LuCalculator as Calculator, LuCircleAlert as AlertCircle, LuWallet as Banknote, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuLoaderCircle as Loader2, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
+import { LuCalculator as Calculator, LuCircleAlert as AlertCircle, LuWallet as Banknote, LuClock3 as Clock3, LuReceiptText as ReceiptText, LuRefreshCw as RefreshCw, LuTrendingDown as TrendingDown, LuTrendingUp as TrendingUp, LuWallet as Wallet } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
@@ -86,13 +85,6 @@ export default function EarningsPage() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [requestOpen, setRequestOpen] = useState(false);
-  const [requestAmount, setRequestAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
-  const [notes, setNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [requestError, setRequestError] = useState("");
-  const [requestSuccess, setRequestSuccess] = useState("");
 
   const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
   const [ledgerPage, setLedgerPage] = useState(1);
@@ -198,11 +190,11 @@ export default function EarningsPage() {
     setLoading(true);
     setError("");
     try {
-      // The "Available Payout" summary below sums every fetched ledger entry
+      // The pending-payout summary below sums every fetched ledger entry
       // client-side, so this must cover the supplier's full ledger, not a
       // paginated slice -- a supplier with more entries than the page size
       // would otherwise see (and be capped at) an understated balance even
-      // though the backend's own payout validation checks the real total.
+      // even when the supplier has more entries than the default page size.
       const [ledgerRes, payoutRes] = await Promise.allSettled([
         api.get("/supplier-ledgers", { params: { limit: 1000 } }),
         api.get("/supplier-payouts", { params: { limit: 20 } }),
@@ -218,10 +210,8 @@ export default function EarningsPage() {
 
   useEffect(() => { void load(); }, []);
 
-  // Ledger entries can span more than one currency - summary totals must be
-  // computed within a single currency at a time, never summed across them,
-  // or the "Available Payout" figure (which gets auto-filled into a real
-  // payout request) would be a meaningless mix of unlike currency amounts.
+  // Ledger entries can span more than one currency, so summary totals are
+  // always computed within a single currency and never mixed.
   const currencies = useMemo(
     () => Array.from(new Set(entries.map((e) => (e.currency || "").toUpperCase()).filter(Boolean))),
     [entries]
@@ -265,56 +255,13 @@ export default function EarningsPage() {
     };
   }, [entries, payouts, selectedCurrency, currencies]);
 
-  function openAutoRequest() {
-    setRequestOpen(true);
-    setRequestError("");
-    setRequestSuccess("");
-    setRequestAmount(summary.pending > 0 ? summary.pending.toFixed(2) : "");
-  }
-
-  async function submitPayoutRequest() {
-    const amount = Number(requestAmount);
-    if (!amount || amount <= 0) {
-      setRequestError("Enter a valid payout amount.");
-      return;
-    }
-    if (amount > summary.pending) {
-      setRequestError("Requested amount cannot exceed pending payable balance.");
-      return;
-    }
-    setSubmitting(true);
-    setRequestError("");
-    setRequestSuccess("");
-    try {
-      await api.post("/supplier-payouts", {
-        amount,
-        currency: summary.currency,
-        payment_method: paymentMethod,
-        notes: notes || `Auto payout request from earnings for ${money(amount, summary.currency)}`,
-      });
-      setRequestSuccess("Payout request submitted successfully.");
-      setRequestOpen(false);
-      setRequestAmount("");
-      setNotes("");
-      await load();
-    } catch (e: unknown) {
-      const msg =
-        (e as { response?: { data?: { detail?: string; message?: string } } })?.response?.data?.detail ??
-        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Failed to request payout.";
-      setRequestError(typeof msg === "string" ? msg : "Failed to request payout.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   const summaryCards = [
     { label: "Gross Sales", value: money(summary.gross, summary.currency), icon: TrendingUp, color: "text-blue-600 bg-blue-50" },
     { label: "Tourvaa Commission", value: money(summary.commission, summary.currency), icon: TrendingDown, color: "text-amber-600 bg-amber-50" },
     { label: "Net Payable", value: money(summary.net, summary.currency), icon: Wallet, color: "text-emerald-600 bg-emerald-50" },
     { label: "Paid", value: money(summary.paid, summary.currency), icon: Banknote, color: "text-purple-600 bg-purple-50" },
-    { label: "Available Payout", value: money(summary.pending, summary.currency), icon: Clock3, color: "text-rose-600 bg-rose-50" },
-    { label: "Reserved in Requests", value: money(summary.reserved, summary.currency), icon: ReceiptText, color: "text-indigo-600 bg-indigo-50" },
+    { label: "Pending Monthly Payout", value: money(summary.pending, summary.currency), icon: Clock3, color: "text-rose-600 bg-rose-50" },
+    { label: "Already Scheduled", value: money(summary.reserved, summary.currency), icon: ReceiptText, color: "text-indigo-600 bg-indigo-50" },
   ];
 
   const columns: DataTableColumn<LedgerEntry>[] = [
@@ -358,36 +305,9 @@ export default function EarningsPage() {
             <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-[#D5E6DB] bg-white px-4 py-2.5 text-xs font-black text-[#526C5D] hover:bg-[#F0F8F3] disabled:opacity-60">
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh
             </button>
-            <button type="button" onClick={openAutoRequest} disabled={summary.pending <= 0} className="inline-flex items-center gap-2 rounded-xl bg-[#16833A] px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-[#117331] disabled:opacity-50">
-              <Banknote size={16} /> Auto Request Payout
-            </button>
           </div>
         </div>
       </SupplierPageHeader>
-
-      {requestSuccess && <div className="mt-4 mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700"><CheckCircle2 size={16} /> {requestSuccess}</div>}
-      {requestError && <div className="mt-4 mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600"><AlertCircle size={16} /> {requestError}</div>}
-
-      {requestOpen && (
-        <div className="mt-4 mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="font-black text-dash-text">Auto payout request</h2>
-              <p className="mt-0.5 text-sm text-dash-muted">Available balance: <strong>{money(summary.pending, summary.currency)}</strong></p>
-            </div>
-            <Link href="/supplier/payouts" className="text-sm font-bold text-emerald-700 hover:underline">View payout history</Link>
-          </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
-            <label><span className={labelCls}>Amount</span><input type="number" min="0.01" max={summary.pending} step="0.01" value={requestAmount} onChange={(e) => setRequestAmount(e.target.value)} className={inputCls} /></label>
-            <label><span className={labelCls}>Payment Method</span><select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className={inputCls}><option value="bank_transfer">Bank Transfer</option><option value="cheque">Cheque</option><option value="online">Online Payment</option></select></label>
-            <label><span className={labelCls}>Notes</span><input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional notes" className={inputCls} /></label>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button type="button" onClick={submitPayoutRequest} disabled={submitting} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60">{submitting ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />} Submit Request</button>
-            <button type="button" onClick={() => setRequestOpen(false)} className="rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg-muted">Cancel</button>
-          </div>
-        </div>
-      )}
 
       <div className="mt-4 mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {summaryCards.map(({ label, value, icon: Icon, color }) => (

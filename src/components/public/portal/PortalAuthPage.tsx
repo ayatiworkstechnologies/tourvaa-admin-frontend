@@ -347,7 +347,7 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
   const key = PENDING_KEY(config.accountType);
   const [form, setForm] = useState({ first_name: "", email: "", country_code: "", mobile_number: "", accepted_terms: false });
   const [phoneIso, setPhoneIso] = useState<CountryCode | "">("");
-  const { countries, loading: countriesLoading } = useGeoCountries();
+  const { countries } = useGeoCountries();
   const { setCountry } = useCurrency();
   const [sentEmail, setSentEmail] = useState(() => readPending(key)?.email ?? "");
   const [changeToken, setChangeToken] = useState(() => readPending(key)?.changeToken ?? "");
@@ -373,8 +373,6 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
     const selectedCountry = countries.find((country) => country.code.toUpperCase() === phoneIso);
     if (!validateEmail(form.email)) return setError("Enter a valid email address.");
     if (!phoneIso) return setError("Select your country before entering your mobile number.");
-    if (countriesLoading) return setError("Countries are still loading. Please try again.");
-    if (!selectedCountry) return setError("Select a valid country.");
     if (!validatePhoneForCountry(phoneIso, form.mobile_number)) return setError("Enter a valid mobile number for the selected country.");
     if (!form.accepted_terms) return setError("Accept the Terms and Privacy Policy to continue.");
     setLoading(true);
@@ -385,7 +383,10 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
         startCooldown(email, changeToken);
       } else {
         const res = await api.post("/auth/register", {
-          first_name: form.first_name, email, country_id: selectedCountry.id,
+          // The phone selector intentionally covers every libphonenumber
+          // territory. A country missing from the admin geo catalogue must
+          // not prevent a global supplier from starting registration.
+          first_name: form.first_name, email, country_id: selectedCountry?.id,
           country_iso: phoneIso, country_code: form.country_code, mobile_number: form.mobile_number,
           accepted_terms: form.accepted_terms, account_type: config.accountType, redirect: safeRedirect,
         });

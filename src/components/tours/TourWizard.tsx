@@ -105,11 +105,17 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   const router = useRouter();
   const isSupplier = role === "supplier";
   const basePath = isSupplier ? "/supplier/tours" : "/admin/tours";
+  // SEO is maintained by Tourvaa. Supplier users receive the same editor
+  // without that step, and its remaining steps are renumbered for clarity.
+  const wizardSteps = useMemo(() => {
+    const allowedSteps = isSupplier ? WIZARD_STEPS.filter((step) => step.id !== "seo") : WIZARD_STEPS;
+    return allowedSteps.map((step, index) => ({ ...step, number: String(index + 1).padStart(2, "0") }));
+  }, [isSupplier]);
 
   // The current step lives in the URL (?step=pricing) so a refresh or a shared
   // link lands on the same step, and a freshly created tour opens on step 2.
   const searchParams = useSearchParams();
-  const initialStep = Math.max(0, WIZARD_STEPS.findIndex((st) => st.id === searchParams.get("step")));
+  const initialStep = Math.max(0, wizardSteps.findIndex((st) => st.id === searchParams.get("step")));
   const [activeIndex, setActiveIndex] = useState(initialStep);
   const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([initialStep]));
   const { confirm, dialog } = useConfirm();
@@ -128,8 +134,8 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     setSavedAt(null);
     setPendingSaves(0);
     setAdvanceAfterSave(false);
-    window.history.replaceState(null, "", `?step=${WIZARD_STEPS[index].id}`);
-  }, []);
+    window.history.replaceState(null, "", `?step=${wizardSteps[index].id}`);
+  }, [wizardSteps]);
 
   const selectStep = useCallback(async (index: number) => {
     if (index === activeIndex) return;
@@ -147,8 +153,8 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   }, [activeIndex, dirty, confirm, moveToStep]);
 
   const goNext = useCallback(() => {
-    void selectStep(Math.min(WIZARD_STEPS.length - 1, activeIndex + 1));
-  }, [activeIndex, selectStep]);
+    void selectStep(Math.min(wizardSteps.length - 1, activeIndex + 1));
+  }, [activeIndex, selectStep, wizardSteps.length]);
 
   // Browser refresh/close with unsaved edits.
   useEffect(() => {
@@ -168,8 +174,8 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   // saves per item through its own add/edit dialog (pricing slabs, itinerary
   // days, gallery uploads, ...), so it has no Save button - only Previous/Next.
   const stepFormIds = useMemo(
-    () => STEP_FORM_IDS[WIZARD_STEPS[activeIndex]?.id] ?? [],
-    [activeIndex],
+    () => STEP_FORM_IDS[wizardSteps[activeIndex]?.id] ?? [],
+    [activeIndex, wizardSteps],
   );
 
   // "Save & Next": advance only once every form on the step has saved (a form
@@ -295,9 +301,9 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
           actions={[{ label: isSupplier ? "Back to My Tours" : "Back to Tours", href: basePath, icon: ArrowLeft, variant: "secondary" }]}
         />
         <div className="mt-4 flex flex-col gap-4 lg:flex-row">
-          <WizardSideStepper role={role} activeIndex={0} visitedIndexes={new Set()} statuses={{}} onSelect={() => {}} disabled />
+          <WizardSideStepper role={role} activeIndex={0} visitedIndexes={new Set()} statuses={{}} onSelect={() => {}} steps={wizardSteps} disabled />
           <div className="min-w-0 flex-1">
-            <TourWorkspaceContent role={role} stepLabel={`Step ${WIZARD_STEPS[0].number} of ${WIZARD_STEPS.length} · ${WIZARD_STEPS[0].label}`}>
+            <TourWorkspaceContent role={role} stepLabel={`Step ${wizardSteps[0].number} of ${wizardSteps.length} · ${wizardSteps[0].label}`}>
               <TourFormPage
                 embedded
                 role={role}
@@ -323,7 +329,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
               ]}
             />
             <p className="mt-3 text-center text-[11px] font-semibold text-dash-subtle">
-              Steps 2–{WIZARD_STEPS.length} unlock once you save the basics above.
+              Steps 2–{wizardSteps.length} unlock once you save the basics above.
             </p>
           </div>
         </div>
@@ -367,7 +373,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     isSupplier &&
     tour &&
     (["pending_approval", "repricing_required"].includes((tour.status ?? "").toLowerCase()) || Boolean(banner));
-  const activeStep = WIZARD_STEPS[activeIndex];
+  const activeStep = wizardSteps[activeIndex];
   const activeKey = activeStep.id;
   const openCommentsForStep = comments.filter((c) => activeStep.reviewSections.includes(c.section));
   const isFirstStep = activeIndex === 0;
@@ -451,7 +457,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
 
       {dialog}
       <div className="mt-4 flex flex-col gap-4 lg:flex-row">
-        <WizardSideStepper role={role} activeIndex={activeIndex} visitedIndexes={visitedSteps} statuses={statuses} onSelect={(i) => void selectStep(i)} />
+        <WizardSideStepper role={role} activeIndex={activeIndex} visitedIndexes={visitedSteps} statuses={statuses} onSelect={(i) => void selectStep(i)} steps={wizardSteps} />
         <div className="min-w-0 flex-1">
 
           {openCommentsForStep.length > 0 && (
@@ -478,7 +484,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
           )}
 
           <div onInputCapture={trackEdit} onChangeCapture={trackEdit}>
-          <TourWorkspaceContent role={role} stepLabel={`Step ${activeStep.number} of ${WIZARD_STEPS.length} · ${activeStep.label}`}>
+          <TourWorkspaceContent role={role} stepLabel={`Step ${activeStep.number} of ${wizardSteps.length} · ${activeStep.label}`}>
             {activeKey === "basic" && (
               <TourFormPage
                 tourId={tourId}
@@ -488,7 +494,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 formId="wizard-form-basic"
                 initialData={tour ?? undefined}
                 onSaved={afterFormSaved}
-                onGoToPricing={() => void selectStep(WIZARD_STEPS.findIndex((s) => s.id === "pricing"))}
+                onGoToPricing={() => void selectStep(wizardSteps.findIndex((s) => s.id === "pricing"))}
               />
             )}
             {activeKey === "location" && (
@@ -549,6 +555,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 isSupplier={isSupplier}
                 status={String(tour.status ?? "")}
                 statuses={statuses}
+                steps={wizardSteps}
                 onEditStep={(i) => void selectStep(i)}
                 canSubmit={Boolean(canSubmit)}
                 submitting={submitting}

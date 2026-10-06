@@ -119,6 +119,13 @@ export type BookingConversation = {
 
 export type BookingConversationThread = BookingConversation & { messages: BookingMessage[] };
 
+/** Admin audit view of the customer/agent and supplier conversation(s) for
+ * one booking. Unlike the participant endpoint, this never creates a thread. */
+export async function getAdminBookingConversations(bookingId: number | string) {
+  const response = await api.get(`/admin/messages/booking-conversations/${bookingId}`);
+  return (response.data?.data ?? []) as BookingConversationThread[];
+}
+
 /** For the customer/agent side: fetches (and lazily creates) their thread
  * with the supplier on a given booking. */
 export async function getBookingConversation(bookingId: number) {

@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import RichText from "@/components/public/home/RichText";
 import { list, useSectionCopy } from "@/components/public/home/useSectionCopy";
 import { useSectionVisibility } from "@/components/public/home/sectionVisibility";
@@ -21,7 +21,9 @@ import {
   LuLayoutDashboard as LayoutDashboard,
   LuLogOut as LogOut,
   LuMenu as Menu,
+  LuMic as Mic,
   LuMessageSquare as MessageSquare,
+  LuSearch as Search,
   LuScale as Scale,
   LuShieldCheck as ShieldCheck,
   LuSparkles as Sparkles,
@@ -229,7 +231,9 @@ export default function PublicHeader() {
           )}
         </Link>
 
-                <nav
+        <HeaderTourSearch />
+
+        <nav
           aria-label="Account and trip tools"
           className="hidden shrink-0 items-center gap-5 lg:flex lg:gap-7"
         >
@@ -336,10 +340,11 @@ export default function PublicHeader() {
       </div>
       {open && (
         <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg lg:hidden">
-                    <Link
+          <HeaderTourSearch compact onSearch={() => setOpen(false)} />
+          <Link
             href="/wishlist"
             onClick={() => setOpen(false)}
-            className="flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"
+            className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"
           >
             <Heart size={15} />
             Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
@@ -613,6 +618,66 @@ const portalNavigation = [
   { label: "Agent Portal", href: "/agent-portal", icon: Briefcase },
   { label: "Supplier Portal", href: "/supplier-portal", icon: Building },
 ];
+
+type SpeechRecognitionInstance = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  start: () => void;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
+function HeaderTourSearch({ compact = false, onSearch }: { compact?: boolean; onSearch?: () => void }) {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [listening, setListening] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const submit = (value = query) => {
+    const term = value.trim();
+    if (!term) return;
+    onSearch?.();
+    router.push(`/tours?search=${encodeURIComponent(term)}`);
+  };
+
+  const startVoiceSearch = () => {
+    const browserWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
+    const Recognition = browserWindow.SpeechRecognition || browserWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      inputRef.current?.focus();
+      return;
+    }
+    const recognition = new Recognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript || "";
+      setQuery(transcript);
+      submit(transcript);
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    setListening(true);
+    recognition.start();
+  };
+
+  return (
+    <form onSubmit={(event) => { event.preventDefault(); submit(); }} className={`relative ${compact ? "w-full" : "hidden min-w-0 flex-1 lg:block lg:max-w-xl"}`} role="search">
+      <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tours, cities or itineraries" aria-label="Search tours, cities or itineraries" className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-20 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-pub-secondary focus:bg-white focus:ring-2 focus:ring-pub-secondary/15" />
+      <button type="button" onClick={startVoiceSearch} aria-label="Search by voice" title="Search by voice" className={`absolute right-9 top-1/2 -translate-y-1/2 rounded-md p-1.5 transition ${listening ? "bg-rose-100 text-rose-600 animate-pulse" : "text-slate-500 hover:bg-slate-100 hover:text-pub-secondary"}`}><Mic size={16} /></button>
+      <button type="submit" aria-label="Search tours" className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-pub-primary p-1.5 text-white transition hover:bg-pub-secondary"><Search size={15} /></button>
+    </form>
+  );
+}
 
 function PortalNavigationLinks({ onClose }: { onClose: () => void }) {
   return (

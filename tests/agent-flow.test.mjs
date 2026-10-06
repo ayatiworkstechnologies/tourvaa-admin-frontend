@@ -51,6 +51,7 @@ const publicBooking = read("src/app/(public)/booking/[id]/page.tsx");
 check("retired agent booking wizard redirects to the booking list", create.includes('redirect("/agent/bookings")'));
 check("agent booking list is the only booking workspace", !read("src/app/agent/layout.tsx").includes('href: "/agent/bookings/create"'));
 check("agent tour cards open the shared public tour booking flow", read("src/app/agent/tours/page.tsx").includes("publicTourUrl(tour)"));
+check("agent tour cards display active discounts on their images", read("src/app/agent/tours/page.tsx").includes("DiscountCardBadge") && read("src/app/agent/tours/page.tsx").includes("hasActiveDiscount(tour)"));
 check("agents can book from the shared public booking page", publicBooking.includes('["agent", "agent-reseller"]') && publicBooking.includes('api.post("/bookings"'));
 check("shared booking page keeps agent-only customer and commercial controls gated", publicBooking.includes("AgentCustomerSelector") && publicBooking.includes("{isAgent && (") && publicBooking.includes("<AgentCommercialFields"));
 check("public agent booking uses the selected customer as primary traveller", publicBooking.includes("const leadName = isAgent ? agentCustomerName : selfBookingName") && publicBooking.includes("passenger.firstName = first"));
@@ -79,11 +80,13 @@ check("dashboard exposes recoverable partial-load errors", dashboard.includes("P
 check("commission requests are managed from the agent dashboard", dashboard.includes('api.post("/agents/me/commission-request"') && dashboard.includes("Commission Setup"));
 
 const detail = read("src/app/agent/bookings/[id]/page.tsx");
+check("agent booking detail explains intentional customer-agent shared visibility", detail.includes("Shared customer booking.") && detail.includes("visible in both the Agent and Customer portals"));
 check("detail uses serialized traveller counts", detail.includes("booking.no_of_adults") && detail.includes("booking.no_of_children"));
-check("detail exposes supplier decision", detail.includes("Supplier decision") && detail.includes("supplier_acceptance_status"));
-check("detail explains payment to confirmation execution", detail.includes("Booking Execution Flow") && detail.includes("Supplier decision") && detail.includes("Confirmed"));
+check("detail uses the same customer-facing booking lifecycle labels", detail.includes("customerFacingBookingStatus") && ["Booking Request Received", "Booking Confirmed", "Ongoing", "Completed", "Cancelled"].every((label) => detail.includes(label)));
+check("detail gives booking-request receipt wording without exposing internal execution flow", detail.includes("Your booking request has been received successfully.") && !detail.includes("Booking Execution Flow") && !detail.includes("Supplier decision"));
 check("detail shows the settlement summary without a duplicate price breakdown", detail.includes("Agent Payments") && detail.includes("Approved Agent Commission") && !detail.includes("Price Breakdown") && detail.includes("Status Timeline"));
 check("agent cancellation requires eligibility and confirmation", ["Request Cancellation", "is_free_cancellation_eligible", "Confirm cancellation request", "Yes, continue", "contact Tourvaa"].every((text) => detail.includes(text)));
+check("agent cancellation warning is clear and does not duplicate support wording", detail.includes("Please contact Tourvaa Support for cancellation assistance or a travel-date change.") && !detail.includes("Help Desk for cancellation assistance"));
 check("agent can reopen payment for an unpaid booking", detail.includes("BookingPaymentModal") && detail.includes("Pay Now"));
 check("agent booking handles Stripe and PayPal returns", detail.includes('/payments/stripe/confirm-return') && detail.includes('/payments/paypal/capture'));
 check("booking detail failures can be retried", detail.includes("setRefreshKey") && detail.includes("Retry"));
@@ -117,6 +120,7 @@ check("agent page system retains the calm blue visual identity", agentPage.inclu
 check("agent dashboard prioritizes list and catalogue actions", ["Browse Tours", "My Customers", "Invoices"].every((label) => dashboard.includes(label)) && !dashboard.includes('href: "/agent/bookings/create"'));
 check("agent catalogue exposes reserve and full-payment actions", tours.includes("AgentSection") && tours.includes("Reserve Now") && tours.includes("Pay in Full Today") && tours.includes("agent_action=reserve") && tours.includes("agent_action=full"));
 check("agent booking action is preserved into settlement", publicBooking.includes('searchParams.get("agent_action")') && publicBooking.includes('"pay_later"') && publicBooking.includes('payment_type: "full"'));
+check("agent Reserve Now is a no-deposit invoice flow", publicBooking.includes("Reserve your booking now with no deposit") && !publicBooking.includes("agent_reserve_deposit") && !publicBooking.includes("agentReserveSplit"));
 check("agent booking creation uses the shared public booking workflow", publicBooking.includes("export default function DynamicTourBookingPage") && publicBooking.includes("AgentCustomerSelector"));
 const agentUi = [...agentInnerPages, layout, agentPage].join("\n");
 check("agent portal uses the calm blue theme", portalTheme.includes('"--color-dash-brand": "#2563EB"') && layout.includes("portalThemeStyles.agent"));

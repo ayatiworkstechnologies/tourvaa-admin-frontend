@@ -90,6 +90,7 @@ export default function AgencyDetailsTab() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedStateId, setSelectedStateId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [bankLocked, setBankLocked] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [retryKey, setRetryKey] = useState(0);
 
@@ -123,6 +124,7 @@ export default function AgencyDetailsTab() {
         const bi = (a.business_info ?? {}) as Record<string, unknown>;
         const primary = Array.isArray(a.contacts) ? a.contacts.find((contact: { is_primary?: boolean }) => contact.is_primary) ?? a.contacts[0] : {};
         const invoice = (a.invoicing ?? {}) as Record<string, unknown>;
+        setBankLocked(Boolean(invoice.bank_details_locked));
         setForm({
           profile_image: p.profile_image || "",
           agent_name: String(a.agent_name || a.name || ""),
@@ -181,7 +183,10 @@ export default function AgencyDetailsTab() {
             destinations_sold: form.destinations_sold,
           },
           contact: { contact_name: form.primary_contact_name, first_name: form.primary_contact_first_name, last_name: form.primary_contact_last_name, designation: form.primary_contact_designation, email: form.primary_contact_email, phone: form.primary_contact_phone, preferred_contact_method: form.primary_contact_method },
-          invoicing: { preferred_payment_method: form.preferred_payment_method, contact_name: form.invoice_contact_name, email: form.invoice_email, phone: form.invoice_phone, account_name: form.account_name, account_number: form.account_number, bank_name: form.bank_name, bank_branch: form.bank_branch, swift_code: form.swift_code, iban: form.iban, billing_address: form.billing_address },
+          invoicing: {
+            contact_name: form.invoice_contact_name, email: form.invoice_email, phone: form.invoice_phone, billing_address: form.billing_address,
+            ...(bankLocked ? {} : { preferred_payment_method: form.preferred_payment_method, account_name: form.account_name, account_number: form.account_number, bank_name: form.bank_name, bank_branch: form.bank_branch, swift_code: form.swift_code, iban: form.iban }),
+          },
         }),
       ]);
       await refreshSession();
@@ -401,14 +406,14 @@ export default function AgencyDetailsTab() {
             <h4 className="text-sm font-black text-dash-text">Bank, Invoicing & Billing Details</h4>
             <p className="mt-1 text-xs text-dash-muted">All invoices will be emailed to the invoicing contact below.</p>
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Payment Method</span><select value={form.preferred_payment_method} onChange={e => set("preferred_payment_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm"><option value="">Select method</option><option value="bank_transfer">Bank Transfer</option><option value="paypal">PayPal</option></select></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Payment Method</span><select disabled={bankLocked} value={form.preferred_payment_method} onChange={e => set("preferred_payment_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm"><option value="">Select method</option><option value="bank_transfer">Bank Transfer</option><option value="paypal">PayPal</option></select></label>
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Invoice Contact Name</span><input value={form.invoice_contact_name} onChange={e => set("invoice_contact_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Invoice Email</span><input type="email" value={form.invoice_email} onChange={e => set("invoice_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Invoice Phone</span><input value={form.invoice_phone} onChange={e => set("invoice_phone", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Name</span><input value={form.account_name} onChange={e => set("account_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Number / IBAN</span><input value={form.iban || form.account_number} onChange={e => set("iban", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Name</span><input value={form.bank_name} onChange={e => set("bank_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Branch / SWIFT / BIC</span><input value={form.swift_code || form.bank_branch} onChange={e => set("swift_code", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Name</span><input disabled={bankLocked} value={form.account_name} onChange={e => set("account_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Number / IBAN</span><input disabled={bankLocked} value={form.iban || form.account_number} onChange={e => set("iban", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Name</span><input disabled={bankLocked} value={form.bank_name} onChange={e => set("bank_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Branch / SWIFT / BIC</span><input disabled={bankLocked} value={form.swift_code || form.bank_branch} onChange={e => set("swift_code", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
               <label className="block sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Billing / Invoice Address</span><input value={form.billing_address} onChange={e => set("billing_address", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
             </div>
           </div>

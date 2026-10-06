@@ -187,13 +187,53 @@ function ExtraTourSection({ section, index }: { section: HomeExtraSection; index
   );
 }
 
+const AUTOMATIC_ADVENTURE_SECTION_ID = "system-adventure-tours";
+
+function automaticAdventureSection(categorySlug: string): HomeExtraSection {
+  return {
+    id: AUTOMATIC_ADVENTURE_SECTION_ID,
+    enabled: true,
+    type: "tours",
+    title: "Adventure Tours",
+    subtitle: "Explore unforgettable outdoor experiences and active escapes.",
+    after: "trending",
+    body: "",
+    image: "",
+    image_position: "left",
+    badge: "",
+    button_text: "",
+    button_link: "",
+    cards: [],
+    source: "category",
+    category: categorySlug,
+    subcategory: "",
+    tour_ids: [],
+    limit: 8,
+    view_all_text: "View all adventure tours",
+    view_all_url: "",
+  };
+}
+
 // One request per page load, shared by every <HomeExtraSections after=...> slot.
 let pendingSections: Promise<HomeExtraSection[]> | null = null;
 function loadSections() {
-  pendingSections ??= fetchContentBlock(EXTRA_SECTIONS_BLOCK_KEY)
-    .then((res) => {
+  pendingSections ??= Promise.all([
+    fetchContentBlock(EXTRA_SECTIONS_BLOCK_KEY),
+    fetchPublicCategories().catch(() => []),
+  ])
+    .then(([res, categories]) => {
       const block = normalizeExtraSections(res?.data);
-      return block.enabled ? block.sections.filter((s) => s.enabled && s.title.trim()) : [];
+      const sections = block.enabled ? block.sections.filter((s) => s.enabled && s.title.trim()) : [];
+      const adventure = categories.find((category) =>
+        category.category_name.trim().toLowerCase() === "adventure tours" || category.slug === "adventure-tours",
+      );
+      // A public category is returned only when it has published tours. Add a
+      // dedicated homepage carousel for Adventure Tours unless CMS already
+      // defines one for the same category, avoiding duplicated carousels.
+      if (adventure && !sections.some((section) => section.type === "tours" && section.source === "category" && section.category === adventure.slug)) {
+        sections.push(automaticAdventureSection(adventure.slug));
+      }
+      return sections;
     })
     .catch(() => []);
   return pendingSections;

@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { LuCircleAlert as AlertCircle, LuHandCoins as Banknote, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2, LuPlus as Plus } from "react-icons/lu";
+import { useEffect, useState } from "react";
+import { LuBanknote as Banknote, LuCircleAlert as AlertCircle, LuCalendarDays as CalendarDays } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -19,339 +19,69 @@ type Payout = {
   paid_at?: string;
 };
 
-type LedgerEntry = {
-  amount_pending?: number | string;
-  currency?: string;
-  status?: string;
-};
-
-function statusColors(s: string) {
-  const v = (s || "").toLowerCase();
-  if (["paid", "completed", "settled"].includes(v))
-    return "bg-emerald-50 text-emerald-700";
-  if (["pending", "processing", "approved"].includes(v))
-    return "bg-amber-50 text-amber-700";
-  if (["failed", "rejected", "cancelled"].includes(v))
-    return "bg-red-50 text-red-600";
-  return "bg-slate-50 text-slate-600";
+function monthEndPayoutDate() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).toLocaleDateString("en-US", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 }
 
-const inputCls =
-  "w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
-const labelCls = "block text-xs font-bold text-dash-body mb-1.5";
+function statusColors(status: string) {
+  const value = status.toLowerCase();
+  if (["paid", "completed", "settled"].includes(value)) return "bg-emerald-50 text-emerald-700";
+  if (["pending", "processing", "approved"].includes(value)) return "bg-amber-50 text-amber-700";
+  if (["failed", "rejected", "cancelled"].includes(value)) return "bg-red-50 text-red-600";
+  return "bg-slate-50 text-slate-600";
+}
 
 export default function PayoutsPage() {
   const { formatExact: money } = useCurrency();
   const [payouts, setPayouts] = useState<Payout[]>([]);
-  const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showForm, setShowForm] = useState(false);
-
-  // Form state
-  const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("USD");
-  const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
-  const [notes, setNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [formSuccess, setFormSuccess] = useState(false);
+  const nextPayoutDate = monthEndPayoutDate();
 
   const load = async () => {
     setLoading(true);
     setError("");
     try {
-      const [payoutRes, ledgerRes] = await Promise.all([
-        api.get("/supplier-payouts", { params: { limit: 20 } }),
-        api.get("/supplier-ledgers", { params: { limit: 100 } }),
-      ]);
-      setPayouts(payoutRes.data?.items ?? payoutRes.data?.data ?? payoutRes.data ?? []);
-      setLedgers(ledgerRes.data?.items ?? ledgerRes.data?.data ?? []);
+      const response = await api.get("/supplier-payouts", { params: { limit: 20 } });
+      setPayouts(response.data?.items ?? response.data?.data ?? response.data ?? []);
     } catch {
-      setError("Failed to load payouts. Please try again.");
+      setError("Failed to load payout history. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    void load();
-  }, []);
-
-  // Derived from the supplier's own ledger entries, not a fixed list -- a
-  // currency that never appears there (or one that does but isn't in a
-  // hardcoded set) must still be requestable.
-  const availableCurrencies = useMemo(() => {
-    const currencies = new Set(
-      ledgers
-        .filter((entry) => ["pending", "partial"].includes((entry.status || "").toLowerCase()))
-        .map((entry) => entry.currency || "USD")
-    );
-    return currencies.size > 0 ? Array.from(currencies).sort() : ["USD"];
-  }, [ledgers]);
-
-  useEffect(() => {
-    if (!availableCurrencies.includes(currency)) setCurrency(availableCurrencies[0]);
-  }, [availableCurrencies, currency]);
-
-  const availableBalance = useMemo(() => ledgers
-    .filter((entry) => ["pending", "partial"].includes((entry.status || "").toLowerCase()) && (entry.currency || "USD") === currency)
-    .reduce((sum, entry) => sum + Number(entry.amount_pending || 0), 0), [ledgers, currency]);
-
-  const handleRequestPayout = async () => {
-    if (!amount || Number(amount) <= 0) {
-      setFormError("Please enter a valid amount.");
-      return;
-    }
-    if (Number(amount) > availableBalance) {
-      setFormError(`Requested amount cannot exceed the available balance of ${money(availableBalance, currency)}.`);
-      return;
-    }
-    setSubmitting(true);
-    setFormError("");
-    setFormSuccess(false);
-    try {
-      await api.post("/supplier-payouts", {
-        amount: Number(amount),
-        currency,
-        payment_method: paymentMethod,
-        notes: notes || undefined,
-      });
-      setFormSuccess(true);
-      setShowForm(false);
-      setAmount("");
-      setNotes("");
-      void load();
-    } catch (e: unknown) {
-      const msg =
-        (e as { response?: { data?: { detail?: string; message?: string } } })
-          ?.response?.data?.detail ??
-        (e as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ??
-        "Failed to request payout.";
-      setFormError(typeof msg === "string" ? msg : "Failed to request payout.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  useEffect(() => { void load(); }, []);
 
   return (
     <SupplierPageShell>
-      <SupplierPageHeader title="Payouts" description="Request available supplier earnings and track every approval, release, and payment reference." icon={Banknote} eyebrow="Supplier Finance">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-[11px] text-[#657C6F]">Only available, unreserved ledger balances can be requested.</span>
-          <button
-            type="button"
-            onClick={() => {
-              setShowForm((v) => !v);
-              setFormError("");
-              setFormSuccess(false);
-            }}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#16833A] px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-[#117331]"
-          >
-            <Plus size={16} />
-            Request Payout
-          </button>
-        </div>
-      </SupplierPageHeader>
+      <SupplierPageHeader title="Payouts" description="Track your monthly payout schedule and payment history." icon={Banknote} eyebrow="Supplier Finance" />
 
-      {/* Success message */}
-      {formSuccess && (
-        <div className="mt-4 mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-          <CheckCircle2 size={16} />
-          Payout request submitted successfully!
-        </div>
-      )}
-
-      {/* Payout request form */}
-      {showForm && (
-        <div className="mt-4 mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
-          <h2 className="mb-4 text-base font-black text-dash-text">
-            Request Payout
-          </h2>
-          <p className="mb-4 text-sm text-dash-muted">Available to request: <strong className="text-emerald-700">{money(availableBalance, currency)}</strong>. Amounts already reserved in another request are excluded.</p>
-          {formError && (
-            <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
-              <AlertCircle size={16} />
-              {formError}
-            </div>
-          )}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={labelCls}>
-                Amount <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min={0}
-                max={availableBalance}
-                step={0.01}
-                className={inputCls}
-                placeholder="e.g. 5000"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Currency</label>
-              <select
-                title="Currency"
-                className={inputCls}
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-              >
-                {availableCurrencies.map((code) => <option key={code} value={code}>{code}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Payment Method</label>
-              <select
-                title="Payment method"
-                className={inputCls}
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              >
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="cheque">Cheque</option>
-                <option value="online">Online Payment</option>
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Notes</label>
-              <input
-                className={inputCls}
-                placeholder="Optional notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="mt-5 flex gap-3">
-            <button
-              type="button"
-              onClick={handleRequestPayout}
-              disabled={submitting || availableBalance <= 0}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {submitting ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <CheckCircle2 size={15} />
-              )}
-              {submitting ? "Submitting..." : "Submit Request"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg-muted"
-            >
-              Cancel
-            </button>
+      <section className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white"><CalendarDays size={20} /></span>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[.12em] text-emerald-800">Next payout date</p>
+            <p className="mt-1 text-xl font-black text-emerald-950">{nextPayoutDate}</p>
+            <p className="mt-1 text-sm text-emerald-800">Payouts are scheduled for processing at the end of every month. No action is required from you.</p>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
-          <span className="flex items-center gap-2">
-            <AlertCircle size={16} />
-            {error}
-          </span>
-          <button
-            type="button"
-            onClick={load}
-            className="text-xs font-bold underline"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-16 animate-pulse rounded-xl border border-dash-border bg-white"
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Empty */}
-      {!loading && !error && payouts.length === 0 && (
-        <div className="rounded-xl border border-dashed border-[#D0D5DD] py-16 text-center">
-          <Banknote size={36} className="mx-auto text-[#D0D5DD]" />
-          <p className="mt-4 text-base font-bold text-dash-muted">
-            No payout requests yet
-          </p>
-          <p className="mt-1 text-sm text-dash-subtle">
-            Submit a payout request and it will appear here.
-          </p>
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
-          >
-            <Plus size={16} />
-            Request Payout
-          </button>
-        </div>
-      )}
-
-      {/* Payouts list */}
-      {!loading && payouts.length > 0 && (
-        <div className="space-y-3">
-          {payouts.map((p) => (
-            <div
-              key={p.id}
-              className="flex flex-col gap-3 rounded-xl border border-dash-border bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
-                  <Banknote size={18} className="text-emerald-600" />
-                </div>
-                <div>
-                  <p className="font-bold text-dash-text">
-                    {p.payout_code ?? `Payout #${p.id}`}
-                  </p>
-                  <p className="text-xs text-dash-muted">
-                    {p.payment_method?.replace(/_/g, " ") ?? "Bank Transfer"}
-                  </p>
-                  <p className="mt-0.5 text-xs text-dash-subtle">
-                    Requested:{" "}
-                    {(p.created_at ?? "").split("T")[0] || "-"}
-                    {p.paid_at
-                      ? ` - Paid: ${p.paid_at.split("T")[0]}`
-                      : ""}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="font-black text-dash-text">
-                    {money(p.total_amount ?? p.amount, p.currency)}
-                  </p>
-                  {p.notes && (
-                    <p className="max-w-[160px] truncate text-xs text-dash-subtle">
-                      {p.notes}
-                    </p>
-                  )}
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-bold ${statusColors(p.status ?? "")}`}
-                >
-                  {p.status ?? "pending"}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {error && <div className="mt-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600"><span className="flex items-center gap-2"><AlertCircle size={16} />{error}</span><button type="button" onClick={load} className="text-xs font-bold underline">Retry</button></div>}
+      {loading && <div className="mt-4 space-y-3">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-xl border border-dash-border bg-white" />)}</div>}
+      {!loading && !error && payouts.length === 0 && <div className="mt-4 rounded-xl border border-dashed border-[#D0D5DD] py-16 text-center"><Banknote size={36} className="mx-auto text-[#D0D5DD]" /><p className="mt-4 text-base font-bold text-dash-muted">No payouts yet</p><p className="mt-1 text-sm text-dash-subtle">Processed monthly payouts will appear here.</p></div>}
+      {!loading && payouts.length > 0 && <div className="mt-4 space-y-3">
+        {payouts.map((payout) => <div key={payout.id} className="flex flex-col gap-3 rounded-xl border border-dash-border bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50"><Banknote size={18} className="text-emerald-600" /></span><div><p className="font-bold text-dash-text">{payout.payout_code ?? `Payout #${payout.id}`}</p><p className="text-xs text-dash-muted">{payout.payment_method?.replace(/_/g, " ") ?? "Bank transfer"}</p><p className="mt-0.5 text-xs text-dash-subtle">Processed: {(payout.paid_at ?? payout.created_at ?? "").split("T")[0] || "-"}</p></div></div>
+          <div className="flex items-center gap-4"><div className="text-right"><p className="font-black text-dash-text">{money(payout.total_amount ?? payout.amount, payout.currency)}</p>{payout.notes && <p className="max-w-[160px] truncate text-xs text-dash-subtle">{payout.notes}</p>}</div><span className={`rounded-full px-3 py-1 text-xs font-bold ${statusColors(payout.status ?? "")}`}>{payout.status ?? "pending"}</span></div>
+        </div>)}
+      </div>}
     </SupplierPageShell>
   );
 }
-
-

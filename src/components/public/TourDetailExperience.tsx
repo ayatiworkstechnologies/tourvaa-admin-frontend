@@ -719,9 +719,15 @@ export default function TourDetailExperience({
   useEffect(() => {
     if (selectedDepartureIso) onTravelDateChange?.(selectedDepartureIso);
   }, [selectedDepartureIso, onTravelDateChange]);
+  // A departure can have more seats remaining than this tour permits in one
+  // reservation. Respect both limits rather than allowing calendar capacity
+  // to override the supplier's maximum group size.
   const maxTravellers = Math.max(
     1,
-    selectedDeparture?.slotsRemaining ?? (tour.max_group_size || MAX_TRAVELLERS_CEILING),
+    Math.min(
+      selectedDeparture?.slotsRemaining ?? MAX_TRAVELLERS_CEILING,
+      tour.max_group_size || MAX_TRAVELLERS_CEILING,
+    ),
   );
   const [adults, setAdults] = useState(
     Math.min(initialAdults || 2, maxTravellers),
@@ -876,9 +882,13 @@ export default function TourDetailExperience({
   // percentage fallback keeps older API deployments compatible.
   const supplierDiscountPercent = Number(tour.supplier_discount_percentage ?? 0);
   const tourvaaDiscountPercent = Number(tour.tourvaa_discount_percentage ?? 0);
-  const todaysSpecialOfferPercent =
-    supplierDiscountPercent + tourvaaDiscountPercent ||
-    Number(tour.discount_percentage ?? 0);
+  // Supplier and Tourvaa offers are applied one after the other. Display the
+  // actual combined saving (10% then 15% is 23.5%), matching the card price.
+  const combinedOfferPercent =
+    100 * (1 - (1 - supplierDiscountPercent / 100) * (1 - tourvaaDiscountPercent / 100));
+  const todaysSpecialOfferPercent = Number(
+    (Number(tour.discount_percentage ?? 0) || combinedOfferPercent).toFixed(2),
+  );
   const todaysSpecialOfferLabel = `Today's Special Offer (${todaysSpecialOfferPercent}% Discount)`;
   const hasSpecialOffer = todaysSpecialOfferPercent > 0;
   // "Starting from" is the cheapest tier (after discount), not the selected one.
@@ -1003,7 +1013,7 @@ export default function TourDetailExperience({
 
   // Itineraries: 100% Dynamic
   const [itineraryMode, setItineraryMode] = useState<"detailed" | "overview">(
-    "detailed",
+    "overview",
   );
   const [openDays, setOpenDays] = useState<Record<number, boolean>>({
     1: true,

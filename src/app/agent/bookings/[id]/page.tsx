@@ -105,6 +105,20 @@ function dateText(value?: string | null) {
   return d.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+// Match the lifecycle language shown in the Customer Portal. Internal
+// payment and supplier-processing states are not Agent-facing stages.
+function customerFacingBookingStatus(status?: string): string {
+  const value = (status || "").toLowerCase();
+  if (["draft", "pending_payment", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required"].includes(value)) return "Booking Request Received";
+  if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(value)) return "Booking Confirmed";
+  if (value === "ongoing") return "Ongoing";
+  if (value === "completed") return "Completed";
+  if (["cancellation_requested", "cancelled", "declined", "refunded"].includes(value)) return "Cancelled";
+  return "Booking Request Received";
+}
+
+const BOOKING_REQUEST_RECEIVED_MESSAGE = "Your booking request has been received successfully. We will review the details and be in touch shortly with your booking confirmation.";
+
 function statusClass(status?: string) {
   const v = (status || "").toLowerCase();
   if (["paid", "completed", "confirmed", "active"].includes(v)) return "bg-emerald-50 text-emerald-700";
@@ -186,8 +200,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
     setPaymentBanner({
       type: "success",
       message: method
-        ? `Booking created successfully. Payment method: ${method}. Collect payment from the customer as agreed and record it once received.`
-        : "Booking created successfully.",
+        ? `Booking Request Received. ${BOOKING_REQUEST_RECEIVED_MESSAGE} Payment method: ${method}.`
+        : `Booking Request Received. ${BOOKING_REQUEST_RECEIVED_MESSAGE}`,
     });
     router.replace(`/agent/bookings/${id}`, { scroll: false });
   }, [booking, id, router, searchParams]);
@@ -195,7 +209,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   useEffect(() => {
     if (!booking || searchParams.get("pay") !== "1") return;
     if (Number(booking.amount_pending ?? 0) > 0) {
-      setPaymentBanner({ type: "info", message: "Booking created successfully. Complete the payment to send it to the supplier." });
+      setPaymentBanner({ type: "info", message: `Booking Request Received. ${BOOKING_REQUEST_RECEIVED_MESSAGE}` });
       setShowPayment(true);
     } else {
       setPaymentBanner({ type: "success", message: "Booking created and payment is already complete." });
@@ -230,7 +244,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         } else {
           return;
         }
-        setPaymentBanner({ type: "success", message: "Payment completed successfully. Booking details have been refreshed." });
+        setPaymentBanner({ type: "success", message: `Booking Request Received. ${BOOKING_REQUEST_RECEIVED_MESSAGE}` });
         setRefreshKey((value) => value + 1);
       } catch {
         setPaymentBanner({ type: "error", message: "Payment return could not be confirmed. Please retry or contact support before paying again." });
@@ -265,8 +279,9 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
       setCancellationReason("");
       setPaymentBanner({ type: "success", message: "Cancellation request submitted. Tourvaa will review it shortly." });
       setRefreshKey((value) => value + 1);
-    } catch (exception) {
-      setPaymentBanner({ type: "error", message: "Cancellation request could not be submitted. Please contact Tourvaa for assistance." });
+    } catch (exception: unknown) {
+      const detail = (exception as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setPaymentBanner({ type: "error", message: typeof detail === "string" ? detail : "Cancellation request could not be submitted. Please contact Tourvaa Support for assistance." });
     } finally {
       setCancelling(false);
     }
@@ -297,22 +312,10 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   }
 
   const travellers = booking.travellers ?? [];
-  const paymentComplete = ["paid", "authorized", "partially_paid", "partially_refunded"].includes((booking.payment_status || "").toLowerCase());
-  const paymentValidationPending = ["credit_approval_pending", "bank_transfer_pending"].includes((booking.payment_status || "").toLowerCase());
-  const supplierAccepted = booking.supplier_acceptance_status === "accepted";
-  const bookingConfirmed = ["confirmed", "ongoing", "completed"].includes((booking.booking_status || "").toLowerCase());
+  const bookingDisplayStatus = customerFacingBookingStatus(booking.booking_status);
+  const isBookingRequestReceived = bookingDisplayStatus === "Booking Request Received";
   const canRequestCancellation = Number(booking.amount_paid ?? 0) > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
   const freeCancellationEligible = booking.cancellation_eligibility?.is_free_cancellation_eligible === true;
-  const workflow = [
-    { label: "Payment / credit", detail: paymentComplete ? "Payment validated" : paymentValidationPending ? booking.payment_status.replaceAll("_", " ") : `${booking.payment_type === "partial" ? "Deposit" : "Full payment"} pending`, done: paymentComplete, active: !paymentComplete },
-    { label: "Supplier decision", detail: supplierAccepted ? "Supplier accepted" : (booking.supplier_acceptance_status ?? "not assigned").replaceAll("_", " "), done: supplierAccepted, active: paymentComplete && !supplierAccepted },
-    { label: "Confirmed", detail: bookingConfirmed ? booking.booking_status.replaceAll("_", " ") : "Waiting for validation and supplier", done: bookingConfirmed, active: paymentComplete && supplierAccepted && !bookingConfirmed },
-  ];
-  const completedStepStyles = [
-    { card: "border-sky-200 bg-sky-50/80", label: "text-sky-700" },
-    { card: "border-violet-200 bg-violet-50/80", label: "text-violet-700" },
-    { card: "border-teal-200 bg-teal-50/80", label: "text-teal-700" },
-  ];
 
   const travellerColumns: DataTableColumn<Traveller>[] = [
     { key: "index", header: "#", render: (_, idx) => idx + 1, className: "text-dash-muted" },
@@ -333,8 +336,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
-            <Pill status={booking.booking_status}>{booking.booking_status.replaceAll("_", " ")}</Pill>
-            <Pill status={booking.payment_status}>{booking.payment_status.replaceAll("_", " ")}</Pill>
+            <Pill status={booking.booking_status}>{bookingDisplayStatus}</Pill>
           </div>
           <div className="flex flex-wrap gap-2">
             {Number(booking.amount_pending ?? 0) > 0 && (
@@ -355,7 +357,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             )}
             {canRequestCancellation && (
               <button type="button" onClick={() => freeCancellationEligible && setShowCancellationConfirm(true)} disabled={!freeCancellationEligible}
-                title={!freeCancellationEligible ? "The free cancellation period has ended. Contact Tourvaa for assistance." : undefined}
+                title={!freeCancellationEligible ? "Self-service cancellation is available only during the free-cancellation period." : undefined}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-bold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400">
                 <XCircle size={15} /> Request Cancellation
               </button>
@@ -370,27 +372,21 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           {paymentBanner.message}
         </div>
       )}
+      {isBookingRequestReceived && !paymentBanner && (
+        <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          <p className="font-bold">Booking Request Received</p>
+          <p className="mt-1 leading-6">{BOOKING_REQUEST_RECEIVED_MESSAGE}</p>
+        </div>
+      )}
       {canRequestCancellation && !freeCancellationEligible && (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">The free cancellation period has finished. Please contact Tourvaa for cancellation assistance. For any travel-date modification, please contact Tourvaa.</div>
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">The free-cancellation period has ended. Please contact Tourvaa Support for cancellation assistance or a travel-date change.</div>
       )}
 
-      <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_35px_-24px_rgba(15,23,42,0.45)]">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-base font-black text-dash-text">Booking Execution Flow</h2>
-            <p className="mt-1 text-xs text-dash-muted">Online payment, approved credit, wallet settlement, or verified bank transfer makes the booking eligible for supplier processing.</p>
-          </div>
-          <span className="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold capitalize text-indigo-700">Current: {booking.booking_status.replaceAll("_", " ")}</span>
+      {booking.booking_source === "agent" && (
+        <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+          <span className="font-bold">Shared customer booking.</span> This reservation was created by your agency for the selected customer, so it is visible in both the Agent and Customer portals. Traveller email addresses do not grant access to other agents.
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {workflow.map((step, index) => (
-            <div key={step.label} className={`rounded-2xl border p-4 transition-colors ${step.done ? completedStepStyles[index].card : step.active ? "border-indigo-200 bg-indigo-50/80" : "border-slate-200 bg-slate-50/70"}`}>
-              <p className={`text-xs font-black uppercase tracking-wide ${step.done ? completedStepStyles[index].label : step.active ? "text-indigo-700" : "text-slate-500"}`}>{step.done ? "✓" : index + 1} · {step.label}</p>
-              <p className="mt-2 text-sm font-bold capitalize text-dash-text">{step.detail}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Booking Info */}
@@ -406,7 +402,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             <InfoRow label="Adults" value={booking.no_of_adults} />
             <InfoRow label="Children" value={booking.no_of_children ?? 0} />
             <InfoRow label="Total Travellers" value={booking.total_travellers ?? ((booking.no_of_adults ?? 0) + (booking.no_of_children ?? 0))} />
-            <InfoRow label="Booking Confirmation" value={(booking.supplier_acceptance_status ?? "-").replaceAll("_", " ")} />
+            <InfoRow label="Booking Status" value={bookingDisplayStatus} />
             <InfoRow label="Source" value={booking.booking_source?.replaceAll("_", " ") ?? "-"} />
             <InfoRow label="Created" value={dateText(booking.created_at)} />
             {(booking.customer_notes || booking.notes) && <InfoRow label="Notes" value={booking.customer_notes ?? booking.notes} />}
@@ -498,7 +494,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <h3 id="agent-cancel-confirm-title" className="text-lg font-black text-dash-text">Confirm cancellation request</h3>
             <p className="mt-3 text-sm leading-6 text-dash-muted">In accordance with the cancellation policy for this tour, you are eligible for a full refund, less any applicable transaction fees. Do you want to continue with the cancellation?</p>
-            <p className="mt-3 text-xs font-medium text-dash-muted">For any travel-date modification, please contact Tourvaa.</p>
+            <p className="mt-3 text-xs font-medium text-dash-muted">For a travel-date change, please contact Tourvaa Support.</p>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setShowCancellationConfirm(false)} className="rounded-xl border border-dash-border bg-white px-4 py-2 text-sm font-bold text-dash-body hover:bg-dash-bg">No</button>
               <button type="button" onClick={() => { setShowCancellationConfirm(false); setShowCancellationForm(true); }} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-700">Yes, continue</button>
@@ -532,7 +528,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           returnPath={`/agent/bookings/${booking.id}`}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
-            setPaymentBanner({ type: "success", message: "Payment completed successfully. The booking is ready for supplier processing." });
+            setPaymentBanner({ type: "success", message: `Booking Request Received. ${BOOKING_REQUEST_RECEIVED_MESSAGE}` });
             setRefreshKey((value) => value + 1);
           }}
         />

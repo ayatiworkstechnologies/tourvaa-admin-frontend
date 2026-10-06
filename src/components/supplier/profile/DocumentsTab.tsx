@@ -10,16 +10,19 @@ import { useToast } from "@/hooks/useToast";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type Document = { id: number; document_type: string; file_url: string; status: string; uploaded_at?: string; notes?: string };
-type DocRequirement = { key: string; label: string };
+type DocRequirement = { key: string; label: string; required: boolean };
 
 // Fallback only - the source of truth is GET /suppliers/document-requirements
 // (app/services/suppliers.py SUPPLIER_DOCUMENT_TYPES), used if that call fails.
 const FALLBACK_DOC_TYPES: DocRequirement[] = [
-  { key: "company_registration", label: "Company Registration Certificate" },
-  { key: "trade_license", label: "Trade License" },
-  { key: "tax_certificate", label: "Tax Registration Certificate" },
-  { key: "identity_proof", label: "Identity Proof (Passport / Emirates ID)" },
-  { key: "bank_details", label: "Bank Account Details / Cheque" },
+  { key: "company_registration", label: "Business Registration Certificate", required: true },
+  { key: "operating_licence", label: "Relevant Operating Licence", required: false },
+  { key: "public_liability_insurance", label: "Public Liability Insurance Certificate", required: false },
+  { key: "tourism_accreditation", label: "Tourism Accreditation", required: false },
+  { key: "industry_certification", label: "Industry Certification", required: false },
+  { key: "safety_certification", label: "Safety Certification", required: false },
+  { key: "other_licences", label: "Other Licences", required: false },
+  { key: "supporting_documents", label: "Additional Supporting Documents", required: false },
 ];
 
 function statusCls(s: string) {
@@ -59,7 +62,7 @@ export default function DocumentsTab() {
       .then(res => {
         const requirements = res.data?.data;
         if (Array.isArray(requirements) && requirements.length) {
-          setDocTypes(requirements.map((item: { document_type: string; label: string }) => ({ key: item.document_type, label: item.label })));
+          setDocTypes(requirements.map((item: { document_type: string; label: string; required?: boolean }) => ({ key: item.document_type, label: item.label, required: Boolean(item.required) })));
         }
       })
       .catch(() => {});
@@ -126,7 +129,7 @@ export default function DocumentsTab() {
   }
 
   const docMap = Object.fromEntries(docs.map(d => [d.document_type, d]));
-  const allUploaded = docTypes.every(t => docMap[t.key]);
+  const allUploaded = docTypes.filter((type) => type.required).every((type) => docMap[type.key]);
 
   return (
     <div className="space-y-6">
@@ -154,7 +157,7 @@ export default function DocumentsTab() {
         <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="animate-pulse h-20 rounded-xl border border-dash-border bg-white" />)}</div>
       ) : (
         <div className="space-y-4">
-          {docTypes.map(({ key, label }) => {
+          {docTypes.map(({ key, label, required }) => {
             const doc = docMap[key];
             return (
               <div key={key} className="rounded-xl border border-dash-border bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
@@ -164,7 +167,7 @@ export default function DocumentsTab() {
                       <FileText size={18} className={doc ? "text-emerald-600" : "text-dash-subtle"} />
                     </div>
                     <div>
-                      <p className="font-semibold text-dash-text">{label}</p>
+                      <p className="font-semibold text-dash-text">{label} {!required && <span className="ml-1 text-xs font-medium text-dash-subtle">(Optional)</span>}</p>
                       {doc ? (
                         <div className="mt-0.5 flex items-center gap-2">
                           <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusCls(doc.status)}`}>{doc.status}</span>

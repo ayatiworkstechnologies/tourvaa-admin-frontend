@@ -33,7 +33,14 @@ check("tour links preserve booking query", detail.includes("bookingQuery"));
 check("login return path preserves booking context", detail.includes("encodeURIComponent(returnPath)"));
 check("tour CTA opens dedicated public booking flow", detail.includes('`/booking/${tour.id}'));
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
+check("public itinerary opens in overview mode by default", detailExperience.includes('useState<"detailed" | "overview">(\n    "overview"'));
 check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
+check(
+  "tour detail limits each booking by both remaining seats and maximum group size",
+  detailExperience.includes("Math.min(") &&
+    detailExperience.includes("selectedDeparture?.slotsRemaining ?? MAX_TRAVELLERS_CEILING") &&
+    detailExperience.includes("tour.max_group_size || MAX_TRAVELLERS_CEILING"),
+);
 const customerBookingDetail = read("src/app/customer/bookings/[id]/page.tsx");
 check(
   "unpaid customer bookings show payment required and can be removed",
@@ -74,12 +81,17 @@ check(
 // -> Passenger Details -> Payment -> Confirmation) backed by a real
 // server-side CheckoutSession, not a client-only react-hook-form wizard.
 const publicBooking = read("src/app/(public)/booking/[id]/page.tsx");
+check(
+  "checkout limits travellers by both the selected departure and maximum group size",
+  publicBooking.includes("Math.min(selectedCalendar?.slots ?? 10, tour.max_group_size ?? 10)"),
+);
 check("public booking has four visible stages", publicBooking.includes("Passengers &amp; Accommodation") && publicBooking.includes("Passenger Details") && publicBooking.includes(">Payment<") && publicBooking.includes("Booking Received"));
 check("public booking is backed by a real checkout session", publicBooking.includes('.post("/checkout/start"') && publicBooking.includes("sessionKey"));
 check("public booking confirms through the checkout-session endpoint", publicBooking.includes("/checkout/session/${sessionKey}/confirm"));
 check("public booking requires a logged-in customer", publicBooking.includes('roleSlug === "customer"') && publicBooking.includes("router.replace(`/login?redirect="));
 check("public booking uses live server-calculated pricing", publicBooking.includes('"/bookings/calculate-price"') && publicBooking.includes("priceEstimate"));
 check("booking continues to the payment step", publicBooking.includes("setStep(3)"));
+check("checkout terms open separately without losing entered passenger details", publicBooking.includes('href="/terms" target="_blank" rel="noopener noreferrer"'));
 check("success copy explains pending payment confirmation", publicBooking.includes("pending payment confirmation"));
 check("traveller fields follow selected adult and child counts", publicBooking.includes("adultCount + childCount") && publicBooking.includes('i < adultCount ? "adult" : "child"'));
 // Traveller ages are collected directly as a numeric field, validated, then

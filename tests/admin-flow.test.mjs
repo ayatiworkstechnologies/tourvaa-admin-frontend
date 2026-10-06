@@ -121,10 +121,20 @@ check(
     bookingList.includes("approveBookingCancellation") &&
     bookingService.includes("/cancellation-request/approve"),
 );
-
 const bookingDetail = read("src/app/admin/bookings/[id]/page.tsx");
+check(
+  "booking detail can confirm or decline a customer cancellation request",
+  bookingDetail.includes("Confirm Cancellation") &&
+    bookingDetail.includes("Decline Request") &&
+    bookingDetail.includes("/cancellation-request/reject") &&
+    bookingDetail.includes('booking.booking_status === "cancellation_requested"'),
+);
 check("admin booking detail renders serialized add-on snapshots", bookingDetail.includes("activity_name_snapshot") && bookingDetail.includes("accommodation_name_snapshot") && bookingDetail.includes("extension_name_snapshot"));
 check("admin booking detail exposes all note channels", bookingDetail.includes("booking.customer_notes") && bookingDetail.includes("booking.admin_notes"));
+check("admin can choose a booking communication recipient and the log labels sender and audience", ["commVisibility", "Customer (send email)", "Supplier (send email)", "From {c.sender_type", "To ${c.visibility}"].every((text) => bookingDetail.includes(text)));
+const adminBookingMessages = read("src/components/messaging/AdminBookingConversationHistory.tsx");
+const messagingService = read("src/lib/api/services/messagingService.ts");
+check("admin booking detail shows customer and agent portal messages for the same booking", bookingDetail.includes("AdminBookingConversationHistory") && adminBookingMessages.includes("getAdminBookingConversations") && messagingService.includes("/admin/messages/booking-conversations/"));
 check("admin booking detail separates booking, supplier, and agent payment blocks", ["Booking Payment Status", "Supplier Payments", "Agent Payments", "Agent Price After Commission"].every((label) => bookingDetail.includes(label)));
 check(
   "admin financial breakdown excludes markup and deducts partner commission from Tourvaa revenue",
@@ -157,6 +167,8 @@ check("dashboard links pending agents to their review page instead of approving 
 const tourApproval = read("src/app/admin/tour-approval/page.tsx");
 check("tour review uses version approval endpoints", tourApproval.includes("/tours/pending-approval") && tourApproval.includes("/versions/${v.id}/approve"));
 check("tour review guard matches backend publish permission", tourApproval.includes('requiredPermission="tours.publish"'));
+check("tour approval titles link to the admin tour editor", tourApproval.includes('href={`/admin/tours/${v.tour_id}/edit`}'));
+check("tour approval compares pending submissions with the last approved baseline", tourApproval.includes("function approvedBaseline") && tourApproval.includes('candidate.status === "approved"'));
 
 const refunds = read("src/app/admin/refunds/page.tsx");
 check("refund screen uses a permission accepted by cancellation APIs", refunds.includes('requiredPermission="bookings.view"'));

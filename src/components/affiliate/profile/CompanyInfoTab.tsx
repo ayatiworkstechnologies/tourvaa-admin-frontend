@@ -56,6 +56,7 @@ export default function CompanyInfoTab() {
   const [marketing, setMarketing] = useState<MarketingForm>(EMPTY_MARKETING);
   const [invoicing, setInvoicing] = useState<InvoicingForm>(EMPTY_INVOICING);
   const [saving, setSaving] = useState(false);
+  const [bankLocked, setBankLocked] = useState(false);
 
   const { countries } = useGeoCountries();
   const { cities } = useGeoCities(null, form.country_id ? Number(form.country_id) : null);
@@ -80,6 +81,7 @@ export default function CompanyInfoTab() {
         });
       }
       if (d.invoicing) {
+        setBankLocked(Boolean(d.invoicing.bank_details_locked));
         setInvoicing({
           contact_name: d.invoicing.contact_name || "",
           email: d.invoicing.email || "",
@@ -128,19 +130,21 @@ export default function CompanyInfoTab() {
           contact_name: invoicing.contact_name,
           email: invoicing.email,
           phone: invoicing.phone,
-          preferred_payment_method: invoicing.preferred_payment_method,
-          account_name: invoicing.account_name,
-          account_number: invoicing.account_number,
-          bank_name: invoicing.bank_name,
-          bank_branch: invoicing.bank_branch,
-          swift_code: invoicing.swift_code,
-          iban: invoicing.iban,
           country_id: parseInt(invoicing.country_id) || null,
           tax_number: invoicing.tax_number,
           billing_address: invoicing.billing_address,
           billing_city: invoicing.billing_city,
           billing_state: invoicing.billing_state,
           billing_postal_code: invoicing.billing_postal_code,
+          ...(bankLocked ? {} : {
+            preferred_payment_method: invoicing.preferred_payment_method,
+            account_name: invoicing.account_name,
+            account_number: invoicing.account_number,
+            bank_name: invoicing.bank_name,
+            bank_branch: invoicing.bank_branch,
+            swift_code: invoicing.swift_code,
+            iban: invoicing.iban,
+          }),
         },
       });
       await refreshSession();
@@ -313,28 +317,28 @@ export default function CompanyInfoTab() {
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Payment Method</span>
-              <select value={invoicing.preferred_payment_method} onChange={e => setI("preferred_payment_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500">
+              <select disabled={bankLocked} value={invoicing.preferred_payment_method} onChange={e => setI("preferred_payment_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500">
                 <option value="">Select method</option><option value="bank_transfer">Bank Transfer</option><option value="paypal">PayPal</option>
               </select>
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Name</span>
-              <input value={invoicing.account_name} onChange={e => setI("account_name", e.target.value)}
+              <input disabled={bankLocked} value={invoicing.account_name} onChange={e => setI("account_name", e.target.value)}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Number</span>
-              <input value={invoicing.account_number} onChange={e => setI("account_number", e.target.value)}
+              <input disabled={bankLocked} value={invoicing.account_number} onChange={e => setI("account_number", e.target.value)}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Name</span>
-              <input value={invoicing.bank_name} onChange={e => setI("bank_name", e.target.value)}
+              <input disabled={bankLocked} value={invoicing.bank_name} onChange={e => setI("bank_name", e.target.value)}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
             </label>
-            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Branch</span><input value={invoicing.bank_branch} onChange={e => setI("bank_branch", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
-            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">SWIFT / BIC</span><input value={invoicing.swift_code} onChange={e => setI("swift_code", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
-            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Number / IBAN</span><input value={invoicing.iban || invoicing.account_number} onChange={e => setI("iban", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Branch</span><input disabled={bankLocked} value={invoicing.bank_branch} onChange={e => setI("bank_branch", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">SWIFT / BIC</span><input disabled={bankLocked} value={invoicing.swift_code} onChange={e => setI("swift_code", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Number / IBAN</span><input disabled={bankLocked} value={invoicing.iban || invoicing.account_number} onChange={e => setI("iban", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500" /></label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country</span>
               <select value={invoicing.country_id} onChange={e => setI("country_id", e.target.value)}

@@ -70,7 +70,7 @@ export function formatCurrency(amount: number | string | null | undefined, code:
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: normalized,
-      currencyDisplay: "narrowSymbol",
+      currencyDisplay: "code",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(num);
@@ -86,7 +86,7 @@ export function formatCurrencyCompact(amount: number | string | null | undefined
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: normalized,
-      currencyDisplay: "narrowSymbol",
+      currencyDisplay: "code",
       maximumFractionDigits: 0,
     }).format(num);
   } catch {

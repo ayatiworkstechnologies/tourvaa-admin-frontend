@@ -59,7 +59,6 @@ const FREQUENCIES = [
 const emptyAvailability = (): AvailabilityConfig => ({
   availability_start_date: null, availability_end_date: null, min_advance_booking_days: 0,
   agent_no_deposit_buffer_weeks: 4,
-  agent_reserve_deposit_percentage: 30,
   frequency: null, frequency_week: null, frequency_weeks: [], frequency_days: [], seats_per_occurrence: 10,
 });
 
@@ -257,7 +256,6 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
         ...schedule,
         min_advance_booking_days: sanitizeNumber(schedule.min_advance_booking_days),
         agent_no_deposit_buffer_weeks: sanitizeNumber(schedule.agent_no_deposit_buffer_weeks),
-        agent_reserve_deposit_percentage: sanitizeNumber(schedule.agent_reserve_deposit_percentage) || 30,
         seats_per_occurrence: targetSeats,
         remove_unmatched_dates: removeUnmatched,
       });
@@ -293,7 +291,6 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
           ...schedule,
           min_advance_booking_days: sanitizeNumber(schedule.min_advance_booking_days),
           agent_no_deposit_buffer_weeks: sanitizeNumber(schedule.agent_no_deposit_buffer_weeks),
-          agent_reserve_deposit_percentage: sanitizeNumber(schedule.agent_reserve_deposit_percentage) || 30,
           seats_per_occurrence: targetSeats,
         });
       } else {
@@ -450,16 +447,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
               onChange={(e) => setSchedule((p) => ({ ...p, agent_no_deposit_buffer_weeks: parseNumberInput(e.target.value) }))}
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
             <span className="mt-1 block text-xs text-dash-subtle">
-              Booking more than {schedule.agent_no_deposit_buffer_weeks} week{schedule.agent_no_deposit_buffer_weeks === 1 ? "" : "s"} before the Minimum Advance Booking cutoff, customers can Secure with a Deposit and agents can Reserve Now (deposit below); the balance is then due {schedule.agent_no_deposit_buffer_weeks} week{schedule.agent_no_deposit_buffer_weeks === 1 ? "" : "s"} before that cutoff. Closer than that, only Pay in Full Today is offered.
-            </span>
-          </label>
-          <label>
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Agent Reserve Now Deposit (%)</span>
-            <input type="number" min={0} max={100} value={numberInputValue(schedule.agent_reserve_deposit_percentage)}
-              onChange={(e) => setSchedule((p) => ({ ...p, agent_reserve_deposit_percentage: parseNumberInput(e.target.value) }))}
-              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            <span className="mt-1 block text-xs text-dash-subtle">
-              Percentage of the total an agent must pay upfront to Reserve Now within the buffer window above. Default 30%.
+              Booking more than {schedule.agent_no_deposit_buffer_weeks} week{schedule.agent_no_deposit_buffer_weeks === 1 ? "" : "s"} before the Minimum Advance Booking cutoff, customers can Secure with a Deposit and agents can Reserve Now, Pay Later. The balance is then due {schedule.agent_no_deposit_buffer_weeks} week{schedule.agent_no_deposit_buffer_weeks === 1 ? "" : "s"} before that cutoff. Closer than that, only Pay in Full Today is offered.
             </span>
           </label>
           <label>

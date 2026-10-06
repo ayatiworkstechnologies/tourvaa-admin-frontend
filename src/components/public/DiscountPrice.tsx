@@ -19,11 +19,16 @@ export function hasActiveDiscount(tour: DiscountInfo): boolean {
   return Boolean(tour.discount_percentage && tour.discount_percentage > 0 && tour.original_price_per_person != null && tour.discounted_price_per_person != null);
 }
 
+export function formatDiscountPercent(percentage: number): string {
+  const rounded = Math.round(percentage * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+}
+
 /** Small red corner badge for a tour card image, e.g. "Save 30%". */
 export function DiscountCardBadge({ percentage }: { percentage: number }) {
   return (
     <span className="absolute bottom-3 right-2.5 z-20 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-md">
-      Save {percentage}%
+      Save {formatDiscountPercent(percentage)}%
     </span>
   );
 }
@@ -32,7 +37,7 @@ export function DiscountCardBadge({ percentage }: { percentage: number }) {
 export function DiscountBanner({ percentage }: { percentage: number }) {
   return (
     <span className="inline-flex items-center rounded-full bg-red-600 px-5 py-2 text-sm font-black text-white shadow-md">
-      Save {percentage}% today
+      Save {formatDiscountPercent(percentage)}% today
     </span>
   );
 }

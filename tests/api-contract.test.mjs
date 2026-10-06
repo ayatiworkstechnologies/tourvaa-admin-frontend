@@ -12,8 +12,12 @@ const backendRoot = resolve(root, "../tourvaa-admin-backend");
 
 if (!existsSync(backendRoot)) {
   console.log("\n=== Frontend / Backend API Contract ===\n");
-  console.log("  skipped: sibling ../tourvaa-admin-backend checkout not found (expected in single-repo CI)");
-  process.exit(0);
+  if (process.env.CI) {
+    console.log("  skipped: sibling ../tourvaa-admin-backend checkout not found (expected in single-repo CI)");
+    process.exit(0);
+  }
+  console.error("  failed: sibling ../tourvaa-admin-backend checkout not found");
+  process.exit(1);
 }
 
 const registryScript = [

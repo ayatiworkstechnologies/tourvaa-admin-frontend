@@ -10,16 +10,16 @@ import { useToast } from "@/hooks/useToast";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type Document = { id: number; document_type: string; file_url: string; status: string; uploaded_at?: string; rejection_reason?: string };
-type DocRequirement = { key: string; label: string };
+type DocRequirement = { key: string; label: string; required: boolean };
 
 // Fallback only - the source of truth is GET /affiliates/document-requirements
 // (app/services/affiliates.py AFFILIATE_DOCUMENT_TYPES), used if that call fails.
 const FALLBACK_DOC_TYPES: DocRequirement[] = [
-  { key: "company_registration", label: "Business Registration Certificate" },
-  { key: "iata_accreditation", label: "IATA Accreditation" },
-  { key: "industry_certification", label: "Industry Certification" },
-  { key: "other_licences", label: "Other Licences" },
-  { key: "supporting_documents", label: "Additional Supporting Documents" },
+  { key: "company_registration", label: "Business Registration Certificate", required: true },
+  { key: "iata_accreditation", label: "IATA Accreditation", required: true },
+  { key: "industry_certification", label: "Industry Certification", required: false },
+  { key: "other_licences", label: "Other Licences", required: false },
+  { key: "supporting_documents", label: "Additional Supporting Documents", required: false },
 ];
 
 function statusCls(s: string) {
@@ -55,7 +55,7 @@ export default function DocumentsTab() {
       .then(res => {
         const requirements = res.data?.data;
         if (Array.isArray(requirements) && requirements.length) {
-          setDocTypes(requirements.map((item: { document_type: string; label: string }) => ({ key: item.document_type, label: item.label })));
+          setDocTypes(requirements.map((item: { document_type: string; label: string; required?: boolean }) => ({ key: item.document_type, label: item.label, required: Boolean(item.required) })));
         }
       })
       .catch(() => {});

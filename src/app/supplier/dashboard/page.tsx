@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   LuArrowRight as ArrowRight,
   LuBadgeCheck as BadgeCheck,
-  LuBanknote as Banknote,
   LuCalendarCheck as CalendarCheck,
   LuCircleAlert as AlertCircle,
   LuCircleDollarSign as CircleDollarSign,
@@ -121,6 +120,15 @@ function dateText(value?: string) {
   return date.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+function monthEndPayoutDate() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).toLocaleDateString("en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 type PendingSupplierProfile = {
   supplier_name?: string;
   supplier_type?: string;
@@ -226,6 +234,7 @@ function PendingSupplierDashboard() {
 function ApprovedSupplierDashboard() {
   const { user } = useAuthContext();
   const { format: money } = useCurrency();
+  const nextPayoutDate = monthEndPayoutDate();
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
@@ -367,10 +376,10 @@ function ApprovedSupplierDashboard() {
       tone: "bg-violet-50 text-violet-700",
     },
     {
-      label: "Available Payout",
-      value: money(commission.pending, commission.currency),
-      note: `${money(commission.reserved, commission.currency)} reserved`,
-      icon: Wallet,
+      label: "Next Payout Date",
+      value: nextPayoutDate,
+      note: "Processed at month end",
+      icon: CalendarCheck,
       href: "/supplier/payouts",
       tone: "bg-teal-50 text-teal-700",
     },
@@ -413,7 +422,7 @@ function ApprovedSupplierDashboard() {
 
             <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:w-[390px]">
               <HeroMetric label="Needs attention" value={String(awaitingAction)} note="Booking decisions" icon={Clock3} />
-              <HeroMetric label="Ready to request" value={money(commission.pending, commission.currency)} note="Available payout" icon={Banknote} />
+              <HeroMetric label="Next payout date" value={nextPayoutDate} note="Processed at month end" icon={CalendarCheck} />
             </div>
           </div>
         </section>
@@ -567,22 +576,19 @@ function ApprovedSupplierDashboard() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/12"><Wallet size={20} /></span>
                 <span className="rounded-full bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-50">Payout Centre</span>
               </div>
-              <p className="mt-5 text-[10px] font-bold uppercase tracking-[.12em] text-emerald-100/75">Available to request</p>
-              <p className="mt-1 text-2xl font-black tracking-tight">{money(commission.pending, commission.currency)}</p>
-              <p className="mt-2 text-[10px] text-emerald-100/75">{money(commission.reserved, commission.currency)} is reserved in open payout requests.</p>
-              <Link href="/supplier/payouts" className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-black text-[#0D6337] transition hover:bg-emerald-50">
-                <Banknote size={15} /> Request Payout
-              </Link>
+              <p className="mt-5 text-[10px] font-bold uppercase tracking-[.12em] text-emerald-100/75">Next payout date</p>
+              <p className="mt-1 text-2xl font-black tracking-tight">{nextPayoutDate}</p>
+              <p className="mt-2 text-[10px] leading-5 text-emerald-100/75">Payouts are scheduled for processing at the end of every month.</p>
             </div>
 
             <div className="space-y-3 p-5">
               <BalanceRow label="Paid to date" value={money(commission.paid, commission.currency)} icon={BadgeCheck} tone="text-emerald-600 bg-emerald-50" />
-              <BalanceRow label="Open payout requests" value={money(commission.pendingPayoutTotal, commission.currency)} icon={Clock3} tone="text-amber-600 bg-amber-50" />
+              <BalanceRow label="Payouts in progress" value={money(commission.pendingPayoutTotal, commission.currency)} icon={Clock3} tone="text-amber-600 bg-amber-50" />
               <BalanceRow label="Released payouts" value={money(commission.paidPayoutTotal, commission.currency)} icon={ReceiptText} tone="text-sky-600 bg-sky-50" />
 
               {commission.latestPayout ? (
                 <div className="rounded-xl border border-[#E1ECE5] bg-[#F8FBF9] p-4">
-                  <p className="text-[9px] font-black uppercase tracking-[.12em] text-[#75897E]">Latest request</p>
+                  <p className="text-[9px] font-black uppercase tracking-[.12em] text-[#75897E]">Latest payout</p>
                   <div className="mt-2 flex items-center justify-between gap-3">
                     <span>
                       <b className="block text-xs text-[#153426]">{commission.latestPayout.payout_code || `Payout #${commission.latestPayout.id}`}</b>
@@ -592,7 +598,7 @@ function ApprovedSupplierDashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed border-[#D7E6DC] px-4 py-5 text-center text-[11px] text-[#75897E]">No payout requests yet.</div>
+                <div className="rounded-xl border border-dashed border-[#D7E6DC] px-4 py-5 text-center text-[11px] text-[#75897E]">Your first payout will appear here after it is processed.</div>
               )}
             </div>
           </aside>

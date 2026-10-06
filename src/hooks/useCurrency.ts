@@ -290,6 +290,7 @@ export function useCurrency() {
     setCode: setDisplayCurrency,
     setCountry: setDisplayCountry,
     convert,
+    outputCode,
     format,
     formatCompact,
     formatExact,

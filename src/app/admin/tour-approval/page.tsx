@@ -1,6 +1,7 @@
 "use client";
 
 import { diffTourSnapshots, summarizeChanges, type SectionChange } from "@/lib/tours/tourDiff";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuGitCompare as GitCompare, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
@@ -29,6 +30,14 @@ type TourVersion = {
 };
 
 type VersionSummary = { previousLabel: string; sections: SectionChange[]; first: boolean };
+
+function approvedBaseline(versions: TourVersion[], version: TourVersion): TourVersion | undefined {
+  // A rejected, withdrawn, or superseded submission is not the live baseline.
+  // Review every pending change against the last version an admin approved.
+  return versions
+    .filter((candidate) => candidate.status === "approved" && candidate.version_number < version.version_number)
+    .sort((a, b) => b.version_number - a.version_number)[0];
+}
 
 const REVIEW_SECTIONS = [
   { key: "basic", label: "Basic Details" },
@@ -93,9 +102,9 @@ export default function TourApprovalPage() {
       try {
         const res = await api.get(`/tours/${v.tour_id}/versions`, { params: { page: 1, limit: 50 } });
         const all: TourVersion[] = res.data?.items ?? res.data?.data ?? [];
-        const previous = all.filter((o) => o.id !== v.id && o.version_number < v.version_number).sort((a, b) => b.version_number - a.version_number)[0];
+        const previous = approvedBaseline(all, v);
         const sections = diffTourSnapshots(previous?.snapshot as Record<string, unknown> | undefined, v.snapshot as unknown as Record<string, unknown>);
-        if (active) setSummaries((prev) => ({ ...prev, [v.id]: { previousLabel: previous ? `v${previous.version_number}` : "no earlier version", sections, first: !previous } }));
+        if (active) setSummaries((prev) => ({ ...prev, [v.id]: { previousLabel: previous ? `approved v${previous.version_number}` : "new tour submission", sections, first: !previous } }));
       } catch {
         /* the Compare button still loads it on demand */
       }
@@ -150,10 +159,8 @@ export default function TourApprovalPage() {
       }
       const res = await api.get(`/tours/${v.tour_id}/versions`, { params: { page: 1, limit: 50 } });
       const allVersions: TourVersion[] = res.data?.items ?? res.data?.data ?? [];
-      const previous = allVersions
-        .filter((other) => other.id !== v.id && other.version_number < v.version_number)
-        .sort((a, b) => b.version_number - a.version_number)[0];
-      setComparePrevLabel(previous ? `v${previous.version_number}` : "no earlier version");
+      const previous = approvedBaseline(allVersions, v);
+      setComparePrevLabel(previous ? `approved v${previous.version_number}` : "new tour submission");
       setCompareDiff(diffTourSnapshots(previous?.snapshot as Record<string, unknown> | undefined, v.snapshot as unknown as Record<string, unknown>));
     } catch {
       toast.error("Could not load version comparison.");
@@ -196,7 +203,13 @@ export default function TourApprovalPage() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-bold text-dash-text">{v.snapshot?.title || `Tour #${v.tour_id}`}</h3>
+                      <Link
+                        href={`/admin/tours/${v.tour_id}/edit`}
+                        className="text-lg font-bold text-dash-text underline-offset-4 hover:text-dash-brand hover:underline"
+                        title="Open this tour in the admin editor"
+                      >
+                        {v.snapshot?.title || `Tour #${v.tour_id}`}
+                      </Link>
                       <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">v{v.version_number} - Pending</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-4 text-sm text-dash-muted">

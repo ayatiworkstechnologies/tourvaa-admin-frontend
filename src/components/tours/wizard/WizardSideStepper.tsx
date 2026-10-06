@@ -2,8 +2,7 @@
 
 import { LuCheck as Check, LuTriangleAlert as AlertTriangle } from "react-icons/lu";
 import { theme, type TourWorkspaceRole } from "@/components/tours/TourWorkspace";
-import { WIZARD_STEPS } from "./steps";
-import type { StepStatus } from "./steps";
+import type { StepStatus, WizardStepDef } from "./steps";
 
 /** Compact step navigator for the tour editor: a narrow sticky column beside
  * the form on desktop, a single dropdown on small screens. No top bar, so the
@@ -14,6 +13,7 @@ export function WizardSideStepper({
   visitedIndexes,
   statuses,
   onSelect,
+  steps,
   disabled = false,
 }: {
   role: TourWorkspaceRole;
@@ -22,6 +22,8 @@ export function WizardSideStepper({
   /** Per-step index status, from useStepCompletion. Absent = not evaluated (e.g. review step). */
   statuses: Record<number, StepStatus>;
   onSelect: (index: number) => void;
+  /** Role-filtered wizard steps supplied by the parent editor. */
+  steps: WizardStepDef[];
   /** Create mode: only the first step is usable until the tour exists. */
   disabled?: boolean;
 }) {
@@ -39,7 +41,7 @@ export function WizardSideStepper({
           onChange={(e) => onSelect(Number(e.target.value))}
           className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm font-bold text-dash-text outline-none ${colors.contentBorder}`}
         >
-          {WIZARD_STEPS.map((step, index) => (
+          {steps.map((step, index) => (
             <option key={step.id} value={index}>
               {step.number} · {step.label}
             </option>
@@ -52,7 +54,7 @@ export function WizardSideStepper({
         className={`sticky top-4 hidden w-52 shrink-0 self-start rounded-2xl border bg-white p-2 shadow-[0_8px_24px_-22px_rgba(24,76,140,.7)] lg:block ${colors.contentBorder}`}
       >
         <ol className="space-y-0.5">
-          {WIZARD_STEPS.map((step, index) => {
+          {steps.map((step, index) => {
             const active = index === activeIndex;
             const visited = visitedIndexes.has(index);
             const status = statuses[index];

@@ -11,6 +11,7 @@ import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
 import AccessDenied from "@/components/common/AccessDenied";
+import { DiscountCardBadge, hasActiveDiscount } from "@/components/public/DiscountPrice";
 
 type Tour = {
   id: number;
@@ -23,6 +24,9 @@ type Tour = {
   city_name?: string;
   category_name?: string;
   banner_image?: string;
+  discount_percentage?: number | null;
+  original_price_per_person?: number | null;
+  discounted_price_per_person?: number | null;
 };
 
 function TourSkeleton() {
@@ -164,10 +168,7 @@ export default function AgentToursPage() {
         <>
           <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {tours.map((tour) => (
-              <div
-                key={tour.id}
-                className="group overflow-hidden rounded-2xl border border-[#DFE7F2] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
-              >
+              <div key={tour.id} className="group overflow-hidden rounded-2xl border border-[#DFE7F2] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md">
                 {/* Thumbnail */}
                 <div className="relative h-44 overflow-hidden bg-[var(--portal-soft)]">
                   {tour.banner_image ? (
@@ -189,6 +190,7 @@ export default function AgentToursPage() {
                       {tour.category_name}
                     </span>
                   )}
+                  {hasActiveDiscount(tour) && <DiscountCardBadge percentage={tour.discount_percentage!} />}
                 </div>
 
                 <div className="p-4">

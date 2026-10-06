@@ -8,6 +8,7 @@ import Loader from "@/components/ui/Loader";
 import DatePicker from "@/components/ui/DatePicker";
 import { Booking, getBookingDetail, getBookingPaymentLink } from "@/lib/api/services/bookingService";
 import BookingStatusBadge from "@/components/bookings/BookingStatusBadge";
+import AdminBookingConversationHistory from "@/components/messaging/AdminBookingConversationHistory";
 import SupplierPicker from "@/components/bookings/SupplierPicker";
 import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -352,6 +353,11 @@ export default function BookingDetailPage() {
   const [statusReason, setStatusReason] = useState("");
   const [changingStatus, setChangingStatus] = useState(false);
 
+  // Customer cancellation decision state
+  const [showCancellationRejectModal, setShowCancellationRejectModal] = useState(false);
+  const [cancellationRejectNotes, setCancellationRejectNotes] = useState("");
+  const [processingCancellation, setProcessingCancellation] = useState(false);
+
   // Assign supplier state
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [supplierId, setSupplierId] = useState<number | null>(null);
@@ -367,6 +373,7 @@ export default function BookingDetailPage() {
   const [showMsgModal, setShowMsgModal] = useState(false);
   const [commMessage, setCommMessage] = useState("");
   const [commSubject, setCommSubject] = useState("");
+  const [commVisibility, setCommVisibility] = useState<"internal" | "customer" | "supplier" | "agent" | "all">("internal");
   const [sendingComm, setSendingComm] = useState(false);
 
   const [fetchingLink, setFetchingLink] = useState(false);
@@ -405,6 +412,39 @@ export default function BookingDetailPage() {
       setActionErr(getApiErrorMessage(err));
     } finally {
       setChangingStatus(false);
+    }
+  }
+
+  async function approveCancellationRequest() {
+    if (!params.id) return;
+    setProcessingCancellation(true);
+    setActionErr("");
+    try {
+      await api.patch(`/bookings/${params.id}/cancellation-request/approve`, {});
+      setActionMsg("Cancellation request confirmed. The booking is now cancelled.");
+      await fetchBooking();
+    } catch (err: unknown) {
+      setActionErr(getApiErrorMessage(err));
+    } finally {
+      setProcessingCancellation(false);
+    }
+  }
+
+  async function rejectCancellationRequest(e: React.FormEvent) {
+    e.preventDefault();
+    if (!params.id || !cancellationRejectNotes.trim()) return;
+    setProcessingCancellation(true);
+    setActionErr("");
+    try {
+      await api.patch(`/bookings/${params.id}/cancellation-request/reject`, { admin_notes: cancellationRejectNotes.trim() });
+      setActionMsg("Cancellation request declined. The booking has been restored to its previous status.");
+      setShowCancellationRejectModal(false);
+      setCancellationRejectNotes("");
+      await fetchBooking();
+    } catch (err: unknown) {
+      setActionErr(getApiErrorMessage(err));
+    } finally {
+      setProcessingCancellation(false);
     }
   }
 
@@ -458,13 +498,14 @@ export default function BookingDetailPage() {
       await api.post(`/bookings/${params.id}/communications`, {
         subject: commSubject || "Admin Note",
         message: commMessage,
-        visibility: "internal",
+        visibility: commVisibility,
         message_type: "admin_message",
       });
-      setActionMsg("Communication logged successfully");
+      setActionMsg(commVisibility === "internal" ? "Internal note logged successfully" : `Communication sent to ${commVisibility === "all" ? "all booking parties" : `the ${commVisibility}`} successfully`);
       setShowMsgModal(false);
       setCommMessage("");
       setCommSubject("");
+      setCommVisibility("internal");
       await fetchBooking();
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
@@ -657,7 +698,26 @@ export default function BookingDetailPage() {
 
                 {/* Right Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
-                  {(BOOKING_STATUS_TRANSITIONS[booking.booking_status] ?? []).length > 0 && (
+                  {booking.booking_status === "cancellation_requested" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void approveCancellationRequest()}
+                        disabled={processingCancellation}
+                        className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 disabled:opacity-60"
+                      >
+                        {processingCancellation ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle2 size={14} />} Confirm Cancellation
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowCancellationRejectModal(true)}
+                        disabled={processingCancellation}
+                        className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-xs font-bold text-rose-700 shadow-xs transition hover:bg-rose-50 active:scale-95 disabled:opacity-60"
+                      >
+                        <XCircle size={14} /> Decline Request
+                      </button>
+                    </>
+                  ) : (BOOKING_STATUS_TRANSITIONS[booking.booking_status] ?? []).length > 0 && (
                     <button
                       type="button"
                       onClick={() => setShowStatusModal(true)}
@@ -723,6 +783,31 @@ export default function BookingDetailPage() {
 
           {/* Booking Pipeline Journey Stepper */}
           <BookingJourneyStepper status={booking.booking_status} />
+
+          {showCancellationRejectModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="decline-cancellation-title">
+              <form onSubmit={rejectCancellationRequest} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                <h2 id="decline-cancellation-title" className="text-lg font-black text-dash-text">Decline cancellation request</h2>
+                <p className="mt-2 text-sm leading-6 text-dash-muted">Provide the reason that will be sent to the customer. The booking will return to its status before the request.</p>
+                <label className="mt-5 block text-xs font-bold uppercase tracking-wider text-dash-muted" htmlFor="cancellation-rejection-notes">Reason</label>
+                <textarea
+                  id="cancellation-rejection-notes"
+                  value={cancellationRejectNotes}
+                  onChange={(event) => setCancellationRejectNotes(event.target.value)}
+                  required
+                  rows={4}
+                  className="mt-2 w-full resize-none rounded-xl border border-dash-border px-3 py-2 text-sm text-dash-text outline-none focus:border-dash-brand"
+                  placeholder="Explain why the cancellation request is declined"
+                />
+                <div className="mt-6 flex justify-end gap-3">
+                  <button type="button" onClick={() => setShowCancellationRejectModal(false)} disabled={processingCancellation} className="rounded-xl border border-dash-border bg-white px-4 py-2.5 text-xs font-bold text-dash-body hover:bg-dash-bg">Keep request</button>
+                  <button type="submit" disabled={processingCancellation || !cancellationRejectNotes.trim()} className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-60">
+                    {processingCancellation && <Loader2 className="animate-spin" size={14} />} Decline request
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* 4 KPI Metrics Strip */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -1166,7 +1251,7 @@ export default function BookingDetailPage() {
                   >
                     <div className="grid gap-3 sm:grid-cols-2">
                       <DetailField
-                        label="Supplier Payment"
+                        label="Supplier Gross Amount"
                         value={formatExact(booking.supplier_breakdown.gross_amount, booking.supplier_breakdown.currency)}
                       />
                       <DetailField
@@ -1176,11 +1261,6 @@ export default function BookingDetailPage() {
                       <DetailField
                         label="Commission Amount"
                         value={formatExact(booking.supplier_breakdown.commission_amount, booking.supplier_breakdown.currency)}
-                      />
-                      <DetailField
-                        label="Supplier Net Payable"
-                        value={formatExact(booking.supplier_breakdown.net_payable, booking.supplier_breakdown.currency)}
-                        highlight
                       />
                       <DetailField
                         label="Supplier Payment Status"
@@ -1214,13 +1294,17 @@ export default function BookingDetailPage() {
                             value={formatExact(booking.agent_payment_summary.total_booking_amount, booking.currency)}
                           />
                           <DetailField
-                            label="Agent Commission / Markup"
+                            label="Agent Commission"
                             value={`${booking.agent_payment_summary.commission_percentage}%`}
                           />
                           <DetailField
                             label="Agent Price After Commission"
                             value={formatExact(booking.agent_payment_summary.agent_price_after_commission, booking.currency)}
                             highlight
+                          />
+                          <DetailField
+                            label="Agent Commission Amount"
+                            value={formatExact(booking.agent_payment_summary.commission_amount, booking.currency)}
                           />
                           <DetailField
                             label="Invoice Status"
@@ -1241,6 +1325,10 @@ export default function BookingDetailPage() {
                         </>
                       ) : (
                         <>
+                          <DetailField
+                            label="Total Booking Amount"
+                            value={formatExact(booking.agent_payment_summary.total_booking_amount, booking.currency)}
+                          />
                           <DetailField
                             label="Amount Paid by Agent"
                             value={formatExact(booking.agent_payment_summary.amount_paid, booking.currency)}
@@ -1374,6 +1462,14 @@ export default function BookingDetailPage() {
           {/* TAB 4: NOTES & COMMUNICATIONS */}
           {activeTab === "communications" && (
             <div className="space-y-6">
+              <DetailPanel
+                title="Portal Messages"
+                icon={<MessageSquare size={18} />}
+                subtitle="Customer, agent, and supplier messages sent from the booking portals"
+              >
+                <AdminBookingConversationHistory bookingId={booking.id} />
+              </DetailPanel>
+
               {/* Notes Grid */}
               <DetailPanel
                 title="Notes"
@@ -1391,7 +1487,7 @@ export default function BookingDetailPage() {
               <DetailPanel
                 title="Communications"
                 icon={<MessageSquare size={18} />}
-                subtitle="Internal conversation log, supplier notices, and updates"
+                subtitle="Internal notes and outgoing communications, labelled by sender and audience"
                 action={
                   <button
                     type="button"
@@ -1418,7 +1514,10 @@ export default function BookingDetailPage() {
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
                             <span className="rounded-md bg-[var(--portal-soft,#EDF2FA)] px-2 py-0.5 text-[11px] font-bold uppercase text-dash-brand">
-                              {c.sender_type || "System"}
+                              From {c.sender_type || "System"}
+                            </span>
+                            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold uppercase text-slate-600">
+                              {c.visibility === "internal" ? "Internal note" : c.visibility === "all" ? "To all parties" : `To ${c.visibility}`}
                             </span>
                             {c.subject && <span className="text-xs font-bold text-dash-text">{c.subject}</span>}
                           </div>
@@ -1664,6 +1763,25 @@ export default function BookingDetailPage() {
                 </div>
 
                 <form onSubmit={sendCommunication} className="mt-4 space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-dash-muted mb-1.5">
+                      Send to
+                    </label>
+                    <select
+                      value={commVisibility}
+                      onChange={(e) => setCommVisibility(e.target.value as typeof commVisibility)}
+                      className="w-full rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
+                    >
+                      <option value="internal">Internal note (Admin only)</option>
+                      <option value="customer">Customer (send email)</option>
+                      <option value="supplier">Supplier (send email)</option>
+                      <option value="agent">Agent (send email)</option>
+                      <option value="all">All booking parties (send email)</option>
+                    </select>
+                    <p className="mt-1.5 text-xs text-dash-muted">
+                      {commVisibility === "internal" ? "This note is visible only in the Admin Portal." : "This communication is emailed to the selected booking recipient and recorded below."}
+                    </p>
+                  </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-dash-muted mb-1.5">
                       Subject

@@ -7,12 +7,14 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import ElfsightTranslator from "@/components/public/ElfsightTranslator";
 import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { canAccessSupplierRoute, isApprovedSupplier, isSupplierOperationalRoute } from "@/lib/auth/supplierAccess";
 import api from "@/lib/api/client";
 import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
 import CommissionCheckFailed from "@/components/common/CommissionCheckFailed";
 import Loader from "@/components/ui/Loader";
+import PortalDataRefresh from "@/components/common/PortalDataRefresh";
 
 const NAV = [
   { href: "/supplier/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -154,6 +156,8 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="flex min-h-screen bg-dash-bg" style={portalThemeStyles.supplier}>
+      <PortalDataRefresh />
+      <ElfsightTranslator />
       <Sidebar
         navItems={navItems}
         title="Tourvaa"

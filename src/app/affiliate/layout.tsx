@@ -13,6 +13,7 @@ import api from "@/lib/api/client";
 import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
 import CommissionCheckFailed from "@/components/common/CommissionCheckFailed";
 import Loader from "@/components/ui/Loader";
+import PortalDataRefresh from "@/components/common/PortalDataRefresh";
 
 const NAV = [
   { href: "/affiliate/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -133,6 +134,7 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-dash-bg" style={portalThemeStyles.affiliate}>
+      <PortalDataRefresh />
       <Sidebar
         navItems={navItems}
         title="Tourvaa"

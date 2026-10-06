@@ -1,6 +1,7 @@
 import axios from "axios";
 import { clearSession } from "@/lib/api/session";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import { requestApiDataRefresh } from "@/lib/api/events";
 
 const API_PATH_PREFIX = "/api";
 const PUBLIC_API_PATHS = [
@@ -122,7 +123,13 @@ function hardLogout() {
         },
       })
     );
-    window.location.assign(window.location.pathname.startsWith("/admin") ? "/admin/login" : "/login");
+    const path = window.location.pathname;
+    const loginPath = path.startsWith("/admin") ? "/admin/login"
+      : path.startsWith("/supplier") ? "/supplier-portal/login"
+      : path.startsWith("/agent") ? "/agent-portal/login"
+      : path.startsWith("/affiliate") ? "/affiliate-portal/login"
+      : "/login";
+    window.location.assign(loginPath);
   }
 }
 
@@ -145,7 +152,13 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const method = (response.config.method || "get").toLowerCase();
+    if (typeof window !== "undefined" && UNSAFE_METHODS.has(method)) {
+      requestApiDataRefresh({ method: method.toUpperCase(), path: getApiPath(response.config.url) });
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error?.config;
 

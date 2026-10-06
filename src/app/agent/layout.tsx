@@ -15,6 +15,7 @@ import api from "@/lib/api/client";
 import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
 import CommissionCheckFailed from "@/components/common/CommissionCheckFailed";
 import Loader from "@/components/ui/Loader";
+import PortalDataRefresh from "@/components/common/PortalDataRefresh";
 
 const NAV = [
   { href: "/agent/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -134,6 +135,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     <PublicSettingsProvider>
       <TravelStoreProvider>
         <div className="agent-portal min-h-screen bg-[#F8FAFC]" style={portalThemeStyles.agent}>
+          <PortalDataRefresh />
           <ElfsightTranslator />
           <CustomerPortalHeader quickLinks={isApproved ? HEADER_LINKS : []} profileHref="/agent/profile" showNotifications />
 

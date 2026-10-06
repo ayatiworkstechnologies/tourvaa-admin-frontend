@@ -167,6 +167,7 @@ function useContactBlock<T extends Record<string, unknown>>(key: string, def: T)
 }
 
 export default function ContactPage() {
+  const [isSupplierInquiry, setIsSupplierInquiry] = useState(false);
   const hero = useContactBlock("contact_page_hero", DEFAULT_HERO);
   const supportCardsBlock = useContactBlock<{ items?: SupportCardItem[] }>("contact_page_support_cards", {});
   const channels = useContactBlock("contact_page_channels", DEFAULT_CHANNELS);
@@ -211,6 +212,16 @@ export default function ContactPage() {
   const [sent, setSent] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
+  useEffect(() => {
+    setIsSupplierInquiry(new URLSearchParams(window.location.search).get("context") === "supplier");
+  }, []);
+
+  useEffect(() => {
+    if (isSupplierInquiry) {
+      setForm((current) => ({ ...current, reservation: "no", subject: "Supplier Registration & Onboarding" }));
+    }
+  }, [isSupplierInquiry]);
+
   // Modal state
   const [showInquiryModal, setShowInquiryModal] = useState<boolean>(false);
 
@@ -239,7 +250,7 @@ export default function ContactPage() {
         phone: form.phone,
         enquiry_type: form.subject || "General Inquiry",
         subject: form.subject || "General Inquiry",
-        message: `Reservation number: ${form.reservation === "yes" ? "Yes" : "No"}\n\n${form.message}`,
+        message: `${isSupplierInquiry ? "Existing supplier account: " : "Reservation number: "}${form.reservation === "yes" ? "Yes" : "No"}\n\n${form.message}`,
       });
       setSent(true);
     } catch (err: unknown) {
@@ -526,7 +537,7 @@ export default function ContactPage() {
                         name: "",
                         phone: "",
                         email: "",
-                        subject: "General Inquiry",
+                        subject: isSupplierInquiry ? "Supplier Registration & Onboarding" : "General Inquiry",
                         message: "",
                       });
                     }}
@@ -540,10 +551,10 @@ export default function ContactPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-2xl sm:text-3xl font-bold text-slate-950 font-heading">
-                        Send Us a Message
+                        {isSupplierInquiry ? "Supplier Registration Support" : "Send Us a Message"}
                       </h3>
                       <p className="mt-1 text-xs sm:text-sm text-slate-500">
-                        Fill in your journey details below and our team will get back to you promptly.
+                        {isSupplierInquiry ? "Tell us where you are in registration and our supplier onboarding team will help." : "Fill in your journey details below and our team will get back to you promptly."}
                       </p>
                     </div>
                   </div>
@@ -559,7 +570,7 @@ export default function ContactPage() {
                     {/* Booking Status Radio */}
                     <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3.5">
                       <label className="block text-xs font-bold text-slate-800">
-                        Do you have an existing booking reference?
+                        {isSupplierInquiry ? "Do you already have a supplier account?" : "Do you have an existing booking reference?"}
                       </label>
                       <div className="mt-2 flex gap-6 text-xs font-semibold text-slate-700">
                         <label className="flex items-center gap-2 cursor-pointer">
@@ -571,7 +582,7 @@ export default function ContactPage() {
                             onChange={() => setForm({ ...form, reservation: "no" })}
                             className="accent-pub-secondary"
                           />
-                          <span>No, I am planning a new trip</span>
+                          <span>{isSupplierInquiry ? "No, I am registering as a supplier" : "No, I am planning a new trip"}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -582,7 +593,7 @@ export default function ContactPage() {
                             onChange={() => setForm({ ...form, reservation: "yes" })}
                             className="accent-pub-secondary"
                           />
-                          <span>Yes, I have an active reservation</span>
+                          <span>{isSupplierInquiry ? "Yes, I need help with my supplier account" : "Yes, I have an active reservation"}</span>
                         </label>
                       </div>
                     </div>
@@ -642,11 +653,24 @@ export default function ContactPage() {
                           onChange={(e) => setForm({ ...form, subject: e.target.value })}
                           className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3.5 text-xs sm:text-sm outline-none focus:border-pub-secondary focus:ring-1 focus:ring-pub-secondary/20 transition bg-white"
                         >
-                          <option value="General Inquiry">General Question</option>
-                          <option value="Booking Assistance">Booking Assistance</option>
-                          <option value="Custom Group Tour">Custom / Private Group Tour</option>
-                          <option value="Operator Partnership">Operator / Supplier Partnership</option>
-                          <option value="Feedback or Complaint">Feedback / Help Desk</option>
+                          {isSupplierInquiry ? (
+                            <>
+                              <option value="Supplier Registration & Onboarding">Registration &amp; onboarding</option>
+                              <option value="Supplier Verification Documents">Verification documents</option>
+                              <option value="Supplier Portal Access">Supplier portal access</option>
+                              <option value="Supplier Tour Listing & Pricing">Tour listing &amp; pricing</option>
+                              <option value="Supplier Payouts & Bank Details">Payouts &amp; bank details</option>
+                              <option value="Supplier Other">Other supplier question</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="General Inquiry">General Question</option>
+                              <option value="Booking Assistance">Booking Assistance</option>
+                              <option value="Custom Group Tour">Custom / Private Group Tour</option>
+                              <option value="Operator Partnership">Operator / Supplier Partnership</option>
+                              <option value="Feedback or Complaint">Feedback / Help Desk</option>
+                            </>
+                          )}
                         </select>
                       </div>
                     </div>
@@ -661,7 +685,7 @@ export default function ContactPage() {
                         rows={4}
                         value={form.message}
                         onChange={(e) => setForm({ ...form, message: e.target.value })}
-                        placeholder="Tell us about your destination plans, travel dates, or specific questions..."
+                        placeholder={isSupplierInquiry ? "Tell us about your business, registration stage, documents, or supplier portal question..." : "Tell us about your destination plans, travel dates, or specific questions..."}
                         className="mt-1.5 w-full rounded-xl border border-slate-200 p-3.5 text-xs sm:text-sm outline-none focus:border-pub-secondary focus:ring-1 focus:ring-pub-secondary/20 transition resize-none"
                       />
                     </div>
@@ -677,7 +701,7 @@ export default function ContactPage() {
                       ) : (
                         <>
                           <Send size={14} />
-                          <span>Send Message to Concierge</span>
+                          <span>{isSupplierInquiry ? "Send Message to Supplier Desk" : "Send Message to Concierge"}</span>
                         </>
                       )}
                     </button>

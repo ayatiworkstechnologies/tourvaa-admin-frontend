@@ -17,6 +17,7 @@ const hook = read("src/hooks/useCurrency.ts");
 const publicHeader = read("src/components/public/PublicHeader.tsx");
 const portalHeader = read("src/components/layout/Header.tsx");
 const listing = read("src/components/public/CountryTourListing.tsx");
+check("country-search tour cards display active discount badges on images", listing.includes("DiscountCardBadge") && listing.includes("hasActiveDiscount({"));
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
 const booking = read("src/app/(public)/booking/[id]/page.tsx");
 

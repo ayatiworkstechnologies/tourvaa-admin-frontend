@@ -28,6 +28,7 @@ import { useContentBlock } from "@/hooks/useContentBlock";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { publicTourUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 import WishlistButton from "@/components/public/WishlistButton";
+import { DiscountCardBadge, hasActiveDiscount } from "@/components/public/DiscountPrice";
 import ExternalExperiencesSection from "@/components/public/external/ExternalExperiencesSection";
 import Loader from "@/components/ui/Loader";
 
@@ -53,6 +54,8 @@ type TourItem = {
   price: string;
   rawPrice: number | null;
   discountPercentage?: number | null;
+  originalPriceRaw?: number | null;
+  discountedPriceRaw?: number | null;
   currency?: string;
   image: string;
   slug?: string;
@@ -468,6 +471,8 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                 : "Price on request",
             rawPrice: t.discounted_price_per_person ?? t.price_start_per_person ?? null,
             discountPercentage: t.discount_percentage,
+            originalPriceRaw: t.original_price_per_person,
+            discountedPriceRaw: t.discounted_price_per_person,
             currency: t.currency || "USD",
             image: t.banner_image ? mediaUrl(t.banner_image) : DEFAULT_TOUR_FALLBACK_IMAGE,
             slug: t.slug,
@@ -1131,6 +1136,11 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                       alt={tour.title}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
+                    {hasActiveDiscount({
+                      discount_percentage: tour.discountPercentage,
+                      original_price_per_person: tour.originalPriceRaw,
+                      discounted_price_per_person: tour.discountedPriceRaw,
+                    }) && <DiscountCardBadge percentage={tour.discountPercentage!} />}
                     {/* Wishlist button (top-right) */}
                     <WishlistButton
                       variant="badge"

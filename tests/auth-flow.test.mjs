@@ -25,7 +25,7 @@ check("API requests include secure cookie credentials", (client.match(/withCrede
 check("browser requests never attach JavaScript bearer tokens", !client.includes("config.headers.Authorization"));
 check("concurrent 401 responses share one refresh operation", client.includes("isRefreshing") && client.includes("refreshQueue"));
 check("retried requests rely on the refreshed httpOnly cookie", client.includes('client_type: "web-cookie"') && !client.includes("newToken"));
-check("expired sessions return to the matching portal login", client.includes('window.location.pathname.startsWith("/admin") ? "/admin/login" : "/login"'));
+check("expired sessions return to the matching portal login", client.includes('path.startsWith("/supplier") ? "/supplier-portal/login"') && client.includes('path.startsWith("/agent") ? "/agent-portal/login"') && client.includes('path.startsWith("/affiliate") ? "/affiliate-portal/login"'));
 check("failed refresh clears stored authentication", client.includes("clearSession()"));
 check("forbidden mutation toasts preserve the backend reason", client.includes("getApiErrorMessage(error)"));
 

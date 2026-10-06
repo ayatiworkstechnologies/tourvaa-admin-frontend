@@ -7,6 +7,7 @@ import {
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { destinationUrl } from "@/lib/utils/tourUrl";
+import { formatDiscountPercent } from "@/components/public/DiscountPrice";
 import {
   LuClock as Clock,
   LuMapPin as MapPin,
@@ -170,7 +171,7 @@ export function mapPublicTour(tour: PublicTour): Tour {
     : tour.price_start_per_person;
   const originalPrice = hasDiscount ? tour.original_price_per_person : null;
   const discountBadge = tour.discount_percentage
-    ? `Save ${Math.round(tour.discount_percentage)}%`
+    ? `Save ${formatDiscountPercent(tour.discount_percentage)}%`
     : undefined;
 
   return {

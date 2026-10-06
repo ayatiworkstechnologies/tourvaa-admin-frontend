@@ -46,6 +46,12 @@ const imageSettingKeys = new Set(["logo", "favicon"]);
 const invoicePdfSettingFields = [
   { key: "invoice_brand_name", label: "Brand name", helper: "Shown at the top-left of every invoice." },
   { key: "invoice_brand_tagline", label: "Brand tagline", helper: "Shown directly below the brand name." },
+  { key: "invoice_column_description", label: "Description column", helper: "Table heading for the invoice line description." },
+  { key: "invoice_column_quantity", label: "Quantity column", helper: "Table heading for quantity." },
+  { key: "invoice_column_unit_price", label: "Unit price column", helper: "Table heading for the unit price." },
+  { key: "invoice_column_tax", label: "Tax column", helper: "Table heading for tax." },
+  { key: "invoice_column_total", label: "Total column", helper: "Table heading for the line total." },
+  { key: "invoice_label_amount_due", label: "Amount due label", helper: "Summary label next to the outstanding balance." },
   { key: "invoice_footer_thanks", label: "Footer thank-you", helper: "Shown above the contact line." },
   { key: "invoice_footer_legal", label: "Footer legal notice", helper: "Shown as the final line on every invoice." },
 ] as const;
@@ -904,9 +910,9 @@ export default function SettingsPage() {
                       <div><strong className="block text-[#123F31]">TRIP DETAILS</strong>Tour and payment details</div>
                     </div>
                     <div className="mt-4 text-[8px]">
-                      <div className="grid grid-cols-[1fr_32px_54px] bg-[#123F31] px-2 py-1.5 font-bold text-white"><span>Description</span><span>Qty</span><span className="text-right">Total</span></div>
+                      <div className="grid grid-cols-[1fr_32px_54px] bg-[#123F31] px-2 py-1.5 font-bold text-white"><span>{form.invoice_column_description || "Description"}</span><span>{form.invoice_column_quantity || "Qty"}</span><span className="text-right">{form.invoice_column_total || "Total"}</span></div>
                       <div className="grid grid-cols-[1fr_32px_54px] border-b border-slate-100 px-2 py-2 text-slate-600"><span>Booking tour</span><span>1</span><span className="text-right">USD 0.00</span></div>
-                      <div className="ml-auto mt-3 w-36 space-y-1.5 text-right text-slate-600"><p>Total <strong className="ml-4 text-[#123F31]">USD 0.00</strong></p><p>Amount Due <strong className="ml-1 text-red-700">USD 0.00</strong></p></div>
+                      <div className="ml-auto mt-3 w-36 space-y-1.5 text-right text-slate-600"><p>{form.invoice_column_total || "Total"} <strong className="ml-4 text-[#123F31]">USD 0.00</strong></p><p>{form.invoice_label_amount_due || "Amount Due"} <strong className="ml-1 text-red-700">USD 0.00</strong></p></div>
                     </div>
                     <div className="mt-6 border-t border-slate-100 pt-3 text-center text-[7px] text-slate-500"><p>{form.invoice_footer_thanks || "Thank you for booking with Tourvaa."}</p><p className="mt-1">{form.invoice_footer_legal || "This is a system-generated invoice and does not require a signature."}</p></div>
                   </div>

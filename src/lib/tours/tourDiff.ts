@@ -17,8 +17,8 @@ type SectionDef = { key: string; label: string; scalars?: string[]; lists?: stri
 
 // Order = the order of the editor steps.
 const SECTIONS: SectionDef[] = [
-  { key: "basic", label: "Basic Information", scalars: ["title", "subtitle", "slug", "number_of_days", "number_of_hours", "short_description", "long_description", "currency"] },
-  { key: "location", label: "Location & Category", scalars: ["country_name", "city_name", "category_name", "start_location", "finish_location"] },
+  { key: "basic", label: "Basic Information", scalars: ["title", "subtitle", "slug", "number_of_days", "number_of_hours", "number_of_nights", "max_group_size", "min_booking_size", "tour_language", "suitable_age_range", "short_description", "long_description", "currency"] },
+  { key: "location", label: "Location & Category", scalars: ["country_name", "state_name", "city_name", "category_name", "start_location", "finish_location"] },
   { key: "overview", label: "Overview & Highlights", objects: ["overview"], lists: ["highlights"] },
   { key: "itinerary", label: "Itinerary", lists: ["itinerary"] },
   { key: "pricing", label: "Pricing & Discounts", scalars: ["price_start_per_person"], lists: ["pricing", "discounts"] },
@@ -26,8 +26,9 @@ const SECTIONS: SectionDef[] = [
   { key: "accommodation", label: "Accommodation & Activities", lists: ["accommodations", "activities"] },
   { key: "extras", label: "Extensions & Similar Tours", lists: ["extensions", "similar_tours"] },
   { key: "inclusions", label: "Inclusions & Exclusions", lists: ["inclusions", "exclusions"] },
-  { key: "media", label: "Media & Gallery", scalars: ["banner_image", "map_image"], lists: ["gallery"] },
-  { key: "seo", label: "SEO", scalars: ["seo_title", "seo_description"] },
+  { key: "settings", label: "Booking & Payment Settings", scalars: ["tour_visibility", "featured", "requires_supplier_confirmation", "deposit_type", "booking_deposit", "deposit_percentage", "deposit_cutoff_days", "balance_payment_deadline_days", "tax_percentage", "service_fee", "gateway_fee_percentage"] },
+  { key: "media", label: "Media & Gallery", scalars: ["banner_image", "map_image", "mobile_cover_image", "tour_video_url", "brochure_pdf", "image_alt_text"], lists: ["gallery"] },
+  { key: "seo", label: "SEO", scalars: ["seo_title", "seo_description", "seo_keywords", "focus_keyword", "canonical_url", "open_graph_image", "search_visibility"] },
 ];
 
 // Server bookkeeping / counters that change without the supplier editing anything.
@@ -37,6 +38,17 @@ const FIELD_LABELS: Record<string, string> = {
   price_start_per_person: "Starting price per person",
   number_of_days: "Number of days",
   number_of_hours: "Number of hours",
+  number_of_nights: "Number of nights",
+  max_group_size: "Maximum group size",
+  min_booking_size: "Minimum booking size",
+  tour_visibility: "Visibility",
+  requires_supplier_confirmation: "Requires supplier confirmation",
+  booking_deposit: "Minimum deposit",
+  deposit_percentage: "Deposit percentage",
+  deposit_cutoff_days: "Deposit cutoff days",
+  balance_payment_deadline_days: "Balance payment deadline",
+  service_fee: "Service fee",
+  gateway_fee_percentage: "Gateway fee percentage",
   seo_title: "SEO title",
   seo_description: "SEO description",
   banner_image: "Banner image",

@@ -13,8 +13,7 @@ import {
 } from "react-icons/lu";
 import Link from "next/link";
 import { theme, type TourWorkspaceRole } from "@/components/tours/TourWorkspace";
-import { REVIEWABLE_STEPS } from "./steps";
-import type { StepStatus } from "./steps";
+import type { StepStatus, WizardStepDef } from "./steps";
 
 const STATUS_BADGE: Record<StepStatus, { label: string; className: string; icon: React.ElementType | null }> = {
   complete: { label: "Complete", className: "border-emerald-200 bg-emerald-50 text-emerald-700", icon: Check },
@@ -30,6 +29,7 @@ export function WizardReviewSubmit({
   isSupplier,
   status,
   statuses,
+  steps,
   onEditStep,
   canSubmit,
   submitting,
@@ -47,6 +47,8 @@ export function WizardReviewSubmit({
   isSupplier: boolean;
   status: string;
   statuses: Record<number, StepStatus>;
+  /** Role-filtered steps, including the review step. */
+  steps: WizardStepDef[];
   onEditStep: (index: number) => void;
   canSubmit: boolean;
   submitting: boolean;
@@ -59,10 +61,11 @@ export function WizardReviewSubmit({
   hasPendingReview: boolean;
 }) {
   const colors = theme[role];
-  const statusValues = REVIEWABLE_STEPS.map((_, index) => statuses[index] ?? "not-started");
+  const reviewableSteps = steps.filter((step) => step.id !== "review");
+  const statusValues = reviewableSteps.map((_, index) => statuses[index] ?? "not-started");
   const completeCount = statusValues.filter((s) => s === "complete").length;
   const missingCount = statusValues.filter((s) => s === "missing").length;
-  const completionPct = REVIEWABLE_STEPS.length ? Math.round((completeCount / REVIEWABLE_STEPS.length) * 100) : 0;
+  const completionPct = reviewableSteps.length ? Math.round((completeCount / reviewableSteps.length) * 100) : 0;
   const isLiveTour = ["active", "published"].includes((status ?? "").toLowerCase());
 
   return (
@@ -83,7 +86,7 @@ export function WizardReviewSubmit({
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <p className={`text-2xl font-black ${colors.progressText}`}>{completeCount}/{REVIEWABLE_STEPS.length}</p>
+            <p className={`text-2xl font-black ${colors.progressText}`}>{completeCount}/{reviewableSteps.length}</p>
             <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Complete</p>
           </div>
         </div>
@@ -93,7 +96,7 @@ export function WizardReviewSubmit({
         </div>
 
         <ul className="mt-5 divide-y divide-dash-border-soft">
-          {REVIEWABLE_STEPS.map((step, index) => {
+          {reviewableSteps.map((step, index) => {
             const stepStatus = statuses[index] ?? "not-started";
             const badge = STATUS_BADGE[stepStatus];
             const Icon = badge.icon;

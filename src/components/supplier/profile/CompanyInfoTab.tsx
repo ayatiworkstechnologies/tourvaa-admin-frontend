@@ -35,6 +35,7 @@ type CompanyForm = {
   contact_name: string;
   contact_first_name: string;
   contact_last_name: string;
+  contact_designation: string;
   contact_email: string;
   contact_phone: string;
   contact_method: string;
@@ -63,7 +64,7 @@ export default function CompanyInfoTab() {
     address: "",
     supplier_type: "",
     trading_name: "", business_email: "", website_url: "",
-    contact_name: "", contact_first_name: "", contact_last_name: "",
+    contact_name: "", contact_first_name: "", contact_last_name: "", contact_designation: "",
     contact_email: "",
     contact_phone: "", contact_method: "",
     years_in_operation: "",
@@ -118,7 +119,7 @@ export default function CompanyInfoTab() {
           supplier_type: s.supplier_type || "",
           trading_name: s.business_info?.trading_name || "", business_email: s.business_info?.business_email || "", website_url: s.business_info?.website_url || "",
           contact_name: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.contact_name || s.contacts?.[0]?.contact_name || "",
-          contact_first_name: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.first_name || s.contacts?.[0]?.first_name || "", contact_last_name: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.last_name || s.contacts?.[0]?.last_name || "",
+          contact_first_name: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.first_name || s.contacts?.[0]?.first_name || "", contact_last_name: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.last_name || s.contacts?.[0]?.last_name || "", contact_designation: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.designation || s.contacts?.[0]?.designation || "",
           contact_email: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.email || s.contacts?.[0]?.email || "",
           contact_phone: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.phone || s.contacts?.[0]?.phone || "", contact_method: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.preferred_contact_method || s.contacts?.[0]?.preferred_contact_method || "",
           years_in_operation: String(
@@ -165,8 +166,8 @@ export default function CompanyInfoTab() {
           country_id: parseInt(form.country_id) || null,
           city_id: parseInt(form.city_id) || null,
           currency: form.currency || null,
-          contact: (form.contact_first_name || form.contact_last_name || form.contact_email || form.contact_phone) ? {
-            contact_name: form.contact_name || null, first_name: form.contact_first_name || null, last_name: form.contact_last_name || null,
+          contact: (form.contact_first_name || form.contact_last_name || form.contact_designation || form.contact_email || form.contact_phone) ? {
+            contact_name: form.contact_name || null, first_name: form.contact_first_name || null, last_name: form.contact_last_name || null, designation: form.contact_designation || null,
             email: form.contact_email || null,
             phone: form.contact_phone || null, preferred_contact_method: form.contact_method || null,
           } : undefined,
@@ -255,9 +256,9 @@ export default function CompanyInfoTab() {
             />
           </div>
 
-          {/* Company Name */}
+          {/* Company / Legal Name */}
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Company Name <span className="text-red-500">*</span></span>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Company / Legal Name <span className="text-red-500">*</span></span>
             <input required value={form.supplier_name} onChange={e => set("supplier_name", e.target.value)}
               placeholder="e.g. Alpine Expeditions Ltd"
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all" />
@@ -282,8 +283,8 @@ export default function CompanyInfoTab() {
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Trading / Business Name</span><input value={form.trading_name} onChange={e => set("trading_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Email</span><input type="email" value={form.business_email} onChange={e => set("business_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Trading / Business Name <span className="normal-case font-normal">(if different)</span></span><input value={form.trading_name} onChange={e => set("trading_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Email <span className="text-red-500">*</span></span><input required type="email" value={form.business_email} onChange={e => set("business_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
             <label className="block sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Website <span className="text-dash-subtle">(optional)</span></span><input type="url" value={form.website_url} onChange={e => set("website_url", e.target.value)} placeholder="https://example.com" className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
           </div>
 
@@ -316,23 +317,23 @@ export default function CompanyInfoTab() {
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Registration Number</span>
-              <input value={form.business_registration_number} onChange={e => set("business_registration_number", e.target.value)}
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Registration Number <span className="text-red-500">*</span></span>
+              <input required value={form.business_registration_number} onChange={e => set("business_registration_number", e.target.value)}
                 placeholder="e.g. REG-4920194"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">GST / Tax Number</span>
-              <input value={form.gst_tax_number} onChange={e => set("gst_tax_number", e.target.value)}
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">GST / VAT Registration Number <span className="text-red-500">*</span></span>
+              <input required value={form.gst_tax_number} onChange={e => set("gst_tax_number", e.target.value)}
                 placeholder="e.g. TAX-8921-9481"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
             </label>
 
             {/* Country */}
             <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country</span>
-              <select value={form.country_id}
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country <span className="text-red-500">*</span></span>
+              <select required value={form.country_id}
                 onChange={e => {
                   const nextCountryId = e.target.value;
                   setSelectedStateId("");
@@ -397,24 +398,25 @@ export default function CompanyInfoTab() {
           </div>
 
           <fieldset className="rounded-xl border border-dash-border bg-dash-bg/45 p-4">
-            <legend className="px-1 text-xs font-bold uppercase text-dash-muted">Booking contact</legend>
-            <p className="mb-3 text-xs text-dash-subtle">Used by Tourvaa for booking and operational communication. This can differ from the account email.</p>
+            <legend className="px-1 text-xs font-bold uppercase text-dash-muted">Primary Contact</legend>
+            <p className="mb-3 text-xs text-dash-subtle">This is the main administrative contact for the Supplier Portal.</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">First Name</span>
-                <input value={form.contact_first_name} onChange={e => set("contact_first_name", e.target.value)} placeholder="e.g. Priya"
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">First Name <span className="text-red-500">*</span></span>
+                <input required value={form.contact_first_name} onChange={e => set("contact_first_name", e.target.value)} placeholder="e.g. Priya"
                   className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
               </label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Last Name</span><input value={form.contact_last_name} onChange={e => set("contact_last_name", e.target.value)} placeholder="e.g. Sharma" className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Last Name <span className="text-red-500">*</span></span><input required value={form.contact_last_name} onChange={e => set("contact_last_name", e.target.value)} placeholder="e.g. Sharma" className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Job Title / Position <span className="text-red-500">*</span></span><input required value={form.contact_designation} onChange={e => set("contact_designation", e.target.value)} placeholder="e.g. Operations Manager" className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" /></label>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Booking Contact Email</span>
-                <input type="email" value={form.contact_email} onChange={e => set("contact_email", e.target.value)} placeholder="operations@example.com"
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Email Address <span className="text-red-500">*</span></span>
+                <input required type="email" value={form.contact_email} onChange={e => set("contact_email", e.target.value)} placeholder="operations@example.com"
                   className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
               </label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Contact Method</span><select value={form.contact_method} onChange={e => set("contact_method", e.target.value)} className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm"><option value="">Select method</option><option value="email">Email</option><option value="phone">Phone</option><option value="whatsapp">WhatsApp</option></select></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Contact Method <span className="text-red-500">*</span></span><select required value={form.contact_method} onChange={e => set("contact_method", e.target.value)} className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm"><option value="">Select method</option><option value="email">Email</option><option value="phone">Phone</option><option value="whatsapp">WhatsApp</option></select></label>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Booking Contact Phone</span>
-                <input type="tel" value={form.contact_phone} onChange={e => set("contact_phone", e.target.value)} placeholder="e.g. +91 98765 43210"
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Phone / Mobile <span className="text-red-500">*</span></span>
+                <input required type="tel" value={form.contact_phone} onChange={e => set("contact_phone", e.target.value)} placeholder="e.g. +91 98765 43210"
                   className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
               </label>
             </div>

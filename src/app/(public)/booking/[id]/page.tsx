@@ -159,8 +159,8 @@ type CustomerPaymentMethod = "full" | "deposit";
 // creation so the checkout page can show/hide "Secure with a Deposit" /
 // "Reserve Now" rather than let the traveller pick it and get rejected at
 // booking-creation time. Both branches share one eligibility window
-// (tour_availability._deposit_window) but each carries its own
-// role-specific deposit terms.
+// (tour_availability._deposit_window). Customers have deposit terms; agents
+// use Reserve Now, Pay Later with an invoice instead of a deposit.
 type DepositOptions = {
   customer: {
     eligible: boolean;
@@ -172,7 +172,6 @@ type DepositOptions = {
   agent: {
     eligible: boolean;
     due_date: string | null;
-    deposit_percentage: number;
   };
 };
 
@@ -317,36 +316,26 @@ function AgentCustomerSelector({
   );
 }
 
-/** Agent-only: commercial controls (markup, reference, settlement method) --
+/** Agent-only: reference and settlement controls --
  * never shown to, or submittable by, a customer booking for themselves. */
 function AgentCommercialFields({
-  agentMarkup,
-  onAgentMarkupChange,
   agentReference,
   onAgentReferenceChange,
   agentPaymentMethod,
   onAgentPaymentMethodChange,
-  reserveDepositPercentage,
   reserveEligible,
-  reserveDepositLabel,
   reserveBalanceLabel,
   reserveDueDate,
 }: {
-  agentMarkup: string;
-  onAgentMarkupChange: (value: string) => void;
   agentReference: string;
   onAgentReferenceChange: (value: string) => void;
   agentPaymentMethod: AgentPaymentMethod;
   onAgentPaymentMethodChange: (value: AgentPaymentMethod) => void;
-  reserveDepositPercentage: number;
   /** Whether this tour/travel date still qualifies for a Reserve Now
-   * (deposit now, balance later) booking (see
+   * (pay later) booking (see
    * tour_availability.agent_reserve_eligibility) - when false, "Reserve Now"
    * is hidden entirely rather than shown and then rejected by booking creation. */
   reserveEligible: boolean;
-  /** Pre-formatted deposit due today and remaining balance, once a price
-   * estimate exists; null before that. */
-  reserveDepositLabel: string | null;
   reserveBalanceLabel: string | null;
   /** Balance due date from the eligibility check (ISO date), if eligible. */
   reserveDueDate: string | null;
@@ -354,18 +343,7 @@ function AgentCommercialFields({
   return (
     <div className="rounded-xl border border-slate-200 p-4 sm:p-5 space-y-4">
       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Agent Commercial Details</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Your markup</label>
-          <input
-            type="number"
-            min={0}
-            value={agentMarkup}
-            onChange={(e) => onAgentMarkupChange(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 outline-none transition focus:border-blue-500"
-          />
-        </div>
-        <div>
+      <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">Your reference (optional)</label>
           <input
             type="text"
@@ -374,16 +352,15 @@ function AgentCommercialFields({
             placeholder="e.g. AGT-REF-1042"
             className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
           />
-        </div>
       </div>
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-2">Booking action</label>
         <div className={`grid gap-3 ${reserveEligible ? "sm:grid-cols-2" : ""}`}>
           {reserveEligible && (
             <button type="button" onClick={() => onAgentPaymentMethodChange("pay_later")} className={`rounded-xl border p-4 text-left transition ${agentPaymentMethod === "pay_later" ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}>
-              <span className="block text-sm font-black text-slate-900">Reserve Now ({reserveDepositPercentage}% deposit)</span>
+              <span className="block text-sm font-black text-slate-900">Reserve Now, Pay Later</span>
               <span className="mt-1 block text-xs leading-5 text-slate-500">
-                Reserve your booking now with a {reserveDepositPercentage}% deposit{reserveDepositLabel ? <> (<strong className="text-slate-700">{reserveDepositLabel}</strong>)</> : null}.
+                Reserve your booking now with no deposit. The full booking amount will be invoiced for payment by the due date.
                 {" "}{reserveBalanceLabel ? <>Balance of <strong className="text-slate-700">{reserveBalanceLabel}</strong> is due</> : "The balance is due"}
                 {reserveDueDate ? <> by <strong className="text-slate-700">{formatDate(reserveDueDate)}</strong>.</> : " before the booking cutoff."}
               </span>
@@ -456,7 +433,6 @@ export default function DynamicTourBookingPage() {
   const [newCustomer, setNewCustomer] = useState<NewCustomerForm>({ fullName: "", email: "", phoneCountry: "+91", phone: "" });
   const [newCustomerLoading, setNewCustomerLoading] = useState(false);
   const [newCustomerError, setNewCustomerError] = useState<string | null>(null);
-  const [agentMarkup, setAgentMarkup] = useState("0");
   const [agentReference, setAgentReference] = useState("");
   const initialAgentAction = searchParams.get("agent_action") === "reserve" ? "reserve" : "full";
   const [agentPaymentMethod, setAgentPaymentMethod] = useState<AgentPaymentMethod>(initialAgentAction === "reserve" ? "pay_later" : "card");
@@ -572,7 +548,7 @@ export default function DynamicTourBookingPage() {
     if (!tour) return;
     const bookingCapacity = Math.max(
       1,
-      selectedCalendar?.slots ?? tour.max_group_size ?? 10,
+      Math.min(selectedCalendar?.slots ?? 10, tour.max_group_size ?? 10),
     );
     const maxAdults = Math.max(1, bookingCapacity - childCount);
     if (adultCount > maxAdults) setAdultCount(maxAdults);
@@ -749,7 +725,7 @@ export default function DynamicTourBookingPage() {
   const totalTravellers = adultCount + childCount;
   const bookingCapacity = Math.max(
     1,
-    selectedCalendar?.slots ?? tour?.max_group_size ?? 10,
+    Math.min(selectedCalendar?.slots ?? 10, tour?.max_group_size ?? 10),
   );
   const maxAdults = Math.max(1, bookingCapacity - childCount);
   const maxChildren = Math.max(0, bookingCapacity - adultCount);
@@ -1145,22 +1121,12 @@ export default function DynamicTourBookingPage() {
     return undefined;
   }
 
-  // Deposit-today / balance-later split shown on the "Secure with a Deposit"
-  // (customer) and "Reserve Now" (agent) options, from the live price
-  // estimate. Display only -- the amounts actually charged are still derived
-  // from the created booking (computeCustomerDepositAmount /
-  // booking.agent_reserve_deposit.minimum_amount).
+  // Deposit-today / balance-later split shown only for the customer "Secure
+  // with a Deposit" option. Agent Reserve Now is an invoice/pay-later flow.
   const estimateTotal = priceEstimate ? Number(priceEstimate.final_amount) : NaN;
   const customerDepositToday = Number.isFinite(estimateTotal) ? computeCustomerDepositAmount(String(estimateTotal)) : undefined;
   const customerDepositSplit = customerDepositToday != null
     ? { deposit: Number(customerDepositToday), balance: Math.max(0, estimateTotal - Number(customerDepositToday)) }
-    : null;
-  const agentReservePercentage = depositEligibility?.agent.deposit_percentage ?? tour?.agent_reserve_deposit_percentage ?? 30;
-  const agentReserveSplit = Number.isFinite(estimateTotal) && estimateTotal > 0
-    ? (() => {
-        const deposit = Math.round(estimateTotal * agentReservePercentage) / 100;
-        return { deposit, balance: Math.max(0, estimateTotal - deposit) };
-      })()
     : null;
 
   const paymentIdempotencyKeys = useRef<Record<string, string>>({});
@@ -1197,11 +1163,9 @@ export default function DynamicTourBookingPage() {
   const handleConfirmAndPay = async () => {
     setPaymentError(null);
     if (!acceptTerms || paymentSubmitting) return;
-    // Agent "Reserve Now" (pay_later) now requires an upfront deposit
-    // (see agent_reserve_deposit in the booking-creation response) instead
-    // of the old $0-down credit-approval flow, so it goes through the same
-    // gateway checkout as "card" - just for a reduced amount.
-    const onlinePayment = !isAgent || agentPaymentMethod === "card" || agentPaymentMethod === "pay_later";
+    // Agent Reserve Now is an invoice/pay-later flow; only the Pay in Full
+    // Today action uses Stripe or PayPal.
+    const onlinePayment = !isAgent || agentPaymentMethod === "card";
     if (onlinePayment && !gateways?.[`${gateway}_test`]) {
       setPaymentError("Enable this provider with test credentials in Payment Settings first.");
       return;
@@ -1240,7 +1204,7 @@ export default function DynamicTourBookingPage() {
           extensions: extensionsPayload,
           promo_code: !isAgent && promoApplied ? promoCode.trim() : undefined,
           ...(isAgent ? {
-            agent_markup: Number(agentMarkup) || 0,
+            agent_markup: 0,
             agent_reference: agentReference.trim() || undefined,
             // UI state uses "card" for the pay-in-full-today choice, but the
             // backend's agent_payment_method enum has no "card" value - it
@@ -1252,8 +1216,7 @@ export default function DynamicTourBookingPage() {
         });
         const booking = res.data?.data;
         if (onlinePayment) {
-          const depositAmount = agentPaymentMethod === "pay_later" ? booking?.agent_reserve_deposit?.minimum_amount : undefined;
-          await startPayment(booking, depositAmount);
+          await startPayment(booking);
           return;
         }
         setBookingResult({
@@ -2373,16 +2336,12 @@ export default function DynamicTourBookingPage() {
 
                   {isAgent && (
                     <AgentCommercialFields
-                      agentMarkup={agentMarkup}
-                      onAgentMarkupChange={setAgentMarkup}
                       agentReference={agentReference}
                       onAgentReferenceChange={setAgentReference}
                       agentPaymentMethod={agentPaymentMethod}
                       onAgentPaymentMethodChange={setAgentPaymentMethod}
-                      reserveDepositPercentage={depositEligibility?.agent.deposit_percentage ?? tour?.agent_reserve_deposit_percentage ?? 30}
                       reserveEligible={depositEligibility?.agent.eligible ?? true}
-                      reserveDepositLabel={agentReserveSplit ? format(agentReserveSplit.deposit, priceEstimate!.currency) : null}
-                      reserveBalanceLabel={agentReserveSplit ? format(agentReserveSplit.balance, priceEstimate!.currency) : null}
+                      reserveBalanceLabel={Number.isFinite(estimateTotal) && estimateTotal > 0 ? format(estimateTotal, priceEstimate!.currency) : null}
                       reserveDueDate={depositEligibility?.agent.due_date ?? null}
                     />
                   )}
@@ -2611,7 +2570,7 @@ export default function DynamicTourBookingPage() {
                       />
                       <span className="leading-relaxed">
                         I accept Tourvaa{" "}
-                        <Link href="/terms" className="text-blue-600 underline font-semibold hover:text-blue-700">
+                        <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-700">
                           Terms &amp; Conditions
                         </Link>{" "}
                         and tour cancellation policies
@@ -2659,7 +2618,7 @@ export default function DynamicTourBookingPage() {
                       ) : (
                         <>
                           <Lock size={16} />
-                          <span>{isAgent && agentPaymentMethod === "pay_later" ? "Pay Deposit & Reserve" : isAgent ? "Pay in Full Today" : customerPaymentMethod === "deposit" ? "Pay Deposit & Secure Booking" : "Confirm and Pay Now"}</span>
+                          <span>{isAgent && agentPaymentMethod === "pay_later" ? "Reserve Now, Pay Later" : isAgent ? "Pay in Full Today" : customerPaymentMethod === "deposit" ? "Pay Deposit & Secure Booking" : "Confirm and Pay Now"}</span>
                         </>
                       )}
                     </button>

@@ -669,7 +669,7 @@ export default function CustomerBookingDetailPage() {
 
           {canCancel && !freeCancellationEligible && (
             <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              The free cancellation period has finished. Please contact Tourvaa for cancellation assistance. For any travel-date modification, please contact Tourvaa.
+              The free cancellation period has finished. Please contact Tourvaa Support for cancellation assistance or a travel-date change.
             </div>
           )}
 
@@ -678,7 +678,7 @@ export default function CustomerBookingDetailPage() {
               <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
                 <h3 id="cancel-confirm-title" className="text-lg font-black text-slate-900">Confirm cancellation request</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-600">In accordance with the cancellation policy for this tour, you are eligible for a full refund, less any applicable transaction fees. Do you want to continue with the cancellation?</p>
-                <p className="mt-3 text-xs font-medium text-slate-500">For any travel-date modification, please contact Tourvaa.</p>
+                <p className="mt-3 text-xs font-medium text-slate-500">For a travel-date change, please contact Tourvaa Support.</p>
                 <div className="mt-6 flex justify-end gap-3">
                   <button type="button" onClick={() => setShowCancelConfirm(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">No</button>
                   <button type="button" onClick={() => { setShowCancelConfirm(false); setShowCancel(true); }} className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700">Yes, continue</button>
