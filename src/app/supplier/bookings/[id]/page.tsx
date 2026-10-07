@@ -21,6 +21,7 @@ type Traveller = {
   passport_number?: string;
   nationality?: string;
   date_of_birth?: string;
+  is_primary_contact?: boolean;
 };
 
 type StatusHistory = {
@@ -74,6 +75,9 @@ type Booking = {
   contact_name?: string;
   contact_email?: string;
   contact_phone?: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
   travellers?: Traveller[];
   created_at?: string;
   cancellation_reason?: string;
@@ -593,6 +597,14 @@ export default function SupplierBookingDetailPage() {
   }
 
   const pax = booking.total_travellers ?? booking.num_travellers ?? booking.total_pax;
+  // Prefer the explicitly selected primary contact.  For older booking
+  // payloads, a one-person booking is naturally its own lead traveller;
+  // customer fields remain a final fallback for legacy records.
+  const leadTraveller = booking.travellers?.find((traveller) => traveller.is_primary_contact)
+    ?? (booking.travellers?.length === 1 ? booking.travellers[0] : undefined);
+  const leadName = booking.contact_name ?? leadTraveller?.full_name ?? leadTraveller?.name ?? booking.customer_name;
+  const leadEmail = booking.contact_email ?? leadTraveller?.email ?? booking.customer_email;
+  const leadPhone = booking.contact_phone ?? leadTraveller?.phone ?? booking.customer_phone;
 
   return (
     <SupplierPageShell>
@@ -683,9 +695,9 @@ export default function SupplierBookingDetailPage() {
             <User size={18} className="text-emerald-600" />
             <h2 className="font-black text-dash-text">Lead Contact</h2>
           </div>
-          <InfoRow label="Name" value={booking.contact_name} />
-          <InfoRow label="Email" value={booking.contact_email} />
-          <InfoRow label="Phone" value={booking.contact_phone} />
+          <InfoRow label="Name" value={leadName} />
+          <InfoRow label="Email" value={leadEmail} />
+          <InfoRow label="Phone" value={leadPhone} />
         </div>
 
         {/* Status History */}

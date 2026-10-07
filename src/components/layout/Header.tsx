@@ -122,8 +122,11 @@ export default function Header({
     <header
       className={`sticky z-30 border-b border-[#E8ECF3] bg-white/95 shadow-[0_1px_6px_-1px_rgba(15,23,42,0.06)] backdrop-blur-xl ${headerOffset ? "top-20" : "top-0"}`}
     >
+      {/* The Elfsight language picker is fixed at the top-right outside this
+          component. Keep a dedicated lane so a wide profile trigger cannot
+          slide underneath it on supplier, agent, or admin pages. */}
       <div
-        className={`flex min-w-0 items-center justify-between gap-2 py-0 pl-3 pr-4 sm:pl-6 sm:pr-6 md:pl-9 md:pr-8 ${spacious ? "h-20" : "h-[70px]"}`}
+        className={`flex min-w-0 items-center justify-between gap-2 py-0 pl-3 pr-[132px] sm:pl-6 sm:pr-[140px] md:pl-9 md:pr-[148px] ${spacious ? "h-20" : "h-[70px]"}`}
       >
         {/* left */}
         <div className="flex min-w-0 items-center gap-3">
