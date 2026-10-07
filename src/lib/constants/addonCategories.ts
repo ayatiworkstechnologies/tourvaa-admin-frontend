@@ -10,6 +10,12 @@ export const ADDON_CATEGORIES = [
   { value: "other", label: "Other" },
 ] as const;
 
+export const ACCOMMODATION_ADDON_CATEGORIES = [
+  { value: "room_upgrade", label: "Room Upgrade" },
+  { value: "additional_night", label: "Additional Night" },
+  { value: "extra_activity", label: "Extra Activity" },
+] as const;
+
 export function addonCategoryLabel(value: string): string {
   return ADDON_CATEGORIES.find((c) => c.value === value)?.label || "Other";
 }

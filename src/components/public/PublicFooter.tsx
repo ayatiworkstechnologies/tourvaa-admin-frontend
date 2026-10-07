@@ -379,8 +379,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
                   )}
                 </div>
 
-                {/* Country Selector Pill */}
-                <div ref={countryRef} className="relative">
+                {false && <><div ref={countryRef} className="relative">
                   <button
                     type="button"
                     onClick={() => setCountryOpen((prev) => !prev)}
@@ -422,7 +421,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
                       </div>
                     </div>
                   )}
-                </div>
+                </div></>}
               </div>
             </div>
 

@@ -15,16 +15,22 @@ import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
-import { ADDON_CATEGORIES, addonCategoryLabel } from "@/lib/constants/addonCategories";
+import { ACCOMMODATION_ADDON_CATEGORIES, addonCategoryLabel } from "@/lib/constants/addonCategories";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const PRICE_TYPE_LABELS: Record<AccommodationExtra["price_type"], string> = {
   per_person: "per person",
-  per_booking: "per booking",
   per_room: "per room",
-  per_person_per_night: "per person / night",
-  per_room_per_night: "per room / night",
+};
+
+const PRICE_TYPES_BY_CATEGORY: Record<string, { value: AccommodationExtra["price_type"]; label: string }[]> = {
+  room_upgrade: [{ value: "per_person", label: "Per person (Adults & Children)" }],
+  extra_activity: [{ value: "per_person", label: "Per person (Adults & Children)" }],
+  additional_night: [
+    { value: "per_room", label: "Per room" },
+    { value: "per_person", label: "Per person (Adults & Children)" },
+  ],
 };
 
 const empty = (): AccommodationExtra => ({
@@ -174,27 +180,33 @@ export default function TourAccommodationExtraTab({ tourId }: { tourId: string }
                 className={fieldClass(errors.extra_price)} />
             </FormField>
             <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Category</span>
+              <select
+                value={editing.category}
+                onChange={(e) => setEditing((p) => {
+                  if (!p) return p;
+                  const category = e.target.value;
+                  const priceTypes = PRICE_TYPES_BY_CATEGORY[category] ?? [];
+                  const price_type = priceTypes.some((type) => type.value === p.price_type)
+                    ? p.price_type
+                    : (priceTypes[0]?.value ?? "per_person");
+                  return { ...p, category, price_type };
+                })}
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
+              >
+                {ACCOMMODATION_ADDON_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </label>
+            <label>
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Price type</span>
               <select
                 value={editing.price_type}
                 onChange={(e) => setEditing((p) => (p ? { ...p, price_type: e.target.value as AccommodationExtra["price_type"] } : p))}
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
               >
-                <option value="per_person">Per person</option>
-                <option value="per_booking">Per booking</option>
-                <option value="per_room">Per room</option>
-                <option value="per_person_per_night">Per person / night</option>
-                <option value="per_room_per_night">Per room / night</option>
-              </select>
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Category</span>
-              <select
-                value={editing.category}
-                onChange={(e) => setEditing((p) => (p ? { ...p, category: e.target.value } : p))}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-              >
-                {ADDON_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {(PRICE_TYPES_BY_CATEGORY[editing.category] ?? []).map((type) => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
               </select>
             </label>
             <label>

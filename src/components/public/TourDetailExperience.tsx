@@ -447,6 +447,21 @@ export default function TourDetailExperience({
     : tour.max_group_size
       ? `Up to ${tour.max_group_size} travellers`
       : tour.overview?.group_size?.trim() || "";
+  const vehicleStyle = (() => {
+    const capacity = Number(tour.max_group_size || 0);
+    if (!capacity) return "";
+    if (capacity <= 4) return "Private car";
+    if (capacity <= 6) return "Mini cab";
+    if (capacity <= 12) return "Minivan";
+    if (capacity <= 20) return "Mini coach";
+    return "Coach";
+  })();
+  const guideStyleLabels: Record<string, string> = {
+    driver_guide: "Driver-guide",
+    dedicated_guide: "Dedicated guide and driver",
+    driver_only: "Driver only",
+  };
+  const guideStyle = guideStyleLabels[tour.overview?.guide_style || ""] || "";
 
   // 100% Dynamic Photo Gallery from Backend
   const galleryItems = useMemo(() => {
@@ -560,11 +575,15 @@ export default function TourDetailExperience({
     earliest.setDate(earliest.getDate() + Math.max(0, Number(tour.min_advance_booking_days ?? 0)));
     const earliestKey = `${earliest.getFullYear()}-${String(earliest.getMonth() + 1).padStart(2, "0")}-${String(earliest.getDate()).padStart(2, "0")}`;
     source.forEach((item) => {
+      // A zero-seat date cannot be booked. Do not label it "Available" or
+      // leave it selectable: the booking API would correctly reject it.
+      const slots = item.slots ?? null;
+      const isBookableStatus = !item.status || item.status === "available" || item.status === "active";
       if (
         item &&
         item.date &&
-        item.status !== "unavailable" &&
-        item.status !== "cancelled" &&
+        isBookableStatus &&
+        (slots == null || slots > 0) &&
         item.date.split("T")[0] >= earliestKey
       ) {
         const dateKey = item.date.split("T")[0];
@@ -602,10 +621,14 @@ export default function TourDetailExperience({
       const slots = rd.slots ?? null;
       const seats =
         slots == null
-          ? "Available"
+          // The API normally supplies a calculated seats-left value.  Do not
+          // substitute the misleading generic word "Available" if an older
+          // response omits it; a traveller must never be shown invented
+          // capacity.
+          ? "Availability unavailable"
           : slots > 0
-            ? `${slots} Seats Left`
-            : "Available";
+            ? `${slots} Available Seats`
+            : "Sold out";
 
       if (!groupMap.has(monthKey)) {
         groupMap.set(monthKey, []);
@@ -674,19 +697,25 @@ export default function TourDetailExperience({
   }, [monthMenuOpen]);
 
   const [selectedDateId, setSelectedDateId] = useState<string>("");
+  // The parent refreshes this tour after loading a date-sensitive quote.  Do
+  // not treat that data refresh as a new navigation request: otherwise the
+  // selected initial date pulls the month picker back after a traveller has
+  // moved to another month.
+  const appliedInitialTravelDateRef = useRef<string>("");
 
   useEffect(() => {
-    if (initialTravelDate && monthGroups.length > 0) {
-      const targetIso = toIsoDate(initialTravelDate);
-      for (let mIdx = 0; mIdx < monthGroups.length; mIdx++) {
-        const found = monthGroups[mIdx].dates.find(
-          (d) => d.isoDate === targetIso || toIsoDate(d.date) === targetIso
-        );
-        if (found) {
-          setCurrentMonthIndex(mIdx);
-          setSelectedDateId(found.id);
-          return;
-        }
+    const targetIso = toIsoDate(initialTravelDate);
+    if (!targetIso || monthGroups.length === 0 || appliedInitialTravelDateRef.current === targetIso) return;
+
+    for (let mIdx = 0; mIdx < monthGroups.length; mIdx++) {
+      const found = monthGroups[mIdx].dates.find(
+        (d) => d.isoDate === targetIso || toIsoDate(d.date) === targetIso
+      );
+      if (found) {
+        setCurrentMonthIndex(mIdx);
+        setSelectedDateId(found.id);
+        appliedInitialTravelDateRef.current = targetIso;
+        return;
       }
     }
   }, [initialTravelDate, monthGroups]);
@@ -1814,7 +1843,7 @@ export default function TourDetailExperience({
             </div>
 
             {/* ── TRAVEL ESSENTIALS / KEY FACTS (Moved directly after Tour Overview) ── */}
-            {(groupSizeLabel || tour.overview?.tour_type || tourPace || physicalRating || tour.tour_language) && (
+            {(groupSizeLabel || vehicleStyle || guideStyle || tour.overview?.tour_type || tourPace || physicalRating || tour.tour_language) && (
               <section id="tour-style" className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_14px_40px_-32px_rgba(15,36,57,0.4)] sm:p-7">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -1836,9 +1865,10 @@ export default function TourDetailExperience({
                 </div>
                 <div className="mt-6 grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
                   {groupSizeLabel && <StyleFact icon={<Users size={20} />} label="Group size" value={groupSizeLabel} detail={tour.min_booking_size && tour.max_group_size ? `Min ${tour.min_booking_size} / Max ${tour.max_group_size}` : undefined} />}
+                  {vehicleStyle && <StyleFact icon={<Car size={20} />} label="Tour style" value={vehicleStyle} detail={tour.max_group_size ? `Vehicle capacity: up to ${tour.max_group_size}` : undefined} />}
                   {tour.overview?.tour_type && <StyleFact icon={<Compass size={20} />} label="Trip type" value={tour.overview.tour_type} />}
                   {tourPace && <StyleFact icon={<Gauge size={20} />} label="Travel style" value={tourPace} />}
-                  {tour.tour_language && <StyleFact icon={<User size={20} />} label="Guiding style" value={`Guided in ${tour.tour_language}`} />}
+                  {(guideStyle || tour.tour_language) && <StyleFact icon={<User size={20} />} label="Guiding style" value={guideStyle || `Guided in ${tour.tour_language}`} />}
                 </div>
                 {(tourPace || physicalRating) && <div className="mt-6 grid gap-6 border-t border-slate-200 pt-6 sm:grid-cols-2">{tourPace && <RatingGuide title="Tour pace" value={tourPace} steps={["Relaxed", "Medium", "Fast"]} />}{physicalRating && <RatingGuide title="Physical rating" value={physicalRating} steps={["Relaxed", "Easy", "Moderate", "Serious"]} multi />}</div>}
                 <div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#eff8ff] px-4 py-3 text-sm text-[#173f70]"><Sparkles size={16} className="shrink-0 text-blue-600" />These ratings are a general guide and may vary from tour to tour.</div>
@@ -2490,7 +2520,7 @@ export default function TourDetailExperience({
                 </div>
 
                 {/* Filter Tabs if multiple categories exist */}
-                {enhancementTabs.length > 0 && (
+                {false && enhancementTabs.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2">
                     {enhancementTabs.map((tab) => {
                       const Icon = tab.icon;
@@ -2614,27 +2644,6 @@ export default function TourDetailExperience({
                             </p>
                           </div>
 
-                          {/* Card Footer Actions */}
-                          <div className="flex items-center justify-between border-t border-slate-100 pt-3.5">
-                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
-                              <Check size={14} className="stroke-[3] text-emerald-500" />
-                              <span>Select at Checkout</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedEnhancementIds((selected) =>
-                                  selected.includes(item.id)
-                                    ? selected.filter((id) => id !== item.id)
-                                    : [...selected, item.id],
-                                );
-                              }}
-                              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-extrabold transition cursor-pointer shadow-2xs group/btn ${selectedEnhancementIds.includes(item.id) ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white"}`}
-                            >
-                              <span>{selectedEnhancementIds.includes(item.id) ? "Added" : "Add"}</span>
-                              <ArrowRight size={13} className="transition-transform group-hover/btn:translate-x-0.5" />
-                            </button>
-                          </div>
                         </div>
                       </div>
                     );
@@ -2642,7 +2651,7 @@ export default function TourDetailExperience({
                 </div>
 
                 {/* Bottom Assurance Banner */}
-                <div className="rounded-3xl border border-blue-100/90 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-white p-5 sm:p-6 shadow-xs">
+                {false && <div className="rounded-3xl border border-blue-100/90 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-white p-5 sm:p-6 shadow-xs">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-3.5">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/25">
@@ -2666,7 +2675,7 @@ export default function TourDetailExperience({
                       <ArrowRight size={14} />
                     </button>
                   </div>
-                </div>
+                </div>}
               </section>
             )}
 

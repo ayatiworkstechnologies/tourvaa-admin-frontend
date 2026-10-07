@@ -40,7 +40,8 @@ check(
 );
 
 const bookingList = read("src/app/supplier/bookings/page.tsx");
-check("booking filter uses backend booking_status contract", bookingList.includes("params.booking_status = statusFilter"));
+check("booking filter uses backend booking-status, supplier-decision, and cancellation contracts", bookingList.includes("params.booking_status = selected.booking_status") && bookingList.includes("params.supplier_acceptance_status = selected.supplier_acceptance_status") && bookingList.includes("params.cancellation_source = selected.cancellation_source"));
+check("supplier booking filters and columns use supplier terminology", ["Awaiting My Decision", "Cancelled by Supplier", "Cancelled by Tourvaa", "Supplier Payment Status"].every((label) => bookingList.includes(label)));
 check("supplier list remains scoped through authenticated bookings API", bookingList.includes('api.get("/bookings"'));
 check("supplier decision status is filterable", bookingList.includes("pending_supplier_acceptance"));
 check("booking summary cards use server-wide status counts", bookingList.includes("status_counts") && bookingList.includes("statusCounts.ongoing"));
@@ -56,7 +57,7 @@ check("dashboard retains date and status filtering", dashboard.includes("<DatePi
 check("dashboard provides loading and filtered empty states", dashboard.includes("BookingSkeleton") && dashboard.includes("No bookings match these filters"));
 
 const bookingDetail = read("src/app/supplier/bookings/[id]/page.tsx");
-check("acceptance waits for payment readiness", bookingDetail.includes("paymentReady") && bookingDetail.includes("isAwaitingPayment"));
+check("supplier can accept pending supplier requests without agent settlement details", bookingDetail.includes('v === "pending_supplier_acceptance"') && bookingDetail.includes("Accept Booking") && bookingDetail.includes("Decline") && !bookingDetail.includes("paymentReady"));
 check("decline includes a required reason", bookingDetail.includes('{ reason: declineReason }'));
 check("supplier cancellation confirms the applicable liability", ["supplier_cancellation_terms", "Confirm booking cancellation", "no cancellation charge", "liability_percentage", "Yes, continue"].every((text) => bookingDetail.includes(text)));
 check("supplier withdrawal stays internal to Tourvaa", bookingDetail.includes("awaiting internal supplier reassignment") && !bookingDetail.includes("Booking cancelled. Customer has been notified."));
@@ -227,18 +228,18 @@ check(
   "supplier pricing displays and edits USD-normalized slabs in the operating currency",
   tourPricing.includes("useCurrency") && tourPricing.includes("convert(slab.adult_price, slab.currency)") && tourPricing.includes("outputCode(slab.currency || \"USD\")"),
 );
-check("TourVaa storefront discounts reduce the admin profit preview", tourPricing.includes("const adultProfit = adultFinal - adultToTourvaa") && tourPricing.includes("const childProfit = childFinal - childToTourvaa") && tourPricing.includes("deducted from TourVaa profit"));
+check("TourVaa storefront discounts reduce the admin profit preview", tourPricing.includes("markupFinancials") && tourPricing.includes("netProfit") && tourPricing.includes("deducted from TourVaa profit"));
 
 const commissionTab = read("src/components/supplier/profile/CommissionTab.tsx");
 check(
-  "supplier profile permits an increase-only commission update",
-  commissionTab.includes('api.put("/suppliers/me", { commission_percentage: nextRate })') &&
-    commissionTab.includes("nextRate <= currentRate") &&
-    commissionTab.includes("Increase your commission rate"),
+  "supplier profile shows the agreed commission without an editable basic tier",
+  commissionTab.includes("Agreed commission rate") &&
+    commissionTab.includes("no separate basic commission") &&
+    commissionTab.includes("supplier-editable commission tier"),
 );
 check(
   "supplier profile shows the marketplace pricing agreement",
-  commissionTab.includes("Marketplace pricing agreement") && commissionTab.includes("final booking price shown to an end consumer"),
+  commissionTab.includes("Supplier Terms &amp; Conditions") && commissionTab.includes("Tourvaa may apply storefront markup"),
 );
 
 const supplierInnerPages = [

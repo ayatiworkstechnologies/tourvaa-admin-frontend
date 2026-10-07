@@ -23,6 +23,7 @@ import { WizardReviewSubmit } from "@/components/tours/wizard/WizardReviewSubmit
 import { useStepCompletion } from "@/components/tours/wizard/useStepCompletion";
 import { WIZARD_STEPS } from "@/components/tours/wizard/steps";
 import TourOverviewTab from "@/components/tours/TourOverviewTab";
+import TourStyleGuideSection from "@/components/tours/TourStyleGuideSection";
 import TourHighlightsTab from "@/components/tours/TourHighlightsTab";
 import TourItineraryTab from "@/components/tours/TourItineraryTab";
 import TourItemsTab from "@/components/tours/TourItemsTab";
@@ -43,6 +44,9 @@ type Tour = {
   slug: string;
   title: string;
   status: string;
+  max_group_size?: number | null;
+  min_booking_size?: number | null;
+  tour_language?: string | null;
   pending_review_kind?: string | null;
 };
 
@@ -486,16 +490,25 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
           <div onInputCapture={trackEdit} onChangeCapture={trackEdit}>
           <TourWorkspaceContent role={role} stepLabel={`Step ${activeStep.number} of ${wizardSteps.length} · ${activeStep.label}`}>
             {activeKey === "basic" && (
-              <TourFormPage
-                tourId={tourId}
-                embedded
-                role={role}
-                sections={["basic-core"]}
-                formId="wizard-form-basic"
-                initialData={tour ?? undefined}
-                onSaved={afterFormSaved}
-                onGoToPricing={() => void selectStep(wizardSteps.findIndex((s) => s.id === "pricing"))}
-              />
+              <div className="space-y-6">
+                <TourFormPage
+                  tourId={tourId}
+                  embedded
+                  role={role}
+                  sections={["basic-core"]}
+                  formId="wizard-form-basic"
+                  initialData={tour ?? undefined}
+                  onSaved={afterFormSaved}
+                  onGoToPricing={() => void selectStep(wizardSteps.findIndex((s) => s.id === "pricing"))}
+                />
+                <TourStyleGuideSection
+                  tourId={tourId}
+                  minBookingSize={tour?.min_booking_size}
+                  maxGroupSize={tour?.max_group_size}
+                  tourLanguage={tour?.tour_language}
+                  onSaved={afterFormSaved}
+                />
+              </div>
             )}
             {activeKey === "location" && (
               <div className="space-y-6">
@@ -513,7 +526,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 </div>
               </div>
             )}
-            {activeKey === "calendar" && <TourCalendarTab tourId={tourId} />}
+            {activeKey === "calendar" && <TourCalendarTab tourId={tourId} maxGroupSize={tour?.max_group_size} />}
             {activeKey === "accommodation" && (
               <div className="space-y-6">
                 <TourAccommodationExtraTab tourId={tourId} />

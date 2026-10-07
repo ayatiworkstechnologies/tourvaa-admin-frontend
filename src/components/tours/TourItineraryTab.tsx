@@ -304,8 +304,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const itineraryItems = await getItineraries(tourId);
-      setItems(itineraryItems);
+      setItems(await getItineraries(tourId));
     } catch {
       toast.error("Failed to load itinerary.");
     }

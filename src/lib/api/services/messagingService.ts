@@ -86,7 +86,7 @@ export async function deleteOwnMessage(messageId: number) {
 
 // --- Booking-scoped direct messaging: customer/agent <-> supplier --------
 
-export type BookingSenderRole = "customer" | "agent" | "supplier";
+export type BookingSenderRole = "admin" | "customer" | "agent" | "supplier";
 
 export type BookingMessage = {
   id: number;
@@ -94,6 +94,7 @@ export type BookingMessage = {
   sender_role: BookingSenderRole;
   sender_user_id: number | null;
   sender_name: string | null;
+  recipient_role?: "customer" | "agent" | "supplier" | null;
   body: string | null;
   is_deleted?: boolean;
   created_at: string;
@@ -124,6 +125,11 @@ export type BookingConversationThread = BookingConversation & { messages: Bookin
 export async function getAdminBookingConversations(bookingId: number | string) {
   const response = await api.get(`/admin/messages/booking-conversations/${bookingId}`);
   return (response.data?.data ?? []) as BookingConversationThread[];
+}
+
+export async function replyToAdminBookingConversation(conversationId: number, body: string, recipientRole: "agent" | "customer" | "supplier") {
+  const response = await api.post(`/admin/messages/booking-conversations/${conversationId}/messages`, { body, recipient_role: recipientRole });
+  return response.data?.data as BookingMessage;
 }
 
 /** For the customer/agent side: fetches (and lazily creates) their thread

@@ -66,7 +66,11 @@ export default function CustomerPortalHeader({ quickLinks, profileHref = "/custo
         >
           Tourvaa
         </Link>
-        <nav className="flex items-center gap-5 sm:gap-7">
+        {/* Keep this action cluster out of the dedicated top-right lane used
+            by the fixed Elfsight language picker.  The explicit margin is
+            needed because a long account name/profile control can otherwise
+            grow over that externally positioned widget. */}
+        <nav className="mr-[108px] flex min-w-0 items-center gap-3 sm:gap-5">
           {links.map(({ label, href, icon: Icon, count }) => (
             <Link
               key={href}

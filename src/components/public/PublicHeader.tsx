@@ -214,7 +214,9 @@ export default function PublicHeader() {
       </div>
       )}
 
-      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:px-8 lg:px-12">
+      {/* Reserve a fixed top-right lane for the external language widget so
+          it never overlays the signed-in account trigger. */}
+      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 pl-4 pr-[132px] sm:pl-8 sm:pr-[148px] lg:pl-12 lg:pr-[164px]">
         <Link
           href="/"
           className="flex shrink-0 items-center text-2xl font-black tracking-tight text-pub-primary transition hover:opacity-90 sm:text-3xl"

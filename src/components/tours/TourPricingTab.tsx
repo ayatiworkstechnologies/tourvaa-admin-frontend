@@ -34,6 +34,26 @@ function withMarkup(price: number | null | undefined, markupPercent: number | nu
   return Math.round(Number(price ?? 0) * (1 + Number(markupPercent ?? 0) / 100) * 100) / 100;
 }
 
+const money = (value: number) => Math.round(value * 100) / 100;
+
+/** Mirrors the booking price stages: supplier offer -> markup -> Tourvaa
+ * offer. Net profit is final customer price less the supplier price to
+ * Tourvaa; profit margin is net profit divided by final customer price. */
+function markupFinancials(
+  supplierListPrice: number,
+  supplierDiscountPercent: number,
+  markupPercent: number,
+  tourvaaDiscountPercent: number,
+) {
+  const supplierCost = money(supplierListPrice * (1 - supplierDiscountPercent / 100));
+  const storefrontPrice = withMarkup(supplierCost, markupPercent);
+  const customerPrice = money(storefrontPrice * (1 - tourvaaDiscountPercent / 100));
+  const markupAmount = money(storefrontPrice - supplierCost);
+  const tourvaaDiscountAmount = money(storefrontPrice - customerPrice);
+  const netProfit = money(customerPrice - supplierCost);
+  return { supplierCost, storefrontPrice, customerPrice, markupAmount, tourvaaDiscountAmount, netProfit };
+}
+
 function fmt(n: number | null | undefined, currency: string) {
   const value = n ?? 0;
   return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
@@ -280,7 +300,7 @@ export default function TourPricingTab({
   const inheritedLabel = tourMarkup != null ? `tour markup (${tourMarkup}%)` : `default (${defaultMarkup}%)`;
   // The markup actually applied to a slab.
   const effectiveMarkup = (slab: PricingSlab) => (slab.admin_markup_value ?? inheritedMarkup);
-  const afterSupplierDiscount = (price: number | null | undefined) => Number(price ?? 0) * (1 - Number(supplierDiscountPercent ?? 0) / 100);
+  const afterSupplierDiscount = (price: number | null | undefined) => money(Number(price ?? 0) * (1 - Number(supplierDiscountPercent ?? 0) / 100));
   const isScheduled = (start: string | null) => Boolean(start && new Date(start) > new Date());
   const supplierDiscountScheduled = isScheduled(supplierDiscountStart);
   const tourvaaDiscountScheduled = isScheduled(tourvaaDiscountStart);
@@ -386,7 +406,7 @@ export default function TourPricingTab({
       icon={Percent}
       iconTone="brand"
       title="Publishable Price"
-      description="Supplier discount is applied first, then TourVaa markup, then any TourVaa storefront discount. A TourVaa discount is deducted from TourVaa profit; it never changes the Supplier Price to Tourvaa table."
+      description="Supplier discount is applied first, then TourVaa markup, then any TourVaa storefront discount. Net profit = final customer price minus supplier price to Tourvaa; margin = net profit divided by final customer price."
     >
       {/* Tour-level markup */}
       <div className="mb-4 rounded-xl border border-dash-border bg-dash-bg px-4 py-3">
@@ -451,19 +471,11 @@ export default function TourPricingTab({
             {slabs.map((r, idx) => {
               const adultOrig = Number(r.adult_price ?? 0);
               const childOrig = Number(r.child_price ?? 0);
-              const adultToTourvaa = afterSupplierDiscount(adultOrig);
-              const childToTourvaa = afterSupplierDiscount(childOrig);
               const mkp = effectiveMarkup(r);
-              const adultStorefront = withMarkup(adultToTourvaa, mkp);
-              const childStorefront = withMarkup(childToTourvaa, mkp);
-              const tvDisc = Number(tourvaaDiscountPercent ?? 0) / 100;
-              const adultFinal = adultStorefront * (1 - tvDisc);
-              const childFinal = childStorefront * (1 - tvDisc);
-              // Profit is the actual customer price after a TourVaa-funded
-              // discount less the supplier price to TourVaa. The discount is
-              // therefore absorbed by TourVaa, never by the supplier.
-              const adultProfit = adultFinal - adultToTourvaa;
-              const childProfit = childFinal - childToTourvaa;
+              const adultFinancials = markupFinancials(adultOrig, Number(supplierDiscountPercent ?? 0), Number(mkp), Number(tourvaaDiscountPercent ?? 0));
+              const childFinancials = markupFinancials(childOrig, Number(supplierDiscountPercent ?? 0), Number(mkp), Number(tourvaaDiscountPercent ?? 0));
+              const { supplierCost: adultToTourvaa, storefrontPrice: adultStorefront, customerPrice: adultFinal, netProfit: adultProfit } = adultFinancials;
+              const { supplierCost: childToTourvaa, storefrontPrice: childStorefront, customerPrice: childFinal, netProfit: childProfit } = childFinancials;
               return (
                 <tr key={r.id ?? idx} className="transition-colors hover:bg-dash-bg/40">
                   <td className="px-4 py-3.5 align-middle">
@@ -512,15 +524,11 @@ export default function TourPricingTab({
                   </td>
                   {/* Tourvaa Profit - Adult */}
                   <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
-                    <span className={`text-sm font-black ${adultProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>
-                      {fmt(adultProfit, r.currency)}
-                    </span>
+                    <span className={`text-sm font-black ${adultProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>{fmt(adultProfit, r.currency)}</span>
                   </td>
                   {/* Tourvaa Profit - Child */}
                   <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
-                    <span className={`text-sm font-black ${childProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>
-                      {fmt(childProfit, r.currency)}
-                    </span>
+                    <span className={`text-sm font-black ${childProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>{fmt(childProfit, r.currency)}</span>
                   </td>
                   {/* Adult Customer Price (Storefront) */}
                   <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">

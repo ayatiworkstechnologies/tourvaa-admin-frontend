@@ -16,8 +16,8 @@ export function AgentPageShell({ children, className = "" }: { children: React.R
   return (
     // Same page canvas as the customer portal pages (app/customer/*), which
     // the agent portal now shares its header/sidebar/footer shell with.
-    <div className={`min-h-screen min-w-0 bg-[#F8FAFC] px-4 py-6 text-[#10213F] sm:px-8 sm:py-8 ${className}`}>
-      <div className="mx-auto max-w-[1200px]">{children}</div>
+    <div className={`min-h-screen min-w-0 bg-[#F8FAFC] px-4 py-4 text-[#10213F] sm:px-6 sm:py-6 xl:px-8 ${className}`}>
+      <div className="mx-auto max-w-[1500px]">{children}</div>
     </div>
   );
 }

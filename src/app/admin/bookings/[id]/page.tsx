@@ -1125,6 +1125,7 @@ export default function BookingDetailPage() {
                   <div className="space-y-3">
                     <DetailField label="Name" value={booking.customer_name || `Customer #${booking.customer_id}`} />
                     <DetailField label="Email" value={booking.customer_email} />
+                    <DetailField label="Phone" value={booking.customer_phone ?? booking.contact_phone} />
                     {booking.customer_id && (
                       <div className="pt-1">
                         <Link
@@ -1263,6 +1264,11 @@ export default function BookingDetailPage() {
                         value={formatExact(booking.supplier_breakdown.commission_amount, booking.supplier_breakdown.currency)}
                       />
                       <DetailField
+                        label="Supplier Net Payable"
+                        value={formatExact(booking.supplier_breakdown.net_payable, booking.supplier_breakdown.currency)}
+                        highlight
+                      />
+                      <DetailField
                         label="Supplier Payment Status"
                         value={booking.supplier_breakdown.payment_status?.replaceAll("_", " ")}
                       />
@@ -1275,6 +1281,12 @@ export default function BookingDetailPage() {
                         }
                       />
                     </div>
+                    {booking.cancellation_reason && (
+                      <div className="mt-4 rounded-xl border border-rose-100 bg-rose-50 p-3">
+                        <p className="text-xs font-bold text-rose-700">Cancellation Reason</p>
+                        <p className="mt-1 text-sm text-rose-800">{booking.cancellation_reason}</p>
+                      </div>
+                    )}
                   </DetailPanel>
                 )}
 

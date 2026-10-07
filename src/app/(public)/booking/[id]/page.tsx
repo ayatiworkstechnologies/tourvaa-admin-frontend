@@ -4,10 +4,8 @@
 
 // MoM 2026-08-27, item 8: hide the accommodation/"hotel booking" step
 // (room-type choice, pre/post-tour nights, accommodation add-ons) from the
-// customer booking flow for now -- a proper redesign is planned, so the
-// sections stay in the code (untouched below) rather than being deleted;
-// flip this back to true once that's ready.
-const SHOW_ACCOMMODATION_BOOKING = false;
+// Accommodation add-ons are now an active, per-person booking option.
+const SHOW_ACCOMMODATION_BOOKING = true;
 // Customer records for agent bookings are now resolved automatically from
 // the lead traveller entered in Step 2. Keep the legacy selector code during
 // rollout, but do not make agents search/create the same person twice.
@@ -90,6 +88,19 @@ type PriceEstimate = {
   tax_amount: string;
   surcharge_amount: string;
   final_amount: string;
+  line_items?: {
+    optional_activities?: PriceLineItem[];
+    accommodations?: PriceLineItem[];
+    extensions?: PriceLineItem[];
+  };
+};
+
+type PriceLineItem = {
+  id: number;
+  name: string;
+  quantity: number;
+  unit_price: string;
+  total_price: string;
 };
 
 const COUNTRIES_LIST = [
@@ -149,6 +160,13 @@ function formatDate(isoDate: string): string {
   const parsed = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return isoDate;
   return parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function localIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 type AgentPaymentMethod = "card" | "pay_later";
@@ -439,7 +457,7 @@ export default function DynamicTourBookingPage() {
 
   const [gateway, setGateway] = useState<"stripe" | "paypal">("stripe");
   const [gateways, setGateways] = useState<{ stripe_test: boolean; paypal_test: boolean } | null>(null);
-  const [pendingBooking, setPendingBooking] = useState<{ id: number; amount_pending: string; currency: string } | null>(null);
+  const [pendingBooking, setPendingBooking] = useState<{ id: number; amount_pending: string; currency: string; selected_payment_amount?: string } | null>(null);
   useEffect(() => {
     api.get("/payments/gateways/status").then(({ data }) => {
       setGateways(data.data);
@@ -509,10 +527,18 @@ export default function DynamicTourBookingPage() {
     };
   }, [tourId]);
 
-  const availableCalendar = useMemo(
-    () => (tour?.calendar || []).filter((c) => c.status === "available" && c.slots > 0),
-    [tour]
-  );
+  const availableCalendar = useMemo(() => {
+    const earliest = new Date();
+    earliest.setHours(0, 0, 0, 0);
+    earliest.setDate(earliest.getDate() + Math.max(0, Number(tour?.min_advance_booking_days || 0)));
+    const earliestDate = localIsoDate(earliest);
+
+    return (tour?.calendar || []).filter((calendar) => (
+      calendar.status === "available"
+      && calendar.slots > 0
+      && normalizeDateStringToIso(calendar.date) >= earliestDate
+    ));
+  }, [tour]);
   const selectedCalendar = useMemo(() => {
     if (availableCalendar.length === 0) return null;
     if (travelDate) {
@@ -640,8 +666,8 @@ export default function DynamicTourBookingPage() {
   };
 
   const accommodationsPayload = useMemo(
-    () => selectedAccommodationExtraIds.map((id) => ({ id, quantity: adultCount })),
-    [selectedAccommodationExtraIds, adultCount]
+    () => selectedAccommodationExtraIds.map((id) => ({ id, quantity: adultCount + childCount })),
+    [selectedAccommodationExtraIds, adultCount, childCount]
   );
 
   // Start (or resume) a real checkout session once the tour has resolved.
@@ -1113,7 +1139,12 @@ export default function DynamicTourBookingPage() {
     const pending = Number(amountPending);
     if (!Number.isFinite(pending) || pending <= 0) return undefined;
     if (customer.deposit_type === "percentage" && customer.deposit_percentage) {
-      return (pending * (customer.deposit_percentage / 100)).toFixed(2);
+      // Match the backend Decimal money rounding. Native toFixed can round a
+      // value such as USD 268.515 down to 268.51 because of binary floating
+      // point representation, while the payment API correctly requires the
+      // half-up value USD 268.52.
+      const cents = Math.round((pending * (customer.deposit_percentage / 100) + Number.EPSILON) * 100);
+      return (cents / 100).toFixed(2);
     }
     if (customer.booking_deposit) {
       return Math.min(customer.booking_deposit, pending).toFixed(2);
@@ -1124,21 +1155,37 @@ export default function DynamicTourBookingPage() {
   // Deposit-today / balance-later split shown only for the customer "Secure
   // with a Deposit" option. Agent Reserve Now is an invoice/pay-later flow.
   const estimateTotal = priceEstimate ? Number(priceEstimate.final_amount) : NaN;
+  const selectedAddOnLines = priceEstimate
+    ? [
+        ...(priceEstimate.line_items?.extensions || []).map((item) => ({ ...item, category: "Extension" })),
+        ...(priceEstimate.line_items?.optional_activities || []).map((item) => ({ ...item, category: "Experience" })),
+        ...(priceEstimate.line_items?.accommodations || []).map((item) => ({ ...item, category: "Accommodation" })),
+      ]
+    : [];
   const customerDepositToday = Number.isFinite(estimateTotal) ? computeCustomerDepositAmount(String(estimateTotal)) : undefined;
   const customerDepositSplit = customerDepositToday != null
     ? { deposit: Number(customerDepositToday), balance: Math.max(0, estimateTotal - Number(customerDepositToday)) }
     : null;
 
   const paymentIdempotencyKeys = useRef<Record<string, string>>({});
-  const startPayment = async (booking: { id: number; amount_pending: string; currency: string }, amountOverride?: string) => {
-    setPendingBooking(booking);
+  const startPayment = async (booking: { id: number; amount_pending: string; currency: string; selected_payment_amount?: string }, amountOverride?: string) => {
+    const selectedPaymentAmount = amountOverride ?? booking.selected_payment_amount;
+    // A selected deposit must never silently fall back to the full outstanding
+    // balance. That fallback caused a retry/return to create a full payment
+    // even though the traveller had chosen the deposit option.
+    if (!isAgent && customerPaymentMethod === "deposit" && !selectedPaymentAmount) {
+      throw new Error("Your deposit amount could not be prepared. Please refresh and try again.");
+    }
+    const paymentBooking = { ...booking, selected_payment_amount: selectedPaymentAmount };
+    setPendingBooking(paymentBooking);
     const base = `${window.location.origin}/${isAgent ? "agent" : "customer"}/bookings/${booking.id}`;
     const testOnly = gateway === "stripe" ? Boolean(gateways?.stripe_test) : Boolean(gateways?.paypal_test);
-    const amount = amountOverride || booking.amount_pending;
+    const amount = selectedPaymentAmount ?? booking.amount_pending;
     // Stable per booking/gateway/amount so a retry or double-click reuses the same
     // gateway session instead of creating a second charge.
-    const common = { booking_id: booking.id, amount, currency: booking.currency, test_only: testOnly, idempotency_key: `checkout-${booking.id}-${gateway}-${amount}` };
-    const paymentKey = `${gateway}:${booking.id}:${common.amount}:${common.currency}`;
+    const payment_type: "partial" | "full" = selectedPaymentAmount && Number(selectedPaymentAmount) < Number(booking.amount_pending) ? "partial" : "full";
+    const common = { booking_id: paymentBooking.id, amount, currency: paymentBooking.currency, payment_type, test_only: testOnly, idempotency_key: `checkout-${paymentBooking.id}-${gateway}-${amount}` };
+    const paymentKey = `${gateway}:${paymentBooking.id}:${common.amount}:${common.currency}`;
     paymentIdempotencyKeys.current[paymentKey] ??= typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -1155,7 +1202,7 @@ export default function DynamicTourBookingPage() {
         ...common, idempotency_key, return_url: `${base}?payment=paypal_approved`, cancel_url: `${base}?payment=cancelled`,
       });
       if (!data.data?.approve_url) throw new Error("PayPal approval URL is missing.");
-      sessionStorage.setItem(`paypal_pid_${booking.id}`, String(data.data.payment_id));
+      sessionStorage.setItem(`paypal_pid_${paymentBooking.id}`, String(data.data.payment_id));
       window.location.assign(data.data.approve_url);
     }
   };
@@ -1832,7 +1879,13 @@ export default function DynamicTourBookingPage() {
                                 <p className="text-sm font-black text-slate-900">
                                   {format(activity.price ?? 0, activity.currency || tourCurrency)}
                                 </p>
-                                <p className={`mt-0.5 text-[10px] font-semibold ${checked ? "text-blue-700" : "text-slate-400"}`}>{checked ? "Added" : "Per adult"}</p>
+                                <button
+                                  type="button"
+                                  onClick={(event) => { event.stopPropagation(); toggleActivity(activity.id); }}
+                                  className={`mt-2 rounded-lg px-3 py-1.5 text-[11px] font-bold transition ${checked ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-pub-primary text-white hover:bg-pub-primary/90"}`}
+                                >
+                                  {checked ? "Added" : "Add add-on"}
+                                </button>
                               </div>
                             </div>
                           );
@@ -1861,13 +1914,9 @@ export default function DynamicTourBookingPage() {
                               }`}
                             >
                               <div className="flex items-start gap-3.5">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() => toggleAccommodationExtra(extra.id)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="mt-1 rounded text-pub-primary focus:ring-pub-primary"
-                                />
+                                <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? "border-pub-primary bg-pub-primary text-white" : "border-slate-300 bg-white"}`}>
+                                  {checked && <Check size={13} className="stroke-[3]" />}
+                                </span>
                                 <div>
                                   <p className="text-xs sm:text-sm font-bold text-slate-900">{extra.name}</p>
                                   {extra.description && (
@@ -1881,7 +1930,13 @@ export default function DynamicTourBookingPage() {
                                 <p className="text-xs sm:text-sm font-black text-slate-900">
                                   {format(extra.price ?? 0, tourCurrency)}
                                 </p>
-                                <p className="text-[10px] text-slate-400">Per adult</p>
+                                <button
+                                  type="button"
+                                  onClick={(event) => { event.stopPropagation(); toggleAccommodationExtra(extra.id); }}
+                                  className={`mt-2 rounded-lg px-3 py-1.5 text-[11px] font-bold transition ${checked ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-pub-primary text-white hover:bg-pub-primary/90"}`}
+                                >
+                                  {checked ? "Added" : "Add add-on"}
+                                </button>
                               </div>
                             </div>
                           );
@@ -2861,30 +2916,22 @@ export default function DynamicTourBookingPage() {
                         </span>
                       </div>
 
-                      {Number(priceEstimate.extension_amount) > 0 && (
-                        <div className="flex items-center justify-between text-slate-700 pt-1.5 border-t border-slate-100">
-                          <span className="text-slate-600">Extensions &amp; Nights</span>
-                          <span className="font-bold text-slate-900">
-                            {format(Number(priceEstimate.extension_amount), priceEstimate.currency)}
-                          </span>
-                        </div>
-                      )}
-
-                      {Number(priceEstimate.optional_activity_amount) > 0 && (
-                        <div className="flex items-center justify-between text-slate-700 pt-1.5 border-t border-slate-100">
-                          <span className="text-slate-600">Optional Experiences</span>
-                          <span className="font-bold text-slate-900">
-                            {format(Number(priceEstimate.optional_activity_amount), priceEstimate.currency)}
-                          </span>
-                        </div>
-                      )}
-
-                      {Number(priceEstimate.accommodation_amount) > 0 && (
-                        <div className="flex items-center justify-between text-slate-700 pt-1.5 border-t border-slate-100">
-                          <span className="text-slate-600">Accommodation Add-ons</span>
-                          <span className="font-bold text-slate-900">
-                            {format(Number(priceEstimate.accommodation_amount), priceEstimate.currency)}
-                          </span>
+                      {selectedAddOnLines.length > 0 && (
+                        <div className="space-y-2 border-t border-slate-100 pt-2">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Selected add-ons</p>
+                          {selectedAddOnLines.map((item) => (
+                            <div key={`${item.category}-${item.id}`} className="flex items-start justify-between gap-3 text-slate-700">
+                              <div className="min-w-0">
+                                <p className="truncate font-semibold text-slate-800">{item.name}</p>
+                                <p className="text-[10px] text-slate-400">
+                                  {item.category}{item.quantity > 1 ? ` · ${item.quantity} selected` : ""}
+                                </p>
+                              </div>
+                              <span className="shrink-0 font-bold text-slate-900">
+                                {format(Number(item.total_price), priceEstimate.currency)}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       )}
 

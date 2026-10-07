@@ -48,9 +48,25 @@ check(
     detailExperience.includes("tour.max_group_size || MAX_TRAVELLERS_CEILING"),
 );
 check(
+  "tour detail never presents sold-out or unavailable departures as bookable",
+  detailExperience.includes("const isBookableStatus") &&
+    detailExperience.includes("(slots == null || slots > 0)") &&
+    detailExperience.includes("${slots} Available Seats") &&
+    detailExperience.includes(': "Sold out"'),
+);
+check(
   "tour detail hides unreachable price tiers and caps the final visible tier at the group limit",
   detailExperience.includes(".filter((row) => !maxGroupSize || row.persons_from <= maxGroupSize)") &&
     detailExperience.includes("return { ...row, persons_to: maxGroupSize };"),
+);
+const pricingTab = read("src/components/tours/TourPricingTab.tsx");
+check(
+  "markup screen shows the final net profit without a repeated breakdown",
+  pricingTab.includes("function markupFinancials") &&
+    pricingTab.includes("Net profit = final customer price minus supplier price") &&
+    pricingTab.includes("Tourvaa Profit") &&
+    !pricingTab.includes("% margin") &&
+    !pricingTab.includes("Less offer"),
 );
 const customerBookingDetail = read("src/app/customer/bookings/[id]/page.tsx");
 check(
@@ -83,7 +99,8 @@ check(
 check(
   "date and month navigation does not change the selected departure",
   !detailExperience.includes("if (firstDate) setSelectedDateId(firstDate.id);") &&
-    detailExperience.includes("const allDates = monthGroups.flatMap"),
+    detailExperience.includes("const allDates = monthGroups.flatMap") &&
+    detailExperience.includes("appliedInitialTravelDateRef.current === targetIso"),
 );
 
 // The booking form was moved off the tour detail page into a dedicated
@@ -97,11 +114,18 @@ check(
   "checkout limits travellers by both the selected departure and maximum group size",
   publicBooking.includes("Math.min(selectedCalendar?.slots ?? 10, tour.max_group_size ?? 10)"),
 );
+check(
+  "checkout excludes departures inside the tour minimum booking window",
+  publicBooking.includes("tour?.min_advance_booking_days") &&
+    publicBooking.includes("normalizeDateStringToIso(calendar.date) >= earliestDate"),
+);
 check("public booking has four visible stages", publicBooking.includes("Passengers &amp; Accommodation") && publicBooking.includes("Passenger Details") && publicBooking.includes(">Payment<") && publicBooking.includes("Booking Received"));
 check("public booking is backed by a real checkout session", publicBooking.includes('.post("/checkout/start"') && publicBooking.includes("sessionKey"));
 check("public booking confirms through the checkout-session endpoint", publicBooking.includes("/checkout/session/${sessionKey}/confirm"));
 check("public booking requires a logged-in customer", publicBooking.includes('roleSlug === "customer"') && publicBooking.includes("router.replace(`/login?redirect="));
 check("public booking uses live server-calculated pricing", publicBooking.includes('"/bookings/calculate-price"') && publicBooking.includes("priceEstimate"));
+check("customer deposit rounds cents upward consistently with gateway validation", publicBooking.includes("Number.EPSILON") && publicBooking.includes("const cents = Math.round"));
+check("selected deposit never falls back to the full outstanding balance", publicBooking.includes("selected_payment_amount") && publicBooking.includes('customerPaymentMethod === "deposit" && !selectedPaymentAmount'));
 check("booking continues to the payment step", publicBooking.includes("setStep(3)"));
 check("checkout terms open separately without losing entered passenger details", publicBooking.includes('href="/terms" target="_blank" rel="noopener noreferrer"'));
 check("success copy explains pending payment confirmation", publicBooking.includes("pending payment confirmation"));

@@ -80,7 +80,7 @@ check("dashboard exposes recoverable partial-load errors", dashboard.includes("P
 check("commission requests are managed from the agent dashboard", dashboard.includes('api.post("/agents/me/commission-request"') && dashboard.includes("Commission Setup"));
 
 const detail = read("src/app/agent/bookings/[id]/page.tsx");
-check("agent booking detail explains intentional customer-agent shared visibility", detail.includes("Shared customer booking.") && detail.includes("visible in both the Agent and Customer portals"));
+check("agent booking detail does not expose the shared-customer visibility notice", !detail.includes("Shared customer booking.") && !detail.includes("visible in both the Agent and Customer portals"));
 check("detail uses serialized traveller counts", detail.includes("booking.no_of_adults") && detail.includes("booking.no_of_children"));
 check("detail uses the same customer-facing booking lifecycle labels", detail.includes("customerFacingBookingStatus") && ["Booking Request Received", "Booking Confirmed", "Ongoing", "Completed", "Cancelled"].every((label) => detail.includes(label)));
 check("detail gives booking-request receipt wording without exposing internal execution flow", detail.includes("Your booking request has been received successfully.") && !detail.includes("Booking Execution Flow") && !detail.includes("Supplier decision"));
@@ -88,7 +88,9 @@ check("detail shows the settlement summary without a duplicate price breakdown",
 check("agent cancellation requires eligibility and confirmation", ["Request Cancellation", "is_free_cancellation_eligible", "Confirm cancellation request", "Yes, continue", "contact Tourvaa"].every((text) => detail.includes(text)));
 check("agent cancellation warning is clear and does not duplicate support wording", detail.includes("Please contact Tourvaa Support for cancellation assistance or a travel-date change.") && !detail.includes("Help Desk for cancellation assistance"));
 check("agent can reopen payment for an unpaid booking", detail.includes("BookingPaymentModal") && detail.includes("Pay Now"));
-check("agent booking handles Stripe and PayPal returns", detail.includes('/payments/stripe/confirm-return') && detail.includes('/payments/paypal/capture'));
+check("agent payment modal never offers a customer deposit option", detail.includes("allowPartialPayment={false}"));
+check("unpaid gateway returns show payment-required copy and can be removed only from My Bookings", detail.includes("Payment Required") && detail.includes("hide-from-agent") && detail.includes("Remove from Bookings") && detail.includes("canRemoveUnpaidBooking"));
+check("agent booking handles Stripe and PayPal returns", detail.includes('/payments/stripe/confirm-return') && detail.includes('/payments/paypal/capture') && detail.includes('"/payments/abandon-pending"'));
 check("booking detail failures can be retried", detail.includes("setRefreshKey") && detail.includes("Retry"));
 
 const invoices = read("src/app/agent/invoices/page.tsx");
@@ -106,6 +108,7 @@ check("agent support compose is connected", portalMessageThread.includes("sendOw
 const profile = read("src/app/agent/profile/page.tsx");
 const verificationDocuments = read("src/components/agent/profile/VerificationDocumentsTab.tsx");
 check("agent profile exposes verification documents", profile.includes("VerificationDocumentsTab") && profile.includes("Verification Documents"));
+check("agent profile uses the shared portal tab and content layout without fleet controls", profile.includes("overflow-x-auto rounded-2xl") && profile.includes("w-full rounded-2xl") && !profile.includes("My Vehicles"));
 check("agent verification lists the required business document categories", ["company_registration", "iata_accreditation", "industry_certification", "other_licences", "supporting_documents"].every((type) => verificationDocuments.includes(type)));
 check("agent verification waits for all required non-rejected uploads", verificationDocuments.includes("allRequiredReady") && verificationDocuments.includes('document.status !== "rejected"') && verificationDocuments.includes("Submit for verification"));
 check("rejected agent documents show re-upload instructions", verificationDocuments.includes("Re-upload required") && verificationDocuments.includes("rejection_reason"));
@@ -115,7 +118,8 @@ const portalTheme = read("src/lib/constants/portalThemes.ts");
 const agentPage = read("src/components/agent/AgentPage.tsx");
 const agentInnerPages = [dashboard, tours, bookings, detail, customers, invoices, messages, profile];
 check("agent inner pages share the upgraded page shell", agentInnerPages.every((page) => page.includes("AgentPageShell")));
-check("agent inner pages share consistent workspace headers", agentInnerPages.every((page) => page.includes("AgentPageHeader")));
+check("agent inner pages share consistent workspace headers", dashboard.includes("Agent Control Centre") && [tours, bookings, detail, customers, invoices, messages, profile].every((page) => page.includes("AgentPageHeader")));
+check("agent dashboard follows the supplier control-centre composition in agent blue", ["bg-linear-to-br from-[#10213F]", "xl:grid-cols-4", "xl:grid-cols-6"].every((fragment) => dashboard.includes(fragment)));
 check("agent page system retains the calm blue visual identity", agentPage.includes("#2563EB") && agentPage.includes("#F8FAFC"));
 check("agent dashboard prioritizes list and catalogue actions", ["Browse Tours", "My Customers", "Invoices"].every((label) => dashboard.includes(label)) && !dashboard.includes('href: "/agent/bookings/create"'));
 check("agent catalogue exposes reserve and full-payment actions", tours.includes("AgentSection") && tours.includes("Reserve Now") && tours.includes("Pay in Full Today") && tours.includes("agent_action=reserve") && tours.includes("agent_action=full"));

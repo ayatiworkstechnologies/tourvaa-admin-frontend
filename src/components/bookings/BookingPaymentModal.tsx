@@ -17,7 +17,7 @@ type DepositConfig = {
 
 export default function BookingPaymentModal({
   bookingId, outstandingAmount, totalAmount, amountPaid, preferredPaymentType, depositConfig,
-  currency, returnPath, onClose, onSuccess,
+  currency, returnPath, onClose, onSuccess, allowPartialPayment = true,
 }: {
   bookingId: number;
   outstandingAmount: number;
@@ -29,6 +29,8 @@ export default function BookingPaymentModal({
   returnPath: string;
   onClose: () => void;
   onSuccess: () => void;
+  /** Agents settle a gateway payment in full; deposits are customer-only. */
+  allowPartialPayment?: boolean;
 }) {
   // Deposit amount comes from the tour's own configured terms (percentage or
   // fixed, resolved server-side by services.bookings._deposit_config, same
@@ -42,7 +44,7 @@ export default function BookingPaymentModal({
     ? totalAmount * ((depositConfig.deposit_percentage ?? 0) / 100)
     : Number(depositConfig?.booking_deposit ?? 0);
   const depositDue = Math.min(outstandingAmount, Math.max(0, Math.round((depositAmount - amountPaid) * 100) / 100));
-  const partialAvailable = Boolean(depositConfig?.still_available) && depositDue > 0 && depositDue < outstandingAmount;
+  const partialAvailable = allowPartialPayment && Boolean(depositConfig?.still_available) && depositDue > 0 && depositDue < outstandingAmount;
   const [paymentType, setPaymentType] = useState<"partial" | "full">(
     preferredPaymentType === "partial" && partialAvailable ? "partial" : "full",
   );
@@ -82,12 +84,15 @@ export default function BookingPaymentModal({
       const origin = window.location.origin;
       const response = await api.post("/payments/stripe/create-session", {
         booking_id: bookingId, amount: paymentAmount, currency,
+        payment_type: paymentType,
         idempotency_key: paymentIdempotencyKey("stripe"),
         success_url: `${origin}${returnPath}?payment=stripe_success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}${returnPath}?payment=cancelled`,
       });
       const checkoutUrl = response.data?.data?.checkout_url;
       if (!checkoutUrl) throw new Error("No checkout URL returned");
+      const paymentId = response.data?.data?.payment_id;
+      if (paymentId) sessionStorage.setItem(`stripe_pid_${bookingId}`, String(paymentId));
       window.location.href = checkoutUrl;
     } catch (requestError) {
       setError(paymentError(requestError, "Could not start Stripe payment."));
@@ -101,6 +106,7 @@ export default function BookingPaymentModal({
       const origin = window.location.origin;
       const response = await api.post("/payments/paypal/create-order", {
         booking_id: bookingId, amount: paymentAmount, currency,
+        payment_type: paymentType,
         idempotency_key: paymentIdempotencyKey("paypal"),
         return_url: `${origin}${returnPath}?payment=paypal_approved`,
         cancel_url: `${origin}${returnPath}?payment=cancelled`,
@@ -168,7 +174,9 @@ export default function BookingPaymentModal({
             <button type="button" onClick={payWithStripe} disabled={Boolean(loading) || !gateways?.stripe} className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#635BFF] hover:bg-[#5249ea] px-4 py-3 text-sm font-black text-white shadow-sm transition-all disabled:opacity-40">
               {loading === "stripe" ? <Loader2 size={17} className="animate-spin" /> : <CreditCard size={17} />}
               <span>Pay with</span>
-              <StripeWordmark className="h-4 w-auto text-white" />
+              <span className="inline-flex rounded-md bg-white px-2 py-1 shadow-2xs">
+                <StripeWordmark className="h-3.5 w-[42px] text-[#635BFF]" />
+              </span>
             </button>
             <button type="button" onClick={payWithPayPal} disabled={Boolean(loading) || !gateways?.paypal} className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] px-4 py-3 text-sm font-black text-white shadow-sm transition-all disabled:opacity-40">
               {loading === "paypal" ? <Loader2 size={17} className="animate-spin" /> : null}

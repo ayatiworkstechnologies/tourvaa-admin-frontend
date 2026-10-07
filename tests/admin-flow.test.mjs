@@ -135,7 +135,8 @@ check("admin can choose a booking communication recipient and the log labels sen
 const adminBookingMessages = read("src/components/messaging/AdminBookingConversationHistory.tsx");
 const messagingService = read("src/lib/api/services/messagingService.ts");
 check("admin booking detail shows customer and agent portal messages for the same booking", bookingDetail.includes("AdminBookingConversationHistory") && adminBookingMessages.includes("getAdminBookingConversations") && messagingService.includes("/admin/messages/booking-conversations/"));
-check("admin booking detail separates booking, supplier, and agent payment blocks", ["Booking Payment Status", "Supplier Payments", "Agent Payments", "Agent Price After Commission"].every((label) => bookingDetail.includes(label)));
+check("admin can reply separately to supplier and agent or customer booking messages", adminBookingMessages.includes("recipientRole") && adminBookingMessages.includes("replyToAdminBookingConversation") && messagingService.includes("/admin/messages/booking-conversations/${conversationId}/messages"));
+check("admin booking detail mirrors supplier and agent settlement fields", ["Booking Payment Status", "Supplier Payments", "Supplier Net Payable", "Supplier Payment Status", "Supplier Payment Date", "Cancellation Reason", "Agent Payments", "Agent Price After Commission"].every((label) => bookingDetail.includes(label)));
 check(
   "admin financial breakdown excludes markup and deducts partner commission from Tourvaa revenue",
   !bookingDetail.includes('label="Tourvaa Markup"') &&

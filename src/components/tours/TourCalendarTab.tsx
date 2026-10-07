@@ -73,7 +73,7 @@ function earliestBookableDate(minDays: number) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export default function TourCalendarTab({ tourId }: { tourId: string }) {
+export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: string; maxGroupSize?: number | null }) {
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const [entries, setEntries] = useState<CalendarEntry[]>([]);
@@ -89,6 +89,10 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [removeUnmatched, setRemoveUnmatched] = useState(false);
   const [syncingSeats, setSyncingSeats] = useState(false);
+  // A vehicle/group limit is the customer-facing capacity. Use it for a new
+  // date by default so a six-seat vehicle starts at six seats, while still
+  // allowing an operator to set a lower date-specific capacity.
+  const calendarSeatDefault = maxGroupSize || schedule.seats_per_occurrence || 10;
 
   // Filters & Pagination state for Tour Calendar
   const [selectedYear, setSelectedYear] = useState<string>("all");
@@ -600,7 +604,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
             )}
             <button
               type="button"
-              onClick={() => setEditing({ ...emptyEntry(), available_seats: schedule.seats_per_occurrence || 10 })}
+              onClick={() => setEditing({ ...emptyEntry(), available_seats: calendarSeatDefault })}
               className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white shadow-xs transition hover:opacity-90 active:scale-95 cursor-pointer self-start sm:self-auto"
             >
               <Plus size={16} /> Add Date
@@ -843,7 +847,7 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
                   clearable={false}
                 />
               </div>
-              {[["available_seats", "Available seats"], ["booked_seats", "Booked seats"]].map(([key, lbl]) => (
+              {[["available_seats", "Available seats (vehicle capacity)"], ["booked_seats", "Booked seats"]].map(([key, lbl]) => (
                 <label key={key}>
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
                   <input type="number" value={numberInputValue((editing as Record<string, unknown>)[key] as number)}

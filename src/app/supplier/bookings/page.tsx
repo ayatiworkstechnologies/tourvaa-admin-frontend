@@ -23,6 +23,7 @@ type Booking = {
   booking_status: string;
   payment_status?: string;
   supplier_acceptance_status?: string;
+  cancellation_source?: string | null;
   amount_pending?: string | number;
   payment_due_date?: string | null;
   final_amount?: string | number;
@@ -37,17 +38,32 @@ function toDateInputValue(value?: string | null) {
   return d.toISOString().slice(0, 10);
 }
 
-const STATUS_OPTIONS = [
+type SupplierStatusOption = {
+  value: string;
+  label: string;
+  booking_status?: string;
+  supplier_acceptance_status?: string;
+  cancellation_source?: string;
+};
+
+const SUPPLIER_STATUS_OPTIONS: SupplierStatusOption[] = [
   { value: "", label: "All Statuses" },
-  { value: "pending_payment", label: "Pending Payment" },
-  { value: "pending_supplier_acceptance", label: "Awaiting My Decision" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "ongoing", label: "Ongoing" },
-  { value: "postponed", label: "Postponed" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "declined", label: "Declined" },
+  { value: "awaiting_my_decision", label: "Awaiting My Decision", supplier_acceptance_status: "pending" },
+  { value: "confirmed", label: "Confirmed", booking_status: "confirmed" },
+  { value: "ongoing", label: "Ongoing", booking_status: "ongoing" },
+  { value: "completed", label: "Completed", booking_status: "completed" },
+  { value: "cancelled_by_supplier", label: "Cancelled by Supplier", booking_status: "cancelled", cancellation_source: "supplier" },
+  { value: "cancelled_by_tourvaa", label: "Cancelled by Tourvaa", booking_status: "cancelled", cancellation_source: "admin" },
+  { value: "declined", label: "Declined", booking_status: "declined" },
 ];
+
+function supplierBookingStatus(booking: Booking) {
+  if (booking.supplier_acceptance_status === "pending") return "Awaiting My Decision";
+  if (booking.booking_status === "cancelled") {
+    return booking.cancellation_source === "supplier" ? "Cancelled by Supplier" : "Cancelled by Tourvaa";
+  }
+  return booking.booking_status.replaceAll("_", " ");
+}
 
 function statusColors(s: string) {
   const v = (s || "").toLowerCase();
@@ -88,7 +104,10 @@ export default function SupplierBookingsPage() {
     setError("");
     try {
       const params: Record<string, string | number> = { limit, page };
-      if (statusFilter) params.booking_status = statusFilter;
+      const selected = SUPPLIER_STATUS_OPTIONS.find((option) => option.value === statusFilter);
+      if (selected?.booking_status) params.booking_status = selected.booking_status;
+      if (selected?.supplier_acceptance_status) params.supplier_acceptance_status = selected.supplier_acceptance_status;
+      if (selected?.cancellation_source) params.cancellation_source = selected.cancellation_source;
       const res = await api.get("/bookings", { params });
       const data = res.data;
       setBookings(data?.items ?? data?.data ?? data ?? []);
@@ -104,7 +123,7 @@ export default function SupplierBookingsPage() {
 
   useEffect(() => {
     const requestedStatus = new URLSearchParams(window.location.search).get("status") || "";
-    if (STATUS_OPTIONS.some((option) => option.value === requestedStatus)) {
+    if (SUPPLIER_STATUS_OPTIONS.some((option) => option.value === requestedStatus)) {
       setStatusFilter(requestedStatus);
     }
     setInitialQueryApplied(true);
@@ -153,8 +172,8 @@ export default function SupplierBookingsPage() {
     { key: "tour", header: "Tour", className: "max-w-[200px]", render: (b) => <p className="truncate font-semibold text-dash-text">{b.tour_name ?? b.tour_title ?? "-"}</p> },
     { key: "travel_date", header: "Travel Date", className: "whitespace-nowrap text-dash-muted", render: (b) => b.tour_date ?? b.travel_date ?? "-" },
     { key: "travellers", header: "Travellers", className: "text-center text-dash-muted", render: (b) => b.num_travellers ?? b.total_pax ?? "-" },
-    { key: "status", header: "Status", render: (b) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(b.booking_status)}`}>{b.booking_status.replaceAll("_", " ")}</span> },
-    { key: "payment", header: "Payment", render: (b) => b.payment_status ? <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(b.payment_status)}`}>{b.payment_status}</span> : <span className="text-xs text-dash-subtle">-</span> },
+    { key: "status", header: "Booking Status", render: (b) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(b.booking_status)}`}>{supplierBookingStatus(b)}</span> },
+    { key: "payment", header: "Supplier Payment Status", render: (b) => b.payment_status ? <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(b.payment_status)}`}>{b.payment_status}</span> : <span className="text-xs text-dash-subtle">-</span> },
     {
       key: "due_date",
       header: "Due Date",
@@ -204,7 +223,7 @@ export default function SupplierBookingsPage() {
             onChange={(e) => handleFilterChange(e.target.value)}
             className="rounded-xl border border-[#D5E6DB] bg-white px-4 py-2.5 text-sm font-bold text-[#365545] outline-none focus:border-[#16833A] focus:ring-4 focus:ring-emerald-50"
           > 
-            {STATUS_OPTIONS.map((o) => (
+            {SUPPLIER_STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>

@@ -127,14 +127,12 @@ function InfoRow({ label, value }: { label: string; value?: string | number | nu
 
 function ActionBanner({
   status,
-  paymentStatus,
   supplierAcceptanceStatus,
   cancellationTerms,
   onAction,
   busy,
 }: {
   status: string;
-  paymentStatus?: string;
   supplierAcceptanceStatus?: string;
   cancellationTerms?: Booking["supplier_cancellation_terms"];
   onAction: (type: ActionType, payload?: Record<string, string>) => void;
@@ -159,11 +157,8 @@ function ActionBanner({
   }, [showCancel, showCancelConfirm, showDecline]);
 
   const v = status.toLowerCase();
-  const payment = (paymentStatus || "").toLowerCase();
   const acceptance = (supplierAcceptanceStatus || "").toLowerCase();
-  const paymentReady = ["authorized", "paid", "partially_paid", "partial"].includes(payment);
-  const isPending = acceptance === "pending" && paymentReady && ["pending_payment", "payment_authorized", "pending_supplier_acceptance"].includes(v);
-  const isAwaitingPayment = acceptance === "pending" && !paymentReady && v === "pending_payment";
+  const isPending = acceptance === "pending" && v === "pending_supplier_acceptance";
   const isConfirmed = v === "confirmed";
   const isOngoing = v === "ongoing";
 
@@ -183,17 +178,6 @@ function ActionBanner({
         <p className="flex items-center gap-2 text-sm font-bold text-emerald-800">
           <CheckCircle2 size={16} /> This booking is already completed.
         </p>
-      </div>
-    );
-  }
-
-  if (isAwaitingPayment) {
-    return (
-      <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-        <p className="flex items-center gap-2 text-sm font-bold text-amber-800">
-          <Clock size={16} /> Waiting for customer payment authorization.
-        </p>
-        <p className="mt-1 text-sm text-amber-700">Accept and decline actions will be available after the payment hold is ready.</p>
       </div>
     );
   }
@@ -646,7 +630,7 @@ export default function SupplierBookingDetailPage() {
       </SupplierPageHeader>
 
       {/* Action banner */}
-      <ActionBanner status={booking.booking_status} paymentStatus={booking.payment_status} supplierAcceptanceStatus={booking.supplier_acceptance_status} cancellationTerms={booking.supplier_cancellation_terms} onAction={handleAction} busy={busy} />
+      <ActionBanner status={booking.booking_status} supplierAcceptanceStatus={booking.supplier_acceptance_status} cancellationTerms={booking.supplier_cancellation_terms} onAction={handleAction} busy={busy} />
 
       {/* Details grid */}
       <div className="grid gap-5 lg:grid-cols-2">
@@ -663,7 +647,7 @@ export default function SupplierBookingDetailPage() {
           <InfoRow label="Adults" value={booking.adults_count} />
           <InfoRow label="Booking Status" value={booking.booking_status.replace(/_/g, " ")} />
           <InfoRow label="Supplier Decision" value={(booking.supplier_acceptance_status ?? "-").replace(/_/g, " ")} />
-          <InfoRow label="Payment Status" value={booking.payment_status ?? "-"} />
+          {booking.payment_status && <InfoRow label="Payment Status" value={booking.payment_status} />}
           <InfoRow label="Booked On" value={dateStr(booking.created_at)} />
         </div>
 

@@ -24,25 +24,18 @@ type Booking = {
   currency?: string;
 };
 
-const STATUSES = [
-  "all",
-  "draft",
-  "pending_payment",
-  "pending_credit_approval",
-  "pending_supplier_assignment",
-  "payment_authorized",
-  "pending_supplier_acceptance",
-  "supplier_reassignment_required",
-  "confirmed",
-  "ready_to_travel",
-  "upcoming",
-  "ongoing",
-  "postponed",
-  "cancellation_requested",
-  "completed",
-  "cancelled",
-  "declined",
-  "refunded",
+// Keep this list at the booking-party level. Internal payment approval and
+// supplier-allocation states are operational detail and do not belong in the
+// Agent's booking filter.
+const AGENT_BOOKING_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "pending_payment", label: "Pending Payment" },
+  { value: "pending_supplier_acceptance", label: "Booking Request Received" },
+  { value: "confirmed", label: "Booking Confirmed" },
+  { value: "ongoing", label: "Ongoing" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+  { value: "declined", label: "Declined" },
 ];
 
 function dateText(value?: string | null) {
@@ -66,6 +59,19 @@ function Pill({ status, children }: { status?: string; children: React.ReactNode
       {children}
     </span>
   );
+}
+
+function agentBookingStatus(status: string) {
+  const labels: Record<string, string> = {
+    pending_payment: "Pending Payment",
+    pending_supplier_acceptance: "Booking Request Received",
+    confirmed: "Booking Confirmed",
+    ongoing: "Ongoing",
+    completed: "Completed",
+    cancelled: "Cancelled",
+    declined: "Declined",
+  };
+  return labels[status] ?? status.replaceAll("_", " ");
 }
 
 export default function AgentBookingsPage() {
@@ -134,8 +140,8 @@ export default function AgentBookingsPage() {
     { key: "customer", header: "Customer", render: (b) => b.customer_name ?? "-", className: "hidden text-dash-muted sm:table-cell" },
     { key: "tour", header: "Tour", render: (b) => b.tour_name ?? "-", className: "hidden max-w-[180px] truncate text-dash-muted md:table-cell" },
     { key: "date", header: "Date", render: (b) => dateText(b.tour_date), className: "hidden text-dash-muted lg:table-cell" },
-    { key: "status", header: "Status", render: (b) => <Pill status={b.booking_status}>{b.booking_status.replaceAll("_", " ")}</Pill> },
-    { key: "payment", header: "Payment", render: (b) => <Pill status={b.payment_status}>{b.payment_status.replaceAll("_", " ")}</Pill>, className: "hidden xl:table-cell" },
+    { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{agentBookingStatus(b.booking_status)}</Pill> },
+    { key: "payment", header: "Booking Payment Status", render: (b) => <Pill status={b.payment_status}>{b.payment_status.replaceAll("_", " ")}</Pill>, className: "hidden xl:table-cell" },
     { key: "paid", header: "Paid", render: (b) => money(b.amount_paid, b.currency), className: "hidden text-right text-dash-muted xl:table-cell" },
     { key: "balance_due", header: "Balance Due", render: (b) => (Number(b.amount_pending || 0) > 0 ? money(b.amount_pending, b.currency) : <span className="text-emerald-700">Paid in full</span>), className: "hidden text-right font-semibold text-amber-700 xl:table-cell" },
     { key: "due_date", header: "Due Date", render: (b) => dateText(b.payment_due_date), className: "hidden text-dash-muted lg:table-cell" },
@@ -158,18 +164,18 @@ export default function AgentBookingsPage() {
 
       <AgentSection className="mt-4">
       <div className="flex gap-2 overflow-x-auto border-b border-[#E7EDF6] p-4">
-        {STATUSES.map((s) => (
+        {AGENT_BOOKING_FILTERS.map(({ value, label }) => (
           <button
-            key={s}
+            key={value}
             type="button"
-            onClick={() => handleStatus(s)}
+            onClick={() => handleStatus(value)}
             className={`shrink-0 rounded-xl px-4 py-2.5 text-xs font-bold capitalize transition-all ${
-              statusFilter === s
+              statusFilter === value
                 ? "bg-dash-brand text-white shadow-dash-brand/20"
                 : "border border-dash-border/80 bg-white text-dash-muted hover:border-dash-brand/30 hover:text-dash-brand"
             }`}
           >
-            {s === "all" ? "All" : s.replaceAll("_", " ")}
+            {label}
           </button>
         ))}
       </div>

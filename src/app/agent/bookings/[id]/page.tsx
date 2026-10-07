@@ -30,7 +30,7 @@ type Booking = {
   customer_name?: string;
   customer_email?: string;
   customer_phone?: string;
-  customer?: { id: number; name?: string; email?: string };
+  customer?: { id: number; name?: string; email?: string; phone?: string };
   tour_name?: string;
   tour_date?: string | null;
   booking_status: string;
@@ -162,6 +162,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const [showCancellationForm, setShowCancellationForm] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [paymentBanner, setPaymentBanner] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null);
   const returnHandled = useRef(false);
@@ -223,7 +224,18 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
     returnHandled.current = true;
 
     if (paymentReturn === "cancelled") {
-      setPaymentBanner({ type: "info", message: "Payment was cancelled. The booking is saved and can be paid when ready." });
+      setPaymentBanner({ type: "info", message: "Payment Required\nYour booking is not yet confirmed. Please complete your payment or reserve now to secure your booking." });
+      const stripeKey = `stripe_pid_${id}`;
+      const paypalKey = `paypal_pid_${id}`;
+      const paymentId = sessionStorage.getItem(stripeKey) || sessionStorage.getItem(paypalKey);
+      void api.post("/payments/abandon-pending", {
+        booking_id: Number(id),
+        payment_id: paymentId ? Number(paymentId) : undefined,
+      }).finally(() => {
+        sessionStorage.removeItem(stripeKey);
+        sessionStorage.removeItem(paypalKey);
+        setRefreshKey((value) => value + 1);
+      });
       router.replace(`/agent/bookings/${id}`, { scroll: false });
       return;
     }
@@ -287,6 +299,18 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
     }
   }
 
+  async function removeUnpaidBooking() {
+    setRemoving(true);
+    try {
+      await api.post(`/bookings/${id}/hide-from-agent`);
+      router.replace("/agent/bookings");
+    } catch (exception: unknown) {
+      const detail = (exception as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setPaymentBanner({ type: "error", message: typeof detail === "string" ? detail : "This booking could not be removed from My Bookings." });
+      setRemoving(false);
+    }
+  }
+
   if (loading) {
     return (
       <AgentPageShell className="flex min-h-[60vh] items-center justify-center">
@@ -315,6 +339,9 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const bookingDisplayStatus = customerFacingBookingStatus(booking.booking_status);
   const isBookingRequestReceived = bookingDisplayStatus === "Booking Request Received";
   const canRequestCancellation = Number(booking.amount_paid ?? 0) > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
+  const canRemoveUnpaidBooking = Number(booking.amount_paid ?? 0) <= 0
+    && booking.booking_status === "pending_payment"
+    && ["unpaid", "pending", "failed"].includes(booking.payment_status);
   const freeCancellationEligible = booking.cancellation_eligibility?.is_free_cancellation_eligible === true;
 
   const travellerColumns: DataTableColumn<Traveller>[] = [
@@ -362,14 +389,20 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
                 <XCircle size={15} /> Request Cancellation
               </button>
             )}
+            {canRemoveUnpaidBooking && (
+              <button type="button" onClick={removeUnpaidBooking} disabled={removing}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-bold text-rose-600 transition hover:bg-rose-50 disabled:cursor-wait disabled:opacity-60">
+                {removing ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />} Remove from Bookings
+              </button>
+            )}
           </div>
         </div>
       </AgentPageHeader>
 
       {invoiceError && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{invoiceError}</div>}
       {paymentBanner && (
-        <div className={`mt-4 rounded-xl border px-4 py-3 text-sm font-bold ${paymentBanner.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : paymentBanner.type === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-blue-200 bg-blue-50 text-blue-700"}`}>
-          {paymentBanner.message}
+        <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${paymentBanner.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : paymentBanner.type === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-blue-200 bg-blue-50 text-blue-700"}`}>
+          {paymentBanner.message.split("\n").map((line, index) => <p key={line} className={index === 0 ? "font-bold" : "mt-1 leading-6"}>{line}</p>)}
         </div>
       )}
       {isBookingRequestReceived && !paymentBanner && (
@@ -382,15 +415,9 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">The free-cancellation period has ended. Please contact Tourvaa Support for cancellation assistance or a travel-date change.</div>
       )}
 
-      {booking.booking_source === "agent" && (
-        <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-          <span className="font-bold">Shared customer booking.</span> This reservation was created by your agency for the selected customer, so it is visible in both the Agent and Customer portals. Traveller email addresses do not grant access to other agents.
-        </div>
-      )}
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
         {/* Booking Info */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_35px_-24px_rgba(15,23,42,0.4)]">
+        <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
           <h2 className="flex items-center gap-2 text-base font-black text-dash-text">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"><FileText size={16} /></span> Booking Information
           </h2>
@@ -410,17 +437,17 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         </div>
 
         {/* Customer & Payment Info */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_35px_-24px_rgba(15,23,42,0.4)]">
+        <div className="contents">
+          <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
             <h2 className="text-base font-black text-dash-text">Customer</h2>
             <div className="mt-4">
               <InfoRow label="Name" value={booking.customer_name ?? booking.customer?.name} />
               <InfoRow label="Email" value={booking.customer_email ?? booking.customer?.email} />
-              <InfoRow label="Phone" value={booking.customer_phone} />
+              <InfoRow label="Phone" value={booking.customer_phone ?? booking.customer?.phone} />
             </div>
           </div>
 
-          {booking.agent_payment_summary && <div className="rounded-2xl border border-indigo-100 bg-linear-to-br from-white to-indigo-50/40 p-6 shadow-[0_10px_35px_-24px_rgba(49,46,129,0.35)]">
+          {booking.agent_payment_summary && <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
             <h2 className="text-base font-black text-dash-text">Agent Payments</h2>
             <div className="mt-4">
               <InfoRow label="Agent Transaction Type" value={booking.agent_payment_summary.transaction_type} />
@@ -446,18 +473,17 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           </div>}
 
         </div>
-      </div>
 
       {/* Message Tourvaa support about this booking */}
       {booking.supplier_id && (
-        <div className="mt-6">
+        <div className="lg:col-span-2">
           <BookingMessageThread bookingId={booking.id} />
         </div>
       )}
 
       {/* Travellers */}
       {travellers.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_35px_-24px_rgba(15,23,42,0.4)]">
+        <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm lg:col-span-2">
           <h2 className="text-base font-black text-dash-text mb-4">Travellers ({travellers.length})</h2>
           <div className="p-0">
             <DataTable
@@ -470,7 +496,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
       )}
 
       {booking.status_history && booking.status_history.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_35px_-24px_rgba(15,23,42,0.4)]">
+        <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
           <h2 className="text-base font-black text-dash-text">Status Timeline</h2>
           <div className="mt-4 space-y-3">
             {[...booking.status_history].reverse().map((entry) => (
@@ -488,6 +514,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           </div>
         </div>
       )}
+      </div>
 
       {showCancellationConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="agent-cancel-confirm-title">
@@ -524,6 +551,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           amountPaid={Number(booking.amount_paid ?? 0)}
           preferredPaymentType={booking.payment_type}
           depositConfig={booking.deposit_config}
+          allowPartialPayment={false}
           currency={booking.currency || "USD"}
           returnPath={`/agent/bookings/${booking.id}`}
           onClose={() => setShowPayment(false)}

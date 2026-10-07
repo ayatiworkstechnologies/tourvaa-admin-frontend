@@ -14,6 +14,7 @@ export type BookingTraveller = {
   age?: number | null;
   traveller_type?: string;
   passport_number?: string | null;
+  phone?: string | null;
 };
 
 export type Booking = {
@@ -22,6 +23,8 @@ export type Booking = {
   customer_id: number;
   customer_name?: string | null;
   customer_email?: string | null;
+  customer_phone?: string | null;
+  contact_phone?: string | null;
   tour_id?: number | null;
   tour_calendar_id?: number | null;
   supplier_id?: number | null;
@@ -84,6 +87,7 @@ export type Booking = {
   group_discount_funded_by?: "SUPPLIER" | "TOURVAA" | "SHARED" | null;
   promo_discount_funded_by?: "SUPPLIER" | "TOURVAA" | "SHARED" | null;
   cancellation_source?: string | null;
+  cancellation_reason?: string | null;
 };
 
 export type SupplierBreakdown = {

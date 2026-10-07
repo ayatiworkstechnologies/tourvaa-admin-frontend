@@ -12,6 +12,7 @@ export type TourOverview = {
   end_location: string;
   group_size: string;
   tour_type: string;
+  guide_style?: "" | "driver_guide" | "dedicated_guide" | "driver_only";
   physical_rating: "easy" | "moderate" | "hard";
   overview_icon_data?: Record<string, string>[] | null;
   why_choose_this_tour?: string;
@@ -29,6 +30,11 @@ export async function getOverview(tourId: number | string): Promise<TourOverview
 }
 export async function saveOverview(tourId: number | string, data: TourOverview): Promise<TourOverview> {
   const r = await api.post<{ data: TourOverview }>(`${base(tourId)}/overview`, data);
+  return r.data.data;
+}
+
+export async function updateTourGroupSize(tourId: number | string, min_booking_size: number, max_group_size: number): Promise<{ min_booking_size: number; max_group_size: number }> {
+  const r = await api.patch<{ data: { min_booking_size: number; max_group_size: number } }>(`${base(tourId)}/group-size`, { min_booking_size, max_group_size });
   return r.data.data;
 }
 
@@ -341,7 +347,7 @@ export type AccommodationExtra = {
   accommodation_name: string;
   description: string;
   extra_price: number;
-  price_type: "per_person" | "per_booking" | "per_room" | "per_person_per_night" | "per_room_per_night";
+  price_type: "per_person" | "per_room";
   image?: string;
   category: string;
   is_default: boolean;
