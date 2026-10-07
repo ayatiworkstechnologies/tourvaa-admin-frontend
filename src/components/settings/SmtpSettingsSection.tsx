@@ -49,6 +49,7 @@ export default function SmtpSettingsSection() {
 
   const load = async () => {
     setLoading(true);
+    setMessage("");
     try {
       const res = await api.get("/settings/smtp");
       const data: SmtpSummary = res.data.data;
@@ -64,6 +65,9 @@ export default function SmtpSettingsSection() {
       setUseSsl(data.use_ssl);
       setUseStarttls(data.use_starttls);
       setTimeoutSeconds(String(data.timeout_seconds ?? 20));
+    } catch {
+      setSummary(null);
+      setMessage("Could not load SMTP settings. Please refresh after the backend is available.");
     } finally {
       setLoading(false);
     }
@@ -125,7 +129,20 @@ export default function SmtpSettingsSection() {
   };
 
   if (loading) return <Loader label="Loading SMTP settings..." />;
-  if (!summary) return null;
+  if (!summary) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <p>{message || "Could not load SMTP settings."}</p>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 font-medium text-red-700 hover:bg-red-100"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={save} className="space-y-6">

@@ -17,6 +17,7 @@ import CurrencySelect from "@/components/ui/CurrencySelect";
 import PaymentSettingsSection from "@/components/settings/PaymentSettingsSection";
 import ApiSettingsSection from "@/components/settings/ApiSettingsSection";
 import SmtpSettingsSection from "@/components/settings/SmtpSettingsSection";
+import AdminNotificationRecipientsSection from "@/components/settings/AdminNotificationRecipientsSection";
 import CurrencyRatesSection from "@/components/settings/CurrencyRatesSection";
 import DefaultCancellationPolicySection from "@/components/settings/DefaultCancellationPolicySection";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
@@ -928,8 +929,10 @@ export default function SettingsPage() {
         )}
 
         {activeGenericGroup && (
-          <form onSubmit={saveSettings}>
-            <section className="rounded-2xl border border-dash-border bg-white p-6">
+          <>
+            {activeGroup === "general" && <AdminNotificationRecipientsSection />}
+            <form onSubmit={saveSettings}>
+              <section className="rounded-2xl border border-dash-border bg-white p-6">
               <h3 className="mb-1 text-lg font-bold text-dash-text">
                 {groupLabels[activeGroup] || activeGroup}
               </h3>
@@ -1045,17 +1048,18 @@ export default function SettingsPage() {
                   );
                 })}
               </div>
-            </section>
+              </section>
 
-            <div className="mt-6 flex justify-end">
-              <button
-                disabled={saving}
-                className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
-              >
-                {saving ? "Saving..." : "Save Settings"}
-              </button>
-            </div>
-          </form>
+              <div className="mt-6 flex justify-end">
+                <button
+                  disabled={saving}
+                  className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Save Settings"}
+                </button>
+              </div>
+            </form>
+          </>
         )}
       </div>
     </DashboardLayout>

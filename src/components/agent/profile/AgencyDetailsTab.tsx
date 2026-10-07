@@ -61,7 +61,7 @@ type AgencyForm = {
 };
 
 const AGENT_TYPES = [
-  "travel_agency", "online_travel_agency", "tour_operator", "corporate_travel", "dmc", "affiliate", "other",
+  "travel_agency", "online_travel_agency", "affiliate", "dmc", "other",
 ];
 
 export default function AgencyDetailsTab() {
@@ -242,7 +242,7 @@ export default function AgencyDetailsTab() {
       {/* agency details */}
       <form onSubmit={saveAgency} className="rounded-2xl border border-dash-border bg-white p-6 shadow-sm">
         <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-dash-text">Agency Details</h3>
+          <h3 className="text-lg font-bold text-dash-text">Business Details</h3>
           <button type="submit" disabled={saving}
             className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60 transition-colors">
             {saving ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
@@ -263,7 +263,7 @@ export default function AgencyDetailsTab() {
 
           {/* Agency Name */}
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Agency Name <span className="text-red-500">*</span></span>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Company / Legal Name <span className="text-red-500">*</span></span>
             <input required value={form.agent_name} onChange={e => set("agent_name", e.target.value)}
               placeholder="e.g. Horizon Travel Ltd"
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all" />
@@ -271,15 +271,15 @@ export default function AgencyDetailsTab() {
 
           {/* Email (read-only) */}
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Agency Email</span>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Email <span className="text-red-500">*</span></span>
             <input type="email" value={form.email} readOnly
               className="w-full cursor-not-allowed rounded-xl border border-dash-border bg-[#F9FAFB] px-4 py-2.5 text-sm text-dash-muted outline-none" />
             <p className="mt-1 text-xs text-dash-subtle">Email cannot be changed here. Contact support to update.</p>
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Trading / Business Name</span><input value={form.trading_name} onChange={e => set("trading_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Email</span><input type="email" value={form.business_email} onChange={e => set("business_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Trading / Business Name <span className="text-dash-subtle">(if different)</span></span><input value={form.trading_name} onChange={e => set("trading_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+            <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Additional Business Email</span><input type="email" value={form.business_email} onChange={e => set("business_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
             <label className="block sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Website <span className="text-dash-subtle">(optional)</span></span><input type="url" value={form.website_url} onChange={e => set("website_url", e.target.value)} placeholder="https://example.com" className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
           </div>
 
@@ -295,7 +295,7 @@ export default function AgencyDetailsTab() {
 
           {/* Address */}
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Agency Address <span className="text-red-500">*</span></span>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Address <span className="text-red-500">*</span></span>
             <input required value={form.address} onChange={e => set("address", e.target.value)}
               placeholder="e.g. Suite 400, 100 Bay Street, Toronto, ON"
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100 transition-all" />
@@ -325,14 +325,14 @@ export default function AgencyDetailsTab() {
 
             {/* IATA */}
             <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">IATA Number</span>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">IATA Accreditation / Travel Licence <span className="text-red-500">*</span></span>
               <input value={form.iata_registration_number} onChange={e => set("iata_registration_number", e.target.value)}
                 placeholder="e.g. 12345678"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">GST / Tax Number</span>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">GST / VAT / Tax Registration Number <span className="text-red-500">*</span></span>
               <input value={form.gst_tax_number} onChange={e => set("gst_tax_number", e.target.value)}
                 placeholder="e.g. TAX-8921-9481"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
@@ -340,7 +340,7 @@ export default function AgencyDetailsTab() {
 
             {/* Country */}
             <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country</span>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country <span className="text-red-500">*</span></span>
               <select value={form.country_id}
                 onChange={e => { setSelectedStateId(""); setForm(f => ({ ...f, country_id: e.target.value, city_id: "" })); }}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand">
@@ -385,7 +385,7 @@ export default function AgencyDetailsTab() {
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Registration Number</span>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Registration Number <span className="text-red-500">*</span></span>
               <input value={form.business_registration_number} onChange={e => set("business_registration_number", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" />
             </label>
           </div>
@@ -403,18 +403,27 @@ export default function AgencyDetailsTab() {
           </div>
 
           <div className="mt-6 border-t border-dash-border pt-5">
-            <h4 className="text-sm font-black text-dash-text">Bank, Invoicing & Billing Details</h4>
+            <h4 className="text-sm font-black text-dash-text">Bank Details</h4>
+            {bankLocked && <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">Bank details are locked after saving. Account details are masked; request any change through Tourvaa support.</p>}
             <p className="mt-1 text-xs text-dash-muted">All invoices will be emailed to the invoicing contact below.</p>
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Payment Method</span><select disabled={bankLocked} value={form.preferred_payment_method} onChange={e => set("preferred_payment_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm"><option value="">Select method</option><option value="bank_transfer">Bank Transfer</option><option value="paypal">PayPal</option></select></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Invoice Contact Name</span><input value={form.invoice_contact_name} onChange={e => set("invoice_contact_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Invoice Email</span><input type="email" value={form.invoice_email} onChange={e => set("invoice_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Invoice Phone</span><input value={form.invoice_phone} onChange={e => set("invoice_phone", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Name</span><input disabled={bankLocked} value={form.account_name} onChange={e => set("account_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Number / IBAN</span><input disabled={bankLocked} value={form.iban || form.account_number} onChange={e => set("iban", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Name</span><input disabled={bankLocked} value={form.bank_name} onChange={e => set("bank_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Branch / SWIFT / BIC</span><input disabled={bankLocked} value={form.swift_code || form.bank_branch} onChange={e => set("swift_code", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Billing / Invoice Address</span><input value={form.billing_address} onChange={e => set("billing_address", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Payment Method <span className="text-red-500">*</span></span><select disabled={bankLocked} value={form.preferred_payment_method} onChange={e => set("preferred_payment_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm"><option value="">Select method</option><option value="bank_transfer">Bank Transfer</option><option value="paypal">PayPal</option></select></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Account Name <span className="text-red-500">*</span></span><input disabled={bankLocked} value={form.account_name} onChange={e => set("account_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Name <span className="text-red-500">*</span></span><input disabled={bankLocked} value={form.bank_name} onChange={e => set("bank_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Branch Address <span className="text-red-500">*</span></span><input disabled={bankLocked} value={form.bank_branch} onChange={e => set("bank_branch", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Number / IBAN <span className="text-red-500">*</span></span><input disabled={bankLocked} value={form.account_number || form.iban} onChange={e => set("account_number", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">SWIFT / BIC <span className="text-dash-subtle">(where applicable)</span></span><input disabled={bankLocked} value={form.swift_code} onChange={e => set("swift_code", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+            </div>
+          </div>
+
+          <div className="mt-6 border-t border-dash-border pt-5">
+            <h4 className="text-sm font-black text-dash-text">Invoicing &amp; Accounts Details</h4>
+            <p className="mt-1 text-xs text-dash-muted">All invoices will be emailed to the above contact.</p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Accounts / Finance Contact Name <span className="text-red-500">*</span></span><input value={form.invoice_contact_name} onChange={e => set("invoice_contact_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Accounts Email Address <span className="text-red-500">*</span></span><input type="email" value={form.invoice_email} onChange={e => set("invoice_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Accounts Phone Number <span className="text-red-500">*</span></span><input value={form.invoice_phone} onChange={e => set("invoice_phone", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
+              <label className="block sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Billing Address <span className="text-red-500">*</span></span><input value={form.billing_address} onChange={e => set("billing_address", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
             </div>
           </div>
         </div>
