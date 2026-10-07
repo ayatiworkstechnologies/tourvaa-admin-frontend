@@ -167,6 +167,7 @@ export default function AgentBankAndInvoicingTab() {
           ...previous,
           account_number: saved.account_number || previous.account_number,
           iban: saved.iban || previous.iban,
+          swift_code: saved.swift_code || previous.swift_code,
         }));
         setBankLocked(Boolean(saved.bank_details_locked));
       }
@@ -278,7 +279,7 @@ export default function AgentBankAndInvoicingTab() {
 
         {bankLocked && (
           <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
-            Bank account details are locked after saving for security. To update banking details, please contact Tourvaa support.
+            Bank account, IBAN, and SWIFT/BIC values are masked after saving. To update banking details, please contact Tourvaa support.
           </p>
         )}
 

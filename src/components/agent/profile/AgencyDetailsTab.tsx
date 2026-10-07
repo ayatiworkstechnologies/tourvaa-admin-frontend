@@ -156,10 +156,6 @@ export default function AgencyDetailsTab() {
       toast.error("Complete the required business type and primary contact details.");
       return;
     }
-    if (!form.preferred_payment_method || !form.invoice_contact_name || !form.invoice_email || !form.invoice_phone) {
-      toast.error("Complete the required invoicing contact and payment method details.");
-      return;
-    }
     setSaving(true);
     try {
       await Promise.all([
@@ -182,11 +178,12 @@ export default function AgencyDetailsTab() {
             target_market: form.target_market,
             destinations_sold: form.destinations_sold,
           },
-          contact: { contact_name: form.primary_contact_name, first_name: form.primary_contact_first_name, last_name: form.primary_contact_last_name, designation: form.primary_contact_designation, email: form.primary_contact_email, phone: form.primary_contact_phone, preferred_contact_method: form.primary_contact_method },
-          invoicing: {
-            contact_name: form.invoice_contact_name, email: form.invoice_email, phone: form.invoice_phone, billing_address: form.billing_address,
-            ...(bankLocked ? {} : { preferred_payment_method: form.preferred_payment_method, account_name: form.account_name, account_number: form.account_number, bank_name: form.bank_name, bank_branch: form.bank_branch, swift_code: form.swift_code, iban: form.iban }),
-          },
+          ...(form.invoice_contact_name ? {
+            invoicing: {
+              contact_name: form.invoice_contact_name, email: form.invoice_email, phone: form.invoice_phone, billing_address: form.billing_address,
+              ...(bankLocked ? {} : { preferred_payment_method: form.preferred_payment_method, account_name: form.account_name, account_number: form.account_number, bank_name: form.bank_name, bank_branch: form.bank_branch, swift_code: form.swift_code, iban: form.iban }),
+            },
+          } : {}),
         }),
       ]);
       await refreshSession();
@@ -399,31 +396,6 @@ export default function AgencyDetailsTab() {
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Email Address <span className="text-red-500">*</span></span><input required type="email" value={form.primary_contact_email} onChange={e => set("primary_contact_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Phone / Mobile <span className="text-red-500">*</span></span><input required value={form.primary_contact_phone} onChange={e => set("primary_contact_phone", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Contact Method <span className="text-red-500">*</span></span><select required value={form.primary_contact_method} onChange={e => set("primary_contact_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm"><option value="">Select method</option><option value="email">Email</option><option value="phone">Phone</option><option value="whatsapp">WhatsApp</option></select></label>
-            </div>
-          </div>
-
-          <div className="mt-6 border-t border-dash-border pt-5">
-            <h4 className="text-sm font-black text-dash-text">Bank Details</h4>
-            {bankLocked && <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">Bank details are locked after saving. Account details are masked; request any change through Tourvaa support.</p>}
-            <p className="mt-1 text-xs text-dash-muted">All invoices will be emailed to the invoicing contact below.</p>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Payment Method <span className="text-red-500">*</span></span><select disabled={bankLocked} value={form.preferred_payment_method} onChange={e => set("preferred_payment_method", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm"><option value="">Select method</option><option value="bank_transfer">Bank Transfer</option><option value="paypal">PayPal</option></select></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Account Name <span className="text-red-500">*</span></span><input disabled={bankLocked} value={form.account_name} onChange={e => set("account_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Name <span className="text-red-500">*</span></span><input disabled={bankLocked} value={form.bank_name} onChange={e => set("bank_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Bank Branch Address <span className="text-red-500">*</span></span><input disabled={bankLocked} value={form.bank_branch} onChange={e => set("bank_branch", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Account Number / IBAN <span className="text-red-500">*</span></span><input disabled={bankLocked} value={form.account_number || form.iban} onChange={e => set("account_number", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">SWIFT / BIC <span className="text-dash-subtle">(where applicable)</span></span><input disabled={bankLocked} value={form.swift_code} onChange={e => set("swift_code", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-            </div>
-          </div>
-
-          <div className="mt-6 border-t border-dash-border pt-5">
-            <h4 className="text-sm font-black text-dash-text">Invoicing &amp; Accounts Details</h4>
-            <p className="mt-1 text-xs text-dash-muted">All invoices will be emailed to the above contact.</p>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Accounts / Finance Contact Name <span className="text-red-500">*</span></span><input value={form.invoice_contact_name} onChange={e => set("invoice_contact_name", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Accounts Email Address <span className="text-red-500">*</span></span><input type="email" value={form.invoice_email} onChange={e => set("invoice_email", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Accounts Phone Number <span className="text-red-500">*</span></span><input value={form.invoice_phone} onChange={e => set("invoice_phone", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
-              <label className="block sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Billing Address <span className="text-red-500">*</span></span><input value={form.billing_address} onChange={e => set("billing_address", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" /></label>
             </div>
           </div>
         </div>

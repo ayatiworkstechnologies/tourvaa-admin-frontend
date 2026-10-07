@@ -2181,15 +2181,12 @@ export default function TourDetailExperience({
                           onClick={() => toggleDay(day.day)}
                           className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-slate-50/70 cursor-pointer"
                         >
-                          <div className="flex items-center gap-3.5">
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold text-white shadow-xs">
-                              {day.day}
-                            </span>
+                          <div className="min-w-0">
                             <div>
-                              <span className="text-xs font-bold uppercase tracking-wider text-blue-600 block">
-                                Day 0{day.day}
+                              <span className="block text-base font-black uppercase tracking-wider text-blue-600 sm:text-lg">
+                                Day {String(day.day).padStart(2, "0")}
                               </span>
-                              <span className="text-sm font-bold text-slate-900">
+                              <span className="mt-0.5 block text-base font-bold text-slate-900 sm:text-lg">
                                 {day.title}
                               </span>
                               {day.isFreeDay && (

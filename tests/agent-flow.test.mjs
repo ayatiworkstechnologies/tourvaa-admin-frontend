@@ -106,8 +106,10 @@ check("agent message history is connected", messages.includes('PortalMessageThre
 check("agent support compose is connected", portalMessageThread.includes("sendOwnMessage(portal") && messagingService.includes("api.post(OWN_MESSAGES_PATH[portal]"));
 
 const profile = read("src/app/agent/profile/page.tsx");
+const agentBankAndInvoicing = read("src/components/agent/profile/AgentBankAndInvoicingTab.tsx");
 const verificationDocuments = read("src/components/agent/profile/VerificationDocumentsTab.tsx");
 check("agent profile exposes verification documents", profile.includes("VerificationDocumentsTab") && profile.includes("Verification Documents"));
+check("locked agent bank identifiers remain masked after saving", agentBankAndInvoicing.includes("swift_code: saved.swift_code") && agentBankAndInvoicing.includes("values are masked after saving"));
 check("agent profile uses the shared portal tab and content layout without fleet controls", profile.includes("overflow-x-auto rounded-2xl") && profile.includes("w-full rounded-2xl") && !profile.includes("My Vehicles"));
 check("agent verification lists the required business document categories", ["company_registration", "iata_accreditation", "industry_certification", "other_licences", "supporting_documents"].every((type) => verificationDocuments.includes(type)));
 check("agent verification waits for all required non-rejected uploads", verificationDocuments.includes("allRequiredReady") && verificationDocuments.includes('document.status !== "rejected"') && verificationDocuments.includes("Submit for verification"));
