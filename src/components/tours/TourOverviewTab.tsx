@@ -9,7 +9,7 @@ import Loader from "@/components/ui/Loader";
 
 const empty: TourOverview = {
   duration_text: "", start_location: "", end_location: "",
-  group_size: "", tour_type: "", guide_style: "", physical_rating: "easy",
+  group_size: "", tour_type: "", vehicle_style: "", guide_style: "", physical_rating: "easy",
   why_choose_this_tour: "", ideal_for: "", best_season: "", tour_pace: "",
   transportation_summary: "", accommodation_summary: "", meal_summary: "",
 };

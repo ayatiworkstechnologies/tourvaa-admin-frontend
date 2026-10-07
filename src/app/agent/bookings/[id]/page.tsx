@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LuArrowLeft as ArrowLeft, LuCreditCard as CreditCard, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuCircleX as XCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuClock as Clock, LuCreditCard as CreditCard, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuUser as User, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
-import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import BookingPaymentModal from "@/components/bookings/BookingPaymentModal";
 import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
 import BookingMessageThread from "@/components/messaging/BookingMessageThread";
@@ -344,14 +343,6 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
     && ["unpaid", "pending", "failed"].includes(booking.payment_status);
   const freeCancellationEligible = booking.cancellation_eligibility?.is_free_cancellation_eligible === true;
 
-  const travellerColumns: DataTableColumn<Traveller>[] = [
-    { key: "index", header: "#", render: (_, idx) => idx + 1, className: "text-dash-muted" },
-    { key: "name", header: "Name", className: "font-bold text-dash-text", render: (t) => t.name ?? t.full_name ?? "-" },
-    { key: "type", header: "Type", className: "hidden capitalize text-dash-muted sm:table-cell", render: (t) => t.traveller_type ?? "adult" },
-    { key: "nationality", header: "Nationality", className: "hidden text-dash-muted md:table-cell", render: (t) => t.nationality ?? "-" },
-    { key: "passport", header: "Passport", className: "hidden text-dash-muted lg:table-cell", render: (t) => t.passport_number ?? "-" },
-  ];
-
   return (
     <AgentPageShell>
       <AgentPageHeader
@@ -417,9 +408,9 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         {/* Booking Info */}
-        <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 text-base font-black text-dash-text">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"><FileText size={16} /></span> Booking Information
+        <div className="order-1 rounded-xl border border-dash-border bg-white p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 font-black text-dash-text">
+            <CalendarCheck size={18} className="text-blue-600" /> Booking Information
           </h2>
           <div className="mt-4">
             <InfoRow label="Booking Code" value={booking.booking_code} />
@@ -438,8 +429,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
         {/* Customer & Payment Info */}
         <div className="contents">
-          <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
-            <h2 className="text-base font-black text-dash-text">Customer</h2>
+          <div className="order-3 rounded-xl border border-dash-border bg-white p-5 shadow-sm">
+            <h2 className="flex items-center gap-2 text-base font-black text-dash-text"><User size={18} className="text-blue-600" /> Customer</h2>
             <div className="mt-4">
               <InfoRow label="Name" value={booking.customer_name ?? booking.customer?.name} />
               <InfoRow label="Email" value={booking.customer_email ?? booking.customer?.email} />
@@ -447,8 +438,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
 
-          {booking.agent_payment_summary && <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
-            <h2 className="text-base font-black text-dash-text">Agent Payments</h2>
+          {booking.agent_payment_summary && <div className="order-2 rounded-xl border border-dash-border bg-white p-5 shadow-sm">
+            <h2 className="flex items-center gap-2 text-base font-black text-dash-text"><CreditCard size={18} className="text-blue-600" /> Agent Payments</h2>
             <div className="mt-4">
               <InfoRow label="Agent Transaction Type" value={booking.agent_payment_summary.transaction_type} />
               {booking.agent_payment_summary.is_reserved ? <>
@@ -476,28 +467,34 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
       {/* Message Tourvaa support about this booking */}
       {booking.supplier_id && (
-        <div className="lg:col-span-2">
-          <BookingMessageThread bookingId={booking.id} />
+        <div className="order-6 lg:col-span-2">
+          <BookingMessageThread bookingId={booking.id} compact />
         </div>
       )}
 
       {/* Travellers */}
       {travellers.length > 0 && (
-        <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm lg:col-span-2">
-          <h2 className="text-base font-black text-dash-text mb-4">Travellers ({travellers.length})</h2>
-          <div className="p-0">
-            <DataTable
-              ariaLabel="Travellers"
-              columns={travellerColumns}
-              rows={travellers}
-            />
+        <div className="order-5 rounded-xl border border-dash-border bg-white p-5 shadow-sm lg:col-span-2">
+          <h2 className="mb-4 flex items-center gap-2 text-base font-black text-dash-text"><User size={18} className="text-blue-600" /> Travellers ({travellers.length})</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {travellers.map((traveller, index) => (
+              <div key={traveller.id ?? index} className="rounded-xl border border-dash-border p-3">
+                <p className="font-semibold text-dash-text">{traveller.name ?? traveller.full_name ?? `Traveller ${index + 1}`}</p>
+                <div className="mt-1 flex flex-wrap gap-3 text-xs text-dash-muted">
+                  <span className="capitalize">Type: {traveller.traveller_type ?? "adult"}</span>
+                  {traveller.age != null && <span>Age: {traveller.age}</span>}
+                  {traveller.nationality && <span>Nationality: {traveller.nationality}</span>}
+                  {traveller.passport_number && <span>Passport: {traveller.passport_number}</span>}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {booking.status_history && booking.status_history.length > 0 && (
-        <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
-          <h2 className="text-base font-black text-dash-text">Status Timeline</h2>
+        <div className="order-4 rounded-xl border border-dash-border bg-white p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-base font-black text-dash-text"><Clock size={18} className="text-blue-600" /> Status Timeline</h2>
           <div className="mt-4 space-y-3">
             {[...booking.status_history].reverse().map((entry) => (
               <div key={entry.id} className="flex gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4">

@@ -89,10 +89,9 @@ export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: stri
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [removeUnmatched, setRemoveUnmatched] = useState(false);
   const [syncingSeats, setSyncingSeats] = useState(false);
-  // A vehicle/group limit is the customer-facing capacity. Use it for a new
-  // date by default so a six-seat vehicle starts at six seats, while still
-  // allowing an operator to set a lower date-specific capacity.
-  const calendarSeatDefault = maxGroupSize || schedule.seats_per_occurrence || 10;
+  // Calendar seats are the total departure capacity. The group size limits
+  // adults + children in one booking and must not replace this value.
+  const calendarSeatDefault = schedule.seats_per_occurrence || 10;
 
   // Filters & Pagination state for Tour Calendar
   const [selectedYear, setSelectedYear] = useState<string>("all");
@@ -280,8 +279,8 @@ export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: stri
     const targetSeats = sanitizeNumber(schedule.seats_per_occurrence) || 10;
     if (
       !(await confirm({
-        title: "Apply Available Seats to All Dates",
-        message: `Set available seats to ${targetSeats} for all unbooked dates in the calendar?`,
+        title: "Apply Total Seats to All Dates",
+        message: `Set total departure capacity to ${targetSeats} seats for all unbooked dates in the calendar?`,
         confirmLabel: `Apply ${targetSeats} Seats`,
       }))
     ) {
@@ -312,7 +311,7 @@ export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: stri
         );
       }
       await load();
-      toast.success(`Updated all unbooked dates to ${targetSeats} available seats.`);
+      toast.success(`Updated all unbooked dates to ${targetSeats} total seats.`);
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -324,6 +323,10 @@ export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: stri
     e.preventDefault();
     if (!editing || !editing.tour_date) {
       toast.error("Select a date.");
+      return;
+    }
+    if (sanitizeNumber(editing.available_seats) < sanitizeNumber(editing.booked_seats)) {
+      toast.error("Total seats cannot be lower than booked seats.");
       return;
     }
     setSaving(true);
@@ -455,11 +458,13 @@ export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: stri
             </span>
           </label>
           <label>
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Available Seats</span>
+            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Total Seats Per Date</span>
             <input type="number" min={0} value={numberInputValue(schedule.seats_per_occurrence)}
               onChange={(e) => setSchedule((p) => ({ ...p, seats_per_occurrence: parseNumberInput(e.target.value) }))}
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-            <span className="mt-1 block text-xs text-dash-subtle">Applied to each generated date below.</span>
+            <span className="mt-1 block text-xs text-dash-subtle">
+              Departure capacity applied to each generated date. Max per booking: {maxGroupSize || "not set"} travellers (adults + children).
+            </span>
           </label>
         </div>
 
@@ -595,11 +600,11 @@ export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: stri
                 type="button"
                 onClick={syncSeatsToAll}
                 disabled={syncingSeats}
-                title={`Apply ${schedule.seats_per_occurrence || 10} available seats to all unbooked calendar dates`}
+                title={`Apply ${schedule.seats_per_occurrence || 10} total seats to all unbooked calendar dates`}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3.5 py-2 text-xs font-bold text-dash-text shadow-2xs hover:bg-slate-50 hover:border-dash-brand/50 transition cursor-pointer disabled:opacity-60"
               >
                 <RotateCcw size={13} className={syncingSeats ? "animate-spin text-dash-brand" : "text-dash-muted"} />
-                <span>Apply {schedule.seats_per_occurrence || 10} Seats to All</span>
+                <span>Apply {schedule.seats_per_occurrence || 10} Total Seats to All</span>
               </button>
             )}
             <button
@@ -765,8 +770,13 @@ export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: stri
                     </span>
                   ),
                 },
-                { key: "available", header: "Available", render: (item) => item.available_seats },
+                { key: "capacity", header: "Total Seats", render: (item) => item.available_seats },
                 { key: "booked", header: "Booked", render: (item) => item.booked_seats },
+                {
+                  key: "remaining",
+                  header: "Seats Left",
+                  render: (item) => Math.max(0, (item.available_seats || 0) - (item.booked_seats || 0)),
+                },
                 {
                   key: "status",
                   header: "Status",
@@ -847,14 +857,18 @@ export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: stri
                   clearable={false}
                 />
               </div>
-              {[["available_seats", "Available seats (vehicle capacity)"], ["booked_seats", "Booked seats"]].map(([key, lbl]) => (
-                <label key={key}>
-                  <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
-                  <input type="number" value={numberInputValue((editing as Record<string, unknown>)[key] as number)}
-                    onChange={(e) => setEditing((p) => p ? { ...p, [key]: parseNumberInput(e.target.value) } : p)}
-                    className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
-                </label>
-              ))}
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Total seats for this date</span>
+                <input type="number" min={editing.booked_seats || 0} value={numberInputValue(editing.available_seats)}
+                  onChange={(e) => setEditing((p) => p ? { ...p, available_seats: parseNumberInput(e.target.value) } : p)}
+                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
+              </label>
+              <div>
+                <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Booked seats</span>
+                <div className="w-full rounded-xl border border-dash-border bg-slate-50 px-4 py-2.5 text-sm text-dash-text">
+                  {editing.booked_seats || 0} booked, {Math.max(0, (editing.available_seats || 0) - (editing.booked_seats || 0))} left
+                </div>
+              </div>
               <label>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
                 <select value={editing.status} onChange={(e) => setEditing((p) => p ? { ...p, status: e.target.value } : p)}

@@ -28,7 +28,7 @@ function timeAgo(value?: string | null) {
  * (see services.messaging's hide_supplier_identity: the API never sends
  * this viewer the supplier's name in the first place). Mount on a booking
  * detail page once the booking has a supplier assigned. */
-export default function BookingMessageThread({ bookingId }: { bookingId: number }) {
+export default function BookingMessageThread({ bookingId, compact = false }: { bookingId: number; compact?: boolean }) {
   const [thread, setThread] = useState<BookingConversationThread | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -103,13 +103,13 @@ export default function BookingMessageThread({ bookingId }: { bookingId: number 
   }
 
   return (
-    <div className="flex h-[480px] flex-col rounded-2xl border border-dash-border-soft bg-white">
+    <div className={`flex flex-col rounded-xl border border-dash-border bg-white shadow-sm ${compact ? "min-h-64" : "h-[480px]"}`}>
       <div className="border-b border-dash-border-soft px-5 py-3">
         <p className="font-bold text-dash-text">Message Tourvaa Support</p>
         <p className="mt-0.5 text-xs text-dash-subtle">Ask about this booking directly.</p>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
+      <div className={`flex-1 space-y-3 overflow-y-auto px-5 py-4 ${compact ? "max-h-80 min-h-32" : ""}`}>
         {loading ? (
           <Loader label="Loading booking messages..." compact />
         ) : thread?.messages.length === 0 ? (

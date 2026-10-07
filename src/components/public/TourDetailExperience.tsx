@@ -170,6 +170,10 @@ type MonthGroup = {
   dates: DepartureDateItem[];
 };
 
+function seatsLeftLabel(slots: number): string {
+  return `${slots} ${slots === 1 ? "seat" : "seats"} left`;
+}
+
 function toIsoDate(val?: string | null): string {
   if (!val) return "";
   const s = decodeURIComponent(val).replace(/\+/g, " ").trim();
@@ -447,15 +451,7 @@ export default function TourDetailExperience({
     : tour.max_group_size
       ? `Up to ${tour.max_group_size} travellers`
       : tour.overview?.group_size?.trim() || "";
-  const vehicleStyle = (() => {
-    const capacity = Number(tour.max_group_size || 0);
-    if (!capacity) return "";
-    if (capacity <= 4) return "Private car";
-    if (capacity <= 6) return "Mini cab";
-    if (capacity <= 12) return "Minivan";
-    if (capacity <= 20) return "Mini coach";
-    return "Coach";
-  })();
+  const vehicleStyle = tour.overview?.vehicle_style?.trim() || "";
   const guideStyleLabels: Record<string, string> = {
     driver_guide: "Driver-guide",
     dedicated_guide: "Dedicated guide and driver",
@@ -627,7 +623,7 @@ export default function TourDetailExperience({
           // capacity.
           ? "Availability unavailable"
           : slots > 0
-            ? `${slots} Available Seats`
+            ? seatsLeftLabel(slots)
             : "Sold out";
 
       if (!groupMap.has(monthKey)) {
@@ -1864,8 +1860,8 @@ export default function TourDetailExperience({
                   </Link>
                 </div>
                 <div className="mt-6 grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
-                  {groupSizeLabel && <StyleFact icon={<Users size={20} />} label="Group size" value={groupSizeLabel} detail={tour.min_booking_size && tour.max_group_size ? `Min ${tour.min_booking_size} / Max ${tour.max_group_size}` : undefined} />}
-                  {vehicleStyle && <StyleFact icon={<Car size={20} />} label="Tour style" value={vehicleStyle} detail={tour.max_group_size ? `Vehicle capacity: up to ${tour.max_group_size}` : undefined} />}
+                  {groupSizeLabel && <StyleFact icon={<Users size={20} />} label="Group size" value={groupSizeLabel} detail={tour.min_booking_size && tour.max_group_size ? `Minimum ${tour.min_booking_size} guests / Maximum ${tour.max_group_size} guests per booking` : undefined} />}
+                  {vehicleStyle && <StyleFact icon={<Car size={20} />} label="Tour style" value={vehicleStyle} detail={tour.max_group_size ? `Maximum ${tour.max_group_size} guests per booking` : undefined} />}
                   {tour.overview?.tour_type && <StyleFact icon={<Compass size={20} />} label="Trip type" value={tour.overview.tour_type} />}
                   {tourPace && <StyleFact icon={<Gauge size={20} />} label="Travel style" value={tourPace} />}
                   {(guideStyle || tour.tour_language) && <StyleFact icon={<User size={20} />} label="Guiding style" value={guideStyle || `Guided in ${tour.tour_language}`} />}
@@ -3038,9 +3034,9 @@ export default function TourDetailExperience({
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
                   Who&apos;s Travelling?
                 </h4>
-                {(selectedDeparture?.slotsRemaining != null || tour.max_group_size) && (
+                {tour.max_group_size && (
                   <span className="text-xs font-medium text-slate-500">
-                    Max {maxTravellers} guests
+                    Max {tour.max_group_size} guests per booking
                   </span>
                 )}
               </div>

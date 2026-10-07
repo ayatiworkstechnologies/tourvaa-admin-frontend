@@ -520,7 +520,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
             {activeKey === "itinerary" && <TourItineraryTab tourId={tourId} numberOfDays={tour?.number_of_days ? Number(tour.number_of_days) : undefined} />}
             {activeKey === "pricing" && (
               <div className="space-y-6">
-                <TourPricingTab tourId={tourId} role={role} tourStatus={tour?.status as string | undefined} />
+                <TourPricingTab tourId={tourId} role={role} tourStatus={tour?.status as string | undefined} maxGroupSize={tour?.max_group_size} />
                 <div id="tour-discounts-section">
                   <TourDiscountsTab tourId={tourId} role={role} />
                 </div>

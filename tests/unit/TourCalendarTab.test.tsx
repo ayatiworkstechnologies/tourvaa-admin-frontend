@@ -171,7 +171,7 @@ describe("TourCalendarTab pagination and filters", () => {
     await waitFor(() => {
       expect(mockConfirm.confirm).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: "Apply Available Seats to All Dates",
+          title: "Apply Total Seats to All Dates",
         })
       );
     });

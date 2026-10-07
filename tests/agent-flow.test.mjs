@@ -90,6 +90,13 @@ check("agent cancellation warning is clear and does not duplicate support wordin
 check("agent can reopen payment for an unpaid booking", detail.includes("BookingPaymentModal") && detail.includes("Pay Now"));
 check("agent payment modal never offers a customer deposit option", detail.includes("allowPartialPayment={false}"));
 check("unpaid gateway returns show payment-required copy and can be removed only from My Bookings", detail.includes("Payment Required") && detail.includes("hide-from-agent") && detail.includes("Remove from Bookings") && detail.includes("canRemoveUnpaidBooking"));
+const bookingService = read("../backend/app/services/bookings.py");
+check(
+  "provisional unpaid bookings stay agent-visible but remain hidden from operational portals",
+  bookingService.includes('if role != "agent":') &&
+    bookingService.includes('Booking.payment_status.notin_(("unpaid", "pending", "failed"))') &&
+    bookingService.includes("Booking.agent_hidden_at.is_(None)"),
+);
 check("agent booking handles Stripe and PayPal returns", detail.includes('/payments/stripe/confirm-return') && detail.includes('/payments/paypal/capture') && detail.includes('"/payments/abandon-pending"'));
 check("booking detail failures can be retried", detail.includes("setRefreshKey") && detail.includes("Retry"));
 

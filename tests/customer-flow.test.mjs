@@ -39,7 +39,10 @@ check(
     detail.includes("window.setInterval(refreshTour, PUBLIC_TOUR_REFRESH_INTERVAL_MS)"),
 );
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
-check("public itinerary opens in overview mode by default", detailExperience.includes('useState<"detailed" | "overview">(\n    "overview"'));
+check(
+  "public itinerary opens in overview mode by default",
+  detailExperience.includes('useState<"detailed" | "overview">(') && detailExperience.includes('"overview",'),
+);
 check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
 check(
   "tour detail limits each booking by both remaining seats and maximum group size",
@@ -51,13 +54,31 @@ check(
   "tour detail never presents sold-out or unavailable departures as bookable",
   detailExperience.includes("const isBookableStatus") &&
     detailExperience.includes("(slots == null || slots > 0)") &&
-    detailExperience.includes("${slots} Available Seats") &&
+    detailExperience.includes("function seatsLeftLabel") &&
+    detailExperience.includes('slots === 1 ? "seat" : "seats"') &&
+    detailExperience.includes('} left`') &&
     detailExperience.includes(': "Sold out"'),
+);
+check(
+  "tour style keeps vehicle capacity separate from live seats remaining",
+  detailExperience.includes("tour.overview?.vehicle_style?.trim()") &&
+    detailExperience.includes("Maximum ${tour.max_group_size} guests per booking") &&
+    detailExperience.includes("Max {tour.max_group_size} guests per booking") &&
+    !detailExperience.includes("Max {maxTravellers} guests") &&
+    !detailExperience.includes("capacity <= 6"),
 );
 check(
   "tour detail hides unreachable price tiers and caps the final visible tier at the group limit",
   detailExperience.includes(".filter((row) => !maxGroupSize || row.persons_from <= maxGroupSize)") &&
     detailExperience.includes("return { ...row, persons_to: maxGroupSize };"),
+);
+const pricingEditor = read("src/components/tours/TourPricingTab.tsx");
+check(
+  "tour pricing editor previews public Group Rate Highlights from active slabs",
+  pricingEditor.includes("Group Rate Highlights Preview") &&
+    pricingEditor.includes('slab.status === "active"') &&
+    pricingEditor.includes("slab.passenger_from <= maxGroupSize") &&
+    pricingEditor.includes("maxGroupSize ? Math.min(slab.passenger_to, maxGroupSize)"),
 );
 const pricingTab = read("src/components/tours/TourPricingTab.tsx");
 check(

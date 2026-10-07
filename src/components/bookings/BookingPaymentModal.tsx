@@ -175,7 +175,7 @@ export default function BookingPaymentModal({
               {loading === "stripe" ? <Loader2 size={17} className="animate-spin" /> : <CreditCard size={17} />}
               <span>Pay with</span>
               <span className="inline-flex rounded-md bg-white px-2 py-1 shadow-2xs">
-                <StripeWordmark className="h-3.5 w-[42px] text-[#635BFF]" />
+                <StripeWordmark className="h-4 w-auto" />
               </span>
             </button>
             <button type="button" onClick={payWithPayPal} disabled={Boolean(loading) || !gateways?.paypal} className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] px-4 py-3 text-sm font-black text-white shadow-sm transition-all disabled:opacity-40">

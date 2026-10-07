@@ -12,6 +12,7 @@ export type TourOverview = {
   end_location: string;
   group_size: string;
   tour_type: string;
+  vehicle_style: string;
   guide_style?: "" | "driver_guide" | "dedicated_guide" | "driver_only";
   physical_rating: "easy" | "moderate" | "hard";
   overview_icon_data?: Record<string, string>[] | null;

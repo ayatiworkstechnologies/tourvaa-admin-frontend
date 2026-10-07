@@ -57,7 +57,14 @@ check("dashboard retains date and status filtering", dashboard.includes("<DatePi
 check("dashboard provides loading and filtered empty states", dashboard.includes("BookingSkeleton") && dashboard.includes("No bookings match these filters"));
 
 const bookingDetail = read("src/app/supplier/bookings/[id]/page.tsx");
+const bookingService = read("../backend/app/services/bookings.py");
 check("supplier can accept pending supplier requests without agent settlement details", bookingDetail.includes('v === "pending_supplier_acceptance"') && bookingDetail.includes("Accept Booking") && bookingDetail.includes("Decline") && !bookingDetail.includes("paymentReady"));
+check(
+  "supplier booking detail masks agent reservation payment state before rendering actions",
+  bookingService.includes('data = _hide_agent_reservation_payment_from_supplier(_supplier_safe(data, booking), booking)') &&
+    bookingService.includes('data["booking_status"] = (') &&
+    bookingService.includes('"pending_supplier_acceptance"'),
+);
 check("decline includes a required reason", bookingDetail.includes('{ reason: declineReason }'));
 check("supplier cancellation confirms the applicable liability", ["supplier_cancellation_terms", "Confirm booking cancellation", "no cancellation charge", "liability_percentage", "Yes, continue"].every((text) => bookingDetail.includes(text)));
 check("supplier withdrawal stays internal to Tourvaa", bookingDetail.includes("awaiting internal supplier reassignment") && !bookingDetail.includes("Booking cancelled. Customer has been notified."));

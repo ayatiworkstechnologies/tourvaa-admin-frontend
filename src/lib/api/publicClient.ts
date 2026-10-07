@@ -139,6 +139,7 @@ export type PublicTourDetail = PublicTour & {
     end_location: string;
     group_size: string;
     tour_type: string;
+    vehicle_style?: string;
     guide_style?: "" | "driver_guide" | "dedicated_guide" | "driver_only";
     physical_rating: string;
     why_choose_this_tour: string | null;
