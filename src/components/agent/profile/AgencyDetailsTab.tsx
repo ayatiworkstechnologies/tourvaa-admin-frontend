@@ -178,6 +178,7 @@ export default function AgencyDetailsTab() {
             target_market: form.target_market,
             destinations_sold: form.destinations_sold,
           },
+          contact: { contact_name: form.primary_contact_name, first_name: form.primary_contact_first_name, last_name: form.primary_contact_last_name, designation: form.primary_contact_designation, email: form.primary_contact_email, phone: form.primary_contact_phone, preferred_contact_method: form.primary_contact_method },
           ...(form.invoice_contact_name ? {
             invoicing: {
               contact_name: form.invoice_contact_name, email: form.invoice_email, phone: form.invoice_phone, billing_address: form.billing_address,
