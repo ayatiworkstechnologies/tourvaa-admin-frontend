@@ -82,6 +82,7 @@ check("legacy seeded contact placeholders are suppressed", publicSettings.includ
 // dynamically, with the old hardcoded content kept only as an offline
 // fallback if that fetch fails.
 check("public footer fetches its link sections from the CMS", publicFooter.includes("fetchFooterSections") && publicFooter.includes("activeFooterSections.map") && !publicFooter.includes("aboutSupportLinks") && !publicFooter.includes("aboutCompanyLinks") && !publicFooter.includes("aboutLoginLinks"));
+check("country catalogue pages keep the shared header but omit only their marketing footer", publicFooter.includes('usePathname') && publicFooter.includes('pathname.match(/^\\/tours\\/([^/]+)\\/?$/)') && publicFooter.includes('if (isCountryTourListing) return null'));
 check("agent and supplier landing pages use complete independently editable public footers", agentPortalLayout.includes("showFooter={false}") && supplierPortalLayout.includes("showFooter={false}") && partnerPortalFooter.includes("contentBlockKey") && publicFooter.includes("portalSections") && publicFooter.includes("fetchFooterSections"));
 
 const tracker = read("src/components/public/AffiliateReferralTracker.tsx");

@@ -56,6 +56,12 @@ check(
     detailExperience.includes('"Check dates"'),
 );
 check(
+  "sticky booking summary presents the selected date, traveller count, and total with an elevated action card",
+  detailExperience.includes("Date selected") &&
+    detailExperience.includes("shadow-[0_14px_45px") &&
+    detailExperience.includes("from-pub-accent to-[#ef6a28]"),
+);
+check(
   "tour detail limits each booking by remaining departure seats",
   detailExperience.includes("selectedDeparture?.slotsRemaining ?? MAX_TRAVELLERS_CEILING") &&
     !detailExperience.includes("tour.max_group_size || MAX_TRAVELLERS_CEILING"),
@@ -84,11 +90,10 @@ check(
 );
 const pricingEditor = read("src/components/tours/TourPricingTab.tsx");
 check(
-  "tour pricing editor previews public Group Rate Highlights from active slabs",
-  pricingEditor.includes("Group Rate Highlights Preview") &&
-    pricingEditor.includes('slab.status === "active"') &&
-    !pricingEditor.includes("slab.passenger_from <= maxGroupSize") &&
-    pricingEditor.includes("const rangeEnd = slab.passenger_to"),
+  "tour pricing editor keeps public Group Rate Highlights out of admin and supplier forms",
+  !pricingEditor.includes("Group Rate Highlights Preview") &&
+    !pricingEditor.includes("Generated dynamically on the public booking panel") &&
+    !pricingEditor.includes("maxGroupSize"),
 );
 const portalAuthPage = read("src/components/public/portal/PortalAuthPage.tsx");
 check(

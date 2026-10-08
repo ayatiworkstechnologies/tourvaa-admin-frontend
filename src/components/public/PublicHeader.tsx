@@ -269,7 +269,7 @@ export default function PublicHeader() {
               </span>
             )}
           </Link>
-          <LanguageCurrencySelector />
+          <LanguageCurrencySelector showCountry />
           <div ref={profileRef} className="relative">
             <button
               type="button"
@@ -320,7 +320,7 @@ export default function PublicHeader() {
           </div>
         </nav>
         <div className="flex items-center gap-3 lg:hidden">
-          <LanguageCurrencySelector />
+          <LanguageCurrencySelector showCountry />
           <button
             onClick={() => setOpen(!open)}
             aria-label="Toggle navigation"

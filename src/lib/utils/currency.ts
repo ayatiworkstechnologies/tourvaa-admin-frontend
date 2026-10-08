@@ -1,5 +1,17 @@
 export type CurrencyListItem = { code: string; name: string; symbol: string };
 
+/** Narrow currency symbols render every dollar denomination as `$` in many
+ * locales. Keep the dollar family explicit so a traveller can distinguish
+ * US, New Zealand, Singapore, Australian, Canadian and Hong Kong prices. */
+export const DISAMBIGUATED_CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "US$",
+  NZD: "NZ$",
+  SGD: "S$",
+  AUD: "A$",
+  CAD: "C$",
+  HKD: "HK$",
+};
+
 /** Offline continuity only, used until the DB-backed /currencies list loads
  * (or if that request fails) - see loadCurrencyList()/getCurrencyList() below. */
 export const FALLBACK_CURRENCY_LIST: CurrencyListItem[] = [
@@ -55,6 +67,8 @@ export const CURRENCY_LIST = FALLBACK_CURRENCY_LIST;
 
 export function currencySymbol(code: string): string {
   const normalized = (code || "USD").toUpperCase();
+  const override = DISAMBIGUATED_CURRENCY_SYMBOLS[normalized];
+  if (override) return override;
   try {
     return new Intl.NumberFormat("en", { style: "currency", currency: normalized, currencyDisplay: "narrowSymbol" })
       .formatToParts(0)
@@ -63,19 +77,34 @@ export function currencySymbol(code: string): string {
     return normalized;
   }
 }
+
+function formatWithCurrencySymbol(
+  amount: number,
+  currency: string,
+  options: Intl.NumberFormatOptions,
+): string {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    currencyDisplay: "narrowSymbol",
+    ...options,
+  });
+  return formatter
+    .formatToParts(amount)
+    .map((part) => (part.type === "currency" ? currencySymbol(currency) : part.value))
+    .join("");
+}
+
 export function formatCurrency(amount: number | string | null | undefined, code: string): string {
   const num = Number(amount ?? 0);
   const normalized = (code || "USD").toUpperCase();
   try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: normalized,
-      currencyDisplay: "code",
+    return formatWithCurrencySymbol(num, normalized, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(num);
+    });
   } catch {
-    return `${normalized} ${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `${currencySymbol(normalized)} ${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 }
 
@@ -83,13 +112,10 @@ export function formatCurrencyCompact(amount: number | string | null | undefined
   const num = Number(amount ?? 0);
   const normalized = (code || "USD").toUpperCase();
   try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: normalized,
-      currencyDisplay: "code",
+    return formatWithCurrencySymbol(num, normalized, {
       maximumFractionDigits: 0,
-    }).format(num);
+    });
   } catch {
-    return `${normalized} ${num.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+    return `${currencySymbol(normalized)} ${num.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
   }
 }

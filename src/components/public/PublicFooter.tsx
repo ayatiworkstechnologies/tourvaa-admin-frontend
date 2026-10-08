@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FaFacebookF,
@@ -22,7 +22,7 @@ import {
   fetchPublicCountries,
 } from "@/lib/api/publicClient";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
-import { destinationUrl } from "@/lib/utils/tourUrl";
+import { destinationUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 import { AFFILIATE_ENABLED } from "@/lib/features";
 
 // Used only if the CMS-managed /cms/footer fetch fails or returns nothing,
@@ -123,6 +123,7 @@ function portalSections(value?: PortalFooterContent["sections"]): CmsFooterSecti
 
 export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { settings } = usePublicSettings();
   const { code, symbol, currencies, setCode, forced, countryCode, setCountry } =
     useCurrency();
@@ -144,6 +145,18 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
     linkedin: "https://linkedin.com",
   });
   const [portalContent, setPortalContent] = useState<PortalFooterContent | null>(null);
+
+  // Country catalogue pages intentionally finish after their results and do
+  // not repeat the marketing footer. Match only a real public-country slug,
+  // so ordinary tour detail routes (/tours/{country}/{tour}) keep the footer.
+  const countryTourSlug = useMemo(() => {
+    const match = pathname.match(/^\/tours\/([^/]+)\/?$/);
+    return match ? decodeURIComponent(match[1]).toLowerCase() : null;
+  }, [pathname]);
+  const isCountryTourListing = Boolean(
+    countryTourSlug &&
+      countries.some((country) => slugifyTourSegment(country.country_name) === countryTourSlug),
+  );
 
   const currencyRef = useRef<HTMLDivElement>(null);
   const countryRef = useRef<HTMLDivElement>(null);
@@ -273,6 +286,8 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
     "Explore more, travel better, and create memories with Tourvaa.",
     500,
   );
+
+  if (isCountryTourListing) return null;
 
   return (
     <footer className="w-full bg-pub-primary text-white pt-12 sm:pt-16 pb-8 sm:pb-10 transition-colors">

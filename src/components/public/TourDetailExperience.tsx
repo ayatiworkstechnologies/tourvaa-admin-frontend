@@ -3397,55 +3397,66 @@ export default function TourDetailExperience({
 
       <aside
         aria-label="Tour booking summary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 shadow-[0_-10px_35px_rgba(11,31,58,0.12)] backdrop-blur-xl"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-slate-950/10 via-white/75 to-transparent px-2 pb-2 pt-7 sm:px-4 sm:pb-3"
       >
-        <div className="mx-auto flex min-h-20 max-w-[1690px] items-center gap-3 px-4 py-3 pr-20 sm:gap-5 sm:px-6 sm:pr-44 lg:px-10 lg:pr-40">
+        <div className="pointer-events-auto mx-auto flex min-h-[76px] max-w-[1690px] items-center gap-3 overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 px-3 py-2.5 shadow-[0_14px_45px_rgba(11,31,58,0.16)] backdrop-blur-xl sm:gap-5 sm:px-5 sm:py-3 lg:px-7">
+          <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#0B2A52] to-[#155C9D] text-white shadow-md shadow-blue-950/20 sm:flex">
+            <Ticket size={21} className="stroke-[2.2]" />
+          </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-black text-slate-950 sm:text-base">{title}</p>
-            <div className="mt-0.5 flex min-w-0 items-baseline gap-1.5">
-              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="truncate text-sm font-black tracking-tight text-slate-950 sm:text-base">{title}</p>
+              {hasBookingDate && (
+                <span className="hidden shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-600/15 md:inline-flex">
+                  Date selected
+                </span>
+              )}
+            </div>
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">
                 {hasQuote ? "Total" : "From"}
               </span>
-              <span className="truncate text-base font-black text-pub-primary sm:text-xl">
+              <span className="truncate text-lg font-black tracking-tight text-[#0B2A52] sm:text-2xl">
                 {format(totalAmount, pricingCurrency)}
               </span>
-              <span className="hidden text-xs font-medium text-slate-500 sm:inline">
+              <span className="hidden items-center gap-1 text-xs font-medium text-slate-500 sm:inline-flex">
+                <Users size={13} className="text-slate-400" />
                 {hasQuote ? `for ${adults + children} traveller${adults + children === 1 ? "" : "s"}` : "per person"}
               </span>
             </div>
           </div>
 
           {agentBooking ? (
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2 border-l border-slate-100 pl-3 sm:pl-5">
               <button
                 type="button"
                 onClick={agentReserveEligible && hasBookingDate ? () => handleBookNow("reserve") : scrollToBooking}
-                className="hidden rounded-xl border border-pub-accent bg-white px-4 py-3 text-sm font-bold text-pub-accent transition hover:bg-orange-50 active:translate-y-px sm:inline-flex"
+                className="hidden min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-pub-accent hover:bg-orange-50 hover:text-pub-accent active:translate-y-px sm:inline-flex"
               >
                 {agentReserveEligible && hasBookingDate ? "Reserve" : "Select date"}
               </button>
               <button
                 type="button"
                 onClick={hasBookingDate && unitPrice && totalAmount > 0 ? () => handleBookNow("full") : scrollToBooking}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-pub-accent px-4 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-[#cf4b24] active:translate-y-px sm:px-6"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-pub-accent to-[#ef6a28] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-orange-500/25 transition hover:brightness-95 active:translate-y-px sm:px-6"
               >
                 <span>{hasBookingDate ? "Pay in full" : "Check dates"}</span>
                 <ArrowRight size={16} />
               </button>
             </div>
           ) : (
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2 border-l border-slate-100 pl-3 sm:pl-5">
               <button
                 type="button"
                 onClick={scrollToBooking}
-                className="hidden rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-blue-400 hover:bg-blue-50 active:translate-y-px sm:inline-flex"
+                className="hidden min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-800 active:translate-y-px sm:inline-flex"
               >
                 {hasBookingDate ? "Change date" : "Select date"}
               </button>
               <button
                 type="button"
                 onClick={hasBookingDate && unitPrice && totalAmount > 0 ? () => handleBookNow() : scrollToBooking}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-pub-accent px-4 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-[#cf4b24] active:translate-y-px sm:px-6"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-pub-accent to-[#ef6a28] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-orange-500/25 transition hover:brightness-95 active:translate-y-px sm:px-6"
               >
                 <span>{hasBookingDate ? "Book now" : "Check dates"}</span>
                 <ArrowRight size={16} />

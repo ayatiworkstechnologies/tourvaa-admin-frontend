@@ -1,3 +1,5 @@
+import { currencySymbol as sharedCurrencySymbol } from "@/lib/utils/currency";
+
 // ISO 4217 currency code -> ISO 3166-1 alpha-2 country code. For the vast
 // majority of currencies the first two letters already match the issuing
 // country (USD -> US, INR -> IN), so only the exceptions - shared/regional
@@ -31,13 +33,7 @@ export function currencyCountryCode(code: string): string | null {
   return country === "UN" || country.length !== 2 ? null : country.toLowerCase();
 }
 
-/** Currency symbol via Intl, which already knows every ISO 4217 code -
- * avoids maintaining our own {code: symbol} table. */
+/** Shared display symbol, including unambiguous dollar denominations. */
 export function currencySymbol(code: string): string {
-  try {
-    const parts = new Intl.NumberFormat("en", { style: "currency", currency: code, currencyDisplay: "narrowSymbol" }).formatToParts(0);
-    return parts.find((part) => part.type === "currency")?.value ?? code;
-  } catch {
-    return code;
-  }
+  return sharedCurrencySymbol(code);
 }

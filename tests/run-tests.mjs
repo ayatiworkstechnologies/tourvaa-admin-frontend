@@ -17,6 +17,7 @@ const TEST_FILES = [
   "auth-flow.test.mjs",
   "api-contract.test.mjs",
   "currency-flow.test.mjs",
+  "country-destination-flow.test.mjs",
   "calendar-flow.test.mjs",
   "metadata-flow.test.mjs",
   "customer-flow.test.mjs",

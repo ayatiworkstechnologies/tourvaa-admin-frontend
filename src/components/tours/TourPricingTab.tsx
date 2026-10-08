@@ -121,7 +121,6 @@ export default function TourPricingTab({
   tourId,
   role = "admin",
   tourStatus,
-  maxGroupSize,
 }: {
   tourId: string;
   role?: "admin" | "supplier";
@@ -129,7 +128,6 @@ export default function TourPricingTab({
    * record -- used only to show the repricing notice inline; the actual
    * behavior is entirely backend-driven (services.tours._apply_pricing_computation). */
   tourStatus?: string;
-  maxGroupSize?: number | null;
 }) {
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
@@ -767,35 +765,6 @@ export default function TourPricingTab({
                 })}
               </tbody>
             </table>
-          </div>
-        )}
-
-        {!isSupplier && slabs.some((slab) => slab.status === "active") && (
-          <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h3 className="text-sm font-black text-dash-text">Group Rate Highlights Preview</h3>
-                <p className="mt-0.5 text-xs text-dash-subtle">Generated dynamically on the public booking panel from the active pricing slabs below.</p>
-              </div>
-              {maxGroupSize ? <span className="text-xs font-bold text-dash-brand">Up to {maxGroupSize} guests per vehicle</span> : null}
-            </div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {slabs
-                .filter((slab) => slab.status === "active")
-                .sort((a, b) => a.passenger_from - b.passenger_from)
-                .map((slab, index) => {
-                  const rangeEnd = slab.passenger_to;
-                  const supplierPrice = afterSupplierDiscount(Number(slab.adult_price || 0));
-                  const storefrontPrice = withMarkup(supplierPrice, effectiveMarkup(slab));
-                  const customerPrice = money(storefrontPrice * (1 - Number(tourvaaDiscountPercent || 0) / 100));
-                  return (
-                    <div key={slab.id ?? index} className="flex items-center justify-between gap-3 rounded-lg border border-blue-100 bg-white px-3 py-2.5 text-xs">
-                      <span className="font-bold text-dash-text">{slab.passenger_from}{slab.passenger_from === rangeEnd ? "" : `-${rangeEnd}`} travellers</span>
-                      <span className="font-black text-dash-brand">{fmt(customerPrice, slab.currency)} / pax</span>
-                    </div>
-                  );
-                })}
-            </div>
           </div>
         )}
 

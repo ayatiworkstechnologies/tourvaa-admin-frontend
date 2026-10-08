@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { fetchCountryDestinationInfo, fetchPublicTours, PublicTour } from "@/lib/api/publicClient";
+import { fetchPublicTours, PublicTour } from "@/lib/api/publicClient";
+import { fetchCountryDestinationInfoForServer } from "@/lib/data/countryDestinationCms";
 import { cleanMetaText } from "@/lib/seo/seoPages";
 import CountryDestinationPageContent from "@/components/public/country/CountryDestinationPageContent";
 
@@ -12,7 +13,7 @@ export async function generateMetadata({
   params,
 }: DestinationPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const info = await fetchCountryDestinationInfo(slug);
+  const info = await fetchCountryDestinationInfoForServer(slug);
 
   if (!info) {
     return {
@@ -43,7 +44,7 @@ export default async function DestinationCountryPage({
   params,
 }: DestinationPageProps) {
   const { slug } = await params;
-  const info = await fetchCountryDestinationInfo(slug);
+  const info = await fetchCountryDestinationInfoForServer(slug);
 
   if (!info) {
     notFound();
