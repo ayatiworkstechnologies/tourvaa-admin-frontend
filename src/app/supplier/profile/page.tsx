@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck, LuLandmark as Landmark, LuPercent as Percent } from "react-icons/lu";
+import { LuBadgeCheck as BadgeCheck, LuBuilding as Building, LuBus as Bus, LuFileCheck as FileCheck, LuLandmark as Landmark, LuPercent as Percent } from "react-icons/lu";
 import BankAndInvoicingTab from "@/components/supplier/profile/BankAndInvoicingTab";
 import CompanyInfoTab from "@/components/supplier/profile/CompanyInfoTab";
 import DocumentsTab from "@/components/supplier/profile/DocumentsTab";
@@ -11,11 +11,11 @@ import CommissionTab from "@/components/supplier/profile/CommissionTab";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 
 const TABS = [
-  { id: "company", label: "Company & Security", icon: Building },
-  { id: "billing", label: "Bank & Invoicing", icon: Landmark },
-  { id: "vehicles", label: "My Vehicles", icon: Bus },
-  { id: "documents", label: "Verification Documents", icon: FileCheck },
-  { id: "commission", label: "Commission %", icon: Percent },
+  { id: "company", label: "Business Details", description: "Company identity and primary contact", icon: Building },
+  { id: "billing", label: "Bank & Invoicing", description: "Settlement, accounts, and billing address", icon: Landmark },
+  { id: "vehicles", label: "Vehicles & Fleet", description: "Vehicles used to deliver your tours", icon: Bus },
+  { id: "documents", label: "Business Verification", description: "Licences, insurance, and supporting documents", icon: FileCheck },
+  { id: "commission", label: "Commission Agreement", description: "Your agreed Tourvaa commission", icon: Percent },
 ];
 
 export default function UnifiedSupplierProfilePage() {
@@ -32,9 +32,10 @@ export default function UnifiedSupplierProfilePage() {
 
   return (
     <SupplierPageShell>
-      <SupplierPageHeader title="My Profile" description="Manage your company identity, account security, fleet, and verification documents." icon={Building} eyebrow="Supplier Account" />
+      <SupplierPageHeader title="My Profile" description="Keep your business details, settlement information, fleet, verification documents, and commission agreement up to date." icon={Building} eyebrow="Supplier Account" />
 
-      <div className="mt-4 flex overflow-x-auto rounded-2xl border border-[#DCEBE2] bg-white p-2 shadow-[0_8px_24px_-22px_rgba(15,82,48,.7)]">
+      <div className="mt-4 rounded-2xl border border-[#DCEBE2] bg-white p-2 shadow-[0_8px_24px_-22px_rgba(15,82,48,.7)]">
+        <div className="flex overflow-x-auto" role="tablist" aria-label="Supplier profile sections">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -43,20 +44,27 @@ export default function UnifiedSupplierProfilePage() {
               type="button"
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200 whitespace-nowrap ${
+              role="tab"
+              aria-selected={isActive}
+              className={`min-w-52 flex-1 rounded-xl px-4 py-3 text-left transition-all duration-200 whitespace-nowrap ${
                 isActive
                   ? "bg-[#16833A] text-white shadow-sm"
                   : "text-dash-muted hover:bg-[#F0F8F3] hover:text-dash-text"
               }`}
             >
-              <Icon size={18} className={isActive ? "text-white" : "text-dash-subtle"} />
-              {tab.label}
+              <span className="flex items-center gap-2 text-sm font-black"><Icon size={18} className={isActive ? "text-white" : "text-dash-subtle"} />{tab.label}</span>
+              <span className={`mt-1 block text-xs font-medium ${isActive ? "text-emerald-100" : "text-slate-500"}`}>{tab.description}</span>
             </button>
           );
         })}
+        </div>
       </div>
 
       <div className="mt-4 w-full rounded-2xl border border-[#DCEBE2] bg-white p-5 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)] sm:p-6">
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm text-slate-700">
+          <BadgeCheck size={19} className="mt-0.5 shrink-0 text-emerald-700" />
+          <p><span className="font-black text-slate-900">{TABS.find((tab) => tab.id === activeTab)?.label}</span><span className="hidden sm:inline"> — {TABS.find((tab) => tab.id === activeTab)?.description}</span></p>
+        </div>
         {/* Every tab stays mounted (hidden via CSS, not unmounted) so
             in-progress form edits on inactive tabs survive switching. */}
         <div className={activeTab === "company" ? "" : "hidden"}><CompanyInfoTab /></div>

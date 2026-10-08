@@ -152,8 +152,8 @@ export default function AgencyDetailsTab() {
     e.preventDefault();
     const phone = combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber);
     if (!validateMobile(phone, true)) { toast.error(mobileHelp); return; }
-    if (!form.agent_type || !form.primary_contact_first_name || !form.primary_contact_last_name || !form.primary_contact_designation || !form.primary_contact_email || !form.primary_contact_phone || !form.primary_contact_method) {
-      toast.error("Complete the required business type and primary contact details.");
+    if (!form.agent_type || !form.address || !form.country_id || !form.business_registration_number || !form.iata_registration_number || !form.gst_tax_number || !form.primary_contact_first_name || !form.primary_contact_last_name || !form.primary_contact_designation || !form.primary_contact_email || !form.primary_contact_phone || !form.primary_contact_method) {
+      toast.error("Complete the required business details and primary contact fields.");
       return;
     }
     setSaving(true);
@@ -324,14 +324,14 @@ export default function AgencyDetailsTab() {
             {/* IATA */}
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">IATA Accreditation / Travel Licence <span className="text-red-500">*</span></span>
-              <input value={form.iata_registration_number} onChange={e => set("iata_registration_number", e.target.value)}
+              <input required value={form.iata_registration_number} onChange={e => set("iata_registration_number", e.target.value)}
                 placeholder="e.g. 12345678"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
 
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">GST / VAT / Tax Registration Number <span className="text-red-500">*</span></span>
-              <input value={form.gst_tax_number} onChange={e => set("gst_tax_number", e.target.value)}
+              <input required value={form.gst_tax_number} onChange={e => set("gst_tax_number", e.target.value)}
                 placeholder="e.g. TAX-8921-9481"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
@@ -339,7 +339,7 @@ export default function AgencyDetailsTab() {
             {/* Country */}
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country <span className="text-red-500">*</span></span>
-              <select value={form.country_id}
+              <select required value={form.country_id}
                 onChange={e => { setSelectedStateId(""); setForm(f => ({ ...f, country_id: e.target.value, city_id: "" })); }}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand">
                 <option value="">Select country</option>
@@ -384,7 +384,7 @@ export default function AgencyDetailsTab() {
 
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Business Registration Number <span className="text-red-500">*</span></span>
-              <input value={form.business_registration_number} onChange={e => set("business_registration_number", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" />
+              <input required value={form.business_registration_number} onChange={e => set("business_registration_number", e.target.value)} className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm" />
             </label>
           </div>
 

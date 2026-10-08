@@ -40,6 +40,19 @@ function formatSchedule(value?: string | null, fallback = "Open") {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+function dateRangesOverlap(
+  firstStart?: string | null,
+  firstEnd?: string | null,
+  secondStart?: string | null,
+  secondEnd?: string | null,
+) {
+  // A blank start means immediately; a blank end means no expiry.
+  // Date.getTime keeps the comparison consistent with the date/time controls.
+  const start = (value?: string | null) => value ? new Date(value).getTime() : Number.NEGATIVE_INFINITY;
+  const end = (value?: string | null) => value ? new Date(value).getTime() : Number.POSITIVE_INFINITY;
+  return start(firstStart) <= end(secondEnd) && start(secondStart) <= end(firstEnd);
+}
+
 function discountedValue(item: TourDiscount, basePrice: number): number | null {
   if (basePrice <= 0) return null;
   const discounted = item.discount_type === "percentage"
@@ -231,6 +244,36 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     ? { solidBtn: "bg-[#16833A] hover:bg-[#117331] shadow-emerald-100", ring: "border-[#16833A]", chip: "bg-emerald-50 text-emerald-700" }
     : { solidBtn: "bg-dash-brand hover:bg-dash-brand-hover shadow-blue-100", ring: "border-dash-brand", chip: "bg-[#EDF5FF] text-dash-brand-hover" };
 
+  const overlappingDiscount = editing?.status === "active"
+    ? items.find((item) => (
+      item.id !== editing.id
+      && item.status === "active"
+      && item.discount_scope === editing.discount_scope
+      // Supplier and Tourvaa discounts intentionally stack as separate price
+      // stages. Only another offer from the same owner is a duplicate.
+      && (isSupplier ? !isTourvaaOwnedDiscount(item) : isTourvaaOwnedDiscount(item))
+      && dateRangesOverlap(editing.start_date, editing.end_date, item.start_date, item.end_date)
+    ))
+    : undefined;
+  const overlapMessage = overlappingDiscount
+    ? `These dates overlap the active ${isSupplier ? "supplier" : "Tourvaa"} discount “${overlappingDiscount.discount_name}” (${formatSchedule(overlappingDiscount.start_date, "Immediate")} to ${formatSchedule(overlappingDiscount.end_date, "no expiry")}). Choose a different date range.`
+    : "";
+
+  useEffect(() => {
+    if (!editing) return;
+    setErrors((previous) => {
+      if (overlapMessage) {
+        return previous.start_date === overlapMessage ? previous : { ...previous, start_date: overlapMessage };
+      }
+      if (previous.start_date?.startsWith("These dates overlap the active")) {
+        const next = { ...previous };
+        delete next.start_date;
+        return next;
+      }
+      return previous;
+    });
+  }, [editing, overlapMessage]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -278,6 +321,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     e.preventDefault();
     if (!editing) return;
     const found = validateDiscount(editing);
+    if (overlapMessage) found.start_date = overlapMessage;
     if (applicationMode === "code" && !editing.discount_code?.trim()) {
       found.discount_code = "Enter the promo code travellers must use.";
     }
@@ -308,7 +352,13 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
       setErrors({});
       window.dispatchEvent(new CustomEvent("tourvaa:discounts-changed", { detail: { tourId } }));
     } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err));
+      const message = getApiErrorMessage(err);
+      if (message.toLowerCase().includes("overlaps an active discount")) {
+        setErrors({ start_date: message });
+        focusField("start_date");
+      } else {
+        toast.error(message);
+      }
     } finally {
       setSaving(false);
     }
@@ -838,7 +888,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                   onChange={(e) => { setEditing((p) => p ? { ...p, usage_limit: e.target.value ? Number(e.target.value) : null } : p); clearError("usage_limit"); }}
                   placeholder="Unlimited" className={fieldClass(errors.usage_limit)} />
               </FormField>
-              <FormField name="start_date" label="Starts at" hint="Leave blank to start immediately.">
+              <FormField name="start_date" label="Starts at" error={errors.start_date} hint="Leave blank to start immediately.">
                 <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
                   <DatePicker value={editing.start_date?.slice(0, 10) ?? ""} maxDate={editing.end_date?.slice(0, 10)}
                     onChange={(date) => { setEditing((previous) => previous ? { ...previous, start_date: date ? `${date}T${previous.start_date?.slice(11, 16) || "00:00"}` : null } : previous); clearError("end_date"); }} />

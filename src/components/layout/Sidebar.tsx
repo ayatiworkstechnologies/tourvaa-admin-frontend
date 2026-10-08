@@ -109,7 +109,7 @@ const SIDEBAR_THEMES: Record<SidebarTheme, {
     logoutIcon: "text-rose-500",
     toggle: "border-[#D8E3F1] bg-white text-[#2563EB] hover:bg-blue-50",
     glow: "bg-transparent",
-    edge: "w-1 bg-gradient-to-b from-[#60A5FA] via-[#2563EB] to-[#1E3A8A]",
+    edge: "w-px bg-[#E2EAF4]",
   },
   customer: {
     shell: "border-[#DFEAF8] bg-white shadow-[8px_0_32px_-20px_rgba(20,120,242,0.24)]",

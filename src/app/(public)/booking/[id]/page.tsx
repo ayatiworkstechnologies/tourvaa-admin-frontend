@@ -574,7 +574,7 @@ export default function DynamicTourBookingPage() {
     if (!tour) return;
     const bookingCapacity = Math.max(
       1,
-      Math.min(selectedCalendar?.slots ?? 10, tour.max_group_size ?? 10),
+      selectedCalendar?.slots ?? tour.max_group_size ?? 10,
     );
     const maxAdults = Math.max(1, bookingCapacity - childCount);
     if (adultCount > maxAdults) setAdultCount(maxAdults);
@@ -751,7 +751,7 @@ export default function DynamicTourBookingPage() {
   const totalTravellers = adultCount + childCount;
   const bookingCapacity = Math.max(
     1,
-    Math.min(selectedCalendar?.slots ?? 10, tour?.max_group_size ?? 10),
+    selectedCalendar?.slots ?? tour?.max_group_size ?? 10,
   );
   const maxAdults = Math.max(1, bookingCapacity - childCount);
   const maxChildren = Math.max(0, bookingCapacity - adultCount);
@@ -1290,13 +1290,19 @@ export default function DynamicTourBookingPage() {
         promo_code: !isAgent && promoApplied ? promoCode.trim() : undefined,
         agreed_terms: acceptTerms,
         agreed_cancellation_policy: acceptTerms,
+        payment_type: customerPaymentMethod === "deposit" ? "partial" : "full",
       });
       const booking = res.data?.data?.booking;
       if (typeof window !== "undefined" && tour) {
         window.sessionStorage.removeItem(`tourvaa_checkout_session_${tour.id}`);
       }
-      const depositAmount = customerPaymentMethod === "deposit" ? computeCustomerDepositAmount(booking?.amount_pending ?? "0") : undefined;
-      await startPayment(booking, depositAmount);
+      // The confirmation response contains the server-authoritative first
+      // charge. This preserves the selected deposit across the session ->
+      // booking boundary and prevents a full balance from replacing it.
+      const selectedPaymentAmount = customerPaymentMethod === "deposit"
+        ? booking?.selected_payment_amount
+        : undefined;
+      await startPayment(booking, selectedPaymentAmount);
     } catch (err) {
       setPaymentError(getApiErrorMessage(err));
     } finally {

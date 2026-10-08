@@ -203,7 +203,7 @@ export type TabConfig = {
   label: string;
   endpoint: string;
   columns: { key: string; header: string; render?: (item: CmsItem) => React.ReactNode; className?: string }[];
-  formFields: { key: string; label: string; type: "text" | "textarea" | "select" | "url" | "number" | "asset" | "video"; options?: FieldOption[]; required?: boolean; min?: number; max?: number; step?: number }[];
+  formFields: { key: string; label: string; type: "text" | "textarea" | "select" | "url" | "number" | "asset" | "video"; options?: FieldOption[]; required?: boolean; min?: number; max?: number; step?: number; maxLength?: number }[];
   createMethod?: "post" | "put";
   updateMethod?: "put" | "patch";
   updatePath?: "item" | "collection";
@@ -421,14 +421,14 @@ export const TABS: TabConfig[] = [
     ],
     formFields: [
       { key: "country_id", label: "Country", type: "select", required: true },
-      { key: "hero_title", label: "Hero Title (e.g. India Tours)", type: "text" },
+      { key: "hero_title", label: "Hero Title (e.g. India Tours)", type: "text", maxLength: 200 },
       { key: "hero_description", label: "Hero Description", type: "textarea" },
       { key: "hero_image", label: "Hero Image", type: "asset" },
-      { key: "showcase_title", label: "Showcase Title (e.g. India Group Tours)", type: "text" },
+      { key: "showcase_title", label: "Showcase Title (e.g. India Group Tours)", type: "text", maxLength: 200 },
       { key: "showcase_description", label: "Showcase Description", type: "textarea" },
       { key: "showcase_image", label: "Showcase Image", type: "asset" },
-      { key: "seo_title", label: "SEO Title", type: "text" },
-      { key: "seo_description", label: "SEO Description", type: "text" },
+      { key: "seo_title", label: "SEO Title", type: "text", maxLength: 200 },
+      { key: "seo_description", label: "SEO Description", type: "textarea", maxLength: 400 },
     ],
   },
   {
@@ -2119,6 +2119,15 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
           body[f.key] = f.key === "tags"
             ? formValues[f.key].split(",").map((tag) => tag.trim()).filter(Boolean)
             : f.type === "number" || f.key.endsWith("_id") ? Number(formValues[f.key]) : formValues[f.key];
+        } else if (
+          editingItem &&
+          !f.required &&
+          (f.type === "text" || f.type === "textarea" || f.type === "url" || f.type === "asset" || f.type === "video")
+        ) {
+          // An empty optional field in edit mode means the administrator chose
+          // to clear it. Sending null makes the API persist that intent instead
+          // of silently retaining the previous value.
+          body[f.key] = null;
         }
       }
       if (isDestinationTab) {
@@ -2340,6 +2349,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
                 ) : f.type === "textarea" ? (
                   <textarea
                     rows={5}
+                    maxLength={f.maxLength}
                     value={formValues[f.key] ?? ""}
                     onChange={e => setFormValues(v => ({ ...v, [f.key]: e.target.value }))}
                     className="w-full resize-none rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
@@ -2372,7 +2382,13 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
                     className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
                   >
                     <option value="">Select a country...</option>
-                    {countryOptions.map(c => (
+                    {countryOptions
+                      .filter((country) =>
+                        !isCountryPageTab ||
+                        String(country.id) === (formValues[f.key] ?? "") ||
+                        !items.some((item) => Number(item.country_id) === country.id)
+                      )
+                      .map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
@@ -2418,6 +2434,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
                     min={f.min}
                     max={f.max}
                     step={f.step}
+                    maxLength={f.maxLength}
                     value={formValues[f.key] ?? ""}
                     onChange={e => setFormValues(v => ({ ...v, [f.key]: e.target.value }))}
                     className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"

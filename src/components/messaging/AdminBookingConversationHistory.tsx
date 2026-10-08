@@ -3,16 +3,24 @@
 import { useCallback, useEffect, useState } from "react";
 import { LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuSend as Send } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
+import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import { BookingConversationThread, BookingMessage, getAdminBookingConversations, replyToAdminBookingConversation } from "@/lib/api/services/messagingService";
+
+function displayDate(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
 
 function displayTime(value?: string | null) {
   if (!value) return "";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
-/** Read-only Admin view of the portal conversation that belongs to a booking.
- * It complements, rather than replaces, the internal BookingCommunication log. */
+/** Admin booking messages are split by portal role. A supplier never shares a
+ * visual thread with an agent or customer, even when legacy records link them
+ * to the same booking conversation row. */
 export default function AdminBookingConversationHistory({ bookingId }: { bookingId: number }) {
   const [conversations, setConversations] = useState<BookingConversationThread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +44,21 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
     void load();
   }, [load]);
 
+  useMessagingSocket(
+    useCallback((event) => {
+      if (event.type !== "new_booking_message" || event.conversation.booking_id !== bookingId) return;
+      setConversations((previous) => {
+        const existing = previous.find((conversation) => conversation.id === event.conversation.id);
+        if (!existing) return [{ ...event.conversation, messages: [event.message] }, ...previous];
+        return previous.map((conversation) => (
+          conversation.id === event.conversation.id
+            ? { ...event.conversation, messages: conversation.messages.some((message) => message.id === event.message.id) ? conversation.messages : [...conversation.messages, event.message] }
+            : conversation
+        ));
+      });
+    }, [bookingId]),
+  );
+
   async function reply(conversation: BookingConversationThread, recipientRole: "supplier" | "agent" | "customer") {
     const key = `${conversation.id}:${recipientRole}`;
     const body = (drafts[key] || "").trim();
@@ -55,22 +78,27 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
   function renderPortalColumn(
     conversation: BookingConversationThread,
     recipientRole: "supplier" | "agent" | "customer",
+    threadMessages: BookingMessage[],
   ) {
     const isSupplier = recipientRole === "supplier";
     const portalLabel = isSupplier ? "Supplier" : recipientRole === "agent" ? "Agent" : "Customer";
     const participantName = isSupplier ? conversation.supplier_name : conversation.initiator_name;
     const key = `${conversation.id}:${recipientRole}`;
-    const messages = conversation.messages.filter(
-      (message) =>
-        message.sender_role === recipientRole ||
-        (message.sender_role === "admin" && message.recipient_role === recipientRole),
-    );
+    const groupedMessages = [...threadMessages]
+      .sort((first, second) => new Date(first.created_at).getTime() - new Date(second.created_at).getTime())
+      .reduce<{ date: string; messages: BookingMessage[] }[]>((groups, message) => {
+        const date = displayDate(message.created_at) || "Unknown date";
+        const previous = groups[groups.length - 1];
+        if (previous?.date === date) previous.messages.push(message);
+        else groups.push({ date, messages: [message] });
+        return groups;
+      }, []);
 
     return (
       <section
         key={key}
         aria-label={`${portalLabel} conversation`}
-        className="flex min-h-72 flex-col rounded-xl border border-dash-border-soft bg-dash-bg p-4"
+        className="flex min-h-80 flex-col rounded-xl border border-dash-border-soft bg-dash-bg p-4"
       >
         <div className="flex items-start gap-2 border-b border-dash-border-soft pb-3">
           <MessageSquare size={14} className="mt-0.5 shrink-0 text-dash-brand" />
@@ -80,23 +108,37 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
           </div>
         </div>
 
-        <div className="mt-3 min-h-24 flex-1 space-y-2">
-          {messages.length === 0 ? (
+        <div className="mt-3 min-h-24 max-h-72 flex-1 space-y-3 overflow-y-auto pr-1">
+          {threadMessages.length === 0 ? (
             <p className="rounded-lg border border-dashed border-dash-border bg-white px-3 py-5 text-center text-xs text-dash-muted">
               No {portalLabel.toLowerCase()} messages yet.
             </p>
           ) : (
-            messages.map((message: BookingMessage) => (
-              <div key={message.id} className="rounded-lg bg-white px-3 py-2.5 shadow-[0_1px_2px_rgb(15_23_42/0.04)]">
-                <div className="flex justify-between gap-2 text-[11px]">
-                  <span className="font-bold capitalize text-dash-text">
-                    {message.sender_role === "admin" ? "Tourvaa Admin" : message.sender_name || message.sender_role}
+            groupedMessages.map((group) => (
+              <div key={group.date} className="space-y-2">
+                <div className="sticky top-0 z-10 flex justify-center py-1">
+                  <span className="rounded-full border border-dash-border bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-dash-muted shadow-sm">
+                    {group.date}
                   </span>
-                  <span className="shrink-0 text-dash-subtle">{displayTime(message.created_at)}</span>
                 </div>
-                <p className="mt-1 whitespace-pre-wrap break-words text-sm text-dash-body">
-                  {message.is_deleted ? "This message was deleted." : message.body}
-                </p>
+                {group.messages.map((message) => {
+                  const isAdminMessage = message.sender_role === "admin";
+                  return (
+                    <div key={message.id} className={`flex ${isAdminMessage ? "justify-start" : "justify-end"}`}>
+                      <div className={`max-w-[86%] rounded-lg px-3 py-2 shadow-[0_1px_2px_rgb(15_23_42/0.04)] ${isAdminMessage ? "bg-blue-50 text-dash-body" : "bg-white text-dash-body"}`}>
+                        <div className="flex items-center justify-between gap-3 text-[10px]">
+                          <span className="font-bold capitalize text-dash-text">
+                            {isAdminMessage ? "Tourvaa Admin" : message.sender_name || message.sender_role}
+                          </span>
+                          <span className="shrink-0 text-dash-subtle">{displayTime(message.created_at)}</span>
+                        </div>
+                        <p className={`mt-1 whitespace-pre-wrap break-words ${isAdminMessage ? "text-xs" : "text-sm"}`}>
+                          {message.is_deleted ? "This message was deleted." : message.body}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ))
           )}
@@ -145,14 +187,21 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
     return <p className="rounded-xl border border-dashed border-dash-border px-4 py-6 text-center text-xs text-dash-muted">No customer, agent, or supplier portal messages for this booking yet.</p>;
   }
 
+  const portalThreads = (["supplier", "agent", "customer"] as const)
+    .map((role) => {
+      const messages = conversations.flatMap((conversation) => conversation.messages.filter(
+        (message) => message.sender_role === role || (message.sender_role === "admin" && message.recipient_role === role),
+      ));
+      const conversation = role === "supplier"
+        ? conversations.find((item) => item.supplier_user_id != null)
+        : conversations.find((item) => item.initiator_role === role);
+      return conversation ? { conversation, role, messages } : null;
+    })
+    .filter((thread): thread is { conversation: BookingConversationThread; role: "supplier" | "agent" | "customer"; messages: BookingMessage[] } => Boolean(thread));
+
   return (
-    <div className="space-y-5">
-      {conversations.map((conversation) => (
-        <div key={conversation.id} className="grid gap-4 md:grid-cols-2">
-          {renderPortalColumn(conversation, "supplier")}
-          {renderPortalColumn(conversation, conversation.initiator_role)}
-        </div>
-      ))}
+    <div className="grid gap-4 xl:grid-cols-2">
+      {portalThreads.map(({ conversation, role, messages }) => renderPortalColumn(conversation, role, messages))}
     </div>
   );
 }

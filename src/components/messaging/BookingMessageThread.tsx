@@ -7,27 +7,21 @@ import Loader from "@/components/ui/Loader";
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import { BookingConversationThread, BookingMessage, deleteOwnBookingMessage, getBookingConversation, sendBookingConversationMessage } from "@/lib/api/services/messagingService";
 
-function timeAgo(value?: string | null) {
+function messageDate(value?: string | null) {
   if (!value) return "";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const diffMs = Date.now() - date.getTime();
-  const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString();
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-/** Chat between whoever booked a tour (customer, or the agent who booked it
- * for them) and the supplier fulfilling it - presented to that viewer as a
- * generic Tourvaa support channel rather than the supplier's real identity
- * (see services.messaging's hide_supplier_identity: the API never sends
- * this viewer the supplier's name in the first place). Mount on a booking
- * detail page once the booking has a supplier assigned. */
+function messageTime(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+/** Booking-specific conversation between the portal user and Tourvaa Admin.
+ * Server-side recipient filtering keeps Admin-to-Supplier and
+ * Admin-to-Agent/Customer replies in their own private portal threads. */
 export default function BookingMessageThread({ bookingId, compact = false }: { bookingId: number; compact?: boolean }) {
   const [thread, setThread] = useState<BookingConversationThread | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,7 +57,11 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
       (event) => {
         if (event.type === "new_booking_message") {
           if (event.conversation.booking_id !== bookingId) return;
-          setThread((prev) => (prev && prev.id === event.conversation.id ? { ...event.conversation, messages: [...prev.messages, event.message] } : prev));
+          setThread((prev) => (
+            prev && prev.id === event.conversation.id
+              ? { ...event.conversation, messages: prev.messages.some((message) => message.id === event.message.id) ? prev.messages : [...prev.messages, event.message] }
+              : prev
+          ));
           return;
         }
         if (event.type === "booking_message_deleted") {
@@ -102,6 +100,15 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
     }
   }
 
+  const groupedMessages = (thread?.messages ?? [])
+    .reduce<{ date: string; messages: BookingMessage[] }[]>((groups, message) => {
+      const date = messageDate(message.created_at) || "Unknown date";
+      const previous = groups[groups.length - 1];
+      if (previous?.date === date) previous.messages.push(message);
+      else groups.push({ date, messages: [message] });
+      return groups;
+    }, []);
+
   return (
     <div className={`flex flex-col rounded-xl border border-dash-border bg-white shadow-sm ${compact ? "min-h-64" : "h-[480px]"}`}>
       <div className="border-b border-dash-border-soft px-5 py-3">
@@ -115,24 +122,34 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
         ) : thread?.messages.length === 0 ? (
           <p className="py-4 text-center text-sm text-dash-muted">No messages yet. Send one below to get started.</p>
         ) : (
-          thread?.messages.map((msg) => (
-            <div key={msg.id} className={`group flex items-end gap-1.5 ${msg.sender_role === "supplier" ? "justify-start" : "justify-end"}`}>
-              {!msg.is_deleted && msg.sender_role !== "supplier" && (
-                <button
-                  type="button"
-                  onClick={() => removeMessage(msg.id)}
-                  disabled={deletingId === msg.id}
-                  aria-label="Delete message"
-                  title="Delete message"
-                  className="mb-1 hidden h-6 w-6 items-center justify-center rounded-lg text-white/60 hover:bg-black/10 hover:text-white group-hover:flex disabled:opacity-50"
-                >
-                  <Trash2 size={13} />
-                </button>
-              )}
-              <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "supplier" ? "bg-dash-bg text-dash-text" : "bg-dash-brand text-white"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
-                <p className="whitespace-pre-wrap">{msg.is_deleted ? "This message was deleted." : msg.body}</p>
-                <p className={`mt-1 text-[10px] ${msg.sender_role === "supplier" ? "text-dash-subtle" : "text-white/70"}`}>{timeAgo(msg.created_at)}</p>
+          groupedMessages.map((group) => (
+            <div key={group.date} className="space-y-2">
+              <div className="sticky top-0 z-10 flex justify-center py-1">
+                <span className="rounded-full border border-dash-border bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-dash-muted shadow-sm">{group.date}</span>
               </div>
+              {group.messages.map((msg) => {
+                const isAdminMessage = msg.sender_role === "admin";
+                return (
+                  <div key={msg.id} className={`group flex items-end gap-1.5 ${isAdminMessage ? "justify-start" : "justify-end"}`}>
+                    {!msg.is_deleted && !isAdminMessage && (
+                      <button
+                        type="button"
+                        onClick={() => removeMessage(msg.id)}
+                        disabled={deletingId === msg.id}
+                        aria-label="Delete message"
+                        title="Delete message"
+                        className="mb-1 hidden h-6 w-6 items-center justify-center rounded-lg text-white/60 hover:bg-black/10 hover:text-white group-hover:flex disabled:opacity-50"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isAdminMessage ? "bg-dash-bg text-dash-text" : "bg-dash-brand text-white"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
+                      <p className={`whitespace-pre-wrap ${isAdminMessage ? "text-xs" : "text-sm"}`}>{msg.is_deleted ? "This message was deleted." : msg.body}</p>
+                      <p className={`mt-1 text-[10px] ${isAdminMessage ? "text-dash-subtle" : "text-white/70"}`}>{messageTime(msg.created_at)}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ))
         )}

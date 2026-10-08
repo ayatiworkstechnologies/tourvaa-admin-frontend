@@ -36,22 +36,38 @@ function withMarkup(price: number | null | undefined, markupPercent: number | nu
 
 const money = (value: number) => Math.round(value * 100) / 100;
 
-/** Mirrors the booking price stages: supplier offer -> markup -> Tourvaa
- * offer. Net profit is final customer price less the supplier price to
- * Tourvaa; profit margin is net profit divided by final customer price. */
+/** Mirrors the booking price stages: supplier offer -> supplier commission
+ * -> markup -> Tourvaa offer. A supplier discount changes the price paid to
+ * Tourvaa; commission then changes the supplier payout. Keeping these stages
+ * separate prevents the profit preview from silently dropping commission. */
 function markupFinancials(
   supplierListPrice: number,
   supplierDiscountPercent: number,
+  supplierCommissionPercent: number,
   markupPercent: number,
   tourvaaDiscountPercent: number,
 ) {
-  const supplierCost = money(supplierListPrice * (1 - supplierDiscountPercent / 100));
-  const storefrontPrice = withMarkup(supplierCost, markupPercent);
+  // 900 with a 10% supplier offer and 10% commission is 900 -> 810 -> 729.
+  const supplierPriceToTourvaa = money(supplierListPrice * (1 - supplierDiscountPercent / 100));
+  const supplierPayout = money(supplierPriceToTourvaa * (1 - supplierCommissionPercent / 100));
+  const storefrontPrice = withMarkup(supplierPriceToTourvaa, markupPercent);
   const customerPrice = money(storefrontPrice * (1 - tourvaaDiscountPercent / 100));
-  const markupAmount = money(storefrontPrice - supplierCost);
+  const markupAmount = money(storefrontPrice - supplierPriceToTourvaa);
+  const commissionAmount = money(supplierPriceToTourvaa - supplierPayout);
   const tourvaaDiscountAmount = money(storefrontPrice - customerPrice);
-  const netProfit = money(customerPrice - supplierCost);
-  return { supplierCost, storefrontPrice, customerPrice, markupAmount, tourvaaDiscountAmount, netProfit };
+  const grossProfit = money(markupAmount + commissionAmount);
+  const netProfit = money(grossProfit - tourvaaDiscountAmount);
+  return {
+    supplierPriceToTourvaa,
+    supplierPayout,
+    storefrontPrice,
+    customerPrice,
+    markupAmount,
+    commissionAmount,
+    tourvaaDiscountAmount,
+    grossProfit,
+    netProfit,
+  };
 }
 
 function SectionCard({
@@ -403,7 +419,7 @@ export default function TourPricingTab({
       icon={Percent}
       iconTone="brand"
       title="Publishable Price"
-      description="Supplier discount is applied first, then TourVaa markup, then any TourVaa storefront discount. Net profit = final customer price minus supplier price to Tourvaa; margin = net profit divided by final customer price."
+      description="Supplier discount is applied first, then supplier commission, TourVaa markup, and any TourVaa storefront discount. Profit includes markup and supplier commission, less the TourVaa-funded storefront discount."
     >
       {/* Tour-level markup */}
       <div className="mb-4 rounded-xl border border-dash-border bg-dash-bg px-4 py-3">
@@ -446,7 +462,7 @@ export default function TourPricingTab({
               <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center">
                 Supplier Price to Tourvaa
               </th>
-              <th rowSpan={2} className="px-4 py-3 text-center align-middle">Markup</th>
+              <th rowSpan={2} className="px-4 py-3 text-center align-middle">Markup / Commission</th>
               <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center text-dash-brand">
                 Tourvaa Profit
               </th>
@@ -469,10 +485,11 @@ export default function TourPricingTab({
               const adultOrig = Number(r.adult_price ?? 0);
               const childOrig = Number(r.child_price ?? 0);
               const mkp = effectiveMarkup(r);
-              const adultFinancials = markupFinancials(adultOrig, Number(supplierDiscountPercent ?? 0), Number(mkp), Number(tourvaaDiscountPercent ?? 0));
-              const childFinancials = markupFinancials(childOrig, Number(supplierDiscountPercent ?? 0), Number(mkp), Number(tourvaaDiscountPercent ?? 0));
-              const { supplierCost: adultToTourvaa, storefrontPrice: adultStorefront, customerPrice: adultFinal, netProfit: adultProfit } = adultFinancials;
-              const { supplierCost: childToTourvaa, storefrontPrice: childStorefront, customerPrice: childFinal, netProfit: childProfit } = childFinancials;
+              const commissionPercent = Number(r.commission_percentage ?? 0);
+              const adultFinancials = markupFinancials(adultOrig, Number(supplierDiscountPercent ?? 0), commissionPercent, Number(mkp), Number(tourvaaDiscountPercent ?? 0));
+              const childFinancials = markupFinancials(childOrig, Number(supplierDiscountPercent ?? 0), commissionPercent, Number(mkp), Number(tourvaaDiscountPercent ?? 0));
+              const { supplierPriceToTourvaa: adultToTourvaa, supplierPayout: adultSupplierPayout, storefrontPrice: adultStorefront, customerPrice: adultFinal, markupAmount: adultMarkupAmount, commissionAmount: adultCommissionAmount, tourvaaDiscountAmount: adultTourvaaDiscountAmount, netProfit: adultProfit } = adultFinancials;
+              const { supplierPriceToTourvaa: childToTourvaa, supplierPayout: childSupplierPayout, storefrontPrice: childStorefront, customerPrice: childFinal, markupAmount: childMarkupAmount, commissionAmount: childCommissionAmount, tourvaaDiscountAmount: childTourvaaDiscountAmount, netProfit: childProfit } = childFinancials;
               return (
                 <tr key={r.id ?? idx} className="transition-colors hover:bg-dash-bg/40">
                   <td className="px-4 py-3.5 align-middle">
@@ -483,29 +500,45 @@ export default function TourPricingTab({
                   {/* Adult Supplier Price to Tourvaa */}
                   <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold text-dash-text">
-                        {fmt(adultToTourvaa, r.currency)}
-                      </span>
+                      {commissionPercent ? (
+                        <>
+                          <span className="text-base font-black text-dash-body">{fmt(adultSupplierPayout, r.currency)}</span>
+                          <span className="mt-1 flex items-center gap-1.5 text-[11px] text-dash-subtle">
+                            <span className="line-through">{fmt(adultToTourvaa, r.currency)}</span>
+                            <span className="rounded bg-violet-50 px-1 py-0.5 text-[10px] font-bold text-violet-700">-{commissionPercent}% commission</span>
+                          </span>
+                          <span className="text-[10px] font-semibold text-dash-subtle">Supplier payout</span>
+                        </>
+                      ) : null}
                       {supplierDiscountPercent ? (
-                        <span className="flex items-center gap-1.5 text-[11px] text-dash-subtle">
+                        <span className={`${commissionPercent ? "mt-1 " : ""}flex items-center gap-1.5 text-[11px] text-dash-subtle`}>
                           <span className="line-through">{fmt(adultOrig, r.currency)}</span>
                           <span className="rounded bg-amber-50 px-1 py-0.5 text-[10px] font-bold text-amber-700">-{supplierDiscountPercent}%</span>
                         </span>
                       ) : null}
+                      {!commissionPercent && <span className="text-xs font-semibold text-dash-text">{fmt(adultToTourvaa, r.currency)}</span>}
                     </div>
                   </td>
                   {/* Child Supplier Price to Tourvaa */}
                   <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold text-dash-muted">
-                        {fmt(childToTourvaa, r.currency)}
-                      </span>
+                      {commissionPercent ? (
+                        <>
+                          <span className="text-base font-black text-dash-body">{fmt(childSupplierPayout, r.currency)}</span>
+                          <span className="mt-1 flex items-center gap-1.5 text-[11px] text-dash-subtle">
+                            <span className="line-through">{fmt(childToTourvaa, r.currency)}</span>
+                            <span className="rounded bg-violet-50 px-1 py-0.5 text-[10px] font-bold text-violet-700">-{commissionPercent}% commission</span>
+                          </span>
+                          <span className="text-[10px] font-semibold text-dash-subtle">Supplier payout</span>
+                        </>
+                      ) : null}
                       {supplierDiscountPercent ? (
-                        <span className="flex items-center gap-1.5 text-[11px] text-dash-subtle">
+                        <span className={`${commissionPercent ? "mt-1 " : ""}flex items-center gap-1.5 text-[11px] text-dash-subtle`}>
                           <span className="line-through">{fmt(childOrig, r.currency)}</span>
                           <span className="rounded bg-amber-50 px-1 py-0.5 text-[10px] font-bold text-amber-700">-{supplierDiscountPercent}%</span>
                         </span>
                       ) : null}
+                      {!commissionPercent && <span className="text-xs font-semibold text-dash-muted">{fmt(childToTourvaa, r.currency)}</span>}
                     </div>
                   </td>
                   {/* Markup % */}
@@ -514,6 +547,7 @@ export default function TourPricingTab({
                       <span className="inline-flex items-center gap-1 rounded-full border border-dash-border bg-dash-bg px-2.5 py-0.5 text-xs font-bold text-dash-body">
                         <Percent size={10} />{Number(mkp)}%
                       </span>
+                      <span className="mt-1 text-[10px] font-semibold text-violet-700">+ {commissionPercent}% commission</span>
                       <span className={`mt-0.5 text-[10px] font-semibold ${r.admin_markup_value != null ? "text-amber-600" : tourMarkup != null ? "text-dash-brand" : "text-dash-subtle"}`}>
                         {r.admin_markup_value != null ? "This slab" : tourMarkup != null ? "Tour" : "Default"}
                       </span>
@@ -521,11 +555,17 @@ export default function TourPricingTab({
                   </td>
                   {/* Tourvaa Profit - Adult */}
                   <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
-                    <span className={`text-sm font-black ${adultProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>{fmt(adultProfit, r.currency)}</span>
+                    <div className="flex flex-col">
+                      <span className={`text-sm font-black ${adultProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>{fmt(adultProfit, r.currency)}</span>
+                      <span className="text-[10px] font-semibold text-dash-subtle">Markup {fmt(adultMarkupAmount, r.currency)} + commission {fmt(adultCommissionAmount, r.currency)}{tourvaaDiscountPercent ? ` − discount ${fmt(adultTourvaaDiscountAmount, r.currency)}` : ""}</span>
+                    </div>
                   </td>
                   {/* Tourvaa Profit - Child */}
                   <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
-                    <span className={`text-sm font-black ${childProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>{fmt(childProfit, r.currency)}</span>
+                    <div className="flex flex-col">
+                      <span className={`text-sm font-black ${childProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>{fmt(childProfit, r.currency)}</span>
+                      <span className="text-[10px] font-semibold text-dash-subtle">Markup {fmt(childMarkupAmount, r.currency)} + commission {fmt(childCommissionAmount, r.currency)}{tourvaaDiscountPercent ? ` − discount ${fmt(childTourvaaDiscountAmount, r.currency)}` : ""}</span>
+                    </div>
                   </td>
                   {/* Adult Customer Price (Storefront) */}
                   <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
@@ -730,21 +770,21 @@ export default function TourPricingTab({
           </div>
         )}
 
-        {!isSupplier && slabs.some((slab) => slab.status === "active" && (!maxGroupSize || slab.passenger_from <= maxGroupSize)) && (
+        {!isSupplier && slabs.some((slab) => slab.status === "active") && (
           <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h3 className="text-sm font-black text-dash-text">Group Rate Highlights Preview</h3>
                 <p className="mt-0.5 text-xs text-dash-subtle">Generated dynamically on the public booking panel from the active pricing slabs below.</p>
               </div>
-              {maxGroupSize ? <span className="text-xs font-bold text-dash-brand">Max {maxGroupSize} guests per booking</span> : null}
+              {maxGroupSize ? <span className="text-xs font-bold text-dash-brand">Up to {maxGroupSize} guests per vehicle</span> : null}
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {slabs
-                .filter((slab) => slab.status === "active" && (!maxGroupSize || slab.passenger_from <= maxGroupSize))
+                .filter((slab) => slab.status === "active")
                 .sort((a, b) => a.passenger_from - b.passenger_from)
                 .map((slab, index) => {
-                  const rangeEnd = maxGroupSize ? Math.min(slab.passenger_to, maxGroupSize) : slab.passenger_to;
+                  const rangeEnd = slab.passenger_to;
                   const supplierPrice = afterSupplierDiscount(Number(slab.adult_price || 0));
                   const storefrontPrice = withMarkup(supplierPrice, effectiveMarkup(slab));
                   const customerPrice = money(storefrontPrice * (1 - Number(tourvaaDiscountPercent || 0) / 100));

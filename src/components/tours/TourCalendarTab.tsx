@@ -463,7 +463,7 @@ export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: stri
               onChange={(e) => setSchedule((p) => ({ ...p, seats_per_occurrence: parseNumberInput(e.target.value) }))}
               className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
             <span className="mt-1 block text-xs text-dash-subtle">
-              Departure capacity applied to each generated date. Max per booking: {maxGroupSize || "not set"} travellers (adults + children).
+              Departure capacity applied to each generated date. Customers and agents can book up to the remaining available seats (adults + children); vehicle allocation is managed separately.
             </span>
           </label>
         </div>

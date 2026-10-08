@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   LuBuilding2 as Building2,
+  LuBadgeCheck as BadgeCheck,
   LuFiles as Files,
   LuLandmark as Landmark,
   LuPercent as Percent,
@@ -15,10 +16,10 @@ import AgentCommissionTab from "@/components/agent/profile/AgentCommissionTab";
 import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
 
 const TABS = [
-  { id: "agency", label: "Agency & Security", icon: Building2 },
-  { id: "billing", label: "Bank & Invoicing", icon: Landmark },
-  { id: "documents", label: "Verification Documents", icon: Files },
-  { id: "commission", label: "Commission %", icon: Percent },
+  { id: "agency", label: "Business Details", description: "Agency identity and primary contact", icon: Building2 },
+  { id: "billing", label: "Bank & Invoicing", description: "Settlement, accounts, and billing address", icon: Landmark },
+  { id: "documents", label: "Business Verification", description: "Licences and supporting documents", icon: Files },
+  { id: "commission", label: "Commission Agreement", description: "Your agreed Tourvaa commission", icon: Percent },
 ];
 
 export default function AgentProfilePage() {
@@ -37,12 +38,13 @@ export default function AgentProfilePage() {
     <AgentPageShell>
       <AgentPageHeader
         title="My Profile"
-        description="Manage your agency identity, account security, settlement banking, and verification documents."
+        description="Keep your agency details, settlement information, verification documents, and commission agreement up to date."
         icon={Building2}
         eyebrow="Agent Account"
       />
 
-      <div className="mt-4 flex overflow-x-auto rounded-2xl border border-[#DCE6F5] bg-white p-2 shadow-[0_8px_24px_-22px_rgba(28,73,135,.7)]">
+      <div className="mt-4 rounded-2xl border border-[#DCE6F5] bg-white p-2 shadow-[0_8px_24px_-22px_rgba(28,73,135,.7)]">
+        <div className="flex overflow-x-auto" role="tablist" aria-label="Agent profile sections">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -51,20 +53,27 @@ export default function AgentProfilePage() {
               type="button"
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200 whitespace-nowrap ${
+              role="tab"
+              aria-selected={isActive}
+              className={`min-w-52 flex-1 rounded-xl px-4 py-3 text-left transition-all duration-200 whitespace-nowrap ${
                 isActive
                   ? "bg-blue-700 text-white shadow-sm"
                   : "text-slate-600 hover:bg-blue-50 hover:text-[#10213F]"
               }`}
             >
-              <Icon size={18} className={isActive ? "text-white" : "text-[#738199]"} />
-              {tab.label}
+              <span className="flex items-center gap-2 text-sm font-black"><Icon size={18} className={isActive ? "text-white" : "text-[#738199]"} />{tab.label}</span>
+              <span className={`mt-1 block text-xs font-medium ${isActive ? "text-blue-100" : "text-slate-500"}`}>{tab.description}</span>
             </button>
           );
         })}
+        </div>
       </div>
 
       <div className="mt-4 w-full rounded-2xl border border-[#DFE7F2] bg-white p-5 shadow-[0_10px_32px_-27px_rgba(28,73,135,.75)] sm:p-6">
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-slate-700">
+          <BadgeCheck size={19} className="mt-0.5 shrink-0 text-blue-700" />
+          <p><span className="font-black text-slate-900">{TABS.find((tab) => tab.id === activeTab)?.label}</span><span className="hidden sm:inline"> — {TABS.find((tab) => tab.id === activeTab)?.description}</span></p>
+        </div>
         {/* All tabs stay mounted (hidden via CSS, not unmounted) so
             in-progress form edits on inactive tabs survive switching. */}
         <div className={activeTab === "agency" ? "" : "hidden"}>

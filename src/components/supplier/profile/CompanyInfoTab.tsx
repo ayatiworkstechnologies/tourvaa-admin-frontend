@@ -146,8 +146,8 @@ export default function CompanyInfoTab() {
       toast.error(mobileHelp);
       return;
     }
-    if (!form.supplier_type) {
-      toast.error("Select a business type.");
+    if (!form.supplier_type || !form.address || !form.country_id || !form.business_email || !form.business_registration_number || !form.gst_tax_number || !form.contact_first_name || !form.contact_last_name || !form.contact_designation || !form.contact_email || !form.contact_phone || !form.contact_method) {
+      toast.error("Complete the required business details and primary contact fields.");
       return;
     }
     setSaving(true);

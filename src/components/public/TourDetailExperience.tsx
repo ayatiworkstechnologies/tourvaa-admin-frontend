@@ -447,9 +447,9 @@ export default function TourDetailExperience({
   const tourPace = tour.overview?.tour_pace?.trim() || "";
   const physicalRating = tour.overview?.physical_rating?.trim() || "";
   const groupSizeLabel = tour.min_booking_size && tour.max_group_size
-    ? `${tour.min_booking_size}–${tour.max_group_size} travellers`
+    ? `${tour.min_booking_size}–${tour.max_group_size} per vehicle`
     : tour.max_group_size
-      ? `Up to ${tour.max_group_size} travellers`
+      ? `Up to ${tour.max_group_size} per vehicle`
       : tour.overview?.group_size?.trim() || "";
   const vehicleStyle = tour.overview?.vehicle_style?.trim() || "";
   const guideStyleLabels: Record<string, string> = {
@@ -728,20 +728,9 @@ export default function TourDetailExperience({
 
   // Dynamic Pricing Tiers directly from Backend
   const pricingRows = useMemo(() => {
-    const maxGroupSize = tour.max_group_size ?? null;
-
     return [...(tour.pricing || [])]
-      .sort((a, b) => a.persons_from - b.persons_from)
-      // Do not present a group-price tier that cannot be selected for this
-      // tour.  The booking service enforces this same maximum.
-      .filter((row) => !maxGroupSize || row.persons_from <= maxGroupSize)
-      .map((row) => {
-        if (!maxGroupSize || (row.persons_to != null && row.persons_to <= maxGroupSize)) {
-          return row;
-        }
-        return { ...row, persons_to: maxGroupSize };
-      });
-  }, [tour.pricing, tour.max_group_size]);
+      .sort((a, b) => a.persons_from - b.persons_from);
+  }, [tour.pricing]);
 
   const selectedDeparture = monthGroups
     .flatMap((month) => month.dates)
@@ -755,15 +744,12 @@ export default function TourDetailExperience({
   useEffect(() => {
     if (selectedDepartureIso) onTravelDateChange?.(selectedDepartureIso);
   }, [selectedDepartureIso, onTravelDateChange]);
-  // A departure can have more seats remaining than this tour permits in one
-  // reservation. Respect both limits rather than allowing calendar capacity
-  // to override the supplier's maximum group size.
+  // A booking may span more than one vehicle. The selected departure's
+  // remaining calendar seats (not the per-vehicle group size) are the
+  // authoritative booking limit.
   const maxTravellers = Math.max(
     1,
-    Math.min(
-      selectedDeparture?.slotsRemaining ?? MAX_TRAVELLERS_CEILING,
-      tour.max_group_size || MAX_TRAVELLERS_CEILING,
-    ),
+    selectedDeparture?.slotsRemaining ?? MAX_TRAVELLERS_CEILING,
   );
   const [adults, setAdults] = useState(
     Math.min(initialAdults || 2, maxTravellers),
@@ -1861,8 +1847,8 @@ export default function TourDetailExperience({
                   </Link>
                 </div>
                 <div className="mt-6 grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
-                  {groupSizeLabel && <StyleFact icon={<Users size={20} />} label="Group size" value={groupSizeLabel} detail={tour.min_booking_size && tour.max_group_size ? `Minimum ${tour.min_booking_size} guests / Maximum ${tour.max_group_size} guests per booking` : undefined} />}
-                  {vehicleStyle && <StyleFact icon={<Car size={20} />} label="Tour style" value={vehicleStyle} detail={tour.max_group_size ? `Maximum ${tour.max_group_size} guests per booking` : undefined} />}
+                  {groupSizeLabel && <StyleFact icon={<Users size={20} />} label="Vehicle capacity" value={groupSizeLabel} detail="Larger groups may travel across multiple vehicles, subject to departure availability." />}
+                  {vehicleStyle && <StyleFact icon={<Car size={20} />} label="Tour style" value={vehicleStyle} detail={tour.max_group_size ? `Up to ${tour.max_group_size} guests per vehicle` : undefined} />}
                   {tour.overview?.tour_type && <StyleFact icon={<Compass size={20} />} label="Trip type" value={tour.overview.tour_type} />}
                   {tourPace && <StyleFact icon={<Gauge size={20} />} label="Travel style" value={tourPace} />}
                   {(guideStyle || tour.tour_language) && <StyleFact icon={<User size={20} />} label="Guiding style" value={guideStyle || `Guided in ${tour.tour_language}`} />}
@@ -3035,11 +3021,10 @@ export default function TourDetailExperience({
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
                   Who&apos;s Travelling?
                 </h4>
-                {tour.max_group_size && (
-                  <span className="text-xs font-medium text-slate-500">
-                    Max {tour.max_group_size} guests per booking
-                  </span>
-                )}
+                <span className="text-right text-xs font-medium text-slate-500">
+                  {tour.max_group_size ? `Min 1 – up to ${tour.max_group_size} per vehicle` : "Min 1 guest"}
+                  {selectedDeparture?.slotsRemaining != null ? ` · ${selectedDeparture.slotsRemaining} seats available` : ""}
+                </span>
               </div>
 
               <div className="space-y-3 text-sm">

@@ -82,6 +82,7 @@ check("commission requests are managed from the agent dashboard", dashboard.incl
 const detail = read("src/app/agent/bookings/[id]/page.tsx");
 check("agent booking detail does not expose the shared-customer visibility notice", !detail.includes("Shared customer booking.") && !detail.includes("visible in both the Agent and Customer portals"));
 check("detail uses serialized traveller counts", detail.includes("booking.no_of_adults") && detail.includes("booking.no_of_children"));
+check("agent booking header prioritizes the tour name and keeps the booking id compact", detail.includes('title={booking.tour_name || "Tour booking"}') && detail.includes('eyebrow={`Booking ${booking.booking_code}`}'));
 check("detail uses the same customer-facing booking lifecycle labels", detail.includes("customerFacingBookingStatus") && ["Booking Request Received", "Booking Confirmed", "Ongoing", "Completed", "Cancelled"].every((label) => detail.includes(label)));
 check("detail gives booking-request receipt wording without exposing internal execution flow", detail.includes("Your booking request has been received successfully.") && !detail.includes("Booking Execution Flow") && !detail.includes("Supplier decision"));
 check("detail shows the settlement summary without a duplicate price breakdown", detail.includes("Agent Payments") && detail.includes("Approved Agent Commission") && !detail.includes("Price Breakdown") && detail.includes("Status Timeline"));
@@ -90,7 +91,7 @@ check("agent cancellation warning is clear and does not duplicate support wordin
 check("agent can reopen payment for an unpaid booking", detail.includes("BookingPaymentModal") && detail.includes("Pay Now"));
 check("agent payment modal never offers a customer deposit option", detail.includes("allowPartialPayment={false}"));
 check("unpaid gateway returns show payment-required copy and can be removed only from My Bookings", detail.includes("Payment Required") && detail.includes("hide-from-agent") && detail.includes("Remove from Bookings") && detail.includes("canRemoveUnpaidBooking"));
-const bookingService = read("../backend/app/services/bookings.py");
+const bookingService = read("../tourvaa-admin-backend/app/services/bookings.py");
 check(
   "provisional unpaid bookings stay agent-visible but remain hidden from operational portals",
   bookingService.includes('if role != "agent":') &&
@@ -115,9 +116,9 @@ check("agent support compose is connected", portalMessageThread.includes("sendOw
 const profile = read("src/app/agent/profile/page.tsx");
 const agentBankAndInvoicing = read("src/components/agent/profile/AgentBankAndInvoicingTab.tsx");
 const verificationDocuments = read("src/components/agent/profile/VerificationDocumentsTab.tsx");
-check("agent profile exposes verification documents", profile.includes("VerificationDocumentsTab") && profile.includes("Verification Documents"));
+check("agent profile exposes business verification documents", profile.includes("VerificationDocumentsTab") && profile.includes("Business Verification"));
 check("locked agent bank identifiers remain masked after saving", agentBankAndInvoicing.includes("swift_code: saved.swift_code") && agentBankAndInvoicing.includes("values are masked after saving"));
-check("agent profile uses the shared portal tab and content layout without fleet controls", profile.includes("overflow-x-auto rounded-2xl") && profile.includes("w-full rounded-2xl") && !profile.includes("My Vehicles"));
+check("agent profile uses the restructured shared portal tab and content layout without fleet controls", profile.includes("overflow-x-auto") && profile.includes("w-full rounded-2xl") && profile.includes('role="tablist"') && !profile.includes("My Vehicles"));
 check("agent verification lists the required business document categories", ["company_registration", "iata_accreditation", "industry_certification", "other_licences", "supporting_documents"].every((type) => verificationDocuments.includes(type)));
 check("agent verification waits for all required non-rejected uploads", verificationDocuments.includes("allRequiredReady") && verificationDocuments.includes('document.status !== "rejected"') && verificationDocuments.includes("Submit for verification"));
 check("rejected agent documents show re-upload instructions", verificationDocuments.includes("Re-upload required") && verificationDocuments.includes("rejection_reason"));
@@ -125,7 +126,9 @@ check("rejected agent documents show re-upload instructions", verificationDocume
 const layout = read("src/app/agent/layout.tsx");
 const portalTheme = read("src/lib/constants/portalThemes.ts");
 const agentPage = read("src/components/agent/AgentPage.tsx");
+const sidebar = read("src/components/layout/Sidebar.tsx");
 const agentInnerPages = [dashboard, tours, bookings, detail, customers, invoices, messages, profile];
+check("agent portal uses the same workspace shell as supplier", layout.includes('from "@/components/layout/Sidebar"') && layout.includes('from "@/components/layout/Header"') && !layout.includes("CustomerSidebar") && !layout.includes("CustomerPortalHeader"));
 check("agent inner pages share the upgraded page shell", agentInnerPages.every((page) => page.includes("AgentPageShell")));
 check("agent inner pages share consistent workspace headers", dashboard.includes("Agent Control Centre") && [tours, bookings, detail, customers, invoices, messages, profile].every((page) => page.includes("AgentPageHeader")));
 check("agent dashboard follows the supplier control-centre composition in agent blue", ["bg-linear-to-br from-[#10213F]", "xl:grid-cols-4", "xl:grid-cols-6"].every((fragment) => dashboard.includes(fragment)));
@@ -137,6 +140,7 @@ check("agent Reserve Now is a no-deposit invoice flow", publicBooking.includes("
 check("agent booking creation uses the shared public booking workflow", publicBooking.includes("export default function DynamicTourBookingPage") && publicBooking.includes("AgentCustomerSelector"));
 const agentUi = [...agentInnerPages, layout, agentPage].join("\n");
 check("agent portal uses the calm blue theme", portalTheme.includes('"--color-dash-brand": "#2563EB"') && layout.includes("portalThemeStyles.agent"));
+check("agent sidebar uses a subtle divider instead of a blue edge rail", sidebar.includes('edge: "w-px bg-[#E2EAF4]"') && !sidebar.includes('edge: "w-1 bg-gradient-to-b from-[#60A5FA] via-[#2563EB] to-[#1E3A8A]"'));
 check("agent primary UI no longer uses saturated orange", !agentUi.includes("from-orange-500") && !agentUi.includes("bg-orange-600") && !agentUi.includes("text-orange-700"));
 
 console.log(`\nAgent flow: ${passed} passed, ${failed} failed`);

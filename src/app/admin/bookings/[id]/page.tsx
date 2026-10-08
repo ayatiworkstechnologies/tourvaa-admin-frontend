@@ -1494,56 +1494,6 @@ export default function BookingDetailPage() {
                 </div>
               </DetailPanel>
 
-              {/* Communications Thread */}
-              <DetailPanel
-                title="Communications"
-                icon={<MessageSquare size={18} />}
-                subtitle="Internal notes and outgoing communications, labelled by sender and audience"
-                action={
-                  <button
-                    type="button"
-                    onClick={() => setShowMsgModal(true)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-dash-brand px-3 py-1.5 text-xs font-bold text-white hover:bg-dash-brand-hover transition shadow-sm"
-                  >
-                    <Send size={12} /> Log New Message
-                  </button>
-                }
-              >
-                {communications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-dash-border py-10 text-center">
-                    <MessageSquare size={32} className="text-dash-subtle" />
-                    <p className="mt-2 text-sm font-bold text-dash-text">No Messages Logged</p>
-                    <p className="text-xs text-dash-muted">Communications with customer or suppliers will appear here.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {communications.map((c) => (
-                      <div
-                        key={c.id}
-                        className="rounded-2xl border border-dash-border-soft bg-dash-bg p-4 transition hover:bg-dash-bg-muted"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <span className="rounded-md bg-[var(--portal-soft,#EDF2FA)] px-2 py-0.5 text-[11px] font-bold uppercase text-dash-brand">
-                              From {c.sender_type || "System"}
-                            </span>
-                            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold uppercase text-slate-600">
-                              {c.visibility === "internal" ? "Internal note" : c.visibility === "all" ? "To all parties" : `To ${c.visibility}`}
-                            </span>
-                            {c.subject && <span className="text-xs font-bold text-dash-text">{c.subject}</span>}
-                          </div>
-                          {c.created_at && (
-                            <span className="text-[11px] text-dash-subtle">
-                              {new Date(c.created_at).toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-2 text-sm text-dash-body whitespace-pre-wrap">{c.message}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </DetailPanel>
             </div>
           )}
 

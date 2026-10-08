@@ -119,6 +119,26 @@ const DEFAULT_SUPPORT_CARDS: Required<SupportCardItem>[] = [
   { eyebrow: "Self-Service Library", title: "Help & Knowledge Base", description: "Browse detailed guides on visas, packing essentials, payment safety, flexible cancellation policies, and partner supplier guidelines." },
 ];
 
+const SUPPLIER_HERO = {
+  badge_label: "Tourvaa Supplier Operations",
+  response_time_text: "Response < 2h",
+  heading: "Support for Your Tours, Bookings & Account",
+  subtitle: "Get help with tour listings, booking requests, availability, pricing, payouts, and your supplier account from the Tourvaa operations team.",
+};
+
+const SUPPLIER_SUPPORT_CARDS: Required<SupportCardItem>[] = [
+  { eyebrow: "Booking Operations", title: "Manage Booking Requests", description: "Review traveller requests, respond to booking updates, and keep your tour availability and operational details accurate." },
+  { eyebrow: "Tourvaa Support", title: "Message the Operations Team", description: "Contact Tourvaa directly for help with booking decisions, tour publishing, pricing, payments, or supplier account issues." },
+  { eyebrow: "Supplier Account", title: "Profile, Documents & Payouts", description: "Keep your company profile, verification documents, bank details, commission preferences, and payout information up to date." },
+];
+
+const SUPPLIER_FAQS: FaqItem[] = [
+  { id: "supplier-bookings", category: "BOOKINGS", question: "How do I respond to a booking request?", answer: "Open Bookings in your supplier workspace to review the request, confirm availability, and send any required update to Tourvaa." },
+  { id: "supplier-tours", category: "TOUR LISTINGS", question: "How do I update a tour, price, or availability?", answer: "Use My Tours to edit your itinerary and pricing, then use Calendar & Availability to manage departures and available seats." },
+  { id: "supplier-payouts", category: "PAYOUTS", question: "When will I receive a payout?", answer: "Completed bookings are included in the supplier payout workflow. Check Earnings and Payouts for the booking-level status and payment history." },
+  { id: "supplier-documents", category: "VERIFICATION", question: "Where can I upload business documents?", answer: "Open My Profile and select Business Verification to upload or replace licences, insurance, and supporting documents." },
+];
+
 const DEFAULT_CHANNELS = {
   badge_text: "Verified Concierge Support",
   heading: "Get in Touch Directly",
@@ -178,9 +198,16 @@ export default function ContactPage() {
   const supportCards = supportCardsBlock.items?.length
     ? [0, 1, 2].map((i) => ({ ...DEFAULT_SUPPORT_CARDS[i], ...supportCardsBlock.items?.[i] }))
     : DEFAULT_SUPPORT_CARDS;
+  const supplierHero = { ...DEFAULT_HERO, ...SUPPLIER_HERO };
+  const displayHero = isSupplierInquiry ? supplierHero : hero;
+  const displaySupportCards = isSupplierInquiry ? SUPPLIER_SUPPORT_CARDS : supportCards;
+  const displayChannels = isSupplierInquiry
+    ? { ...DEFAULT_CHANNELS, badge_text: "Supplier Operations Desk", heading: "Talk to the Supplier Team", subtitle: "For active suppliers, Tourvaa operations can help with tours, booking requests, payments, verification, and account access.", phone_hint: "Supplier operations support and urgent booking assistance", guarantee_title: "Supplier Support Commitment", guarantee_text: "Clear operational guidance for your tours and booking workflow." }
+    : channels;
   const faqs: FaqItem[] = faqHeading.items?.length
     ? faqHeading.items.map((it, i) => ({ id: `faq-${i}`, category: it.category || "", question: it.question || "", answer: it.answer || "" }))
     : DEFAULT_FAQS;
+  const displayFaqs = isSupplierInquiry ? SUPPLIER_FAQS : faqs;
   const partners = partnersBlock.items?.length
     ? [0, 1, 2, 3].map((i) => ({ ...DEFAULT_PARTNERS[i], ...partnersBlock.items?.[i] }))
     : DEFAULT_PARTNERS;
@@ -266,7 +293,7 @@ export default function ContactPage() {
       <div className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-4 sm:pt-6">
         <section className="relative min-h-[320px] sm:min-h-[360px] w-full overflow-hidden rounded-[26px] bg-[#0B1F3A] shadow-lg flex items-center">
           <img
-            src={hero.background_image || DEFAULT_HERO.background_image}
+            src={displayHero.background_image || DEFAULT_HERO.background_image}
             alt="Misty mountain valley landscape"
             className="absolute inset-0 h-full w-full object-cover opacity-50 scale-105"
           />
@@ -276,16 +303,16 @@ export default function ContactPage() {
           <div className="relative z-10 flex h-full flex-col justify-center px-6 sm:px-12 py-10 max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-bold text-white backdrop-blur-md shadow-xs w-fit">
               <Sparkles size={13} className="text-amber-400" />
-              <span>{hero.badge_label || DEFAULT_HERO.badge_label}</span>
+              <span>{displayHero.badge_label || DEFAULT_HERO.badge_label}</span>
               <span className="text-white/40">•</span>
-              <span className="text-emerald-400">{hero.response_time_text || DEFAULT_HERO.response_time_text}</span>
+              <span className="text-emerald-400">{displayHero.response_time_text || DEFAULT_HERO.response_time_text}</span>
             </div>
 
             <h1 className="mt-4 text-3xl sm:text-4xl lg:text-[46px] font-black tracking-tight text-white font-heading leading-tight drop-shadow-md">
-              {hero.heading || DEFAULT_HERO.heading}
+              {displayHero.heading || DEFAULT_HERO.heading}
             </h1>
             <p className="mt-3 text-sm sm:text-base font-medium leading-relaxed text-white/85 max-w-2xl">
-              {hero.subtitle || DEFAULT_HERO.subtitle}
+              {displayHero.subtitle || DEFAULT_HERO.subtitle}
             </p>
 
             {/* Quick Action Navigation Pills */}
@@ -300,13 +327,13 @@ export default function ContactPage() {
                 href="#help-cards"
                 className="inline-flex items-center rounded-full border border-white/20 bg-black/25 px-4 py-2 text-xs font-semibold text-white backdrop-blur-xs transition hover:bg-white/20"
               >
-                Priority Services
+                {isSupplierInquiry ? "Supplier Services" : "Priority Services"}
               </a>
               <a
                 href="#faqs"
                 className="inline-flex items-center rounded-full border border-white/20 bg-black/25 px-4 py-2 text-xs font-semibold text-white backdrop-blur-xs transition hover:bg-white/20"
               >
-                Instant FAQs
+                {isSupplierInquiry ? "Supplier FAQs" : "Instant FAQs"}
               </a>
               <a
                 href="#offices"
@@ -332,20 +359,20 @@ export default function ContactPage() {
                 <Calendar size={22} />
               </div>
               <span className="mt-4 inline-block text-[11px] font-bold uppercase tracking-wider text-sky-700">
-                {supportCards[0].eyebrow}
+                {displaySupportCards[0].eyebrow}
               </span>
               <h3 className="mt-1 text-lg font-bold text-slate-950 leading-snug font-heading">
-                {supportCards[0].title}
+                {displaySupportCards[0].title}
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
-                {supportCards[0].description}
+                {displaySupportCards[0].description}
               </p>
             </div>
             <Link
-              href="/profile/bookings"
+              href={isSupplierInquiry ? "/supplier/bookings" : "/profile/bookings"}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
-              <span>Manage My Bookings</span>
+              <span>{isSupplierInquiry ? "Review Booking Requests" : "Manage My Bookings"}</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -357,23 +384,26 @@ export default function ContactPage() {
                 <MessageCircle size={22} />
               </div>
               <span className="mt-4 inline-block text-[11px] font-bold uppercase tracking-wider text-amber-700">
-                {supportCards[1].eyebrow}
+                {displaySupportCards[1].eyebrow}
               </span>
               <h3 className="mt-1 text-lg font-bold text-slate-950 leading-snug font-heading">
-                {supportCards[1].title}
+                {displaySupportCards[1].title}
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
-                {supportCards[1].description}
+                {displaySupportCards[1].description}
               </p>
             </div>
-            <button
+            {isSupplierInquiry ? <Link
+              href="/supplier/messages"
+              className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
+            >
+              <span>Message Tourvaa Support</span>
+              <ArrowRight size={14} />
+            </Link> : <button
               type="button"
               onClick={handleOpenChat}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
-            >
-              <span>Launch Live Chat</span>
-              <ArrowRight size={14} />
-            </button>
+            ><span>Launch Live Chat</span><ArrowRight size={14} /></button>}
           </div>
 
           {/* Card 3: Help Center */}
@@ -383,20 +413,20 @@ export default function ContactPage() {
                 <HelpCircle size={22} />
               </div>
               <span className="mt-4 inline-block text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-                {supportCards[2].eyebrow}
+                {displaySupportCards[2].eyebrow}
               </span>
               <h3 className="mt-1 text-lg font-bold text-slate-950 leading-snug font-heading">
-                {supportCards[2].title}
+                {displaySupportCards[2].title}
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
-                {supportCards[2].description}
+                {displaySupportCards[2].description}
               </p>
             </div>
             <Link
-              href="/help-centre"
+              href={isSupplierInquiry ? "/supplier/profile" : "/help-centre"}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
-              <span>Browse Knowledge Base</span>
+              <span>{isSupplierInquiry ? "Open Supplier Profile" : "Browse Knowledge Base"}</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -415,13 +445,13 @@ export default function ContactPage() {
               <div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur-xs">
                   <ShieldCheck size={14} className="text-emerald-400" />
-                  <span>{channels.badge_text || DEFAULT_CHANNELS.badge_text}</span>
+                  <span>{displayChannels.badge_text || DEFAULT_CHANNELS.badge_text}</span>
                 </span>
                 <h2 className="mt-4 text-2xl sm:text-3xl font-black text-white font-heading">
-                  {channels.heading || DEFAULT_CHANNELS.heading}
+                  {displayChannels.heading || DEFAULT_CHANNELS.heading}
                 </h2>
                 <p className="mt-2 text-xs sm:text-sm text-white/80 font-normal leading-relaxed">
-                  {channels.subtitle || DEFAULT_CHANNELS.subtitle}
+                  {displayChannels.subtitle || DEFAULT_CHANNELS.subtitle}
                 </p>
 
                 {/* Direct Channel Items */}
@@ -436,13 +466,13 @@ export default function ContactPage() {
                         International Booking Hotline
                       </div>
                       <a
-                        href={`tel:${channels.phone_href || DEFAULT_CHANNELS.phone_href}`}
+                        href={`tel:${displayChannels.phone_href || DEFAULT_CHANNELS.phone_href}`}
                         className="text-sm font-bold text-white hover:text-sky-300 transition-colors"
                       >
-                        {channels.phone_display || DEFAULT_CHANNELS.phone_display}
+                        {displayChannels.phone_display || DEFAULT_CHANNELS.phone_display}
                       </a>
                       <div className="text-[11px] text-white/60 mt-0.5">
-                        {channels.phone_hint || DEFAULT_CHANNELS.phone_hint}
+                        {displayChannels.phone_hint || DEFAULT_CHANNELS.phone_hint}
                       </div>
                     </div>
                   </div>
@@ -487,10 +517,10 @@ export default function ContactPage() {
                         Live Operations Response
                       </div>
                       <div className="text-sm font-bold text-white">
-                        {channels.hours_value || DEFAULT_CHANNELS.hours_value}
+                        {displayChannels.hours_value || DEFAULT_CHANNELS.hours_value}
                       </div>
                       <div className="text-[11px] text-white/60 mt-0.5">
-                        {channels.hours_hint || DEFAULT_CHANNELS.hours_hint}
+                        {displayChannels.hours_hint || DEFAULT_CHANNELS.hours_hint}
                       </div>
                     </div>
                   </div>
@@ -505,10 +535,10 @@ export default function ContactPage() {
                   </span>
                   <div className="text-xs">
                     <span className="font-bold text-white block">
-                      {channels.guarantee_title || DEFAULT_CHANNELS.guarantee_title}
+                      {displayChannels.guarantee_title || DEFAULT_CHANNELS.guarantee_title}
                     </span>
                     <span className="text-white/75 block mt-0.5">
-                      {channels.guarantee_text || DEFAULT_CHANNELS.guarantee_text}
+                      {displayChannels.guarantee_text || DEFAULT_CHANNELS.guarantee_text}
                     </span>
                   </div>
                 </div>
@@ -731,7 +761,7 @@ export default function ContactPage() {
         </div>
 
         <div className="mt-10 space-y-3.5">
-          {faqs.map((faq) => {
+          {displayFaqs.map((faq) => {
             const isOpen = openFaqId === faq.id;
 
             return (

@@ -56,10 +56,9 @@ check(
     detailExperience.includes('"Check dates"'),
 );
 check(
-  "tour detail limits each booking by both remaining seats and maximum group size",
-  detailExperience.includes("Math.min(") &&
-    detailExperience.includes("selectedDeparture?.slotsRemaining ?? MAX_TRAVELLERS_CEILING") &&
-    detailExperience.includes("tour.max_group_size || MAX_TRAVELLERS_CEILING"),
+  "tour detail limits each booking by remaining departure seats",
+  detailExperience.includes("selectedDeparture?.slotsRemaining ?? MAX_TRAVELLERS_CEILING") &&
+    !detailExperience.includes("tour.max_group_size || MAX_TRAVELLERS_CEILING"),
 );
 check(
   "tour detail never presents sold-out or unavailable departures as bookable",
@@ -73,23 +72,23 @@ check(
 check(
   "tour style keeps vehicle capacity separate from live seats remaining",
   detailExperience.includes("tour.overview?.vehicle_style?.trim()") &&
-    detailExperience.includes("Maximum ${tour.max_group_size} guests per booking") &&
-    detailExperience.includes("Max {tour.max_group_size} guests per booking") &&
+    detailExperience.includes("Min 1 – up to ${tour.max_group_size} per vehicle") &&
+    detailExperience.includes("seats available") &&
     !detailExperience.includes("Max {maxTravellers} guests") &&
     !detailExperience.includes("capacity <= 6"),
 );
 check(
-  "tour detail hides unreachable price tiers and caps the final visible tier at the group limit",
-  detailExperience.includes(".filter((row) => !maxGroupSize || row.persons_from <= maxGroupSize)") &&
-    detailExperience.includes("return { ...row, persons_to: maxGroupSize };"),
+  "tour detail keeps price tiers available above the vehicle group size",
+  !detailExperience.includes(".filter((row) => !maxGroupSize || row.persons_from <= maxGroupSize)") &&
+    !detailExperience.includes("return { ...row, persons_to: maxGroupSize };"),
 );
 const pricingEditor = read("src/components/tours/TourPricingTab.tsx");
 check(
   "tour pricing editor previews public Group Rate Highlights from active slabs",
   pricingEditor.includes("Group Rate Highlights Preview") &&
     pricingEditor.includes('slab.status === "active"') &&
-    pricingEditor.includes("slab.passenger_from <= maxGroupSize") &&
-    pricingEditor.includes("maxGroupSize ? Math.min(slab.passenger_to, maxGroupSize)"),
+    !pricingEditor.includes("slab.passenger_from <= maxGroupSize") &&
+    pricingEditor.includes("const rangeEnd = slab.passenger_to"),
 );
 const portalAuthPage = read("src/components/public/portal/PortalAuthPage.tsx");
 check(
@@ -100,12 +99,16 @@ check(
 );
 const pricingTab = read("src/components/tours/TourPricingTab.tsx");
 check(
-  "markup screen shows the final net profit without a repeated breakdown",
+  "markup screen includes supplier commission in the staged profit calculation",
   pricingTab.includes("function markupFinancials") &&
-    pricingTab.includes("Net profit = final customer price minus supplier price") &&
+    pricingTab.includes("supplierCommissionPercent") &&
+    pricingTab.includes("supplierPriceToTourvaa") &&
+    pricingTab.includes("supplierPayout") &&
+    pricingTab.includes("commissionAmount") &&
+    pricingTab.includes("grossProfit") &&
+    pricingTab.includes("900 -> 810 -> 729") &&
     pricingTab.includes("Tourvaa Profit") &&
-    !pricingTab.includes("% margin") &&
-    !pricingTab.includes("Less offer"),
+    pricingTab.includes("Profit includes markup and supplier commission"),
 );
 const customerBookingDetail = read("src/app/customer/bookings/[id]/page.tsx");
 check(
@@ -125,6 +128,12 @@ check(
   "customer payment dialog exposes only real payment gateways",
   !customerBookingDetail.includes("/payments/test/simulate") &&
     !customerBookingDetail.includes("Test mode active - no real money will be charged."),
+);
+check(
+  "customer balance payment sends its derived payment type to both gateways",
+  customerBookingDetail.includes("payment_type: paymentType") &&
+    customerBookingDetail.includes('"/payments/stripe/create-session"') &&
+    customerBookingDetail.includes('"/payments/paypal/create-order"'),
 );
 check(
   "tour detail uses one combined special-offer badge and an authoritative quote summary",
@@ -150,8 +159,9 @@ check(
 // server-side CheckoutSession, not a client-only react-hook-form wizard.
 const publicBooking = read("src/app/(public)/booking/[id]/page.tsx");
 check(
-  "checkout limits travellers by both the selected departure and maximum group size",
-  publicBooking.includes("Math.min(selectedCalendar?.slots ?? 10, tour.max_group_size ?? 10)"),
+  "checkout limits travellers by the selected departure seats",
+  publicBooking.includes("selectedCalendar?.slots ?? tour?.max_group_size ?? 10") &&
+    !publicBooking.includes("Math.min(selectedCalendar?.slots ?? 10, tour.max_group_size ?? 10)"),
 );
 check(
   "checkout excludes departures inside the tour minimum booking window",
@@ -165,6 +175,7 @@ check("public booking requires a logged-in customer", publicBooking.includes('ro
 check("public booking uses live server-calculated pricing", publicBooking.includes('"/bookings/calculate-price"') && publicBooking.includes("priceEstimate"));
 check("customer deposit rounds cents upward consistently with gateway validation", publicBooking.includes("Number.EPSILON") && publicBooking.includes("const cents = Math.round"));
 check("selected deposit never falls back to the full outstanding balance", publicBooking.includes("selected_payment_amount") && publicBooking.includes('customerPaymentMethod === "deposit" && !selectedPaymentAmount'));
+check("checkout sends the selected payment type and uses the server-authoritative first charge", publicBooking.includes('payment_type: customerPaymentMethod === "deposit" ? "partial" : "full"') && publicBooking.includes("booking?.selected_payment_amount"));
 check("booking continues to the payment step", publicBooking.includes("setStep(3)"));
 check("checkout terms open separately without losing entered passenger details", publicBooking.includes('href="/terms" target="_blank" rel="noopener noreferrer"'));
 check("success copy explains pending payment confirmation", publicBooking.includes("pending payment confirmation"));
@@ -217,6 +228,9 @@ const wishlist = read("src/app/customer/wishlist/page.tsx");
 const wishlistStore = read("src/providers/TravelStoreProvider.tsx");
 const legacyWishlist = read("src/app/(public)/wishlist/page.tsx");
 const retiredCart = read("src/app/(public)/cart/page.tsx");
+const contactPage = read("src/app/(public)/contact/page.tsx");
+const publicTourCard = read("src/components/public/TourCard.tsx");
+const countryToursSection = read("src/components/public/country/CountryToursSection.tsx");
 check("public and customer headers no longer expose cart", !publicHeader.includes('href="/cart"') && !customerHeader.includes('href="/cart"'));
 // The customer portal renders its own sidebar + header chrome, so it deliberately
 // does NOT include the marketing <PublicFooter />. It must still be wrapped in
@@ -241,6 +255,8 @@ check("wishlist falls back to local storage for guests", wishlistStore.includes(
 check("compare list still uses local storage (by design, unlike wishlist for logged-in users)", wishlistStore.includes("COMPARE_STORAGE_KEY") && wishlistStore.includes("window.localStorage"));
 check("public wishlist page renders the store directly instead of redirecting", legacyWishlist.includes("useTravelStore") && !legacyWishlist.includes("redirect("));
 check("retired cart route permanently redirects to tours", retiredCart.includes('permanentRedirect("/tours")'));
+check("supplier contact context uses supplier operations content and workspace actions", contactPage.includes("SUPPLIER_HERO") && contactPage.includes("SUPPLIER_SUPPORT_CARDS") && contactPage.includes('href={isSupplierInquiry ? "/supplier/bookings" : "/profile/bookings"}') && contactPage.includes('href="/supplier/messages"'));
+check("country and catalogue cards show active discount badges", countryToursSection.includes('variant="search"') && (publicTourCard.match(/\{discounted && <DiscountCardBadge percentage=\{tour\.discount_percentage!\} \/>\}/g) || []).length >= 3);
 
 const login = read("src/app/(public)/login/page.tsx");
 const register = read("src/app/(public)/register/page.tsx");

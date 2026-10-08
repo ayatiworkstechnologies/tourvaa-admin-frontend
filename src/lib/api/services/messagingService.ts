@@ -156,6 +156,13 @@ export async function getSupplierBookingConversationThread(conversationId: numbe
   return response.data?.data as BookingConversationThread;
 }
 
+/** Fetches the Supplier <-> Tourvaa Admin thread for one booking, creating
+ * its container when the supplier is the first person to write. */
+export async function getSupplierBookingConversationForBooking(bookingId: number | string) {
+  const response = await api.get(`/supplier/booking-messages/booking/${bookingId}`);
+  return response.data?.data as BookingConversationThread;
+}
+
 export async function replySupplierBookingConversation(conversationId: number, body: string) {
   const response = await api.post(`/supplier/booking-messages/${conversationId}/messages`, { body });
   return response.data?.data as BookingMessage;

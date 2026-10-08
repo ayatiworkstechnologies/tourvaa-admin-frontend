@@ -119,7 +119,7 @@ export default function AgentBankAndInvoicingTab() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!form.contact_name || !form.email || !form.phone || !form.billing_address) {
+    if (!form.contact_name || !form.email || !form.phone || !form.billing_address || !form.billing_city || !form.country_id) {
       toast.error("Complete the required accounts and billing details.");
       return;
     }
@@ -128,7 +128,9 @@ export default function AgentBankAndInvoicingTab() {
       (!form.preferred_payment_method ||
         !form.account_name ||
         !form.account_number ||
-        !form.bank_name)
+        !form.bank_name ||
+        !form.bank_branch ||
+        !form.bank_country_id)
     ) {
       toast.error("Complete all required bank details before saving.");
       return;
@@ -235,8 +237,9 @@ export default function AgentBankAndInvoicingTab() {
             />
           </label>
           <label className="block">
-            <Label>Country</Label>
+            <Label>Country *</Label>
             <select
+              required
               value={form.country_id}
               onChange={(e) => set("country_id", e.target.value)}
               className={fieldClass}
@@ -250,7 +253,7 @@ export default function AgentBankAndInvoicingTab() {
             </select>
           </label>
           <label className="block sm:col-span-2">
-            <Label>Registered Billing Address *</Label>
+            <Label>Business Billing Address *</Label>
             <input
               required
               value={form.billing_address}
@@ -258,6 +261,18 @@ export default function AgentBankAndInvoicingTab() {
               placeholder="Street address, suite, or building"
               className={fieldClass}
             />
+          </label>
+          <label className="block">
+            <Label>City *</Label>
+            <input required value={form.billing_city} onChange={(e) => set("billing_city", e.target.value)} className={fieldClass} />
+          </label>
+          <label className="block">
+            <Label>State / Province / Region</Label>
+            <input value={form.billing_state} onChange={(e) => set("billing_state", e.target.value)} className={fieldClass} />
+          </label>
+          <label className="block">
+            <Label>Postcode / ZIP Code</Label>
+            <input value={form.billing_postal_code} onChange={(e) => set("billing_postal_code", e.target.value)} className={fieldClass} />
           </label>
         </div>
       </div>
@@ -285,7 +300,7 @@ export default function AgentBankAndInvoicingTab() {
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <Label>Preferred Settlement Method *</Label>
+            <Label>Preferred Payment Method (Bank Transfer / PayPal) *</Label>
             <select
               disabled={bankLocked}
               value={form.preferred_payment_method}
@@ -318,14 +333,22 @@ export default function AgentBankAndInvoicingTab() {
             />
           </label>
           <label className="block">
-            <Label>Bank Branch / City</Label>
+            <Label>Bank Branch Address *</Label>
             <input
+              required
               disabled={bankLocked}
               value={form.bank_branch}
               onChange={(e) => set("bank_branch", e.target.value)}
               placeholder="Branch name or location"
               className={fieldClass}
             />
+          </label>
+          <label className="block">
+            <Label>Bank Country *</Label>
+            <select required disabled={bankLocked} value={form.bank_country_id} onChange={(e) => set("bank_country_id", e.target.value)} className={fieldClass}>
+              <option value="">Select country</option>
+              {countries.map((country) => <option key={country.id} value={country.id}>{country.name}</option>)}
+            </select>
           </label>
           <label className="block">
             <Label>Account Number / IBAN *</Label>
@@ -357,7 +380,7 @@ export default function AgentBankAndInvoicingTab() {
           className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-dash-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
-          Save Bank &amp; Invoicing Details
+          Save Bank, Invoicing &amp; Billing Details
         </button>
       </div>
     </form>

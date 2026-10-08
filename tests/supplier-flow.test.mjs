@@ -57,7 +57,7 @@ check("dashboard retains date and status filtering", dashboard.includes("<DatePi
 check("dashboard provides loading and filtered empty states", dashboard.includes("BookingSkeleton") && dashboard.includes("No bookings match these filters"));
 
 const bookingDetail = read("src/app/supplier/bookings/[id]/page.tsx");
-const bookingService = read("../backend/app/services/bookings.py");
+const bookingService = read("../tourvaa-admin-backend/app/services/bookings.py");
 check("supplier can accept pending supplier requests without agent settlement details", bookingDetail.includes('v === "pending_supplier_acceptance"') && bookingDetail.includes("Accept Booking") && bookingDetail.includes("Decline") && !bookingDetail.includes("paymentReady"));
 check(
   "supplier booking detail masks agent reservation payment state before rendering actions",
@@ -70,7 +70,7 @@ check("supplier cancellation confirms the applicable liability", ["supplier_canc
 check("supplier withdrawal stays internal to Tourvaa", bookingDetail.includes("awaiting internal supplier reassignment") && !bookingDetail.includes("Booking cancelled. Customer has been notified."));
 check("submitted supplier withdrawal returns to the supplier booking queue", bookingDetail.includes('router.replace("/supplier/bookings")'));
 check("supplier acceptance status is displayed", bookingDetail.includes("Supplier Decision"));
-check("supplier booking messages use the backend-supported update type", bookingDetail.includes('message_type: "supplier_update"') && !bookingDetail.includes('message_type: "supplier_message"'));
+check("supplier booking messages use the unified Admin conversation thread", bookingDetail.includes("getSupplierBookingConversationForBooking(bookingId)") && bookingDetail.includes("replySupplierBookingConversation(thread.id"));
 check("supplier booking message errors show the API detail", bookingDetail.includes("response?.data?.detail") && bookingDetail.includes("toast.error(message || \"Could not send message.\")"));
 check("accept endpoint is connected", bookingDetail.includes("/accept"));
 check("decline endpoint is connected", bookingDetail.includes("/decline"));
@@ -112,7 +112,7 @@ check(
 check("supplier portal mounts the shared language translator", supplierLayout.includes("ElfsightTranslator") && supplierLayout.includes("<ElfsightTranslator />"));
 check(
   "supplier sees only supplier settlement details",
-  ["Supplier Payment", "Commission to Tourvaa", "Supplier Net Payable", "Supplier Payment Status"].every((label) => bookingDetail.includes(label)),
+  ["Supplier Gross Amount", "Commission to Tourvaa", "Supplier Net Payable", "Supplier Payment Status"].every((label) => bookingDetail.includes(label)),
 );
 
 const tours = read("src/app/supplier/tours/page.tsx");
@@ -205,12 +205,9 @@ check(
     supplierBilling.includes("Use Primary Contact"),
 );
 check(
-  "supplier tour editor cannot view or submit checkout tax and service fees",
-  sharedTourForm.includes("const canManageCheckoutCharges = !isSupplier") &&
-    sharedTourForm.includes("{canManageCheckoutCharges && (") &&
-    sharedTourForm.includes("if (canManageCheckoutCharges) {") &&
-    sharedTourForm.includes("payload.tax_percentage") &&
-    sharedTourForm.includes("payload.service_fee"),
+  "tour editor no longer exposes or submits checkout tax and service fees",
+  !sharedTourForm.includes("tax_percentage") &&
+    !sharedTourForm.includes("service_fee"),
 );
 check(
   "supplier tour editor excludes the SEO step and preserves SEO metadata on other saves",
@@ -239,6 +236,14 @@ check(
   tourPricing.includes("useCurrency") && tourPricing.includes("convert(slab.adult_price, slab.currency)") && tourPricing.includes("outputCode(slab.currency || \"USD\")"),
 );
 check("TourVaa storefront discounts reduce the admin profit preview", tourPricing.includes("markupFinancials") && tourPricing.includes("netProfit") && tourPricing.includes("deducted from TourVaa profit"));
+const tourDiscounts = read("src/components/tours/TourDiscountsTab.tsx");
+check(
+  "discount editor blocks overlapping date windows inside the modal for the same owner",
+  tourDiscounts.includes("dateRangesOverlap") &&
+    tourDiscounts.includes("These dates overlap the active") &&
+    tourDiscounts.includes("error={errors.start_date}") &&
+    tourDiscounts.includes("overlaps an active discount"),
+);
 
 const commissionTab = read("src/components/supplier/profile/CommissionTab.tsx");
 check(

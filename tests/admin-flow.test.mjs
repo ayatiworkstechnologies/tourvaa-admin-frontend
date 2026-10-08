@@ -97,6 +97,23 @@ check(
     actionModal.includes('`Hide ${field.label}`') &&
     actionModal.includes("visiblePasswords"),
 );
+const cmsShared = read("src/app/admin/cms/cmsShared.tsx");
+check(
+  "Country Pages restrict persisted field lengths and let editors clear optional content",
+  cmsShared.includes('maxLength: 400') &&
+    cmsShared.includes('body[f.key] = null') &&
+    cmsShared.includes('maxLength={f.maxLength}'),
+);
+check(
+  "Country Pages do not offer a country that already has a page",
+  cmsShared.includes('!items.some((item) => Number(item.country_id) === country.id)'),
+);
+check(
+  "shared action modals close with Escape or a backdrop click when not saving",
+  actionModal.includes('event.key === "Escape"') &&
+    actionModal.includes('event.target === event.currentTarget') &&
+    actionModal.includes('aria-modal="true"'),
+);
 check("supplier commission banner omits the misleading approve request action", !suppliers.includes("Approve request"));
 check("supplier document review uses private document service", suppliers.includes('openPrivateDocument("supplier"'));
 const suppliersCompact = suppliers.replace(/\s+/g, " "); // tolerate formatter line-wrapping
@@ -131,7 +148,7 @@ check(
 );
 check("admin booking detail renders serialized add-on snapshots", bookingDetail.includes("activity_name_snapshot") && bookingDetail.includes("accommodation_name_snapshot") && bookingDetail.includes("extension_name_snapshot"));
 check("admin booking detail exposes all note channels", bookingDetail.includes("booking.customer_notes") && bookingDetail.includes("booking.admin_notes"));
-check("admin can choose a booking communication recipient and the log labels sender and audience", ["commVisibility", "Customer (send email)", "Supplier (send email)", "From {c.sender_type", "To ${c.visibility}"].every((text) => bookingDetail.includes(text)));
+check("admin booking detail removes the legacy communications log in favour of portal messages", bookingDetail.includes('title="Portal Messages"') && !bookingDetail.includes('title="Communications"'));
 const adminBookingMessages = read("src/components/messaging/AdminBookingConversationHistory.tsx");
 const messagingService = read("src/lib/api/services/messagingService.ts");
 check("admin booking detail shows customer and agent portal messages for the same booking", bookingDetail.includes("AdminBookingConversationHistory") && adminBookingMessages.includes("getAdminBookingConversations") && messagingService.includes("/admin/messages/booking-conversations/"));

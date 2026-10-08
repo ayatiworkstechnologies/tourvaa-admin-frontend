@@ -191,6 +191,7 @@ function PayNowModal({
       const origin = window.location.origin;
       const res = await api.post("/payments/stripe/create-session", {
         booking_id: bookingId, amount: paymentAmount, currency: currency || "USD",
+        payment_type: paymentType,
         success_url: `${origin}/customer/bookings/${bookingId}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/customer/bookings/${bookingId}?payment=cancelled`,
       });
@@ -210,6 +211,7 @@ function PayNowModal({
       const origin = window.location.origin;
       const res = await api.post("/payments/paypal/create-order", {
         booking_id: bookingId, amount: paymentAmount, currency: currency || "USD",
+        payment_type: paymentType,
         return_url: `${origin}/customer/bookings/${bookingId}?payment=paypal_approved`,
         cancel_url: `${origin}/customer/bookings/${bookingId}?payment=cancelled`,
       });

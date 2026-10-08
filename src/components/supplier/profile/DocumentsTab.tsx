@@ -16,8 +16,8 @@ type DocRequirement = { key: string; label: string; required: boolean };
 // (app/services/suppliers.py SUPPLIER_DOCUMENT_TYPES), used if that call fails.
 const FALLBACK_DOC_TYPES: DocRequirement[] = [
   { key: "company_registration", label: "Business Registration Certificate", required: true },
-  { key: "operating_licence", label: "Relevant Operating Licence", required: false },
-  { key: "public_liability_insurance", label: "Public Liability Insurance Certificate", required: false },
+  { key: "operating_licence", label: "Relevant Operating Licence", required: true },
+  { key: "public_liability_insurance", label: "Public Liability Insurance Certificate", required: true },
   { key: "tourism_accreditation", label: "Tourism Accreditation", required: false },
   { key: "industry_certification", label: "Industry Certification", required: false },
   { key: "safety_certification", label: "Safety Certification", required: false },

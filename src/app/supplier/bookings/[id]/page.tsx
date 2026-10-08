@@ -10,7 +10,14 @@ import {
   SupplierPageShell,
 } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import { useToast } from "@/hooks/useToast";
+import {
+  BookingConversationThread,
+  BookingMessage,
+  getSupplierBookingConversationForBooking,
+  replySupplierBookingConversation,
+} from "@/lib/api/services/messagingService";
 
 type Traveller = {
   id?: number;
@@ -33,27 +40,9 @@ type StatusHistory = {
   created_at: string;
 };
 
-type MessageReply = {
-  id: number;
-  sender_type: string;
-  message: string;
-  created_at?: string | null;
-};
-
-type Communication = {
-  id: number;
-  sender_type: string;
-  subject?: string;
-  message: string;
-  visibility: string;
-  created_at?: string | null;
-  replies?: MessageReply[];
-};
-
 type Booking = {
   id: number;
   booking_code: string;
-  communications?: Communication[];
   tour_name?: string;
   tour_title?: string;
   tour_id?: number;
@@ -436,17 +425,21 @@ export default function SupplierBookingDetailPage() {
   const toast = useToast();
   const [showNotify, setShowNotify] = useState(false);
   const [downloadingIcs, setDownloadingIcs] = useState(false);
+  const [messageThread, setMessageThread] = useState<BookingConversationThread | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [bookRes, histRes] = await Promise.allSettled([
+      const [bookRes, histRes, messageRes] = await Promise.allSettled([
         api.get(`/supplier/bookings/${bookingId}`),
         api.get(`/supplier/bookings/${bookingId}/status-history`),
+        getSupplierBookingConversationForBooking(bookingId),
       ]);
       if (bookRes.status === "fulfilled") setBooking(bookRes.value.data?.data ?? bookRes.value.data);
       if (histRes.status === "fulfilled") setHistory(histRes.value.data?.data ?? []);
+      if (messageRes.status === "fulfilled") setMessageThread(messageRes.value);
+      else setMessageThread(null);
       if (bookRes.status === "rejected") setError("Failed to load booking details.");
       else if (histRes.status === "rejected") setError("Booking loaded, but status history could not be loaded.");
     } catch {
@@ -514,45 +507,41 @@ export default function SupplierBookingDetailPage() {
 
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({});
-  const [sendingReplyId, setSendingReplyId] = useState<number | null>(null);
+
+  useMessagingSocket(
+    useCallback((event) => {
+      if (event.type !== "new_booking_message" || event.conversation.booking_id !== Number(bookingId)) return;
+      setMessageThread((previous) => (
+        previous && previous.id === event.conversation.id
+          ? {
+              ...event.conversation,
+              messages: previous.messages.some((message) => message.id === event.message.id)
+                ? previous.messages
+                : [...previous.messages, event.message],
+            }
+          : previous
+      ));
+    }, [bookingId])
+  );
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
     setSendingMessage(true);
     try {
-      await api.post(`/supplier/bookings/${bookingId}/communications`, {
-        message: newMessage.trim(),
-        subject: "Message from supplier",
-        visibility: "internal",
-        // Must use the server's BookingCommunicationCreate enum. The old
-        // supplier_message value was rejected as a 422 before saving.
-        message_type: "supplier_update",
-      });
+      const thread = messageThread ?? await getSupplierBookingConversationForBooking(bookingId);
+      if (!messageThread) setMessageThread(thread);
+      const message = await replySupplierBookingConversation(thread.id, newMessage.trim());
       setNewMessage("");
-      await load();
+      setMessageThread((previous) => previous
+        ? { ...previous, messages: previous.messages.some((item) => item.id === message.id) ? previous.messages : [...previous.messages, message] }
+        : previous);
     } catch (error: unknown) {
       const detail = (error as { response?: { data?: { detail?: string | Array<{ msg?: string }> } } })?.response?.data?.detail;
       const message = Array.isArray(detail) ? detail.map((item) => item.msg).filter(Boolean).join(" ") : detail;
       toast.error(message || "Could not send message.");
     } finally {
       setSendingMessage(false);
-    }
-  };
-
-  const sendReply = async (communicationId: number) => {
-    const message = (replyDrafts[communicationId] || "").trim();
-    if (!message) return;
-    setSendingReplyId(communicationId);
-    try {
-      await api.post(`/supplier/bookings/communications/${communicationId}/replies`, { message });
-      setReplyDrafts((prev) => ({ ...prev, [communicationId]: "" }));
-      await load();
-    } catch {
-      toast.error("Could not send reply.");
-    } finally {
-      setSendingReplyId(null);
     }
   };
 
@@ -605,6 +594,14 @@ export default function SupplierBookingDetailPage() {
   const leadName = booking.contact_name ?? leadTraveller?.full_name ?? leadTraveller?.name ?? booking.customer_name;
   const leadEmail = booking.contact_email ?? leadTraveller?.email ?? booking.customer_email;
   const leadPhone = booking.contact_phone ?? leadTraveller?.phone ?? booking.customer_phone;
+  const chatMessages = messageThread?.messages ?? [];
+  const messageGroups = chatMessages.reduce<{ date: string; messages: BookingMessage[] }[]>((groups, message) => {
+    const date = message.created_at ? new Date(message.created_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "Unknown date";
+    const previous = groups[groups.length - 1];
+    if (previous?.date === date) previous.messages.push(message);
+    else groups.push({ date, messages: [message] });
+    return groups;
+  }, []);
 
   return (
     <SupplierPageShell>
@@ -667,9 +664,9 @@ export default function SupplierBookingDetailPage() {
         <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <span className="text-emerald-600 font-black text-lg">$</span>
-            <h2 className="font-black text-dash-text">Supplier Payment</h2>
+            <h2 className="font-black text-dash-text">Supplier Gross Amount</h2>
           </div>
-          <InfoRow label="Supplier Payment" value={format(booking.supplier_payment_summary?.gross_amount ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
+          <InfoRow label="Supplier Gross Amount" value={format(booking.supplier_payment_summary?.gross_amount ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
           <InfoRow label="Commission to Tourvaa" value={booking.supplier_payment_summary ? `${booking.supplier_payment_summary.commission_percentage}%` : "-"} />
           <InfoRow label="Commission Amount" value={format(booking.supplier_payment_summary?.commission_amount ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
           <InfoRow label="Supplier Net Payable" value={format(booking.supplier_payment_summary?.net_payable ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
@@ -727,69 +724,47 @@ export default function SupplierBookingDetailPage() {
           </div>
         )}
 
-        {/* Communications thread */}
-        <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm lg:col-span-2">
-          <div className="mb-4 flex items-center gap-2">
-            <MessageSquare size={18} className="text-emerald-600" />
-            <h2 className="font-black text-dash-text">Communications</h2>
+        {/* Supplier booking messages are private to Tourvaa Admin. */}
+        <div className="flex h-[500px] flex-col overflow-hidden rounded-2xl border border-dash-border bg-white shadow-sm lg:col-span-2">
+          <div className="flex items-start gap-2 border-b border-dash-border-soft px-5 py-4">
+            <MessageSquare size={18} className="mt-0.5 text-emerald-600" />
+            <div>
+              <h2 className="font-black text-dash-text">Message Tourvaa Admin</h2>
+              <p className="mt-0.5 text-xs text-dash-subtle">Private booking messages with the Tourvaa Admin team.</p>
+            </div>
           </div>
 
-          {(!booking.communications || booking.communications.length === 0) ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dash-border bg-dash-bg py-10 text-center">
+          <div className="flex-1 space-y-3 overflow-y-auto bg-dash-bg/40 px-5 py-4">
+          {chatMessages.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-dash-border bg-white py-10 text-center">
               <MessageSquare size={28} className="text-dash-subtle" />
               <p className="mt-3 text-sm font-bold text-dash-text">No messages yet</p>
-              <p className="mt-1 text-xs text-dash-muted">Messages with the customer and admin will appear here.</p>
+              <p className="mt-1 text-xs text-dash-muted">Messages sent to or received from Tourvaa Admin will appear here.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {booking.communications.map((comm) => (
-                <div key={comm.id} className="rounded-xl border border-dash-border bg-[#FAFBFC] p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold uppercase text-dash-subtle">{comm.sender_type}{comm.subject ? ` · ${comm.subject}` : ""}</span>
-                    <span className="text-xs text-dash-subtle">{comm.created_at ? new Date(comm.created_at).toLocaleString() : ""}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-dash-text">{comm.message}</p>
-
-                  {comm.replies && comm.replies.length > 0 && (
-                    <div className="mt-3 space-y-2 border-l-2 border-emerald-200 pl-3">
-                      {comm.replies.map((reply) => (
-                        <div key={reply.id}>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-bold uppercase text-dash-subtle">{reply.sender_type}</span>
-                            <span className="text-xs text-dash-subtle">{reply.created_at ? new Date(reply.created_at).toLocaleString() : ""}</span>
-                          </div>
-                          <p className="text-sm text-dash-body">{reply.message}</p>
-                        </div>
-                      ))}
+            messageGroups.map((group) => (
+              <div key={group.date} className="space-y-2">
+                <div className="sticky top-0 z-10 flex justify-center py-1"><span className="rounded-full border border-dash-border bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-dash-muted shadow-sm">{group.date}</span></div>
+                {group.messages.map((message) => {
+                  const isSupplierMessage = message.sender_role === "supplier";
+                  return <div key={message.id} className={`flex ${isSupplierMessage ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${isSupplierMessage ? "bg-emerald-600 text-white" : "bg-white text-dash-text"}`}>
+                      <p className={`text-[10px] font-bold ${isSupplierMessage ? "text-emerald-100" : "text-dash-subtle"}`}>{isSupplierMessage ? "You" : "Tourvaa Admin"}</p>
+                      <p className={`mt-1 whitespace-pre-wrap ${isSupplierMessage ? "text-sm" : "text-xs"}`}>{message.is_deleted ? "This message was deleted." : message.body}</p>
+                      <p className={`mt-1 text-[10px] ${isSupplierMessage ? "text-emerald-100" : "text-dash-subtle"}`}>{message.created_at ? new Date(message.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : ""}</p>
                     </div>
-                  )}
-
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      value={replyDrafts[comm.id] || ""}
-                      onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [comm.id]: e.target.value }))}
-                      placeholder="Reply..."
-                      className="flex-1 rounded-lg border border-dash-border px-3 py-1.5 text-xs outline-none focus:border-emerald-500"
-                    />
-                    <button
-                      type="button"
-                      disabled={sendingReplyId === comm.id}
-                      onClick={() => void sendReply(comm.id)}
-                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
-                    >
-                      Reply
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </div>;
+                })}
+              </div>
+            ))
           )}
+          </div>
 
-          <form onSubmit={sendMessage} className="mt-4 flex gap-2 border-t border-dash-border pt-4">
+          <form onSubmit={sendMessage} className="flex gap-2 border-t border-dash-border-soft bg-white px-4 py-3">
             <input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Send a new message..."
+              placeholder="Write a message to Tourvaa Admin..."
               className="flex-1 rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-emerald-500"
             />
             <button

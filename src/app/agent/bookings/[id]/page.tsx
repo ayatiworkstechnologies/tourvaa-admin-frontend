@@ -346,10 +346,10 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   return (
     <AgentPageShell>
       <AgentPageHeader
-        title={booking.booking_code}
-        description={`${booking.tour_name || "Tour booking"} for ${booking.customer_name || booking.customer?.name || "your customer"}.`}
+        title={booking.tour_name || "Tour booking"}
+        description="Review traveller details, payment status and every booking update from one workspace."
         icon={FileText}
-        eyebrow="Booking Details"
+        eyebrow={`Booking ${booking.booking_code}`}
         actions={[{ label: "Back to Bookings", href: "/agent/bookings", icon: ArrowLeft, variant: "secondary" }]}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">

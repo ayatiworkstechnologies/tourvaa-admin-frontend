@@ -211,6 +211,9 @@ export default function TourCard({ tour, format, variant = "search", href, view 
           wishlisted={isTourWishlisted}
           onToggle={() => handleWishlistClick()}
         />
+        {/* Country and catalogue listings use this search variant. Keep its
+            active-discount badge consistent with featured and compact cards. */}
+        {discounted && <DiscountCardBadge percentage={tour.discount_percentage!} />}
       </div>
 
       {/* ── Card Body ── */}

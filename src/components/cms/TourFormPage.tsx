@@ -803,7 +803,6 @@ export default function TourFormPage({
   const isSupplier = role === "supplier";
   // Checkout charges are controlled by Tourvaa. Suppliers can configure the
   // deposit policy but must not view or modify tax and service-fee settings.
-  const canManageCheckoutCharges = !isSupplier;
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const clearError = (field: string) => {
@@ -1131,19 +1130,6 @@ export default function TourFormPage({
         }
       }
 
-      if (canManageCheckoutCharges && form.tax_percentage !== undefined && form.tax_percentage !== "") {
-        const tax = Number(form.tax_percentage);
-        if (isNaN(tax) || tax < 0 || tax > 100) {
-          newErrors.tax_percentage = "Tax percentage must be between 0% and 100%.";
-        }
-      }
-
-      if (canManageCheckoutCharges && form.service_fee !== undefined && form.service_fee !== "") {
-        const fee = Number(form.service_fee);
-        if (isNaN(fee) || fee < 0) {
-          newErrors.service_fee = "Service fee cannot be negative.";
-        }
-      }
     }
 
     if (checkMedia) {
@@ -1235,10 +1221,6 @@ export default function TourFormPage({
       payload.deposit_percentage = form.deposit_percentage ? Number(form.deposit_percentage) : null;
       payload.deposit_cutoff_days = form.deposit_cutoff_days ? Number(form.deposit_cutoff_days) : null;
       payload.balance_payment_deadline_days = form.balance_payment_deadline_days ? Number(form.balance_payment_deadline_days) : null;
-      if (canManageCheckoutCharges) {
-        payload.tax_percentage = form.tax_percentage ? Number(form.tax_percentage) : 0;
-        payload.service_fee = form.service_fee ? Number(form.service_fee) : 0;
-      }
 
       // Simple number fields - use default if blank
       // price_start_per_person is intentionally omitted -- it's system-
@@ -1903,65 +1885,6 @@ export default function TourFormPage({
               Balance due date: the remaining balance is due the buffer weeks (Calendar &amp; Availability step) before the Minimum Advance Booking cutoff.
             </p>
 
-            {canManageCheckoutCharges && (
-              <>
-                <div className="md:col-span-2 mt-2 border-t border-slate-100 pt-4">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-600">Tax &amp; service fee</p>
-                  <p className="mt-0.5 text-xs text-slate-400">Added on top of the discounted subtotal at checkout -- shown to the customer as a separate line, not folded into the tour price.</p>
-                </div>
-
-                <label data-field="tax_percentage" className="block">
-                  <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Tax (%)</span>
-                  <input
-                    name="tax_percentage"
-                    type="number"
-                    min={0}
-                    max={100}
-                    step="0.01"
-                    value={form.tax_percentage ?? ""}
-                    onChange={(e) => {
-                      update("tax_percentage", e.target.value);
-                      if (errors.tax_percentage) clearError("tax_percentage");
-                    }}
-                    className={getInputClass("tax_percentage")}
-                    placeholder="0.00"
-                  />
-                  {errors.tax_percentage ? (
-                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
-                      <AlertCircle size={13} className="shrink-0 text-red-500" />
-                      <span>{errors.tax_percentage}</span>
-                    </p>
-                  ) : (
-                    <span className="mt-1 block text-[11px] text-slate-400">Percentage applied to the discounted subtotal.</span>
-                  )}
-                </label>
-
-                <label data-field="service_fee" className="block">
-                  <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Service fee ({form.currency || "USD"})</span>
-                  <input
-                    name="service_fee"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={form.service_fee ?? ""}
-                    onChange={(e) => {
-                      update("service_fee", e.target.value);
-                      if (errors.service_fee) clearError("service_fee");
-                    }}
-                    className={getInputClass("service_fee")}
-                    placeholder="0.00"
-                  />
-                  {errors.service_fee ? (
-                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
-                      <AlertCircle size={13} className="shrink-0 text-red-500" />
-                      <span>{errors.service_fee}</span>
-                    </p>
-                  ) : (
-                    <span className="mt-1 block text-[11px] text-slate-400">Flat amount added once per booking, regardless of traveller count.</span>
-                  )}
-                </label>
-              </>
-            )}
           </FormSection>
           )}
 
