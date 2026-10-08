@@ -165,7 +165,7 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
   const t = THEME[config.theme];
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { loginWithToken, isLoggedIn, loading: sessionLoading, dashboard } = useAuthContext();
+  const { isLoggedIn, loading: sessionLoading, dashboard } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -206,9 +206,20 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
       const data = res.data.data;
       if (data.account_restricted) { router.push("/account-status"); return; }
       const roleSlug = String(data.user?.role?.slug ?? "").toLowerCase();
-      if (roleSlug !== config.roleSlug) { setError(config.wrongRoleMessage); return; }
-      await loginWithToken();
-      router.push(redirectTarget());
+      if (roleSlug !== config.roleSlug) {
+        // Login has already issued httpOnly cookies. Remove them before
+        // leaving the user on the wrong portal's form, otherwise its stale
+        // session bootstrap can race the next correct login attempt.
+        await api.post("/auth/logout").catch(() => {});
+        setError(config.wrongRoleMessage);
+        return;
+      }
+      // A full navigation starts AuthProvider from a clean lifecycle after
+      // the browser has committed the new httpOnly cookies. Calling
+      // refreshSession here can race an expired-session restore that began
+      // when the public login page mounted and incorrectly log out the new
+      // session on the destination page.
+      window.location.assign(redirectTarget());
     } catch (err: unknown) {
       setError(getLoginErrorMessage(err));
     } finally {

@@ -80,6 +80,13 @@ check(
     pricingEditor.includes("slab.passenger_from <= maxGroupSize") &&
     pricingEditor.includes("maxGroupSize ? Math.min(slab.passenger_to, maxGroupSize)"),
 );
+const portalAuthPage = read("src/components/public/portal/PortalAuthPage.tsx");
+check(
+  "portal login commits cookies before a clean dashboard navigation",
+  portalAuthPage.includes("window.location.assign(redirectTarget())") &&
+    !portalAuthPage.includes("await loginWithToken();") &&
+    portalAuthPage.includes('await api.post("/auth/logout").catch(() => {})'),
+);
 const pricingTab = read("src/components/tours/TourPricingTab.tsx");
 check(
   "markup screen shows the final net profit without a repeated breakdown",
