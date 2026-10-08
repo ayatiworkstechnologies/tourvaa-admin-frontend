@@ -795,21 +795,6 @@ export default function ChatWidget() {
             : "pointer-events-none translate-y-20 opacity-0"
         }`}
       >
-        {/* Floating invitation pill (shows when closed) */}
-        {!open && (
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/95 px-3.5 py-2 text-xs font-bold text-slate-900 shadow-lg backdrop-blur-md transition hover:scale-105 hover:border-sky-300 cursor-pointer group"
-          >
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-tr from-[#146EF5] to-sky-400 text-white shadow-2xs">
-              <Bot size={12} className="stroke-[2.5]" />
-            </span>
-            <span>Chat with Scout AI</span>
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
-          </button>
-        )}
-
         {/* Circular Interactive Button */}
         <button
           type="button"
@@ -821,6 +806,19 @@ export default function ChatWidget() {
               : "bg-gradient-to-tr from-[#0B1F3A] via-[#102A4E] to-[#146EF5]"
           }`}
         >
+          {!open && (
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute right-full mr-3 hidden translate-x-2 items-center gap-2 whitespace-nowrap rounded-full border border-slate-200/90 bg-white/95 px-4 py-2.5 text-xs font-bold text-slate-900 opacity-0 shadow-lg backdrop-blur-md transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 sm:flex"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-tr from-[#146EF5] to-sky-400 text-white shadow-2xs">
+                <Bot size={12} className="stroke-[2.5]" />
+              </span>
+              <span>Chat with Scout AI</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+          )}
+
           {/* Ambient pulsing outer glow ring */}
           {!open && (
             <span className="absolute -inset-1 rounded-full bg-sky-400/25 animate-pulse -z-10" />

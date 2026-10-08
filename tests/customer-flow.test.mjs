@@ -45,6 +45,17 @@ check(
 );
 check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
 check(
+  "tour detail keeps a sticky booking summary with live name price and actions",
+  detailExperience.includes('aria-label="Tour booking summary"') &&
+    detailExperience.includes("fixed inset-x-0 bottom-0") &&
+    detailExperience.includes("{title}") &&
+    detailExperience.includes("format(totalAmount, pricingCurrency)") &&
+    detailExperience.includes("hasBookingDate") &&
+    detailExperience.includes('handleBookNow("full")') &&
+    detailExperience.includes('"Book now"') &&
+    detailExperience.includes('"Check dates"'),
+);
+check(
   "tour detail limits each booking by both remaining seats and maximum group size",
   detailExperience.includes("Math.min(") &&
     detailExperience.includes("selectedDeparture?.slotsRemaining ?? MAX_TRAVELLERS_CEILING") &&

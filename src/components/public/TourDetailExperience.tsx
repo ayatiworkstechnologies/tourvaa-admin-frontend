@@ -747,6 +747,7 @@ export default function TourDetailExperience({
     .flatMap((month) => month.dates)
     .find((date) => date.id === selectedDateId);
   const selectedDepartureIso = selectedDeparture?.isoDate || toIsoDate(selectedDeparture?.date);
+  const hasBookingDate = Boolean(selectedDepartureIso || toIsoDate(initialTravelDate));
 
   // The price is date-sensitive. Notify the owning page whenever the
   // traveller changes departure so it reloads the server-authoritative
@@ -3408,6 +3409,66 @@ export default function TourDetailExperience({
           </section>
         )}
       </div>
+
+      <aside
+        aria-label="Tour booking summary"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 shadow-[0_-10px_35px_rgba(11,31,58,0.12)] backdrop-blur-xl"
+      >
+        <div className="mx-auto flex min-h-20 max-w-[1690px] items-center gap-3 px-4 py-3 pr-20 sm:gap-5 sm:px-6 sm:pr-44 lg:px-10 lg:pr-40">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-black text-slate-950 sm:text-base">{title}</p>
+            <div className="mt-0.5 flex min-w-0 items-baseline gap-1.5">
+              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                {hasQuote ? "Total" : "From"}
+              </span>
+              <span className="truncate text-base font-black text-pub-primary sm:text-xl">
+                {format(totalAmount, pricingCurrency)}
+              </span>
+              <span className="hidden text-xs font-medium text-slate-500 sm:inline">
+                {hasQuote ? `for ${adults + children} traveller${adults + children === 1 ? "" : "s"}` : "per person"}
+              </span>
+            </div>
+          </div>
+
+          {agentBooking ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={agentReserveEligible && hasBookingDate ? () => handleBookNow("reserve") : scrollToBooking}
+                className="hidden rounded-xl border border-pub-accent bg-white px-4 py-3 text-sm font-bold text-pub-accent transition hover:bg-orange-50 active:translate-y-px sm:inline-flex"
+              >
+                {agentReserveEligible && hasBookingDate ? "Reserve" : "Select date"}
+              </button>
+              <button
+                type="button"
+                onClick={hasBookingDate && unitPrice && totalAmount > 0 ? () => handleBookNow("full") : scrollToBooking}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-pub-accent px-4 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-[#cf4b24] active:translate-y-px sm:px-6"
+              >
+                <span>{hasBookingDate ? "Pay in full" : "Check dates"}</span>
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={scrollToBooking}
+                className="hidden rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-blue-400 hover:bg-blue-50 active:translate-y-px sm:inline-flex"
+              >
+                {hasBookingDate ? "Change date" : "Select date"}
+              </button>
+              <button
+                type="button"
+                onClick={hasBookingDate && unitPrice && totalAmount > 0 ? () => handleBookNow() : scrollToBooking}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-pub-accent px-4 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-[#cf4b24] active:translate-y-px sm:px-6"
+              >
+                <span>{hasBookingDate ? "Book now" : "Check dates"}</span>
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
     </main>
   );
 }

@@ -35,6 +35,13 @@ const chat = read("src/components/public/ChatWidget.tsx");
 check("chat booking uses the customer portal endpoint", chat.includes('api.post("/customer/bookings"'));
 check("chat no longer calls the nonexistent customers-me booking route", !chat.includes("/customers/me/bookings"));
 check("chat login guidance points to the frontend login page", chat.includes("Open /login"));
+check(
+  "Scout launcher reveals its label only on hover or keyboard focus",
+  chat.includes('role="tooltip"') &&
+    chat.includes("group-hover:opacity-100") &&
+    chat.includes("group-focus-visible:opacity-100") &&
+    chat.includes("Chat with Scout AI"),
+);
 
 const publicHomepage = read("src/app/(public)/page.tsx");
 const homepageSections = [
