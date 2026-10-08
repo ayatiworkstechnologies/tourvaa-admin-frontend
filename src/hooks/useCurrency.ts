@@ -22,6 +22,8 @@ type CurrencyState = {
    * actually charged (see formatExact's docstring for that same rule on
    * currency). */
   countryCode: string;
+  /** Why the current country was selected. This never contains an IP address. */
+  countrySource: "cdn" | "ip" | "locale" | "saved" | "manual" | "unknown";
 };
 
 const STORAGE_KEY = "tourvaa_display_currency";
@@ -34,7 +36,7 @@ export const PUBLIC_HEADER_COUNTRY_CODES = [
   "JP", "KR", "IN", "CN",
 ] as const;
 const listeners = new Set<(state: CurrencyState) => void>();
-let state: CurrencyState = { code: "USD", baseCode: "USD", rates: { USD: 1 }, loading: true, isStale: false, forced: false, countryCode: "" };
+let state: CurrencyState = { code: "USD", baseCode: "USD", rates: { USD: 1 }, loading: true, isStale: false, forced: false, countryCode: "", countrySource: "unknown" };
 let loadPromise: Promise<void> | null = null;
 
 function emit(next: Partial<CurrencyState>) {
@@ -70,12 +72,14 @@ async function loadCurrency() {
     ]);
     const rateData = ratesResult.status === "fulfilled" ? ratesResult.value.data?.data : null;
     let contextData = contextResult.status === "fulfilled" ? contextResult.value.data?.data : null;
+    let detectedCountrySource = String(contextData?.country_source || "unknown").toLowerCase();
     if (!contextData?.country_code) {
       const localeFallback = localeCountry();
       if (localeFallback) {
         try {
           const fallbackResult = await api.get("/currency/context", { params: { country: localeFallback } });
           contextData = fallbackResult.data?.data ?? contextData;
+          if (contextData?.country_code) detectedCountrySource = "locale";
         } catch {
           // keep the original (IP-less) contextData; format() below still
           // falls back to USD.
@@ -88,6 +92,11 @@ async function loadCurrency() {
     const detectedCountry = String(contextData?.country_code || "").toUpperCase();
     const latestSavedCountry = typeof window !== "undefined" ? localStorage.getItem(COUNTRY_STORAGE_KEY) : null;
     const preferredCountry = String(latestSavedCountry || savedCountryAtStart || detectedCountry || "").toUpperCase();
+    const countrySource = latestSavedCountry || savedCountryAtStart
+      ? "saved"
+      : detectedCountrySource === "cdn" || detectedCountrySource === "ip" || detectedCountrySource === "locale"
+        ? detectedCountrySource
+        : "unknown";
 
     // An admin-set site currency is a strict override: every visitor sees it,
     // no per-browser choice. Gated on the separate "force_site_currency"
@@ -107,6 +116,7 @@ async function loadCurrency() {
         rateDate: rateData?.rate_date || undefined,
         forced: true,
         countryCode: preferredCountry,
+        countrySource,
       });
       return;
     }
@@ -125,6 +135,7 @@ async function loadCurrency() {
       isStale: Boolean(rateData?.is_stale),
       rateDate: rateData?.rate_date || undefined,
       countryCode: preferredCountry,
+      countrySource,
       forced: false,
     });
   })().catch(() => emit({ loading: false, isStale: true }));
@@ -181,7 +192,7 @@ export function setDisplayCurrency(code: string) {
 export async function setDisplayCountry(code: string, preferredCurrency?: string) {
   const normalized = code.toUpperCase();
   if (typeof window !== "undefined") localStorage.setItem(COUNTRY_STORAGE_KEY, normalized);
-  emit({ countryCode: normalized });
+  emit({ countryCode: normalized, countrySource: "manual" });
   if (state.forced) return;
   // The country record already carries its own currency (countries.currency_code,
   // populated by the geo seed), so switch immediately off that instead of making
@@ -228,7 +239,7 @@ export function useCurrency() {
         const normalized = event.newValue.toUpperCase();
         if (state.rates[normalized]) emit({ code: normalized });
       } else if (event.key === COUNTRY_STORAGE_KEY) {
-        emit({ countryCode: event.newValue.toUpperCase() });
+        emit({ countryCode: event.newValue.toUpperCase(), countrySource: "saved" });
       }
     };
     window.addEventListener("storage", syncStoredCurrency);

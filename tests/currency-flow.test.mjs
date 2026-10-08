@@ -25,6 +25,7 @@ const booking = read("src/app/(public)/booking/[id]/page.tsx");
 
 check("USD is the conversion base", hook.includes('baseCode: "USD"') && hook.includes('/currency/rates'));
 check("visitor country is used for automatic currency", hook.includes('/currency/context') && hook.includes("navigator.language"));
+check("country source preserves IP detection and manual overrides", hook.includes("countrySource") && hook.includes('countrySource: "manual"') && hook.includes('detectedCountrySource = "locale"'));
 check("currency preference persists", hook.includes("localStorage.setItem") && hook.includes("tourvaa_display_currency"));
 check("shared money formatting uses selected-currency symbols", (currencyUtils.match(/currencyDisplay: "narrowSymbol"/g) || []).length >= 2 && !currencyUtils.includes('currencyDisplay: "code"'));
 check("shared money formatting distinguishes dollar currencies", ["USD: \"US$\"", "NZD: \"NZ$\"", "SGD: \"S$\"", "AUD: \"A$\"", "CAD: \"C$\"", "HKD: \"HK$\""].every((symbol) => currencyUtils.includes(symbol)));
@@ -35,6 +36,7 @@ check("public header exposes the selector", publicHeader.includes("<LanguageCurr
 check("public header connects country selection to the saved currency context", publicHeader.includes("<LanguageCurrencySelector showCountry") && publicSelector.includes("fetchPublicCountries") && publicSelector.includes("setCountry(country.country_code, country.currency_code)"));
 check("public country selector updates the local currency without changing the current page", publicSelector.includes("setCountry(country.country_code, country.currency_code)") && !publicSelector.includes("router.push(") && !publicSelector.includes("destinationUrl"));
 check("public location selector separates Country and Currency choices into tabs", publicSelector.includes('activeTab === "country"') && publicSelector.includes('activeTab === "currency"') && publicSelector.includes('>Country</button>') && publicSelector.includes('>Currency</button>'));
+check("public location selector explains IP detection without exposing an IP", publicSelector.includes("Auto-detected from your IP address."));
 check("portal header exposes the selector", portalHeader.includes("<CurrencySelector"));
 check("tour listing converts from each tour currency", listing.includes("format(t.price_start_per_person, t.currency)"));
 check("tour details convert price and add-ons", detailExperience.includes('format(totalAmount, pricingCurrency)') && detailExperience.includes('format(displayedPerPersonPrice, pricingCurrency)'));
