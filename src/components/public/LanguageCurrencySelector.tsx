@@ -55,11 +55,21 @@ export default function LanguageCurrencySelector({ inverse = false, showCountry 
     return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", esc); };
   }, []);
 
+  const enabledCurrencyCodes = useMemo(() => {
+    // The Countries settings screen is the public availability source. USD
+    // remains selectable as the safe fallback for an unlisted visitor
+    // location, even if no enabled country uses USD at the moment.
+    return new Set(["USD", ...countries.map((country) => country.currency_code?.toUpperCase()).filter(Boolean)]);
+  }, [countries]);
+
   const currencyList = useMemo(() => {
     const list = currencies.length ? currencies : FALLBACK_CURRENCIES;
     const query = search.trim().toLowerCase();
-    return query ? list.filter((currency) => currency.code.toLowerCase().includes(query) || currency.symbol?.toLowerCase().includes(query)) : list;
-  }, [currencies, search]);
+    const publicCurrencies = showCountry
+      ? list.filter((currency) => enabledCurrencyCodes.has(currency.code.toUpperCase()))
+      : list;
+    return query ? publicCurrencies.filter((currency) => currency.code.toLowerCase().includes(query) || currency.symbol?.toLowerCase().includes(query)) : publicCurrencies;
+  }, [currencies, enabledCurrencyCodes, search, showCountry]);
 
   const countryList = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -117,7 +127,7 @@ export default function LanguageCurrencySelector({ inverse = false, showCountry 
         <div className="absolute right-0 top-[calc(100%+10px)] z-[100] w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/5 animate-in fade-in zoom-in-95 duration-200">
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="text-xs font-bold text-pub-primary">{showCountry ? "Location & currency" : "Choose currency"}</p>
-            {showCountry && <p className="mt-0.5 text-[10px] font-medium text-slate-500">{countrySourceLabel} You can change it any time.</p>}
+            {showCountry && <p className="mt-0.5 text-[10px] font-medium text-slate-500">{countrySourceLabel} Enabled countries control the available currencies.</p>}
           </div>
           <div className="p-3">
             {showCountry && (

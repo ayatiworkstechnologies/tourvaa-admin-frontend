@@ -37,6 +37,7 @@ check("public header connects country selection to the saved currency context", 
 check("public country selector updates the local currency without changing the current page", publicSelector.includes("setCountry(country.country_code, country.currency_code)") && !publicSelector.includes("router.push(") && !publicSelector.includes("destinationUrl"));
 check("public location selector separates Country and Currency choices into tabs", publicSelector.includes('activeTab === "country"') && publicSelector.includes('activeTab === "currency"') && publicSelector.includes('>Country</button>') && publicSelector.includes('>Currency</button>'));
 check("public location selector explains IP detection without exposing an IP", publicSelector.includes("Auto-detected from your IP address."));
+check("public header currency list only exposes currencies for enabled countries plus USD", publicSelector.includes('new Set(["USD", ...countries.map') && publicSelector.includes("enabledCurrencyCodes.has(currency.code.toUpperCase())"));
 check("portal header exposes the selector", portalHeader.includes("<CurrencySelector"));
 check("tour listing converts from each tour currency", listing.includes("format(t.price_start_per_person, t.currency)"));
 check("tour details convert price and add-ons", detailExperience.includes('format(totalAmount, pricingCurrency)') && detailExperience.includes('format(displayedPerPersonPrice, pricingCurrency)'));
