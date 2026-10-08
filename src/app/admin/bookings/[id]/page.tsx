@@ -35,7 +35,6 @@ import {
   LuChevronRight as ChevronRight,
   LuFileText as FileText,
   LuInfo as Info,
-  LuCopy as Copy,
   LuX as X,
   LuBed as Bed,
   LuCompass as Compass,
@@ -214,7 +213,7 @@ function StatusTimeline({ booking }: { booking: Booking }) {
             </div>
             {h.reason && (
               <p className="mt-2 text-xs text-dash-body italic bg-white/80 rounded-lg p-2 border border-dash-border-soft">
-                "{h.reason}"
+                &ldquo;{h.reason}&rdquo;
               </p>
             )}
           </div>
@@ -562,7 +561,7 @@ export default function BookingDetailPage() {
       day: "numeric",
       year: "numeric",
     });
-  }, [booking?.created_at]);
+  }, [booking]);
 
   return (
     <ModuleWrapper title="Booking Detail" requiredPermission="bookings.view">

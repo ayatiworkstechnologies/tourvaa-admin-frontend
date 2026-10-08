@@ -8,15 +8,20 @@ import { spawnSync } from "child_process";
 import { fileURLToPath } from "url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const backendRoot = resolve(root, "../tourvaa-admin-backend");
+const backendCandidates = [
+  process.env.TOURVAA_BACKEND_ROOT,
+  resolve(root, "../backend"),
+  resolve(root, "../tourvaa-admin-backend"),
+].filter(Boolean);
+const backendRoot = backendCandidates.find((candidate) => existsSync(candidate));
 
-if (!existsSync(backendRoot)) {
+if (!backendRoot) {
   console.log("\n=== Frontend / Backend API Contract ===\n");
   if (process.env.CI) {
-    console.log("  skipped: sibling ../tourvaa-admin-backend checkout not found (expected in single-repo CI)");
+    console.log("  skipped: backend checkout not found (expected in single-repo CI)");
     process.exit(0);
   }
-  console.error("  failed: sibling ../tourvaa-admin-backend checkout not found");
+  console.error("  failed: backend checkout not found; set TOURVAA_BACKEND_ROOT when it is not a sibling directory");
   process.exit(1);
 }
 
@@ -31,7 +36,7 @@ const python = process.env.TOURVAA_TEST_PYTHON || [
 ].map((path) => resolve(backendRoot, path)).find(existsSync) || "python";
 const registryResult = spawnSync(python, ["-c", registryScript], { cwd: backendRoot, encoding: "utf8" });
 if (registryResult.status !== 0) {
-  console.error(registryResult.stderr || "Could not load the FastAPI route registry");
+  console.error(registryResult.stderr || registryResult.error?.message || "Could not load the FastAPI route registry");
   process.exit(1);
 }
 const registry = JSON.parse(registryResult.stdout.trim().split(/\r?\n/).at(-1));

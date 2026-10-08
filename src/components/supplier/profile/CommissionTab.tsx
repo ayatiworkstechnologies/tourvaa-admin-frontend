@@ -13,8 +13,8 @@ type Profile = {
 export default function CommissionTab() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [requestedRate, setRequestedRate] = useState("");
-  const [requestMessage, setRequestMessage] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [requestMessage] = useState("");
+  const [saving] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

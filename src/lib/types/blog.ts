@@ -106,7 +106,7 @@ export function extractFaqsFromContent(rawContent: string = ""): {
   }
 
   // Remove FAQ HTML blocks from content
-  let clean = contentWithoutMarker
+  const clean = contentWithoutMarker
     .replace(/<details[^>]*>[\s\S]*?<\/details>/gi, "")
     .replace(/<div class="[^"]*space-y-4[^"]*">[\s\S]*?<h[234][^>]*>Frequently Asked Questions<\/h[234]>[\s\S]*?<\/div>\s*<\/div>/gi, "")
     .replace(/<h[234][^>]*>Frequently Asked Questions<\/h[234]>/gi, "")

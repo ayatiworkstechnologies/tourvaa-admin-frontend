@@ -12,7 +12,6 @@ import {
   LuHeadphones as Headphones,
   LuLock as Lock,
   LuLogOut as LogOut,
-  LuMailCheck as MailCheck,
   LuCompass as MapPinned,
   LuMessageSquare as MessageSquare,
   LuPackageCheck as PackageCheck,

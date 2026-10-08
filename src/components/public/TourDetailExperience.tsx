@@ -830,7 +830,7 @@ export default function TourDetailExperience({
   const [priceQuote, setPriceQuote] = useState<PublicPriceQuote | null>(null);
   const [isQuoting, setIsQuoting] = useState<boolean>(false);
   const quoteRequestIdRef = useRef(0);
-  const [selectedEnhancementIds, setSelectedEnhancementIds] = useState<string[]>([]);
+  const [selectedEnhancementIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!tour.id || !selectedDepartureIso) {

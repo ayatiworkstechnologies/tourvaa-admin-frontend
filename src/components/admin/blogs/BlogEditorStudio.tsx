@@ -6,20 +6,16 @@ import { useRouter } from "next/navigation";
 import {
   LuArrowLeft as ArrowLeft,
   LuCalendar as Calendar,
-  LuCheck as Check,
   LuCircleHelp as CircleHelp,
   LuClock as Clock,
   LuExternalLink as ExternalLink,
   LuEye as Eye,
-  LuGlobe as Globe,
-  LuImage as ImageIcon,
   LuLock as Lock,
   LuLockOpen as Unlock,
   LuPlus as Plus,
   LuRefreshCw as RefreshCw,
   LuSave as Save,
   LuSend as Send,
-  LuSparkles as Sparkles,
   LuTag as Tag,
   LuTrash2 as Trash2,
   LuUser as User,
@@ -28,7 +24,6 @@ import {
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 import BlogContentEditor from "./BlogContentEditor";
 import {
-  BlogFaqItem,
   BlogFormData,
   BlogItem,
   calculateReadingTime,
@@ -77,6 +72,11 @@ export default function BlogEditorStudio({
     return DEFAULT_BLOG_FORM;
   });
 
+  const [saving, setSaving] = useState(false);
+  const [slugLocked, setSlugLocked] = useState(Boolean(initialBlog?.slug));
+  const [tagInput, setTagInput] = useState("");
+  const [showPublicPreview, setShowPublicPreview] = useState(false);
+
   useEffect(() => {
     if (initialBlog) {
       const extracted = extractFaqsFromContent(initialBlog.content || "");
@@ -101,11 +101,6 @@ export default function BlogEditorStudio({
       }
     }
   }, [initialBlog]);
-
-  const [saving, setSaving] = useState(false);
-  const [slugLocked, setSlugLocked] = useState(Boolean(initialBlog?.slug));
-  const [tagInput, setTagInput] = useState("");
-  const [showPublicPreview, setShowPublicPreview] = useState(false);
 
   // Structured Plain-Text FAQ Inputs (No HTML required!)
   const [newFaqQuestion, setNewFaqQuestion] = useState("");

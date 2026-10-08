@@ -51,7 +51,6 @@ check("homepage fallbacks use bundled images", homepageSections.includes('"/imag
 const publicLayout = read("src/components/public/PublicLayout.tsx");
 const publicSettings = read("src/providers/PublicSettingsProvider.tsx");
 const publicFooter = read("src/components/public/PublicFooter.tsx");
-const portalPublicFooter = read("src/components/public/portal/PortalPublicFooter.tsx");
 const agentPortalLayout = read("src/app/agent-portal/layout.tsx");
 const supplierPortalLayout = read("src/app/supplier-portal/layout.tsx");
 const partnerPortalFooter = read("src/components/public/portal/PartnerPortalFooter.tsx");

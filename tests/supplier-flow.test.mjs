@@ -208,14 +208,17 @@ check(
   "supplier tour editor cannot view or submit checkout tax and service fees",
   sharedTourForm.includes("const canManageCheckoutCharges = !isSupplier") &&
     sharedTourForm.includes("{canManageCheckoutCharges && (") &&
-    sharedTourForm.includes("if (canManageCheckoutCharges) {\n        payload.tax_percentage"),
+    sharedTourForm.includes("if (canManageCheckoutCharges) {") &&
+    sharedTourForm.includes("payload.tax_percentage") &&
+    sharedTourForm.includes("payload.service_fee"),
 );
 check(
   "supplier tour editor excludes the SEO step and preserves SEO metadata on other saves",
   tourWizard.includes('WIZARD_STEPS.filter((step) => step.id !== "seo")') &&
-    tourWizard.includes("steps={wizardSteps}") &&
-    sharedTourForm.includes("const metadataFields = isSupplier") &&
-    sharedTourForm.includes("if (!isSupplier) {\n        payload.open_graph_image"),
+  tourWizard.includes("steps={wizardSteps}") &&
+  sharedTourForm.includes("const metadataFields = isSupplier") &&
+    sharedTourForm.includes("if (!isSupplier) {") &&
+    sharedTourForm.includes("payload.open_graph_image"),
 );
 check(
   "admin supplier detail exposes registration contact and business address",

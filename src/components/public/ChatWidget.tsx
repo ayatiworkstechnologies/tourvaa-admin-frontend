@@ -7,7 +7,6 @@ import {
   LuCircleCheckBig as CheckCircle2,
   LuClock as Clock,
   LuCompass as Compass,
-  LuCreditCard as CreditCard,
   LuMapPinned as MapPinned,
   LuLoaderCircle as Loader2,
   LuMessageSquare as MessageSquare,
