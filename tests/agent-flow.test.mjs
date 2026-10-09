@@ -94,7 +94,7 @@ const paymentModal = read("src/components/bookings/BookingPaymentModal.tsx");
 check("agent payment has a usable non-production fallback when live gateways are absent", paymentModal.includes("Complete test payment") && paymentModal.includes("gateways?.test_mode_available && !gateways.stripe && !gateways.paypal"));
 check("payment method loading failures are visible and retryable", paymentModal.includes("Payment methods could not be loaded.") && paymentModal.includes("Retry payment methods") && paymentModal.includes("loadGateways"));
 check("unpaid gateway returns show payment-required copy and can be removed only from My Bookings", detail.includes("Payment Required") && detail.includes("hide-from-agent") && detail.includes("Remove from Bookings") && detail.includes("canRemoveUnpaidBooking") && detail.includes("has_abandoned_gateway_payment === true"));
-const bookingService = read("../backend/app/services/bookings.py");
+const bookingService = read("../tourvaa-admin-backend/app/services/bookings.py");
 check(
   "provisional unpaid bookings stay agent-visible but remain hidden from operational portals",
   bookingService.includes('if role != "agent":') &&

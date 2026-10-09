@@ -57,7 +57,7 @@ check("dashboard retains date and status filtering", dashboard.includes("<DatePi
 check("dashboard provides loading and filtered empty states", dashboard.includes("BookingSkeleton") && dashboard.includes("No bookings match these filters"));
 
 const bookingDetail = read("src/app/supplier/bookings/[id]/page.tsx");
-const bookingService = read("../backend/app/services/bookings.py");
+const bookingService = read("../tourvaa-admin-backend/app/services/bookings.py");
 check("supplier can accept pending supplier requests without agent settlement details", bookingDetail.includes('v === "pending_supplier_acceptance"') && bookingDetail.includes("Accept Booking") && bookingDetail.includes("Decline") && !bookingDetail.includes("paymentReady"));
 check(
   "supplier booking detail masks agent reservation payment state before rendering actions",
@@ -240,8 +240,8 @@ check(
   tourPricing.includes("Adult (each)") && tourPricing.includes("Child (each)"),
 );
 const tourForm = read("src/components/cms/TourFormPage.tsx");
-const tourService = read("../backend/app/services/tours.py");
-const cmsService = read("../backend/app/services/cms.py");
+const tourService = read("../tourvaa-admin-backend/app/services/tours.py");
+const cmsService = read("../tourvaa-admin-backend/app/services/cms.py");
 check(
   "supplier operating currency is authoritative for tours and pricing slabs",
   cmsService.includes('payload["currency"] = supplier.currency.strip().upper()') &&
