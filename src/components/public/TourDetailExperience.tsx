@@ -949,7 +949,7 @@ export default function TourDetailExperience({
   // /tours/{id}/deposit-options -> tour_availability._deposit_window): a
   // deposit is only offered when booking more than X weeks before the
   // Minimum Advance cutoff. Customers get the tour's deposit terms ("Secure
-  // with a Deposit"); agents get the Reserve Now percentage.
+  // with a Deposit"); agents use Reserve Now, Pay Later instead.
   const [depositOptions, setDepositOptions] = useState<{
     customer: { eligible: boolean; due_date: string | null; deposit_type: "percentage" | "fixed" | null; deposit_percentage: number | null; booking_deposit: number | null };
     agent: { eligible: boolean; due_date: string | null; deposit_percentage: number };
@@ -970,11 +970,7 @@ export default function TourDetailExperience({
 
   const depositOffer = (() => {
     if (!depositOptions || totalAmount <= 0) return null;
-    if (agentBooking) {
-      const { eligible, due_date, deposit_percentage } = depositOptions.agent;
-      if (!eligible) return null;
-      return { percent: deposit_percentage, amount: Math.round((totalAmount * deposit_percentage) / 100), dueDate: due_date };
-    }
+    if (agentBooking) return null;
     const c = depositOptions.customer;
     if (!c.eligible) return null;
     if (c.deposit_type === "percentage" && c.deposit_percentage) {
@@ -988,8 +984,9 @@ export default function TourDetailExperience({
   const depositPercent = depositOffer?.percent ?? null;
   const depositDue = depositOffer?.amount ?? null;
   const agentReserveEligible = Boolean(
-    agentBooking && depositOptions?.agent.eligible && depositDue != null,
+    agentBooking && depositOptions?.agent.eligible,
   );
+  const agentReserveDueDate = agentBooking ? depositOptions?.agent.due_date ?? null : null;
 
   // Highlights: Dynamic only
   const highlightsList = useMemo(() => {
@@ -1035,9 +1032,6 @@ export default function TourDetailExperience({
   );
 
   // Itineraries: 100% Dynamic
-  const [itineraryMode, setItineraryMode] = useState<"detailed" | "overview">(
-    "overview",
-  );
   const [openDays, setOpenDays] = useState<Record<number, boolean>>({
     1: true,
   });
@@ -1681,11 +1675,19 @@ export default function TourDetailExperience({
                     </span>
                   </span>
                 )}
-                {depositDue != null && (
+                {agentBooking && agentReserveEligible ? (
                   <span className="flex items-center gap-1.5">
                     <Check size={14} className="text-emerald-400 stroke-[3]" />
                     <span>
-                      <b>{agentBooking ? "Reserve Now:" : "Secure with a Deposit:"}</b>{" "}
+                      <b>Reserve Now, Pay Later:</b> Full payment is due
+                      {agentReserveDueDate ? ` by ${new Date(`${agentReserveDueDate}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.` : " before the booking cutoff."}
+                    </span>
+                  </span>
+                ) : depositDue != null && (
+                  <span className="flex items-center gap-1.5">
+                    <Check size={14} className="text-emerald-400 stroke-[3]" />
+                    <span>
+                      <b>Secure with a Deposit:</b>{" "}
                       {depositPercent != null ? `${depositPercent}%` : ""} (
                       {format(depositDue, tourCurrency)})
                     </span>
@@ -2122,30 +2124,6 @@ export default function TourDetailExperience({
                       {allDaysExpanded ? "Collapse All" : "Expand All"}
                     </button>
 
-                    <div className="flex items-center rounded-lg border border-slate-200 p-0.5 text-xs font-semibold">
-                      <button
-                        type="button"
-                        onClick={() => setItineraryMode("detailed")}
-                        className={`rounded-md px-3 py-1 transition cursor-pointer ${
-                          itineraryMode === "detailed"
-                            ? "bg-pub-primary text-white"
-                            : "text-slate-600 hover:text-slate-900"
-                        }`}
-                      >
-                        Detailed
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setItineraryMode("overview")}
-                        className={`rounded-md px-3 py-1 transition cursor-pointer ${
-                          itineraryMode === "overview"
-                            ? "bg-pub-primary text-white"
-                            : "text-slate-600 hover:text-slate-900"
-                        }`}
-                      >
-                        Overview
-                      </button>
-                    </div>
                   </div>
                 </div>
 
@@ -2153,6 +2131,7 @@ export default function TourDetailExperience({
                 <div className="space-y-3 sm:space-y-4">
                   {itineraryList.map((day, dIdx) => {
                     const isOpen = Boolean(openDays[day.day]);
+                    const overviewText = day.summary || day.detail;
 
                     return (
                       <div
@@ -2190,8 +2169,8 @@ export default function TourDetailExperience({
 
                         {isOpen && (
                           <div className="border-t border-slate-100 bg-white p-5 space-y-4">
-                            {day.summary &&
-                              (day.summary.length > 160 ? (
+                            {overviewText &&
+                              (overviewText.length > 160 ? (
                                 // Long-form content with no separate short
                                 // highlight (e.g. no short_description was
                                 // set) -- the compact blue callout below is
@@ -2205,7 +2184,7 @@ export default function TourDetailExperience({
                                     Day Overview
                                   </p>
                                   <TextParagraphs
-                                    text={day.summary}
+                                    text={overviewText}
                                     className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
                                   />
                                 </div>
@@ -2216,23 +2195,11 @@ export default function TourDetailExperience({
                                       size={16}
                                       className="text-blue-600 shrink-0 mt-0.5"
                                     />
-                                    <span>{day.summary}</span>
+                                    <span>{overviewText}</span>
                                   </p>
                                 </div>
                               ))}
 
-                            {itineraryMode === "detailed" && day.detail && (
-                              <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs">
-                                <p className="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5 mb-2.5">
-                                  <MapIcon size={14} className="text-blue-500" />
-                                  Full Day Details
-                                </p>
-                                <TextParagraphs
-                                  text={day.detail}
-                                  className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
-                                />
-                              </div>
-                            )}
 
                             {/* Quick Facts Strip: Start, Timings, Transport (only if present) */}
                             {(day.startPoint ||
@@ -3184,7 +3151,7 @@ export default function TourDetailExperience({
                 </div>
 
                 {/* Deposit Option in Summary */}
-                {depositDue != null && depositDue > 0 && (
+                {!agentBooking && depositDue != null && depositDue > 0 && (
                   <div className="mt-3 rounded-lg bg-blue-50 border border-blue-200/60 p-3 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-blue-900 flex items-center gap-1">
@@ -3218,14 +3185,14 @@ export default function TourDetailExperience({
                         disabled={!agentReserveEligible || !selectedDeparture || !unitPrice || totalAmount <= 0}
                         className="w-full rounded-lg bg-pub-accent py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-[#cf4b24] disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
                       >
-                        Pay Deposit &amp; Reserve
+                        Reserve Now Pay Later
                       </button>
                       <p className="mt-2 text-center text-[10px] font-medium leading-4 text-blue-900/75">
                         {agentReserveEligible ? (
-                          <>Pay {depositPercent ?? 0}% ({format(depositDue ?? 0, pricingCurrency)}) today
-                          {depositOffer?.dueDate
-                            ? `; balance due ${new Date(`${depositOffer.dueDate}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.`
-                            : "."}</>
+                          <>Full payment to be made
+                          {agentReserveDueDate
+                            ? ` by ${new Date(`${agentReserveDueDate}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.`
+                            : " before the booking cutoff."}</>
                         ) : "Unavailable for this departure because it is inside the Reserve Now cutoff."}
                       </p>
                     </div>

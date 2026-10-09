@@ -40,8 +40,10 @@ check(
 );
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
 check(
-  "public itinerary opens in overview mode by default",
-  detailExperience.includes('useState<"detailed" | "overview">(') && detailExperience.includes('"overview",'),
+  "public itinerary has one overview presentation without a detailed-view switch",
+  !detailExperience.includes("setItineraryMode") &&
+    !detailExperience.includes("Full Day Details") &&
+    detailExperience.includes("const overviewText = day.summary || day.detail"),
 );
 check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
 check(

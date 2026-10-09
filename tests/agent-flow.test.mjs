@@ -146,6 +146,8 @@ check("agent dashboard prioritizes list and catalogue actions", ["Browse Tours",
 check("agent catalogue exposes reserve and full-payment actions", tours.includes("AgentSection") && tours.includes("Reserve Now") && tours.includes("Pay in Full Today") && tours.includes("agent_action=reserve") && tours.includes("agent_action=full"));
 check("agent booking action is preserved into settlement", publicBooking.includes('searchParams.get("agent_action")') && publicBooking.includes('"pay_later"') && publicBooking.includes('payment_type: "full"'));
 check("agent Reserve Now is a no-deposit invoice flow", publicBooking.includes("Reserve your booking now with no deposit") && !publicBooking.includes("agent_reserve_deposit") && !publicBooking.includes("agentReserveSplit"));
+const tourDetail = read("src/components/public/TourDetailExperience.tsx");
+check("agent tour-detail Reserve Now never charges a deposit", tourDetail.includes("if (agentBooking) return null") && tourDetail.includes("Reserve Now Pay Later") && tourDetail.includes("Full payment to be made") && tourDetail.includes("!agentBooking && depositDue != null"));
 check("agent booking creation uses the shared public booking workflow", publicBooking.includes("export default function DynamicTourBookingPage") && publicBooking.includes("AgentCustomerSelector"));
 const agentUi = [...agentInnerPages, layout, agentPage].join("\n");
 check("agent portal uses the calm blue theme", portalTheme.includes('"--color-dash-brand": "#2563EB"') && layout.includes("portalThemeStyles.agent"));
