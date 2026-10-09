@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { LuReceiptText as FileText, LuDownload as Download, LuLoaderCircle as Loader2 } from "react-icons/lu";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
-import { Invoice, getInvoices, downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
+import { Invoice, getSupplierInvoices, downloadSupplierInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import { useCurrency } from "@/hooks/useCurrency";
 
 export default function SupplierInvoicesPage() {
@@ -17,7 +17,7 @@ export default function SupplierInvoicesPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await getInvoices({ limit: 50 });
+      const res = await getSupplierInvoices({ limit: 50 });
       setInvoices(res.items ?? res.data ?? []);
     } catch {
       setError("Could not load invoices.");
@@ -31,7 +31,7 @@ export default function SupplierInvoicesPage() {
   async function handleDownload(invoice: Invoice) {
     setDownloadingId(invoice.id);
     try {
-      await downloadInvoicePdf(invoice.id, `${invoice.invoice_number}.pdf`);
+      await downloadSupplierInvoicePdf(invoice.id, `${invoice.invoice_number}.pdf`);
     } catch (downloadError) {
       setError(invoiceActionError(downloadError, "Could not download the invoice PDF."));
     } finally {

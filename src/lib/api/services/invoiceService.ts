@@ -80,6 +80,15 @@ export async function regenerateInvoicePdf(invoiceId: number | string) {
   return response.data.data;
 }
 
+/** Supplier portal invoices are deliberately served through a scoped route;
+ * suppliers must not receive the general/admin invoice permission. */
+export async function getSupplierInvoices(filters: InvoiceFilters = {}) {
+  const response = await api.get<PaginatedInvoices & { status: string }>("/supplier/invoices", {
+    params: filters,
+  });
+  return response.data;
+}
+
 export function invoiceActionError(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) return getApiErrorMessage(error) || fallback;
   if (error instanceof Error && error.message) return error.message;
@@ -125,6 +134,22 @@ export async function downloadInvoicePdf(invoiceId: number | string, filename?: 
   link.click();
   link.remove();
   // Revoking synchronously can cancel downloads in Safari/WebKit.
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 1_000);
+}
+
+export async function downloadSupplierInvoicePdf(invoiceId: number | string, filename?: string) {
+  const endpoint = `/supplier/invoices/${invoiceId}/download`;
+  const response = await api.get(endpoint, { responseType: "blob" });
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: "application/pdf" });
+  const signature = new TextDecoder("ascii").decode((await blob.slice(0, 5).arrayBuffer()));
+  if (signature !== "%PDF-") throw new Error("The server did not return a valid invoice PDF.");
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename || `invoice-${invoiceId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
   window.setTimeout(() => window.URL.revokeObjectURL(url), 1_000);
 }
 

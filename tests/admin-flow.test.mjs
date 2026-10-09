@@ -173,7 +173,11 @@ check("payment operations use capture, void, refund, and status contracts", ["/c
 const invoices = read("src/lib/api/services/invoiceService.ts");
 check("invoice downloads carry authorization through blob requests", invoices.includes('responseType: "blob"'));
 check("invoice downloads validate real PDFs and delay URL cleanup", invoices.includes('signature !== "%PDF-"') && invoices.includes("window.setTimeout") && invoices.includes("link.remove()"));
-check("invoice downloads are shared by every portal", ["src/app/admin/invoices/page.tsx", "src/app/customer/invoices/page.tsx", "src/app/supplier/invoices/page.tsx", "src/app/agent/invoices/page.tsx", "src/app/agent/bookings/[id]/page.tsx"].every((path) => read(path).includes("downloadInvoicePdf")));
+check(
+  "invoice downloads use an authenticated portal-scoped helper",
+  ["src/app/admin/invoices/page.tsx", "src/app/customer/invoices/page.tsx", "src/app/agent/invoices/page.tsx", "src/app/agent/bookings/[id]/page.tsx"].every((path) => read(path).includes("downloadInvoicePdf")) &&
+    read("src/app/supplier/invoices/page.tsx").includes("downloadSupplierInvoicePdf"),
+);
 
 const dashboard = read("src/app/admin/dashboard/page.tsx");
 // The dashboard keeps an inline approve/reject action for suppliers, but

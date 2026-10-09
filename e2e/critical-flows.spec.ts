@@ -13,10 +13,10 @@ type RoleCase = {
 };
 
 const roles: RoleCase[] = [
-  { name: "admin", emailEnv: "E2E_ADMIN_EMAIL", passwordEnv: "E2E_ADMIN_PASSWORD", loginPath: "/admin/login", emailPlaceholder: "Enter email address", passwordPlaceholder: "Password", signInLabel: /^login$/i, dashboard: "/admin/dashboard", bookings: "/admin/bookings" },
+  { name: "admin", emailEnv: "E2E_ADMIN_EMAIL", passwordEnv: "E2E_ADMIN_PASSWORD", loginPath: "/admin/login", emailPlaceholder: "name@company.com", passwordPlaceholder: "Enter your password", signInLabel: /^login$/i, dashboard: "/admin/dashboard", bookings: "/admin/bookings" },
   { name: "customer", emailEnv: "E2E_CUSTOMER_EMAIL", passwordEnv: "E2E_CUSTOMER_PASSWORD", loginPath: "/login", emailPlaceholder: "name@example.com or mobile number", passwordPlaceholder: "Enter your password", signInLabel: /sign in as traveller/i, dashboard: "/customer/dashboard", bookings: "/customer/bookings" },
-  { name: "supplier", emailEnv: "E2E_SUPPLIER_EMAIL", passwordEnv: "E2E_SUPPLIER_PASSWORD", loginPath: "/supplier-portal/login", emailPlaceholder: "you@example.com or +919876543210", passwordPlaceholder: "Your password", signInLabel: /sign in as supplier/i, dashboard: "/supplier/dashboard", bookings: "/supplier/bookings" },
-  { name: "agent", emailEnv: "E2E_AGENT_EMAIL", passwordEnv: "E2E_AGENT_PASSWORD", loginPath: "/agent-portal/login", emailPlaceholder: "you@example.com or +919876543210", passwordPlaceholder: "Your password", signInLabel: /sign in as agent/i, dashboard: "/agent/dashboard", bookings: "/agent/bookings" },
+  { name: "supplier", emailEnv: "E2E_SUPPLIER_EMAIL", passwordEnv: "E2E_SUPPLIER_PASSWORD", loginPath: "/supplier-portal/login", emailPlaceholder: "name@example.com or mobile number", passwordPlaceholder: "Enter your password", signInLabel: /sign in as supplier/i, dashboard: "/supplier/dashboard", bookings: "/supplier/bookings" },
+  { name: "agent", emailEnv: "E2E_AGENT_EMAIL", passwordEnv: "E2E_AGENT_PASSWORD", loginPath: "/agent-portal/login", emailPlaceholder: "name@example.com or mobile number", passwordPlaceholder: "Enter your password", signInLabel: /sign in as agent/i, dashboard: "/agent/dashboard", bookings: "/agent/bookings" },
 ];
 
 async function login(page: Page, role: RoleCase) {
