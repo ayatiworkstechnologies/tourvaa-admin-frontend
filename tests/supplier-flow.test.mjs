@@ -57,7 +57,7 @@ check("dashboard retains date and status filtering", dashboard.includes("<DatePi
 check("dashboard provides loading and filtered empty states", dashboard.includes("BookingSkeleton") && dashboard.includes("No bookings match these filters"));
 
 const bookingDetail = read("src/app/supplier/bookings/[id]/page.tsx");
-const bookingService = read("../tourvaa-admin-backend/app/services/bookings.py");
+const bookingService = read("../backend/app/services/bookings.py");
 check("supplier can accept pending supplier requests without agent settlement details", bookingDetail.includes('v === "pending_supplier_acceptance"') && bookingDetail.includes("Accept Booking") && bookingDetail.includes("Decline") && !bookingDetail.includes("paymentReady"));
 check(
   "supplier booking detail masks agent reservation payment state before rendering actions",
@@ -97,7 +97,7 @@ check(
 const contactPage = read("src/app/(public)/contact/page.tsx");
 check(
   "supplier desk opens supplier-specific onboarding questions instead of booking questions",
-  contactPage.includes('get("context") === "supplier"') &&
+  contactPage.includes('context === "supplier"') &&
     contactPage.includes("Do you already have a supplier account?") &&
     contactPage.includes("Supplier Verification Documents") &&
     contactPage.includes("Send Message to Supplier Desk"),
@@ -232,8 +232,26 @@ check(
   tourPricing.includes("You will receive (child)"),
 );
 check(
-  "supplier pricing displays and edits USD-normalized slabs in the operating currency",
+  "supplier pricing displays and edits legacy slabs in the operating currency",
   tourPricing.includes("useCurrency") && tourPricing.includes("convert(slab.adult_price, slab.currency)") && tourPricing.includes("outputCode(slab.currency || \"USD\")"),
+);
+check(
+  "pricing table identifies adult and child amounts as per-person values",
+  tourPricing.includes("Adult (each)") && tourPricing.includes("Child (each)"),
+);
+const tourForm = read("src/components/cms/TourFormPage.tsx");
+const tourService = read("../backend/app/services/tours.py");
+const cmsService = read("../backend/app/services/cms.py");
+check(
+  "supplier operating currency is authoritative for tours and pricing slabs",
+  cmsService.includes('payload["currency"] = supplier.currency.strip().upper()') &&
+    tourService.includes("_apply_tour_currency") &&
+    !tourService.includes("_normalize_pricing_to_usd"),
+);
+check(
+  "basic tour details displays legacy prices in the supplier operating currency",
+  tourForm.includes("isSupplier ? convert(n, onePaxSlab.currency) : n") &&
+    tourForm.includes("isSupplier ? outputCode(onePaxSlab.currency) : onePaxSlab.currency"),
 );
 check("TourVaa storefront discounts reduce the admin profit preview", tourPricing.includes("markupFinancials") && tourPricing.includes("netProfit") && tourPricing.includes("deducted from TourVaa profit"));
 const tourDiscounts = read("src/components/tours/TourDiscountsTab.tsx");

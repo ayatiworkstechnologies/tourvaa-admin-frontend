@@ -5,6 +5,7 @@ export type ContactEnquiry = {
   name: string;
   email: string;
   phone: string | null;
+  audience: "public" | "supplier" | "agent";
   enquiry_type: string;
   subject: string;
   message: string;
@@ -34,8 +35,10 @@ async function list<T>(path: string, page: number, limit: number, search: string
   return response.data.data;
 }
 
-export function listContactEnquiries(page: number, limit: number, search: string) {
-  return list<ContactEnquiry>("/public-leads/contact-enquiries", page, limit, search);
+export function listContactEnquiries(page: number, limit: number, search: string, audience = "all") {
+  return api.get<{ data: PublicLeadPage<ContactEnquiry> }>("/public-leads/contact-enquiries", {
+    params: { page, limit, search: search.trim(), audience },
+  }).then((response) => response.data.data);
 }
 
 export function listNewsletterSubscribers(page: number, limit: number, search: string) {

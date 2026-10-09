@@ -132,9 +132,9 @@ export default function TourPricingTab({
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const isSupplier = role === "supplier";
-  // TourPricing is normalized to USD for accounting by the API. The supplier
-  // portal must nevertheless read and edit it in the supplier's operating
-  // currency, which AuthProvider pins as the portal display currency.
+  // Supplier tours and every related price use the supplier's operating
+  // currency. useCurrency remains useful for legacy slabs saved before this
+  // rule was enforced, which are converted once when the supplier edits them.
   const { code: portalCurrency, convert, outputCode } = useCurrency();
   const fmt = (value: number | null | undefined, currency: string) => {
     const converted = convert(value, currency);
@@ -470,12 +470,12 @@ export default function TourPricingTab({
               <th rowSpan={2} className="px-4 py-3 text-right align-middle">Actions</th>
             </tr>
             <tr className="border-b border-dash-border-soft bg-dash-bg/40 text-[10px] font-bold uppercase tracking-wider">
-              <th className="border-l border-dash-border-soft px-4 py-1.5 text-blue-600">Adult</th>
-              <th className="border-r border-dash-border-soft px-4 py-1.5 text-violet-600">Child</th>
-              <th className="border-l border-dash-border-soft px-4 py-1.5 text-dash-brand">Adult</th>
-              <th className="border-r border-dash-border-soft px-4 py-1.5 text-dash-brand">Child</th>
-              <th className="border-l border-dash-border-soft px-4 py-1.5 text-emerald-700">Adult</th>
-              <th className="border-r border-dash-border-soft px-4 py-1.5 text-emerald-600">Child</th>
+              <th className="border-l border-dash-border-soft px-4 py-1.5 text-blue-600">Adult (each)</th>
+              <th className="border-r border-dash-border-soft px-4 py-1.5 text-violet-600">Child (each)</th>
+              <th className="border-l border-dash-border-soft px-4 py-1.5 text-dash-brand">Adult (each)</th>
+              <th className="border-r border-dash-border-soft px-4 py-1.5 text-dash-brand">Child (each)</th>
+              <th className="border-l border-dash-border-soft px-4 py-1.5 text-emerald-700">Adult (each)</th>
+              <th className="border-r border-dash-border-soft px-4 py-1.5 text-emerald-600">Child (each)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-dash-border-soft/70 bg-white">
@@ -688,10 +688,10 @@ export default function TourPricingTab({
                   <th rowSpan={2} className="px-4 py-3 text-right align-middle">Actions</th>
                 </tr>
                 <tr className="border-b border-dash-border-soft bg-dash-bg/40 text-[10px] font-bold uppercase tracking-wider">
-                  <th className="border-l border-dash-border-soft px-4 py-1.5 text-blue-600">Adult</th>
-                  <th className="border-r border-dash-border-soft px-4 py-1.5 text-violet-600">Child</th>
-                  <th className="border-l border-dash-border-soft px-4 py-1.5 text-emerald-700">Adult</th>
-                  <th className="border-r border-dash-border-soft px-4 py-1.5 text-emerald-600">Child</th>
+                  <th className="border-l border-dash-border-soft px-4 py-1.5 text-blue-600">Adult (each)</th>
+                  <th className="border-r border-dash-border-soft px-4 py-1.5 text-violet-600">Child (each)</th>
+                  <th className="border-l border-dash-border-soft px-4 py-1.5 text-emerald-700">Adult (each)</th>
+                  <th className="border-r border-dash-border-soft px-4 py-1.5 text-emerald-600">Child (each)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-dash-border-soft/70 bg-white">

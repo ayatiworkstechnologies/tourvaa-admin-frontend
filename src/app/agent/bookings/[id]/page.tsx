@@ -90,6 +90,7 @@ type Booking = {
     still_available: boolean;
   } | null;
   cancellation_eligibility?: { is_free_cancellation_eligible: boolean; refund_percentage: string };
+  has_abandoned_gateway_payment?: boolean;
 };
 
 type Invoice = {
@@ -340,7 +341,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const canRequestCancellation = Number(booking.amount_paid ?? 0) > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
   const canRemoveUnpaidBooking = Number(booking.amount_paid ?? 0) <= 0
     && booking.booking_status === "pending_payment"
-    && ["unpaid", "pending", "failed"].includes(booking.payment_status);
+    && ["unpaid", "pending", "failed"].includes(booking.payment_status)
+    && booking.has_abandoned_gateway_payment === true;
   const freeCancellationEligible = booking.cancellation_eligibility?.is_free_cancellation_eligible === true;
 
   return (

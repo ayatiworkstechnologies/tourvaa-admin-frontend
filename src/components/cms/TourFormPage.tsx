@@ -30,6 +30,7 @@ import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import api from "@/lib/api/client";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type ActiveDiscount = {
   discount_percentage: number;
@@ -794,6 +795,7 @@ export default function TourFormPage({
   formId,
 }: Props) {
   const toast = useToast();
+  const { convert, outputCode } = useCurrency();
   const { confirm, dialog } = useConfirm();
   const showBasic = sections.includes("basic-core");
   const showSettings = sections.includes("settings");
@@ -1436,7 +1438,11 @@ export default function TourFormPage({
               const discountPercent = isSupplier
                 ? supplierDiscountPercent
                 : (tourvaaDiscountPercent || supplierDiscountPercent);
-              const money = (n: number) => `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${onePaxSlab.currency}`;
+              const money = (n: number) => {
+                const amount = isSupplier ? convert(n, onePaxSlab.currency) : n;
+                const currency = isSupplier ? outputCode(onePaxSlab.currency) : onePaxSlab.currency;
+                return `${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+              };
               return (
                 <div className="sm:col-span-2">
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">

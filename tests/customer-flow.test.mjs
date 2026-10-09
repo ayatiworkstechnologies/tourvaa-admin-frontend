@@ -251,6 +251,13 @@ check("wishlist books tours directly", wishlist.includes("href: w.href || `/book
 // the customer-portal header/sidebar link to /customer/wishlist for signed-in
 // customers browsing inside their portal - both render the same store.
 check("public header links to the public wishlist page", publicHeader.includes('href="/wishlist"'));
+check(
+  "public header gives admin roles only a direct admin entry",
+  publicHeader.includes('["admin", "super-admin", "sub-admin"]') &&
+    publicHeader.includes('isAdminRole ? "/admin" : dashboardPath') &&
+    publicHeader.includes("!isAdminRole && bookingsPath") &&
+    publicHeader.includes("!isAdminRole && <Link"),
+);
 check("customer portal header links to the portal wishlist page", customerHeader.includes('"/customer/wishlist"'));
 check("wishlist is loaded from the authenticated user API when logged in", wishlistStore.includes('api.get<WishlistResponse>("/wishlist")'));
 check("wishlist mutations persist to the user API when logged in", wishlistStore.includes('api.post(`/wishlist/${item.id}`)') && wishlistStore.includes('api.delete(`/wishlist/${item.id}`)'));

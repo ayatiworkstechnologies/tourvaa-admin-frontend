@@ -50,6 +50,7 @@ export default function BookingPaymentModal({
   );
   const [gateways, setGateways] = useState<GatewayStatus>(null);
   const [gatewayLoading, setGatewayLoading] = useState(true);
+  const [gatewayStatusError, setGatewayStatusError] = useState(false);
   const [loading, setLoading] = useState<"stripe" | "paypal" | "test" | null>(null);
   const [error, setError] = useState("");
   const idempotencyKeys = useRef<Record<string, string>>({});
@@ -65,11 +66,24 @@ export default function BookingPaymentModal({
     return idempotencyKeys.current[key];
   }
 
+  async function loadGateways() {
+    setGatewayLoading(true);
+    setGatewayStatusError(false);
+    try {
+      const response = await api.get("/payments/gateways/status");
+      setGateways(response.data?.data ?? { stripe: false, paypal: false, test_mode_available: false });
+    } catch {
+      // A failed availability probe is different from a disabled gateway.
+      // Surface a retry instead of making every payment button silently inert.
+      setGateways(null);
+      setGatewayStatusError(true);
+    } finally {
+      setGatewayLoading(false);
+    }
+  }
+
   useEffect(() => {
-    api.get("/payments/gateways/status")
-      .then((response) => setGateways(response.data?.data ?? { stripe: false, paypal: false, test_mode_available: false }))
-      .catch(() => setGateways({ stripe: false, paypal: false, test_mode_available: true }))
-      .finally(() => setGatewayLoading(false));
+    void loadGateways();
   }, []);
 
   function paymentError(error: unknown, fallback: string) {
@@ -169,26 +183,42 @@ export default function BookingPaymentModal({
           <span className="text-lg font-black">{currency} {paymentAmount.toLocaleString()}</span>
         </div>
 
-        {gatewayLoading ? <div className="flex justify-center py-8"><Loader2 className="animate-spin text-orange-600" /></div> : (
+        {gatewayLoading ? <div className="flex justify-center py-8"><Loader2 className="animate-spin text-orange-600" /></div> : gatewayStatusError ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
+            <p className="text-sm font-bold text-amber-900">Payment methods could not be loaded.</p>
+            <button type="button" onClick={() => void loadGateways()} className="mt-3 rounded-lg bg-amber-900 px-4 py-2 text-xs font-black text-white hover:bg-amber-800">
+              Retry payment methods
+            </button>
+          </div>
+        ) : (
           <div className="mt-4 space-y-3">
-            <button type="button" onClick={payWithStripe} disabled={Boolean(loading) || !gateways?.stripe} className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#635BFF] hover:bg-[#5249ea] px-4 py-3 text-sm font-black text-white shadow-sm transition-all disabled:opacity-40">
-              {loading === "stripe" ? <Loader2 size={17} className="animate-spin" /> : <CreditCard size={17} />}
-              <span>Pay with</span>
-              <span className="inline-flex rounded-md bg-white px-2 py-1 shadow-2xs">
-                <StripeWordmark className="h-4 w-auto" />
-              </span>
-            </button>
-            <button type="button" onClick={payWithPayPal} disabled={Boolean(loading) || !gateways?.paypal} className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] px-4 py-3 text-sm font-black text-white shadow-sm transition-all disabled:opacity-40">
-              {loading === "paypal" ? <Loader2 size={17} className="animate-spin" /> : null}
-              <span>Pay with</span>
-              <span className="inline-flex items-center rounded-md bg-white px-2 py-0.5 shadow-2xs">
-                <PayPalLogo className="h-3.5 w-auto" />
-              </span>
-            </button>
-            {false && gateways?.test_mode_available && (
-              <button type="button" onClick={payWithTestGateway} disabled={Boolean(loading)} className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 py-3 text-sm font-black text-amber-800 disabled:opacity-50">
-                {loading === "test" ? <Loader2 size={17} className="animate-spin" /> : null} Simulate test payment
+            {gateways?.stripe && (
+              <button type="button" onClick={payWithStripe} disabled={Boolean(loading)} className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#635BFF] hover:bg-[#5249ea] px-4 py-3 text-sm font-black text-white shadow-sm transition-all disabled:opacity-40">
+                {loading === "stripe" ? <Loader2 size={17} className="animate-spin" /> : <CreditCard size={17} />}
+                <span>Pay with</span>
+                <span className="inline-flex rounded-md bg-white px-2 py-1 shadow-2xs">
+                  <StripeWordmark className="h-4 w-auto" />
+                </span>
               </button>
+            )}
+            {gateways?.paypal && (
+              <button type="button" onClick={payWithPayPal} disabled={Boolean(loading)} className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] px-4 py-3 text-sm font-black text-white shadow-sm transition-all disabled:opacity-40">
+                {loading === "paypal" ? <Loader2 size={17} className="animate-spin" /> : null}
+                <span>Pay with</span>
+                <span className="inline-flex items-center rounded-md bg-white px-2 py-0.5 shadow-2xs">
+                  <PayPalLogo className="h-3.5 w-auto" />
+                </span>
+              </button>
+            )}
+            {gateways?.test_mode_available && !gateways.stripe && !gateways.paypal && (
+              <button type="button" onClick={payWithTestGateway} disabled={Boolean(loading)} className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 py-3 text-sm font-black text-amber-800 disabled:opacity-50">
+                {loading === "test" ? <Loader2 size={17} className="animate-spin" /> : <CreditCard size={17} />} Complete test payment
+              </button>
+            )}
+            {!gateways?.stripe && !gateways?.paypal && !gateways?.test_mode_available && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-center text-sm font-semibold text-rose-700">
+                Online payment is temporarily unavailable. Please contact Tourvaa Support.
+              </div>
             )}
           </div>
         )}

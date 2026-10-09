@@ -63,6 +63,7 @@ export default function PublicHeader() {
   const { wishlistCount, compareCount } = useTravelStore();
   const dashboardPath = getDashboardPath(dashboard?.user?.role?.slug ?? "");
   const roleSlug = dashboard?.user?.role?.slug ?? "";
+  const isAdminRole = ["admin", "super-admin", "sub-admin"].includes(roleSlug.toLowerCase());
   const profilePath =
     roleSlug === "customer"
       ? "/customer/profile"
@@ -239,7 +240,7 @@ export default function PublicHeader() {
           aria-label="Account and trip tools"
           className="hidden shrink-0 items-center gap-5 lg:flex lg:gap-7"
         >
-          <Link
+          {!isAdminRole && <Link
             href="/wishlist"
             className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-pub-primary transition-colors hover:text-pub-secondary"
           >
@@ -253,8 +254,8 @@ export default function PublicHeader() {
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}
-          </Link>
-          <Link
+          </Link>}
+          {!isAdminRole && <Link
             href="/compare"
             className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-pub-primary transition-colors hover:text-pub-secondary"
           >
@@ -268,7 +269,7 @@ export default function PublicHeader() {
                 {compareCount}
               </span>
             )}
-          </Link>
+          </Link>}
           <LanguageCurrencySelector showCountry />
           <div ref={profileRef} className="relative">
             <button
@@ -309,6 +310,7 @@ export default function PublicHeader() {
                   profilePath={profilePath}
                   bookingsPath={bookingsPath}
                   dashboardPath={dashboardPath}
+                  isAdminRole={isAdminRole}
                   wishlistCount={wishlistCount}
                   compareCount={compareCount}
                   onClose={() => setProfileOpen(false)}
@@ -343,22 +345,22 @@ export default function PublicHeader() {
       {open && (
         <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg lg:hidden">
           <HeaderTourSearch compact onSearch={() => setOpen(false)} />
-          <Link
+          {!isAdminRole && <Link
             href="/wishlist"
             onClick={() => setOpen(false)}
             className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"
           >
             <Heart size={15} />
             Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
-          </Link>
-          <Link
+          </Link>}
+          {!isAdminRole && <Link
             href="/compare"
             onClick={() => setOpen(false)}
             className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"
           >
             <Scale size={15} />
             Compare {compareCount > 0 && `(${compareCount})`}
-          </Link>
+          </Link>}
           <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
             {isLoggedIn ? "Your account" : "Account & partner portals"}
           </p>
@@ -385,14 +387,14 @@ export default function PublicHeader() {
                 </div>
 
                 <Link
-                  href={dashboardPath}
+                  href={isAdminRole ? "/admin" : dashboardPath}
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-3 rounded-xl bg-pub-secondary px-4 py-3 text-sm font-bold text-white shadow-xs"
                 >
                   <LayoutDashboard size={17} />
-                  Open My Dashboard
+                  {isAdminRole ? "Open Admin" : "Open My Dashboard"}
                 </Link>
-                {bookingsPath && (
+                {!isAdminRole && bookingsPath && (
                   <Link
                     href={bookingsPath}
                     onClick={() => setOpen(false)}
@@ -402,15 +404,15 @@ export default function PublicHeader() {
                     My Bookings
                   </Link>
                 )}
-                <Link
+                {!isAdminRole && <Link
                   href={profilePath}
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-3 rounded-xl border border-pub-secondary/20 px-4 py-3 text-sm font-bold text-slate-700"
                 >
                   <User size={17} className="text-pub-secondary" />
                   Account Settings
-                </Link>
-                <Link
+                </Link>}
+                {!isAdminRole && <Link
                   href="/help-centre"
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 text-sm font-bold text-slate-700"
@@ -419,7 +421,7 @@ export default function PublicHeader() {
                     <Headset size={15} />
                   </span>
                   Help Centre & FAQs
-                </Link>
+                </Link>}
                 <button
                   type="button"
                   onClick={() => {
@@ -704,6 +706,7 @@ function AuthenticatedProfileMenu({
   profilePath,
   bookingsPath,
   dashboardPath,
+  isAdminRole,
   wishlistCount,
   compareCount,
   onClose,
@@ -713,6 +716,7 @@ function AuthenticatedProfileMenu({
   profilePath: string;
   bookingsPath: string | null;
   dashboardPath: string;
+  isAdminRole: boolean;
   wishlistCount: number;
   compareCount: number;
   onClose: () => void;
@@ -755,7 +759,7 @@ function AuthenticatedProfileMenu({
       </div>
 
       {/* Quick Shortcuts: Wishlist & Compare */}
-      <div className="mt-2.5 grid grid-cols-2 gap-2">
+      {!isAdminRole && <div className="mt-2.5 grid grid-cols-2 gap-2">
         <Link
           role="menuitem"
           href="/wishlist"
@@ -784,13 +788,13 @@ function AuthenticatedProfileMenu({
             {compareCount}
           </span>
         </Link>
-      </div>
+      </div>}
 
       {/* Navigation Links */}
       <div className="mt-2.5 space-y-0.5 border-t border-slate-100 pt-2 text-xs font-semibold">
         <Link
           role="menuitem"
-          href={dashboardPath}
+          href={isAdminRole ? "/admin" : dashboardPath}
           onClick={onClose}
           className="group flex items-center justify-between rounded-xl px-3 py-2.5 text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
         >
@@ -800,10 +804,10 @@ function AuthenticatedProfileMenu({
             </span>
             <span>
               <b className="block text-xs font-bold text-slate-900">
-                My Dashboard
+                {isAdminRole ? "Admin Dashboard" : "My Dashboard"}
               </b>
               <span className="block text-[10px] text-slate-400 font-normal">
-                Overview & activity
+                {isAdminRole ? "Open administration" : "Overview & activity"}
               </span>
             </span>
           </span>
@@ -813,7 +817,7 @@ function AuthenticatedProfileMenu({
           />
         </Link>
 
-        {bookingsPath && (
+        {!isAdminRole && bookingsPath && (
           <Link
             role="menuitem"
             href={bookingsPath}
@@ -840,7 +844,7 @@ function AuthenticatedProfileMenu({
           </Link>
         )}
 
-        <Link
+        {!isAdminRole && <Link
           role="menuitem"
           href={profilePath}
           onClick={onClose}
@@ -863,9 +867,9 @@ function AuthenticatedProfileMenu({
             size={14}
             className="text-slate-300 group-hover:text-slate-600 transition"
           />
-        </Link>
+        </Link>}
 
-        <Link
+        {!isAdminRole && <Link
           role="menuitem"
           href="/help-centre"
           onClick={onClose}
@@ -888,7 +892,7 @@ function AuthenticatedProfileMenu({
             size={14}
             className="text-slate-300 group-hover:text-slate-600 transition"
           />
-        </Link>
+        </Link>}
       </div>
 
       {/* Sign Out Action */}

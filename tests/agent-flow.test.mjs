@@ -90,13 +90,22 @@ check("agent cancellation requires eligibility and confirmation", ["Request Canc
 check("agent cancellation warning is clear and does not duplicate support wording", detail.includes("Please contact Tourvaa Support for cancellation assistance or a travel-date change.") && !detail.includes("Help Desk for cancellation assistance"));
 check("agent can reopen payment for an unpaid booking", detail.includes("BookingPaymentModal") && detail.includes("Pay Now"));
 check("agent payment modal never offers a customer deposit option", detail.includes("allowPartialPayment={false}"));
-check("unpaid gateway returns show payment-required copy and can be removed only from My Bookings", detail.includes("Payment Required") && detail.includes("hide-from-agent") && detail.includes("Remove from Bookings") && detail.includes("canRemoveUnpaidBooking"));
-const bookingService = read("../tourvaa-admin-backend/app/services/bookings.py");
+const paymentModal = read("src/components/bookings/BookingPaymentModal.tsx");
+check("agent payment has a usable non-production fallback when live gateways are absent", paymentModal.includes("Complete test payment") && paymentModal.includes("gateways?.test_mode_available && !gateways.stripe && !gateways.paypal"));
+check("payment method loading failures are visible and retryable", paymentModal.includes("Payment methods could not be loaded.") && paymentModal.includes("Retry payment methods") && paymentModal.includes("loadGateways"));
+check("unpaid gateway returns show payment-required copy and can be removed only from My Bookings", detail.includes("Payment Required") && detail.includes("hide-from-agent") && detail.includes("Remove from Bookings") && detail.includes("canRemoveUnpaidBooking") && detail.includes("has_abandoned_gateway_payment === true"));
+const bookingService = read("../backend/app/services/bookings.py");
 check(
   "provisional unpaid bookings stay agent-visible but remain hidden from operational portals",
   bookingService.includes('if role != "agent":') &&
     bookingService.includes('Booking.payment_status.notin_(("unpaid", "pending", "failed"))') &&
     bookingService.includes("Booking.agent_hidden_at.is_(None)"),
+);
+check(
+  "remove-from-bookings eligibility requires an abandoned agent gateway checkout",
+  bookingService.includes('data["has_abandoned_gateway_payment"]') &&
+    bookingService.includes('Payment.payment_status == "abandoned"') &&
+    bookingService.includes('Payment.gateway.in_(("stripe", "paypal"))'),
 );
 check("agent booking handles Stripe and PayPal returns", detail.includes('/payments/stripe/confirm-return') && detail.includes('/payments/paypal/capture') && detail.includes('"/payments/abandon-pending"'));
 check("booking detail failures can be retried", detail.includes("setRefreshKey") && detail.includes("Retry"));

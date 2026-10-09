@@ -633,7 +633,7 @@ export default function AgentPortalLandingPage() {
             </p>
           </div>
           <Link
-            href="/contact"
+            href="/contact?context=agent#contact-form-section"
             className="inline-flex items-center justify-center shrink-0 rounded-xl bg-pub-primary hover:bg-pub-primary/90 text-white text-xs font-bold px-6 py-3 transition whitespace-nowrap"
           >
             Contact Agency Desk &rarr;

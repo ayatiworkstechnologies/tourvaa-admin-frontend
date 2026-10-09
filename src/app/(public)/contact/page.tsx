@@ -188,6 +188,7 @@ function useContactBlock<T extends Record<string, unknown>>(key: string, def: T)
 
 export default function ContactPage() {
   const [isSupplierInquiry, setIsSupplierInquiry] = useState(false);
+  const [isAgentInquiry, setIsAgentInquiry] = useState(false);
   const hero = useContactBlock("contact_page_hero", DEFAULT_HERO);
   const supportCardsBlock = useContactBlock<{ items?: SupportCardItem[] }>("contact_page_support_cards", {});
   const channels = useContactBlock("contact_page_channels", DEFAULT_CHANNELS);
@@ -240,14 +241,15 @@ export default function ContactPage() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    setIsSupplierInquiry(new URLSearchParams(window.location.search).get("context") === "supplier");
+    const context = new URLSearchParams(window.location.search).get("context");
+    setIsSupplierInquiry(context === "supplier");
+    setIsAgentInquiry(context === "agent");
   }, []);
 
   useEffect(() => {
-    if (isSupplierInquiry) {
-      setForm((current) => ({ ...current, reservation: "no", subject: "Supplier Registration & Onboarding" }));
-    }
-  }, [isSupplierInquiry]);
+    if (isSupplierInquiry) setForm((current) => ({ ...current, reservation: "no", subject: "Supplier Registration & Onboarding" }));
+    if (isAgentInquiry) setForm((current) => ({ ...current, reservation: "no", subject: "Agent Account Support" }));
+  }, [isAgentInquiry, isSupplierInquiry]);
 
   // Modal state
   const [showInquiryModal, setShowInquiryModal] = useState<boolean>(false);
@@ -275,9 +277,10 @@ export default function ContactPage() {
         name: form.name,
         email: form.email,
         phone: form.phone,
+        audience: isSupplierInquiry ? "supplier" : isAgentInquiry ? "agent" : "public",
         enquiry_type: form.subject || "General Inquiry",
         subject: form.subject || "General Inquiry",
-        message: `${isSupplierInquiry ? "Existing supplier account: " : "Reservation number: "}${form.reservation === "yes" ? "Yes" : "No"}\n\n${form.message}`,
+        message: `${isSupplierInquiry ? "Existing supplier account: " : isAgentInquiry ? "Existing agent account: " : "Reservation number: "}${form.reservation === "yes" ? "Yes" : "No"}\n\n${form.message}`,
       });
       setSent(true);
     } catch (err: unknown) {
@@ -567,7 +570,7 @@ export default function ContactPage() {
                         name: "",
                         phone: "",
                         email: "",
-                        subject: isSupplierInquiry ? "Supplier Registration & Onboarding" : "General Inquiry",
+                        subject: isSupplierInquiry ? "Supplier Registration & Onboarding" : isAgentInquiry ? "Agent Account Support" : "General Inquiry",
                         message: "",
                       });
                     }}
@@ -581,10 +584,10 @@ export default function ContactPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-2xl sm:text-3xl font-bold text-slate-950 font-heading">
-                        {isSupplierInquiry ? "Supplier Registration Support" : "Send Us a Message"}
+                        {isSupplierInquiry ? "Supplier Registration Support" : isAgentInquiry ? "Agent Support" : "Send Us a Message"}
                       </h3>
                       <p className="mt-1 text-xs sm:text-sm text-slate-500">
-                        {isSupplierInquiry ? "Tell us where you are in registration and our supplier onboarding team will help." : "Fill in your journey details below and our team will get back to you promptly."}
+                        {isSupplierInquiry ? "Tell us where you are in registration and our supplier onboarding team will help." : isAgentInquiry ? "Tell us what you need help with and our agent support team will respond." : "Fill in your journey details below and our team will get back to you promptly."}
                       </p>
                     </div>
                   </div>
@@ -600,7 +603,7 @@ export default function ContactPage() {
                     {/* Booking Status Radio */}
                     <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3.5">
                       <label className="block text-xs font-bold text-slate-800">
-                        {isSupplierInquiry ? "Do you already have a supplier account?" : "Do you have an existing booking reference?"}
+                        {isSupplierInquiry ? "Do you already have a supplier account?" : isAgentInquiry ? "Do you already have an agent account?" : "Do you have an existing booking reference?"}
                       </label>
                       <div className="mt-2 flex gap-6 text-xs font-semibold text-slate-700">
                         <label className="flex items-center gap-2 cursor-pointer">
@@ -612,7 +615,7 @@ export default function ContactPage() {
                             onChange={() => setForm({ ...form, reservation: "no" })}
                             className="accent-pub-secondary"
                           />
-                          <span>{isSupplierInquiry ? "No, I am registering as a supplier" : "No, I am planning a new trip"}</span>
+                          <span>{isSupplierInquiry ? "No, I am registering as a supplier" : isAgentInquiry ? "No, I am applying as an agent" : "No, I am planning a new trip"}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -623,7 +626,7 @@ export default function ContactPage() {
                             onChange={() => setForm({ ...form, reservation: "yes" })}
                             className="accent-pub-secondary"
                           />
-                          <span>{isSupplierInquiry ? "Yes, I need help with my supplier account" : "Yes, I have an active reservation"}</span>
+                          <span>{isSupplierInquiry ? "Yes, I need help with my supplier account" : isAgentInquiry ? "Yes, I need help with my agent account" : "Yes, I have an active reservation"}</span>
                         </label>
                       </div>
                     </div>
