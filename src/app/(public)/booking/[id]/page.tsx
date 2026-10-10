@@ -580,6 +580,21 @@ export default function DynamicTourBookingPage() {
     if (adultCount > maxAdults) setAdultCount(maxAdults);
   }, [tour, selectedCalendar, childCount, adultCount]);
 
+  // ``min_booking_size`` is configured by the operator and is also reflected
+  // by the price slabs.  Previously the checkout always started at one adult,
+  // even for tours whose first valid price tier starts at two travellers. That
+  // immediately sent an unpriceable request and left the summary loading.
+  // Keep a real query-string selection when it already meets the minimum
+  // (for example, one adult + one child), but otherwise raise the adult count
+  // to the first bookable party size before requesting a quote.
+  const minimumTravellers = Math.max(1, Number(tour?.min_booking_size || 1));
+  useEffect(() => {
+    const total = adultCount + childCount;
+    if (tour && total < minimumTravellers) {
+      setAdultCount((current) => Math.max(current, minimumTravellers - childCount));
+    }
+  }, [tour, adultCount, childCount, minimumTravellers]);
+
   useEffect(() => {
     if (!tour?.id || !selectedCalendar?.date) {
       setDepositEligibility(null);
@@ -1638,14 +1653,16 @@ export default function DynamicTourBookingPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <span className="block text-xs font-bold text-slate-900">Adults (12+ yrs)</span>
-                              <span className="text-[11px] text-slate-400">Standard traveller fare</span>
+                              <span className="text-[11px] text-slate-400">
+                                {minimumTravellers > 1 ? `Minimum ${minimumTravellers} travellers per booking` : "Standard traveller fare"}
+                              </span>
                             </div>
 
                             {/* Tactile Counter */}
                             <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100/70 p-1">
                               <button
                                 type="button"
-                                disabled={adultCount <= 1}
+                                disabled={adultCount <= 1 || totalTravellers <= minimumTravellers}
                                 onClick={() => setAdultCount(Math.max(1, adultCount - 1))}
                                 aria-label="Decrease adult count"
                                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-white font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed"
@@ -1676,7 +1693,7 @@ export default function DynamicTourBookingPage() {
                             <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100/70 p-1">
                               <button
                                 type="button"
-                                disabled={childCount <= 0}
+                                disabled={childCount <= 0 || totalTravellers <= minimumTravellers}
                                 onClick={() => setChildCount(Math.max(0, childCount - 1))}
                                 aria-label="Decrease child count"
                                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-white font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed"
