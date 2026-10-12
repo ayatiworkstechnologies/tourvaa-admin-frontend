@@ -41,7 +41,6 @@ import {
   LuCompass as Compass,
   LuSparkles as Sparkles,
   LuUser as User,
-  LuSend as Send,
   LuCalendarDays as CalendarDays,
 } from "react-icons/lu";
 

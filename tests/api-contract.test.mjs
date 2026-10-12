@@ -10,8 +10,8 @@ import { fileURLToPath } from "url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const backendCandidates = [
   process.env.TOURVAA_BACKEND_ROOT,
-  resolve(root, "../backend"),
   resolve(root, "../tourvaa-admin-backend"),
+  resolve(root, "../backend"),
 ].filter(Boolean);
 const backendRoot = backendCandidates.find((candidate) => existsSync(candidate));
 

@@ -73,7 +73,7 @@ function earliestBookableDate(minDays: number) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export default function TourCalendarTab({ tourId, maxGroupSize }: { tourId: string; maxGroupSize?: number | null }) {
+export default function TourCalendarTab({ tourId }: { tourId: string }) {
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const [entries, setEntries] = useState<CalendarEntry[]>([]);

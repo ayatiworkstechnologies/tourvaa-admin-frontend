@@ -346,7 +346,10 @@ export default function ReportsPage() {
 
   const reportMeta = REPORT_TYPES.find((r) => r.value === reportType)!;
   const supportsDetailFilters = reportType === "booking-report" || reportType === "payment-report";
-  const activeDetailFilters = supportsDetailFilters ? detailFilters : {};
+  const activeDetailFilters = useMemo(
+    () => supportsDetailFilters ? detailFilters : {},
+    [supportsDetailFilters, detailFilters],
+  );
   const columns = useMemo(() => {
     const serialColumn: DataTableColumn<ReportRow> = {
       key: "no",
@@ -392,7 +395,7 @@ export default function ReportsPage() {
     } finally {
       setRowsLoading(false);
     }
-  }, [reportType, period, customStart, customEnd, reportMeta.periodAware, detailFilters, supportsDetailFilters, salesGranularity]);
+  }, [reportType, period, customStart, customEnd, reportMeta.periodAware, activeDetailFilters, salesGranularity]);
 
   useEffect(() => {
     if (period === "custom" && reportMeta.periodAware && (!customStart || !customEnd)) return;

@@ -6,7 +6,7 @@ import { use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuClock as Clock, LuCreditCard as CreditCard, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuUser as User, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
-import { agentBookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_LABEL, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE, BOOKING_PAYMENT_RECEIVED_MESSAGE } from "@/lib/constants/bookingStatus";
+import { agentBookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_LABEL, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE } from "@/lib/constants/bookingStatus";
 import { downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import BookingPaymentModal from "@/components/bookings/BookingPaymentModal";
 import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";

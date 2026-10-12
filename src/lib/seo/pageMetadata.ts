@@ -50,6 +50,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/customer/wishlist": { title: "My Wishlist", description: "Review tours saved to your Tourvaa customer account.", index: false },
   "/forgot-password": { title: "Forgot Password", description: "Request a secure password reset link for your Tourvaa account.", index: false },
   "/reset-password": { title: "Reset Password", description: "Choose a new secure password and restore access to your Tourvaa account.", index: false },
+  "/message-reply": { title: "Reply to Message", description: "Reply securely to a Tourvaa booking or support conversation using your email link.", index: false },
 
   "/privacy-policy": { title: "Privacy Policy", description: "Read how Tourvaa collects, uses, and protects your personal information across account, booking, and payment activity." },
   "/agent-portal/login": { title: "Agent Sign In", description: "Sign in to your Tourvaa agent account to book for clients, track commissions, and manage your agency dashboard.", index: false },

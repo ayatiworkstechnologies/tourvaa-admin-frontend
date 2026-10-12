@@ -49,7 +49,15 @@ export type AgentReportRow = {
 export type CustomerReportRow = { customer_id: number; customer_name: string; bookings: number; amount: string; pending: string };
 export type ReportAudience = "supplier" | "agent" | "customer";
 export type AudienceOption = { id: number; name: string };
-export type AudienceReportRow = SupplierReportRow | AgentReportRow | CustomerReportRow;
+export type AudienceIdentity = {
+  code: string | null;
+  email: string | null;
+  phone: string | null;
+  status: string;
+  approval_status: string;
+  joined_at: string | null;
+};
+export type AudienceReportRow = (SupplierReportRow | AgentReportRow | CustomerReportRow) & AudienceIdentity;
 
 export async function getAudienceOptions(audience: ReportAudience) {
   const res = await api.get<ApiDataResponse<AudienceOption[]>>("/reports/audience-options", { params: { audience } });
@@ -63,15 +71,15 @@ export async function getAudienceReport(audience: ReportAudience, entityId: numb
   return res.data.data;
 }
 
-export async function exportAudienceReport(audience: ReportAudience, entityId: number | undefined, startDate: string, endDate: string) {
+export async function exportAudienceReport(audience: ReportAudience, entityId: number | undefined, startDate: string, endDate: string, format: "xlsx" | "pdf" | "csv" = "xlsx") {
   const response = await api.get("/reports/audience-export", {
-    params: { audience, entity_id: entityId, period: "custom", start_date: startDate, end_date: endDate },
+    params: { audience, entity_id: entityId, period: "custom", start_date: startDate, end_date: endDate, format },
     responseType: "blob",
   });
   const url = window.URL.createObjectURL(new Blob([response.data], { type: "text/csv" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${audience}-report-${startDate}-${endDate}.csv`;
+  link.download = `${audience}-report-${startDate}-${endDate}.${format}`;
   document.body.appendChild(link);
   link.click();
   link.remove();

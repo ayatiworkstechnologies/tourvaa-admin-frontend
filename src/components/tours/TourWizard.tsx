@@ -526,7 +526,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 </div>
               </div>
             )}
-            {activeKey === "calendar" && <TourCalendarTab tourId={tourId} maxGroupSize={tour?.max_group_size} />}
+            {activeKey === "calendar" && <TourCalendarTab tourId={tourId} />}
             {activeKey === "accommodation" && (
               <div className="space-y-6">
                 <TourAccommodationExtraTab tourId={tourId} />

@@ -1,10 +1,17 @@
 /** Supplier journey contract checks. No server required. */
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(resolve(root, path), "utf8");
+const backendRoot = [
+  process.env.TOURVAA_BACKEND_ROOT,
+  resolve(root, "../tourvaa-admin-backend"),
+  resolve(root, "../backend"),
+].filter(Boolean).find((path) => existsSync(path));
+if (!backendRoot) throw new Error("Tourvaa backend not found; set TOURVAA_BACKEND_ROOT");
+const readBackend = (path) => readFileSync(resolve(backendRoot, path), "utf8");
 let passed = 0;
 let failed = 0;
 
@@ -57,7 +64,7 @@ check("dashboard retains date and status filtering", dashboard.includes("<DatePi
 check("dashboard provides loading and filtered empty states", dashboard.includes("BookingSkeleton") && dashboard.includes("No bookings match these filters"));
 
 const bookingDetail = read("src/app/supplier/bookings/[id]/page.tsx");
-const bookingService = read("../tourvaa-admin-backend/app/services/bookings.py");
+const bookingService = readBackend("app/services/bookings.py");
 check("supplier can accept pending supplier requests without agent settlement details", bookingDetail.includes('v === "pending_supplier_acceptance"') && bookingDetail.includes("Accept Booking") && bookingDetail.includes("Decline") && !bookingDetail.includes("paymentReady"));
 check(
   "supplier booking detail masks agent reservation payment state before rendering actions",
@@ -240,8 +247,8 @@ check(
   tourPricing.includes("Adult (each)") && tourPricing.includes("Child (each)"),
 );
 const tourForm = read("src/components/cms/TourFormPage.tsx");
-const tourService = read("../tourvaa-admin-backend/app/services/tours.py");
-const cmsService = read("../tourvaa-admin-backend/app/services/cms.py");
+const tourService = readBackend("app/services/tours.py");
+const cmsService = readBackend("app/services/cms.py");
 check(
   "supplier operating currency is authoritative for tours and pricing slabs",
   cmsService.includes('payload["currency"] = supplier.currency.strip().upper()') &&
