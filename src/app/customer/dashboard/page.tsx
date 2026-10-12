@@ -14,7 +14,6 @@ import {
   LuMapPin as MapPin,
   LuPencil as Pencil,
   LuShare2 as Share2,
-  LuStar as Star,
   LuTicket as Ticket,
   LuUserPlus as UserPlus,
 } from "react-icons/lu";
@@ -58,46 +57,6 @@ type Booking = {
   tour_image?: string | null;
 };
 
-const DEFAULT_BOOKINGS: Booking[] = [
-  {
-    id: 1,
-    booking_code: "TRV-2847",
-    tour_date: "2025-12-15",
-    tour_name: "Bali Island Retreat – 5D/4N",
-    booking_status: "Confirmed",
-    final_amount: 1240.0,
-    currency: "USD",
-  },
-  {
-    id: 2,
-    booking_code: "TRV-9281",
-    tour_date: "2025-11-22",
-    tour_name: "Paris City Explorer – 4D/3N",
-    booking_status: "In Transit",
-    final_amount: 985.0,
-    currency: "USD",
-  },
-  {
-    id: 3,
-    booking_code: "TRV-4102",
-    tour_date: "2025-10-10",
-    tour_name: "Tokyo Cultural Tour – 7D/6N",
-    booking_status: "Completed",
-    final_amount: 2125.0,
-    currency: "USD",
-  },
-  {
-    id: 4,
-    booking_code: "TRV-1029",
-    tour_date: "2025-09-05",
-    tour_name: "Santorini Sunset Package – 3D/2N",
-    booking_status: "Cancelled",
-    final_amount: 799.0,
-    currency: "USD",
-  },
-];
-
-
 function formatDate(value?: string | null) {
   if (!value) return "Date TBD";
   const date = new Date(value);
@@ -134,7 +93,7 @@ function formatPrice(amount?: number | string) {
 
 export default function CustomerDashboardPage() {
   const { user } = useAuthContext();
-  const { wishlist } = useTravelStore();
+  const { wishlist, toggleWishlist } = useTravelStore();
   const { format } = useCurrency();
   const toast = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -216,8 +175,6 @@ export default function CustomerDashboardPage() {
     title: w.title || "Tour Experience",
     location: w.place || "Destination",
     duration: w.duration || "Flexible",
-    rating: 4.8,
-    reviews: "Saved",
     price: w.price ? format(w.price, w.currency || "USD") : "Price on request",
     image: mediaUrl(w.image) || "/images/tour-card-fallback.jpg",
     href: w.href || `/tours/${w.id}`,
@@ -537,7 +494,11 @@ export default function CustomerDashboardPage() {
                     {/* Top-Right Heart Button */}
                     <button
                       type="button"
-                      aria-label="Wishlist"
+                      onClick={() => {
+                        const savedTour = wishlist.find((tour) => String(tour.id) === item.id);
+                        if (savedTour) toggleWishlist(savedTour);
+                      }}
+                      aria-label={`Remove ${item.title} from wishlist`}
                       className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-blue-600 shadow-xs hover:scale-110 transition"
                     >
                       <Heart size={14} className="fill-current text-blue-600" />
@@ -552,17 +513,6 @@ export default function CustomerDashboardPage() {
                       <span className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
                         {item.duration}
                       </span>
-                    </div>
-
-                    {/* Rating */}
-                    <div className="mt-2 flex items-center gap-1.5">
-                      <div className="flex items-center text-amber-400">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={i} size={11} className="fill-current text-amber-400" />
-                        ))}
-                      </div>
-                      <span className="text-[11px] font-bold text-slate-900">{item.rating}</span>
-                      <span className="text-[10px] text-slate-400">({item.reviews})</span>
                     </div>
 
                     {/* Price & Book Now */}

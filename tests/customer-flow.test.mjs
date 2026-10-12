@@ -183,7 +183,7 @@ check(
   publicBooking.includes("tour?.min_advance_booking_days") &&
     publicBooking.includes("normalizeDateStringToIso(calendar.date) >= earliestDate"),
 );
-check("public booking has four visible stages", publicBooking.includes("Passengers &amp; Accommodation") && publicBooking.includes("Passenger Details") && publicBooking.includes(">Payment<") && publicBooking.includes("Booking Received"));
+check("public booking has four visible stages", publicBooking.includes("Passengers &amp; Accommodation") && publicBooking.includes("Passenger Details") && publicBooking.includes(">Payment<") && publicBooking.includes("Payment Received"));
 check("public booking is backed by a real checkout session", publicBooking.includes('.post("/checkout/start"') && publicBooking.includes("sessionKey"));
 check("public booking confirms through the checkout-session endpoint", publicBooking.includes("/checkout/session/${sessionKey}/confirm"));
 check("public booking requires a logged-in customer", publicBooking.includes('roleSlug === "customer"') && publicBooking.includes("router.replace(`/login?redirect="));
@@ -193,7 +193,7 @@ check("selected deposit never falls back to the full outstanding balance", publi
 check("checkout sends the selected payment type and uses the server-authoritative first charge", publicBooking.includes('payment_type: customerPaymentMethod === "deposit" ? "partial" : "full"') && publicBooking.includes("booking?.selected_payment_amount"));
 check("booking continues to the payment step", publicBooking.includes("setStep(3)"));
 check("checkout terms open separately without losing entered passenger details", publicBooking.includes('href="/terms" target="_blank" rel="noopener noreferrer"'));
-check("success copy explains pending payment confirmation", publicBooking.includes("pending payment confirmation"));
+check("success copy explains Tourvaa confirmation is pending", publicBooking.includes("Booking Successful – Awaiting Tourvaa Confirmation") && publicBooking.includes("Please wait for"));
 check("traveller fields follow selected adult and child counts", publicBooking.includes("adultCount + childCount") && publicBooking.includes('i < adultCount ? "adult" : "child"'));
 // Traveller ages are collected directly as a numeric field, validated, then
 // submitted as a Number. The earlier birthDay/birthMonth/birthYear + calcAge()
@@ -210,8 +210,8 @@ check("new booking opens payment UI", customerBooking.includes('searchParams.get
 check(
   "customer request states use customer-safe booking language",
   customerBooking.includes("isBookingRequestReceived") &&
-    customerBooking.includes("Booking Successfully Received") &&
-    customerBooking.includes("Tourvaa is confirming the tour arrangements") &&
+    customerBooking.includes("Booking Successful – Awaiting Tourvaa Confirmation") &&
+    customerBooking.includes("BOOKING_AWAITING_CONFIRMATION_MESSAGE") &&
     !customerBooking.includes("Pending supplier acceptance"),
 );
 check(
@@ -238,6 +238,7 @@ check("payment return shows success only after verified gateway completion", pay
 
 const customerBookings = read("src/app/customer/bookings/page.tsx");
 check("dashboard request links apply the bookings tab filter", customerBookings.includes('new URLSearchParams(window.location.search).get("tab")'));
+check("customer dashboard has no fallback booking or wishlist tour data", !customerDashboard.includes("DEFAULT_BOOKINGS") && !customerDashboard.includes("rating: 4.8"));
 
 const publicHeader = read("src/components/public/PublicHeader.tsx");
 const customerHeader = read("src/components/customer/CustomerPortalHeader.tsx");
@@ -260,7 +261,13 @@ check(
     !customerLayout.includes("<PublicFooter />") &&
     portalPublicFooter.includes("<PublicFooter />"),
 );
-check("wishlist books tours directly", wishlist.includes("href: w.href || `/booking/${w.id}`") && !wishlist.includes("addToCart"));
+check(
+  "customer wishlist renders only saved dynamic tours and books them directly",
+  wishlist.includes("const { hydrated, wishlist, toggleWishlist } = useTravelStore()") &&
+    wishlist.includes("href={`/booking/${tour.id}`}") &&
+    !wishlist.includes("DEFAULT_WISHLIST_TOURS") &&
+    !wishlist.includes("addToCart"),
+);
 // The public nav links to the public /wishlist page (works for guests too);
 // the customer-portal header/sidebar link to /customer/wishlist for signed-in
 // customers browsing inside their portal - both render the same store.
