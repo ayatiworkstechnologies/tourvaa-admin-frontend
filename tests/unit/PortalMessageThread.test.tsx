@@ -10,6 +10,8 @@ const mockThread = {
   participant_user_id: 10,
   participant_name: "Jane Customer",
   participant_email: "jane@example.com",
+  participant_online: true,
+  admin_online: true,
   status: "open",
   last_message_at: null,
   last_message_preview: null,
@@ -49,6 +51,7 @@ describe("PortalMessageThread delete-own-message", () => {
 
     const deleteButtons = screen.getAllByRole("button", { name: "Delete message" });
     expect(deleteButtons).toHaveLength(1);
+    expect(screen.getByRole("status", { name: "Tourvaa Admin online" })).toHaveTextContent("Online");
   });
 
   it("deletes the caller's own message and shows the deleted placeholder", async () => {

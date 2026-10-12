@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuLoaderCircle as Loader2, LuSend as Send, LuTrash2 as Trash2, LuWifiOff as WifiOff } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
+import PresenceBadge from "@/components/messaging/PresenceBadge";
 
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import { BookingConversationThread, BookingMessage, deleteOwnBookingMessage, getBookingConversation, sendBookingConversationMessage } from "@/lib/api/services/messagingService";
@@ -116,6 +117,10 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
   useMessagingSocket(
     useCallback(
       (event) => {
+        if (event.type === "admin_presence") {
+          setThread((prev) => (prev ? { ...prev, admin_online: event.online } : prev));
+          return;
+        }
         if (event.type === "new_booking_message") {
           if (event.conversation.booking_id !== bookingId) return;
           setThread((prev) => (
@@ -196,7 +201,10 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
       <div className="border-b border-dash-border-soft px-5 py-3">
         <div className="flex items-center justify-between gap-3">
           <p className="font-bold text-dash-text">Message Tourvaa Support</p>
-          {!isOnline && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700"><WifiOff size={13} /> Offline</span>}
+          <div className="flex items-center gap-2">
+            {!isOnline && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700"><WifiOff size={13} /> You are offline</span>}
+            <PresenceBadge online={thread?.admin_online ?? false} subject="Tourvaa Admin" />
+          </div>
         </div>
         <p className="mt-0.5 text-xs text-dash-subtle">Ask about this booking directly. Drafts are saved on this device.</p>
       </div>

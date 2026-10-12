@@ -8,7 +8,8 @@ export type MessagingSocketEvent =
   | { type: "new_booking_message"; conversation: BookingConversation; message: BookingMessage }
   | { type: "message_deleted"; conversation_id: number; message: ChatMessage }
   | { type: "booking_message_deleted"; conversation_id: number; message: BookingMessage }
-  | { type: "participant_presence"; user_id: number; online: boolean };
+  | { type: "participant_presence"; user_id: number; online: boolean }
+  | { type: "admin_presence"; online: boolean };
 
 const INITIAL_RETRY_MS = 2000;
 const MAX_RETRY_MS = 30000;
@@ -67,7 +68,8 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
             data.type === "new_booking_message" ||
             data.type === "message_deleted" ||
             data.type === "booking_message_deleted" ||
-            data.type === "participant_presence"
+            data.type === "participant_presence" ||
+            data.type === "admin_presence"
           ) {
             onMessageRef.current(data);
           }

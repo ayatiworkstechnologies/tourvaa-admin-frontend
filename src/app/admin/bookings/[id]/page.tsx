@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
 import DatePicker from "@/components/ui/DatePicker";
@@ -336,6 +336,7 @@ function BookingJourneyStepper({ status }: { status: string }) {
 
 export default function BookingDetailPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const { formatExact } = useCurrency();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -344,7 +345,9 @@ export default function BookingDetailPage() {
   const [actionErr, setActionErr] = useState("");
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<"overview" | "financials" | "operations" | "communications">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "financials" | "operations" | "communications">(
+    searchParams.get("tab") === "communications" ? "communications" : "overview",
+  );
 
   // Status change state
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -1472,7 +1475,7 @@ export default function BookingDetailPage() {
 
           {/* TAB 4: NOTES & COMMUNICATIONS */}
           {activeTab === "communications" && (
-            <div className="space-y-6">
+            <div id="booking-messages" className="scroll-mt-28 space-y-6">
               <DetailPanel
                 title="Portal Messages"
                 icon={<MessageSquare size={18} />}

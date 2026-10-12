@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuLoaderCircle as Loader2, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
+import PresenceBadge from "@/components/messaging/PresenceBadge";
 
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import { requestNotificationRefresh } from "@/lib/notifications/events";
@@ -61,6 +62,10 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
 
   useMessagingSocket(
     useCallback((event) => {
+      if (event.type === "admin_presence") {
+        setThread((prev) => (prev ? { ...prev, admin_online: event.online } : prev));
+        return;
+      }
       if (event.type === "new_message") {
         if (event.message.sender_role === "admin") requestNotificationRefresh();
         setThread((prev) => {
@@ -118,10 +123,7 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
             <h2 className="font-black text-dash-text">Conversation with Tourvaa Admin</h2>
             <p className="mt-1 text-xs text-dash-subtle">Send a message to the Tourvaa team. Replies appear here in real time.</p>
           </div>
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Admin support
-          </span>
+          <PresenceBadge online={thread?.admin_online ?? false} subject="Tourvaa Admin" />
         </div>
       </div>
 

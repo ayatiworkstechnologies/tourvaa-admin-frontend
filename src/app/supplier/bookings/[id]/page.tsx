@@ -11,6 +11,7 @@ import {
 } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
+import PresenceBadge from "@/components/messaging/PresenceBadge";
 import { useToast } from "@/hooks/useToast";
 import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 import {
@@ -521,6 +522,10 @@ export default function SupplierBookingDetailPage() {
 
   useMessagingSocket(
     useCallback((event) => {
+      if (event.type === "admin_presence") {
+        setMessageThread((previous) => (previous ? { ...previous, admin_online: event.online } : previous));
+        return;
+      }
       if (event.type !== "new_booking_message" || event.conversation.booking_id !== Number(bookingId)) return;
       setMessageThread((previous) => (
         previous && previous.id === event.conversation.id
@@ -736,13 +741,16 @@ export default function SupplierBookingDetailPage() {
         )}
 
         {/* Supplier booking messages are private to Tourvaa Admin. */}
-        <div className="flex h-[500px] flex-col overflow-hidden rounded-2xl border border-dash-border bg-white shadow-sm lg:col-span-2">
-          <div className="flex items-start gap-2 border-b border-dash-border-soft px-5 py-4">
-            <MessageSquare size={18} className="mt-0.5 text-emerald-600" />
-            <div>
-              <h2 className="font-black text-dash-text">Message Tourvaa Admin</h2>
-              <p className="mt-0.5 text-xs text-dash-subtle">Private booking messages with the Tourvaa Admin team.</p>
+        <div id="booking-messages" className="flex h-[500px] scroll-mt-28 flex-col overflow-hidden rounded-2xl border border-dash-border bg-white shadow-sm lg:col-span-2">
+          <div className="flex items-start justify-between gap-3 border-b border-dash-border-soft px-5 py-4">
+            <div className="flex min-w-0 items-start gap-2">
+              <MessageSquare size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+              <div>
+                <h2 className="font-black text-dash-text">Message Tourvaa Admin</h2>
+                <p className="mt-0.5 text-xs text-dash-subtle">Private booking messages with the Tourvaa Admin team.</p>
+              </div>
             </div>
+            <PresenceBadge online={messageThread?.admin_online ?? false} subject="Tourvaa Admin" />
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto bg-dash-bg/40 px-5 py-4">

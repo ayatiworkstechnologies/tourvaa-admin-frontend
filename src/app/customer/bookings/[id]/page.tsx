@@ -854,7 +854,7 @@ export default function CustomerBookingDetailPage() {
               never presented to the customer as coming from/going to the
               supplier by name) */}
           {booking.supplier_id && (
-            <div className="mt-4">
+            <div id="booking-messages" className="mt-4 scroll-mt-28">
               <BookingMessageThread bookingId={booking.id} />
             </div>
           )}

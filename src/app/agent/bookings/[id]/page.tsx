@@ -476,7 +476,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
       {/* Message Tourvaa support about this booking */}
       {booking.supplier_id && (
-        <div className="order-6 lg:col-span-2">
+        <div id="booking-messages" className="order-6 scroll-mt-28 lg:col-span-2">
           <BookingMessageThread bookingId={booking.id} compact />
         </div>
       )}

@@ -5,6 +5,7 @@ import { LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as 
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
+import PresenceBadge from "@/components/messaging/PresenceBadge";
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import { requestNotificationRefresh } from "@/lib/notifications/events";
 import {
@@ -23,6 +24,7 @@ const TABS: { key: ParticipantType; label: string }[] = [
   { key: "agent", label: "Agents" },
   { key: "supplier", label: "Suppliers" },
   { key: "customer", label: "Customers" },
+  { key: "affiliate", label: "Affiliates" },
 ];
 
 function timeAgo(value?: string | null) {
@@ -112,6 +114,19 @@ export default function AdminMessagesPage() {
   useMessagingSocket(
     useCallback(
       (event) => {
+        if (event.type === "participant_presence") {
+          setConversations((prev) => prev.map((conversation) => (
+            conversation.participant_user_id === event.user_id
+              ? { ...conversation, participant_online: event.online }
+              : conversation
+          )));
+          setThread((prev) => (
+            prev?.participant_user_id === event.user_id
+              ? { ...prev, participant_online: event.online }
+              : prev
+          ));
+          return;
+        }
         if (event.type === "new_message") {
           const { conversation, message } = event;
           if (message.sender_role !== "admin") requestNotificationRefresh();
@@ -213,7 +228,10 @@ export default function AdminMessagesPage() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-sm font-bold text-dash-text">{conv.participant_name || conv.participant_email || `User #${conv.participant_user_id}`}</span>
-                      {conv.admin_unread_count > 0 && <span className="shrink-0 rounded-full bg-dash-brand px-2 py-0.5 text-[10px] font-bold text-white">{conv.admin_unread_count}</span>}
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        <PresenceBadge online={conv.participant_online} subject={conv.participant_name || "Portal user"} />
+                        {conv.admin_unread_count > 0 && <span className="rounded-full bg-dash-brand px-2 py-0.5 text-[10px] font-bold text-white">{conv.admin_unread_count}</span>}
+                      </span>
                     </div>
                     <span className="truncate text-xs text-dash-subtle">{conv.last_message_preview || "No messages yet"}</span>
                     <span className="text-[11px] text-dash-subtle">{timeAgo(conv.last_message_at || conv.created_at)}</span>
@@ -234,9 +252,12 @@ export default function AdminMessagesPage() {
             <div className="flex flex-1 items-center justify-center"><Loader label="Loading messages..." compact /></div>
           ) : (
             <>
-              <div className="border-b border-dash-border-soft px-5 py-3">
-                <p className="font-bold text-dash-text">{thread?.participant_name || thread?.participant_email}</p>
-                <p className="text-xs text-dash-subtle">{thread?.participant_email}</p>
+              <div className="flex items-start justify-between gap-3 border-b border-dash-border-soft px-5 py-3">
+                <div className="min-w-0">
+                  <p className="truncate font-bold text-dash-text">{thread?.participant_name || thread?.participant_email}</p>
+                  <p className="truncate text-xs text-dash-subtle">{thread?.participant_email}</p>
+                </div>
+                <PresenceBadge online={thread?.participant_online ?? false} subject={thread?.participant_name || "Portal user"} />
               </div>
               <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
                 {thread?.messages.length === 0 && <p className="text-center text-sm text-dash-subtle">No messages in this conversation yet.</p>}

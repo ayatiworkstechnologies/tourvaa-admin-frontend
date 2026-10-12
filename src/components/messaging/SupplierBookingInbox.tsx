@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
+import PresenceBadge from "@/components/messaging/PresenceBadge";
 
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import {
@@ -30,8 +31,7 @@ function timeAgo(value?: string | null) {
   return date.toLocaleDateString();
 }
 
-/** Supplier's inbox of direct, per-booking threads opened by customers or
- * agents. Separate from the supplier's own admin-support thread. */
+/** Supplier's private, per-booking threads with Tourvaa Admin. */
 export default function SupplierBookingInbox() {
   const [conversations, setConversations] = useState<BookingConversation[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -81,6 +81,11 @@ export default function SupplierBookingInbox() {
   useMessagingSocket(
     useCallback(
       (event) => {
+        if (event.type === "admin_presence") {
+          setConversations((prev) => prev.map((conversation) => ({ ...conversation, admin_online: event.online })));
+          setThread((prev) => (prev ? { ...prev, admin_online: event.online } : prev));
+          return;
+        }
         if (event.type === "new_booking_message") {
           const { conversation, message } = event;
           const isOpenThread = selectedId === conversation.id;
@@ -143,7 +148,7 @@ export default function SupplierBookingInbox() {
         ) : conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-sm text-dash-subtle">
             <MessageSquare size={28} className="text-dash-subtle" />
-            No messages from customers or agents yet.
+            No booking messages yet.
           </div>
         ) : (
           <ul className="divide-y divide-[#EEF2F8]">
@@ -155,10 +160,10 @@ export default function SupplierBookingInbox() {
                   className={`flex w-full flex-col gap-1 px-4 py-3 text-left transition hover:bg-[#F8FAFD] ${selectedId === conv.id ? "bg-[#F0F4FA]" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-bold text-dash-text">{conv.initiator_name || `${conv.initiator_role} #${conv.initiator_user_id}`}</span>
+                    <span className="truncate text-sm font-bold text-dash-text">{conv.booking_code ? `Booking ${conv.booking_code}` : `Booking #${conv.booking_id}`}</span>
                     {conv.supplier_unread_count > 0 && <span className="shrink-0 rounded-full bg-dash-brand px-2 py-0.5 text-[10px] font-bold text-white">{conv.supplier_unread_count}</span>}
                   </div>
-                  <span className="truncate text-xs text-dash-subtle">{conv.booking_code ? `Booking ${conv.booking_code}` : ""}{conv.tour_name ? ` — ${conv.tour_name}` : ""}</span>
+                  <span className="truncate text-xs text-dash-subtle">{conv.tour_name || "Tourvaa booking support"}</span>
                   <span className="truncate text-xs text-dash-subtle">{conv.last_message_preview || "No messages yet"}</span>
                   <span className="text-[11px] text-dash-subtle">{timeAgo(conv.last_message_at || conv.created_at)}</span>
                 </button>
@@ -178,9 +183,12 @@ export default function SupplierBookingInbox() {
           <div className="flex flex-1 items-center justify-center"><Loader label="Loading conversations..." compact /></div>
         ) : (
           <>
-            <div className="border-b border-dash-border-soft px-5 py-3">
-              <p className="font-bold text-dash-text">{thread?.initiator_name || `${thread?.initiator_role} #${thread?.initiator_user_id}`}</p>
-              <p className="text-xs text-dash-subtle">{thread?.booking_code ? `Booking ${thread.booking_code}` : ""}{thread?.tour_name ? ` — ${thread.tour_name}` : ""}</p>
+            <div className="flex items-start justify-between gap-3 border-b border-dash-border-soft px-5 py-3">
+              <div className="min-w-0">
+                <p className="font-bold text-dash-text">Tourvaa Admin</p>
+                <p className="truncate text-xs text-dash-subtle">{thread?.booking_code ? `Booking ${thread.booking_code}` : ""}{thread?.tour_name ? ` — ${thread.tour_name}` : ""}</p>
+              </div>
+              <PresenceBadge online={thread?.admin_online ?? false} subject="Tourvaa Admin" />
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
               {thread?.messages.length === 0 && <p className="text-center text-sm text-dash-subtle">No messages in this conversation yet.</p>}

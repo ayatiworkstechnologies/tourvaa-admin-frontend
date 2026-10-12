@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuSend as Send } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
+import PresenceBadge from "@/components/messaging/PresenceBadge";
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import { BookingConversationThread, BookingMessage, getAdminBookingConversations, replyToAdminBookingConversation } from "@/lib/api/services/messagingService";
 
@@ -117,10 +118,7 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
               {participantName && <p className="truncate text-[11px] text-dash-muted">{participantName}</p>}
             </div>
           </div>
-          <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${isOnline ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-slate-400"}`} />
-            {isOnline ? "Online" : "Offline"}
-          </span>
+          <PresenceBadge online={isOnline} subject={`${portalLabel} portal`} />
         </div>
 
         <div className="mt-3 min-h-24 max-h-72 flex-1 space-y-3 overflow-y-auto pr-1">

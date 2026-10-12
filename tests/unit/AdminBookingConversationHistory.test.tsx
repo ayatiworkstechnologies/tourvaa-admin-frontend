@@ -26,6 +26,7 @@ const conversation = {
   supplier_user_id: 8,
   supplier_name: "Southern Tours",
   supplier_online: true,
+  admin_online: true,
   status: "open",
   last_message_at: "2026-10-07T03:00:00Z",
   last_message_preview: "Agent reply",
