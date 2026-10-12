@@ -6,6 +6,7 @@ import { use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuClock as Clock, LuCreditCard as CreditCard, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuUser as User, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { agentBookingStatusLabel, BOOKING_REQUEST_RECEIVED_MESSAGE } from "@/lib/constants/bookingStatus";
 import { downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import BookingPaymentModal from "@/components/bookings/BookingPaymentModal";
 import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
@@ -104,20 +105,6 @@ function dateText(value?: string | null) {
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
 }
-
-// Match the lifecycle language shown in the Customer Portal. Internal
-// payment and supplier-processing states are not Agent-facing stages.
-function customerFacingBookingStatus(status?: string): string {
-  const value = (status || "").toLowerCase();
-  if (["draft", "pending_payment", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required"].includes(value)) return "Booking Request Received";
-  if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(value)) return "Booking Confirmed";
-  if (value === "ongoing") return "Ongoing";
-  if (value === "completed") return "Completed";
-  if (["cancellation_requested", "cancelled", "declined", "refunded"].includes(value)) return "Cancelled";
-  return "Booking Request Received";
-}
-
-const BOOKING_REQUEST_RECEIVED_MESSAGE = "Your booking request has been received successfully. We will review the details and be in touch shortly with your booking confirmation.";
 
 function statusClass(status?: string) {
   const v = (status || "").toLowerCase();
@@ -336,7 +323,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   }
 
   const travellers = booking.travellers ?? [];
-  const bookingDisplayStatus = customerFacingBookingStatus(booking.booking_status);
+  const bookingDisplayStatus = agentBookingStatusLabel(booking.booking_status);
   const isBookingRequestReceived = bookingDisplayStatus === "Booking Request Received";
   const canRequestCancellation = Number(booking.amount_paid ?? 0) > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
   const canRemoveUnpaidBooking = Number(booking.amount_paid ?? 0) <= 0

@@ -53,6 +53,8 @@ check("AuthProvider fetches /dashboard/me", authProviderSrc.includes("/dashboard
 check("dashboard page fetches /dashboard/summary", pageSrc.includes("/dashboard/summary"));
 check("dashboard page fetches /dashboard/charts", pageSrc.includes("/dashboard/charts"));
 check("dashboard page fetches /dashboard/recent-activities", pageSrc.includes("/dashboard/recent-activities"));
+check("dashboard applies booking ID and status filters to every booking analytics request", pageSrc.includes("p.booking_id = activeFilters.bookingId") && pageSrc.includes("p.booking_status = activeFilters.bookingStatus") && pageSrc.includes('api.get("/dashboard/recent-activities", { params: p })'));
+check("dashboard offers one-click current day, week, and month ranges", pageSrc.includes('(["today", "week", "month"] as const)') && pageSrc.includes("dateRangeFor(period)"));
 check("dashboard data flow has no /api/v1", !authProviderSrc.includes("/api/v1") && !pageSrc.includes("/api/v1"));
 
 // ---------------------------------------------------------------------------

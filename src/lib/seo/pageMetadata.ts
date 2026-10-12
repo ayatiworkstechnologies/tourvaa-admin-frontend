@@ -153,6 +153,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/customer/cancellations": { title: "My Cancellations", description: "Review cancellation requests, eligibility, refund estimates, and processing status.", index: false },
   "/customer/invoices": { title: "My Invoices", description: "View and download invoices for your Tourvaa bookings and payments.", index: false },
   "/customer/payments": { title: "My Payments", description: "Review deposits, balances, completed payments, and transaction status.", index: false },
+  "/customer/payments/[result]": { title: "Payment Status", description: "Securely verify the outcome of your Tourvaa booking payment.", index: false },
   "/customer/profile": { title: "My Profile", description: "Manage your Tourvaa personal details, contact information, and account security.", index: false },
   "/customer/support": { title: "Customer Support", description: "Review support conversations and contact Tourvaa about your account or booking.", index: false },
   "/customer/travellers": { title: "My Travellers", description: "Save and manage traveller information for faster Tourvaa booking.", index: false },

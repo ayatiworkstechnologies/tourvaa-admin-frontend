@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { IconType } from "react-icons";
 import {
   LuClock as Clock,
+  LuCreditCard as CreditCard,
   LuHeart as Heart,
   LuHeadphones as Headphones,
   LuLock as Lock,
@@ -42,6 +43,7 @@ type CustomerSidebarProps = {
 const customerNavigation: PortalNavItem[] = [
   { label: "My Profile", href: "/customer/dashboard", icon: UserRound, alsoActiveFor: ["/customer/profile"] },
   { label: "My Bookings", href: "/customer/bookings", icon: Ticket },
+  { label: "Payments", href: "/customer/payments", icon: CreditCard },
   { label: "Wishlist", href: "/customer/wishlist", icon: Heart },
   { label: "Support", href: "/customer/support", icon: Headphones },
 ];

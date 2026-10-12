@@ -8,6 +8,15 @@ export type PeriodParams = {
   end_date?: string;
 };
 
+/** Filters supported by the detailed booking and payment report endpoints. */
+export type DetailReportFilters = {
+  booking_status?: string;
+  payment_status?: string;
+  gateway?: string;
+  supplier_id?: number;
+  granularity?: "day" | "week" | "month";
+};
+
 export type ReportSummary = {
   total_bookings: number;
   confirmed_bookings: number;
@@ -157,6 +166,16 @@ export type MyBookingRow = {
   special_requests: string | null;
 };
 
+export type SupplierBookingSummary = {
+  total_bookings: number;
+  confirmed_bookings: number;
+  completed_bookings: number;
+  pending_bookings: number;
+  cancelled_bookings: number;
+  amounts_by_currency: { currency: string; booking_value: string; bookings: number }[];
+  status_breakdown: { status: string; count: number }[];
+};
+
 export type MyEarningsReport = {
   total_sales: string;
   platform_commission: string;
@@ -298,8 +317,8 @@ export async function getCustomerReport(params: PeriodParams) {
   return res.data.data;
 }
 
-export async function getBookingDetailReport(params: PeriodParams) {
-  const res = await api.get<ApiDataResponse<BookingDetailRow[]>>("/reports/booking-report", { params: periodQuery(params) });
+export async function getBookingDetailReport(params: PeriodParams, filters: DetailReportFilters = {}) {
+  const res = await api.get<ApiDataResponse<BookingDetailRow[]>>("/reports/booking-report", { params: { ...periodQuery(params), ...filters } });
   return res.data.data;
 }
 
@@ -308,8 +327,8 @@ export async function getSalesRevenueReport(params: PeriodParams, granularity: "
   return res.data.data;
 }
 
-export async function getPaymentDetailReport(params: PeriodParams) {
-  const res = await api.get<ApiDataResponse<PaymentDetailRow[]>>("/reports/payment-report", { params: periodQuery(params) });
+export async function getPaymentDetailReport(params: PeriodParams, filters: DetailReportFilters = {}) {
+  const res = await api.get<ApiDataResponse<PaymentDetailRow[]>>("/reports/payment-report", { params: { ...periodQuery(params), ...filters } });
   return res.data.data;
 }
 
@@ -333,8 +352,13 @@ export async function getCancellationRefundReport(params: PeriodParams) {
   return res.data.data;
 }
 
-export async function getMyBookingsReport(params: { booking_status?: string; payment_status?: string; start_date?: string; end_date?: string } = {}) {
+export async function getMyBookingsReport(params: { booking_status?: string; payment_status?: string; period?: ReportPeriod; start_date?: string; end_date?: string } = {}) {
   const res = await api.get<ApiDataResponse<MyBookingRow[]>>("/reports/my-bookings", { params });
+  return res.data.data;
+}
+
+export async function getMyBookingsSummary(params: { booking_status?: string; payment_status?: string; period?: ReportPeriod; start_date?: string; end_date?: string } = {}) {
+  const res = await api.get<ApiDataResponse<SupplierBookingSummary>>("/reports/my-bookings-summary", { params });
   return res.data.data;
 }
 
@@ -377,9 +401,9 @@ export async function deleteReportSchedule(scheduleId: number) {
   await api.delete(`/reports/schedule/${scheduleId}`);
 }
 
-export async function exportReportCsv(report: ReportType, params: PeriodParams) {
+export async function exportReportCsv(report: ReportType, params: PeriodParams, filters: DetailReportFilters = {}) {
   const response = await api.get("/reports/exports", {
-    params: { report, format: "csv", ...periodQuery(params) },
+    params: { report, format: "csv", ...periodQuery(params), ...filters },
     responseType: "blob",
   });
 

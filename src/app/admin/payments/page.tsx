@@ -320,14 +320,24 @@ export default function PaymentsPage() {
       className: "w-20 font-bold text-dash-muted",
       render: (_row, index) => (currentPage - 1) * PAGE_SIZE + index + 1,
     },
-    { key: "payment_code", header: "Code", className: "font-bold text-dash-text", render: (p) => <Link href={`/admin/payments/${p.id}`} className="font-bold text-dash-brand-hover hover:underline">{p.payment_code}</Link> },
+    { key: "payment_code", header: "Code", className: "w-20 whitespace-nowrap font-bold text-dash-text", render: (p) => <Link href={`/admin/payments/${p.id}`} className="font-bold text-dash-brand-hover hover:underline">{p.payment_code}</Link> },
+    {
+      key: "reference",
+      header: "Reference / Transaction",
+      className: "hidden w-52 font-mono text-xs text-dash-muted lg:table-cell",
+      render: p => {
+        const reference = p.transaction_id || p.gateway_payment_id || p.gateway_order_id || "-";
+        return <span className="block max-w-48 truncate" title={reference} aria-label={`Gateway reference: ${reference}`}>{reference}</span>;
+      },
+    },
     {
       key: "customer_name",
       header: "Customer",
+      className: "min-w-48",
       render: p => (
-        <div>
-          <p className="font-semibold text-dash-text">{p.customer_name || `Customer #${p.customer_id}`}</p>
-          {p.customer_email && <p className="text-xs text-dash-subtle">{p.customer_email}</p>}
+        <div className="max-w-52">
+          <p className="truncate font-semibold text-dash-text" title={p.customer_name || `Customer #${p.customer_id}`}>{p.customer_name || `Customer #${p.customer_id}`}</p>
+          {p.customer_email && <p className="truncate text-xs text-dash-subtle" title={p.customer_email}>{p.customer_email}</p>}
         </div>
       ),
     },
@@ -435,6 +445,7 @@ export default function PaymentsPage() {
           pageSize={PAGE_SIZE}
           total={totalPayments}
           totalPages={totalPages}
+          minWidthClass="min-w-[1680px]"
           search={searchTerm}
           onSearchChange={s => setSearchTerm(s)}
           onPageChange={setCurrentPage}

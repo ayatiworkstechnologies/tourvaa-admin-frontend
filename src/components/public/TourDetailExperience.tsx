@@ -751,8 +751,15 @@ export default function TourDetailExperience({
     1,
     selectedDeparture?.slotsRemaining ?? MAX_TRAVELLERS_CEILING,
   );
+  // Prefer the stricter configured minimum or first active price slab so the
+  // public selector never asks the API to price an unsupported party size.
+  const minimumTravellers = Math.max(
+    1,
+    Number(tour.min_booking_size || 1),
+    Number(pricingRows[0]?.persons_from || 1),
+  );
   const [adults, setAdults] = useState(
-    Math.min(initialAdults || 2, maxTravellers),
+    Math.min(Math.max(initialAdults || minimumTravellers, minimumTravellers - (initialChildren || 0)), maxTravellers),
   );
   const [children, setChildren] = useState(initialChildren || 0);
 
@@ -766,7 +773,14 @@ export default function TourDetailExperience({
     });
   }, [maxTravellers]);
 
+  useEffect(() => {
+    if (adults + children < minimumTravellers && maxTravellers >= minimumTravellers) {
+      setAdults((current) => Math.min(maxTravellers - children, Math.max(current, minimumTravellers - children)));
+    }
+  }, [adults, children, maxTravellers, minimumTravellers]);
+
   const travellerCount = adults + children;
+  const meetsMinimumParty = travellerCount >= minimumTravellers;
   const selectedGroupTier = useMemo(() => {
     const idx = pricingRows.findIndex(
       (row) =>
@@ -820,7 +834,7 @@ export default function TourDetailExperience({
   const [selectedEnhancementIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!tour.id || !selectedDepartureIso) {
+    if (!tour.id || !selectedDepartureIso || adults + children < minimumTravellers) {
       setPriceQuote(null);
       setIsQuoting(false);
       return;
@@ -859,7 +873,7 @@ export default function TourDetailExperience({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [tour.id, selectedDepartureIso, adults, children, selectedEnhancementIds]);
+  }, [tour.id, selectedDepartureIso, adults, children, minimumTravellers, selectedEnhancementIds]);
 
   const quotedTotal = Number(priceQuote?.final_amount);
   const hasQuote = Boolean(priceQuote && Number.isFinite(quotedTotal) && quotedTotal > 0);
@@ -1032,12 +1046,10 @@ export default function TourDetailExperience({
   );
 
   // Itineraries: 100% Dynamic
-  const [openDays, setOpenDays] = useState<Record<number, boolean>>({
-    1: true,
-  });
+  const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
 
-  const toggleDay = (day: number) => {
-    setOpenDays((prev) => ({ ...prev, [day]: !prev[day] }));
+  const toggleDay = (dayKey: string) => {
+    setOpenDays((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }));
   };
 
   const itineraryList = useMemo(() => {
@@ -1068,6 +1080,7 @@ export default function TourDetailExperience({
         const activities = splitList(it.activities);
 
         return {
+          accordionKey: `${it.day || idx + 1}-${idx}`,
           day: it.day || idx + 1,
           title: it.title || `Day ${idx + 1}`,
           summary,
@@ -1100,7 +1113,7 @@ export default function TourDetailExperience({
 
   const allDaysExpanded = useMemo(() => {
     return (
-      itineraryList.length > 0 && itineraryList.every((d) => openDays[d.day])
+      itineraryList.length > 0 && itineraryList.every((d) => openDays[d.accordionKey])
     );
   }, [itineraryList, openDays]);
 
@@ -1108,9 +1121,9 @@ export default function TourDetailExperience({
     if (allDaysExpanded) {
       setOpenDays({});
     } else {
-      const next: Record<number, boolean> = {};
+      const next: Record<string, boolean> = {};
       itineraryList.forEach((d) => {
-        next[d.day] = true;
+        next[d.accordionKey] = true;
       });
       setOpenDays(next);
     }
@@ -1293,6 +1306,7 @@ export default function TourDetailExperience({
   const handleBookNow = (
     agentAction?: "reserve" | "full",
   ) => {
+    if (!meetsMinimumParty) return;
     const chosen = monthGroups
       .flatMap((month) => month.dates)
       .find((date) => date.id === selectedDateId);
@@ -1849,8 +1863,8 @@ export default function TourDetailExperience({
                   </Link>
                 </div>
                 <div className="mt-6 grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
-                  {groupSizeLabel && <StyleFact icon={<Users size={20} />} label="Vehicle capacity" value={groupSizeLabel} detail="Larger groups may travel across multiple vehicles, subject to departure availability." />}
-                  {vehicleStyle && <StyleFact icon={<Car size={20} />} label="Tour style" value={vehicleStyle} detail={tour.max_group_size ? `Up to ${tour.max_group_size} guests per vehicle` : undefined} />}
+                  {groupSizeLabel && <StyleFact icon={<Users size={20} />} label="Group & vehicle capacity" value={groupSizeLabel} detail="Larger groups may travel across multiple vehicles, subject to departure availability." />}
+                  {vehicleStyle && <StyleFact icon={<Car size={20} />} label="Transport / vehicle" value={vehicleStyle} detail={tour.max_group_size ? `Up to ${tour.max_group_size} guests per vehicle` : undefined} />}
                   {tour.overview?.tour_type && <StyleFact icon={<Compass size={20} />} label="Trip type" value={tour.overview.tour_type} />}
                   {tourPace && <StyleFact icon={<Gauge size={20} />} label="Travel style" value={tourPace} />}
                   {(guideStyle || tour.tour_language) && <StyleFact icon={<User size={20} />} label="Guiding style" value={guideStyle || `Guided in ${tour.tour_language}`} />}
@@ -2130,17 +2144,19 @@ export default function TourDetailExperience({
                 {itineraryList.length > 0 ? (
                 <div className="space-y-3 sm:space-y-4">
                   {itineraryList.map((day, dIdx) => {
-                    const isOpen = Boolean(openDays[day.day]);
+                    const isOpen = Boolean(openDays[day.accordionKey]);
                     const overviewText = day.summary || day.detail;
 
                     return (
                       <div
-                        key={dIdx}
+                        key={day.accordionKey}
                         className="overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-300"
                       >
                         <button
                           type="button"
-                          onClick={() => toggleDay(day.day)}
+                          onClick={() => toggleDay(day.accordionKey)}
+                          aria-expanded={isOpen}
+                          aria-controls={`itinerary-day-${day.accordionKey}`}
                           className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-slate-50/70 cursor-pointer"
                         >
                           <div className="min-w-0">
@@ -2168,7 +2184,7 @@ export default function TourDetailExperience({
                         </button>
 
                         {isOpen && (
-                          <div className="border-t border-slate-100 bg-white p-5 space-y-4">
+                          <div id={`itinerary-day-${day.accordionKey}`} className="border-t border-slate-100 bg-white p-5 space-y-4">
                             {overviewText &&
                               (overviewText.length > 160 ? (
                                 // Long-form content with no separate short
@@ -2989,7 +3005,7 @@ export default function TourDetailExperience({
                   Who&apos;s Travelling?
                 </h4>
                 <span className="text-right text-xs font-medium text-slate-500">
-                  {tour.max_group_size ? `Min 1 – up to ${tour.max_group_size} per vehicle` : "Min 1 guest"}
+                  {tour.max_group_size ? `Min ${minimumTravellers} – up to ${tour.max_group_size} per vehicle` : `Min ${minimumTravellers} guest${minimumTravellers === 1 ? "" : "s"}`}
                   {selectedDeparture?.slotsRemaining != null ? ` · ${selectedDeparture.slotsRemaining} seats available` : ""}
                 </span>
               </div>
@@ -3006,8 +3022,8 @@ export default function TourDetailExperience({
                   <div className="flex items-center gap-2.5">
                     <button
                       type="button"
-                      disabled={adults <= 1}
-                      onClick={() => setAdults((a) => Math.max(1, a - 1))}
+                      disabled={adults + children <= minimumTravellers}
+                      onClick={() => setAdults((a) => Math.max(Math.max(1, minimumTravellers - children), a - 1))}
                       className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
                     >
                       <Minus size={15} />
@@ -3182,7 +3198,7 @@ export default function TourDetailExperience({
                       <button
                         type="button"
                         onClick={() => handleBookNow("reserve")}
-                        disabled={!agentReserveEligible || !selectedDeparture || !unitPrice || totalAmount <= 0}
+                        disabled={!agentReserveEligible || !meetsMinimumParty || !selectedDeparture || !unitPrice || totalAmount <= 0}
                         className="w-full rounded-lg bg-pub-accent py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-[#cf4b24] disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
                       >
                         Reserve Now Pay Later
@@ -3200,7 +3216,7 @@ export default function TourDetailExperience({
                     <button
                       type="button"
                       onClick={() => handleBookNow("full")}
-                      disabled={!selectedDeparture || !unitPrice || totalAmount <= 0}
+                      disabled={!meetsMinimumParty || !selectedDeparture || !unitPrice || totalAmount <= 0}
                       className="w-full rounded-lg bg-pub-accent py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 transition hover:bg-[#cf4b24] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Pay in Full Today
@@ -3217,7 +3233,7 @@ export default function TourDetailExperience({
                       <button
                         type="button"
                         onClick={() => handleBookNow("reserve")}
-                        disabled={!selectedDeparture || !unitPrice || totalAmount <= 0}
+                        disabled={!meetsMinimumParty || !selectedDeparture || !unitPrice || totalAmount <= 0}
                         className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <span>Secure with a Deposit ({format(depositDue, pricingCurrency)} today)</span>
@@ -3233,7 +3249,7 @@ export default function TourDetailExperience({
                   <button
                     type="button"
                     onClick={() => handleBookNow()}
-                    disabled={!selectedDeparture || !unitPrice || totalAmount <= 0}
+                    disabled={!meetsMinimumParty || !selectedDeparture || !unitPrice || totalAmount <= 0}
                     className="w-full rounded-xl bg-pub-accent hover:bg-[#cf4b24] py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {!unitPrice ? "Price Unavailable" : !selectedDeparture ? "Select Date" : (
@@ -3404,7 +3420,7 @@ export default function TourDetailExperience({
               </button>
               <button
                 type="button"
-                onClick={hasBookingDate && unitPrice && totalAmount > 0 ? () => handleBookNow("full") : scrollToBooking}
+                onClick={hasBookingDate && meetsMinimumParty && unitPrice && totalAmount > 0 ? () => handleBookNow("full") : scrollToBooking}
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-pub-accent to-[#ef6a28] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-orange-500/25 transition hover:brightness-95 active:translate-y-px sm:px-6"
               >
                 <span>{hasBookingDate ? "Pay in full" : "Check dates"}</span>
@@ -3422,7 +3438,7 @@ export default function TourDetailExperience({
               </button>
               <button
                 type="button"
-                onClick={hasBookingDate && unitPrice && totalAmount > 0 ? () => handleBookNow() : scrollToBooking}
+                onClick={hasBookingDate && meetsMinimumParty && unitPrice && totalAmount > 0 ? () => handleBookNow() : scrollToBooking}
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-pub-accent to-[#ef6a28] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-orange-500/25 transition hover:brightness-95 active:translate-y-px sm:px-6"
               >
                 <span>{hasBookingDate ? "Book now" : "Check dates"}</span>

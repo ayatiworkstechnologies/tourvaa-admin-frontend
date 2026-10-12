@@ -32,6 +32,7 @@ import {
   getTourPerformanceReport,
   REPORT_TYPES,
   ReportPeriod,
+  DetailReportFilters,
   ReportSnapshot,
   ReportType,
   SalesRevenueReport,
@@ -39,6 +40,7 @@ import {
 import PrintButton from "@/components/reports/PrintButton";
 import { useToast } from "@/hooks/useToast";
 import { useCurrency } from "@/hooks/useCurrency";
+import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -193,7 +195,7 @@ function buildColumns(reportType: ReportType, money: FormatMoney): DataTableColu
         { key: "children", header: "Children" },
         { key: "booking_amount", header: "Amount", render: (r) => money(r.booking_amount) },
         { key: "payment_status", header: "Payment Status", className: "capitalize" },
-        { key: "booking_status", header: "Booking Status", className: "capitalize" },
+        { key: "booking_status", header: "Booking Status", render: (r) => bookingStatusLabel(String(r.booking_status || ""), "admin") },
         { key: "cancellation_status", header: "Cancellation Status", className: "capitalize" },
       ];
     case "sales-revenue-report":
@@ -290,7 +292,7 @@ function buildColumns(reportType: ReportType, money: FormatMoney): DataTableColu
   }
 }
 
-async function fetchReportRows(reportType: ReportType, periodParams: { period: ReportPeriod; start_date?: string; end_date?: string }): Promise<ReportRow[]> {
+async function fetchReportRows(reportType: ReportType, periodParams: { period: ReportPeriod; start_date?: string; end_date?: string }, filters: DetailReportFilters = {}): Promise<ReportRow[]> {
   switch (reportType) {
     case "bookings": return (await getBookingReport(periodParams)) as unknown as ReportRow[];
     case "payments": return (await getPaymentReport(periodParams)) as unknown as ReportRow[];
@@ -301,8 +303,8 @@ async function fetchReportRows(reportType: ReportType, periodParams: { period: R
     case "suppliers": return (await getSupplierReport(periodParams)) as unknown as ReportRow[];
     case "agents": return (await getAgentReport(periodParams)) as unknown as ReportRow[];
     case "customers": return (await getCustomerReport(periodParams)) as unknown as ReportRow[];
-    case "booking-report": return (await getBookingDetailReport(periodParams)) as unknown as ReportRow[];
-    case "payment-report": return (await getPaymentDetailReport(periodParams)) as unknown as ReportRow[];
+    case "booking-report": return (await getBookingDetailReport(periodParams, filters)) as unknown as ReportRow[];
+    case "payment-report": return (await getPaymentDetailReport(periodParams, filters)) as unknown as ReportRow[];
     case "supplier-report": return (await getSupplierDetailReport(periodParams)) as unknown as ReportRow[];
     case "supplier-payout-report": return (await getSupplierPayoutReport()) as unknown as ReportRow[];
     case "tour-performance-report": return (await getTourPerformanceReport()) as unknown as ReportRow[];
@@ -339,8 +341,12 @@ export default function ReportsPage() {
   const [salesTimeSeries, setSalesTimeSeries] = useState<SalesRevenueReport["time_series"]>([]);
   const [rowsPage, setRowsPage] = useState(1);
   const rowsPageSize = 10;
+  const [detailFilters, setDetailFilters] = useState<DetailReportFilters>({});
+  const [salesGranularity, setSalesGranularity] = useState<"day" | "week" | "month">("day");
 
   const reportMeta = REPORT_TYPES.find((r) => r.value === reportType)!;
+  const supportsDetailFilters = reportType === "booking-report" || reportType === "payment-report";
+  const activeDetailFilters = supportsDetailFilters ? detailFilters : {};
   const columns = useMemo(() => {
     const serialColumn: DataTableColumn<ReportRow> = {
       key: "no",
@@ -369,12 +375,12 @@ export default function ReportsPage() {
         ? { period, start_date: customStart, end_date: customEnd }
         : { period: "all" as ReportPeriod };
       if (reportType === "sales-revenue-report") {
-        const report = await getSalesRevenueReport(periodParams);
+        const report = await getSalesRevenueReport(periodParams, salesGranularity);
         const { time_series, ...totals } = report;
         setRows([totals as unknown as ReportRow]);
         setSalesTimeSeries(time_series);
       } else {
-        const result = await fetchReportRows(reportType, periodParams);
+        const result = await fetchReportRows(reportType, periodParams, activeDetailFilters);
         setRows(result);
         setSalesTimeSeries([]);
       }
@@ -386,7 +392,7 @@ export default function ReportsPage() {
     } finally {
       setRowsLoading(false);
     }
-  }, [reportType, period, customStart, customEnd, reportMeta.periodAware]);
+  }, [reportType, period, customStart, customEnd, reportMeta.periodAware, detailFilters, supportsDetailFilters, salesGranularity]);
 
   useEffect(() => {
     if (period === "custom" && reportMeta.periodAware && (!customStart || !customEnd)) return;
@@ -399,7 +405,11 @@ export default function ReportsPage() {
       const periodParams = reportMeta.periodAware
         ? { period, start_date: customStart, end_date: customEnd }
         : { period: "all" as ReportPeriod };
-      await exportReportCsv(reportType, periodParams);
+      await exportReportCsv(
+        reportType,
+        periodParams,
+        reportType === "sales-revenue-report" ? { granularity: salesGranularity } : activeDetailFilters,
+      );
       toast.success("Export downloaded.");
     } catch {
       toast.error("Could not export this report.");
@@ -596,6 +606,102 @@ export default function ReportsPage() {
             <p className="mb-5 text-xs font-semibold text-dash-subtle">
               This report always shows current outstanding records, not a date range.
             </p>
+          )}
+
+          {supportsDetailFilters && (
+            <div className="mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-dash-border bg-dash-bg p-3 print:hidden">
+              <div>
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-dash-muted">Booking status</label>
+                <select
+                  value={detailFilters.booking_status || ""}
+                  onChange={(event) => setDetailFilters((current) => ({ ...current, booking_status: event.target.value }))}
+                  className="h-10 rounded-lg border border-dash-border bg-white px-3 text-sm text-dash-body"
+                >
+                  <option value="">All booking statuses</option>
+                  <option value="pending_payment">Payment required</option>
+                  <option value="pending_supplier_acceptance">Awaiting supplier acceptance</option>
+                  <option value="confirmed">Booking confirmed</option>
+                  <option value="ongoing">Tour in progress</option>
+                  <option value="completed">Tour completed</option>
+                  <option value="cancelled">Booking cancelled</option>
+                  <option value="refunded">Refund completed</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-dash-muted">Payment status</label>
+                <select
+                  value={detailFilters.payment_status || ""}
+                  onChange={(event) => setDetailFilters((current) => ({ ...current, payment_status: event.target.value }))}
+                  className="h-10 rounded-lg border border-dash-border bg-white px-3 text-sm text-dash-body"
+                >
+                  <option value="">All payment statuses</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="authorized">Authorized</option>
+                  <option value="partially_paid">Partially paid</option>
+                  <option value="paid">Paid</option>
+                  <option value="failed">Failed</option>
+                  <option value="refunded">Refunded</option>
+                </select>
+              </div>
+              {reportType === "booking-report" && (
+                <div>
+                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-dash-muted">Supplier ID</label>
+                  <input
+                    type="number"
+                    min="1"
+                    inputMode="numeric"
+                    value={detailFilters.supplier_id || ""}
+                    onChange={(event) => setDetailFilters((current) => ({
+                      ...current,
+                      supplier_id: event.target.value ? Number(event.target.value) : undefined,
+                    }))}
+                    placeholder="Any supplier"
+                    className="h-10 w-32 rounded-lg border border-dash-border bg-white px-3 text-sm text-dash-body"
+                  />
+                </div>
+              )}
+              {reportType === "payment-report" && (
+                <div>
+                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-dash-muted">Gateway</label>
+                  <select
+                    value={detailFilters.gateway || ""}
+                    onChange={(event) => setDetailFilters((current) => ({ ...current, gateway: event.target.value }))}
+                    className="h-10 rounded-lg border border-dash-border bg-white px-3 text-sm text-dash-body"
+                  >
+                    <option value="">All gateways</option>
+                    <option value="stripe">Stripe</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="bank_transfer">Bank transfer</option>
+                  </select>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setDetailFilters({})}
+                disabled={!detailFilters.booking_status && !detailFilters.payment_status && !detailFilters.gateway && !detailFilters.supplier_id}
+                className="h-10 rounded-lg px-3 text-sm font-bold text-dash-brand hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+
+          {reportType === "sales-revenue-report" && (
+            <div className="mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-dash-border bg-dash-bg p-3 print:hidden">
+              <div>
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-dash-muted">Revenue trend</label>
+                <select
+                  value={salesGranularity}
+                  onChange={(event) => setSalesGranularity(event.target.value as "day" | "week" | "month")}
+                  className="h-10 rounded-lg border border-dash-border bg-white px-3 text-sm text-dash-body"
+                >
+                  <option value="day">Daily</option>
+                  <option value="week">Weekly</option>
+                  <option value="month">Monthly</option>
+                </select>
+              </div>
+              <p className="pb-2 text-xs font-medium text-dash-muted">Changes the revenue chart and CSV export grouping.</p>
+            </div>
           )}
 
           {rowsError && <p className="mb-3 text-sm text-red-600">{rowsError}</p>}

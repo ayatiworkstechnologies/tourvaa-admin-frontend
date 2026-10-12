@@ -12,6 +12,7 @@ import {
 import { useCurrency } from "@/hooks/useCurrency";
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
 import { useToast } from "@/hooks/useToast";
+import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 import {
   BookingConversationThread,
   BookingMessage,
@@ -616,7 +617,7 @@ export default function SupplierBookingDetailPage() {
       >
         <div className="flex flex-wrap items-center gap-3">
           <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black capitalize text-emerald-700">
-            {booking.booking_status.replace(/_/g, " ")}
+            {bookingStatusLabel(booking.booking_status, "supplier")}
           </span>
           <button
             type="button"
@@ -654,7 +655,7 @@ export default function SupplierBookingDetailPage() {
           <InfoRow label="Travel Date" value={dateStr(booking.tour_date ?? booking.travel_date)} />
           <InfoRow label="Travellers" value={pax ?? "-"} />
           <InfoRow label="Adults" value={booking.adults_count} />
-          <InfoRow label="Booking Status" value={booking.booking_status.replace(/_/g, " ")} />
+          <InfoRow label="Booking Status" value={bookingStatusLabel(booking.booking_status, "supplier")} />
           <InfoRow label="Supplier Decision" value={(booking.supplier_acceptance_status ?? "-").replace(/_/g, " ")} />
           {booking.payment_status && <InfoRow label="Payment Status" value={booking.payment_status} />}
           <InfoRow label="Booked On" value={dateStr(booking.created_at)} />

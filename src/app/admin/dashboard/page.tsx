@@ -11,6 +11,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { ReportSnapshot } from "@/lib/api/services/reportService";
 import DatePicker from "@/components/ui/DatePicker";
 import Loader from "@/components/ui/Loader";
+import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line,
@@ -58,6 +59,21 @@ function changeBadge(pct: number) {
   );
 }
 
+function localDate(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function dateRangeFor(period: "today" | "week" | "month") {
+  const today = new Date();
+  const start = new Date(today);
+  if (period === "week") start.setDate(today.getDate() - 6);
+  if (period === "month") start.setDate(1);
+  return { start: localDate(start), end: localDate(today) };
+}
+
 // main content
 function AdminDashboardContent({ user }: { user: { name: string; role: { name: string } } }) {
   const { formatCompact } = useCurrency();
@@ -88,8 +104,10 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
   const [fStart,   setFStart]   = useState("");
   const [fEnd,     setFEnd]     = useState("");
   const [fCountry, setFCountry] = useState("");
+  const [fBookingId, setFBookingId] = useState("");
+  const [fBookingStatus, setFBookingStatus] = useState("");
   // active filters - what the load() actually uses
-  const [activeFilters, setActiveFilters] = useState({ start: "", end: "", country: "" });
+  const [activeFilters, setActiveFilters] = useState({ start: "", end: "", country: "", bookingId: "", bookingStatus: "" });
   const [setupProgress, setSetupProgress] = useState<{ percent: number; completed: number; total: number; pending: string[] } | null>(null);
 
   const load = useCallback(async () => {
@@ -99,6 +117,8 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
     if (activeFilters.start)   p.start_date  = activeFilters.start;
     if (activeFilters.end)     p.end_date    = activeFilters.end;
     if (activeFilters.country) p.country_id  = activeFilters.country;
+    if (activeFilters.bookingId) p.booking_id = activeFilters.bookingId;
+    if (activeFilters.bookingStatus) p.booking_status = activeFilters.bookingStatus;
 
     try {
       const [sumRes, suppRes, agentRes, chartRes, actRes, snapRes, countryRes] =
@@ -107,7 +127,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
           api.get("/suppliers",  { params: { limit: 1000 } }),
           api.get("/agents",     { params: { limit: 1000 } }),
           api.get("/dashboard/charts",           { params: p }),
-          api.get("/dashboard/recent-activities"),
+          api.get("/dashboard/recent-activities", { params: p }),
           api.get("/reports/snapshot"),
           api.get("/countries", { params: { limit: 200 } }),
         ]);
@@ -325,9 +345,16 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
       <div className="rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
         <div className="mb-5">
           <h2 className="text-base font-black text-dash-text">Dashboard Filters</h2>
-          <p className="mt-0.5 text-xs font-semibold text-dash-muted">Filter analytics by date range or country, then press Apply.</p>
+          <p className="mt-0.5 text-xs font-semibold text-dash-muted">Filter all booking analytics by period, booking ID, status, or country.</p>
         </div>
-        <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-4 flex flex-wrap gap-2">
+          {(["today", "week", "month"] as const).map((period) => (
+            <button key={period} type="button" onClick={() => { const range = dateRangeFor(period); setFStart(range.start); setFEnd(range.end); }} className="rounded-lg border border-dash-border bg-dash-bg px-3 py-1.5 text-xs font-bold capitalize text-dash-body hover:border-dash-brand hover:text-dash-brand">
+              This {period === "today" ? "day" : period}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {/* Start date */}
           <DatePicker label="Start date" value={fStart} maxDate={fEnd || undefined} onChange={setFStart} />
           {/* End date */}
@@ -348,11 +375,22 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
               ))}
             </select>
           </div>
+          <div>
+            <label htmlFor="filter-booking-id" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-dash-muted">Booking ID</label>
+            <input id="filter-booking-id" inputMode="numeric" min="1" pattern="[0-9]*" value={fBookingId} onChange={(e) => setFBookingId(e.target.value.replace(/\D/g, ""))} placeholder="e.g. 1024" className="w-full rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand focus:ring-1 focus:ring-dash-brand" />
+          </div>
+          <div>
+            <label htmlFor="filter-booking-status" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-dash-muted">Booking status</label>
+            <select id="filter-booking-status" value={fBookingStatus} onChange={(e) => setFBookingStatus(e.target.value)} className="w-full appearance-none rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand focus:ring-1 focus:ring-dash-brand">
+              <option value="">All statuses</option>
+              <option value="pending_payment">Pending payment</option><option value="payment_authorized">Payment authorized</option><option value="pending_supplier_acceptance">Pending supplier acceptance</option><option value="confirmed">Confirmed</option><option value="upcoming">Upcoming</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="declined">Declined</option><option value="refunded">Refunded</option>
+            </select>
+          </div>
           {/* Action buttons */}
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setActiveFilters({ start: fStart, end: fEnd, country: fCountry })}
+              onClick={() => setActiveFilters({ start: fStart, end: fEnd, country: fCountry, bookingId: fBookingId, bookingStatus: fBookingStatus })}
               className="flex h-10.5 flex-1 items-center justify-center gap-2 rounded-xl bg-dash-brand px-4 text-sm font-bold text-white hover:bg-[#2196e0] transition-colors"
             >
               <Filter size={14} /> Apply
@@ -360,8 +398,8 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
             <button
               type="button"
               onClick={() => {
-                setFStart(""); setFEnd(""); setFCountry("");
-                setActiveFilters({ start: "", end: "", country: "" });
+                setFStart(""); setFEnd(""); setFCountry(""); setFBookingId(""); setFBookingStatus("");
+                setActiveFilters({ start: "", end: "", country: "", bookingId: "", bookingStatus: "" });
               }}
               className="flex h-10.5 items-center justify-center gap-1.5 rounded-xl border border-dash-border bg-white px-4 text-sm font-bold text-dash-body hover:bg-[var(--portal-soft)] transition-colors"
             >
@@ -369,9 +407,14 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
             </button>
           </div>
         </div>
-        {(activeFilters.start || activeFilters.end || activeFilters.country) && (
+        {(activeFilters.start || activeFilters.end || activeFilters.country || activeFilters.bookingId || activeFilters.bookingStatus) && (
           <p className="mt-3 text-[11px] font-semibold text-dash-brand">
             Active filter: {[activeFilters.start, activeFilters.end && `→ ${activeFilters.end}`, countries.find(c => String(c.id) === activeFilters.country)?.country_name].filter(Boolean).join(" ")}
+          </p>
+        )}
+        {(activeFilters.bookingId || activeFilters.bookingStatus) && (
+          <p className="mt-1 text-[11px] font-semibold text-dash-brand">
+            {[activeFilters.bookingId && `Booking #${activeFilters.bookingId}`, activeFilters.bookingStatus?.replaceAll("_", " ")].filter(Boolean).join(" · ")}
           </p>
         )}
       </div>
@@ -791,7 +834,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
                   {recentBookings.map((b) => (
                     <li key={b.id} className="rounded-lg bg-dash-bg p-2.5">
                       <p className="text-xs font-bold text-dash-text">{b.booking_code}</p>
-                      <p className="mt-0.5 text-[10px] font-semibold text-dash-muted">{b.tour_name || "-"} · {b.booking_status.replaceAll("_", " ")}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-dash-muted">{b.tour_name || "-"} · {bookingStatusLabel(b.booking_status, "admin")}</p>
                     </li>
                   ))}
                 </ul>

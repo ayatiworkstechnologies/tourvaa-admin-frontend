@@ -25,6 +25,7 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 import api from "@/lib/api/client";
+import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { formatCurrencyCompact } from "@/lib/utils/currency";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
@@ -672,7 +673,7 @@ export default function AgentDashboardPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusColors(b.booking_status)}`}>
-                            {b.booking_status.replaceAll("_", " ")}
+                            {bookingStatusLabel(b.booking_status, "agent")}
                           </span>
                           <Link href={`/agent/bookings/${b.id}`} className="text-xs font-bold text-dash-brand hover:underline">
                             View

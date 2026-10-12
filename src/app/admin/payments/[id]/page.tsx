@@ -53,7 +53,22 @@ export default function PaymentDetailPage() {
               <Row label="Paid Amount" value={payment.paid_amount} />
               <Row label="Gateway Payment ID" value={payment.gateway_payment_id} />
               <Row label="Gateway Order ID" value={payment.gateway_order_id} />
+              <Row label="Transaction ID" value={payment.transaction_id} />
             </div>
+          </section>
+
+          <section className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+            <h2 className="font-black text-dash-text">Gateway transaction history</h2>
+            {!payment.transactions || payment.transactions.length === 0 ? (
+              <p className="mt-3 rounded-lg bg-dash-bg p-4 text-sm text-dash-muted">No gateway transaction events have been recorded.</p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[560px] text-left text-sm">
+                  <thead className="border-b border-dash-border text-xs uppercase text-dash-subtle"><tr><th className="px-3 py-2">Type</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Gateway reference</th><th className="px-3 py-2">Recorded</th></tr></thead>
+                  <tbody>{payment.transactions.map((transaction) => <tr key={transaction.id} className="border-b border-dash-border-soft"><td className="px-3 py-3 capitalize">{transaction.transaction_type}</td><td className="px-3 py-3 capitalize">{transaction.status}</td><td className="px-3 py-3">{transaction.amount} {payment.currency}</td><td className="px-3 py-3 font-mono text-xs">{transaction.gateway_reference || "-"}</td><td className="px-3 py-3 text-dash-muted">{transaction.created_at ? new Date(transaction.created_at).toLocaleString() : "-"}</td></tr>)}</tbody>
+                </table>
+              </div>
+            )}
           </section>
 
           <section className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">

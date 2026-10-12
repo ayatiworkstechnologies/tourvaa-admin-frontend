@@ -23,8 +23,10 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import { useToast } from "@/hooks/useToast";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 import { useCurrency } from "@/hooks/useCurrency";
 import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
+import Loader from "@/components/ui/Loader";
 
 type Profile = {
   full_name?: string;
@@ -105,22 +107,23 @@ function formatDate(value?: string | null) {
 
 function formatStatus(status: string) {
   const s = status.toLowerCase();
+  const label = bookingStatusLabel(status, "customer");
   if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(s)) {
-    return <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-600">Booking Confirmed</span>;
+    return <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-600">{label}</span>;
   }
   if (s === "ongoing") {
-    return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">Ongoing</span>;
+    return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">{label}</span>;
   }
   if (s === "completed") {
-    return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-600">Completed</span>;
+    return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-600">{label}</span>;
   }
   if (s === "cancellation_requested") {
-    return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">Cancellation Requested</span>;
+    return <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">{label}</span>;
   }
   if (["cancelled", "declined", "refunded"].includes(s)) {
-    return <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[11px] font-bold text-red-500">Cancelled</span>;
+    return <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[11px] font-bold text-red-500">{label}</span>;
   }
-  return <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">Booking Request Received</span>;
+  return <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">{label}</span>;
 }
 
 function formatPrice(amount?: number | string) {
@@ -135,7 +138,9 @@ export default function CustomerDashboardPage() {
   const { format } = useCurrency();
   const toast = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [bookings, setBookings] = useState<Booking[]>(DEFAULT_BOOKINGS);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [bookingsError, setBookingsError] = useState(false);
 
   const handleReferralShare = useCallback(async () => {
     const link = typeof window !== "undefined" ? `${window.location.origin}/register?ref=${encodeURIComponent(String(user?.id ?? ""))}` : "";
@@ -156,12 +161,18 @@ export default function CustomerDashboardPage() {
     }
   }, [user, toast]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
+    setBookingsLoading(true);
+    setBookingsError(false);
     try {
       const [profileResult, bookingResult] = await Promise.allSettled([
-        api.get("/customers/me"),
-        api.get("/customer/bookings", { params: { limit: 5 } }),
+        // Customer portal routes enforce ownership. The former /customers/me
+        // endpoint is an admin-era path and caused a rejected request on every
+        // dashboard mount, which made reloads visibly flicker.
+        api.get("/customer/profile", { signal }),
+        api.get("/customer/bookings", { params: { limit: 5 }, signal }),
       ]);
+      if (signal?.aborted) return;
       if (profileResult.status === "fulfilled") {
         setProfile(profileResult.value.data?.data ?? null);
       }
@@ -169,15 +180,27 @@ export default function CustomerDashboardPage() {
         const items = bookingResult.value.data?.items ?? bookingResult.value.data?.data;
         if (Array.isArray(items)) {
           setBookings(items);
+        } else {
+          setBookings([]);
+          setBookingsError(true);
         }
+      } else {
+        setBookings([]);
+        setBookingsError(true);
       }
     } catch {
-      // Use fallback data
+      if (signal?.aborted) return;
+      setBookings([]);
+      setBookingsError(true);
+    } finally {
+      if (!signal?.aborted) setBookingsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void load();
+    const controller = new AbortController();
+    void load(controller.signal);
+    return () => controller.abort();
   }, [load]);
 
   const fullName = profile?.full_name || profile?.name || user?.name || "";
@@ -406,7 +429,15 @@ export default function CustomerDashboardPage() {
         <AgentSection className="mt-4" title="My Bookings" description="Track your latest trips, balances, and booking status." action={{ label: "See all", href: "/customer/bookings", icon: LayoutGrid }}>
           <div className="p-5">
 
-          {bookings.length === 0 ? (
+          {bookingsLoading ? (
+            <div className="py-8"><Loader label="Loading your bookings..." compact /></div>
+          ) : bookingsError ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-amber-200 bg-amber-50/60 p-8 text-center">
+              <Ticket size={28} className="text-amber-400" />
+              <p className="mt-2 text-xs font-bold text-amber-900">We could not load your bookings</p>
+              <button type="button" onClick={() => void load()} className="mt-3 rounded-xl border border-amber-300 bg-white px-3.5 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100">Try again</button>
+            </div>
+          ) : bookings.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
               <Ticket size={28} className="text-slate-300" />
               <p className="mt-2 text-xs font-bold text-slate-600">No tour bookings yet</p>

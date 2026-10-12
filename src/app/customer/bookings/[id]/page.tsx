@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/utils/currency";
 import { StripeBadge, PayPalLogo } from "@/components/common/PaymentLogos";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import Loader from "@/components/ui/Loader";
+import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 
 type Traveller = {
   id: number;
@@ -82,14 +83,7 @@ function StatusIcon({ status }: { status: string }) {
 }
 
 function customerBookingStatus(status?: string): string {
-  const value = (status || "").toLowerCase();
-  if (["draft", "pending_payment", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required"].includes(value)) return "Booking Request Received";
-  if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(value)) return "Booking Confirmed";
-  if (value === "ongoing") return "Ongoing";
-  if (value === "completed") return "Completed";
-  if (value === "cancellation_requested") return "Cancellation Requested";
-  if (["cancelled", "declined", "refunded"].includes(value)) return "Cancelled";
-  return "Booking Request Received";
+  return bookingStatusLabel(status, "customer");
 }
 
 function Field({ label, value }: { label: string; value?: React.ReactNode }) {
@@ -192,8 +186,8 @@ function PayNowModal({
       const res = await api.post("/payments/stripe/create-session", {
         booking_id: bookingId, amount: paymentAmount, currency: currency || "USD",
         payment_type: paymentType,
-        success_url: `${origin}/customer/bookings/${bookingId}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/customer/bookings/${bookingId}?payment=cancelled`,
+        success_url: `${origin}/customer/payments/success?booking_id=${bookingId}&provider=stripe&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/customer/payments/failed?booking_id=${bookingId}&provider=stripe`,
       });
       const { checkout_url, payment_id } = res.data?.data ?? {};
       if (!checkout_url) throw new Error("No checkout URL returned");
@@ -212,8 +206,8 @@ function PayNowModal({
       const res = await api.post("/payments/paypal/create-order", {
         booking_id: bookingId, amount: paymentAmount, currency: currency || "USD",
         payment_type: paymentType,
-        return_url: `${origin}/customer/bookings/${bookingId}?payment=paypal_approved`,
-        cancel_url: `${origin}/customer/bookings/${bookingId}?payment=cancelled`,
+        return_url: `${origin}/customer/payments/success?booking_id=${bookingId}&provider=paypal`,
+        cancel_url: `${origin}/customer/payments/failed?booking_id=${bookingId}&provider=paypal`,
       });
       const { approve_url, payment_id } = res.data?.data ?? {};
       if (!approve_url) throw new Error("No PayPal approval URL returned");

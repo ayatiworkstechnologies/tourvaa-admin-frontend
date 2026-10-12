@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuPlane as Plane, LuRefreshCw as RefreshCw, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { agentBookingStatusLabel } from "@/lib/constants/bookingStatus";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -59,19 +60,6 @@ function Pill({ status, children }: { status?: string; children: React.ReactNode
       {children}
     </span>
   );
-}
-
-function agentBookingStatus(status: string) {
-  const labels: Record<string, string> = {
-    pending_payment: "Pending Payment",
-    pending_supplier_acceptance: "Booking Request Received",
-    confirmed: "Booking Confirmed",
-    ongoing: "Ongoing",
-    completed: "Completed",
-    cancelled: "Cancelled",
-    declined: "Declined",
-  };
-  return labels[status] ?? status.replaceAll("_", " ");
 }
 
 export default function AgentBookingsPage() {
@@ -140,7 +128,7 @@ export default function AgentBookingsPage() {
     { key: "customer", header: "Customer", render: (b) => b.customer_name ?? "-", className: "hidden text-dash-muted sm:table-cell" },
     { key: "tour", header: "Tour", render: (b) => b.tour_name ?? "-", className: "hidden max-w-[180px] truncate text-dash-muted md:table-cell" },
     { key: "date", header: "Date", render: (b) => dateText(b.tour_date), className: "hidden text-dash-muted lg:table-cell" },
-    { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{agentBookingStatus(b.booking_status)}</Pill> },
+    { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{agentBookingStatusLabel(b.booking_status)}</Pill> },
     { key: "payment", header: "Booking Payment Status", render: (b) => <Pill status={b.payment_status}>{b.payment_status.replaceAll("_", " ")}</Pill>, className: "hidden xl:table-cell" },
     { key: "paid", header: "Paid", render: (b) => money(b.amount_paid, b.currency), className: "hidden text-right text-dash-muted xl:table-cell" },
     { key: "balance_due", header: "Balance Due", render: (b) => (Number(b.amount_pending || 0) > 0 ? money(b.amount_pending, b.currency) : <span className="text-emerald-700">Paid in full</span>), className: "hidden text-right font-semibold text-amber-700 xl:table-cell" },

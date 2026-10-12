@@ -1,5 +1,7 @@
 "use client";
 
+import { bookingStatusLabel, type BookingPortal } from "@/lib/constants/bookingStatus";
+
 type StatusStyle = {
   bg: string;
   text: string;
@@ -180,10 +182,10 @@ const defaultStyle: StatusStyle = {
   dot: "bg-blue-500",
 };
 
-export default function BookingStatusBadge({ value }: { value?: string | null }) {
+export default function BookingStatusBadge({ value, portal = "admin" }: { value?: string | null; portal?: BookingPortal }) {
   const normKey = (value || "").toLowerCase().trim();
   const conf = statusStyles[normKey] || defaultStyle;
-  const label = conf.label || (normKey ? normKey.replaceAll("_", " ") : "Unknown");
+  const label = conf.label || bookingStatusLabel(normKey, portal);
 
   return (
     <span

@@ -169,6 +169,8 @@ check(
 
 const payments = read("src/lib/api/services/paymentService.ts");
 check("payment operations use capture, void, refund, and status contracts", ["/capture", "/void", "/refund", "/status"].every((path) => payments.includes(path)));
+const paymentPage = read("src/app/admin/payments/page.tsx");
+check("admin payment list keeps long gateway references and customer details within their columns", paymentPage.includes('className="block max-w-48 truncate"') && paymentPage.includes('className="max-w-52"') && paymentPage.includes('minWidthClass="min-w-[1680px]"'));
 
 const invoices = read("src/lib/api/services/invoiceService.ts");
 check("invoice downloads carry authorization through blob requests", invoices.includes('responseType: "blob"'));

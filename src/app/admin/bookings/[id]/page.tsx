@@ -14,6 +14,7 @@ import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 import {
   LuArrowLeft as ArrowLeft,
   LuCircleCheckBig as CheckCircle2,
@@ -1460,7 +1461,7 @@ export default function BookingDetailPage() {
                       value={booking.updated_at ? new Date(booking.updated_at).toLocaleString() : "-"}
                     />
                     <DetailField label="Booking Code" value={booking.booking_code} />
-                    <DetailField label="Current Status" value={booking.booking_status.replaceAll("_", " ")} />
+                    <DetailField label="Current Status" value={bookingStatusLabel(booking.booking_status, "admin")} />
                     {booking.cancellation_source && (
                       <DetailField label="Cancellation Source" value={booking.cancellation_source} />
                     )}

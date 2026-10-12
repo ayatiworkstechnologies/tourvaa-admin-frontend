@@ -10,6 +10,7 @@ import DatePicker from "@/components/ui/DatePicker";
 import { SupplierMetric, SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/useToast";
+import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 
 type Booking = {
   id: number;
@@ -62,7 +63,7 @@ function supplierBookingStatus(booking: Booking) {
   if (booking.booking_status === "cancelled") {
     return booking.cancellation_source === "supplier" ? "Cancelled by Supplier" : "Cancelled by Tourvaa";
   }
-  return booking.booking_status.replaceAll("_", " ");
+  return bookingStatusLabel(booking.booking_status, "supplier");
 }
 
 function statusColors(s: string) {

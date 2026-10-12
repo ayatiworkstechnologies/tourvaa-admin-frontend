@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { LuBell as Bell } from "react-icons/lu";
 import api from '@/lib/api/client';
 import { useAuthContext } from '@/providers/AuthProvider';
@@ -17,6 +18,7 @@ type Notification = {
   message: string;
   is_read: boolean;
   created_at: string;
+  metadata?: { action_url?: string | null } | null;
 };
 
 const inboxCache = new Map<number, Notification[]>();
@@ -42,6 +44,7 @@ function loadInbox(userId: number) {
 }
 
 export default function NotificationInbox() {
+  const router = useRouter();
   const { user } = useAuthContext();
   const userId = user?.id;
   const [open, setOpen] = useState(false);
@@ -171,6 +174,14 @@ export default function NotificationInbox() {
     }
   }
 
+  function openNotification(notification: Notification) {
+    if (!notification.is_read) void markRead(notification.id);
+    const url = notification.metadata?.action_url;
+    // The API supplies only internal, role-scoped URLs. Keep the UI equally
+    // strict if an old or manually-created notification contains bad metadata.
+    if (url && url.startsWith('/') && !url.startsWith('//')) router.push(url);
+  }
+
   const unread = items.filter((n) => !n.is_read).length;
   const shouldBlink = hasNewAlert || unread > 0;
 
@@ -228,7 +239,7 @@ export default function NotificationInbox() {
               items.map((n) => (
                 <li
                   key={n.id}
-                  onClick={() => !n.is_read && markRead(n.id)}
+                  onClick={() => openNotification(n)}
                   className={`cursor-pointer px-4 py-3 transition-colors hover:bg-dash-bg ${!n.is_read ? 'bg-[#F0F7FF]' : ''}`}
                 >
                   <div className="flex items-start gap-2">

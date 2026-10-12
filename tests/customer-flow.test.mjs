@@ -80,10 +80,18 @@ check(
 check(
   "tour style keeps vehicle capacity separate from live seats remaining",
   detailExperience.includes("tour.overview?.vehicle_style?.trim()") &&
-    detailExperience.includes("Min 1 – up to ${tour.max_group_size} per vehicle") &&
+    detailExperience.includes("Min ${minimumTravellers} – up to ${tour.max_group_size} per vehicle") &&
     detailExperience.includes("seats available") &&
     !detailExperience.includes("Max {maxTravellers} guests") &&
     !detailExperience.includes("capacity <= 6"),
+);
+check(
+  "tour detail never requests a quote below the configured minimum party size",
+  detailExperience.includes("const minimumTravellers = Math.max(") &&
+    detailExperience.includes("Number(tour.min_booking_size || 1)") &&
+    detailExperience.includes("Number(pricingRows[0]?.persons_from || 1)") &&
+    detailExperience.includes("adults + children < minimumTravellers") &&
+    detailExperience.includes("const meetsMinimumParty = travellerCount >= minimumTravellers"),
 );
 check(
   "tour detail keeps price tiers available above the vehicle group size",
@@ -223,6 +231,9 @@ const customerDashboard = read("src/app/customer/dashboard/page.tsx");
 check("dashboard exposes the main traveller quick actions", ["Book a Tour", "Make a Payment", "Add Traveller", "View Invoices", "Contact Support"].every((label) => customerDashboard.includes(label)));
 check("dashboard links pending balances to checkout", customerDashboard.includes("?action=pay"));
 check("dashboard referral action uses native share with clipboard fallback", customerDashboard.includes("navigator.share") && customerDashboard.includes("navigator.clipboard.writeText"));
+check("dashboard loads its profile from the customer-owned portal endpoint and cancels stale reloads", customerDashboard.includes('api.get("/customer/profile", { signal })') && customerDashboard.includes("new AbortController()") && !customerDashboard.includes('api.get("/customers/me")'));
+const paymentReturn = read("src/app/customer/payments/[result]/page.tsx");
+check("payment return shows success only after verified gateway completion", paymentReturn.includes('"/payments/stripe/confirm-return"') && paymentReturn.includes('paypal_status !== "COMPLETED"') && paymentReturn.includes('"/payments/abandon-pending"'));
 
 const customerBookings = read("src/app/customer/bookings/page.tsx");
 check("dashboard request links apply the bookings tab filter", customerBookings.includes('new URLSearchParams(window.location.search).get("tab")'));

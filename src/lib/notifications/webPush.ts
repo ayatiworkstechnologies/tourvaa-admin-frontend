@@ -15,6 +15,13 @@ export function pushPermission(): PushState {
   return Notification.permission as PushState;
 }
 
+function deviceDetails() {
+  const agent = navigator.userAgent;
+  const platform = /Android/i.test(agent) ? "android" : /iPhone|iPad|iPod/i.test(agent) ? "ios" : /Windows/i.test(agent) ? "windows" : /Macintosh/i.test(agent) ? "macos" : "web";
+  const device_type = /Mobi|Android|iPhone|iPad|iPod/i.test(agent) ? "mobile" : "desktop";
+  return { platform, device_type };
+}
+
 function base64UrlToUint8Array(value: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
   const raw = atob((value + padding).replace(/-/g, "+").replace(/_/g, "/"));
@@ -66,7 +73,7 @@ async function subscribeAndSave(): Promise<boolean> {
 
   const json = subscription.toJSON();
   if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return false;
-  await api.post("/notifications/push/subscribe", { endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth });
+  await api.post("/notifications/push/subscribe", { endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth, ...deviceDetails() });
   return true;
 }
 

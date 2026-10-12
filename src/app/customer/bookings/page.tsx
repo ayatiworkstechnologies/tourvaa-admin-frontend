@@ -14,6 +14,7 @@ import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import DatePicker from "@/components/ui/DatePicker";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
+import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 
 type Booking = {
   id: number | string;
@@ -104,14 +105,7 @@ function statusBadge(status: string) {
 }
 
 function customerBookingStatus(status?: string): string {
-  const value = (status || "").toLowerCase();
-  if (["draft", "pending_payment", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required"].includes(value)) return "Booking Request Received";
-  if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(value)) return "Booking Confirmed";
-  if (value === "ongoing") return "Ongoing";
-  if (value === "completed") return "Completed";
-  if (value === "cancellation_requested") return "Cancellation Requested";
-  if (["cancelled", "declined", "refunded"].includes(value)) return "Cancelled";
-  return "Booking Request Received";
+  return bookingStatusLabel(status, "customer");
 }
 
 export default function CustomerBookingsPage() {
