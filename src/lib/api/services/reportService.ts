@@ -58,6 +58,38 @@ export type AudienceIdentity = {
   joined_at: string | null;
 };
 export type AudienceReportRow = (SupplierReportRow | AgentReportRow | CustomerReportRow) & AudienceIdentity;
+export type AudienceBookingDetail = {
+  booking_id: number;
+  booking_code: string;
+  booked_at: string | null;
+  tour_name: string | null;
+  travel_date: string | null;
+  customer_name: string | null;
+  travellers: number;
+  booking_status: string;
+  payment_status: string;
+  currency: string;
+  booking_value: string;
+  paid: string;
+  pending: string;
+  partner_earnings: string;
+  tourvaa_revenue: string;
+};
+export type AudienceReportDetail = {
+  identity: AudienceReportRow;
+  summary: {
+    bookings: number;
+    travellers: number;
+    booking_value: string;
+    paid: string;
+    pending: string;
+    partner_earnings: string;
+    tourvaa_revenue: string;
+  };
+  status_breakdown: { status: string; count: number }[];
+  payment_breakdown: { status: string; count: number }[];
+  bookings: AudienceBookingDetail[];
+};
 
 export async function getAudienceOptions(audience: ReportAudience) {
   const res = await api.get<ApiDataResponse<AudienceOption[]>>("/reports/audience-options", { params: { audience } });
@@ -66,6 +98,13 @@ export async function getAudienceOptions(audience: ReportAudience) {
 
 export async function getAudienceReport(audience: ReportAudience, entityId: number | undefined, startDate: string, endDate: string) {
   const res = await api.get<ApiDataResponse<AudienceReportRow[]>>("/reports/audience", {
+    params: { audience, entity_id: entityId, period: "custom", start_date: startDate, end_date: endDate },
+  });
+  return res.data.data;
+}
+
+export async function getAudienceReportDetail(audience: ReportAudience, entityId: number, startDate: string, endDate: string) {
+  const res = await api.get<ApiDataResponse<AudienceReportDetail>>("/reports/audience-detail", {
     params: { audience, entity_id: entityId, period: "custom", start_date: startDate, end_date: endDate },
   });
   return res.data.data;

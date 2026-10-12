@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   LuBriefcaseBusiness as BriefcaseBusiness,
   LuBuilding2 as Building2,
   LuCalendarDays as CalendarDays,
+  LuCircleDollarSign as CircleDollarSign,
   LuDownload as Download,
   LuEye as Eye,
   LuFileChartColumn as FileChartColumn,
   LuLoaderCircle as LoaderCircle,
   LuPrinter as Printer,
+  LuReceiptText as ReceiptText,
   LuSearch as Search,
   LuUsers as Users,
+  LuWalletCards as WalletCards,
+  LuX as X,
 } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DatePicker from "@/components/ui/DatePicker";
@@ -20,10 +24,12 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/useToast";
 import {
   AudienceOption,
+  AudienceReportDetail,
   AudienceReportRow,
   exportAudienceReport,
   getAudienceOptions,
   getAudienceReport,
+  getAudienceReportDetail,
   ReportAudience,
 } from "@/lib/api/services/reportService";
 
@@ -32,6 +38,27 @@ const AUDIENCES: Array<{ value: ReportAudience; label: string; description: stri
   { value: "agent", label: "Agent", description: "Sales and commissions", icon: BriefcaseBusiness },
   { value: "customer", label: "Customer", description: "Bookings, spend and pending", icon: Users },
 ];
+
+const AUDIENCE_DETAIL_COPY: Record<ReportAudience, { title: string; valueLabel: string; explanation: string; flow: string[] }> = {
+  supplier: {
+    title: "Supplier end-to-end report",
+    valueLabel: "Supplier net earnings",
+    explanation: "Trace every assigned booking from customer value and collection through to the supplier's net payable and Tourvaa revenue.",
+    flow: ["Assigned bookings", "Customer collections", "Supplier net payable", "Tourvaa revenue"],
+  },
+  agent: {
+    title: "Agent end-to-end report",
+    valueLabel: "Agent commission earned",
+    explanation: "Trace every agent booking from customer value and collection through to earned commission and Tourvaa revenue.",
+    flow: ["Agent bookings", "Customer collections", "Agent commission", "Tourvaa revenue"],
+  },
+  customer: {
+    title: "Customer end-to-end report",
+    valueLabel: "Customer paid",
+    explanation: "Trace the customer's complete booking history, travel volume, payments, outstanding balance and Tourvaa revenue.",
+    flow: ["Bookings placed", "Travel and travellers", "Paid and outstanding", "Tourvaa revenue"],
+  },
+};
 
 function inputDate(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -70,6 +97,12 @@ export default function CreateReportPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "bookings" | "amount">("amount");
   const [page, setPage] = useState(1);
+  const [detail, setDetail] = useState<AudienceReportDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+  const [bookingSearch, setBookingSearch] = useState("");
+  const [bookingStatus, setBookingStatus] = useState("");
+  const detailRef = useRef<HTMLDivElement>(null);
   const pageSize = 10;
 
   useEffect(() => {
@@ -79,6 +112,7 @@ export default function CreateReportPage() {
     setHasRun(false);
     setSearch("");
     setStatusFilter("");
+    setDetail(null);
     setPage(1);
     setOptionsLoading(true);
     getAudienceOptions(audience)
@@ -96,6 +130,7 @@ export default function CreateReportPage() {
     setRunning(true);
     setError("");
     try {
+      setDetail(null);
       setRows(await getAudienceReport(audience, entityId ? Number(entityId) : undefined, startDate, endDate));
       setHasRun(true);
       setPage(1);
@@ -105,6 +140,23 @@ export default function CreateReportPage() {
       setError("Could not create this report. Please check the filters and try again.");
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function openDetail(row: AudienceReportRow) {
+    const id = "supplier_id" in row ? row.supplier_id : "agent_id" in row ? row.agent_id : row.customer_id;
+    setDetailLoading(true);
+    setDetailError("");
+    setBookingSearch("");
+    setBookingStatus("");
+    requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    try {
+      setDetail(await getAudienceReportDetail(audience, id, startDate, endDate));
+    } catch {
+      setDetail(null);
+      setDetailError("Could not load the booking-level report. Please try again.");
+    } finally {
+      setDetailLoading(false);
     }
   }
 
@@ -146,6 +198,18 @@ export default function CreateReportPage() {
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const visibleRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
   const availableStatuses = useMemo(() => Array.from(new Set(rows.flatMap((row) => [row.status, row.approval_status]).filter(Boolean))).sort(), [rows]);
+  const detailBookings = useMemo(() => {
+    if (!detail) return [];
+    const needle = bookingSearch.trim().toLowerCase();
+    return detail.bookings.filter((booking) => {
+      const matchesSearch = !needle || [booking.booking_code, booking.tour_name, booking.customer_name].some((value) => String(value || "").toLowerCase().includes(needle));
+      return matchesSearch && (!bookingStatus || booking.booking_status === bookingStatus);
+    });
+  }, [detail, bookingSearch, bookingStatus]);
+  const detailName = detail ? ("supplier_name" in detail.identity ? detail.identity.supplier_name : "agent_name" in detail.identity ? detail.identity.agent_name : detail.identity.customer_name) : "";
+  const detailBookingStatuses = detail ? Array.from(new Set(detail.bookings.map((booking) => booking.booking_status))).sort() : [];
+  const detailCopy = AUDIENCE_DETAIL_COPY[audience];
+  const partnerEarningsLabel = detailCopy.valueLabel;
 
   useEffect(() => { setPage(1); }, [search, statusFilter, sortBy]);
 
@@ -225,11 +289,66 @@ export default function CreateReportPage() {
                 <div className="overflow-x-auto"><table className="w-full min-w-[1180px] text-left text-sm"><thead className="bg-dash-bg text-xs text-dash-muted"><tr><th className="px-4 py-3 font-bold">ID / Code</th><th className="px-4 py-3 font-bold">Name & contact</th><th className="px-4 py-3 font-bold">Status</th><th className="px-4 py-3 font-bold">Approval</th><th className="px-4 py-3 font-bold">Bookings</th><th className="px-4 py-3 font-bold">Booking value</th>{audience === "agent" && <><th className="px-4 py-3 font-bold">Commission earned</th><th className="px-4 py-3 font-bold">Paid</th><th className="px-4 py-3 font-bold">Outstanding</th></>}{audience === "customer" && <th className="px-4 py-3 font-bold">Pending</th>}<th className="px-4 py-3 text-right font-bold print:hidden">Action</th></tr></thead><tbody className="divide-y divide-dash-border-soft">{visibleRows.map((row) => {
                   const id = "supplier_id" in row ? row.supplier_id : "agent_id" in row ? row.agent_id : row.customer_id;
                   const name = "supplier_name" in row ? row.supplier_name : "agent_name" in row ? row.agent_name : row.customer_name;
-                  const detailHref = `/admin/${audience}s/${id}`;
-                  return <tr key={id} className="align-top hover:bg-dash-bg/60"><td className="px-4 py-4"><p className="font-black text-dash-text">#{id}</p><p className="mt-1 text-xs text-dash-muted">{row.code || "No code"}</p></td><td className="px-4 py-4"><p className="font-bold text-dash-text">{name}</p><p className="mt-1 text-xs text-dash-muted">{row.email || "No email"}</p><p className="mt-0.5 text-xs text-dash-subtle">{row.phone || "No phone"}</p></td><td className="px-4 py-4"><StatusBadge value={row.status || "unknown"} /></td><td className="px-4 py-4"><StatusBadge value={row.approval_status || "pending"} /></td><td className="px-4 py-4 font-semibold text-dash-body">{row.bookings}</td><td className="px-4 py-4 font-bold text-dash-text">{money(row.amount)}</td>{"agent_id" in row && <><td className="px-4 py-4 text-dash-body">{money(row.commission_earned)}</td><td className="px-4 py-4 font-semibold text-emerald-700">{money(row.commission_paid)}</td><td className="px-4 py-4 font-semibold text-amber-700">{money(row.commission_outstanding)}</td></>}{"customer_id" in row && <td className="px-4 py-4 font-semibold text-amber-700">{money(row.pending)}</td>}<td className="px-4 py-4 text-right print:hidden"><Link href={detailHref} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-dash-border bg-white px-3 text-xs font-black text-dash-brand transition hover:border-dash-brand hover:bg-[#EDF5FF] active:translate-y-px"><Eye size={15} /> View</Link></td></tr>;
+                  return <tr key={id} className="align-top hover:bg-dash-bg/60"><td className="px-4 py-4"><p className="font-black text-dash-text">#{id}</p><p className="mt-1 text-xs text-dash-muted">{row.code || "No code"}</p></td><td className="px-4 py-4"><p className="font-bold text-dash-text">{name}</p><p className="mt-1 text-xs text-dash-muted">{row.email || "No email"}</p><p className="mt-0.5 text-xs text-dash-subtle">{row.phone || "No phone"}</p></td><td className="px-4 py-4"><StatusBadge value={row.status || "unknown"} /></td><td className="px-4 py-4"><StatusBadge value={row.approval_status || "pending"} /></td><td className="px-4 py-4 font-semibold text-dash-body">{row.bookings}</td><td className="px-4 py-4 font-bold text-dash-text">{money(row.amount)}</td>{"agent_id" in row && <><td className="px-4 py-4 text-dash-body">{money(row.commission_earned)}</td><td className="px-4 py-4 font-semibold text-emerald-700">{money(row.commission_paid)}</td><td className="px-4 py-4 font-semibold text-amber-700">{money(row.commission_outstanding)}</td></>}{"customer_id" in row && <td className="px-4 py-4 font-semibold text-amber-700">{money(row.pending)}</td>}<td className="px-4 py-4 text-right print:hidden"><button type="button" onClick={() => void openDetail(row)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-dash-border bg-white px-3 text-xs font-black text-dash-brand transition hover:border-dash-brand hover:bg-[#EDF5FF] active:translate-y-px"><Eye size={15} /> View report</button></td></tr>;
                 })}</tbody></table></div>
               )}
               {filteredRows.length > pageSize && <div className="flex items-center justify-between border-t border-dash-border-soft px-4 py-3 print:hidden"><p className="text-xs font-semibold text-dash-muted">Page {page} of {totalPages}</p><div className="flex gap-2"><button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page === 1} className="h-9 rounded-lg border border-dash-border px-3 text-xs font-bold text-dash-body disabled:opacity-40">Previous</button><button type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={page === totalPages} className="h-9 rounded-lg border border-dash-border px-3 text-xs font-bold text-dash-body disabled:opacity-40">Next</button></div></div>}
+            </div>
+
+            <div ref={detailRef} className="scroll-mt-24">
+              {detailLoading && <div className="flex min-h-56 items-center justify-center rounded-2xl border border-dash-border-soft bg-white"><LoaderCircle className="animate-spin text-dash-brand" size={26} /><span className="ml-3 text-sm font-bold text-dash-muted">Building booking-level report...</span></div>}
+              {detailError && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-700">{detailError}</div>}
+              {detail && !detailLoading && (
+                <div className="overflow-hidden rounded-2xl border border-dash-border-soft bg-white shadow-[0_16px_50px_-38px_rgba(23,92,211,.55)]">
+                  <div className="flex flex-col gap-4 border-b border-dash-border-soft bg-[#F7FBFF] px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-dash-brand">{detailCopy.title}</p>
+                      <h2 className="mt-1 text-xl font-black text-dash-text">{detailName}</h2>
+                      <p className="mt-1 max-w-3xl text-sm text-dash-muted">{detailCopy.explanation} Reporting period: {startDate} to {endDate}.</p>
+                    </div>
+                    <div className="flex items-center gap-2 print:hidden">
+                      <Link href={`/admin/${audience}s/${"supplier_id" in detail.identity ? detail.identity.supplier_id : "agent_id" in detail.identity ? detail.identity.agent_id : detail.identity.customer_id}`} className="inline-flex h-10 items-center rounded-lg border border-dash-border bg-white px-3 text-xs font-black text-dash-brand hover:border-dash-brand">Open profile</Link>
+                      <button type="button" onClick={() => setDetail(null)} aria-label="Close detailed report" className="grid h-10 w-10 place-items-center rounded-lg border border-dash-border bg-white text-dash-muted hover:border-dash-brand hover:text-dash-brand"><X size={17} /></button>
+                    </div>
+                  </div>
+
+                  <div className="grid border-b border-dash-border-soft bg-white sm:grid-cols-2 xl:grid-cols-4">
+                    {detailCopy.flow.map((step, index) => <div key={step} className="flex items-center gap-3 border-dash-border-soft px-5 py-3.5 sm:border-r last:border-r-0"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#EDF5FF] text-xs font-black text-dash-brand">{index + 1}</span><span className="text-xs font-bold text-dash-body">{step}</span></div>)}
+                  </div>
+
+                  <div className="grid gap-px bg-dash-border-soft sm:grid-cols-2 xl:grid-cols-4">
+                    {[
+                      { label: "Bookings", value: detail.summary.bookings, icon: ReceiptText },
+                      { label: "Travellers", value: detail.summary.travellers, icon: Users },
+                      { label: "Gross booking value", value: money(detail.summary.booking_value), icon: CircleDollarSign },
+                      { label: partnerEarningsLabel, value: money(detail.summary.partner_earnings), icon: WalletCards },
+                      { label: "Collected", value: money(detail.summary.paid), icon: CircleDollarSign },
+                      { label: "Outstanding", value: money(detail.summary.pending), icon: ReceiptText },
+                      { label: "Tourvaa revenue", value: money(detail.summary.tourvaa_revenue), icon: FileChartColumn },
+                      { label: "Collection rate", value: `${Number(detail.summary.booking_value) > 0 ? Math.round((Number(detail.summary.paid) / Number(detail.summary.booking_value)) * 100) : 0}%`, icon: FileChartColumn },
+                    ].map((item) => { const Icon = item.icon; return <div key={item.label} className="bg-white p-5"><Icon size={18} className="text-dash-brand" /><p className="mt-3 text-xs font-bold text-dash-muted">{item.label}</p><p className="mt-1 text-xl font-black text-dash-text">{item.value}</p></div>; })}
+                  </div>
+
+                  <div className="grid border-t border-dash-border-soft lg:grid-cols-2">
+                    <div className="p-5 sm:p-6 lg:border-r lg:border-dash-border-soft">
+                      <h3 className="text-sm font-black text-dash-text">Booking status</h3>
+                      <div className="mt-4 space-y-3">{detail.status_breakdown.length === 0 ? <p className="text-sm text-dash-muted">No bookings in this period.</p> : detail.status_breakdown.map((item) => <div key={item.status} className="flex items-center justify-between"><span className="text-sm font-semibold capitalize text-dash-body">{readable(item.status)}</span><span className="rounded-md bg-dash-bg px-2.5 py-1 text-xs font-black text-dash-text">{item.count}</span></div>)}</div>
+                    </div>
+                    <div className="p-5 sm:p-6">
+                      <h3 className="text-sm font-black text-dash-text">Payment status</h3>
+                      <div className="mt-4 space-y-3">{detail.payment_breakdown.length === 0 ? <p className="text-sm text-dash-muted">No payment activity in this period.</p> : detail.payment_breakdown.map((item) => <div key={item.status} className="flex items-center justify-between"><span className="text-sm font-semibold capitalize text-dash-body">{readable(item.status)}</span><span className="rounded-md bg-dash-bg px-2.5 py-1 text-xs font-black text-dash-text">{item.count}</span></div>)}</div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-dash-border-soft">
+                    <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                      <div><h3 className="font-black text-dash-text">Bookings included</h3><p className="text-xs text-dash-muted">{detailBookings.length} of {detail.bookings.length} bookings shown</p></div>
+                      <div className="flex flex-col gap-2 sm:flex-row print:hidden"><label className="relative"><span className="sr-only">Search bookings</span><Search size={15} className="absolute left-3 top-3 text-dash-subtle" /><input value={bookingSearch} onChange={(event) => setBookingSearch(event.target.value)} placeholder="Booking, tour or customer" className="h-10 rounded-lg border border-dash-border bg-white pl-9 pr-3 text-sm outline-none focus:border-dash-brand" /></label><select value={bookingStatus} onChange={(event) => setBookingStatus(event.target.value)} className="h-10 rounded-lg border border-dash-border bg-white px-3 text-sm font-semibold text-dash-body"><option value="">All booking statuses</option>{detailBookingStatuses.map((status) => <option key={status} value={status}>{readable(status)}</option>)}</select></div>
+                    </div>
+                    {detailBookings.length === 0 ? <div className="border-t border-dash-border-soft px-5 py-10 text-center text-sm text-dash-muted">No bookings match the selected filters.</div> : <div className="overflow-x-auto border-t border-dash-border-soft"><table className="w-full min-w-[1260px] text-left text-sm"><thead className="bg-dash-bg text-xs text-dash-muted"><tr><th className="px-4 py-3">Booking</th><th className="px-4 py-3">Tour & customer</th><th className="px-4 py-3">Travel</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Payment</th><th className="px-4 py-3">Value</th><th className="px-4 py-3">Paid / pending</th><th className="px-4 py-3">{partnerEarningsLabel}</th><th className="px-4 py-3">Tourvaa revenue</th><th className="px-4 py-3 text-right print:hidden">Action</th></tr></thead><tbody className="divide-y divide-dash-border-soft">{detailBookings.map((booking) => <tr key={booking.booking_id} className="hover:bg-dash-bg/50"><td className="px-4 py-4"><p className="font-black text-dash-text">{booking.booking_code}</p><p className="mt-1 text-xs text-dash-muted">{booking.booked_at ? new Date(booking.booked_at).toLocaleDateString() : "Date unavailable"}</p></td><td className="px-4 py-4"><p className="font-bold text-dash-text">{booking.tour_name || "Tour unavailable"}</p><p className="mt-1 text-xs text-dash-muted">{booking.customer_name || "Customer unavailable"}</p></td><td className="px-4 py-4"><p className="font-semibold text-dash-body">{booking.travel_date ? new Date(booking.travel_date).toLocaleDateString() : "Not scheduled"}</p><p className="mt-1 text-xs text-dash-muted">{booking.travellers} traveller{booking.travellers === 1 ? "" : "s"}</p></td><td className="px-4 py-4"><StatusBadge value={booking.booking_status} /></td><td className="px-4 py-4"><StatusBadge value={booking.payment_status} /></td><td className="px-4 py-4 font-black text-dash-text">{booking.currency} {Number(booking.booking_value).toLocaleString()}</td><td className="px-4 py-4"><p className="font-semibold text-emerald-700">{booking.currency} {Number(booking.paid).toLocaleString()}</p><p className="mt-1 text-xs font-semibold text-amber-700">Pending {booking.currency} {Number(booking.pending).toLocaleString()}</p></td><td className="px-4 py-4 font-bold text-dash-body">{booking.currency} {Number(booking.partner_earnings).toLocaleString()}</td><td className="px-4 py-4 font-bold text-dash-body">{booking.currency} {Number(booking.tourvaa_revenue).toLocaleString()}</td><td className="px-4 py-4 text-right print:hidden"><Link href={`/admin/bookings/${booking.booking_id}`} className="inline-flex h-9 items-center rounded-lg border border-dash-border px-3 text-xs font-black text-dash-brand hover:border-dash-brand">Open booking</Link></td></tr>)}</tbody></table></div>}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         )}
