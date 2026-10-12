@@ -168,6 +168,7 @@ check("supplier and agent uploads share AVIF acceptance", [supplierDocuments, su
 const notificationInbox = read("src/components/ui/NotificationInbox.tsx");
 const notificationAdmin = read("src/app/admin/notifications/page.tsx");
 const notificationWorker = read("public/sw.js");
+const bookingMessageThread = read("src/components/messaging/BookingMessageThread.tsx");
 // NotificationInbox no longer loads exactly once: a 20s visibility-gated poll
 // plus focus/visibilitychange listeners were added so the bell stays dependable
 // when Web Push is unavailable. The guarantees that still matter are the
@@ -185,6 +186,7 @@ check("admin notifications no longer poll on a timer", !notificationAdmin.includ
 check("notification refresh is driven by explicit app and push events", [notificationInbox, notificationAdmin].every((source) => source.includes("NOTIFICATION_REFRESH_EVENT") && source.includes("isNotificationPushMessage")));
 check("push worker tells open pages when a notification arrives", notificationWorker.includes("client.postMessage") && notificationWorker.includes("tourvaa:notification-received"));
 check("notifications retain entity ids and safe direct actions", notificationInbox.includes("ENTITY_LABELS") && notificationInbox.includes("booking_id") && notificationInbox.includes("Booking #") && notificationWorker.includes("view_details") && notificationWorker.includes("entityType") && notificationWorker.includes("bookingId"));
+check("booking messages recover drafts and queue only explicit offline sends", bookingMessageThread.includes("booking-message-draft") && bookingMessageThread.includes("booking-message-queue") && bookingMessageThread.includes('window.addEventListener("online"') && bookingMessageThread.includes("flushQueuedMessages") && bookingMessageThread.includes("crypto.randomUUID"));
 
 console.log(`\nOverall flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

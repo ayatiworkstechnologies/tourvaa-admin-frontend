@@ -7,7 +7,8 @@ export type MessagingSocketEvent =
   | { type: "new_message"; conversation: Conversation; message: ChatMessage }
   | { type: "new_booking_message"; conversation: BookingConversation; message: BookingMessage }
   | { type: "message_deleted"; conversation_id: number; message: ChatMessage }
-  | { type: "booking_message_deleted"; conversation_id: number; message: BookingMessage };
+  | { type: "booking_message_deleted"; conversation_id: number; message: BookingMessage }
+  | { type: "participant_presence"; user_id: number; online: boolean };
 
 const INITIAL_RETRY_MS = 2000;
 const MAX_RETRY_MS = 30000;
@@ -34,6 +35,7 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
     let socket: WebSocket | null = null;
     let cancelled = false;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     let retryDelay = INITIAL_RETRY_MS;
 
     async function connect() {
@@ -52,6 +54,10 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
 
       socket.onopen = () => {
         retryDelay = INITIAL_RETRY_MS;
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        heartbeatTimer = setInterval(() => {
+          if (socket?.readyState === WebSocket.OPEN) socket.send("ping");
+        }, 25_000);
       };
       socket.onmessage = (event) => {
         try {
@@ -60,7 +66,8 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
             data.type === "new_message" ||
             data.type === "new_booking_message" ||
             data.type === "message_deleted" ||
-            data.type === "booking_message_deleted"
+            data.type === "booking_message_deleted" ||
+            data.type === "participant_presence"
           ) {
             onMessageRef.current(data);
           }
@@ -69,6 +76,8 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
         }
       };
       socket.onclose = () => {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
         if (cancelled) return;
         retryTimer = setTimeout(connect, retryDelay);
         retryDelay = Math.min(retryDelay * 1.5, MAX_RETRY_MS);
@@ -83,6 +92,7 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
     return () => {
       cancelled = true;
       if (retryTimer) clearTimeout(retryTimer);
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
       socket?.close();
     };
   }, []);

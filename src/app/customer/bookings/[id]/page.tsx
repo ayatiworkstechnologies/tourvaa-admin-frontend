@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/utils/currency";
 import { StripeBadge, PayPalLogo } from "@/components/common/PaymentLogos";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { bookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_RECEIVED_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE } from "@/lib/constants/bookingStatus";
+import Loader from "@/components/ui/Loader";
 
 type Traveller = {
   id: number;
@@ -737,7 +738,7 @@ export default function CustomerBookingDetailPage() {
             <div className="mb-5 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-blue-900 sm:px-5 md:mb-6">
               <Clock size={18} className="mt-0.5 shrink-0" />
               <div>
-                <p className="font-bold">Booking Successful - Awaiting Tourvaa Confirmation</p>
+                <p className="font-bold">Booking Successful — Awaiting Tourvaa Confirmation</p>
                 <p className="mt-1 text-sm leading-6">{BOOKING_AWAITING_CONFIRMATION_MESSAGE}</p>
               </div>
             </div>

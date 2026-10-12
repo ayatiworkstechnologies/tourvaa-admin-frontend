@@ -6,7 +6,7 @@ import { use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuClock as Clock, LuCreditCard as CreditCard, LuDownload as Download, LuFileText as FileText, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuUser as User, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
-import { agentBookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE, BOOKING_PAYMENT_RECEIVED_MESSAGE } from "@/lib/constants/bookingStatus";
+import { agentBookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_LABEL, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE, BOOKING_PAYMENT_RECEIVED_MESSAGE } from "@/lib/constants/bookingStatus";
 import { downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import BookingPaymentModal from "@/components/bookings/BookingPaymentModal";
 import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
@@ -196,8 +196,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
     setPaymentBanner({
       type: "success",
       message: method
-        ? `Booking Successful – Awaiting Tourvaa Confirmation. Your customer's booking and payment have been successfully submitted. Please wait for Tourvaa confirmation. We will notify you once the booking is confirmed. Payment method: ${method}.`
-        : "Booking Successful – Awaiting Tourvaa Confirmation. Your customer's booking and payment have been successfully submitted. Please wait for Tourvaa confirmation. We will notify you once the booking is confirmed.",
+        ? `${BOOKING_AWAITING_CONFIRMATION_LABEL}. Your customer's booking and payment have been successfully submitted. Please wait for Tourvaa confirmation. We will notify you once the booking is confirmed. Payment method: ${method}.`
+        : `${BOOKING_AWAITING_CONFIRMATION_LABEL}. Your customer's booking and payment have been successfully submitted. Please wait for Tourvaa confirmation. We will notify you once the booking is confirmed.`,
     });
     router.replace(`/agent/bookings/${id}`, { scroll: false });
   }, [booking, id, router, searchParams]);
@@ -251,7 +251,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         } else {
           return;
         }
-        setPaymentBanner({ type: "success", message: "Booking Successful – Awaiting Tourvaa Confirmation. Your customer's booking and payment have been successfully submitted. Please wait for Tourvaa confirmation. We will notify you once the booking is confirmed." });
+        setPaymentBanner({ type: "success", message: `${BOOKING_AWAITING_CONFIRMATION_LABEL}. Your customer's booking and payment have been successfully submitted. Please wait for Tourvaa confirmation. We will notify you once the booking is confirmed.` });
         setRefreshKey((value) => value + 1);
       } catch {
         setPaymentBanner({ type: "error", message: "Payment return could not be confirmed. Please retry or contact support before paying again." });
@@ -332,7 +332,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
   const travellers = booking.travellers ?? [];
   const bookingDisplayStatus = agentBookingStatusLabel(booking.booking_status);
-  const isBookingRequestReceived = bookingDisplayStatus === "Awaiting Tourvaa Confirmation";
+  const isBookingRequestReceived = bookingDisplayStatus === BOOKING_AWAITING_CONFIRMATION_LABEL;
   const canRequestCancellation = Number(booking.amount_paid ?? 0) > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
   const canRemoveUnpaidBooking = Number(booking.amount_paid ?? 0) <= 0
     && booking.booking_status === "pending_payment"
@@ -395,7 +395,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
       )}
       {isBookingRequestReceived && !paymentBanner && (
         <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-          <p className="font-bold">Booking Successful – Awaiting Tourvaa Confirmation</p>
+          <p className="font-bold">{BOOKING_AWAITING_CONFIRMATION_LABEL}</p>
           <p className="mt-1 leading-6">{BOOKING_AWAITING_CONFIRMATION_MESSAGE}</p>
         </div>
       )}
@@ -562,7 +562,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           returnPath={`/agent/bookings/${booking.id}`}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
-            setPaymentBanner({ type: "success", message: "Booking Successful – Awaiting Tourvaa Confirmation. Your customer's booking and payment have been successfully submitted. Please wait for Tourvaa confirmation. We will notify you once the booking is confirmed." });
+            setPaymentBanner({ type: "success", message: `${BOOKING_AWAITING_CONFIRMATION_LABEL}. Your customer's booking and payment have been successfully submitted. Please wait for Tourvaa confirmation. We will notify you once the booking is confirmed.` });
             setRefreshKey((value) => value + 1);
           }}
         />

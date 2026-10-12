@@ -22,8 +22,10 @@ const conversation = {
   initiator_role: "agent" as const,
   initiator_user_id: 7,
   initiator_name: "Brightlane Agent",
+  initiator_online: false,
   supplier_user_id: 8,
   supplier_name: "Southern Tours",
+  supplier_online: true,
   status: "open",
   last_message_at: "2026-10-07T03:00:00Z",
   last_message_preview: "Agent reply",
@@ -57,6 +59,8 @@ describe("AdminBookingConversationHistory", () => {
     expect(within(agent).getByText("Agent message")).toBeInTheDocument();
     expect(within(agent).getByText("Agent reply")).toBeInTheDocument();
     expect(within(agent).queryByText("Supplier message")).not.toBeInTheDocument();
+    expect(within(supplier).getByText("Online")).toBeInTheDocument();
+    expect(within(agent).getByText("Offline")).toBeInTheDocument();
   });
 
   it("sends each reply to the selected portal and keeps it in that column", async () => {

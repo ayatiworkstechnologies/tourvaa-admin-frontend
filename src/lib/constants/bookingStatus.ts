@@ -2,6 +2,8 @@ const CONFIRMED_STATUSES = new Set(["confirmed", "ready_to_travel", "upcoming", 
 
 export type BookingPortal = "customer" | "agent" | "supplier" | "admin";
 
+export const BOOKING_AWAITING_CONFIRMATION_LABEL = "Booking Successful — Awaiting Tourvaa Confirmation";
+
 /**
  * A booking state is operational data, not customer-facing copy. Keep one
  * vocabulary here so each portal shows the right amount of detail without
@@ -15,15 +17,15 @@ export function bookingStatusLabel(status?: string | null, portal: BookingPortal
   if (value === "pending_payment") return bookingParty ? "Payment Required" : "Awaiting Payment";
   if (value === "pending_credit_approval" || value === "credit_approval_pending") return bookingParty ? "Credit Approval in Progress" : "Credit Approval Pending";
   if (value === "bank_transfer_pending") return bookingParty ? "Bank Transfer Pending" : "Awaiting Bank Transfer";
-  if (value === "pending_supplier_assignment") return bookingParty ? "Awaiting Tourvaa Confirmation" : "Awaiting Supplier Assignment";
-  if (value === "payment_authorized") return bookingParty ? "Awaiting Tourvaa Confirmation" : "Payment Authorized";
+  if (value === "pending_supplier_assignment") return bookingParty ? BOOKING_AWAITING_CONFIRMATION_LABEL : "Awaiting Supplier Assignment";
+  if (value === "payment_authorized") return bookingParty ? BOOKING_AWAITING_CONFIRMATION_LABEL : "Payment Authorized";
   if (value === "pending_supplier_acceptance") {
     if (portal === "supplier") return "Awaiting Your Decision";
-    return bookingParty ? "Awaiting Tourvaa Confirmation" : "Awaiting Supplier Acceptance";
+    return bookingParty ? BOOKING_AWAITING_CONFIRMATION_LABEL : "Awaiting Supplier Acceptance";
   }
   if (value === "supplier_accepted") {
     if (portal === "supplier") return "Acceptance Recorded";
-    return bookingParty ? "Awaiting Tourvaa Confirmation" : "Supplier Accepted";
+    return bookingParty ? BOOKING_AWAITING_CONFIRMATION_LABEL : "Supplier Accepted";
   }
   if (value === "supplier_reassignment_required") return bookingParty ? "Supplier Reassignment in Progress" : "Supplier Reassignment Required";
   if (CONFIRMED_STATUSES.has(value)) return bookingParty ? "Booking Confirmed" : value === "postponed" ? "Travel Date Updated" : "Booking Confirmed";

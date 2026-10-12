@@ -1521,7 +1521,7 @@ export default function DynamicTourBookingPage() {
               Payment Received
             </span>
             <h1 className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
-              Booking Successful – Awaiting Tourvaa Confirmation
+              Booking Successful — Awaiting Tourvaa Confirmation
             </h1>
             <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
               Your booking and payment for <b>{tourTitle}</b> have been successfully submitted. Please wait for

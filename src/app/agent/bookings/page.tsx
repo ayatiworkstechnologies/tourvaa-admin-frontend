@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuPlane as Plane, LuRefreshCw as RefreshCw, LuCircleX as XCircle } from "react-icons/lu";
 import api from "@/lib/api/client";
-import { agentBookingStatusLabel } from "@/lib/constants/bookingStatus";
+import { BOOKING_AWAITING_CONFIRMATION_LABEL, agentBookingStatusLabel } from "@/lib/constants/bookingStatus";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -31,7 +31,7 @@ type Booking = {
 const AGENT_BOOKING_FILTERS = [
   { value: "all", label: "All" },
   { value: "pending_payment", label: "Pending Payment" },
-  { value: "pending_supplier_acceptance", label: "Awaiting Tourvaa Confirmation" },
+  { value: "pending_supplier_acceptance", label: BOOKING_AWAITING_CONFIRMATION_LABEL },
   { value: "confirmed", label: "Booking Confirmed" },
   { value: "ongoing", label: "Ongoing" },
   { value: "completed", label: "Completed" },

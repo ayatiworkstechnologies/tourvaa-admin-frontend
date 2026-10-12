@@ -46,6 +46,14 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
 
   useMessagingSocket(
     useCallback((event) => {
+      if (event.type === "participant_presence") {
+        setConversations((previous) => previous.map((conversation) => ({
+          ...conversation,
+          initiator_online: conversation.initiator_user_id === event.user_id ? event.online : conversation.initiator_online,
+          supplier_online: conversation.supplier_user_id === event.user_id ? event.online : conversation.supplier_online,
+        })));
+        return;
+      }
       if (event.type !== "new_booking_message" || event.conversation.booking_id !== bookingId) return;
       setConversations((previous) => {
         const existing = previous.find((conversation) => conversation.id === event.conversation.id);
@@ -83,6 +91,7 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
     const isSupplier = recipientRole === "supplier";
     const portalLabel = isSupplier ? "Supplier" : recipientRole === "agent" ? "Agent" : "Customer";
     const participantName = isSupplier ? conversation.supplier_name : conversation.initiator_name;
+    const isOnline = isSupplier ? conversation.supplier_online : conversation.initiator_online;
     const key = `${conversation.id}:${recipientRole}`;
     const groupedMessages = [...threadMessages]
       .sort((first, second) => new Date(first.created_at).getTime() - new Date(second.created_at).getTime())
@@ -100,12 +109,18 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
         aria-label={`${portalLabel} conversation`}
         className="flex min-h-80 flex-col rounded-xl border border-dash-border-soft bg-dash-bg p-4"
       >
-        <div className="flex items-start gap-2 border-b border-dash-border-soft pb-3">
-          <MessageSquare size={14} className="mt-0.5 shrink-0 text-dash-brand" />
-          <div className="min-w-0">
-            <h3 className="text-xs font-bold text-dash-text">{portalLabel} portal</h3>
-            {participantName && <p className="truncate text-[11px] text-dash-muted">{participantName}</p>}
+        <div className="flex items-start justify-between gap-3 border-b border-dash-border-soft pb-3">
+          <div className="flex min-w-0 items-start gap-2">
+            <MessageSquare size={14} className="mt-0.5 shrink-0 text-dash-brand" />
+            <div className="min-w-0">
+              <h3 className="text-xs font-bold text-dash-text">{portalLabel} portal</h3>
+              {participantName && <p className="truncate text-[11px] text-dash-muted">{participantName}</p>}
+            </div>
           </div>
+          <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${isOnline ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-slate-400"}`} />
+            {isOnline ? "Online" : "Offline"}
+          </span>
         </div>
 
         <div className="mt-3 min-h-24 max-h-72 flex-1 space-y-3 overflow-y-auto pr-1">

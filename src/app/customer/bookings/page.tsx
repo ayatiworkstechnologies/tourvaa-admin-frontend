@@ -14,7 +14,7 @@ import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import DatePicker from "@/components/ui/DatePicker";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
-import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
+import { BOOKING_AWAITING_CONFIRMATION_LABEL, bookingStatusLabel } from "@/lib/constants/bookingStatus";
 
 type Booking = {
   id: number | string;
@@ -58,7 +58,7 @@ function statusBadge(status: string) {
   if (s.includes("awaiting tourvaa confirmation")) {
     return (
       <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">
-        Awaiting Tourvaa Confirmation
+        {BOOKING_AWAITING_CONFIRMATION_LABEL}
       </span>
     );
   }
@@ -248,7 +248,7 @@ export default function CustomerBookingsPage() {
                 className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none shadow-2xs focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
               >
                 <option value="All">Status: All</option>
-                <option value="Awaiting Tourvaa Confirmation">Awaiting Tourvaa Confirmation</option>
+                <option value={BOOKING_AWAITING_CONFIRMATION_LABEL}>{BOOKING_AWAITING_CONFIRMATION_LABEL}</option>
                 <option value="Booking Confirmed">Booking Confirmed</option>
                 <option value="Ongoing">Ongoing</option>
                 <option value="Completed">Completed</option>

@@ -108,8 +108,10 @@ export type BookingConversation = {
   initiator_role: "customer" | "agent";
   initiator_user_id: number;
   initiator_name: string | null;
+  initiator_online: boolean;
   supplier_user_id: number;
   supplier_name: string | null;
+  supplier_online: boolean;
   status: string;
   last_message_at: string | null;
   last_message_preview: string | null;

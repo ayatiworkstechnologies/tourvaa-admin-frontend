@@ -39,6 +39,7 @@ check(
     detail.includes("window.setInterval(refreshTour, PUBLIC_TOUR_REFRESH_INTERVAL_MS)"),
 );
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
+check("itinerary behaves as a single-open accordion", detailExperience.includes("prev[dayKey] ? {} : { [dayKey]: true }") && !detailExperience.includes('"Expand All"'));
 check(
   "public itinerary has one overview presentation without a detailed-view switch",
   !detailExperience.includes("setItineraryMode") &&
@@ -199,7 +200,7 @@ check("selected deposit never falls back to the full outstanding balance", publi
 check("checkout sends the selected payment type and uses the server-authoritative first charge", publicBooking.includes('payment_type: customerPaymentMethod === "deposit" ? "partial" : "full"') && publicBooking.includes("booking?.selected_payment_amount"));
 check("booking continues to the payment step", publicBooking.includes("setStep(3)"));
 check("checkout terms open separately without losing entered passenger details", publicBooking.includes('href="/terms" target="_blank" rel="noopener noreferrer"'));
-check("success copy explains Tourvaa confirmation is pending", publicBooking.includes("Booking Successful – Awaiting Tourvaa Confirmation") && publicBooking.includes("Please wait for"));
+check("success copy explains Tourvaa confirmation is pending", publicBooking.includes("Booking Successful — Awaiting Tourvaa Confirmation") && publicBooking.includes("Please wait for"));
 check("traveller fields follow selected adult and child counts", publicBooking.includes("adultCount + childCount") && publicBooking.includes('i < adultCount ? "adult" : "child"'));
 // Traveller ages are collected directly as a numeric field, validated, then
 // submitted as a Number. The earlier birthDay/birthMonth/birthYear + calcAge()
@@ -216,14 +217,14 @@ check("new booking opens payment UI", customerBooking.includes('searchParams.get
 check(
   "customer request states use customer-safe booking language",
   customerBooking.includes("isBookingRequestReceived") &&
-    customerBooking.includes("Booking Successful - Awaiting Tourvaa Confirmation") &&
+    customerBooking.includes("Booking Successful — Awaiting Tourvaa Confirmation") &&
     customerBooking.includes("BOOKING_AWAITING_CONFIRMATION_MESSAGE") &&
     !customerBooking.includes("Pending supplier acceptance"),
 );
 check(
   "customer status lifecycle is explicit",
   customerBooking.includes("bookingStatusLabel") &&
-    ["Awaiting Tourvaa Confirmation", "Booking Confirmed", "Tour In Progress", "Tour Completed", "Cancellation Requested", "Booking Cancelled"].every((status) => read("src/lib/constants/bookingStatus.ts").includes(status)),
+    ["Booking Successful — Awaiting Tourvaa Confirmation", "Booking Confirmed", "Tour In Progress", "Tour Completed", "Cancellation Requested", "Booking Cancelled"].every((status) => read("src/lib/constants/bookingStatus.ts").includes(status)),
 );
 check(
   "cancellation requires free-period eligibility and explicit confirmation",

@@ -1049,7 +1049,9 @@ export default function TourDetailExperience({
   const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
 
   const toggleDay = (dayKey: string) => {
-    setOpenDays((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }));
+    // A true accordion keeps at most one itinerary day open. Clicking the
+    // active day closes it; clicking another replaces the current selection.
+    setOpenDays((prev) => (prev[dayKey] ? {} : { [dayKey]: true }));
   };
 
   const itineraryList = useMemo(() => {
@@ -1111,23 +1113,7 @@ export default function TourDetailExperience({
     return [];
   }, [tour.itineraries, galleryItems, startLocation]);
 
-  const allDaysExpanded = useMemo(() => {
-    return (
-      itineraryList.length > 0 && itineraryList.every((d) => openDays[d.accordionKey])
-    );
-  }, [itineraryList, openDays]);
-
-  const toggleAllDays = () => {
-    if (allDaysExpanded) {
-      setOpenDays({});
-    } else {
-      const next: Record<string, boolean> = {};
-      itineraryList.forEach((d) => {
-        next[d.accordionKey] = true;
-      });
-      setOpenDays(next);
-    }
-  };
+  const hasOpenDay = Object.values(openDays).some(Boolean);
 
   const [copiedShare, setCopiedShare] = useState(false);
   const { isCompared, toggleCompare, compareCount } = useTravelStore();
@@ -2129,21 +2115,21 @@ export default function TourDetailExperience({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  {hasOpenDay && <div className="flex items-center gap-3">
                     <button
                       type="button"
-                      onClick={toggleAllDays}
+                      onClick={() => setOpenDays({})}
                       className="text-xs font-bold text-blue-600 hover:text-blue-800 transition cursor-pointer"
                     >
-                      {allDaysExpanded ? "Collapse All" : "Expand All"}
+                      Collapse All
                     </button>
 
-                  </div>
+                  </div>}
                 </div>
 
                 {itineraryList.length > 0 ? (
                 <div className="space-y-3 sm:space-y-4">
-                  {itineraryList.map((day, dIdx) => {
+                  {itineraryList.map((day) => {
                     const isOpen = Boolean(openDays[day.accordionKey]);
                     const overviewText = day.summary || day.detail;
 

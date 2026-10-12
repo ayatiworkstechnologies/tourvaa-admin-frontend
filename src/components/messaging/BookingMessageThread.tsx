@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuLoaderCircle as Loader2, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
+import { LuLoaderCircle as Loader2, LuSend as Send, LuTrash2 as Trash2, LuWifiOff as WifiOff } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
 
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
@@ -19,6 +19,22 @@ function messageTime(value?: string | null) {
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
+type QueuedBookingMessage = { id: string; body: string; queued_at: string; attempted?: boolean };
+
+function draftStorageKey(bookingId: number) { return `tourvaa:booking-message-draft:${bookingId}`; }
+function queueStorageKey(bookingId: number) { return `tourvaa:booking-message-queue:${bookingId}`; }
+
+function readQueuedMessages(bookingId: number): QueuedBookingMessage[] {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(queueStorageKey(bookingId)) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((item): item is QueuedBookingMessage => typeof item?.id === "string" && typeof item?.body === "string") : [];
+  } catch { return []; }
+}
+
+function saveQueuedMessages(bookingId: number, messages: QueuedBookingMessage[]) {
+  try { window.localStorage.setItem(queueStorageKey(bookingId), JSON.stringify(messages)); } catch { /* best effort */ }
+}
+
 /** Booking-specific conversation between the portal user and Tourvaa Admin.
  * Server-side recipient filtering keeps Admin-to-Supplier and
  * Admin-to-Agent/Customer replies in their own private portal threads. */
@@ -29,6 +45,8 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [queuedMessages, setQueuedMessages] = useState<QueuedBookingMessage[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -47,6 +65,49 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
   useEffect(() => {
     void load();
   }, [load]);
+
+  const flushQueuedMessages = useCallback(async () => {
+    if (!navigator.onLine) return;
+    const queued = readQueuedMessages(bookingId);
+    setQueuedMessages(queued);
+    for (const item of queued) {
+      // An uncertain network result is never retried automatically: that could duplicate a booking note.
+      if (item.attempted) continue;
+      try {
+        const message = await sendBookingConversationMessage(bookingId, item.body);
+        setThread((prev) => prev && !prev.messages.some((row) => row.id === message.id) ? { ...prev, messages: [...prev.messages, message] } : prev);
+        const remaining = readQueuedMessages(bookingId).filter((row) => row.id !== item.id);
+        saveQueuedMessages(bookingId, remaining);
+        setQueuedMessages(remaining);
+      } catch {
+        const failed = readQueuedMessages(bookingId).map((row) => row.id === item.id ? { ...row, attempted: true } : row);
+        saveQueuedMessages(bookingId, failed);
+        setQueuedMessages(failed);
+        setError("A queued message needs your confirmation before it can be retried.");
+        break;
+      }
+    }
+  }, [bookingId]);
+
+  useEffect(() => {
+    const savedDraft = window.localStorage.getItem(draftStorageKey(bookingId));
+    if (savedDraft) setDraft(savedDraft);
+    setIsOnline(navigator.onLine);
+    setQueuedMessages(readQueuedMessages(bookingId));
+    if (navigator.onLine) void flushQueuedMessages();
+    const online = () => { setIsOnline(true); void load(); void flushQueuedMessages(); };
+    const offline = () => setIsOnline(false);
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+    return () => { window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
+  }, [bookingId, flushQueuedMessages, load]);
+
+  useEffect(() => {
+    try {
+      if (draft) window.localStorage.setItem(draftStorageKey(bookingId), draft);
+      else window.localStorage.removeItem(draftStorageKey(bookingId));
+    } catch { /* draft recovery must never block messaging */ }
+  }, [bookingId, draft]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -87,10 +148,19 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
   async function send(event: React.FormEvent) {
     event.preventDefault();
     if (!draft.trim()) return;
+    const body = draft.trim();
+    if (!navigator.onLine) {
+      const next = [...readQueuedMessages(bookingId), { id: crypto.randomUUID(), body, queued_at: new Date().toISOString() }];
+      saveQueuedMessages(bookingId, next);
+      setQueuedMessages(next);
+      setDraft("");
+      setError("");
+      return;
+    }
     setSending(true);
     setError("");
     try {
-      const message: BookingMessage = await sendBookingConversationMessage(bookingId, draft.trim());
+      const message: BookingMessage = await sendBookingConversationMessage(bookingId, body);
       setDraft("");
       setThread((prev) => (prev ? { ...prev, messages: [...prev.messages, message] } : prev));
     } catch {
@@ -98,6 +168,18 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
     } finally {
       setSending(false);
     }
+  }
+
+  function retryQueuedMessages() {
+    if (!navigator.onLine) {
+      setError("Reconnect before retrying this queued message.");
+      return;
+    }
+    const next = readQueuedMessages(bookingId).map((message) => ({ ...message, attempted: false }));
+    saveQueuedMessages(bookingId, next);
+    setQueuedMessages(next);
+    setError("");
+    void flushQueuedMessages();
   }
 
   const groupedMessages = (thread?.messages ?? [])
@@ -112,8 +194,11 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
   return (
     <div className={`flex flex-col rounded-xl border border-dash-border bg-white shadow-sm ${compact ? "min-h-64" : "h-[480px]"}`}>
       <div className="border-b border-dash-border-soft px-5 py-3">
-        <p className="font-bold text-dash-text">Message Tourvaa Support</p>
-        <p className="mt-0.5 text-xs text-dash-subtle">Ask about this booking directly.</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-bold text-dash-text">Message Tourvaa Support</p>
+          {!isOnline && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700"><WifiOff size={13} /> Offline</span>}
+        </div>
+        <p className="mt-0.5 text-xs text-dash-subtle">Ask about this booking directly. Drafts are saved on this device.</p>
       </div>
 
       <div className={`flex-1 space-y-3 overflow-y-auto px-5 py-4 ${compact ? "max-h-80 min-h-32" : ""}`}>
@@ -155,6 +240,17 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
         )}
         <div ref={endRef} />
       </div>
+
+      {queuedMessages.length > 0 && (
+        <div className="mx-5 mb-2 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <span>{queuedMessages.some((message) => !message.attempted)
+            ? `${queuedMessages.filter((message) => !message.attempted).length} message${queuedMessages.filter((message) => !message.attempted).length === 1 ? "" : "s"} will send when you are online.`
+            : "A queued message could not be confirmed."}</span>
+          {queuedMessages.some((message) => message.attempted) && (
+            <button type="button" onClick={retryQueuedMessages} className="shrink-0 font-bold underline underline-offset-2">Retry</button>
+          )}
+        </div>
+      )}
 
       {error && <div className="mx-5 mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">{error}</div>}
 
