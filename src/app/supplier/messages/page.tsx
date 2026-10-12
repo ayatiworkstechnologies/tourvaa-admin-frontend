@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LuMessageSquare as MessageSquare } from "react-icons/lu";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 import PortalMessageThread from "@/components/messaging/PortalMessageThread";
@@ -13,6 +13,10 @@ const TABS = [
 
 export default function SupplierMessagesPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("bookings");
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "support") setTab("support");
+  }, []);
 
   return (
     <SupplierPageShell>

@@ -27,6 +27,10 @@ const TABS: { key: ParticipantType; label: string }[] = [
   { key: "affiliate", label: "Affiliates" },
 ];
 
+function isParticipantType(value: string | null): value is ParticipantType {
+  return TABS.some((item) => item.key === value);
+}
+
 function timeAgo(value?: string | null) {
   if (!value) return "";
   const date = new Date(value);
@@ -54,7 +58,20 @@ export default function AdminMessagesPage() {
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [unreadSummary, setUnreadSummary] = useState<Record<ParticipantType, number>>({ agent: 0, supplier: 0, customer: 0, affiliate: 0 });
+  const [deepLink, setDeepLink] = useState<{ type: ParticipantType; conversationId: number } | null>(null);
+  const [routeReady, setRouteReady] = useState(false);
   const threadEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedType = params.get("type");
+    const requestedConversationId = Number(params.get("conversation"));
+    if (isParticipantType(requestedType) && Number.isInteger(requestedConversationId) && requestedConversationId > 0) {
+      setTab(requestedType);
+      setDeepLink({ type: requestedType, conversationId: requestedConversationId });
+    }
+    setRouteReady(true);
+  }, []);
 
   const loadUnreadSummary = useCallback(async () => {
     try {
@@ -82,10 +99,11 @@ export default function AdminMessagesPage() {
   }, []);
 
   useEffect(() => {
+    if (!routeReady) return;
     setSelectedId(null);
     setThread(null);
     void loadList(tab);
-  }, [tab, loadList]);
+  }, [tab, loadList, routeReady]);
 
   const openConversation = useCallback(async (conversationId: number) => {
     setSelectedId(conversationId);
@@ -106,6 +124,12 @@ export default function AdminMessagesPage() {
       setLoadingThread(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!deepLink || tab !== deepLink.type) return;
+    setDeepLink(null);
+    void openConversation(deepLink.conversationId);
+  }, [deepLink, openConversation, tab]);
 
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ block: "end" });

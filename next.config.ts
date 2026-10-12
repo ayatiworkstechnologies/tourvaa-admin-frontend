@@ -5,19 +5,33 @@ const apiProxyTarget = (
 ).replace(/\/$/, "");
 const apiProxyOrigin = new URL(apiProxyTarget).origin;
 
-if (!process.env.NEXT_PUBLIC_WS_URL && apiProxyOrigin) {
-  process.env.NEXT_PUBLIC_WS_URL = apiProxyOrigin.replace(/^http/, "ws");
+function normalizeWebSocketOrigin(rawValue: string | undefined, fallbackHttpOrigin: string) {
+  const configured = (rawValue || fallbackHttpOrigin).trim();
+  // Repair the common deployment typo currently seen in production:
+  // `ws://https://api.example.com`. The HTTP(S) part is authoritative.
+  const withoutDuplicateWsScheme = configured.replace(/^wss?:\/\/(?=https?:\/\/)/i, "");
+  const candidate = withoutDuplicateWsScheme
+    .replace(/^https:\/\//i, "wss://")
+    .replace(/^http:\/\//i, "ws://");
+  const parsed = new URL(candidate);
+  if (!["ws:", "wss:"].includes(parsed.protocol)) {
+    throw new Error("NEXT_PUBLIC_WS_URL must use ws:// or wss://.");
+  }
+  if (parsed.username || parsed.password || parsed.search || parsed.hash || !["", "/"].includes(parsed.pathname)) {
+    throw new Error("NEXT_PUBLIC_WS_URL must be a WebSocket origin without credentials, a path, query, or fragment.");
+  }
+  const isPublicProductionBuild = process.env.VERCEL === "1" || process.env.BUILD_ENV === "production" || fallbackHttpOrigin.startsWith("https://");
+  if (isPublicProductionBuild && parsed.protocol !== "wss:") {
+    throw new Error("NEXT_PUBLIC_WS_URL must use wss:// in production.");
+  }
+  return parsed.origin;
 }
+
+const publicWsUrl = normalizeWebSocketOrigin(process.env.NEXT_PUBLIC_WS_URL, apiProxyOrigin);
+process.env.NEXT_PUBLIC_WS_URL = publicWsUrl;
 
 if (process.env.NODE_ENV === "production" && !process.env.API_PROXY_TARGET) {
   throw new Error("API_PROXY_TARGET is required in production because /api/:path* proxies to the backend.");
-}
-
-if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_WS_URL) {
-  throw new Error("NEXT_PUBLIC_WS_URL is required in production for realtime messaging.");
-}
-if (process.env.NEXT_PUBLIC_WS_URL && !/^wss?:\/\//.test(process.env.NEXT_PUBLIC_WS_URL)) {
-  throw new Error("NEXT_PUBLIC_WS_URL must use ws:// or wss://.");
 }
 
 // Google Translate loads its widget from translate.google.com and
@@ -60,7 +74,6 @@ const devHmrHosts = "ws://localhost:* ws://127.0.0.1:*";
 // the same-origin /api path the rest of the app uses. NEXT_PUBLIC_WS_URL
 // must be set to the backend's public wss:// origin for this to work; it
 // falls back to deriving one from apiProxyOrigin for local dev only.
-const publicWsUrl = (process.env.NEXT_PUBLIC_WS_URL || apiProxyOrigin.replace(/^http/, "ws")).replace(/\/$/, "");
 const connectSrc =
   process.env.NODE_ENV === "production"
     ? `connect-src 'self' ${apiProxyOrigin} ${publicWsUrl} ${elfsightHosts};`
@@ -69,6 +82,12 @@ const connectSrc =
 const apiProxyUrl = new URL(apiProxyTarget);
 
 const nextConfig: NextConfig = {
+  // Embed the normalized origin explicitly. This prevents a malformed
+  // hosting value from being substituted into the browser bundle before
+  // next.config.ts has corrected it.
+  env: {
+    NEXT_PUBLIC_WS_URL: publicWsUrl,
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
