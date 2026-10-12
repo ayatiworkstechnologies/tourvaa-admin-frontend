@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LuChartColumn as ChartColumn, LuDownload as Download, LuLoaderCircle as Loader2, LuPrinter as Printer } from "react-icons/lu";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import DatePicker from "@/components/ui/DatePicker";
 import Loader from "@/components/ui/Loader";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -260,14 +261,8 @@ export default function SupplierReportsPage() {
               </select>
             </label>
             {period === "custom" && <>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold uppercase tracking-wide text-[#6B8074]">From booking date</span>
-                <input type="date" value={startDate} max={endDate || undefined} onChange={(e) => setStartDate(e.target.value)} className="h-10 rounded-xl border border-[#D5E4DB] bg-white px-3 text-xs font-semibold text-[#365545] outline-none focus:border-[#16833A]" />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold uppercase tracking-wide text-[#6B8074]">To booking date</span>
-                <input type="date" value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} className="h-10 rounded-xl border border-[#D5E4DB] bg-white px-3 text-xs font-semibold text-[#365545] outline-none focus:border-[#16833A]" />
-              </label>
+              <DatePicker label="From booking date" value={startDate} maxDate={endDate || undefined} onChange={setStartDate} accent="teal" />
+              <DatePicker label="To booking date" value={endDate} minDate={startDate || undefined} onChange={setEndDate} accent="teal" />
             </>}
             <label className="flex flex-col gap-1">
               <span className="text-xs font-bold uppercase tracking-wide text-[#6B8074]">Booking Status</span>
