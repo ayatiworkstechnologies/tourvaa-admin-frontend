@@ -53,7 +53,6 @@ const BOOKING_STATUS_TRANSITIONS: Record<string, string[]> = {
     "payment_authorized",
     "pending_supplier_assignment",
     "pending_supplier_acceptance",
-    "confirmed",
     "cancellation_requested",
     "cancelled",
     "declined",
@@ -78,20 +77,20 @@ const BOOKING_STATUS_TRANSITIONS: Record<string, string[]> = {
   payment_authorized: [
     "pending_supplier_assignment",
     "pending_supplier_acceptance",
-    "confirmed",
     "cancellation_requested",
     "cancelled",
     "declined",
   ],
   pending_supplier_acceptance: [
     "pending_supplier_assignment",
+    "supplier_accepted",
     "supplier_reassignment_required",
-    "confirmed",
     "postponed",
     "cancellation_requested",
     "cancelled",
     "declined",
   ],
+  supplier_accepted: ["confirmed", "supplier_reassignment_required", "cancellation_requested", "cancelled", "declined"],
   supplier_reassignment_required: [
     "pending_supplier_assignment",
     "pending_supplier_acceptance",
@@ -242,7 +241,7 @@ function BookingJourneyStepper({ status }: { status: string }) {
     {
       key: "supplier",
       label: "Supplier",
-      statuses: ["pending_supplier_assignment", "pending_supplier_acceptance", "supplier_reassignment_required"],
+      statuses: ["pending_supplier_assignment", "pending_supplier_acceptance", "supplier_accepted", "supplier_reassignment_required"],
     },
     { key: "confirmed", label: "Confirmed", statuses: ["confirmed", "ready_to_travel", "upcoming"] },
     { key: "ongoing", label: "Ongoing", statuses: ["ongoing"] },
@@ -265,7 +264,7 @@ function BookingJourneyStepper({ status }: { status: string }) {
     if (status === "completed") activeIndex = 5;
     else if (status === "ongoing") activeIndex = 4;
     else if (["confirmed", "ready_to_travel", "upcoming"].includes(status)) activeIndex = 3;
-    else if (["pending_supplier_acceptance", "pending_supplier_assignment", "supplier_reassignment_required"].includes(status))
+    else if (["pending_supplier_acceptance", "pending_supplier_assignment", "supplier_accepted", "supplier_reassignment_required"].includes(status))
       activeIndex = 2;
   }
 

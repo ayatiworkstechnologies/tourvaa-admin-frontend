@@ -1511,21 +1511,21 @@ export default function DynamicTourBookingPage() {
           </div>
         </div>
 
-        {/* BOOKING CONFIRMED SUCCESS VIEW (STEP 4) */}
+        {/* PAYMENT RECEIVED / AWAITING TOURVAA CONFIRMATION (STEP 4) */}
         {step === 4 ? (
           <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 sm:p-12 text-center shadow-sm my-10">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <CheckCircle size={48} />
             </div>
             <span className="mt-6 inline-block text-xs font-black uppercase tracking-widest text-emerald-600">
-              Booking Received
+              Payment Received
             </span>
             <h1 className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
-              You&apos;re Going to {tourPlace || "your destination"}!
+              Booking Successful – Awaiting Tourvaa Confirmation
             </h1>
             <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
-              Your booking for <b>{tourTitle}</b> has been received and is pending payment confirmation. A
-              confirmation email has been sent to you.
+              Your booking and payment for <b>{tourTitle}</b> have been successfully submitted. Please wait for
+              Tourvaa to confirm your booking. We will notify you once it is confirmed.
             </p>
 
             <div className="mt-6 inline-block rounded-xl border border-slate-200 bg-slate-50 px-6 py-3">

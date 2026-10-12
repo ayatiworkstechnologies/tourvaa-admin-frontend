@@ -31,7 +31,7 @@ type Booking = {
 const AGENT_BOOKING_FILTERS = [
   { value: "all", label: "All" },
   { value: "pending_payment", label: "Pending Payment" },
-  { value: "pending_supplier_acceptance", label: "Booking Request Received" },
+  { value: "pending_supplier_acceptance", label: "Awaiting Tourvaa Confirmation" },
   { value: "confirmed", label: "Booking Confirmed" },
   { value: "ongoing", label: "Ongoing" },
   { value: "completed", label: "Completed" },

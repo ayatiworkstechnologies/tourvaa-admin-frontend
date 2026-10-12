@@ -55,10 +55,10 @@ type ApiBooking = {
 
 function statusBadge(status: string) {
   const s = status.toLowerCase();
-  if (s.includes("request received")) {
+  if (s.includes("awaiting tourvaa confirmation")) {
     return (
       <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">
-        Booking Request Received
+        Awaiting Tourvaa Confirmation
       </span>
     );
   }
@@ -248,7 +248,7 @@ export default function CustomerBookingsPage() {
                 className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none shadow-2xs focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
               >
                 <option value="All">Status: All</option>
-                <option value="Booking Request Received">Booking Request Received</option>
+                <option value="Awaiting Tourvaa Confirmation">Awaiting Tourvaa Confirmation</option>
                 <option value="Booking Confirmed">Booking Confirmed</option>
                 <option value="Ongoing">Ongoing</option>
                 <option value="Completed">Completed</option>

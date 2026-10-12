@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuLoaderCircle as Loader2 } from "react-icons/lu";
 import api from "@/lib/api/client";
+import { BOOKING_PAYMENT_RECEIVED_MESSAGE } from "@/lib/constants/bookingStatus";
 import { CustomerPageShell } from "@/components/customer/CustomerPage";
 
 type ReturnState = "verifying" | "success" | "failed";
@@ -49,7 +50,7 @@ export default function CustomerPaymentResultPage() {
           sessionStorage.removeItem(`stripe_pid_${id}`);
         }
         setState("success");
-        setMessage("Payment received. Your booking request is now with our team for review and confirmation.");
+        setMessage(BOOKING_PAYMENT_RECEIVED_MESSAGE);
       } catch {
         setState("failed");
         setMessage("We could not verify this payment yet. Please do not pay again until you have checked the booking or contacted support.");
@@ -83,7 +84,7 @@ export default function CustomerPaymentResultPage() {
           {verifying ? <Loader2 size={32} className="animate-spin" /> : success ? <CheckCircle2 size={32} /> : <AlertCircle size={32} />}
         </span>
         <p className="mt-5 text-xs font-black uppercase tracking-[.16em] text-[#2475E8]">Secure payment return</p>
-        <h1 className="mt-2 text-2xl font-black text-[#0C2043]">{verifying ? "Confirming payment" : success ? "Payment received" : "Payment not completed"}</h1>
+        <h1 className="mt-2 text-2xl font-black text-[#0C2043]">{verifying ? "Verifying payment" : success ? "Booking Successful – Awaiting Tourvaa Confirmation" : "Payment Required"}</h1>
         <p className="mt-3 text-sm leading-6 text-[#52677F]">{message}</p>
         {!verifying && <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
           <Link href={bookingHref} className="rounded-xl bg-[#1464F4] px-5 py-3 text-sm font-bold text-white hover:bg-[#0B52D3]">View booking</Link>

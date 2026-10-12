@@ -128,7 +128,7 @@ check(
 const customerBookingDetail = read("src/app/customer/bookings/[id]/page.tsx");
 check(
   "unpaid customer bookings show payment required and can be removed",
-  customerBookingDetail.includes("Payment Required: Your booking has not yet been confirmed") &&
+  customerBookingDetail.includes("BOOKING_PAYMENT_REQUIRED_MESSAGE") &&
     customerBookingDetail.includes("Remove from Bookings") &&
     customerBookingDetail.includes("/remove-unpaid") &&
     customerBookingDetail.includes("amountPaid > 0"),
@@ -210,13 +210,14 @@ check("new booking opens payment UI", customerBooking.includes('searchParams.get
 check(
   "customer request states use customer-safe booking language",
   customerBooking.includes("isBookingRequestReceived") &&
-    customerBooking.includes("Booking Request Received") &&
+    customerBooking.includes("Booking Successfully Received") &&
+    customerBooking.includes("Tourvaa is confirming the tour arrangements") &&
     !customerBooking.includes("Pending supplier acceptance"),
 );
 check(
   "customer status lifecycle is explicit",
-  customerBooking.includes('return "Booking Request Received"') &&
-    ["Booking Confirmed", "Ongoing", "Completed", "Cancellation Requested", "Cancelled"].every((status) => customerBooking.includes(status)),
+  customerBooking.includes("bookingStatusLabel") &&
+    ["Awaiting Tourvaa Confirmation", "Booking Confirmed", "Tour In Progress", "Tour Completed", "Cancellation Requested", "Booking Cancelled"].every((status) => read("src/lib/constants/bookingStatus.ts").includes(status)),
 );
 check(
   "cancellation requires free-period eligibility and explicit confirmation",

@@ -13,7 +13,7 @@ import { formatCurrency } from "@/lib/utils/currency";
 import { StripeBadge, PayPalLogo } from "@/components/common/PaymentLogos";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import Loader from "@/components/ui/Loader";
-import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
+import { bookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_RECEIVED_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE } from "@/lib/constants/bookingStatus";
 
 type Traveller = {
   id: number;
@@ -386,7 +386,7 @@ export default function CustomerBookingDetailPage() {
     if (searchParams.get("new") === "1") {
       setPaymentBanner({
         type: "info",
-        msg: "Booking request received. Complete payment so we can review and confirm your booking.",
+        msg: BOOKING_PAYMENT_REQUIRED_MESSAGE,
       });
     }
     if (searchParams.get("pay") === "1") setShowPayModal(true);
@@ -405,7 +405,7 @@ export default function CustomerBookingDetailPage() {
         session_id: sessionId || undefined,
       })
         .then(() => {
-          setPaymentBanner({ type: "success", msg: "Payment received. Your booking request has been received successfully. We will review the details and be in touch shortly with your booking confirmation." });
+          setPaymentBanner({ type: "success", msg: BOOKING_PAYMENT_RECEIVED_MESSAGE });
           void load();
         })
         .catch(() => {
@@ -413,7 +413,7 @@ export default function CustomerBookingDetailPage() {
           void load();
         });
     } else if (payment === "cancelled") {
-      setPaymentBanner({ type: "info", msg: "Payment Required: Your booking has not yet been confirmed. Please complete your payment to secure your booking." });
+      setPaymentBanner({ type: "info", msg: `Payment Required: ${BOOKING_PAYMENT_REQUIRED_MESSAGE}` });
       const stripeKey = `stripe_pid_${params.id}`;
       const paypalKey = `paypal_pid_${params.id}`;
       const paymentId = sessionStorage.getItem(stripeKey) || sessionStorage.getItem(paypalKey);
@@ -433,7 +433,7 @@ export default function CustomerBookingDetailPage() {
         api.post("/payments/paypal/capture", { order_id: token, payment_id: parseInt(savedPid) })
           .then(() => {
             sessionStorage.removeItem(pidKey);
-            setPaymentBanner({ type: "success", msg: "PayPal payment received. Your booking request has been received successfully. We will review the details and be in touch shortly with your booking confirmation." });
+            setPaymentBanner({ type: "success", msg: BOOKING_PAYMENT_RECEIVED_MESSAGE });
             void load();
           })
           .catch(() => {
@@ -458,7 +458,7 @@ export default function CustomerBookingDetailPage() {
       setShowCancel(false);
       await load();
     } catch {
-      setError("Failed to submit cancellation request.");
+      setError("Your cancellation request could not be submitted. Please try again or contact Tourvaa Support.");
     } finally {
       setCancelling(false);
     }
@@ -491,7 +491,7 @@ export default function CustomerBookingDetailPage() {
   const isBookingRequestReceived = Boolean(
     booking &&
       !isUnpaidBooking &&
-      ["draft", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required"].includes(booking.booking_status),
+      ["pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_accepted", "supplier_reassignment_required"].includes(booking.booking_status),
   );
   const canCancel = booking && amountPaid > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
   const freeCancellationEligible = booking?.cancellation_eligibility?.is_free_cancellation_eligible === true;
@@ -569,7 +569,7 @@ export default function CustomerBookingDetailPage() {
       {cancelSuccess && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
           <CheckCircle2 size={16} />
-          Cancellation request submitted. Our team will review it shortly.
+          Your cancellation request has been submitted successfully. Tourvaa will review the request and notify you of the outcome.
         </div>
       )}
 
@@ -689,8 +689,8 @@ export default function CustomerBookingDetailPage() {
             <div className="mb-5 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-blue-900 sm:px-5 md:mb-6">
               <Clock size={18} className="mt-0.5 shrink-0" />
               <div>
-                <p className="font-bold">Booking Request Received</p>
-                <p className="mt-1 text-sm leading-6">Your booking request has been received successfully. We will review the details and be in touch shortly with your booking confirmation.</p>
+                <p className="font-bold">Booking Successful – Awaiting Tourvaa Confirmation</p>
+                <p className="mt-1 text-sm leading-6">{BOOKING_AWAITING_CONFIRMATION_MESSAGE}</p>
               </div>
             </div>
           )}

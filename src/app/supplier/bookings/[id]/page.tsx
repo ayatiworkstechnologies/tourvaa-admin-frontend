@@ -176,6 +176,16 @@ function ActionBanner({
     );
   }
 
+  if (v === "supplier_accepted") {
+    return (
+      <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <p className="flex items-center gap-2 text-sm font-bold text-emerald-800">
+          <CheckCircle2 size={16} /> Acceptance recorded. Tourvaa will complete the final booking confirmation.
+        </p>
+      </div>
+    );
+  }
+
   if (!isPending && !isConfirmed && !isOngoing) return null;
 
   return (
