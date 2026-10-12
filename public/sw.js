@@ -14,7 +14,20 @@ self.addEventListener('push', event => {
         body: data.body || '',
         icon: data.icon || '/favicon.ico',
         badge: '/favicon.ico',
-        data: { url: data.url || '/', action: data.action, phone: data.phone, waMsg: data.waMsg },
+        actions: data.url && data.url !== '/' && data.action !== 'whatsapp'
+          ? [{ action: 'view_details', title: data.actionLabel || (data.bookingId ? 'View booking' : 'View details') }]
+          : [],
+        data: {
+          url: data.url || '/',
+          action: data.action,
+          phone: data.phone,
+          waMsg: data.waMsg,
+          bookingId: data.bookingId,
+          entityType: data.entityType,
+          entityId: data.entityId,
+          actionLabel: data.actionLabel,
+          notificationId: data.notificationId,
+        },
       }),
       notifyOpenClients,
     ])

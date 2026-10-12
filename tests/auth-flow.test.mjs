@@ -51,6 +51,10 @@ check("every public role sends the same verification link", register.includes('"
 check("session restoration loads dashboard identity", auth.includes('api.get("/dashboard/me")'));
 check("invalid restored sessions clear local state", auth.includes("clearSession()") && auth.includes("setDashboard(null)"));
 check("authenticated login pages redirect by role", auth.includes("getDashboardPath(roleSlug)"));
+const dashboardPath = read("src/lib/utils/dashboardPath.ts");
+const customRoleDashboard = read("src/app/[slug]/dashboard/page.tsx");
+const portalAuth = read("src/components/public/portal/PortalAuthPage.tsx");
+check("new non-admin roles use a role-scoped workspace", dashboardPath.includes("`/${slug}/dashboard`") && customRoleDashboard.includes('dashboard_type === "portal"') && customRoleDashboard.includes("requestedRole === actualRole") && portalAuth.includes("isCustomRoleOnSharedLogin") && portalAuth.includes("redirectTarget(roleSlug)"));
 check("explicit logout returns to the matching portal login", auth.includes('pathname.startsWith("/admin") ? "/admin/login" : "/login"') && auth.includes("const logout = useCallback(async (redirectTo?: string)"));
 
 const adminGuard = read("src/components/admin/AdminRouteGuard.tsx");

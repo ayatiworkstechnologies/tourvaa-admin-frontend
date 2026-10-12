@@ -108,7 +108,7 @@ check(
 const portalAuthPage = read("src/components/public/portal/PortalAuthPage.tsx");
 check(
   "portal login commits cookies before a clean dashboard navigation",
-  portalAuthPage.includes("window.location.assign(redirectTarget())") &&
+  portalAuthPage.includes("window.location.assign(redirectTarget(roleSlug))") &&
     !portalAuthPage.includes("await loginWithToken();") &&
     portalAuthPage.includes('await api.post("/auth/logout").catch(() => {})'),
 );
@@ -126,6 +126,12 @@ check(
     pricingTab.includes("Profit includes markup and supplier commission"),
 );
 const customerBookingDetail = read("src/app/customer/bookings/[id]/page.tsx");
+check(
+  "customer booking detail shows real payment and transaction references",
+  customerBookingDetail.includes('label="Payment ID"') &&
+    customerBookingDetail.includes('label="Transaction ID"') &&
+    customerBookingDetail.includes("payment.transaction_id || payment.gateway_payment_id"),
+);
 check(
   "unpaid customer bookings show payment required and can be removed",
   customerBookingDetail.includes("BOOKING_PAYMENT_REQUIRED_MESSAGE") &&
@@ -210,7 +216,7 @@ check("new booking opens payment UI", customerBooking.includes('searchParams.get
 check(
   "customer request states use customer-safe booking language",
   customerBooking.includes("isBookingRequestReceived") &&
-    customerBooking.includes("Booking Successful – Awaiting Tourvaa Confirmation") &&
+    customerBooking.includes("Booking Successful - Awaiting Tourvaa Confirmation") &&
     customerBooking.includes("BOOKING_AWAITING_CONFIRMATION_MESSAGE") &&
     !customerBooking.includes("Pending supplier acceptance"),
 );

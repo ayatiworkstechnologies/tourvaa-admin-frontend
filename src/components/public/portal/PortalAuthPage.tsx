@@ -172,16 +172,16 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
   const [socialProviders, setSocialProviders] = useState<Record<string, boolean>>({});
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({ defaultValues: { identifier: "", password: "" } });
 
-  function redirectTarget() {
+  function redirectTarget(roleSlug = config.roleSlug) {
     const allowed = safeRedirect && (
       safeRedirect.startsWith(config.redirectPrefix) ||
       (config.extraRedirectPrefixes ?? []).some((prefix) => safeRedirect.startsWith(prefix))
     );
-    return allowed ? safeRedirect! : getDashboardPath(config.roleSlug);
+    return allowed ? safeRedirect! : getDashboardPath(roleSlug);
   }
 
   useEffect(() => {
-    if (!sessionLoading && isLoggedIn && dashboard) router.replace(redirectTarget());
+    if (!sessionLoading && isLoggedIn && dashboard) router.replace(redirectTarget(dashboard.user.role?.slug));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionLoading, isLoggedIn, dashboard, router, safeRedirect]);
 
@@ -206,7 +206,8 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
       const data = res.data.data;
       if (data.account_restricted) { router.push("/account-status"); return; }
       const roleSlug = String(data.user?.role?.slug ?? "").toLowerCase();
-      if (roleSlug !== config.roleSlug) {
+      const isCustomRoleOnSharedLogin = config.accountType === "CUSTOMER" && !["customer", "supplier", "agent-reseller", "affiliate", "admin", "super-admin", "sub-admin"].includes(roleSlug);
+      if (roleSlug !== config.roleSlug && !isCustomRoleOnSharedLogin) {
         // Login has already issued httpOnly cookies. Remove them before
         // leaving the user on the wrong portal's form, otherwise its stale
         // session bootstrap can race the next correct login attempt.
@@ -219,7 +220,7 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
       // refreshSession here can race an expired-session restore that began
       // when the public login page mounted and incorrectly log out the new
       // session on the destination page.
-      window.location.assign(redirectTarget());
+      window.location.assign(redirectTarget(roleSlug));
     } catch (err: unknown) {
       setError(getLoginErrorMessage(err));
     } finally {

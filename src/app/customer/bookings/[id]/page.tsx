@@ -12,7 +12,6 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { formatCurrency } from "@/lib/utils/currency";
 import { StripeBadge, PayPalLogo } from "@/components/common/PaymentLogos";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
-import Loader from "@/components/ui/Loader";
 import { bookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_RECEIVED_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE } from "@/lib/constants/bookingStatus";
 
 type Traveller = {
@@ -32,6 +31,14 @@ type StatusHistory = {
   new_status: string;
   reason?: string;
   created_at?: string;
+};
+
+type PaymentReference = {
+  id: number;
+  payment_code?: string | null;
+  transaction_id?: string | null;
+  gateway_payment_id?: string | null;
+  payment_status?: string | null;
 };
 
 type Booking = {
@@ -69,6 +76,7 @@ type Booking = {
   created_at?: string;
   travellers?: Traveller[];
   status_history?: StatusHistory[];
+  payments?: PaymentReference[];
   cancellation_eligibility?: {
     is_free_cancellation_eligible: boolean;
     refund_percentage: string;
@@ -84,6 +92,14 @@ function StatusIcon({ status }: { status: string }) {
 
 function customerBookingStatus(status?: string): string {
   return bookingStatusLabel(status, "customer");
+}
+
+function bookingDate(value?: string) {
+  if (!value) return "Date to be confirmed";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
 
 function Field({ label, value }: { label: string; value?: React.ReactNode }) {
@@ -498,6 +514,13 @@ export default function CustomerBookingDetailPage() {
   const pendingAmount = Number(booking?.amount_pending ?? 0);
   const canPay = booking && pendingAmount > 0 && !["cancelled", "declined", "completed", "cancellation_requested", "postponed"].includes(booking.booking_status);
   const canReview = booking && booking.booking_status === "completed" && !booking.has_review && !reviewSubmitted;
+  const nextStep = canPay
+    ? `Complete the outstanding balance of ${format(pendingAmount, booking?.currency)} to keep this booking moving.`
+    : isBookingRequestReceived
+      ? "Your payment is recorded. Tourvaa will send the next booking update here and by email."
+      : booking?.booking_status === "confirmed"
+        ? "Your trip is confirmed. Keep your booking code handy when you contact Tourvaa."
+        : "Review your trip details and check this page for the latest update.";
   const tourHref = booking?.tour_slug
     ? publicTourUrl({
         country_name: booking.tour_country_name || booking.country,
@@ -557,12 +580,22 @@ export default function CustomerBookingDetailPage() {
       )}
 
       {loading && (
-        <Loader label="Loading your booking..." />
+        <div className="animate-pulse space-y-4" aria-label="Loading your booking">
+          <div className="h-44 rounded-2xl border border-slate-100 bg-slate-100" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="h-52 rounded-2xl bg-slate-100" />
+            <div className="h-52 rounded-2xl bg-slate-100" />
+            <div className="h-52 rounded-2xl bg-slate-100" />
+          </div>
+        </div>
       )}
 
       {!loading && error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           <AlertCircle size={16} /> {error}
+          <button type="button" onClick={() => void load()} className="ml-auto rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-100">
+            Try again
+          </button>
         </div>
       )}
 
@@ -576,13 +609,14 @@ export default function CustomerBookingDetailPage() {
       {!loading && booking && (
         <>
           {/* Booking header */}
-          <div className="relative mb-5 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_25px_rgba(0,0,0,0.02)] sm:p-6 md:mb-6 md:p-7">
-            <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
+          <div className="relative mb-5 overflow-hidden rounded-2xl border border-blue-100 bg-[linear-gradient(135deg,#ffffff_0%,#f4f8ff_58%,#eaf3ff_100%)] p-5 shadow-[0_12px_32px_rgba(28,78,143,0.08)] sm:p-6 md:mb-6 md:p-7">
+            <div className="absolute -right-16 -top-20 h-52 w-52 rounded-full bg-blue-200/30 blur-3xl" aria-hidden="true" />
+            <div className="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
+              <div className="min-w-0">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   BOOKING CODE: <span className="font-mono text-[#1B64F2]">#{booking.booking_code.replace(/^#/, "")}</span>
                 </p>
-                <h2 className="mt-1 text-xl font-black leading-tight text-[#0B1527] md:text-2xl">
+                <h2 className="mt-1 text-2xl font-black leading-tight tracking-tight text-[#0B1527] md:text-3xl">
                   {tourHref ? (
                     <Link href={tourHref} className="transition hover:text-blue-600 hover:underline">
                       {booking.tour_name || "Tour Booking"}
@@ -602,8 +636,21 @@ export default function CustomerBookingDetailPage() {
                     </span>
                   )}
                 </div>
+                <div className="mt-5 grid max-w-2xl gap-3 border-t border-blue-100 pt-4 sm:grid-cols-2">
+                  <div className="flex items-center gap-2 text-sm text-slate-700">
+                    <CalendarCheck size={16} className="shrink-0 text-[#1B64F2]" />
+                    <span><span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Travel date</span>{bookingDate(booking.tour_date)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-700">
+                    <Users size={16} className="shrink-0 text-[#1B64F2]" />
+                    <span><span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Travellers</span>{booking.total_travellers ?? 0} traveller{booking.total_travellers === 1 ? "" : "s"}</span>
+                  </div>
+                </div>
               </div>
-              <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3">
+              <div className="rounded-xl border border-blue-100 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">What happens next</p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">{nextStep}</p>
+                <div className="mt-4 grid w-full gap-2 sm:flex sm:flex-wrap sm:items-center">
                 {canPay && (
                   <button
                     type="button"
@@ -645,6 +692,7 @@ export default function CustomerBookingDetailPage() {
                     <Star size={15} /> Submit Review
                   </button>
                 )}
+                </div>
               </div>
             </div>
           </div>
@@ -689,7 +737,7 @@ export default function CustomerBookingDetailPage() {
             <div className="mb-5 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-blue-900 sm:px-5 md:mb-6">
               <Clock size={18} className="mt-0.5 shrink-0" />
               <div>
-                <p className="font-bold">Booking Successful – Awaiting Tourvaa Confirmation</p>
+                <p className="font-bold">Booking Successful - Awaiting Tourvaa Confirmation</p>
                 <p className="mt-1 text-sm leading-6">{BOOKING_AWAITING_CONFIRMATION_MESSAGE}</p>
               </div>
             </div>
@@ -777,6 +825,19 @@ export default function CustomerBookingDetailPage() {
                   } />
                 )}
                 <Field label="Payment Status" value={booking.payment_status?.replaceAll("_", " ")} />
+                {(booking.payments?.length ?? 0) > 0 && (
+                  <div className="space-y-3 border-t border-slate-100 pt-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Payment references</p>
+                    {booking.payments!.map((payment) => (
+                      <div key={payment.id} className="rounded-lg bg-slate-50 p-3">
+                        <Field label="Payment ID" value={payment.payment_code || String(payment.id)} />
+                        <div className="mt-2">
+                          <Field label="Transaction ID" value={payment.transaction_id || payment.gateway_payment_id || "-"} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {canPay && (
                   <button type="button" onClick={() => setShowPayModal(true)}
                     className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition-colors">

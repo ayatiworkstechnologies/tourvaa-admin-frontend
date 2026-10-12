@@ -184,6 +184,7 @@ check(
 check("admin notifications no longer poll on a timer", !notificationAdmin.includes("setInterval") && !notificationAdmin.includes("POLL_INTERVAL_MS"));
 check("notification refresh is driven by explicit app and push events", [notificationInbox, notificationAdmin].every((source) => source.includes("NOTIFICATION_REFRESH_EVENT") && source.includes("isNotificationPushMessage")));
 check("push worker tells open pages when a notification arrives", notificationWorker.includes("client.postMessage") && notificationWorker.includes("tourvaa:notification-received"));
+check("notifications retain entity ids and safe direct actions", notificationInbox.includes("ENTITY_LABELS") && notificationInbox.includes("booking_id") && notificationInbox.includes("Booking #") && notificationWorker.includes("view_details") && notificationWorker.includes("entityType") && notificationWorker.includes("bookingId"));
 
 console.log(`\nOverall flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

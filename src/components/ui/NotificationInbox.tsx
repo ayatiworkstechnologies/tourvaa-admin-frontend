@@ -18,8 +18,30 @@ type Notification = {
   message: string;
   is_read: boolean;
   created_at: string;
-  metadata?: { action_url?: string | null } | null;
+  metadata?: { action_url?: string | null; action_label?: string | null; booking_id?: number | null; entity_type?: string | null; entity_id?: number | null } | null;
 };
+
+const ENTITY_LABELS: Record<string, string> = {
+  booking: 'Booking', payment: 'Payment', invoice: 'Invoice', cancellation_request: 'Cancellation request',
+  supplier: 'Supplier', agent: 'Agent', affiliate: 'Affiliate', affiliate_payout: 'Affiliate payout',
+  supplier_payout: 'Supplier payout', agent_payout: 'Agent payout', tour: 'Tour', tour_version: 'Tour submission',
+  conversation: 'Message', customer: 'Customer', user: 'User', role: 'Role',
+};
+
+function notificationReference(notification: Notification) {
+  const metadata = notification.metadata;
+  if (!metadata) return null;
+  const references: string[] = [];
+  if (metadata.entity_type && metadata.entity_id) {
+    references.push(`${ENTITY_LABELS[metadata.entity_type] || 'Update'} #${metadata.entity_id}`);
+  }
+  if (metadata.booking_id && (metadata.entity_type !== 'booking' || metadata.entity_id !== metadata.booking_id)) {
+    references.push(`Booking #${metadata.booking_id}`);
+  }
+  return references.length
+    ? `${references.join(' · ')}${metadata.action_url ? ` · ${metadata.action_label || 'View details'}` : ''}`
+    : null;
+}
 
 const inboxCache = new Map<number, Notification[]>();
 const inboxRequests = new Map<number, Promise<Notification[]>>();
@@ -247,6 +269,11 @@ export default function NotificationInbox() {
                     <div className={!n.is_read ? '' : 'pl-4'}>
                       <p className="text-sm font-semibold text-dash-text">{n.title}</p>
                       <p className="mt-0.5 text-xs text-[#6B7280]">{n.message}</p>
+                      {notificationReference(n) && (
+                        <p className="mt-1 text-[11px] font-bold text-dash-brand">
+                          {notificationReference(n)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </li>

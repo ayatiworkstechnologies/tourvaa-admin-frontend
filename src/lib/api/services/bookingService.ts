@@ -124,10 +124,12 @@ export type PaymentAttempt = {
   payment_method: string;
   payment_type: string;
   gateway: string;
+  gateway_payment_id?: string | null;
   total_amount: string;
   captured_amount: string;
   refunded_amount: string;
   payment_status: string;
+  transaction_id?: string | null;
   failure_reason?: string | null;
   created_at?: string | null;
 };

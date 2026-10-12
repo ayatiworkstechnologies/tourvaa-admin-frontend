@@ -24,6 +24,13 @@ type Traveller = {
   traveller_type?: string;
 };
 
+type PaymentReference = {
+  id: number;
+  payment_code?: string | null;
+  transaction_id?: string | null;
+  gateway_payment_id?: string | null;
+};
+
 type Booking = {
   id: number;
   booking_code: string;
@@ -73,6 +80,7 @@ type Booking = {
   booking_source?: string;
   created_at?: string;
   travellers?: Traveller[];
+  payments?: PaymentReference[];
   status_history?: Array<{ id: number; old_status?: string | null; new_status: string; change_source?: string; reason?: string | null; created_at?: string }>;
   price_breakdown?: {
     base_amount?: string | number;
@@ -449,6 +457,18 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
                 <InfoRow label="Commission Status" value={<Pill status={booking.agent_payment_summary.commission_status}>{booking.agent_payment_summary.commission_status.replaceAll("_", " ")}</Pill>} />
                 <InfoRow label="Commission Payment Date" value={dateText(booking.agent_payment_summary.commission_payment_date)} />
               </>}
+            </div>
+          </div>}
+
+          {(booking.payments?.length ?? 0) > 0 && <div className="order-2 rounded-xl border border-dash-border bg-white p-5 shadow-sm">
+            <h2 className="flex items-center gap-2 text-base font-black text-dash-text"><CreditCard size={18} className="text-blue-600" /> Payment References</h2>
+            <div className="mt-4">
+              {booking.payments!.map((payment) => (
+                <div key={payment.id} className="border-b border-dash-border py-3 first:pt-0 last:border-b-0 last:pb-0">
+                  <InfoRow label="Payment ID" value={payment.payment_code || String(payment.id)} />
+                  <InfoRow label="Transaction ID" value={payment.transaction_id || payment.gateway_payment_id || "-"} />
+                </div>
+              ))}
             </div>
           </div>}
 
