@@ -39,14 +39,23 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
     let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     let retryDelay = INITIAL_RETRY_MS;
 
+    const scheduleReconnect = () => {
+      if (cancelled || !navigator.onLine || retryTimer) return;
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        void connect();
+      }, retryDelay);
+      retryDelay = Math.min(retryDelay * 1.5, MAX_RETRY_MS);
+    };
+
     async function connect() {
       if (cancelled) return;
+      if (!navigator.onLine) return;
       let ticket: string;
       try {
         ticket = await issueWsTicket();
       } catch {
-        retryTimer = setTimeout(connect, retryDelay);
-        retryDelay = Math.min(retryDelay * 1.5, MAX_RETRY_MS);
+        scheduleReconnect();
         return;
       }
       if (cancelled) return;
@@ -81,13 +90,25 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
         if (heartbeatTimer) clearInterval(heartbeatTimer);
         heartbeatTimer = null;
         if (cancelled) return;
-        retryTimer = setTimeout(connect, retryDelay);
-        retryDelay = Math.min(retryDelay * 1.5, MAX_RETRY_MS);
+        scheduleReconnect();
       };
       socket.onerror = () => {
         socket?.close();
       };
     }
+
+    const handleOffline = () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = null;
+      socket?.close();
+    };
+    const handleOnline = () => {
+      retryDelay = INITIAL_RETRY_MS;
+      if (!socket || socket.readyState === WebSocket.CLOSED) void connect();
+    };
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
 
     void connect();
 
@@ -95,6 +116,8 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
       cancelled = true;
       if (retryTimer) clearTimeout(retryTimer);
       if (heartbeatTimer) clearInterval(heartbeatTimer);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
       socket?.close();
     };
   }, []);
