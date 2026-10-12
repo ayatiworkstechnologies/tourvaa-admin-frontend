@@ -133,6 +133,7 @@ function PayNowModal({
   preferredPaymentType,
   currency,
   depositConfig,
+  allowPartialPayment,
   onClose,
 }: {
   bookingId: number;
@@ -142,13 +143,15 @@ function PayNowModal({
   preferredPaymentType?: "partial" | "full";
   currency: string;
   depositConfig?: Booking["deposit_config"];
+  /** A booking created as full-payment must never be re-offered as a deposit. */
+  allowPartialPayment: boolean;
   onClose: () => void;
 }) {
-  // The deposit option only makes sense before any payment has been made -
-  // once a deposit is already on the booking, this modal is collecting the
-  // remaining balance in full, not splitting it further.
+  // Deposit terms are saved when the booking is created. Do not apply a
+  // current tour setting retroactively to an older full-payment booking.
+  // Once any payment is made, this modal can only collect the full balance.
   const depositDue = (() => {
-    if (amountPaid > 0 || !depositConfig?.still_available) return 0;
+    if (!allowPartialPayment || amountPaid > 0 || !depositConfig?.still_available) return 0;
     const raw = depositConfig.deposit_type === "percentage"
       ? depositConfig.deposit_percentage ? totalAmount * (depositConfig.deposit_percentage / 100) : 0
       : Number(depositConfig.booking_deposit || 0);
@@ -159,6 +162,7 @@ function PayNowModal({
   const [err, setErr] = useState("");
   const [gw, setGw] = useState<GatewayStatus>(null);
   const [gwLoading, setGwLoading] = useState(true);
+  const retriedAfterPendingRelease = useRef(false);
   const [paymentType, setPaymentType] = useState<"partial" | "full">(
     preferredPaymentType === "partial" && partialAvailable ? "partial" : "full",
   );
@@ -179,6 +183,26 @@ function PayNowModal({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
+  async function releasePreviousCheckoutIfBlocking(error: unknown) {
+    const message = axios.isAxiosError(error)
+      ? String(error.response?.data?.detail || error.response?.data?.message || "").toLowerCase()
+      : "";
+    // A gateway payment row is created before the browser leaves Tourvaa. If
+    // that redirect was abandoned, its pending amount reserves the balance.
+    // A fresh, explicit payment click may safely replace that unfinished
+    // gateway attempt; never repeat this recovery automatically.
+    if (retriedAfterPendingRelease.current || !message.includes("no outstanding balance") || amount <= 0) return false;
+    retriedAfterPendingRelease.current = true;
+    setErr("An earlier checkout was not completed. Preparing a new secure checkout…");
+    try {
+      await api.post("/payments/abandon-pending", { booking_id: bookingId });
+      return true;
+    } catch {
+      retriedAfterPendingRelease.current = false;
+      return false;
+    }
+  }
+
   async function payWithStripe() {
     setLoading("stripe"); setErr("");
     try {
@@ -194,6 +218,10 @@ function PayNowModal({
       if (payment_id) sessionStorage.setItem(`stripe_pid_${bookingId}`, String(payment_id));
       window.location.href = checkout_url;
     } catch (e: unknown) {
+      if (await releasePreviousCheckoutIfBlocking(e)) {
+        await payWithStripe();
+        return;
+      }
       setErr(axios.isAxiosError(e) ? (e.response?.data?.detail || e.response?.data?.message || "Could not start Stripe payment.") : "Could not start Stripe payment.");
       setLoading(null);
     }
@@ -214,6 +242,10 @@ function PayNowModal({
       sessionStorage.setItem(`paypal_pid_${bookingId}`, String(payment_id));
       window.location.href = approve_url;
     } catch (e: unknown) {
+      if (await releasePreviousCheckoutIfBlocking(e)) {
+        await payWithPayPal();
+        return;
+      }
       setErr(axios.isAxiosError(e) ? (e.response?.data?.detail || e.response?.data?.message || "Could not start PayPal payment.") : "Could not start PayPal payment.");
       setLoading(null);
     }
@@ -834,6 +866,7 @@ export default function CustomerBookingDetailPage() {
           preferredPaymentType={booking.payment_type}
           currency={booking.currency || "USD"}
           depositConfig={booking.deposit_config}
+          allowPartialPayment={booking.payment_type === "partial"}
           onClose={() => setShowPayModal(false)}
         />
       )}

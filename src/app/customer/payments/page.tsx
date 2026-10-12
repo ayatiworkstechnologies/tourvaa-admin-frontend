@@ -9,10 +9,10 @@ import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/Cus
 import { useCurrency } from "@/hooks/useCurrency";
 
 type Payment = {
-  id: number;
+  /** Local table key only; never a payment identifier from the API. */
+  id?: string;
   booking_id?: number;
   booking_code?: string;
-  payment_code?: string;
   payment_method?: string;
   payment_status?: string;
   paid_amount?: string | number;
@@ -51,7 +51,8 @@ export default function CustomerPaymentsPage() {
     api.get("/customer/payments", { params: { page, limit } })
       .then((res) => {
         if (!active) return;
-        setRows(res.data?.items ?? res.data?.data ?? []);
+        const items = res.data?.items ?? res.data?.data ?? [];
+        setRows(items.map((item: Payment, index: number) => ({ ...item, id: `payment-row-${page}-${index}` })));
         setTotal(res.data?.total ?? 0);
       })
       .catch(() => active && setRows([]))
@@ -66,7 +67,6 @@ export default function CustomerPaymentsPage() {
       className: "w-20 font-bold text-dash-muted",
       render: (_row, index) => (page - 1) * limit + index + 1,
     },
-    { key: "code", header: "Payment", render: (p) => p.payment_code || `#${p.id}`, className: "font-bold text-dash-text" },
     { key: "booking", header: "Booking", render: (p) => p.booking_id ? <Link className="font-semibold text-dash-brand hover:underline" href={`/customer/bookings/${p.booking_id}`}>{p.booking_code || `Booking #${p.booking_id}`}</Link> : "-" },
     { key: "method", header: "Method", render: (p) => (p.payment_method || "-").replaceAll("_", " "), className: "hidden capitalize text-dash-muted sm:table-cell" },
     { key: "status", header: "Status", render: (p) => <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold capitalize ${statusClass(p.payment_status)}`}>{(p.payment_status || "unknown").replaceAll("_", " ")}</span> },

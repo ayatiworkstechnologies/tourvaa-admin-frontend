@@ -54,6 +54,7 @@ export default function BookingPaymentModal({
   const [loading, setLoading] = useState<"stripe" | "paypal" | "test" | null>(null);
   const [error, setError] = useState("");
   const idempotencyKeys = useRef<Record<string, string>>({});
+  const retriedAfterPendingRelease = useRef(false);
   const paymentAmount = paymentType === "partial" ? depositDue : outstandingAmount;
 
   function paymentIdempotencyKey(gateway: "stripe" | "paypal") {
@@ -92,6 +93,28 @@ export default function BookingPaymentModal({
       : fallback;
   }
 
+  async function releasePreviousCheckoutIfBlocking(error: unknown) {
+    const message = axios.isAxiosError(error)
+      ? String(error.response?.data?.detail || error.response?.data?.message || "").toLowerCase()
+      : "";
+    // A pending gateway row reserves the amount before redirect. A new,
+    // explicit click replaces a checkout the traveller/agent already left;
+    // only one recovery attempt is allowed for this modal instance.
+    if (retriedAfterPendingRelease.current || !message.includes("no outstanding balance") || outstandingAmount <= 0) return false;
+    retriedAfterPendingRelease.current = true;
+    setError("An earlier checkout was not completed. Preparing a new secure checkout…");
+    try {
+      await api.post("/payments/abandon-pending", { booking_id: bookingId });
+      // The old request's idempotency key is tied to its abandoned gateway
+      // session. A replacement checkout must use a fresh key.
+      idempotencyKeys.current = {};
+      return true;
+    } catch {
+      retriedAfterPendingRelease.current = false;
+      return false;
+    }
+  }
+
   async function payWithStripe() {
     setLoading("stripe"); setError("");
     try {
@@ -109,6 +132,10 @@ export default function BookingPaymentModal({
       if (paymentId) sessionStorage.setItem(`stripe_pid_${bookingId}`, String(paymentId));
       window.location.href = checkoutUrl;
     } catch (requestError) {
+      if (await releasePreviousCheckoutIfBlocking(requestError)) {
+        await payWithStripe();
+        return;
+      }
       setError(paymentError(requestError, "Could not start Stripe payment."));
       setLoading(null);
     }
@@ -130,6 +157,10 @@ export default function BookingPaymentModal({
       sessionStorage.setItem(`paypal_pid_${bookingId}`, String(paymentId));
       window.location.href = approveUrl;
     } catch (requestError) {
+      if (await releasePreviousCheckoutIfBlocking(requestError)) {
+        await payWithPayPal();
+        return;
+      }
       setError(paymentError(requestError, "Could not start PayPal payment."));
       setLoading(null);
     }
