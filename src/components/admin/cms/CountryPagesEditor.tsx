@@ -4,18 +4,14 @@ import { useEffect, useState } from "react";
 import { fetchPublicCountries, type PublicCountry } from "@/lib/api/publicClient";
 import { slugifyTourSegment } from "@/lib/utils/tourUrl";
 import PageEditor, { type PageEditorSection } from "./PageEditor";
-
-const SECTIONS: PageEditorSection[] = [
-  { key: "listing", label: "Country Tour Page (hero, showcase, SEO)", tabs: ["country-pages"], preview: "tours" },
-  { key: "guide", label: "Destination Guide", tabs: ["country-destination-guide"], preview: "destinations" },
-  { key: "index", label: "Destinations Page Extras", tabs: ["destination-styles", "destination-seasons"], preview: "index" },
-];
+import CountryDestinationInfoPanel from "./CountryDestinationInfoPanel";
 
 // Country landing pages: the /tours/{country} overrides and the
 // /destinations/{country} guide, previewed live for the chosen country.
 export default function CountryPagesEditor() {
   const [countries, setCountries] = useState<PublicCountry[]>([]);
   const [country, setCountry] = useState("");
+  const [previewVersion, setPreviewVersion] = useState(0);
 
   useEffect(() => {
     fetchPublicCountries()
@@ -26,11 +22,33 @@ export default function CountryPagesEditor() {
       .catch(() => {});
   }, []);
 
+  const selectedCountryName = countries.find(
+    (item) => slugifyTourSegment(item.country_name) === country,
+  )?.country_name;
+
+  const sections: PageEditorSection[] = [
+    { key: "listing", label: "Country Tour Page (hero, showcase, SEO)", tabs: ["country-pages"], preview: "tours" },
+    {
+      key: "guide",
+      label: "Destination Guide",
+      preview: "destinations",
+      render: () => (
+        <CountryDestinationInfoPanel
+          selectedCountryName={selectedCountryName}
+          onCountryChange={(name) => setCountry(slugifyTourSegment(name))}
+          onSaved={() => setPreviewVersion((version) => version + 1)}
+        />
+      ),
+    },
+    { key: "index", label: "Destinations Page Extras", tabs: ["destination-styles", "destination-seasons"], preview: "index" },
+  ];
+
   return (
     <PageEditor
-      sections={SECTIONS}
+      sections={sections}
       previewTitle="Live country page"
       previewSrc={(sec) => (sec.preview === "index" ? "/destinations" : country ? `/${sec.preview}/${country}` : null)}
+      previewVersion={previewVersion}
       toolbarExtra={
         <select
           value={country}

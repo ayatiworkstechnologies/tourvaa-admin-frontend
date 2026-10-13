@@ -21,7 +21,7 @@ import {
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
-import { CountryDestinationInfo, MonthlyWeather, PlaceToVisit, WhyVisitReason } from "@/lib/types/countryDestination";
+import { CountryDestinationInfo, CountryDestinationSectionKey, MonthlyWeather, PlaceToVisit, WhyVisitReason } from "@/lib/types/countryDestination";
 import {
   CURATED_COUNTRY_INFOS,
   getFallbackCountryDestinationInfo,
@@ -43,16 +43,48 @@ type SubTabKey =
   | "monsoon"
   | "temperature"
   | "places"
-  | "travel_info";
+  | "travel_info"
+  | "sections";
 
-export default function CountryDestinationInfoPanel() {
+const PUBLIC_SECTIONS: { key: CountryDestinationSectionKey; label: string; description: string }[] = [
+  { key: "hero", label: "Hero", description: "Image, title and destination introduction" },
+  { key: "overview", label: "Overview", description: "Narrative and quick facts" },
+  { key: "places", label: "Places to visit", description: "Destination cards and tour filtering" },
+  { key: "why_visit", label: "Why visit", description: "Feature banner and travel highlights" },
+  { key: "duration_guiding", label: "Duration and travel style", description: "Trip-length and guiding-style choices" },
+  { key: "when_to_go", label: "When to go", description: "Seasons, monsoon and climate guidance" },
+  { key: "travel_info", label: "Travel information", description: "Practical travel advice" },
+  { key: "tours", label: "Tour packages", description: "Live Tourvaa tours for this country" },
+  { key: "external_experiences", label: "Partner experiences", description: "Configured external activities" },
+  { key: "related_destinations", label: "Countries worth exploring", description: "Related destination cards" },
+  { key: "destination_directory", label: "Destination directory", description: "Destination links grid" },
+  { key: "faq", label: "FAQs", description: "Frequently asked questions" },
+];
+
+interface CountryDestinationInfoPanelProps {
+  selectedCountryName?: string;
+  onCountryChange?: (countryName: string) => void;
+  onSaved?: () => void;
+}
+
+export default function CountryDestinationInfoPanel({
+  selectedCountryName: controlledCountryName,
+  onCountryChange,
+  onSaved,
+}: CountryDestinationInfoPanelProps) {
   const toast = useToast();
   const [countries, setCountries] = useState<CountryOption[]>([]);
-  const [selectedCountryName, setSelectedCountryName] = useState<string>("India");
+  const [uncontrolledCountryName, setUncontrolledCountryName] = useState<string>("India");
   const [activeSubTab, setActiveSubTab] = useState<SubTabKey>("hero");
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [info, setInfo] = useState<CountryDestinationInfo | null>(null);
+  const selectedCountryName = controlledCountryName || uncontrolledCountryName;
+
+  const selectCountry = (countryName: string) => {
+    setUncontrolledCountryName(countryName);
+    onCountryChange?.(countryName);
+  };
 
   // 1. Fetch available countries from the system
   useEffect(() => {
@@ -68,13 +100,13 @@ export default function CountryDestinationInfoPanel() {
         }));
         setCountries(mapped);
 
-        // If India is in list, select India, else first
-        if (mapped.length > 0) {
+        // Preserve the parent page's selection when embedded in Country Pages.
+        if (!controlledCountryName && mapped.length > 0) {
           const india = mapped.find((m) => m.name.toLowerCase() === "india");
           if (india) {
-            setSelectedCountryName(india.name);
+            setUncontrolledCountryName(india.name);
           } else {
-            setSelectedCountryName(mapped[0].name);
+            setUncontrolledCountryName(mapped[0].name);
           }
         }
       })
@@ -87,9 +119,9 @@ export default function CountryDestinationInfoPanel() {
           { id: 3, name: "Thailand", code: "TH" },
           { id: 4, name: "United Kingdom", code: "GB" },
         ]);
-        setSelectedCountryName("India");
+        if (!controlledCountryName) setUncontrolledCountryName("India");
       });
-  }, []);
+  }, [controlledCountryName]);
 
   // 2. Fetch or initialize the country destination info
   const loadCountryData = useCallback(async (countryName: string) => {
@@ -144,6 +176,7 @@ export default function CountryDestinationInfoPanel() {
       };
       await api.put(`/cms/content-blocks/country_info_${slug}`, { data: payload });
       toast.success(`Destination Guide for ${info.country_name} published successfully!`);
+      onSaved?.();
     } catch (err) {
       console.error("Save error:", err);
       toast.error(`Failed to publish destination guide for ${info.country_name}.`);
@@ -178,20 +211,20 @@ export default function CountryDestinationInfoPanel() {
   const liveUrl = `/destinations/${currentSlug}`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* ── Top Header & Country Picker ── */}
-      <section className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 px-5 py-3.5 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-200">
+          <span className="inline-flex items-center gap-2"><Compass size={14} /> Country guide workspace</span>
+        </div>
+        <div className="p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-600/20">
-              <Compass size={13} className="text-blue-600" />
-              <span>Country Destination Guide</span>
-            </div>
-            <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-900">
-              Destination Guide CMS
+            <h3 className="text-xl font-bold tracking-tight text-slate-950">
+              Build the public destination guide
             </h3>
-            <p className="mt-1 text-xs text-slate-500 leading-relaxed max-w-2xl">
-              Dynamically manage climate matrices, monsoon advisories, best places to visit, why visit highlights, quick facts, and travel info for any country.
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
+              Edit one country at a time. Saving updates the same content used on the public destination page and refreshes the preview.
             </p>
           </div>
 
@@ -202,7 +235,7 @@ export default function CountryDestinationInfoPanel() {
               target="_blank"
               className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
             >
-              <span>View Public Page</span>
+              <span>Open public page</span>
               <ExternalLink size={13} />
             </Link>
 
@@ -230,7 +263,7 @@ export default function CountryDestinationInfoPanel() {
               ) : (
                 <>
                   <Save size={14} />
-                  <span>Save Destination Guide</span>
+                  <span>Publish changes</span>
                 </>
               )}
             </button>
@@ -240,12 +273,12 @@ export default function CountryDestinationInfoPanel() {
         {/* Country Selector Dropdown Strip */}
         <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
           <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            Selected Country:
+            Editing country
           </label>
           <div className="relative max-w-xs w-full">
             <select
               value={selectedCountryName}
-              onChange={(e) => setSelectedCountryName(e.target.value)}
+              onChange={(e) => selectCountry(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white px-3.5 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-slate-800 focus:bg-white focus:ring-2 focus:ring-slate-900/10 shadow-2xs cursor-pointer"
             >
               {countries.map((c) => (
@@ -256,14 +289,15 @@ export default function CountryDestinationInfoPanel() {
             </select>
           </div>
           <span className="text-xs text-slate-500 font-medium">
-            URL: <code className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold">{liveUrl}</code>
+            Live route <code className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold">{liveUrl}</code>
           </span>
+        </div>
         </div>
       </section>
 
       {/* ── Sub-Tabs Navigation for the 8 Pillars ── */}
-      <section className="rounded-xl border border-dash-border bg-white p-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+      <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 shadow-2xs">
+        <div aria-label="Destination guide chapters" className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           <button
             type="button"
             onClick={() => setActiveSubTab("hero")}
@@ -367,12 +401,58 @@ export default function CountryDestinationInfoPanel() {
             <BookOpen size={14} />
             <span>8. Travel Information</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("sections")}
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition ${
+              activeSubTab === "sections"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-dash-bg/60 text-dash-text hover:bg-dash-bg"
+            }`}
+          >
+            <span>9. Section visibility</span>
+          </button>
         </div>
       </section>
 
       {/* ── Sub-Tab Forms ── */}
 
       {/* TAB 1: HERO & QUICK FACTS */}
+      {activeSubTab === "sections" && (
+        <section className="space-y-5 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs sm:p-6">
+          <div className="border-b border-slate-100 pb-4">
+            <h4 className="text-base font-bold text-slate-900">Public page sections</h4>
+            <p className="mt-1 text-sm text-slate-500">Choose which sections appear on this country&apos;s destination page. Changes are saved with the guide when you publish.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {PUBLIC_SECTIONS.map((section) => {
+              const isVisible = info.section_visibility?.[section.key] !== false;
+              return (
+                <div key={section.key} className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                  <div>
+                    <h5 className="text-sm font-bold text-slate-900">{section.label}</h5>
+                    <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{section.description}</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isVisible}
+                    aria-label={`Show ${section.label}`}
+                    onClick={() => setInfo({
+                      ...info,
+                      section_visibility: { ...info.section_visibility, [section.key]: !isVisible },
+                    })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition ${isVisible ? "bg-emerald-500" : "bg-slate-300"}`}
+                  >
+                    <span className={`mt-1 h-4 w-4 rounded-full bg-white shadow transition ${isVisible ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {activeSubTab === "hero" && (
         <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-6">
           <h4 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">

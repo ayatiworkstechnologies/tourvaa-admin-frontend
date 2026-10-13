@@ -86,6 +86,11 @@ export interface TravelAdviceSection {
   emergency_numbers?: string;
 }
 
+export type CountryDestinationSectionKey =
+  | "hero" | "overview" | "places" | "why_visit" | "duration_guiding"
+  | "when_to_go" | "travel_info" | "tours" | "external_experiences"
+  | "related_destinations" | "destination_directory" | "faq";
+
 export interface CountryDestinationInfo extends Record<string, unknown> {
   country_id: number;
   country_name: string;
@@ -111,5 +116,7 @@ export interface CountryDestinationInfo extends Record<string, unknown> {
     places: PlaceToVisit[];
   };
   travel_info: TravelAdviceSection;
+  /** Per-country display controls. Missing entries default to visible. */
+  section_visibility?: Partial<Record<CountryDestinationSectionKey, boolean>>;
   updated_at?: string | null;
 }

@@ -4,12 +4,7 @@
 
 import React from "react";
 import Link from "next/link";
-import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
-import {
-  LuArrowRight as ArrowRight,
-  LuHouse as Home,
-  LuChevronRight as ChevronRight,
-} from "react-icons/lu";
+import { LuArrowRight as ArrowRight, LuChevronRight as ChevronRight, LuHouse as Home } from "react-icons/lu";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 
 export interface CountryDestinationHeroProps {
@@ -21,135 +16,50 @@ export default function CountryDestinationHero({
   info,
   tourCount = 24,
 }: CountryDestinationHeroProps) {
-  const scrollToTours = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const el = document.getElementById("section-tours");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const scrollToWhenToGo = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const el = document.getElementById("section-when-to-go");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
+  const scrollToTours = (event: React.MouseEvent) => {
+    event.preventDefault();
+    document.getElementById("section-tours")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <section className="bg-white text-slate-900 pt-4 pb-8">
+    <section className="bg-white pb-7 pt-4 text-slate-900">
       <div className="mx-auto max-w-[1400px] px-5">
-        {/* ── 1. Panoramic Scenic Hero Banner ── */}
-        <div className="relative h-[480px] min-h-[480px] w-full overflow-hidden rounded-[26px] bg-slate-950 shadow-md">
+        <div className="relative min-h-[460px] overflow-hidden rounded-[26px] bg-slate-950 shadow-md sm:min-h-[500px]">
           <img
-            src={
-              info.hero_image ||
-              "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=1800&q=80"
-            }
+            src={info.hero_image || "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=1800&q=80"}
             alt={`${info.country_name} Tours`}
-            className="h-full w-full object-cover object-center opacity-85 scale-102 transition-transform duration-1000"
+            className="absolute inset-0 h-full w-full object-cover object-center opacity-85"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/25 to-black/20" />
-
-          {/* Transparent content overlay: the hero image remains the visual background. */}
-          <div className="absolute inset-x-5 bottom-6 sm:bottom-10 sm:left-10 sm:right-auto max-w-lg p-6 sm:p-7 text-white">
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-black/15" />
+          <div className="absolute inset-x-5 bottom-6 max-w-xl text-white sm:bottom-10 sm:left-10 sm:right-auto">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-200">Destination guide</p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               {info.hero_title || `${info.country_name} Tours`}
             </h1>
-            <p className="mt-2.5 text-xs sm:text-sm text-white/90 leading-relaxed font-medium">
-              {info.hero_subtitle ||
-                info.tagline ||
-                `Discover ancient wonders, mist-shrouded peaks, futuristic skylines, and thousand-year traditions on unforgettable journeys across ${info.country_name}.`}
+            <p className="mt-3 text-sm font-medium leading-relaxed text-white/90 sm:text-base">
+              {info.hero_subtitle || info.tagline || `Explore ${info.country_name} with confidence, context, and carefully planned journeys.`}
             </p>
-            <div className="mt-4 pt-3 border-t border-white/15">
-              <a
-                href="#section-tours"
-                onClick={scrollToTours}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-300 hover:text-white transition group cursor-pointer"
-              >
-                <span>
-                  Browse all {tourCount || 24} tours in {info.country_name}
-                </span>
-                <ArrowRight
-                  size={13}
-                  className="transition group-hover:translate-x-1"
-                />
-              </a>
-            </div>
+            <a
+              href="#section-tours"
+              onClick={scrollToTours}
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-sky-100"
+            >
+              Browse {tourCount || 24} tours
+              <ArrowRight size={14} />
+            </a>
           </div>
         </div>
 
-        {/* ── 2. Breadcrumbs Navigation ── */}
-        <nav
-          aria-label="Breadcrumb"
-          className="mt-6 flex items-center gap-2 text-xs font-semibold text-slate-500"
-        >
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 hover:text-slate-900 transition"
-          >
+        <nav aria-label="Breadcrumb" className="mt-5 flex items-center gap-2 text-xs font-semibold text-slate-500">
+          <Link href="/" className="inline-flex items-center gap-1 transition hover:text-slate-900">
             <Home size={13} className="text-slate-400" />
             <span>Home</span>
           </Link>
           <ChevronRight size={12} className="text-slate-300" />
-          <Link
-            href="/destinations"
-            className="hover:text-slate-900 transition"
-          >
-            Tours
-          </Link>
+          <Link href="/destinations" className="transition hover:text-slate-900">Destinations</Link>
           <ChevronRight size={12} className="text-slate-300" />
-          <span className="text-slate-900 font-bold">{info.country_name}</span>
+          <span className="font-bold text-slate-900">{info.country_name}</span>
         </nav>
-
-        {/* ── 3. Country Title & Split Overview Card ── */}
-        <div className="mt-6">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-950 tracking-tight mb-4">
-            {info.hero_title || info.country_name}
-          </h2>
-
-          <div className="rounded-[24px] border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs">
-            <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-8 items-center">
-              {/* Left Column: Narrative & Action Buttons */}
-              <div className="text-left">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2">
-                  An Introduction
-                </p>
-                <div className="space-y-3 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                  <p>{info.overview_narrative}</p>
-                </div>
-
-                {/* Two Action Buttons matching screenshot */}
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <PrimaryCtaButton
-                    href="#section-tours"
-                    onClick={scrollToTours}
-                    size="sm"
-                  >
-                    Explore Tours
-                  </PrimaryCtaButton>
-                  <a
-                    href="#section-when-to-go"
-                    onClick={scrollToWhenToGo}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-bold px-6 py-2.5 shadow-2xs transition cursor-pointer"
-                  >
-                    <span>Best time to visit</span>
-                  </a>
-                </div>
-              </div>
-
-              {/* Right Column: High-Res Landscape Photograph */}
-              <div className="overflow-hidden rounded-[20px] bg-slate-100 shadow-sm border border-slate-100">
-                <img
-                  src={
-                    info.why_visit?.reasons?.[0]?.image ||
-                    info.best_places_to_visit?.places?.[0]?.image ||
-                    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80"
-                  }
-                  alt={`${info.country_name} Landscape`}
-                  className="h-[250px] sm:h-[290px] w-full object-cover transition-transform duration-700 hover:scale-105"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );

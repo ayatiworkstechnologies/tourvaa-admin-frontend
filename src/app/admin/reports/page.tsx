@@ -12,6 +12,7 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import DatePicker from "@/components/ui/DatePicker";
 import {
   exportReportCsv,
+  exportAllReportsWorkbook,
   getAgentReport,
   getBookingDetailReport,
   getBookingReport,
@@ -338,6 +339,7 @@ export default function ReportsPage() {
   const [rowsLoading, setRowsLoading] = useState(true);
   const [rowsError, setRowsError] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [exportingAll, setExportingAll] = useState(false);
   const [salesTimeSeries, setSalesTimeSeries] = useState<SalesRevenueReport["time_series"]>([]);
   const [rowsPage, setRowsPage] = useState(1);
   const rowsPageSize = 10;
@@ -418,6 +420,21 @@ export default function ReportsPage() {
       toast.error("Could not export this report.");
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleExportAll() {
+    setExportingAll(true);
+    try {
+      const periodParams = reportMeta.periodAware
+        ? { period, start_date: customStart, end_date: customEnd }
+        : { period: "all" as ReportPeriod };
+      await exportAllReportsWorkbook(periodParams);
+      toast.success("Complete report workbook downloaded.");
+    } catch {
+      toast.error("Could not export the complete report workbook.");
+    } finally {
+      setExportingAll(false);
     }
   }
 
@@ -549,12 +566,22 @@ export default function ReportsPage() {
               <h2 className="text-lg font-black text-dash-text">Detailed Reports</h2>
               <p className="text-xs font-medium text-dash-subtle">Filter by period, view the data, and export or print it.</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <PrintButton label={`${reportMeta.label} (${period})`} />
               <button
                 type="button"
+                onClick={() => void handleExportAll()}
+                disabled={exportingAll || exporting || rowsLoading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-5 py-2.5 text-sm font-bold text-dash-text transition hover:border-dash-brand hover:text-dash-brand disabled:opacity-60"
+                title="Downloads every admin report in separate Excel worksheets"
+              >
+                {exportingAll ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                Export all Excel
+              </button>
+              <button
+                type="button"
                 onClick={() => void handleExport()}
-                disabled={exporting || rowsLoading}
+                disabled={exporting || exportingAll || rowsLoading}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_12px_rgb(67,169,246,0.25)] transition hover:-translate-y-0.5 hover:bg-dash-brand-hover disabled:opacity-60"
               >
                 {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}

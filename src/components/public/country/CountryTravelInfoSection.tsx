@@ -10,8 +10,6 @@ import {
   LuBus as Bus,
   LuPackage as Package,
   LuPhoneCall as PhoneCall,
-  LuCheck as Check,
-  LuInfo as Info,
 } from "react-icons/lu";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 
@@ -25,7 +23,6 @@ interface TravelTab {
   shortLabel: string;
   icon: React.ElementType;
   content: string;
-  tip?: string;
 }
 
 export default function CountryTravelInfoSection({
@@ -40,7 +37,6 @@ export default function CountryTravelInfoSection({
       shortLabel: "Visas",
       icon: FileText,
       content: travel_info.visas_and_passports,
-      tip: "Ensure your passport has at least 6 months validity from your arrival date and 2 blank pages.",
     },
     {
       id: "money",
@@ -48,7 +44,6 @@ export default function CountryTravelInfoSection({
       shortLabel: "Money",
       icon: Coins,
       content: travel_info.money_and_tipping,
-      tip: `Local currency is ${info.quick_facts.currency}. Inform your bank before travel to avoid card blocks.`,
     },
     {
       id: "health",
@@ -56,7 +51,6 @@ export default function CountryTravelInfoSection({
       shortLabel: "Health",
       icon: ShieldAlert,
       content: travel_info.health_and_vaccinations,
-      tip: "Comprehensive travel medical insurance is strongly recommended for all travelers.",
     },
     {
       id: "culture",
@@ -64,7 +58,6 @@ export default function CountryTravelInfoSection({
       shortLabel: "Culture",
       icon: HeartHandshake,
       content: travel_info.local_customs_and_culture,
-      tip: "Dress modestly when visiting temples and sacred heritage sites, removing shoes where required.",
     },
     {
       id: "transport",
@@ -72,7 +65,6 @@ export default function CountryTravelInfoSection({
       shortLabel: "Transport",
       icon: Bus,
       content: travel_info.getting_around_and_transport,
-      tip: "Tourvaa guided tours include private vetted air-conditioned vehicles and internal flight/train transfers.",
     },
     {
       id: "packing",
@@ -80,7 +72,6 @@ export default function CountryTravelInfoSection({
       shortLabel: "Packing",
       icon: Package,
       content: travel_info.packing_essentials,
-      tip: `Electrical plugs used: ${info.quick_facts.plug_types}. Bring a universal adapter.`,
     },
   ];
 
@@ -91,7 +82,6 @@ export default function CountryTravelInfoSection({
       shortLabel: "Emergency",
       icon: PhoneCall,
       content: travel_info.emergency_numbers,
-      tip: "Keep a copy of your Tourvaa tour leader emergency hotline stored in your phone at all times.",
     });
   }
 
@@ -168,11 +158,6 @@ export default function CountryTravelInfoSection({
                 </div>
               </div>
 
-              {/* Quick Country Pill */}
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 border border-slate-200/80 shadow-xs self-start sm:self-center">
-                <Check size={13} className="text-emerald-500 stroke-[3]" />
-                <span>Verified for {info.country_name}</span>
-              </div>
             </div>
 
             {/* Narrative text with formatted paragraphs */}
@@ -185,55 +170,9 @@ export default function CountryTravelInfoSection({
                 ))}
             </div>
 
-            {/* Tourvaa Insider Tip Callout */}
-            {activeTab.tip && (
-              <div className="mt-8 flex items-start gap-3 rounded-2xl border border-orange-200/70 bg-orange-50/70 p-4 text-slate-900">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-pub-accent text-white">
-                  <Info size={16} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black uppercase tracking-wider text-pub-accent">
-                    Tourvaa Expert Tip
-                  </h4>
-                  <p className="mt-0.5 text-xs sm:text-sm font-semibold text-slate-800">
-                    {activeTab.tip}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Peace of Mind Grid */}
-        <div className="mt-12 mx-auto max-w-4xl grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-2xs">
-            <span className="text-xl font-black text-pub-accent">24/7</span>
-            <p className="mt-1 text-xs font-bold text-slate-900">
-              Ground Assistance
-            </p>
-            <p className="mt-0.5 text-[11px] text-slate-500">
-              Dedicated Tour Leader & Operations
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-2xs">
-            <span className="text-xl font-black text-pub-accent">100%</span>
-            <p className="mt-1 text-xs font-bold text-slate-900">
-              Financial Protection
-            </p>
-            <p className="mt-0.5 text-[11px] text-slate-500">
-              ABTA & ATOL bonded partner coverage
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-2xs">
-            <span className="text-xl font-black text-pub-accent">Local</span>
-            <p className="mt-1 text-xs font-bold text-slate-900">
-              Vetted Guides
-            </p>
-            <p className="mt-0.5 text-[11px] text-slate-500">
-              Passionate, native licensed storytelling
-            </p>
-          </div>
-        </div>
       </div>
     </section>
   );

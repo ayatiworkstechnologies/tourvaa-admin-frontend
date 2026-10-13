@@ -14,9 +14,17 @@ import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 
 export interface CountryExploreFaqSectionProps {
   info: CountryDestinationInfo;
+  showRelated?: boolean;
+  showDirectory?: boolean;
+  showFaq?: boolean;
 }
 
-export default function CountryExploreFaqSection({ info }: CountryExploreFaqSectionProps) {
+export default function CountryExploreFaqSection({
+  info,
+  showRelated = true,
+  showDirectory = true,
+  showFaq = true,
+}: CountryExploreFaqSectionProps) {
   // Frequently Asked Questions state (first item open by default like screenshot)
   const [openFaqIndex, setOpenFaqIndex] = useState<number>(0);
 
@@ -126,7 +134,7 @@ export default function CountryExploreFaqSection({ info }: CountryExploreFaqSect
   return (
     <div className="bg-white text-slate-900">
       {/* ── 11. Countries Worth Exploring Section ── */}
-      <section className="py-12 sm:py-16 bg-slate-50/60 border-b border-slate-100">
+      {showRelated && <section className="py-12 sm:py-16 bg-slate-50/60 border-b border-slate-100">
         <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
@@ -185,10 +193,10 @@ export default function CountryExploreFaqSection({ info }: CountryExploreFaqSect
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ── 12. Country Directory Grid ── */}
-      <section className="py-12 sm:py-14 border-b border-slate-100">
+      {showDirectory && <section className="py-12 sm:py-14 border-b border-slate-100">
         <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
           <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6 text-left">
             Popular destinations in Asia &amp; Worldwide
@@ -210,10 +218,10 @@ export default function CountryExploreFaqSection({ info }: CountryExploreFaqSect
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ── 13. Frequently Asked Questions Accordion ── */}
-      <section id="section-faq" className="py-16 sm:py-20">
+      {showFaq && <section id="section-faq" className="py-16 sm:py-20">
         <div className="mx-auto max-w-[960px] px-4 sm:px-6">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-950 tracking-tight">
@@ -264,7 +272,7 @@ export default function CountryExploreFaqSection({ info }: CountryExploreFaqSect
             })}
           </div>
         </div>
-      </section>
+      </section>}
     </div>
   );
 }

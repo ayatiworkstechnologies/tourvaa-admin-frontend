@@ -494,3 +494,22 @@ export async function exportReportCsv(report: ReportType, params: PeriodParams, 
   link.remove();
   window.URL.revokeObjectURL(url);
 }
+
+/** Download every admin report as a single workbook with one worksheet per report. */
+export async function exportAllReportsWorkbook(params: PeriodParams) {
+  const response = await api.get("/reports/exports", {
+    params: { report: "all", format: "xlsx", ...periodQuery(params) },
+    responseType: "blob",
+  });
+
+  const url = window.URL.createObjectURL(new Blob([response.data], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `all-reports-${params.period}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}

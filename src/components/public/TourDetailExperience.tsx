@@ -40,6 +40,8 @@ import {
   LuArrowLeftRight as ArrowLeftRight,
   LuSun as Sun,
   LuGauge as Gauge,
+  LuActivity as Activity,
+  LuCalendar as Calendar,
 } from "react-icons/lu";
 import publicApi, { PublicTourDetail } from "@/lib/api/publicClient";
 import { destinationUrl } from "@/lib/utils/tourUrl";
@@ -162,6 +164,9 @@ type DepartureDateItem = {
   seats: string;
   urgent: boolean;
   slotsRemaining: number | null;
+  dayOfWeek?: string;
+  dayNumber?: string;
+  monthShort?: string;
 };
 
 type MonthGroup = {
@@ -380,25 +385,281 @@ function LightboxModal({
 
 // Upper bound for the traveller steppers only when the tour publishes neither a
 // group size nor departure seats; availability is still enforced by the server.
-function StyleFact({ icon, label, value, detail }: { icon: ReactNode; label: string; value: string; detail?: string }) {
-  return <div className="flex gap-3 px-0 py-4 text-[#173f70] sm:px-5 lg:px-4">
-    <span className="mt-0.5 shrink-0 text-[#ef6b36]">{icon}</span>
-    <div><p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 font-extrabold">{value}</p>{detail && <p className="mt-1 text-sm text-slate-600">{detail}</p>}</div>
-  </div>;
+function StyleFact({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  detail?: string;
+}) {
+  return (
+    <div className="group flex flex-col justify-between rounded-2xl border border-slate-100/90 bg-gradient-to-b from-slate-50/70 via-white to-white p-4.5 transition-all duration-200 hover:border-blue-200 hover:shadow-xs">
+      <div>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-100/80 bg-orange-50 text-[#ef6b36] shadow-2xs transition-transform group-hover:scale-105">
+            {icon}
+          </div>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-400">
+            {label}
+          </p>
+        </div>
+        <p className="mt-3 text-[15px] font-black leading-snug text-[#0B2A52]">
+          {value}
+        </p>
+      </div>
+      {detail && (
+        <p className="mt-2.5 border-t border-slate-100/80 pt-2 text-xs leading-relaxed text-slate-500 font-normal">
+          {detail}
+        </p>
+      )}
+    </div>
+  );
 }
 
-function RatingGuide({ title, value, steps, multi = false }: { title: string; value: string; steps: string[]; multi?: boolean }) {
-  const normalizedValue = value.replace(/modreate/gi, "moderate").replace(/\s*,\s*/g, ", ").trim();
-  const selectedValues = normalizedValue.toLowerCase().split(/[,&/]+/).map((item) => item.trim()).filter(Boolean);
-  const isSelected = (step: string) => {
-    const normalizedStep = step.toLowerCase();
-    return selectedValues.some((item) => item === normalizedStep || (normalizedStep === "medium" && ["moderate", "balanced"].includes(item)) || (normalizedStep === "relaxed" && ["easy", "relaxing"].includes(item)));
+interface StepStyle {
+  bg: string;
+  ring: string;
+  dotBg: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+}
+
+// 4 distinct vibrant colors for Physical rating:
+// Step 0: Relaxed  -> Emerald Green (#10b981)
+// Step 1: Easy     -> Vibrant Ocean Blue (#0284c7)
+// Step 2: Moderate -> Warm Golden Amber (#f59e0b)
+// Step 3: Serious  -> Coral / Crimson Red (#ef4444)
+const PHYSICAL_STEP_STYLES: StepStyle[] = [
+  {
+    bg: "bg-[#10b981]",
+    ring: "ring-[#10b981]/25",
+    dotBg: "bg-[#10b981]",
+    badgeBg: "bg-emerald-50",
+    badgeText: "text-emerald-700",
+    badgeBorder: "border-emerald-200/80",
+  },
+  {
+    bg: "bg-[#0284c7]",
+    ring: "ring-[#0284c7]/25",
+    dotBg: "bg-[#0284c7]",
+    badgeBg: "bg-sky-50",
+    badgeText: "text-sky-700",
+    badgeBorder: "border-sky-200/80",
+  },
+  {
+    bg: "bg-[#f59e0b]",
+    ring: "ring-[#f59e0b]/25",
+    dotBg: "bg-[#f59e0b]",
+    badgeBg: "bg-amber-50",
+    badgeText: "text-amber-700",
+    badgeBorder: "border-amber-200/80",
+  },
+  {
+    bg: "bg-[#ef4444]",
+    ring: "ring-[#ef4444]/25",
+    dotBg: "bg-[#ef4444]",
+    badgeBg: "bg-red-50",
+    badgeText: "text-red-700",
+    badgeBorder: "border-red-200/80",
+  },
+];
+
+// Highlight colors based on pace for Tour Pace (3 rounds: Relaxed, Medium, Fast):
+const PACE_STEP_STYLES: StepStyle[] = [
+  {
+    bg: "bg-[#10b981]",
+    ring: "ring-[#10b981]/25",
+    dotBg: "bg-[#10b981]",
+    badgeBg: "bg-emerald-50",
+    badgeText: "text-emerald-700",
+    badgeBorder: "border-emerald-200/80",
+  },
+  {
+    bg: "bg-[#f59e0b]",
+    ring: "ring-[#f59e0b]/25",
+    dotBg: "bg-[#f59e0b]",
+    badgeBg: "bg-amber-50",
+    badgeText: "text-amber-700",
+    badgeBorder: "border-amber-200/80",
+  },
+  {
+    bg: "bg-[#ef4444]",
+    ring: "ring-[#ef4444]/25",
+    dotBg: "bg-[#ef4444]",
+    badgeBg: "bg-rose-50",
+    badgeText: "text-rose-700",
+    badgeBorder: "border-rose-200/80",
+  },
+];
+
+function RatingGuide({
+  title,
+  value,
+  steps,
+}: {
+  title: string;
+  value: string;
+  steps: string[];
+  multi?: boolean;
+}) {
+  const isPace = title.toLowerCase().includes("pace") || steps.length === 3;
+  const stylesList = isPace ? PACE_STEP_STYLES : PHYSICAL_STEP_STYLES;
+
+  const normalizedValue = value
+    .replace(/modreate/gi, "moderate")
+    .replace(/\s*,\s*/g, ", ")
+    .trim();
+
+  const rawTokens = normalizedValue
+    .toLowerCase()
+    .split(/[,&/]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const resolveIndex = (token: string): number => {
+    const exact = steps.findIndex((s) => s.toLowerCase() === token);
+    if (exact !== -1) return exact;
+
+    if (["hard", "serious", "strenuous", "challenging", "difficult"].includes(token)) {
+      const idx = steps.findIndex((s) => s.toLowerCase() === "serious");
+      if (idx !== -1) return idx;
+    }
+    if (["moderate", "medium", "balanced"].includes(token)) {
+      const target = isPace ? "medium" : "moderate";
+      const idx = steps.findIndex((s) => s.toLowerCase() === target);
+      if (idx !== -1) return idx;
+    }
+    if (["relaxed", "relaxing"].includes(token)) {
+      const idx = steps.findIndex((s) => s.toLowerCase() === "relaxed");
+      if (idx !== -1) return idx;
+    }
+    if (["easy", "light"].includes(token)) {
+      const idx = steps.findIndex((s) => s.toLowerCase() === "easy");
+      if (idx !== -1) return idx;
+      if (isPace) return 0;
+    }
+    if (["fast", "fast-paced", "active", "speedy"].includes(token)) {
+      const idx = steps.findIndex((s) => s.toLowerCase() === "fast");
+      if (idx !== -1) return idx;
+    }
+    return -1;
   };
-  return <div>
-    <div className="flex items-center justify-between"><h3 className="font-extrabold text-[#173f70]">{title}</h3><span className="text-sm font-bold text-[#ef6b36]">{normalizedValue}</span></div>
-    <div className="mt-4 flex gap-2">{steps.map((step, index) => <span key={step} className={`h-3 flex-1 rounded-full ${isSelected(step) ? "bg-[#ef6b36] ring-4 ring-[#ef6b36]/20" : multi ? ["bg-blue-300", "bg-green-500", "bg-amber-400", "bg-red-500"][index] : "bg-blue-200"}`} />)}</div>
-    <div className="mt-3 flex justify-between text-xs text-slate-500">{steps.map((step) => <span key={step} className={isSelected(step) ? "font-bold text-[#173f70]" : ""}>{step}</span>)}</div>
-  </div>;
+
+  const matchedIndices = rawTokens
+    .map(resolveIndex)
+    .filter((idx) => idx !== -1);
+
+  if (matchedIndices.length === 0) {
+    steps.forEach((step, idx) => {
+      if (normalizedValue.toLowerCase().includes(step.toLowerCase())) {
+        matchedIndices.push(idx);
+      }
+    });
+  }
+
+  const highestTargetIndex =
+    matchedIndices.length > 0 ? Math.max(...matchedIndices) : 0;
+  const currentStepIndex = Math.min(
+    Math.max(highestTargetIndex, 0),
+    steps.length - 1
+  );
+
+  const activeStyle = stylesList[currentStepIndex] || stylesList[0];
+  const displayLabel = normalizedValue || steps[currentStepIndex];
+
+  return (
+    <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-white via-slate-50/30 to-slate-50/70 p-5 shadow-xs transition-all hover:border-slate-300">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${activeStyle.badgeBorder} ${activeStyle.badgeBg} ${activeStyle.badgeText} shadow-2xs`}
+          >
+            {isPace ? <Gauge size={17} /> : <Activity size={17} />}
+          </div>
+          <div>
+            <h3 className="text-sm sm:text-base font-black tracking-tight text-[#0B2A52]">
+              {title}
+            </h3>
+            <p className="text-[11px] font-medium text-slate-400">
+              {isPace
+                ? "Daily sightseeing tempo"
+                : "Activity & fitness demand"}
+            </p>
+          </div>
+        </div>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-black capitalize shadow-2xs transition-colors ${activeStyle.badgeBg} ${activeStyle.badgeText} ${activeStyle.badgeBorder}`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${activeStyle.dotBg}`} />
+          {displayLabel}
+        </span>
+      </div>
+
+      {/* Pill bars track */}
+      <div className="mt-5 flex gap-2 sm:gap-2.5">
+        {steps.map((step, index) => {
+          const isActive =
+            matchedIndices.length > 0
+              ? matchedIndices.includes(index)
+              : index === currentStepIndex;
+          const stepStyle = stylesList[index] || stylesList[0];
+
+          return (
+            <div key={step} className="flex-1">
+              <div
+                className={`relative h-3.5 rounded-full transition-all duration-300 ${
+                  isActive
+                    ? `${stepStyle.bg} ring-4 ${stepStyle.ring} scale-y-110 shadow-sm`
+                    : "bg-[#b9d9f8] border border-sky-200/60"
+                }`}
+                title={`${step}${isActive ? " (Active)" : ""}`}
+              >
+                {isActive && (
+                  <span className="absolute inset-0 rounded-full bg-white/20 animate-pulse" />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Step labels */}
+      <div className="mt-3.5 flex justify-between text-xs">
+        {steps.map((step, index) => {
+          const isActive =
+            matchedIndices.length > 0
+              ? matchedIndices.includes(index)
+              : index === currentStepIndex;
+          const stepStyle = stylesList[index] || stylesList[0];
+
+          return (
+            <div
+              key={step}
+              className={`flex flex-col items-center gap-1 transition-colors ${
+                isActive
+                  ? "font-black text-[#0B2A52]"
+                  : "font-semibold text-slate-400"
+              }`}
+            >
+              <span>{step}</span>
+              <span
+                className={`h-1 rounded-full transition-all ${
+                  isActive
+                    ? `${stepStyle.dotBg} w-3.5`
+                    : "bg-transparent w-1"
+                }`}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 const MAX_TRAVELLERS_CEILING = 99;
@@ -631,13 +892,12 @@ export default function TourDetailExperience({
         month: "short",
         year: "numeric",
       });
+      const dayOfWeek = dObj.toLocaleDateString("en-US", { weekday: "short" });
+      const dayNumber = String(dObj.getDate());
+      const monthShort = dObj.toLocaleDateString("en-US", { month: "short" });
       const slots = rd.slots ?? null;
       const seats =
         slots == null
-          // The API normally supplies a calculated seats-left value.  Do not
-          // substitute the misleading generic word "Available" if an older
-          // response omits it; a traveller must never be shown invented
-          // capacity.
           ? "Availability unavailable"
           : slots > 0
             ? seatsLeftLabel(slots)
@@ -654,6 +914,9 @@ export default function TourDetailExperience({
         seats,
         urgent: slots != null && slots > 0 && slots <= 5,
         slotsRemaining: slots,
+        dayOfWeek,
+        dayNumber,
+        monthShort,
       });
     });
 
@@ -1878,34 +2141,89 @@ export default function TourDetailExperience({
 
             {/* ── TRAVEL ESSENTIALS / KEY FACTS (Moved directly after Tour Overview) ── */}
             {(groupSizeLabel || vehicleStyle || guideStyle || tour.overview?.tour_type || tourPace || physicalRating || tour.tour_language) && (
-              <section id="tour-style" className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_14px_40px_-32px_rgba(15,36,57,0.4)] sm:p-7">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-pub-primary/5 text-pub-primary border border-pub-primary/10 shadow-2xs">
-                      <Gauge size={22} className="text-pub-primary" />
+              <section id="tour-style" className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-[0_20px_55px_-30px_rgba(15,36,57,0.12)]">
+                {/* Section Header */}
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-6">
+                  <div className="flex items-center gap-3.5">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0B2A52] to-[#155C9D] text-white shadow-md shadow-blue-950/20">
+                      <Gauge size={22} className="stroke-[2.2]" />
                     </span>
-                    <h2 className="text-xl sm:text-2xl font-bold text-pub-primary">
-                      Tour Style
-                    </h2>
-                    {tour.overview?.tour_type && (
-                      <span className="rounded-full border border-pub-primary/20 bg-pub-primary/5 px-3 py-1 text-xs font-bold text-pub-primary">
-                        {tour.overview.tour_type}
-                      </span>
-                    )}
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <h2 className="text-xl sm:text-2xl font-black text-[#0B2A52] tracking-tight">
+                          Tour Style
+                        </h2>
+                        {tour.overview?.tour_type && (
+                          <span className="rounded-full border border-blue-200/80 bg-blue-50/80 px-3 py-0.5 text-xs font-black text-[#0B2A52]">
+                            {tour.overview.tour_type}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-slate-500 font-medium">
+                        Everything you need to know about pace, vehicle standards, and physical ratings
+                      </p>
+                    </div>
                   </div>
-                  <Link href={destinationUrl(destination)} className="text-sm font-bold text-blue-600 transition hover:text-blue-800">
-                    Explore other {destination} tours <ArrowRight size={14} className="ml-1 inline" />
+                  <Link
+                    href={destinationUrl(destination)}
+                    className="group inline-flex items-center gap-2 rounded-full border border-slate-200/90 bg-slate-50/70 px-4 py-2 text-xs font-black text-[#0B2A52] transition-all hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 shadow-2xs"
+                  >
+                    <span>Explore other {destination} tours</span>
+                    <ArrowRight size={13} className="text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-blue-600" />
                   </Link>
                 </div>
-                <div className="mt-6 grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
-                  {groupSizeLabel && <StyleFact icon={<Users size={20} />} label="Group & vehicle capacity" value={groupSizeLabel} detail="Larger groups may travel across multiple vehicles, subject to departure availability." />}
-                  {vehicleStyle && <StyleFact icon={<Car size={20} />} label="Transport / vehicle" value={vehicleStyle} detail={tour.max_group_size ? `Up to ${tour.max_group_size} guests per vehicle` : undefined} />}
-                  {tour.overview?.tour_type && <StyleFact icon={<Compass size={20} />} label="Trip type" value={tour.overview.tour_type} />}
-                  {tourPace && <StyleFact icon={<Gauge size={20} />} label="Travel style" value={tourPace} />}
-                  {(guideStyle || tour.tour_language) && <StyleFact icon={<User size={20} />} label="Guiding style" value={guideStyle || `Guided in ${tour.tour_language}`} />}
+
+                {/* Modern Fact Cards Grid */}
+                <div className="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+                  {groupSizeLabel && (
+                    <StyleFact
+                      icon={<Users size={19} />}
+                      label="Group & vehicle capacity"
+                      value={groupSizeLabel}
+                      detail="Larger groups may travel across multiple vehicles, subject to availability."
+                    />
+                  )}
+                  {vehicleStyle && (
+                    <StyleFact
+                      icon={<Car size={19} />}
+                      label="Transport / vehicle"
+                      value={vehicleStyle}
+                      detail={tour.max_group_size ? `Up to ${tour.max_group_size} guests per vehicle` : undefined}
+                    />
+                  )}
+                  {tourPace && (
+                    <StyleFact
+                      icon={<Gauge size={19} />}
+                      label="Travel style"
+                      value={tourPace}
+                      detail="Carefully curated tempo for comfortable sightseeing"
+                    />
+                  )}
+                  {(guideStyle || tour.tour_language) && (
+                    <StyleFact
+                      icon={<User size={19} />}
+                      label="Guiding style"
+                      value={guideStyle || `Guided in ${tour.tour_language}`}
+                      detail="Live knowledgeable host accompanying the departure"
+                    />
+                  )}
                 </div>
-                {(tourPace || physicalRating) && <div className="mt-6 grid gap-6 border-t border-slate-200 pt-6 sm:grid-cols-2">{tourPace && <RatingGuide title="Tour pace" value={tourPace} steps={["Relaxed", "Medium", "Fast"]} />}{physicalRating && <RatingGuide title="Physical rating" value={physicalRating} steps={["Relaxed", "Easy", "Moderate", "Serious"]} multi />}</div>}
-                <div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#eff8ff] px-4 py-3 text-sm text-[#173f70]"><Sparkles size={16} className="shrink-0 text-blue-600" />These ratings are a general guide and may vary from tour to tour.</div>
+
+                {/* Rating Guides Grid */}
+                {(tourPace || physicalRating) && (
+                  <div className="mt-5 grid gap-4.5 sm:grid-cols-2">
+                    {tourPace && <RatingGuide title="Tour pace" value={tourPace} steps={["Relaxed", "Medium", "Fast"]} />}
+                    {physicalRating && <RatingGuide title="Physical rating" value={physicalRating} steps={["Relaxed", "Easy", "Moderate", "Serious"]} multi />}
+                  </div>
+                )}
+
+                {/* Footer Sparkle Callout */}
+                <div className="mt-5 flex items-center gap-3.5 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50/70 via-sky-50/40 to-blue-50/70 px-4.5 py-3 text-xs sm:text-sm font-semibold text-[#173f70] shadow-2xs">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-white text-blue-600 shadow-2xs">
+                    <Sparkles size={15} />
+                  </div>
+                  <span>These ratings are a general guide to help you choose the right trip and may vary slightly by tour.</span>
+                </div>
               </section>
             )}
 
@@ -2814,7 +3132,8 @@ export default function TourDetailExperience({
                   onClick={() =>
                     setCurrentMonthIndex((prev) => Math.max(0, prev - 1))
                   }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition disabled:opacity-30 cursor-pointer"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/90 text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition shadow-2xs disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                  aria-label="Previous month"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -2825,10 +3144,13 @@ export default function TourDetailExperience({
                     aria-haspopup="listbox"
                     aria-expanded={monthMenuOpen}
                     onClick={() => setMonthMenuOpen((open) => !open)}
-                    className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-xs outline-none transition hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-white px-3 py-2 text-xs font-bold text-[#0B2A52] shadow-2xs outline-none transition hover:border-blue-300 hover:bg-blue-50/20 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer"
                   >
-                    <span className="flex-1 text-center">{currentMonth.name}</span>
-                    <ChevronDown size={14} className={`shrink-0 text-slate-500 transition-transform ${monthMenuOpen ? "rotate-180" : ""}`} />
+                    <span className="flex items-center gap-1.5 min-w-0 truncate">
+                      <Calendar size={13} className="shrink-0 text-blue-600" />
+                      <span className="truncate">{currentMonth.name}</span>
+                    </span>
+                    <ChevronDown size={14} className={`shrink-0 text-slate-400 transition-transform duration-200 ${monthMenuOpen ? "rotate-180" : ""}`} />
                   </button>
                   {monthMenuOpen && (
                     <div role="listbox" aria-label="Available departure months" className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl ring-1 ring-slate-900/5 no-scrollbar">
@@ -2844,7 +3166,7 @@ export default function TourDetailExperience({
                               setCurrentMonthIndex(index);
                               setMonthMenuOpen(false);
                             }}
-                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition ${selected ? "bg-blue-600 font-bold text-white" : "font-medium text-slate-700 hover:bg-slate-100"}`}
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition cursor-pointer ${selected ? "bg-blue-600 font-bold text-white shadow-xs" : "font-semibold text-slate-700 hover:bg-slate-100"}`}
                           >
                             <span>{month.name}</span>
                             {selected && <Check size={13} className="shrink-0 stroke-[3]" />}
@@ -2862,7 +3184,8 @@ export default function TourDetailExperience({
                       Math.min(monthGroups.length - 1, prev + 1),
                     )
                   }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition disabled:opacity-30 cursor-pointer"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/90 text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition shadow-2xs disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                  aria-label="Next month"
                 >
                   <ChevronRight size={16} />
                 </button>
@@ -2880,35 +3203,51 @@ export default function TourDetailExperience({
                     const nextPage = Math.max(0, safeDatePageIndex - 1);
                     setDatePageIndex(nextPage);
                   }}
-                  className="flex h-8 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:opacity-25"
+                  className="flex h-12 w-7 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-20 disabled:pointer-events-none cursor-pointer"
                 >
-                  <ChevronLeft size={14} />
+                  <ChevronLeft size={15} />
                 </button>
-                <div className="grid min-w-0 flex-1 grid-cols-3 gap-2.5">
+                <div className="grid min-w-0 flex-1 grid-cols-3 gap-2">
                 {visibleDepartureDates.map((dep) => {
                   const isSelected = selectedDateId === dep.id;
+                  const isSoldOut = dep.slotsRemaining === 0;
+
                   return (
                     <button
                       key={dep.id}
                       type="button"
+                      disabled={isSoldOut}
                       onClick={() => setSelectedDateId(dep.id)}
-                      className={`rounded-xl border p-2.5 text-center transition cursor-pointer ${
+                      className={`group relative flex flex-col items-center justify-between rounded-xl border p-2 sm:p-2.5 text-center transition-all cursor-pointer ${
                         isSelected
-                          ? "border-blue-600 bg-blue-50/80 ring-2 ring-blue-600/30 font-bold"
-                          : "border-slate-200 bg-white hover:border-slate-300"
+                          ? "border-blue-600 bg-gradient-to-b from-blue-50/90 via-sky-50/40 to-blue-50/90 shadow-md ring-2 ring-blue-500/30"
+                          : isSoldOut
+                          ? "border-slate-100 bg-slate-50/60 opacity-60 cursor-not-allowed"
+                          : "border-slate-200/90 bg-white hover:border-blue-300 hover:shadow-xs active:scale-[0.98]"
                       }`}
                     >
-                      <span className="block text-xs font-bold text-slate-900 leading-tight">
-                        {dep.date}
+                      {isSelected && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs">
+                          <Check size={10} className="stroke-[3]" />
+                        </span>
+                      )}
+                      <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${isSelected ? "text-blue-700" : "text-slate-400 group-hover:text-blue-600"}`}>
+                        {dep.dayOfWeek || "Date"}
+                      </span>
+                      <span className="mt-0.5 block text-xs sm:text-[13px] font-black text-[#0B2A52] leading-tight">
+                        {dep.dayNumber ? `${dep.dayNumber} ${dep.monthShort}` : dep.date}
                       </span>
                       <span
-                        className={`mt-1 block text-[11px] ${
+                        className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-colors ${
                           dep.urgent
-                            ? "font-bold text-amber-600"
-                            : "text-emerald-600 font-semibold"
+                            ? "bg-amber-50 text-amber-700 ring-1 ring-amber-500/20"
+                            : isSoldOut
+                            ? "bg-slate-100 text-slate-500"
+                            : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500/20"
                         }`}
                       >
-                        {dep.seats}
+                        <span className={`h-1.5 w-1.5 rounded-full ${dep.urgent ? "bg-amber-500 animate-pulse" : isSoldOut ? "bg-slate-400" : "bg-emerald-500"}`} />
+                        <span className="truncate max-w-[65px]">{dep.seats}</span>
                       </span>
                     </button>
                   );
@@ -2922,9 +3261,9 @@ export default function TourDetailExperience({
                     const nextPage = Math.min(datePageCount - 1, safeDatePageIndex + 1);
                     setDatePageIndex(nextPage);
                   }}
-                  className="flex h-8 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:opacity-25"
+                  className="flex h-12 w-7 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-20 disabled:pointer-events-none cursor-pointer"
                 >
-                  <ChevronRight size={14} />
+                  <ChevronRight size={15} />
                 </button>
               </div>
             )}
@@ -3421,8 +3760,18 @@ export default function TourDetailExperience({
         className="pointer-events-none fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-slate-950/10 via-white/75 to-transparent px-2 pb-2 pt-7 sm:px-4 sm:pb-3"
       >
         <div className="pointer-events-auto mx-auto flex min-h-[76px] max-w-[1690px] items-center gap-3 overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 px-3 py-2.5 shadow-[0_14px_45px_rgba(11,31,58,0.16)] backdrop-blur-xl sm:gap-5 sm:px-5 sm:py-3 lg:px-7">
-          <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#0B2A52] to-[#155C9D] text-white shadow-md shadow-blue-950/20 sm:flex">
-            <Ticket size={21} className="stroke-[2.2]" />
+          <div className="relative hidden h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-[#0B2A52] to-[#155C9D] text-white shadow-md shadow-blue-950/20 sm:flex">
+            {galleryItems[0]?.url ? (
+              <MarketingImage
+                src={galleryItems[0].url}
+                alt={galleryItems[0].title || title}
+                fill
+                sizes="44px"
+                className="object-cover"
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center"><Ticket size={21} className="stroke-[2.2]" /></span>
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">

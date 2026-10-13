@@ -24,6 +24,8 @@ export default function CountryDestinationPageContent({
   initialTours = [],
 }: CountryDestinationPageContentProps) {
   const [selectedPlaceFilter, setSelectedPlaceFilter] = useState<string>("");
+  const visible = (section: keyof NonNullable<CountryDestinationInfo["section_visibility"]>) =>
+    info.section_visibility?.[section] !== false;
 
   const handleSelectPlaceFilter = (placeName: string) => {
     setSelectedPlaceFilter(placeName);
@@ -40,53 +42,60 @@ export default function CountryDestinationPageContent({
   return (
     <div className="min-h-screen bg-white text-slate-900">
       {/* ── 1, 2, 3: Hero Banner, Breadcrumbs & Split Overview Card ── */}
-      <CountryDestinationHero info={info} tourCount={initialTours?.length || 24} />
+      {visible("hero") && <CountryDestinationHero info={info} tourCount={initialTours?.length || 24} />}
 
       {/* CMS: Overview and quick facts */}
-      <CountryOverviewSection info={info} />
+      {visible("overview") && <CountryOverviewSection info={info} />}
 
       {/* ── 4: Places to Visit in {Country} (4 Horizontal Cards) ── */}
-      <CountryPlacesToVisitSection
+      {visible("places") && <CountryPlacesToVisitSection
         info={info}
         onSelectPlaceFilter={handleSelectPlaceFilter}
-      />
+      />}
 
       {/* ── 5: Must-See Highlight Panoramic Banner ── */}
-      <CountryWhyVisitSection info={info} />
+      {visible("why_visit") && <CountryWhyVisitSection info={info} />}
 
       {/* ── 6 & 7: "Find your perfect duration" & "Choose your guiding style" ── */}
-      <CountryDurationGuidingStyles
+      {visible("duration_guiding") && <CountryDurationGuidingStyles
         info={info}
         onSelectDuration={(tag) => {
           setSelectedPlaceFilter(tag);
         }}
-      />
+      />}
 
       {/* ── 8 & 9: Panoramic Feature Banner & "When to travel to {Country}" ── */}
-      <CountryWhenToGoSection
+      {visible("when_to_go") && <CountryWhenToGoSection
         info={info}
         onSelectSeason={(season) => {
           setSelectedPlaceFilter(season);
         }}
-      />
+      />}
 
       {/* CMS: Practical travel information */}
-      <CountryTravelInfoSection info={info} />
+      {visible("travel_info") && <CountryTravelInfoSection info={info} />}
 
       {/* ── 10: All Tours in {Country} (Filter Pills & 6-Tour Grid) ── */}
-      <CountryToursSection
+      {visible("tours") && <CountryToursSection
         info={info}
         initialTours={initialTours}
         selectedPlaceFilter={selectedPlaceFilter}
         onClearPlaceFilter={handleClearPlaceFilter}
-      />
+      />}
 
       {/* ── 10b: Things to Do in {Country} - partner experiences (Viator),
           kept as their own section after Tourvaa's tours ── */}
-      <ExternalExperiencesSection placement="show_on_destination_pages" source="destination" country={info.country_name} />
+      {visible("external_experiences") && <ExternalExperiencesSection placement="show_on_destination_pages" source="destination" country={info.country_name} />}
 
       {/* ── 11, 12, 13: Countries Worth Exploring, Directory & FAQs ── */}
-      <CountryExploreFaqSection info={info} />
+      {(visible("related_destinations") || visible("destination_directory") || visible("faq")) && (
+        <CountryExploreFaqSection
+          info={info}
+          showRelated={visible("related_destinations")}
+          showDirectory={visible("destination_directory")}
+          showFaq={visible("faq")}
+        />
+      )}
     </div>
   );
 }
