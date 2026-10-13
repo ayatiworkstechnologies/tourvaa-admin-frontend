@@ -1,24 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { API_DATA_REFRESH_EVENT } from "@/lib/api/events";
+import { API_DATA_REFRESH_EVENT, API_DATA_UPDATED_EVENT } from "@/lib/api/events";
 import { requestNotificationRefresh } from "@/lib/notifications/events";
 
 /**
- * Keeps portal server-rendered state and notification badges current after
- * any successful POST/PUT/PATCH/DELETE. A short debounce combines related
- * writes (for example profile + account updates) into a single refresh.
+ * Announces successful writes to the live portal without navigating or
+ * reloading the current route. Individual screens already own their data and
+ * can refetch without losing filters, typed form values, or scroll position.
+ * Notification badges are shared portal chrome, so refresh them centrally.
  */
 export default function PortalDataRefresh() {
-  const router = useRouter();
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const refresh = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         requestNotificationRefresh();
-        router.refresh();
+        window.dispatchEvent(new CustomEvent(API_DATA_UPDATED_EVENT));
       }, 120);
     };
     window.addEventListener(API_DATA_REFRESH_EVENT, refresh);
@@ -26,6 +25,6 @@ export default function PortalDataRefresh() {
       if (timer) clearTimeout(timer);
       window.removeEventListener(API_DATA_REFRESH_EVENT, refresh);
     };
-  }, [router]);
+  }, []);
   return null;
 }

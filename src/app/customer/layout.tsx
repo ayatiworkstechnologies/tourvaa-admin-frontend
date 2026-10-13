@@ -12,6 +12,7 @@ import { portalThemeStyles } from "@/lib/constants/portalThemes";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
 import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
 import Loader from "@/components/ui/Loader";
+import PortalDataRefresh from "@/components/common/PortalDataRefresh";
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -50,6 +51,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     <PublicSettingsProvider>
       <TravelStoreProvider>
         <div className="customer-public-portal min-h-screen bg-[#F8FAFC]">
+        <PortalDataRefresh />
         <ElfsightTranslator />
         <CustomerPortalHeader showNotifications />
 

@@ -139,6 +139,17 @@ api.interceptors.request.use((config) => {
     config.url = normalizeApiUrl(config.url);
 
     const method = (config.method || "get").toLowerCase();
+    // Portal records are operational data (bookings, balances, messages,
+    // availability, etc.).  A cached GET here made a user see old backend
+    // data until they manually reloaded the browser.  Make each read unique
+    // as well as asking every cache layer to revalidate; the query parameter
+    // also protects us from proxies which ignore request cache directives.
+    if (method === "get") {
+      config.headers = config.headers ?? {};
+      config.headers["Cache-Control"] = "no-store";
+      config.headers.Pragma = "no-cache";
+      config.params = { ...config.params, _t: Date.now() };
+    }
     if (UNSAFE_METHODS.has(method)) {
       const csrfToken = getCookie(CSRF_COOKIE_NAME);
       if (csrfToken) {
