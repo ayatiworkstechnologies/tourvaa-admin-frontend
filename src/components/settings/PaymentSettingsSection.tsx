@@ -9,9 +9,12 @@ type PaymentSummary = {
   stripe_public_key: string;
   stripe_secret_key: string; // masked, display-only
   paypal_enabled: boolean;
-  paypal_client_id: string;
-  paypal_secret: string; // masked, display-only
   paypal_webhook_id: string;
+  paypal_mode: "sandbox" | "live";
+  paypal_sandbox_client_id: string;
+  paypal_sandbox_secret: string;
+  paypal_live_client_id: string;
+  paypal_live_secret: string;
   payment_surcharge_percentage: string;
   default_payment_mode: string;
   stripe_last_test_status?: string | null;
@@ -85,8 +88,11 @@ export default function PaymentSettingsSection() {
   const [stripePublicKey, setStripePublicKey] = useState("");
   const [stripeSecretKey, setStripeSecretKey] = useState("");
   const [paypalEnabled, setPaypalEnabled] = useState(false);
-  const [paypalClientId, setPaypalClientId] = useState("");
-  const [paypalSecret, setPaypalSecret] = useState("");
+  const [paypalSandboxClientId, setPaypalSandboxClientId] = useState("");
+  const [paypalSandboxSecret, setPaypalSandboxSecret] = useState("");
+  const [paypalLiveClientId, setPaypalLiveClientId] = useState("");
+  const [paypalLiveSecret, setPaypalLiveSecret] = useState("");
+  const [paypalMode, setPaypalMode] = useState<"sandbox" | "live">("sandbox");
   const [paypalWebhookId, setPaypalWebhookId] = useState("");
   const [surcharge, setSurcharge] = useState("0");
   const [mode, setMode] = useState("test");
@@ -103,8 +109,11 @@ export default function PaymentSettingsSection() {
       setStripePublicKey(data.stripe_public_key || "");
       setStripeSecretKey("");
       setPaypalEnabled(data.paypal_enabled);
-      setPaypalClientId(data.paypal_client_id || "");
-      setPaypalSecret("");
+      setPaypalSandboxClientId(data.paypal_sandbox_client_id || "");
+      setPaypalSandboxSecret("");
+      setPaypalLiveClientId(data.paypal_live_client_id || "");
+      setPaypalLiveSecret("");
+      setPaypalMode(data.paypal_mode === "live" ? "live" : "sandbox");
       setPaypalWebhookId(data.paypal_webhook_id || "");
       setSurcharge(data.payment_surcharge_percentage || "0");
       setMode(data.default_payment_mode || "test");
@@ -124,15 +133,18 @@ export default function PaymentSettingsSection() {
         stripe_enabled: stripeEnabled,
         stripe_public_key: stripePublicKey,
         paypal_enabled: paypalEnabled,
-        paypal_client_id: paypalClientId,
         paypal_webhook_id: paypalWebhookId,
+        paypal_mode: paypalMode,
+        paypal_sandbox_client_id: paypalSandboxClientId,
+        paypal_live_client_id: paypalLiveClientId,
         payment_surcharge_percentage: surcharge,
         default_payment_mode: mode,
       };
       // Only send secrets the admin actually typed - omitting them entirely
       // leaves the existing encrypted value untouched server-side.
       if (stripeSecretKey.trim()) payload.stripe_secret_key = stripeSecretKey.trim();
-      if (paypalSecret.trim()) payload.paypal_secret = paypalSecret.trim();
+      if (paypalSandboxSecret.trim()) payload.paypal_sandbox_secret = paypalSandboxSecret.trim();
+      if (paypalLiveSecret.trim()) payload.paypal_live_secret = paypalLiveSecret.trim();
 
       await api.put("/settings/payment", payload);
       setMessage("Payment settings updated successfully.");
@@ -216,12 +228,25 @@ export default function PaymentSettingsSection() {
             <input type="checkbox" checked={paypalEnabled} onChange={(e) => setPaypalEnabled(e.target.checked)} /> Enabled
           </label>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Client ID</span><input value={paypalClientId} onChange={(e) => setPaypalClientId(e.target.value)} className={inputClass} /></label>
-          <label>
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Secret</span>
-            <input type="password" value={paypalSecret} onChange={(e) => setPaypalSecret(e.target.value)} placeholder={summary.paypal_secret ? `Saved: ${summary.paypal_secret} (leave blank to keep)` : "Not set"} className={inputClass} />
-          </label>
+        <p className="mb-4 text-sm text-dash-muted">Save each environment separately. Checkout uses only the environment selected below; Live is never used until you select Live and save.</p>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <fieldset className="rounded-xl border border-sky-200 bg-sky-50/50 p-4">
+            <legend className="px-1 text-sm font-black text-sky-800">Sandbox credentials</legend>
+            <div className="mt-2 space-y-3">
+              <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Sandbox Client ID</span><input value={paypalSandboxClientId} onChange={(e) => setPaypalSandboxClientId(e.target.value)} className={inputClass} /></label>
+              <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Sandbox Secret</span><input type="password" value={paypalSandboxSecret} onChange={(e) => setPaypalSandboxSecret(e.target.value)} placeholder={summary.paypal_sandbox_secret ? `Saved: ${summary.paypal_sandbox_secret} (leave blank to keep)` : "Not set"} className={inputClass} /></label>
+            </div>
+          </fieldset>
+          <fieldset className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+            <legend className="px-1 text-sm font-black text-amber-800">Live credentials</legend>
+            <div className="mt-2 space-y-3">
+              <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Live Client ID</span><input value={paypalLiveClientId} onChange={(e) => setPaypalLiveClientId(e.target.value)} className={inputClass} /></label>
+              <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Live Secret</span><input type="password" value={paypalLiveSecret} onChange={(e) => setPaypalLiveSecret(e.target.value)} placeholder={summary.paypal_live_secret ? `Saved: ${summary.paypal_live_secret} (leave blank to keep)` : "Not set"} className={inputClass} /></label>
+            </div>
+          </fieldset>
+        </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Active PayPal environment</span><select value={paypalMode} onChange={(e) => setPaypalMode(e.target.value === "live" ? "live" : "sandbox")} className={inputClass}><option value="sandbox">Sandbox — safe testing</option><option value="live">Live — real customer payments</option></select></label>
           <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Webhook ID</span><input value={paypalWebhookId} onChange={(e) => setPaypalWebhookId(e.target.value)} className={inputClass} /></label>
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-dash-border pt-4">

@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   creator: SITE_NAME,
   publisher: SITE_NAME,
   category: "travel",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: ["/icon.svg"],
+    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
   formatDetection: { email: false, address: false, telephone: false },
   openGraph: { type: "website", siteName: SITE_NAME, locale: "en_US", title: SITE_NAME, description: DEFAULT_DESCRIPTION, url: "/", images: [{ url: DEFAULT_SOCIAL_IMAGE, alt: "Tourvaa travel experiences" }] },
   twitter: { card: "summary_large_image", title: SITE_NAME, description: DEFAULT_DESCRIPTION, images: [DEFAULT_SOCIAL_IMAGE] },

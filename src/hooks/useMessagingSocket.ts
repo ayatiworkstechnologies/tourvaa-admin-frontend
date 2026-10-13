@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { issueWsTicket, BookingConversation, BookingMessage, ChatMessage, Conversation } from "@/lib/api/services/messagingService";
 
 export type MessagingSocketEvent =
@@ -8,6 +8,7 @@ export type MessagingSocketEvent =
   | { type: "new_booking_message"; conversation: BookingConversation; message: BookingMessage }
   | { type: "message_deleted"; conversation_id: number; message: ChatMessage }
   | { type: "booking_message_deleted"; conversation_id: number; message: BookingMessage }
+  | { type: "typing"; scope: "support" | "booking"; conversation_id: number; sender_role: string; recipient_role?: string; is_typing: boolean }
   | { type: "participant_presence"; user_id: number; online: boolean }
   | { type: "admin_presence"; online: boolean };
 
@@ -21,13 +22,29 @@ const MAX_RETRY_MS = 30000;
  * rather than the session cookie, since a cross-origin request wouldn't carry it. */
 export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => void) {
   const onMessageRef = useRef(onMessage);
+  const socketRef = useRef<WebSocket | null>(null);
+
+  const sendEvent = useCallback((event: Record<string, unknown>) => {
+    if (socketRef.current?.readyState !== WebSocket.OPEN) return false;
+    socketRef.current.send(JSON.stringify(event));
+    return true;
+  }, []);
 
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
 
   useEffect(() => {
-    const base = (process.env.NEXT_PUBLIC_WS_URL || "").replace(/\/$/, "");
+    const configuredBase = (process.env.NEXT_PUBLIC_WS_URL || "").replace(/\/$/, "");
+    // Next exposes NEXT_PUBLIC_* values at dev-server startup. Falling back
+    // only in local development prevents an already-running `next dev`
+    // process from making every presence badge look offline just because its
+    // environment file was added or changed after it started.
+    const base = configuredBase || (
+      process.env.NODE_ENV !== "production" && typeof window !== "undefined"
+        ? `ws://${window.location.hostname}:8000`
+        : ""
+    );
     if (!base) {
       console.warn("Messaging is unavailable: configure NEXT_PUBLIC_WS_URL with the public backend WebSocket origin.");
       return;
@@ -61,6 +78,7 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
       if (cancelled) return;
 
       socket = new WebSocket(`${base}/api/ws/messages?ticket=${encodeURIComponent(ticket)}`);
+      socketRef.current = socket;
 
       socket.onopen = () => {
         retryDelay = INITIAL_RETRY_MS;
@@ -77,6 +95,7 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
             data.type === "new_booking_message" ||
             data.type === "message_deleted" ||
             data.type === "booking_message_deleted" ||
+            data.type === "typing" ||
             data.type === "participant_presence" ||
             data.type === "admin_presence"
           ) {
@@ -87,6 +106,7 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
         }
       };
       socket.onclose = () => {
+        if (socketRef.current === socket) socketRef.current = null;
         if (heartbeatTimer) clearInterval(heartbeatTimer);
         heartbeatTimer = null;
         if (cancelled) return;
@@ -119,6 +139,9 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
       socket?.close();
+      socketRef.current = null;
     };
   }, []);
+
+  return sendEvent;
 }

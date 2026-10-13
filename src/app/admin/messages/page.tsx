@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
+import { LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
@@ -55,12 +55,14 @@ export default function AdminMessagesPage() {
   const [loadingThread, setLoadingThread] = useState(false);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
+  const [participantTyping, setParticipantTyping] = useState(false);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [unreadSummary, setUnreadSummary] = useState<Record<ParticipantType, number>>({ agent: 0, supplier: 0, customer: 0, affiliate: 0 });
   const [deepLink, setDeepLink] = useState<{ type: ParticipantType; conversationId: number } | null>(null);
   const [routeReady, setRouteReady] = useState(false);
   const threadEndRef = useRef<HTMLDivElement>(null);
+  const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -135,7 +137,7 @@ export default function AdminMessagesPage() {
     threadEndRef.current?.scrollIntoView({ block: "end" });
   }, [thread?.messages.length]);
 
-  useMessagingSocket(
+  const sendSocketEvent = useMessagingSocket(
     useCallback(
       (event) => {
         if (event.type === "participant_presence") {
@@ -173,6 +175,10 @@ export default function AdminMessagesPage() {
           });
           return;
         }
+        if (event.type === "typing" && event.scope === "support" && event.conversation_id === selectedId && event.sender_role !== "admin") {
+          setParticipantTyping(event.is_typing);
+          return;
+        }
         if (event.type === "message_deleted") {
           setThread((prev) => (prev && prev.id === event.conversation_id ? { ...prev, messages: prev.messages.map((m) => (m.id === event.message.id ? event.message : m)) } : prev));
         }
@@ -180,6 +186,29 @@ export default function AdminMessagesPage() {
       [tab, selectedId]
     )
   );
+
+  useEffect(() => () => {
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+  }, []);
+
+  function updateReply(value: string) {
+    setReply(value);
+    if (!selectedId) return;
+    const typing = { type: "typing", scope: "support", conversation_id: selectedId };
+    if (!value.trim()) {
+      if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+      sendSocketEvent({ ...typing, is_typing: false });
+      return;
+    }
+    sendSocketEvent({ ...typing, is_typing: true });
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    typingStopTimer.current = setTimeout(() => sendSocketEvent({ ...typing, is_typing: false }), 1200);
+  }
+
+  function stopTyping() {
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    if (selectedId) sendSocketEvent({ type: "typing", scope: "support", conversation_id: selectedId, is_typing: false });
+  }
 
   async function removeMessage(messageId: number) {
     setDeletingId(messageId);
@@ -198,6 +227,7 @@ export default function AdminMessagesPage() {
     if (!selectedId || !reply.trim()) return;
     setSending(true);
     setError("");
+    stopTyping();
     try {
       const message: ChatMessage = await replyToConversation(selectedId, reply.trim());
       setReply("");
@@ -283,13 +313,17 @@ export default function AdminMessagesPage() {
                 </div>
                 <PresenceBadge online={thread?.participant_online ?? false} subject={thread?.participant_name || "Portal user"} />
               </div>
+              {participantTyping && <p className="px-5 pb-2 text-xs font-medium text-dash-brand">{thread?.participant_name || "Portal user"} is typing…</p>}
               <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
                 {thread?.messages.length === 0 && <p className="text-center text-sm text-dash-subtle">No messages in this conversation yet.</p>}
                 {thread?.messages.map((msg) => (
                   <div key={msg.id} className={`group flex items-end gap-1.5 ${msg.sender_role === "admin" ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "admin" ? "bg-dash-text text-white" : "bg-dash-bg text-dash-text"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
                       <p className="whitespace-pre-wrap">{msg.is_deleted ? "This message was deleted." : msg.body}</p>
-                      <p className={`mt-1 text-[10px] ${msg.sender_role === "admin" ? "text-white/60" : "text-dash-subtle"}`}>{timeAgo(msg.created_at)}</p>
+                      <div className={`mt-1 flex items-center gap-1 text-[10px] ${msg.sender_role === "admin" ? "text-white/60" : "text-dash-subtle"}`}>
+                        <span>{timeAgo(msg.created_at)}</span>
+                        {msg.sender_role === "admin" && !msg.is_deleted && <span className="inline-flex items-center gap-0.5" title={msg.read_at ? "Read" : "Sent"}><CheckCheck size={12} /> {msg.read_at ? "Read" : "Sent"}</span>}
+                      </div>
                     </div>
                     {!msg.is_deleted && msg.sender_role === "admin" && (
                       <button
@@ -310,7 +344,8 @@ export default function AdminMessagesPage() {
               <form onSubmit={sendReply} className="flex items-center gap-2 border-t border-dash-border-soft px-4 py-3">
                 <input
                   value={reply}
-                  onChange={(event) => setReply(event.target.value)}
+                  onChange={(event) => updateReply(event.target.value)}
+                  onBlur={stopTyping}
                   placeholder="Type a reply…"
                   className="flex-1 rounded-xl border border-dash-border bg-dash-bg px-3.5 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100"
                 />

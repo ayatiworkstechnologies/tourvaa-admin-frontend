@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tourvaa">
+  <rect width="64" height="64" rx="17" fill="#102B50"/>
+  <path fill="#FFFFFF" d="M17 16c0-1.66 1.34-3 3-3h25c1.66 0 3 1.34 3 3v4c0 1.66-1.34 3-3 3h-7v25c0 1.66-1.34 3-3 3h-6c-1.66 0-3-1.34-3-3V23h-7c-1.66 0-3-1.34-3-3v-4Z"/>
+  <circle cx="47" cy="46" r="4" fill="#F5823A"/>
+</svg>

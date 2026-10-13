@@ -417,6 +417,7 @@ export default function TourDetailExperience({
   modal,
 }: Props) {
   const { format } = useCurrency();
+  const [overviewExpanded, setOverviewExpanded] = useState(false);
 
   const destination = tour.country_name || tour.city_name || "Destination";
   const city = tour.city_name || "";
@@ -458,6 +459,22 @@ export default function TourDetailExperience({
     driver_only: "Driver only",
   };
   const guideStyle = guideStyleLabels[tour.overview?.guide_style || ""] || "";
+  const overviewPreviewText = (tour.long_description || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const overviewHasSupportingDetails = Boolean(
+    tour.overview?.why_choose_this_tour ||
+      tour.overview?.ideal_for ||
+      tour.overview?.transportation_summary ||
+      tour.overview?.accommodation_summary ||
+      tour.map_image ||
+      tour.tour_video_url,
+  );
+  const overviewCanCollapse =
+    Boolean(overviewPreviewText) &&
+    (overviewPreviewText.length > 280 ||
+      (tour.long_description || "").trim().split(/\n\s*\n+/).filter(Boolean).length > 1 ||
+      overviewHasSupportingDetails);
 
   // 100% Dynamic Photo Gallery from Backend
   const galleryItems = useMemo(() => {
@@ -1047,12 +1064,27 @@ export default function TourDetailExperience({
 
   // Itineraries: 100% Dynamic
   const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
+  const itineraryDayRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const openItineraryDayKey = Object.keys(openDays).find((key) => openDays[key]);
 
   const toggleDay = (dayKey: string) => {
     // A true accordion keeps at most one itinerary day open. Clicking the
     // active day closes it; clicking another replaces the current selection.
     setOpenDays((prev) => (prev[dayKey] ? {} : { [dayKey]: true }));
   };
+
+  useEffect(() => {
+    if (!openItineraryDayKey) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      itineraryDayRefs.current[openItineraryDayKey]?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [openItineraryDayKey]);
 
   const itineraryList = useMemo(() => {
     if (tour.itineraries && tour.itineraries.length > 0) {
@@ -1745,14 +1777,19 @@ export default function TourDetailExperience({
                 </p>
               )}
 
-              {tour.long_description && (
-                <TextParagraphs
-                  text={tour.long_description}
-                  className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
-                />
-              )}
+              {tour.long_description &&
+                (overviewCanCollapse && !overviewExpanded ? (
+                  <p className="overflow-hidden text-[15px] font-normal leading-7 text-slate-800 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4] sm:text-base">
+                    {overviewPreviewText}
+                  </p>
+                ) : (
+                  <TextParagraphs
+                    text={tour.long_description}
+                    className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
+                  />
+                ))}
 
-              {tour.overview?.why_choose_this_tour && (
+              {(!overviewCanCollapse || overviewExpanded) && tour.overview?.why_choose_this_tour && (
                 <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Sparkles size={15} className="text-blue-600" />
@@ -1767,7 +1804,7 @@ export default function TourDetailExperience({
                 </div>
               )}
 
-              {tour.overview?.ideal_for && (
+              {(!overviewCanCollapse || overviewExpanded) && tour.overview?.ideal_for && (
                 <div className="mt-3 flex items-start gap-2">
                   <Users size={15} className="mt-0.5 shrink-0 text-emerald-600" />
                   <p className="text-[15px] sm:text-base leading-relaxed text-black">
@@ -1777,7 +1814,7 @@ export default function TourDetailExperience({
                 </div>
               )}
 
-              {(tour.overview?.transportation_summary ||
+              {(!overviewCanCollapse || overviewExpanded) && (tour.overview?.transportation_summary ||
                 tour.overview?.accommodation_summary) && (
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-100 pt-4">
                   {tour.overview?.transportation_summary && (
@@ -1810,7 +1847,7 @@ export default function TourDetailExperience({
               )}
 
               {/* Download Brochure & Map links */}
-              {(tour.map_image || tour.tour_video_url) && (
+              {(!overviewCanCollapse || overviewExpanded) && (tour.map_image || tour.tour_video_url) && (
                 <div className="mt-5 flex flex-wrap gap-2.5 pt-4 border-t border-slate-100">
                   {tour.map_image && (
                     <a
@@ -1824,6 +1861,18 @@ export default function TourDetailExperience({
                     </a>
                   )}
                 </div>
+              )}
+
+              {overviewCanCollapse && (
+                <button
+                  type="button"
+                  aria-expanded={overviewExpanded}
+                  onClick={() => setOverviewExpanded((expanded) => !expanded)}
+                  className="mt-1 inline-flex items-center gap-1.5 rounded-lg px-1 py-2 text-sm font-bold text-pub-primary transition hover:text-[#cf4b24] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pub-primary"
+                >
+                  <span>{overviewExpanded ? "Show less" : "Read full overview"}</span>
+                  {overviewExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
               )}
             </div>
 
@@ -2136,7 +2185,10 @@ export default function TourDetailExperience({
                     return (
                       <div
                         key={day.accordionKey}
-                        className="overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-300"
+                        ref={(element) => {
+                          itineraryDayRefs.current[day.accordionKey] = element;
+                        }}
+                        className="scroll-mt-44 overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-300"
                       >
                         <button
                           type="button"

@@ -39,6 +39,20 @@ check(
     detail.includes("window.setInterval(refreshTour, PUBLIC_TOUR_REFRESH_INTERVAL_MS)"),
 );
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
+check(
+  "tour overview starts compact and can reveal its full content",
+  detailExperience.includes("overviewCanCollapse") &&
+    detailExperience.includes("[-webkit-line-clamp:4]") &&
+    detailExperience.includes('"Read full overview"') &&
+    detailExperience.includes("aria-expanded={overviewExpanded}"),
+);
+check(
+  "opening an itinerary day scrolls its header below fixed navigation",
+  detailExperience.includes("itineraryDayRefs") &&
+    detailExperience.includes("scrollIntoView({") &&
+    detailExperience.includes('behavior: "smooth"') &&
+    detailExperience.includes("scroll-mt-44"),
+);
 check("itinerary behaves as a single-open accordion", detailExperience.includes("prev[dayKey] ? {} : { [dayKey]: true }") && !detailExperience.includes('"Expand All"'));
 check(
   "public itinerary has one overview presentation without a detailed-view switch",

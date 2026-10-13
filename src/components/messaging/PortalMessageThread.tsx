@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuLoaderCircle as Loader2, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
+import { LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
 import PresenceBadge from "@/components/messaging/PresenceBadge";
 
@@ -32,7 +32,9 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
   const [sending, setSending] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [adminTyping, setAdminTyping] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,7 +62,7 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
     endRef.current?.scrollIntoView({ block: "end" });
   }, [thread?.messages.length]);
 
-  useMessagingSocket(
+  const sendSocketEvent = useMessagingSocket(
     useCallback((event) => {
       if (event.type === "admin_presence") {
         setThread((prev) => (prev ? { ...prev, admin_online: event.online } : prev));
@@ -78,11 +80,38 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
         });
         return;
       }
+      if (event.type === "typing" && event.scope === "support" && event.conversation_id === thread?.id && event.sender_role === "admin") {
+        setAdminTyping(event.is_typing);
+        return;
+      }
       if (event.type === "message_deleted") {
         setThread((prev) => (prev ? { ...prev, messages: prev.messages.map((m) => (m.id === event.message.id ? event.message : m)) } : prev));
       }
-    }, [])
+    }, [thread?.id])
   );
+
+  useEffect(() => () => {
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+  }, []);
+
+  function updateDraft(value: string) {
+    setDraft(value);
+    if (!thread?.id) return;
+    const event = { type: "typing", scope: "support", conversation_id: thread.id };
+    if (!value.trim()) {
+      if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+      sendSocketEvent({ ...event, is_typing: false });
+      return;
+    }
+    sendSocketEvent({ ...event, is_typing: true });
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    typingStopTimer.current = setTimeout(() => sendSocketEvent({ ...event, is_typing: false }), 1200);
+  }
+
+  function stopTyping() {
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    if (thread?.id) sendSocketEvent({ type: "typing", scope: "support", conversation_id: thread.id, is_typing: false });
+  }
 
   async function removeMessage(messageId: number) {
     setDeletingId(messageId);
@@ -101,6 +130,7 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
     if (!draft.trim()) return;
     setSending(true);
     setError("");
+    stopTyping();
     try {
       const message: ChatMessage = await sendOwnMessage(portal, draft.trim());
       setDraft("");
@@ -125,6 +155,7 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
           </div>
           <PresenceBadge online={thread?.admin_online ?? false} subject="Tourvaa Admin" />
         </div>
+        {adminTyping && <p className="mt-2 text-xs font-medium text-dash-brand">Tourvaa Admin is typing…</p>}
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-6 py-4">
@@ -149,7 +180,10 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
               )}
               <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "admin" ? "bg-dash-bg text-dash-text" : "bg-dash-brand text-white"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
                 <p className="whitespace-pre-wrap">{msg.is_deleted ? "This message was deleted." : msg.body}</p>
-                <p className={`mt-1 text-[10px] ${msg.sender_role === "admin" ? "text-dash-subtle" : "text-white/70"}`}>{timeAgo(msg.created_at, now)}</p>
+                <div className={`mt-1 flex items-center gap-1 text-[10px] ${msg.sender_role === "admin" ? "text-dash-subtle" : "text-white/70"}`}>
+                  <span>{timeAgo(msg.created_at, now)}</span>
+                  {msg.sender_role !== "admin" && !msg.is_deleted && <span className="inline-flex items-center gap-0.5" title={msg.read_at ? "Read" : "Sent"}><CheckCheck size={12} /> {msg.read_at ? "Read" : "Sent"}</span>}
+                </div>
               </div>
             </div>
           ))
@@ -162,7 +196,8 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
       <form onSubmit={send} className="flex items-center gap-2 border-t border-[#E6EDF6] px-4 py-3">
         <input
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => updateDraft(event.target.value)}
+          onBlur={stopTyping}
           placeholder="Type a message…"
           className="flex-1 rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100"
         />

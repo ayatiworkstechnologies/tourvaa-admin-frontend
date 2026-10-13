@@ -11,6 +11,8 @@ export type ChatMessage = {
   sender_name: string | null;
   body: string | null;
   is_deleted?: boolean;
+  delivered_at?: string | null;
+  read_at?: string | null;
   created_at: string;
 };
 
@@ -99,7 +101,14 @@ export type BookingMessage = {
   recipient_role?: "customer" | "agent" | "supplier" | null;
   body: string | null;
   is_deleted?: boolean;
+  delivered_at?: string | null;
+  read_at?: string | null;
   created_at: string;
+  /** Delivery metadata for the content-free email notification, when one was sent. */
+  email_delivery?: {
+    status: "sending" | "sent" | "failed";
+    recipient_count: number;
+  } | null;
 };
 
 export type BookingConversation = {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuLoaderCircle as Loader2, LuSend as Send, LuTrash2 as Trash2, LuWifiOff as WifiOff } from "react-icons/lu";
+import { LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuMail as Mail, LuSend as Send, LuTrash2 as Trash2, LuWifiOff as WifiOff } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
 import PresenceBadge from "@/components/messaging/PresenceBadge";
 
@@ -18,6 +18,14 @@ function messageTime(value?: string | null) {
   if (!value) return "";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+function emailDeliveryLabel(message: BookingMessage) {
+  const delivery = message.email_delivery;
+  if (!delivery?.recipient_count) return null;
+  if (delivery.status === "failed") return "Email notification needs attention";
+  if (delivery.status === "sending") return "Email notification sending";
+  return "Email notification sent";
 }
 
 type QueuedBookingMessage = { id: string; body: string; queued_at: string; attempted?: boolean };
@@ -48,7 +56,9 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [queuedMessages, setQueuedMessages] = useState<QueuedBookingMessage[]>([]);
+  const [adminTyping, setAdminTyping] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,7 +124,7 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
     endRef.current?.scrollIntoView({ block: "end" });
   }, [thread?.messages.length]);
 
-  useMessagingSocket(
+  const sendSocketEvent = useMessagingSocket(
     useCallback(
       (event) => {
         if (event.type === "admin_presence") {
@@ -130,13 +140,45 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
           ));
           return;
         }
+        if (event.type === "typing" && event.scope === "booking" && event.conversation_id === thread?.id && event.sender_role === "admin") {
+          setAdminTyping(event.is_typing);
+          return;
+        }
         if (event.type === "booking_message_deleted") {
           setThread((prev) => (prev && prev.id === event.conversation_id ? { ...prev, messages: prev.messages.map((m) => (m.id === event.message.id ? event.message : m)) } : prev));
         }
       },
-      [bookingId]
+      [bookingId, thread?.id]
     )
   );
+
+  useEffect(() => () => {
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+  }, []);
+
+  function updateDraft(value: string) {
+    setDraft(value);
+    if (!thread?.id) return;
+    const baseEvent = { type: "typing", scope: "booking", conversation_id: thread.id };
+    if (!value.trim()) {
+      if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+      typingStopTimer.current = null;
+      sendSocketEvent({ ...baseEvent, is_typing: false });
+      return;
+    }
+    sendSocketEvent({ ...baseEvent, is_typing: true });
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    typingStopTimer.current = setTimeout(() => {
+      sendSocketEvent({ ...baseEvent, is_typing: false });
+      typingStopTimer.current = null;
+    }, 1200);
+  }
+
+  function stopTyping() {
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    typingStopTimer.current = null;
+    if (thread?.id) sendSocketEvent({ type: "typing", scope: "booking", conversation_id: thread.id, is_typing: false });
+  }
 
   async function removeMessage(messageId: number) {
     setDeletingId(messageId);
@@ -164,6 +206,7 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
     }
     setSending(true);
     setError("");
+    stopTyping();
     try {
       const message: BookingMessage = await sendBookingConversationMessage(bookingId, body);
       setDraft("");
@@ -207,6 +250,7 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
           </div>
         </div>
         <p className="mt-0.5 text-xs text-dash-subtle">Ask about this booking directly. Drafts are saved on this device.</p>
+        {adminTyping && <p className="mt-1 text-xs font-medium text-dash-brand">Tourvaa Admin is typing…</p>}
       </div>
 
       <div className={`flex-1 space-y-3 overflow-y-auto px-5 py-4 ${compact ? "max-h-80 min-h-32" : ""}`}>
@@ -222,6 +266,8 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
               </div>
               {group.messages.map((msg) => {
                 const isAdminMessage = msg.sender_role === "admin";
+                const isOwnMessage = !isAdminMessage;
+                const deliveryLabel = emailDeliveryLabel(msg);
                 return (
                   <div key={msg.id} className={`group flex items-end gap-1.5 ${isAdminMessage ? "justify-start" : "justify-end"}`}>
                     {!msg.is_deleted && !isAdminMessage && (
@@ -238,7 +284,19 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
                     )}
                     <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isAdminMessage ? "bg-dash-bg text-dash-text" : "bg-dash-brand text-white"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
                       <p className={`whitespace-pre-wrap ${isAdminMessage ? "text-xs" : "text-sm"}`}>{msg.is_deleted ? "This message was deleted." : msg.body}</p>
-                      <p className={`mt-1 text-[10px] ${isAdminMessage ? "text-dash-subtle" : "text-white/70"}`}>{messageTime(msg.created_at)}</p>
+                      <div className={`mt-1 flex items-center gap-2 text-[10px] ${isAdminMessage ? "text-dash-subtle" : "text-white/70"}`}>
+                        <span>{messageTime(msg.created_at)}</span>
+                        {deliveryLabel && !msg.is_deleted && (
+                          <span className="inline-flex items-center gap-1" title={deliveryLabel}>
+                            <Mail size={11} /> {deliveryLabel}
+                          </span>
+                        )}
+                        {isOwnMessage && !msg.is_deleted && (
+                          <span className="inline-flex items-center gap-0.5" title={msg.read_at ? "Read by Tourvaa Admin" : "Sent to Tourvaa Admin"}>
+                            <CheckCheck size={11} /> {msg.read_at ? "Read" : "Sent"}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -265,7 +323,8 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
       <form onSubmit={send} className="flex items-center gap-2 border-t border-dash-border-soft px-4 py-3">
         <input
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => updateDraft(event.target.value)}
+          onBlur={stopTyping}
           placeholder="Type a message…"
           className="flex-1 rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100"
         />

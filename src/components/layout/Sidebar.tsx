@@ -322,11 +322,15 @@ export default function Sidebar({
           }`}
         >
           {collapsed ? (
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-lg ${colors.logo}`}>
+            <Link
+              href="/"
+              aria-label="Go to Tourvaa homepage"
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${colors.logo}`}
+            >
               <LogoIcon size={18} strokeWidth={2.5} />
-            </div>
+            </Link>
           ) : (
-            <Link href={dashboardHref} className="flex min-w-0 items-center gap-3 overflow-hidden">
+            <Link href="/" aria-label="Go to Tourvaa homepage" className="flex min-w-0 items-center gap-3 overflow-hidden">
               <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-lg ${colors.logo}`}>
                 <LogoIcon size={18} strokeWidth={2.5} />
               </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuSend as Send } from "react-icons/lu";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { LuCheckCheck as CheckCheck, LuMail as Mail, LuMessageSquare as MessageSquare, LuRefreshCw as RefreshCw, LuSend as Send } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
 import PresenceBadge from "@/components/messaging/PresenceBadge";
 import { useMessagingSocket } from "@/hooks/useMessagingSocket";
@@ -19,6 +19,14 @@ function displayTime(value?: string | null) {
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
+function emailDeliveryLabel(message: BookingMessage) {
+  const delivery = message.email_delivery;
+  if (!delivery?.recipient_count) return null;
+  if (delivery.status === "failed") return "Email notification needs attention";
+  if (delivery.status === "sending") return "Email notification sending";
+  return "Email notification sent";
+}
+
 /** Admin booking messages are split by portal role. A supplier never shares a
  * visual thread with an agent or customer, even when legacy records link them
  * to the same booking conversation row. */
@@ -28,6 +36,8 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
   const [error, setError] = useState("");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [sending, setSending] = useState<string | null>(null);
+  const [typingRoles, setTypingRoles] = useState<Record<string, boolean>>({});
+  const typingStopTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,7 +55,7 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
     void load();
   }, [load]);
 
-  useMessagingSocket(
+  const sendSocketEvent = useMessagingSocket(
     useCallback((event) => {
       if (event.type === "participant_presence") {
         setConversations((previous) => previous.map((conversation) => ({
@@ -53,6 +63,10 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
           initiator_online: conversation.initiator_user_id === event.user_id ? event.online : conversation.initiator_online,
           supplier_online: conversation.supplier_user_id === event.user_id ? event.online : conversation.supplier_online,
         })));
+        return;
+      }
+      if (event.type === "typing" && event.scope === "booking" && event.sender_role !== "admin") {
+        setTypingRoles((previous) => ({ ...previous, [`${event.conversation_id}:${event.recipient_role || event.sender_role}`]: event.is_typing }));
         return;
       }
       if (event.type !== "new_booking_message" || event.conversation.booking_id !== bookingId) return;
@@ -68,11 +82,36 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
     }, [bookingId]),
   );
 
+  useEffect(() => () => {
+    Object.values(typingStopTimers.current).forEach(clearTimeout);
+  }, []);
+
+  function updateDraft(conversationId: number, recipientRole: "supplier" | "agent" | "customer", value: string) {
+    const key = `${conversationId}:${recipientRole}`;
+    setDrafts((previous) => ({ ...previous, [key]: value }));
+    const typing = { type: "typing", scope: "booking", conversation_id: conversationId, recipient_role: recipientRole };
+    if (!value.trim()) {
+      if (typingStopTimers.current[key]) clearTimeout(typingStopTimers.current[key]);
+      sendSocketEvent({ ...typing, is_typing: false });
+      return;
+    }
+    sendSocketEvent({ ...typing, is_typing: true });
+    if (typingStopTimers.current[key]) clearTimeout(typingStopTimers.current[key]);
+    typingStopTimers.current[key] = setTimeout(() => sendSocketEvent({ ...typing, is_typing: false }), 1200);
+  }
+
+  function stopTyping(conversationId: number, recipientRole: "supplier" | "agent" | "customer") {
+    const key = `${conversationId}:${recipientRole}`;
+    if (typingStopTimers.current[key]) clearTimeout(typingStopTimers.current[key]);
+    sendSocketEvent({ type: "typing", scope: "booking", conversation_id: conversationId, recipient_role: recipientRole, is_typing: false });
+  }
+
   async function reply(conversation: BookingConversationThread, recipientRole: "supplier" | "agent" | "customer") {
     const key = `${conversation.id}:${recipientRole}`;
     const body = (drafts[key] || "").trim();
     if (!body) return;
     setSending(key);
+    stopTyping(conversation.id, recipientRole);
     try {
       const message = await replyToAdminBookingConversation(conversation.id, body, recipientRole);
       setConversations((previous) => previous.map((item) => item.id === conversation.id ? { ...item, messages: [...item.messages, message] } : item));
@@ -120,6 +159,7 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
           </div>
           <PresenceBadge online={isOnline} subject={`${portalLabel} portal`} />
         </div>
+        {typingRoles[key] && <p className="mt-2 text-[11px] font-medium text-dash-brand">{portalLabel} is typing…</p>}
 
         <div className="mt-3 min-h-24 max-h-72 flex-1 space-y-3 overflow-y-auto pr-1">
           {threadMessages.length === 0 ? (
@@ -136,6 +176,7 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
                 </div>
                 {group.messages.map((message) => {
                   const isAdminMessage = message.sender_role === "admin";
+                  const deliveryLabel = emailDeliveryLabel(message);
                   return (
                     <div key={message.id} className={`flex ${isAdminMessage ? "justify-start" : "justify-end"}`}>
                       <div className={`max-w-[86%] rounded-lg px-3 py-2 shadow-[0_1px_2px_rgb(15_23_42/0.04)] ${isAdminMessage ? "bg-blue-50 text-dash-body" : "bg-white text-dash-body"}`}>
@@ -148,6 +189,16 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
                         <p className={`mt-1 whitespace-pre-wrap break-words ${isAdminMessage ? "text-xs" : "text-sm"}`}>
                           {message.is_deleted ? "This message was deleted." : message.body}
                         </p>
+                        {deliveryLabel && !message.is_deleted && (
+                          <p className="mt-1 inline-flex items-center gap-1 text-[10px] text-dash-subtle" title={deliveryLabel}>
+                            <Mail size={11} /> {deliveryLabel}
+                          </p>
+                        )}
+                        {isAdminMessage && !message.is_deleted && (
+                          <p className="mt-1 inline-flex items-center gap-1 text-[10px] text-dash-subtle" title={message.read_at ? "Read" : "Sent"}>
+                            <CheckCheck size={11} /> {message.read_at ? "Read" : "Sent"}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
@@ -170,7 +221,8 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
               aria-label={`Message for ${portalLabel.toLowerCase()}`}
               rows={2}
               value={drafts[key] || ""}
-              onChange={(event) => setDrafts((previous) => ({ ...previous, [key]: event.target.value }))}
+              onChange={(event) => updateDraft(conversation.id, recipientRole, event.target.value)}
+              onBlur={() => stopTyping(conversation.id, recipientRole)}
               placeholder={`Reply to ${portalLabel.toLowerCase()}...`}
               className="block w-full resize-none rounded-lg border border-dash-border bg-white px-3 py-2 text-xs text-dash-text outline-none placeholder:text-dash-subtle focus:border-dash-brand focus:ring-2 focus:ring-dash-brand/10"
             />

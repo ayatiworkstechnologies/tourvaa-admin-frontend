@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
+import { LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuSend as Send, LuTrash2 as Trash2 } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
 import PresenceBadge from "@/components/messaging/PresenceBadge";
 
@@ -42,7 +42,9 @@ export default function SupplierBookingInbox() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [adminTyping, setAdminTyping] = useState(false);
   const threadEndRef = useRef<HTMLDivElement>(null);
+  const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
@@ -78,7 +80,7 @@ export default function SupplierBookingInbox() {
     threadEndRef.current?.scrollIntoView({ block: "end" });
   }, [thread?.messages.length]);
 
-  useMessagingSocket(
+  const sendSocketEvent = useMessagingSocket(
     useCallback(
       (event) => {
         if (event.type === "admin_presence") {
@@ -100,6 +102,10 @@ export default function SupplierBookingInbox() {
           setThread((prev) => (prev && prev.id === conversation.id ? { ...conversation, messages: [...prev.messages, message] } : prev));
           return;
         }
+        if (event.type === "typing" && event.scope === "booking" && event.conversation_id === selectedId && event.sender_role === "admin") {
+          setAdminTyping(event.is_typing);
+          return;
+        }
         if (event.type === "booking_message_deleted") {
           setThread((prev) => (prev && prev.id === event.conversation_id ? { ...prev, messages: prev.messages.map((m) => (m.id === event.message.id ? event.message : m)) } : prev));
         }
@@ -107,6 +113,29 @@ export default function SupplierBookingInbox() {
       [selectedId]
     )
   );
+
+  useEffect(() => () => {
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+  }, []);
+
+  function updateReply(value: string) {
+    setReply(value);
+    if (!selectedId) return;
+    const typing = { type: "typing", scope: "booking", conversation_id: selectedId };
+    if (!value.trim()) {
+      if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+      sendSocketEvent({ ...typing, is_typing: false });
+      return;
+    }
+    sendSocketEvent({ ...typing, is_typing: true });
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    typingStopTimer.current = setTimeout(() => sendSocketEvent({ ...typing, is_typing: false }), 1200);
+  }
+
+  function stopTyping() {
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    if (selectedId) sendSocketEvent({ type: "typing", scope: "booking", conversation_id: selectedId, is_typing: false });
+  }
 
   async function removeMessage(messageId: number) {
     setDeletingId(messageId);
@@ -125,6 +154,7 @@ export default function SupplierBookingInbox() {
     if (!selectedId || !reply.trim()) return;
     setSending(true);
     setError("");
+    stopTyping();
     try {
       const message: BookingMessage = await replySupplierBookingConversation(selectedId, reply.trim());
       setReply("");
@@ -190,13 +220,17 @@ export default function SupplierBookingInbox() {
               </div>
               <PresenceBadge online={thread?.admin_online ?? false} subject="Tourvaa Admin" />
             </div>
+            {adminTyping && <p className="px-5 pb-2 text-xs font-medium text-dash-brand">Tourvaa Admin is typing…</p>}
             <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
               {thread?.messages.length === 0 && <p className="text-center text-sm text-dash-subtle">No messages in this conversation yet.</p>}
               {thread?.messages.map((msg) => (
                 <div key={msg.id} className={`group flex items-end gap-1.5 ${msg.sender_role === "supplier" ? "justify-end" : "justify-start"}`}>
                   <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender_role === "supplier" ? "bg-dash-text text-white" : "bg-dash-bg text-dash-text"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
                     <p className="whitespace-pre-wrap">{msg.is_deleted ? "This message was deleted." : msg.body}</p>
-                    <p className={`mt-1 text-[10px] ${msg.sender_role === "supplier" ? "text-white/60" : "text-dash-subtle"}`}>{timeAgo(msg.created_at)}</p>
+                    <div className={`mt-1 flex items-center gap-1 text-[10px] ${msg.sender_role === "supplier" ? "text-white/60" : "text-dash-subtle"}`}>
+                      <span>{timeAgo(msg.created_at)}</span>
+                      {msg.sender_role === "supplier" && !msg.is_deleted && <span className="inline-flex items-center gap-0.5" title={msg.read_at ? "Read by Tourvaa Admin" : "Sent to Tourvaa Admin"}><CheckCheck size={12} /> {msg.read_at ? "Read" : "Sent"}</span>}
+                    </div>
                   </div>
                   {!msg.is_deleted && msg.sender_role === "supplier" && (
                     <button
@@ -217,7 +251,8 @@ export default function SupplierBookingInbox() {
             <form onSubmit={sendReply} className="flex items-center gap-2 border-t border-dash-border-soft px-4 py-3">
               <input
                 value={reply}
-                onChange={(event) => setReply(event.target.value)}
+                onChange={(event) => updateReply(event.target.value)}
+                onBlur={stopTyping}
                 placeholder="Type a reply…"
                 className="flex-1 rounded-xl border border-dash-border bg-dash-bg px-3.5 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100"
               />
