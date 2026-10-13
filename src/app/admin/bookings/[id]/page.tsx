@@ -1479,6 +1479,7 @@ export default function BookingDetailPage() {
                 title="Portal Messages"
                 icon={<MessageSquare size={18} />}
                 subtitle="Customer, agent, and supplier messages sent from the booking portals"
+                className="relative z-10 isolate overflow-hidden"
               >
                 <AdminBookingConversationHistory bookingId={booking.id} />
               </DetailPanel>

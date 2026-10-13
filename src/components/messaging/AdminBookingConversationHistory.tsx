@@ -147,7 +147,7 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
       <section
         key={key}
         aria-label={`${portalLabel} conversation`}
-        className="flex min-h-80 flex-col rounded-xl border border-dash-border-soft bg-dash-bg p-4"
+        className="relative isolate flex h-[22rem] min-h-80 flex-col overflow-hidden rounded-xl border border-dash-border-soft bg-dash-bg p-4"
       >
         <div className="flex items-start justify-between gap-3 border-b border-dash-border-soft pb-3">
           <div className="flex min-w-0 items-start gap-2">
@@ -161,7 +161,7 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
         </div>
         {typingRoles[key] && <p className="mt-2 text-[11px] font-medium text-dash-brand">{portalLabel} is typing…</p>}
 
-        <div className="mt-3 min-h-24 max-h-72 flex-1 space-y-3 overflow-y-auto pr-1">
+        <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
           {threadMessages.length === 0 ? (
             <p className="rounded-lg border border-dashed border-dash-border bg-white px-3 py-5 text-center text-xs text-dash-muted">
               No {portalLabel.toLowerCase()} messages yet.
