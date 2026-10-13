@@ -835,6 +835,15 @@ body.lightbox-open [class*="eapp-website-translator"] {
   display: none !important;
 }
 
+/* The translator belongs to the public storefront. Its external runtime can
+   survive a Next.js client-side route change and render an empty fixed canvas
+   above an Admin page. It must never be active in the private Admin console. */
+body.admin-route [class*="elfsight-app"],
+body.admin-route [class*="eapps-website-translator"],
+body.admin-route [class*="eapp-website-translator"] {
+  display: none !important;
+}
+
 /* 404 Flight & Aviation Animations */
 @keyframes planeFlyGlide {
   0% {

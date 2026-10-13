@@ -19,6 +19,15 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
     isLoggedIn && dashboard && !ADMIN_DASHBOARD_TYPES.has(dashboard.dashboard_type),
   );
 
+  // The public language widget is loaded by a third-party runtime. During a
+  // client-side navigation it can outlive its public-page host and leave an
+  // empty fixed layer over the admin workspace. Mark the document while this
+  // protected route is mounted so global CSS can suppress that public widget.
+  useEffect(() => {
+    document.body.classList.add("admin-route");
+    return () => document.body.classList.remove("admin-route");
+  }, []);
+
   useEffect(() => {
     if (!docsMode && !loading && !isLoggedIn && !isAdminLogin) {
       router.replace("/admin/login");
