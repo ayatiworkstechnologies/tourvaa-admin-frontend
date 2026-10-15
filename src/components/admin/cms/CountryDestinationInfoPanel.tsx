@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   LuBookOpen as BookOpen,
+  LuChevronLeft as ChevronLeft,
+  LuChevronRight as ChevronRight,
   LuCloudRain as CloudRain,
   LuCompass as Compass,
   LuExternalLink as ExternalLink,
@@ -45,6 +47,18 @@ type SubTabKey =
   | "places"
   | "travel_info"
   | "sections";
+
+const GUIDE_CHAPTERS: { key: SubTabKey; label: string }[] = [
+  { key: "hero", label: "Hero & Quick Facts" },
+  { key: "places", label: "Places to Visit" },
+  { key: "why_visit", label: "Why Visit" },
+  { key: "overview", label: "Overview & Narrative" },
+  { key: "seasons", label: "Best Time & Seasons" },
+  { key: "monsoon", label: "Monsoon & Rain" },
+  { key: "temperature", label: "12-Month Climate" },
+  { key: "travel_info", label: "Travel Information" },
+  { key: "sections", label: "Section Visibility" },
+];
 
 const PUBLIC_SECTIONS: { key: CountryDestinationSectionKey; label: string; description: string }[] = [
   { key: "hero", label: "Hero & Quick Facts Strip", description: "Top banner, title, introduction and 8-item quick facts strip" },
@@ -209,6 +223,8 @@ export default function CountryDestinationInfoPanel({
 
   const currentSlug = info.country_slug || slugifyTourSegment(info.country_name);
   const liveUrl = `/destinations/${currentSlug}`;
+  const activeChapterIndex = GUIDE_CHAPTERS.findIndex((chapter) => chapter.key === activeSubTab);
+  const activeChapter = GUIDE_CHAPTERS[activeChapterIndex];
 
   return (
     <div className="space-y-5">
@@ -297,7 +313,7 @@ export default function CountryDestinationInfoPanel({
 
       {/* ── Sub-Tabs Navigation for the 8 Pillars ── */}
       <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 shadow-2xs">
-        <div aria-label="Destination guide chapters" className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {false && <div aria-label="Destination guide chapters" className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           <button
             type="button"
             onClick={() => setActiveSubTab("hero")}
@@ -321,7 +337,7 @@ export default function CountryDestinationInfoPanel({
             }`}
           >
             <MapPin size={14} />
-            <span>2. Places to Visit ({info.best_places_to_visit.places?.length || 0})</span>
+            <span>2. Places to Visit ({info?.best_places_to_visit.places?.length || 0})</span>
           </button>
 
           <button
@@ -334,7 +350,7 @@ export default function CountryDestinationInfoPanel({
             }`}
           >
             <Sparkles size={14} />
-            <span>3. Why Visit ({info.why_visit.reasons?.length || 0})</span>
+            <span>3. Why Visit ({info?.why_visit.reasons?.length || 0})</span>
           </button>
 
           <button
@@ -413,6 +429,14 @@ export default function CountryDestinationInfoPanel({
           >
             <span>9. Section Visibility</span>
           </button>
+        </div>}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-bold text-slate-900">Step {activeChapterIndex + 1} of {GUIDE_CHAPTERS.length}: {activeChapter.label}</p>
+          <nav aria-label="Destination guide chapters" className="flex flex-wrap items-center gap-1.5">
+            <button type="button" onClick={() => setActiveSubTab(GUIDE_CHAPTERS[activeChapterIndex - 1].key)} disabled={activeChapterIndex === 0} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={14} /> Previous</button>
+            {GUIDE_CHAPTERS.map((chapter, index) => <button key={chapter.key} type="button" onClick={() => setActiveSubTab(chapter.key)} aria-label={`Step ${index + 1}: ${chapter.label}`} aria-current={chapter.key === activeSubTab ? "step" : undefined} className={`h-8 min-w-8 rounded-lg px-2 text-xs font-bold transition ${chapter.key === activeSubTab ? "bg-slate-900 text-white shadow-xs" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"}`}>{index + 1}</button>)}
+            <button type="button" onClick={() => setActiveSubTab(GUIDE_CHAPTERS[activeChapterIndex + 1].key)} disabled={activeChapterIndex === GUIDE_CHAPTERS.length - 1} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40">Next <ChevronRight size={14} /></button>
+          </nav>
         </div>
       </section>
 
