@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Cross-repo API contract check (tests/api-contract.test.mjs) needs the
       # backend checked out as a sibling directory (../tourvaa-admin-backend)
@@ -43,7 +43,7 @@ jobs:
 
       - name: Checkout sibling backend repo
         if: steps.backend_token.outputs.available == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ayatiworkstechnologies/tourvaa-admin-backend
           token: ${{ secrets.BACKEND_CHECKOUT_TOKEN }}
@@ -115,7 +115,7 @@ jobs:
       packages: write
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Fail fast if the vars this repo needs (Settings > Secrets and
       # variables > Actions > Variables: API_PROXY_TARGET, NEXT_PUBLIC_WS_URL,
