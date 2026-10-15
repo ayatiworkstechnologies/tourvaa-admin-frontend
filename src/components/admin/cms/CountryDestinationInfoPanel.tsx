@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   LuBookOpen as BookOpen,
+  LuChevronLeft as ChevronLeft,
+  LuChevronRight as ChevronRight,
   LuCloudRain as CloudRain,
   LuCompass as Compass,
   LuExternalLink as ExternalLink,
@@ -79,6 +81,7 @@ export default function CountryDestinationInfoPanel({
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [info, setInfo] = useState<CountryDestinationInfo | null>(null);
+  const chapterNavRef = useRef<HTMLDivElement>(null);
   const selectedCountryName = controlledCountryName || uncontrolledCountryName;
 
   const selectCountry = (countryName: string) => {
@@ -298,7 +301,11 @@ export default function CountryDestinationInfoPanel({
 
       {/* ── Sub-Tabs Navigation for the 8 Pillars ── */}
       <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 shadow-2xs">
-        <div aria-label="Destination guide chapters" className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => chapterNavRef.current?.scrollBy({ left: -260, behavior: "smooth" })} aria-label="Show previous guide chapters" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-2xs transition hover:bg-slate-100">
+            <ChevronLeft size={17} />
+          </button>
+          <div ref={chapterNavRef} aria-label="Destination guide chapters" className="scrollbar-none flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pb-1">
           <button
             type="button"
             onClick={() => setActiveSubTab("hero")}
@@ -413,6 +420,10 @@ export default function CountryDestinationInfoPanel({
             }`}
           >
             <span>9. Section Visibility</span>
+          </button>
+          </div>
+          <button type="button" onClick={() => chapterNavRef.current?.scrollBy({ left: 260, behavior: "smooth" })} aria-label="Show next guide chapters" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-2xs transition hover:bg-slate-100">
+            <ChevronRight size={17} />
           </button>
         </div>
       </section>
