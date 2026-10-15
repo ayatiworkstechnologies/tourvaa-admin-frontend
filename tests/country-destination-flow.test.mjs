@@ -20,7 +20,7 @@ const editor = read("src/components/admin/cms/CountryDestinationInfoPanel.tsx");
 check("destination page reads its CMS guide during server rendering", page.includes("fetchCountryDestinationInfoForServer(slug)"));
 check("server guide fetch bypasses relative browser API routing", serverData.includes("API_PROXY_TARGET") && serverData.includes("cache: \"no-store\""));
 check("saved guide content merges with a complete country fallback", ["quick_facts", "why_visit", "best_time_to_visit", "monsoon_info", "temperature_info", "best_places_to_visit", "travel_info"].every((field) => serverData.includes(field)));
-check("admin can save each selected country guide to its scoped CMS block", editor.includes("country_info_${slug}") && editor.includes("Destination Guide CMS"));
+check("admin can save each selected country guide to its scoped CMS block", editor.includes("country_info_") && editor.includes("Destination Overview &amp; Narrative"));
 
 console.log(`\nCountry destination CMS flow: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

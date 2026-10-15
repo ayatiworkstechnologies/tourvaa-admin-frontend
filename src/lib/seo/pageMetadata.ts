@@ -35,6 +35,8 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/login": { title: "Sign In", description: "Sign in to your Tourvaa customer, supplier, agent, affiliate, or administration account.", index: false },
   "/supplier-portal": { title: "Become a Supplier", description: "Partner with Tourvaa to list your tours, manage bookings, and get paid - see what's included and what's required to join." },
   "/agent-portal": { title: "Become an Agent", description: "Partner with Tourvaa as a travel agent to book for clients, track commissions, and manage everything from one dashboard." },
+  "/supplier-contact": { title: "Supplier Contact", description: "Contact Tourvaa's supplier operations team for help with onboarding, tours, booking requests, payments, verification, or account access." },
+  "/agent-contact": { title: "Agent Contact", description: "Contact Tourvaa's agent support team for help with agency accounts, client bookings, payments, commissions, or portal access." },
   "/affiliate-portal": { title: "Become an Affiliate", description: "Partner with Tourvaa as an affiliate to promote tours, generate referral links, and earn commission on every booking." },
   "/register": { title: "Create an Account", description: "Create your Tourvaa customer account to save travellers, manage bookings, payments, invoices, and support.", index: false },
   "/account-status": { title: "Account Status", description: "Check the verification and activation status of your Tourvaa account.", index: false },

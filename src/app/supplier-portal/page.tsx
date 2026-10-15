@@ -646,7 +646,7 @@ export default function SupplierPortalLandingPage() {
             </p>
           </div>
           <Link
-            href="/contact?context=supplier#contact-form-section"
+            href="/supplier-contact#contact-form-section"
             className="inline-flex items-center justify-center shrink-0 rounded-xl bg-pub-primary hover:bg-pub-primary/90 text-white text-xs font-bold px-6 py-3 transition whitespace-nowrap"
           >
             Contact Supplier Desk &rarr;

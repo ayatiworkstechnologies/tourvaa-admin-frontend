@@ -25,6 +25,7 @@ export default function LanguageCurrencySelector({ inverse = false, showCountry 
   const { code, symbol, currencies, setCode, countryCode, countrySource, setCountry, forced, isStale } = useCurrency();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<"country" | "currency">(showCountry ? "country" : "currency");
   const [countries, setCountries] = useState<PublicCountry[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -53,12 +54,13 @@ export default function LanguageCurrencySelector({ inverse = false, showCountry 
   const currencyList = useMemo(() => {
     const query = search.trim().toLowerCase();
     const availableCurrencies = currencies.length ? currencies : FALLBACK_CURRENCIES;
-    return availableCurrencies.filter((currency) => !query || currency.code.toLowerCase().includes(query) || currency.symbol?.toLowerCase().includes(query));
-  }, [currencies, search]);
+    const enabledCurrencyCodes = new Set(["USD", ...countries.map((country) => country.currency_code?.toUpperCase()).filter(Boolean)]);
+    return availableCurrencies.filter((currency) => enabledCurrencyCodes.has(currency.code.toUpperCase()) && (!query || currency.code.toLowerCase().includes(query) || currency.symbol?.toLowerCase().includes(query)));
+  }, [currencies, countries, search]);
 
   const selectedCountry = useMemo(() => countries.find((country) => country.country_code.toUpperCase() === countryCode?.toUpperCase()), [countries, countryCode]);
   const sourceText = {
-    cdn: "Using a location-based country suggestion.", ip: "Using a location-based country suggestion.", locale: "Based on your browser region.",
+    cdn: "Auto-detected from your IP address.", ip: "Auto-detected from your IP address.", locale: "Based on your browser region.",
     saved: "Using your saved country preference.", manual: "Using your selected country.", unknown: "Choose a country to show its local currency.",
   }[countrySource];
 
@@ -84,8 +86,12 @@ export default function LanguageCurrencySelector({ inverse = false, showCountry 
       {open && <div role="dialog" aria-label={showCountry ? "Location and currency" : "Choose currency"} className="absolute right-0 top-[calc(100%+10px)] z-[100] w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/5">
         <div className="border-b border-slate-100 px-5 py-4"><p className="text-sm font-bold text-pub-primary">{showCountry ? "Location & currency" : "Choose currency"}</p>{showCountry && <p className="mt-1 text-xs font-medium leading-relaxed text-slate-600">{sourceText} Enabled countries control the available currencies.</p>}</div>
         <div className="p-4">
+          {showCountry && <div className="mb-3 grid grid-cols-2 rounded-xl bg-slate-100 p-1" role="tablist" aria-label="Location selection">
+            <button type="button" role="tab" aria-selected={activeTab === "country"} onClick={() => { setActiveTab("country"); setSearch(""); }} className={`rounded-lg px-3 py-2 text-xs font-bold transition ${activeTab === "country" ? "bg-white text-pub-primary shadow-sm" : "text-slate-500"}`}>Country</button>
+            <button type="button" role="tab" aria-selected={activeTab === "currency"} onClick={() => { setActiveTab("currency"); setSearch(""); }} className={`rounded-lg px-3 py-2 text-xs font-bold transition ${activeTab === "currency" ? "bg-white text-pub-primary shadow-sm" : "text-slate-500"}`}>Currency</button>
+          </div>}
           <div className="relative mb-2"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="text" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={showCountry ? "Search country or currency..." : "Search currency..."} className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-9 pr-8 text-sm font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-accent focus:bg-white focus:ring-2 focus:ring-pub-accent/15" />{search && <button type="button" onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:text-slate-700" aria-label="Clear search"><X size={12} /></button>}</div>
-          {showCountry ? <div className="no-scrollbar max-h-72 space-y-0.5 overflow-y-auto pr-0.5">{countryList.length ? countryList.map((country) => {
+          {showCountry && activeTab === "country" ? <div className="no-scrollbar max-h-72 space-y-0.5 overflow-y-auto pr-0.5">{countryList.length ? countryList.map((country) => {
             const selected = country.country_code.toUpperCase() === countryCode?.toUpperCase();
             const currencyCode = country.currency_code?.toUpperCase() || "USD";
             return <button key={country.country_code} type="button" onClick={() => selectCountry(country)} className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-bold transition ${selected ? "bg-pub-primary text-white shadow-sm" : "text-slate-800 hover:bg-slate-100"}`}><span className="flex min-w-0 items-center gap-2.5"><FlagIcon countryCode={country.country_code} className="text-lg leading-none" /><span className="truncate">{country.country_name}</span></span><span className={`ml-3 shrink-0 text-xs font-bold ${selected ? "text-slate-100" : "text-slate-500"}`}>{currencyCode} <span className="ml-1">{currencySymbol(currencyCode)}</span></span></button>;

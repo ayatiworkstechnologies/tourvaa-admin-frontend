@@ -296,6 +296,8 @@ export const TAB_DESCRIPTIONS: Record<string, string> = {
   "travel-advice-essentials": "The pre-flight checklist cards on the Travel Advice page.",
   "supplier-portal": "Edit every section of the Supplier Portal landing page in one place, with the live public page shown alongside. The earnings calculator stays interactive and isn't editable here.",
   "agent-portal": "Edit every section of the Agent Portal landing page in one place, with the live public page shown alongside. The commission calculator stays interactive and isn't editable here.",
+  "supplier-contact": "Edit the Supplier Contact page and preview the supplier-specific enquiry experience shown on the public site.",
+  "agent-contact": "Edit the Agent Contact page and preview the agent-specific enquiry experience shown on the public site.",
   "affiliate-portal": "Edit every section of the Affiliate Portal landing page in one place, with the live public page shown alongside.",
   "supplier-portal-hero": "The Supplier Portal hero banner and publish toggle.",
   "supplier-portal-metrics": "The metrics strip on the Supplier Portal page.",
@@ -2514,6 +2516,8 @@ export const ALL_TABS: { key: string; label: string }[] = [
   { key: "travel-advice", label: "Travel Advice" },
   { key: "supplier-portal", label: "Supplier Portal" },
   { key: "agent-portal", label: "Agent Portal" },
+  { key: "supplier-contact", label: "Supplier Contact" },
+  { key: "agent-contact", label: "Agent Contact" },
   ...TABS.map((t) => ({ key: t.key, label: t.label })),
   ...CONTENT_BLOCK_TABS.map((t) => ({ key: t.key, label: t.label })),
   FOOTER_TAB,
@@ -2565,8 +2569,8 @@ export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
   {
     key: "portals",
     label: "Partner Portal Pages",
-    description: "The public landing pages for suppliers and travel agents - hero, features, steps, documents, FAQs and CTA. Interactive calculators stay code-driven.",
-    tabs: ["supplier-portal", "agent-portal"],
+    description: "The public landing pages and contact pages for suppliers and travel agents - hero, features, steps, documents, FAQs and CTA. Interactive calculators stay code-driven.",
+    tabs: ["supplier-portal", "agent-portal", "supplier-contact", "agent-contact"],
   },
   {
     key: "site",

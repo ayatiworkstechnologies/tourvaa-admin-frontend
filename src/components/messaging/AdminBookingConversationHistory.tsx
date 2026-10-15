@@ -252,17 +252,35 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
     return <p className="rounded-xl border border-dashed border-dash-border px-4 py-6 text-center text-xs text-dash-muted">No customer, agent, or supplier portal messages for this booking yet.</p>;
   }
 
-  const portalThreads = (["supplier", "agent", "customer"] as const)
-    .map((role) => {
-      const messages = conversations.flatMap((conversation) => conversation.messages.filter(
-        (message) => message.sender_role === role || (message.sender_role === "admin" && message.recipient_role === role),
-      ));
-      const conversation = role === "supplier"
-        ? conversations.find((item) => item.supplier_user_id != null)
-        : conversations.find((item) => item.initiator_role === role);
-      return conversation ? { conversation, role, messages } : null;
-    })
-    .filter((thread): thread is { conversation: BookingConversationThread; role: "supplier" | "agent" | "customer"; messages: BookingMessage[] } => Boolean(thread));
+  // A booking has one supplier side and one booking-origin side.  Keep those
+  // two portal conversations side-by-side: an Agent-created booking gets an
+  // Agent column, while a direct booking gets a Customer column.  Historical
+  // rows can contain extra threads, but they must not produce duplicate portal
+  // panels in the Admin workspace.
+  const supplierConversation = conversations.find((item) => item.supplier_user_id != null);
+  const initiatorConversation = conversations.find(
+    (item) => item.initiator_role === "agent" || item.initiator_role === "customer",
+  );
+  const portalThreads = [
+    supplierConversation
+      ? {
+          conversation: supplierConversation,
+          role: "supplier" as const,
+          messages: conversations.flatMap((conversation) => conversation.messages.filter(
+            (message) => message.sender_role === "supplier" || (message.sender_role === "admin" && message.recipient_role === "supplier"),
+          )),
+        }
+      : null,
+    initiatorConversation
+      ? {
+          conversation: initiatorConversation,
+          role: initiatorConversation.initiator_role as "agent" | "customer",
+          messages: conversations.flatMap((conversation) => conversation.messages.filter(
+            (message) => message.sender_role === initiatorConversation.initiator_role || (message.sender_role === "admin" && message.recipient_role === initiatorConversation.initiator_role),
+          )),
+        }
+      : null,
+  ].filter((thread): thread is { conversation: BookingConversationThread; role: "supplier" | "agent" | "customer"; messages: BookingMessage[] } => Boolean(thread));
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">

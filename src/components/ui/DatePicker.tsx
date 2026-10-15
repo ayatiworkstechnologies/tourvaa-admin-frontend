@@ -22,6 +22,8 @@ export type DatePickerProps = {
   buttonClassName?: string;
   availableDates?: string[];
   disabledDates?: string[];
+  /** Return a reason to block a date dynamically (for example an active offer). */
+  disabledDateReason?: (date: string) => string | undefined;
   restrictToAvailableDates?: boolean;
   required?: boolean;
   disabled?: boolean;
@@ -61,6 +63,7 @@ export default function DatePicker({
   buttonClassName = "",
   availableDates = [],
   disabledDates = [],
+  disabledDateReason,
   restrictToAvailableDates = false,
   required = false,
   disabled = false,
@@ -150,6 +153,7 @@ export default function DatePicker({
     if (min && normalized < startOfDay(min)) return true;
     if (max && normalized > startOfDay(max)) return true;
     if (disabledSet.has(key)) return true;
+    if (disabledDateReason?.(key)) return true;
     if (restrictToAvailableDates && availableSet.size > 0 && !availableSet.has(key)) return true;
     return false;
   }
@@ -242,6 +246,7 @@ export default function DatePicker({
               const key = dateKey(date);
               const outsideMonth = date.getMonth() !== currentMonth.getMonth();
               const dateDisabled = isDisabledDate(date);
+              const disabledReason = disabledDateReason?.(key);
               const selected = value.slice(0, 10) === key;
               const isToday = dateKey(today) === key;
               const available = availableSet.has(key);
@@ -251,9 +256,10 @@ export default function DatePicker({
                   type="button"
                   disabled={dateDisabled}
                   onClick={() => selectDate(date)}
-                  aria-label={date.toLocaleDateString("en-US", { dateStyle: "full" })}
+                  aria-label={`${date.toLocaleDateString("en-US", { dateStyle: "full" })}${disabledReason ? `. Unavailable: ${disabledReason}` : ""}`}
                   aria-pressed={selected}
-                  className={`relative flex h-10 items-center justify-center rounded-xl text-xs font-bold transition ${selected ? `${accentStyles.selected} shadow-md` : dateDisabled ? "cursor-not-allowed text-slate-300 line-through decoration-slate-300" : outsideMonth ? "text-slate-300 hover:bg-slate-50" : isToday ? accentStyles.soft : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"}`}
+                  title={disabledReason}
+                  className={`relative flex h-10 items-center justify-center rounded-xl text-xs font-bold transition ${selected ? `${accentStyles.selected} shadow-md` : dateDisabled ? disabledReason ? "cursor-not-allowed bg-rose-50 text-rose-300 line-through decoration-rose-300" : "cursor-not-allowed text-slate-300 line-through decoration-slate-300" : outsideMonth ? "text-slate-300 hover:bg-slate-50" : isToday ? accentStyles.soft : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"}`}
                 >
                   {selected ? <CircleCheck size={17} /> : date.getDate()}
                   {available && !selected && !dateDisabled && <span className={`absolute bottom-1 h-1 w-1 rounded-full ${accentStyles.dot}`} />}

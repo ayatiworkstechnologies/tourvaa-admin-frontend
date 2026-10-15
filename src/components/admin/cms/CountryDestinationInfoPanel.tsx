@@ -47,18 +47,18 @@ type SubTabKey =
   | "sections";
 
 const PUBLIC_SECTIONS: { key: CountryDestinationSectionKey; label: string; description: string }[] = [
-  { key: "hero", label: "Hero", description: "Image, title and destination introduction" },
-  { key: "overview", label: "Overview", description: "Narrative and quick facts" },
-  { key: "places", label: "Places to visit", description: "Destination cards and tour filtering" },
-  { key: "why_visit", label: "Why visit", description: "Feature banner and travel highlights" },
-  { key: "duration_guiding", label: "Duration and travel style", description: "Trip-length and guiding-style choices" },
-  { key: "when_to_go", label: "When to go", description: "Seasons, monsoon and climate guidance" },
-  { key: "travel_info", label: "Travel information", description: "Practical travel advice" },
-  { key: "tours", label: "Tour packages", description: "Live Tourvaa tours for this country" },
-  { key: "external_experiences", label: "Partner experiences", description: "Configured external activities" },
-  { key: "related_destinations", label: "Countries worth exploring", description: "Related destination cards" },
-  { key: "destination_directory", label: "Destination directory", description: "Destination links grid" },
-  { key: "faq", label: "FAQs", description: "Frequently asked questions" },
+  { key: "hero", label: "Hero & Quick Facts Strip", description: "Top banner, title, introduction and 8-item quick facts strip" },
+  { key: "places", label: "Places to Visit", description: "Iconic destination cards carousel and tour filtering" },
+  { key: "why_visit", label: "Why Visit", description: "Core reason highlight cards with photos and badges" },
+  { key: "overview", label: "Overview & Narrative", description: "Editorial narrative story paragraphs" },
+  { key: "duration_guiding", label: "Duration and Guiding Styles", description: "Trip-length and guiding-style choices" },
+  { key: "when_to_go", label: "When to Go & Climate", description: "Best time to visit, seasonal breakdown, monsoon guidance, and 12-month climate matrix" },
+  { key: "travel_info", label: "Practical Travel Information", description: "Essential travel advice cards (Visas, currency, health, plugs)" },
+  { key: "tours", label: "Tour Packages", description: "Live Tourvaa tours for this country" },
+  { key: "external_experiences", label: "Partner Experiences (Viator)", description: "Configured external activities and day tours" },
+  { key: "related_destinations", label: "Countries Worth Exploring", description: "Related destination cards" },
+  { key: "destination_directory", label: "Destination Directory", description: "Destination links directory grid" },
+  { key: "faq", label: "Frequently Asked Questions (FAQ)", description: "Destination FAQs accordion" },
 ];
 
 interface CountryDestinationInfoPanelProps {
@@ -308,20 +308,20 @@ export default function CountryDestinationInfoPanel({
             }`}
           >
             <Compass size={14} />
-            <span>1. Hero & Quick Facts</span>
+            <span>1. Hero &amp; Quick Facts</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveSubTab("overview")}
+            onClick={() => setActiveSubTab("places")}
             className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition ${
-              activeSubTab === "overview"
+              activeSubTab === "places"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "bg-dash-bg/60 text-dash-text hover:bg-dash-bg"
             }`}
           >
-            <Info size={14} />
-            <span>2. Overview</span>
+            <MapPin size={14} />
+            <span>2. Places to Visit ({info.best_places_to_visit.places?.length || 0})</span>
           </button>
 
           <button
@@ -339,6 +339,19 @@ export default function CountryDestinationInfoPanel({
 
           <button
             type="button"
+            onClick={() => setActiveSubTab("overview")}
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition ${
+              activeSubTab === "overview"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-dash-bg/60 text-dash-text hover:bg-dash-bg"
+            }`}
+          >
+            <Info size={14} />
+            <span>4. Overview &amp; Narrative</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveSubTab("seasons")}
             className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition ${
               activeSubTab === "seasons"
@@ -347,7 +360,7 @@ export default function CountryDestinationInfoPanel({
             }`}
           >
             <Sun size={14} />
-            <span>4. Best Time & Seasons</span>
+            <span>5. Best Time &amp; Seasons</span>
           </button>
 
           <button
@@ -360,7 +373,7 @@ export default function CountryDestinationInfoPanel({
             }`}
           >
             <CloudRain size={14} />
-            <span>5. Monsoon & Rain</span>
+            <span>6. Monsoon &amp; Rain</span>
           </button>
 
           <button
@@ -373,20 +386,7 @@ export default function CountryDestinationInfoPanel({
             }`}
           >
             <Thermometer size={14} />
-            <span>6. 12-Month Climate</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSubTab("places")}
-            className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition ${
-              activeSubTab === "places"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "bg-dash-bg/60 text-dash-text hover:bg-dash-bg"
-            }`}
-          >
-            <MapPin size={14} />
-            <span>7. Best Places ({info.best_places_to_visit.places?.length || 0})</span>
+            <span>7. 12-Month Climate</span>
           </button>
 
           <button
@@ -401,6 +401,7 @@ export default function CountryDestinationInfoPanel({
             <BookOpen size={14} />
             <span>8. Travel Information</span>
           </button>
+
           <button
             type="button"
             onClick={() => setActiveSubTab("sections")}
@@ -410,7 +411,7 @@ export default function CountryDestinationInfoPanel({
                 : "bg-dash-bg/60 text-dash-text hover:bg-dash-bg"
             }`}
           >
-            <span>9. Section visibility</span>
+            <span>9. Section Visibility</span>
           </button>
         </div>
       </section>
@@ -1349,6 +1350,50 @@ export default function CountryDestinationInfoPanel({
               <Plus size={13} />
               <span>Add Place</span>
             </button>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Section Headline (e.g. Iconic Places to Visit in {info.country_name})
+              </label>
+              <input
+                type="text"
+                value={info.best_places_to_visit.headline || ""}
+                placeholder={`Iconic Places to Visit in ${info.country_name}`}
+                onChange={(e) =>
+                  setInfo({
+                    ...info,
+                    best_places_to_visit: {
+                      ...info.best_places_to_visit,
+                      headline: e.target.value,
+                    },
+                  })
+                }
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Section Subtitle
+              </label>
+              <input
+                type="text"
+                value={info.best_places_to_visit.subtitle || ""}
+                placeholder="From grand royal palaces and timeless riverbanks to wildlife sanctuaries and coastal sanctuaries."
+                onChange={(e) =>
+                  setInfo({
+                    ...info,
+                    best_places_to_visit: {
+                      ...info.best_places_to_visit,
+                      subtitle: e.target.value,
+                    },
+                  })
+                }
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs outline-none transition focus:border-slate-800 focus:ring-2 focus:ring-slate-900/10"
+              />
+            </div>
           </div>
 
           <div className="space-y-5">

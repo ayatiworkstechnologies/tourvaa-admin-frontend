@@ -12,6 +12,12 @@ const CONTACT_SECTIONS: PageEditorSection[] = [
   { key: "offices", label: "Our Offices", tabs: ["contact-page-offices"] },
 ];
 
-export default function ContactPageEditor() {
-  return <PageEditor sections={CONTACT_SECTIONS} previewTitle="Live Contact page" previewSrc={() => "/contact"} />;
+export default function ContactPageEditor({
+  previewTitle = "Live Contact page",
+  previewSrc = "/contact",
+}: {
+  previewTitle?: string;
+  previewSrc?: string;
+}) {
+  return <PageEditor sections={CONTACT_SECTIONS} previewTitle={previewTitle} previewSrc={() => previewSrc} />;
 }

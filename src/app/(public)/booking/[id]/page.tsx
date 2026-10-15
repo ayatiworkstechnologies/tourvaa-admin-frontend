@@ -200,8 +200,8 @@ type NewCustomerForm = {
   phone: string;
 };
 
-/** Agent-only: link an existing customer by email, or create a new one, so
- * the booking is placed against a real customer_id -- never the agent's own. */
+/** Legacy Agent CRM selector. New bookings use traveller records directly and
+ * do not create or link a Customer portal account. */
 function AgentCustomerSelector({
   selectedCustomerId,
   selectedCustomerName,
@@ -722,8 +722,8 @@ export default function DynamicTourBookingPage() {
   const selfBookingName = isCustomer ? user?.name || "" : "";
 
   // Keep the passenger form list in sync with adult/child counts, and
-  // prefill the lead traveller from the booking's real owner (the logged-in
-  // customer, or the agent's selected customer) -- never from the agent.
+  // prefill the lead traveller from the logged-in Customer only. Agent
+  // bookings always collect independent traveller details.
   useEffect(() => {
     setPassengers((prev) => {
       const total = adultCount + childCount;
@@ -789,7 +789,7 @@ export default function DynamicTourBookingPage() {
     const timer = setTimeout(() => {
       api
         .post("/bookings/calculate-price", {
-          customer_id: (isAgent ? agentCustomerId : user?.customer_id) || 0,
+          customer_id: isAgent ? undefined : user?.customer_id,
           tour_id: tour.id,
           tour_calendar_id: selectedCalendar?.id ?? null,
           booking_source: isAgent ? "agent" : "customer",
@@ -1085,41 +1085,6 @@ export default function DynamicTourBookingPage() {
       is_primary_contact: idx === 0,
     }));
 
-  const ensureAgentCustomer = async (): Promise<number> => {
-    if (agentCustomerId) return agentCustomerId;
-    const lead = passengers[0];
-    if (!lead) throw new Error("Enter the lead passenger details first.");
-    const email = lead.email.trim().toLowerCase();
-    const fullName = `${lead.firstName} ${lead.middleName} ${lead.lastName}`.replace(/\s+/g, " ").trim();
-    if (!email || !fullName) throw new Error("Enter the lead passenger's name and email first.");
-
-    try {
-      const linked = await api.post("/customers/link", { email });
-      const customer = linked.data?.data;
-      if (customer?.id) {
-        setAgentCustomerId(customer.id);
-        setAgentCustomerName(customer.full_name || fullName);
-        setAgentCustomerEmail(customer.email || email);
-        return customer.id;
-      }
-    } catch {
-      // No linked customer with this email: create one from the lead
-      // traveller below. The endpoint still enforces agent ownership.
-    }
-
-    const created = await api.post("/customers/", {
-      full_name: fullName,
-      email,
-      phone: lead.phone.trim() ? `${lead.phoneCountry}${lead.phone}`.trim() : "",
-    });
-    const customer = created.data?.data;
-    if (!customer?.id) throw new Error("Customer record could not be created.");
-    setAgentCustomerId(customer.id);
-    setAgentCustomerName(customer.full_name || fullName);
-    setAgentCustomerEmail(customer.email || email);
-    return customer.id;
-  };
-
   const handleContinueStep2 = async () => {
     const err = validatePassengers();
     if (err) {
@@ -1240,15 +1205,12 @@ export default function DynamicTourBookingPage() {
       return;
     }
 
-    // Agent bookings submit directly to /bookings. The customer record is
-    // resolved automatically from the lead traveller entered in Step 2;
-    // agent_id comes from the authenticated user and supplier_id from tour.
+    // Agent bookings submit directly with their traveller manifest. A lead
+    // traveller is not a Customer portal account and must not create one.
     if (isAgent) {
       setPaymentSubmitting(true);
       try {
-        const resolvedCustomerId = await ensureAgentCustomer();
         const res = await api.post("/bookings", {
-          customer_id: resolvedCustomerId,
           tour_id: tour!.id,
           tour_calendar_id: selectedCalendar?.id ?? null,
           tour_date: travelDate || undefined,

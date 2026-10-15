@@ -186,7 +186,7 @@ function useContactBlock<T extends Record<string, unknown>>(key: string, def: T)
   return data;
 }
 
-export default function ContactPage() {
+export default function ContactPage({ audience }: { audience?: "supplier" | "agent" } = {}) {
   const [isSupplierInquiry, setIsSupplierInquiry] = useState(false);
   const [isAgentInquiry, setIsAgentInquiry] = useState(false);
   const hero = useContactBlock("contact_page_hero", DEFAULT_HERO);
@@ -241,10 +241,10 @@ export default function ContactPage() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    const context = new URLSearchParams(window.location.search).get("context");
+    const context = audience ?? new URLSearchParams(window.location.search).get("context");
     setIsSupplierInquiry(context === "supplier");
     setIsAgentInquiry(context === "agent");
-  }, []);
+  }, [audience]);
 
   useEffect(() => {
     if (isSupplierInquiry) setForm((current) => ({ ...current, reservation: "no", subject: "Supplier Registration & Onboarding" }));

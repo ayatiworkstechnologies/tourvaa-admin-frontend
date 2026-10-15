@@ -99,7 +99,7 @@ check(
 check(
   "supplier verification checklist matches the supplier document requirements and contact desk opens the form",
   ["Business Registration Certificate", "Relevant Operating Licence", "Public Liability Insurance Certificate", "Tourism Accreditation", "Industry Certification", "Safety Certification", "Other Licences", "Additional Supporting Documents"].every((label) => supplierLanding.includes(label)) &&
-    supplierLanding.includes('href="/contact?context=supplier#contact-form-section"'),
+    supplierLanding.includes('href="/supplier-contact#contact-form-section"'),
 );
 const contactPage = read("src/app/(public)/contact/page.tsx");
 check(
@@ -226,10 +226,10 @@ check(
 );
 check(
   "admin supplier detail exposes registration contact and business address",
-  adminSupplierDetail.includes("Supplier information") &&
-    adminSupplierDetail.includes("Business address") &&
-    adminSupplierDetail.includes("Person in charge") &&
-    adminSupplierDetail.includes("Years in business"),
+  adminSupplierDetail.includes("Company & Legal Identity") &&
+    adminSupplierDetail.includes("Registered Business Address") &&
+    adminSupplierDetail.includes("Primary Account Signatory") &&
+    adminSupplierDetail.includes("Years in Operation"),
 );
 check(
   "supplier pricing distinguishes the offer price from the post-commission payout",

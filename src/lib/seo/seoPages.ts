@@ -29,6 +29,8 @@ export const EDITABLE_SEO_PAGES: { path: string; label: string; group: string }[
   { path: "/accessibility", label: "Accessibility", group: "Legal" },
   { path: "/supplier-portal", label: "Supplier Portal", group: "Partner pages" },
   { path: "/agent-portal", label: "Agent Portal", group: "Partner pages" },
+  { path: "/supplier-contact", label: "Supplier Contact", group: "Partner pages" },
+  { path: "/agent-contact", label: "Agent Contact", group: "Partner pages" },
   { path: "/affiliate-portal", label: "Affiliate Portal", group: "Partner pages" },
 
 ];

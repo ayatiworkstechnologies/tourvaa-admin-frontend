@@ -36,63 +36,12 @@ export default function CountryWhenToGoSection({
   return (
     <section id="section-when-to-go" className="bg-white text-slate-900 py-10 sm:py-16">
       <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
-        {/* ── 8. Panoramic Feature Showcase Banner matching Dubai reference ── */}
-        <div className="relative min-h-[360px] sm:min-h-[440px] w-full overflow-hidden rounded-[28px] sm:rounded-[32px] bg-slate-950 p-6 sm:p-10 flex flex-col justify-between shadow-lg mb-14 sm:mb-20">
-          {/* Panoramic Background Photo */}
-          <img
-            src={
-              info.why_visit?.reasons?.[0]?.image ||
-              info.hero_image ||
-              "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1800&q=80"
-            }
-            alt={`${info.country_name} Showcase`}
-            className="absolute inset-0 h-full w-full object-cover object-center opacity-85 scale-102 transition-transform duration-1000"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
-
-          {/* Floating White Showcase Card in the Top Center */}
-          <div className="relative z-10 w-full max-w-3xl rounded-[20px] border border-white/60 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-4 sm:gap-6 text-left">
-              <h3 className="md:col-span-5 text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                {info.why_visit?.reasons?.[0]?.title || info.tagline || `Iconic Wonders of ${info.country_name}`}
-              </h3>
-              <p className="md:col-span-7 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
-                {info.why_visit?.reasons?.[0]?.description ||
-                  info.why_visit?.subtitle ||
-                  `Step inside one of the world's most iconic landscapes and architectural wonders. Explore immersive cultural heritage, breathtaking natural vistas, and timeless traditions across ${info.country_name}.`}
-              </p>
-            </div>
-          </div>
-
-          {/* Carousel Left & Right Arrow Buttons */}
-          <div className="relative z-10 flex items-center justify-between pointer-events-none px-2">
-            <button
-              type="button"
-              aria-label="Previous showcase"
-              className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/80 backdrop-blur-xs text-slate-800 shadow-md hover:bg-white transition"
-            >
-              <LuChevronLeft size={16} />
-            </button>
-            <button
-              type="button"
-              aria-label="Next showcase"
-              className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/80 backdrop-blur-xs text-slate-800 shadow-md hover:bg-white transition"
-            >
-              <LuChevronRight size={16} />
-            </button>
-          </div>
-
-          {/* Bottom Pagination Indicator Dashes */}
-          <div className="relative z-10 flex items-center justify-center gap-1.5">
-            <span className="h-1 w-8 rounded-full bg-white shadow-xs" />
-            <span className="h-1 w-2 rounded-full bg-white/40" />
-            <span className="h-1 w-2 rounded-full bg-white/40" />
-          </div>
-        </div>
-
-        {/* ── 9. "When is the best time to visit {Country}?" Section ── */}
+        {/* ── When to Go & Climate ── */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
           <div className="max-w-md">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-pub-accent block mb-1">
+              When to Go &amp; Climate
+            </span>
             <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
               When is the best time to visit {info.country_name}?
             </h2>

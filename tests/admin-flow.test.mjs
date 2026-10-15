@@ -121,7 +121,7 @@ check(
   "supplier document and vehicle filenames stay within their cards",
   suppliersCompact.includes('className="mt-0.5 truncate text-xs font-medium text-dash-muted" title={fileName}') &&
     suppliersCompact.includes('className="min-w-0 flex-1"') &&
-    suppliersCompact.includes('className="min-w-0 rounded-xl border border-dash-border p-4"'),
+    suppliersCompact.includes('className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs'),
 );
 check("agent document review uses private document service", agents.includes('openPrivateDocument("agent"'));
 check("admin can approve and reject individual agent documents", agents.includes("reviewAgentDocument") && agents.includes("Reject agent document"));

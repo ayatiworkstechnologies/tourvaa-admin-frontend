@@ -37,12 +37,15 @@ export default function CountryPlacesToVisitSection({
         {/* Section Header with Title, Subtitle, and Carousel Controls */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-7">
           <div className="text-left max-w-2xl">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-pub-accent block mb-1">
+              Places to Visit
+            </span>
             <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
-              {best_places_to_visit.headline || `What You'll See in ${info.country_name}`}
+              {best_places_to_visit.headline || `Iconic Places to Visit in ${info.country_name}`}
             </h2>
             <p className="mt-1.5 text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
               {best_places_to_visit.subtitle ||
-                `Discover the iconic landmarks, ancient history, and breathtaking landscapes that make ${info.country_name} a traveler's dream destination.`}
+                `From grand royal palaces and timeless riverbanks to wildlife sanctuaries and coastal sanctuaries.`}
             </p>
           </div>
 

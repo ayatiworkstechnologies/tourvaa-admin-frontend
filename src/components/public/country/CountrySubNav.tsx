@@ -18,16 +18,16 @@ export interface CountrySubNavProps {
 }
 
 const NAV_ITEMS = [
-  { id: "section-tours", label: "Tour Packages", icon: Compass },
-  { id: "section-overview", label: "Overview", icon: Info },
-  { id: "section-why-visit", label: "Why Visit", icon: Heart },
-  { id: "section-best-time", label: "When to Go & Climate", icon: Calendar },
   { id: "section-places", label: "Places to Visit", icon: MapPin },
+  { id: "section-why-visit", label: "Why Visit", icon: Heart },
+  { id: "section-overview", label: "Overview", icon: Info },
+  { id: "section-when-to-go", label: "When to Go & Climate", icon: Calendar },
   { id: "section-travel-info", label: "Travel Guide", icon: Sparkles },
+  { id: "section-tours", label: "Tour Packages", icon: Compass },
 ];
 
 export default function CountrySubNav({ tourCount }: CountrySubNavProps) {
-  const [activeSection, setActiveSection] = useState("section-tours");
+  const [activeSection, setActiveSection] = useState("section-places");
 
   useEffect(() => {
     const handleScroll = () => {

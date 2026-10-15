@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuPlane as Plane, LuRefreshCw as RefreshCw, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuEye as Eye, LuPlane as Plane, LuRefreshCw as RefreshCw, LuCircleX as XCircle, LuFilter as Filter } from "react-icons/lu";
 import api from "@/lib/api/client";
-import { BOOKING_AWAITING_CONFIRMATION_LABEL, agentBookingStatusLabel } from "@/lib/constants/bookingStatus";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -31,13 +30,25 @@ type Booking = {
 const AGENT_BOOKING_FILTERS = [
   { value: "all", label: "All" },
   { value: "pending_payment", label: "Pending Payment" },
-  { value: "pending_supplier_acceptance", label: BOOKING_AWAITING_CONFIRMATION_LABEL },
+  { value: "pending_credit_approval,credit_approval_pending,pending_supplier_assignment,payment_authorized,pending_supplier_acceptance,supplier_accepted,supplier_reassignment_required", label: "Booking Request Received" },
   { value: "confirmed", label: "Booking Confirmed" },
   { value: "ongoing", label: "Ongoing" },
   { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
   { value: "declined", label: "Declined" },
 ];
+
+function agentBookingStatusLabel(status?: string) {
+  const value = (status || "").toLowerCase();
+  if (value === "pending_payment") return "Pending Payment";
+  if (["pending_credit_approval", "credit_approval_pending", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_accepted", "supplier_reassignment_required"].includes(value)) return "Booking Request Received";
+  if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(value)) return "Booking Confirmed";
+  if (value === "ongoing") return "Ongoing";
+  if (value === "completed") return "Completed";
+  if (value === "cancelled") return "Cancelled";
+  if (value === "declined") return "Declined";
+  return value ? value.replaceAll("_", " ") : "-";
+}
 
 function dateText(value?: string | null) {
   if (!value) return "-";
@@ -113,7 +124,7 @@ export default function AgentBookingsPage() {
     { label: "Total Bookings", value: Object.values(statusCounts).reduce((sum, count) => sum + count, 0), icon: CalendarCheck, tone: "bg-blue-50 text-blue-700" },
     { label: "Confirmed", value: (statusCounts.confirmed ?? 0) + (statusCounts.upcoming ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-700" },
     { label: "Ready to Travel", value: statusCounts.ready_to_travel ?? 0, icon: Plane, tone: "bg-sky-50 text-sky-700" },
-    { label: "Pending", value: (statusCounts.pending_payment ?? 0) + (statusCounts.pending_credit_approval ?? 0) + (statusCounts.pending_supplier_assignment ?? 0) + (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0) + (statusCounts.supplier_reassignment_required ?? 0) + (statusCounts.cancellation_requested ?? 0), icon: Clock3, tone: "bg-amber-50 text-amber-700" },
+    { label: "Booking Requests", value: (statusCounts.pending_payment ?? 0) + (statusCounts.pending_credit_approval ?? 0) + (statusCounts.credit_approval_pending ?? 0) + (statusCounts.pending_supplier_assignment ?? 0) + (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0) + (statusCounts.supplier_accepted ?? 0) + (statusCounts.supplier_reassignment_required ?? 0), icon: Clock3, tone: "bg-amber-50 text-amber-700" },
     { label: "Cancelled", value: (statusCounts.cancelled ?? 0) + (statusCounts.declined ?? 0) + (statusCounts.refunded ?? 0), icon: XCircle, tone: "bg-rose-50 text-rose-700" },
   ];
 
@@ -151,21 +162,26 @@ export default function AgentBookingsPage() {
       </div>
 
       <AgentSection className="mt-4">
-      <div className="flex gap-2 overflow-x-auto border-b border-[#E7EDF6] p-4">
-        {AGENT_BOOKING_FILTERS.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => handleStatus(value)}
-            className={`shrink-0 rounded-xl px-4 py-2.5 text-xs font-bold capitalize transition-all ${
-              statusFilter === value
-                ? "bg-dash-brand text-white shadow-dash-brand/20"
-                : "border border-dash-border/80 bg-white text-dash-muted hover:border-dash-brand/30 hover:text-dash-brand"
-            }`}
+      <div className="flex flex-col gap-3 border-b border-[#E7EDF6] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Filter size={18} className="text-dash-subtle" />
+          <label className="sr-only" htmlFor="agent-booking-status-filter">Booking status</label>
+          <select
+            id="agent-booking-status-filter"
+            value={statusFilter}
+            onChange={(event) => handleStatus(event.target.value)}
+            className="rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-blue-50"
           >
-            {label}
-          </button>
-        ))}
+            {AGENT_BOOKING_FILTERS.map(({ value, label }) => (
+              <option key={value} value={value}>{value === "all" ? "All Statuses" : label}</option>
+            ))}
+          </select>
+        </div>
+        {total > 0 && (
+          <div className="flex items-center gap-2 rounded-xl bg-[#EDF5FF] px-4 py-2 text-sm font-bold text-dash-brand-hover">
+            <span>{total} booking{total !== 1 ? "s" : ""}</span>
+          </div>
+        )}
       </div>
 
       {/* Table */}

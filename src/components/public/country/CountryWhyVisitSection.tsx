@@ -11,38 +11,75 @@ export interface CountryWhyVisitSectionProps {
 }
 
 export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionProps) {
+  const reasons = info.why_visit?.reasons || [];
+  const title = info.why_visit?.title || `Why Visit ${info.country_name}?`;
+  const subtitle =
+    info.why_visit?.subtitle ||
+    `From world-wonder monuments to sacred rituals and rare wildlife, discover what makes ${info.country_name} a life-changing journey.`;
+
   return (
-    <section id="section-why-visit" className="py-6 sm:py-8 bg-white">
+    <section id="section-why-visit" className="py-12 sm:py-16 bg-white border-b border-slate-100">
       <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
-        {/* Wide Panoramic Highlight Banner */}
-        <div className="relative h-[240px] sm:h-[280px] w-full overflow-hidden rounded-[24px] bg-slate-950 flex items-center justify-center text-center p-6 sm:p-10 shadow-md">
-          {/* Background image */}
-          <img
-            src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1800&q=80"
-            alt="Scenic mountain highlight"
-            className="absolute inset-0 h-full w-full object-cover object-center opacity-45 scale-102"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/30" />
-
-          {/* Centered Content */}
-          <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center">
-            <span className="inline-flex items-center gap-1 rounded-full bg-pub-accent px-3.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
-              <Sparkles size={11} className="fill-white" />
-              <span>Must-See Highlight</span>
-            </span>
-
-            <h2 className="mt-3.5 text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
-              {info.why_visit?.title || info.tagline || "Why visit this destination"}
-            </h2>
-
-            <p className="mt-2 text-xs sm:text-sm text-white/85 font-medium leading-relaxed max-w-xl">
-              {info.why_visit?.subtitle ||
-                `Immerse yourself in centuries of living culture, dramatic scenery, and legendary hospitality across ${info.country_name}.`}
-            </p>
+        {/* Section Header matching CMS Tab 3 */}
+        <div className="mx-auto max-w-3xl text-center mb-10 sm:mb-12">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
+            <Sparkles size={11} className="fill-pub-accent" />
+            <span>Why Visit {info.country_name}</span>
           </div>
+
+          <h2 className="mt-3.5 text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-950">
+            {title}
+          </h2>
+
+          <p className="mt-2.5 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed max-w-2xl mx-auto">
+            {subtitle}
+          </p>
         </div>
+
+        {/* Reason Cards Grid matching CMS inputs */}
+        {reasons.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {reasons.map((reason, idx) => {
+              const fallbackImg =
+                "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80";
+              const imgSrc = reason.image && reason.image.trim().length > 0 ? reason.image : fallbackImg;
+
+              return (
+                <div
+                  key={reason.id || idx}
+                  className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:border-slate-200 hover:shadow-md"
+                >
+                  <div>
+                    {/* Visual Photo */}
+                    <div className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-100">
+                      <img
+                        src={imgSrc}
+                        alt={reason.title}
+                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      />
+                      {reason.badge && (
+                        <div className="absolute top-3 left-3">
+                          <span className="inline-block rounded-full bg-slate-950/85 backdrop-blur-xs px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
+                            {reason.badge}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <h3 className="mt-4 text-base sm:text-lg font-bold text-slate-900 tracking-tight group-hover:text-pub-accent transition">
+                      {reason.title}
+                    </h3>
+                    <p className="mt-2 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
+                      {reason.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
 }
-

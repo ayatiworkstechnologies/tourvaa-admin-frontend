@@ -41,53 +41,68 @@ export default function CountryDestinationPageContent({
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      {/* ── 1, 2, 3: Hero Banner, Breadcrumbs & Split Overview Card ── */}
-      {visible("hero") && <CountryDestinationHero info={info} tourCount={initialTours?.length || 24} />}
+      {/* ── 1. Hero Banner, Tagline, Introduction & Quick Facts Strip ── */}
+      {visible("hero") && (
+        <CountryDestinationHero info={info} tourCount={initialTours?.length || 24} />
+      )}
 
-      {/* CMS: Overview and quick facts */}
-      {visible("overview") && <CountryOverviewSection info={info} />}
+      {/* ── 2. Places to Visit in {Country} (Directly following Hero as in Design Spec) ── */}
+      {visible("places") && (
+        <CountryPlacesToVisitSection
+          info={info}
+          onSelectPlaceFilter={handleSelectPlaceFilter}
+        />
+      )}
 
-      {/* ── 4: Places to Visit in {Country} (4 Horizontal Cards) ── */}
-      {visible("places") && <CountryPlacesToVisitSection
-        info={info}
-        onSelectPlaceFilter={handleSelectPlaceFilter}
-      />}
-
-      {/* ── 5: Must-See Highlight Panoramic Banner ── */}
+      {/* ── 3. Why Visit {Country} — Core Reason Pillars ── */}
       {visible("why_visit") && <CountryWhyVisitSection info={info} />}
 
-      {/* ── 6 & 7: "Find your perfect duration" & "Choose your guiding style" ── */}
-      {visible("duration_guiding") && <CountryDurationGuidingStyles
-        info={info}
-        onSelectDuration={(tag) => {
-          setSelectedPlaceFilter(tag);
-        }}
-      />}
+      {/* ── 4. Destination Overview & Detailed Narrative ── */}
+      {visible("overview") && <CountryOverviewSection info={info} />}
 
-      {/* ── 8 & 9: Panoramic Feature Banner & "When to travel to {Country}" ── */}
-      {visible("when_to_go") && <CountryWhenToGoSection
-        info={info}
-        onSelectSeason={(season) => {
-          setSelectedPlaceFilter(season);
-        }}
-      />}
+      {/* ── 5. Duration & Guiding Styles ── */}
+      {visible("duration_guiding") && (
+        <CountryDurationGuidingStyles
+          info={info}
+          onSelectDuration={(tag) => {
+            setSelectedPlaceFilter(tag);
+          }}
+        />
+      )}
 
-      {/* CMS: Practical travel information */}
+      {/* ── 6. When to travel to {Country} & Climate Matrix ── */}
+      {visible("when_to_go") && (
+        <CountryWhenToGoSection
+          info={info}
+          onSelectSeason={(season) => {
+            setSelectedPlaceFilter(season);
+          }}
+        />
+      )}
+
+      {/* ── 7. Practical Travel Information & Advice ── */}
       {visible("travel_info") && <CountryTravelInfoSection info={info} />}
 
-      {/* ── 10: All Tours in {Country} (Filter Pills & 6-Tour Grid) ── */}
-      {visible("tours") && <CountryToursSection
-        info={info}
-        initialTours={initialTours}
-        selectedPlaceFilter={selectedPlaceFilter}
-        onClearPlaceFilter={handleClearPlaceFilter}
-      />}
+      {/* ── 8. All Tours in {Country} ── */}
+      {visible("tours") && (
+        <CountryToursSection
+          info={info}
+          initialTours={initialTours}
+          selectedPlaceFilter={selectedPlaceFilter}
+          onClearPlaceFilter={handleClearPlaceFilter}
+        />
+      )}
 
-      {/* ── 10b: Things to Do in {Country} - partner experiences (Viator),
-          kept as their own section after Tourvaa's tours ── */}
-      {visible("external_experiences") && <ExternalExperiencesSection placement="show_on_destination_pages" source="destination" country={info.country_name} />}
+      {/* ── 9. Things to Do in {Country} - partner experiences (Viator) ── */}
+      {visible("external_experiences") && (
+        <ExternalExperiencesSection
+          placement="show_on_destination_pages"
+          source="destination"
+          country={info.country_name}
+        />
+      )}
 
-      {/* ── 11, 12, 13: Countries Worth Exploring, Directory & FAQs ── */}
+      {/* ── 10. Countries Worth Exploring, Directory & FAQs ── */}
       {(visible("related_destinations") || visible("destination_directory") || visible("faq")) && (
         <CountryExploreFaqSection
           info={info}
@@ -99,4 +114,3 @@ export default function CountryDestinationPageContent({
     </div>
   );
 }
-

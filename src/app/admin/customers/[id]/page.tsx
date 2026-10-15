@@ -2,7 +2,19 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuArrowLeft as ArrowLeft, LuCalendar as Calendar, LuCalendarCheck as CalendarCheck, LuCalendarX as CalendarX, LuCircleCheckBig as CheckCircle2, LuCreditCard as CreditCard, LuMail as Mail, LuMapPin as MapPin, LuMessageSquare as MessageSquare, LuWallet as Wallet, LuCircleX as XCircle } from "react-icons/lu";
+import {
+  LuArrowLeft as ArrowLeft,
+  LuCalendar as Calendar,
+  LuCalendarCheck as CalendarCheck,
+  LuCalendarX as CalendarX,
+  LuCircleCheckBig as CheckCircle2,
+  LuCreditCard as CreditCard,
+  LuMail as Mail,
+  LuMapPin as MapPin,
+  LuMessageSquare as MessageSquare,
+  LuWallet as Wallet,
+  LuCircleX as XCircle,
+} from "react-icons/lu";
 import { useParams } from "next/navigation";
 
 import CustomerActionButtons from "@/components/customers/CustomerActionButtons";
@@ -109,7 +121,7 @@ export default function CustomerDetailPage() {
     setSaving(true);
     try {
       await blockCustomer(customer.id, reason);
-      toast.success("Customer blocked.");
+      toast.success("Customer account blocked.");
       setBlockModalOpen(false);
       await fetchCustomer();
     } catch {
@@ -121,12 +133,19 @@ export default function CustomerDetailPage() {
 
   const handleUnblock = async () => {
     if (!customer) return;
-    if (!(await confirm({ title: "Unblock customer", message: "Unblock this customer?", confirmLabel: "Unblock" }))) return;
+    if (
+      !(await confirm({
+        title: "Unblock customer",
+        message: "Are you sure you want to restore active access for this customer?",
+        confirmLabel: "Unblock Customer",
+      }))
+    )
+      return;
 
     setSaving(true);
     try {
       await unblockCustomer(customer.id);
-      toast.success("Customer unblocked.");
+      toast.success("Customer unblocked successfully.");
       await fetchCustomer();
     } catch {
       toast.error("Could not unblock customer.");
@@ -137,7 +156,14 @@ export default function CustomerDetailPage() {
 
   const handleReset = async () => {
     if (!customer) return;
-    if (!(await confirm({ title: "Send password reset", message: "Send password reset email to this customer?", confirmLabel: "Send" }))) return;
+    if (
+      !(await confirm({
+        title: "Send password reset",
+        message: `Send an official password reset link to ${customer.email}?`,
+        confirmLabel: "Send Reset Link",
+      }))
+    )
+      return;
 
     setSaving(true);
     try {
@@ -150,7 +176,10 @@ export default function CustomerDetailPage() {
     }
   };
 
-  const handleSaveLocation = async (value: { country_id: number | null; city_id: number | null }) => {
+  const handleSaveLocation = async (value: {
+    country_id: number | null;
+    city_id: number | null;
+  }) => {
     setSaving(true);
     try {
       await updateCustomer(customerId, value);
@@ -164,11 +193,15 @@ export default function CustomerDetailPage() {
     }
   };
 
-  const handleSendMessage = async (payload: { subject: string; message: string; booking_id?: number | null }) => {
+  const handleSendMessage = async (payload: {
+    subject: string;
+    message: string;
+    booking_id?: number | null;
+  }) => {
     setSaving(true);
     try {
       await sendCustomerMessage(customerId, payload);
-      toast.success("Customer message sent.");
+      toast.success("Message dispatched to customer.");
       setMessageOpen(false);
       const communicationResponse = await getCustomerCommunications(customerId);
       setCommunications(communicationResponse.items || []);
@@ -182,17 +215,36 @@ export default function CustomerDetailPage() {
   const tabs = useMemo(
     () =>
       [
-        { key: "bookings" as const, label: "Bookings", icon: Calendar, count: bookings.length, visible: canViewBookings },
-        { key: "payments" as const, label: "Payments", icon: CreditCard, count: payments.length, visible: canViewPayments },
+        {
+          key: "bookings" as const,
+          label: "Reservations & Bookings",
+          icon: Calendar,
+          count: bookings.length,
+          visible: canViewBookings,
+        },
+        {
+          key: "payments" as const,
+          label: "Payments & Invoices",
+          icon: CreditCard,
+          count: payments.length,
+          visible: canViewPayments,
+        },
         {
           key: "communications" as const,
-          label: "Communications",
+          label: "Communications Log",
           icon: MessageSquare,
           count: communications.length,
           visible: canViewCommunications,
         },
       ].filter((tab) => tab.visible),
-    [bookings.length, canViewBookings, canViewCommunications, canViewPayments, communications.length, payments.length]
+    [
+      bookings.length,
+      canViewBookings,
+      canViewCommunications,
+      canViewPayments,
+      communications.length,
+      payments.length,
+    ],
   );
 
   useEffect(() => {
@@ -201,25 +253,51 @@ export default function CustomerDetailPage() {
     }
   }, [activeTab, tabs]);
 
+  const totalBookings =
+    bookings.length || (customer?.booking_summary?.total ?? customer?.total_bookings ?? 0);
+  const completedTours =
+    bookings.length > 0
+      ? bookings.filter((b) => b.booking_status === "completed").length
+      : (customer?.booking_summary?.completed ?? customer?.completed_tours ?? 0);
+  const cancelledTours =
+    bookings.length > 0
+      ? bookings.filter((b) => b.booking_status === "cancelled" || b.booking_status === "declined").length
+      : (customer?.booking_summary?.cancelled ?? customer?.cancelled_tours ?? 0);
+  const upcomingTours =
+    bookings.length > 0
+      ? bookings.filter((b) =>
+          ["confirmed", "pending_supplier_acceptance", "payment_authorized"].includes(b.booking_status)
+        ).length
+      : (customer?.booking_summary?.upcoming ?? customer?.upcoming_tours ?? 0);
+  const totalPaid =
+    customer?.payment_summary?.paid ?? customer?.amount_paid ?? 0;
+  const totalPending =
+    customer?.payment_summary?.pending ?? customer?.amount_pending ?? 0;
+
   return (
     <ModuleWrapper title="Customer Detail" requiredPermission="customers.view">
       {loading ? (
         <Loader label="Loading customer..." />
       ) : customer ? (
         <div className="space-y-6">
+          {/* Header Action Bar */}
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <Link href="/admin/customers" className="inline-flex items-center gap-2 text-sm font-bold text-dash-brand-hover">
+            <Link
+              href="/admin/customers"
+              className="inline-flex items-center gap-2 text-sm font-bold text-dash-text hover:text-dash-brand"
+            >
               <ArrowLeft size={16} />
               Back to customers
             </Link>
-            <div className="flex flex-wrap gap-2">
+
+            <div className="flex flex-wrap items-center gap-2">
               {canEditLocation && (
                 <button
                   type="button"
                   onClick={() => setLocationModalOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3.5 py-2 text-xs font-bold text-dash-text shadow-xs hover:border-slate-300 hover:bg-slate-50 transition"
                 >
-                  <MapPin size={16} />
+                  <MapPin size={14} className="text-dash-subtle" />
                   Edit Location
                 </button>
               )}
@@ -227,9 +305,9 @@ export default function CustomerDetailPage() {
                 <button
                   type="button"
                   onClick={() => setMessageOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3.5 py-2 text-xs font-bold text-dash-text shadow-xs hover:border-slate-300 hover:bg-slate-50 transition"
                 >
-                  <Mail size={16} />
+                  <Mail size={14} className="text-dash-brand" />
                   Send Message
                 </button>
               )}
@@ -246,48 +324,105 @@ export default function CustomerDetailPage() {
             </div>
           </div>
 
+          {/* Profile Hero Card */}
           <CustomerProfileCard customer={customer} />
 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-            {[
-              { label: "Bookings", value: customer.booking_summary?.total ?? customer.total_bookings, icon: Calendar, accent: "text-dash-brand-hover bg-[#EDF5FF]" },
-              { label: "Completed", value: customer.booking_summary?.completed ?? customer.completed_tours, icon: CheckCircle2, accent: "text-emerald-600 bg-emerald-50" },
-              { label: "Cancelled", value: customer.booking_summary?.cancelled ?? customer.cancelled_tours, icon: XCircle, accent: "text-red-600 bg-red-50" },
-              { label: "Upcoming", value: customer.booking_summary?.upcoming ?? customer.upcoming_tours, icon: CalendarCheck, accent: "text-violet-600 bg-violet-50" },
-              { label: "Paid", value: format(customer.payment_summary?.paid ?? customer.amount_paid), icon: Wallet, accent: "text-emerald-600 bg-emerald-50" },
-              { label: "Pending", value: format(customer.payment_summary?.pending ?? customer.amount_pending), icon: CalendarX, accent: "text-amber-700 bg-amber-50" },
-            ].map(({ label, value, icon: Icon, accent }) => (
-              <div
-                key={label}
-                className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]"
-              >
-                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${accent}`}>
-                  <Icon size={18} />
-                </div>
-                <p className="mt-3 text-xs font-bold uppercase tracking-wide text-dash-subtle">{label}</p>
-                <p className="mt-1 text-xl font-black text-dash-text">{value}</p>
+          {/* Executive Metrics Grid */}
+          <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+            <div className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-xs">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                <Calendar size={18} />
               </div>
-            ))}
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-dash-subtle">
+                Total Bookings
+              </p>
+              <p className="mt-1 text-xl font-black text-dash-text">
+                {totalBookings}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-xs">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <CheckCircle2 size={18} />
+              </div>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-dash-subtle">
+                Completed
+              </p>
+              <p className="mt-1 text-xl font-black text-emerald-600">
+                {completedTours}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-xs">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <CalendarCheck size={18} />
+              </div>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-dash-subtle">
+                Upcoming
+              </p>
+              <p className="mt-1 text-xl font-black text-violet-600">
+                {upcomingTours}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-xs">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                <XCircle size={18} />
+              </div>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-dash-subtle">
+                Cancelled
+              </p>
+              <p className="mt-1 text-xl font-black text-rose-600">
+                {cancelledTours}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-xs">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <Wallet size={18} />
+              </div>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-dash-subtle">
+                Amount Paid
+              </p>
+              <p className="mt-1 text-xl font-black text-emerald-600">
+                {format(totalPaid)}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-xs">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                <CalendarX size={18} />
+              </div>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-dash-subtle">
+                Outstanding Due
+              </p>
+              <p className="mt-1 text-xl font-black text-amber-700">
+                {format(totalPending)}
+              </p>
+            </div>
           </section>
 
-          <section className="rounded-2xl border border-dash-border-soft bg-white shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
-            <div className="flex flex-wrap gap-1 border-b border-[#F0F3F8] p-2">
+          {/* Tabbed Activity Container */}
+          <section className="rounded-2xl border border-dash-border-soft bg-white shadow-xs overflow-hidden">
+            <div className="flex flex-wrap gap-1 border-b border-[#F0F3F8] bg-slate-50/50 p-2.5">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
-                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors ${
+                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
                     activeTab === tab.key
-                      ? "bg-[#EDF5FF] text-dash-brand-hover"
-                      : "text-dash-muted hover:bg-dash-bg"
+                      ? "bg-white text-dash-brand shadow-xs ring-1 ring-slate-200/80"
+                      : "text-dash-muted hover:bg-white/60 hover:text-dash-text"
                   }`}
                 >
-                  <tab.icon size={16} />
+                  <tab.icon size={15} />
                   {tab.label}
                   <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                      activeTab === tab.key ? "bg-white text-dash-brand-hover" : "bg-[#F0F3F8] text-dash-subtle"
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      activeTab === tab.key
+                        ? "bg-dash-brand text-white"
+                        : "bg-slate-200/70 text-dash-muted"
                     }`}
                   >
                     {tab.count}
@@ -297,14 +432,19 @@ export default function CustomerDetailPage() {
             </div>
 
             <div className="p-6">
-              {activeTab === "bookings" && canViewBookings && <CustomerBookingHistory rows={bookings} />}
-              {activeTab === "payments" && canViewPayments && <CustomerPaymentHistory rows={payments} />}
+              {activeTab === "bookings" && canViewBookings && (
+                <CustomerBookingHistory rows={bookings} />
+              )}
+              {activeTab === "payments" && canViewPayments && (
+                <CustomerPaymentHistory rows={payments} />
+              )}
               {activeTab === "communications" && canViewCommunications && (
                 <CustomerCommunicationHistory rows={communications} />
               )}
             </div>
           </section>
 
+          {/* Action Modals */}
           <SendCustomerMessageModal
             open={messageOpen}
             saving={saving}
@@ -323,9 +463,16 @@ export default function CustomerDetailPage() {
           <ActionModal
             open={blockModalOpen}
             title={`Block ${customer.full_name}`}
-            fields={[{ name: "reason", label: "Block reason", type: "textarea", required: true }]}
+            fields={[
+              {
+                name: "reason",
+                label: "Block reason",
+                type: "textarea",
+                required: true,
+              },
+            ]}
             saving={saving}
-            submitLabel="Block"
+            submitLabel="Block Account"
             onClose={() => setBlockModalOpen(false)}
             onSubmit={submitBlock}
           />
@@ -339,4 +486,3 @@ export default function CustomerDetailPage() {
     </ModuleWrapper>
   );
 }
-

@@ -1,4 +1,4 @@
-﻿import api from "@/lib/api/client";
+import api from "@/lib/api/client";
 
 export type ReviewRecord = {
   id: number;
@@ -20,6 +20,7 @@ export type ReviewRecord = {
   country_name?: string;
   city_name?: string;
   years_in_operation?: number;
+  business_logo?: string;
   business_address?: string;
   registration_contact?: {
     full_name?: string;
@@ -33,6 +34,13 @@ export type ReviewRecord = {
   pending_requirements?: string | null;
   discount_type?: string | null;
   discount_value?: number;
+  currency?: string;
+  onboarding_completed_at?: string | null;
+  commission_accepted_at?: string | null;
+  approved_at?: string | null;
+  approved_by?: number | null;
+  rejected_at?: string | null;
+  rejected_by?: number | null;
   commission_percentage?: string | number | null;
   commission_request_type?: string | null;
   commission_request_value?: number | null;

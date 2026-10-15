@@ -33,6 +33,8 @@ const PAGE_EDITORS: Record<string, React.ComponentType> = {
   "supplier-portal": SupplierPortalPageEditor,
   "agent-portal": AgentPortalPageEditor,
   "affiliate-portal": AffiliatePortalPageEditor,
+  "supplier-contact": () => <ContactPageEditor previewTitle="Live Supplier Contact page" previewSrc="/supplier-contact" />,
+  "agent-contact": () => <ContactPageEditor previewTitle="Live Agent Contact page" previewSrc="/agent-contact" />,
   "tours-listing": ToursListingPageEditor,
   seo: PageSeoEditor,
 };

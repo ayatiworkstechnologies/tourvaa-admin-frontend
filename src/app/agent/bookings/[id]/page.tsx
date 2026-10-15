@@ -9,7 +9,7 @@ import api from "@/lib/api/client";
 import { agentBookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_LABEL, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE } from "@/lib/constants/bookingStatus";
 import { downloadInvoicePdf, invoiceActionError } from "@/lib/api/services/invoiceService";
 import BookingPaymentModal from "@/components/bookings/BookingPaymentModal";
-import { AgentPageHeader, AgentPageShell } from "@/components/agent/AgentPage";
+import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 import BookingMessageThread from "@/components/messaging/BookingMessageThread";
 import { useCurrency } from "@/hooks/useCurrency";
 import Loader from "@/components/ui/Loader";
@@ -132,9 +132,9 @@ function Pill({ status, children }: { status?: string; children: React.ReactNode
 
 function InfoRow({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dash-border py-3 last:border-b-0">
-      <span className="text-sm text-dash-muted">{label}</span>
-      <span className="text-sm font-bold text-dash-text">{value ?? "-"}</span>
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E5EFE9] py-2.5 last:border-b-0">
+      <span className="text-sm text-[#647B6E]">{label}</span>
+      <span className="text-sm font-semibold text-[#123024]">{value ?? "-"}</span>
     </div>
   );
 }
@@ -308,17 +308,17 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
   if (loading) {
     return (
-      <AgentPageShell className="flex min-h-[60vh] items-center justify-center">
+      <SupplierPageShell className="flex min-h-[60vh] items-center justify-center">
         <div className="flex items-center gap-2 text-sm text-dash-muted">
           <Loader label="Loading booking..." />
         </div>
-      </AgentPageShell>
+      </SupplierPageShell>
     );
   }
 
   if (error || !booking) {
     return (
-      <AgentPageShell>
+      <SupplierPageShell>
         <Link href="/agent/bookings" className="flex items-center gap-2 text-sm font-bold text-dash-muted hover:text-dash-brand">
           <ArrowLeft size={15} /> Back to Bookings
         </Link>
@@ -326,7 +326,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           <p className="font-bold text-rose-700">{error || "Booking not found."}</p>
           <button type="button" onClick={() => setRefreshKey((value) => value + 1)} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-rose-700 shadow-sm ring-1 ring-rose-200 hover:bg-rose-100"><RefreshCw size={14} />Retry</button>
         </div>
-      </AgentPageShell>
+      </SupplierPageShell>
     );
   }
 
@@ -341,8 +341,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const freeCancellationEligible = booking.cancellation_eligibility?.is_free_cancellation_eligible === true;
 
   return (
-    <AgentPageShell>
-      <AgentPageHeader
+    <SupplierPageShell>
+      <SupplierPageHeader
         title={booking.tour_name || "Tour booking"}
         description="Review traveller details, payment status and every booking update from one workspace."
         icon={FileText}
@@ -385,7 +385,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             )}
           </div>
         </div>
-      </AgentPageHeader>
+      </SupplierPageHeader>
 
       {invoiceError && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{invoiceError}</div>}
       {paymentBanner && (
@@ -403,11 +403,11 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">The free-cancellation period has ended. Please contact Tourvaa Support for cancellation assistance or a travel-date change.</div>
       )}
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+      <div className="mt-5 grid gap-3 lg:grid-cols-2">
         {/* Booking Info */}
-        <div className="order-1 rounded-xl border border-dash-border bg-white p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 font-black text-dash-text">
-            <CalendarCheck size={18} className="text-blue-600" /> Booking Information
+        <div className="order-1 rounded-2xl border border-[#DCEBE2] bg-white p-4 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)]">
+          <h2 className="flex items-center gap-2 text-base font-black text-[#123024]">
+            <CalendarCheck size={16} className="text-[#16833A]" /> Booking Information
           </h2>
           <div className="mt-4">
             <InfoRow label="Booking Code" value={booking.booking_code} />
@@ -426,8 +426,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
         {/* Customer & Payment Info */}
         <div className="contents">
-          <div className="order-3 rounded-xl border border-dash-border bg-white p-5 shadow-sm">
-            <h2 className="flex items-center gap-2 text-base font-black text-dash-text"><User size={18} className="text-blue-600" /> Customer</h2>
+          <div className="order-3 rounded-2xl border border-[#DCEBE2] bg-white p-4 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)]">
+            <h2 className="flex items-center gap-2 text-base font-black text-[#123024]"><User size={16} className="text-[#16833A]" /> Customer</h2>
             <div className="mt-4">
               <InfoRow label="Name" value={booking.customer_name ?? booking.customer?.name} />
               <InfoRow label="Email" value={booking.customer_email ?? booking.customer?.email} />
@@ -435,8 +435,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
 
-          {booking.agent_payment_summary && <div className="order-2 rounded-xl border border-dash-border bg-white p-5 shadow-sm">
-            <h2 className="flex items-center gap-2 text-base font-black text-dash-text"><CreditCard size={18} className="text-blue-600" /> Agent Payments</h2>
+          {booking.agent_payment_summary && <div className="order-2 rounded-2xl border border-[#DCEBE2] bg-white p-4 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)]">
+            <h2 className="flex items-center gap-2 text-base font-black text-[#123024]"><CreditCard size={16} className="text-[#16833A]" /> Agent Payments</h2>
             <div className="mt-4">
               <InfoRow label="Agent Transaction Type" value={booking.agent_payment_summary.transaction_type} />
               {booking.agent_payment_summary.is_reserved ? <>
@@ -460,8 +460,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>}
 
-          {(booking.payments?.length ?? 0) > 0 && <div className="order-2 rounded-xl border border-dash-border bg-white p-5 shadow-sm">
-            <h2 className="flex items-center gap-2 text-base font-black text-dash-text"><CreditCard size={18} className="text-blue-600" /> Payment References</h2>
+          {(booking.payments?.length ?? 0) > 0 && <div className="order-2 rounded-2xl border border-[#DCEBE2] bg-white p-4 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)]">
+            <h2 className="flex items-center gap-2 text-base font-black text-[#123024]"><CreditCard size={16} className="text-[#16833A]" /> Payment References</h2>
             <div className="mt-4">
               {booking.payments!.map((payment) => (
                 <div key={payment.id} className="border-b border-dash-border py-3 first:pt-0 last:border-b-0 last:pb-0">
@@ -483,13 +483,13 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
       {/* Travellers */}
       {travellers.length > 0 && (
-        <div className="order-5 rounded-xl border border-dash-border bg-white p-5 shadow-sm lg:col-span-2">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-black text-dash-text"><User size={18} className="text-blue-600" /> Travellers ({travellers.length})</h2>
+        <div className="order-5 rounded-2xl border border-[#DCEBE2] bg-white p-4 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)] lg:col-span-2">
+          <h2 className="mb-4 flex items-center gap-2 text-base font-black text-[#123024]"><User size={16} className="text-[#16833A]" /> Travellers ({travellers.length})</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {travellers.map((traveller, index) => (
-              <div key={traveller.id ?? index} className="rounded-xl border border-dash-border p-3">
-                <p className="font-semibold text-dash-text">{traveller.name ?? traveller.full_name ?? `Traveller ${index + 1}`}</p>
-                <div className="mt-1 flex flex-wrap gap-3 text-xs text-dash-muted">
+              <div key={traveller.id ?? index} className="rounded-xl border border-[#E5EFE9] bg-[#FBFDFC] p-3">
+                <p className="font-semibold text-[#123024]">{traveller.name ?? traveller.full_name ?? `Traveller ${index + 1}`}</p>
+                <div className="mt-1 flex flex-wrap gap-3 text-xs text-[#647B6E]">
                   <span className="capitalize">Type: {traveller.traveller_type ?? "adult"}</span>
                   {traveller.age != null && <span>Age: {traveller.age}</span>}
                   {traveller.nationality && <span>Nationality: {traveller.nationality}</span>}
@@ -502,8 +502,8 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
       )}
 
       {booking.status_history && booking.status_history.length > 0 && (
-        <div className="order-4 rounded-xl border border-dash-border bg-white p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 text-base font-black text-dash-text"><Clock size={18} className="text-blue-600" /> Status Timeline</h2>
+        <div className="order-4 rounded-2xl border border-[#DCEBE2] bg-white p-4 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)]">
+          <h2 className="flex items-center gap-2 text-base font-black text-[#123024]"><Clock size={16} className="text-[#16833A]" /> Status Timeline</h2>
           <div className="mt-4 space-y-3">
             {[...booking.status_history].reverse().map((entry) => (
               <div key={entry.id} className="flex gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
@@ -567,6 +567,6 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           }}
         />
       )}
-    </AgentPageShell>
+    </SupplierPageShell>
   );
 }

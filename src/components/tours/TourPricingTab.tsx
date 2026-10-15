@@ -36,10 +36,10 @@ function withMarkup(price: number | null | undefined, markupPercent: number | nu
 
 const money = (value: number) => Math.round(value * 100) / 100;
 
-/** Mirrors the booking price stages: supplier offer -> supplier commission
- * -> markup -> Tourvaa offer. A supplier discount changes the price paid to
- * Tourvaa; commission then changes the supplier payout. Keeping these stages
- * separate prevents the profit preview from silently dropping commission. */
+/** Mirrors the Admin publishable-price view: supplier offer -> supplier
+ * commission -> markup -> Tourvaa offer. The customer offer still applies to
+ * the storefront price, while its displayed profit deduction is the same
+ * percentage of Tourvaa's gross profit (the agreed commercial rule). */
 function markupFinancials(
   supplierListPrice: number,
   supplierDiscountPercent: number,
@@ -54,8 +54,11 @@ function markupFinancials(
   const customerPrice = money(storefrontPrice * (1 - tourvaaDiscountPercent / 100));
   const markupAmount = money(storefrontPrice - supplierPriceToTourvaa);
   const commissionAmount = money(supplierPriceToTourvaa - supplierPayout);
-  const tourvaaDiscountAmount = money(storefrontPrice - customerPrice);
   const grossProfit = money(markupAmount + commissionAmount);
+  // Do not subtract the customer-price reduction from the profit column.
+  // Example: $243 gross profit with a 15% Tourvaa offer deducts $36.45,
+  // leaving $206.55. The storefront price remains discounted separately.
+  const tourvaaDiscountAmount = money(grossProfit * (tourvaaDiscountPercent / 100));
   const netProfit = money(grossProfit - tourvaaDiscountAmount);
   return {
     supplierPriceToTourvaa,

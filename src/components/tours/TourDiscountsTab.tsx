@@ -18,6 +18,7 @@ import {
   LuEye as Eye,
   LuEyeOff as EyeOff,
   LuPower as Power,
+  LuCircleAlert as AlertCircle,
 } from "react-icons/lu";
 import { TourDiscount, DiscountHistoryEntry, getDiscounts, createDiscount, updateDiscount, amendDiscount, deactivateDiscount, getDiscountHistory, getPricing } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
@@ -51,6 +52,12 @@ function dateRangesOverlap(
   const start = (value?: string | null) => value ? new Date(value).getTime() : Number.NEGATIVE_INFINITY;
   const end = (value?: string | null) => value ? new Date(value).getTime() : Number.POSITIVE_INFINITY;
   return start(firstStart) <= end(secondEnd) && start(secondStart) <= end(firstEnd);
+}
+
+function dateIsInsideDiscount(date: string, discount: TourDiscount) {
+  const start = discount.start_date?.slice(0, 10);
+  const end = discount.end_date?.slice(0, 10);
+  return (!start || date >= start) && (!end || date <= end);
 }
 
 function discountedValue(item: TourDiscount, basePrice: number): number | null {
@@ -244,7 +251,10 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
     ? { solidBtn: "bg-[#16833A] hover:bg-[#117331] shadow-emerald-100", ring: "border-[#16833A]", chip: "bg-emerald-50 text-emerald-700" }
     : { solidBtn: "bg-dash-brand hover:bg-dash-brand-hover shadow-blue-100", ring: "border-dash-brand", chip: "bg-[#EDF5FF] text-dash-brand-hover" };
 
-  const overlappingDiscount = editing?.status === "active"
+  // Blank dates represent an open-ended offer. Do not report an overlap while
+  // the editor is empty; re-check immediately when either date is selected.
+  const hasSelectedDateBoundary = Boolean(editing?.start_date || editing?.end_date);
+  const overlappingDiscount = hasSelectedDateBoundary && editing?.status === "active"
     ? items.find((item) => (
       item.id !== editing.id
       && item.status === "active"
@@ -255,24 +265,21 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
       && dateRangesOverlap(editing.start_date, editing.end_date, item.start_date, item.end_date)
     ))
     : undefined;
+  const blockingDiscounts = items.filter((item) => (
+    item.id !== editing?.id
+    && item.status === "active"
+    && item.discount_scope === editing?.discount_scope
+    && (isSupplier ? !isTourvaaOwnedDiscount(item) : isTourvaaOwnedDiscount(item))
+  ));
+  const blockedDiscountReason = useCallback((date: string) => {
+    const blockingDiscount = blockingDiscounts.find((item) => dateIsInsideDiscount(date, item));
+    return blockingDiscount
+      ? `Blocked by active discount: ${blockingDiscount.discount_name}`
+      : undefined;
+  }, [blockingDiscounts]);
   const overlapMessage = overlappingDiscount
     ? `These dates overlap the active ${isSupplier ? "supplier" : "Tourvaa"} discount “${overlappingDiscount.discount_name}” (${formatSchedule(overlappingDiscount.start_date, "Immediate")} to ${formatSchedule(overlappingDiscount.end_date, "no expiry")}). Choose a different date range.`
     : "";
-
-  useEffect(() => {
-    if (!editing) return;
-    setErrors((previous) => {
-      if (overlapMessage) {
-        return previous.start_date === overlapMessage ? previous : { ...previous, start_date: overlapMessage };
-      }
-      if (previous.start_date?.startsWith("These dates overlap the active")) {
-        const next = { ...previous };
-        delete next.start_date;
-        return next;
-      }
-      return previous;
-    });
-  }, [editing, overlapMessage]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -888,24 +895,38 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
                   onChange={(e) => { setEditing((p) => p ? { ...p, usage_limit: e.target.value ? Number(e.target.value) : null } : p); clearError("usage_limit"); }}
                   placeholder="Unlimited" className={fieldClass(errors.usage_limit)} />
               </FormField>
-              <FormField name="start_date" label="Starts at" error={errors.start_date} hint="Leave blank to start immediately.">
+              <FormField name="start_date" label="Starts at" error={errors.start_date} hint="Leave blank to start immediately. Red blocked dates belong to an active discount; hover to see its name.">
                 <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
                   <DatePicker value={editing.start_date?.slice(0, 10) ?? ""} maxDate={editing.end_date?.slice(0, 10)}
-                    onChange={(date) => { setEditing((previous) => previous ? { ...previous, start_date: date ? `${date}T${previous.start_date?.slice(11, 16) || "00:00"}` : null } : previous); clearError("end_date"); }} />
+                    disabledDateReason={blockedDiscountReason}
+                    onChange={(date) => { setEditing((previous) => previous ? { ...previous, start_date: date ? `${date}T${previous.start_date?.slice(11, 16) || "00:00"}` : null } : previous); clearError("start_date"); clearError("end_date"); }} />
                   <input aria-label="Start time" type="time" value={editing.start_date?.slice(11, 16) || "00:00"}
                     onChange={(event) => setEditing((previous) => previous?.start_date ? { ...previous, start_date: `${previous.start_date.slice(0, 10)}T${event.target.value}` } : previous)} className={fieldClass()} />
                 </div>
               </FormField>
               <div data-field="end_date">
-                <FormField name="end_date" label="Ends at" error={errors.end_date} hint="Leave blank for no expiry.">
+                <FormField name="end_date" label="Ends at" error={errors.end_date} hint="Leave blank for no expiry. Red blocked dates belong to an active discount; hover to see its name.">
                   <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
                     <DatePicker value={editing.end_date?.slice(0, 10) ?? ""} minDate={editing.start_date?.slice(0, 10)}
-                      onChange={(date) => { setEditing((previous) => previous ? { ...previous, end_date: date ? `${date}T${previous.end_date?.slice(11, 16) || "23:59"}` : null } : previous); clearError("end_date"); }} />
+                      disabledDateReason={blockedDiscountReason}
+                      onChange={(date) => { setEditing((previous) => previous ? { ...previous, end_date: date ? `${date}T${previous.end_date?.slice(11, 16) || "23:59"}` : null } : previous); clearError("start_date"); clearError("end_date"); }} />
                     <input aria-label="End time" type="time" value={editing.end_date?.slice(11, 16) || "23:59"}
                       onChange={(event) => setEditing((previous) => previous?.end_date ? { ...previous, end_date: `${previous.end_date.slice(0, 10)}T${event.target.value}` } : previous)} className={fieldClass(errors.end_date)} />
                   </div>
                 </FormField>
               </div>
+              {overlapMessage && (
+                <div className="md:col-span-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 text-sm text-red-800 shadow-sm" role="alert" aria-live="polite">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle size={19} className="mt-0.5 shrink-0 text-red-600" aria-hidden="true" />
+                    <div>
+                      <p className="font-black text-red-800">Discount dates conflict</p>
+                      <p className="mt-1 font-semibold leading-5">{overlapMessage}</p>
+                      <p className="mt-1.5 text-xs font-medium text-red-700">Update the start or end date to enable Save Discount.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
               <label>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
                 <select value={editing.status} onChange={(e) => setEditing((p) => p ? { ...p, status: e.target.value } : p)}
@@ -917,7 +938,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
             </div>
             <div className="mt-6 flex justify-end gap-3 border-t border-dash-border pt-4">
               <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg">Cancel</button>
-              <button type="submit" disabled={saving} className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 disabled:opacity-60 ${accent.solidBtn}`}>
+              <button type="submit" disabled={saving || Boolean(overlapMessage)} title={overlapMessage ? "Choose a non-overlapping date range to save this discount." : undefined} className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 disabled:opacity-60 ${accent.solidBtn}`}>
                 <Save size={14} /> {saving ? "Saving..." : editing.id ? "Save Changes" : "Save Discount"}
               </button>
             </div>

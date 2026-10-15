@@ -10,7 +10,6 @@ import DatePicker from "@/components/ui/DatePicker";
 import { SupplierMetric, SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/useToast";
-import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 
 type Booking = {
   id: number;
@@ -21,8 +20,10 @@ type Booking = {
   travel_date?: string;
   num_travellers?: number;
   total_pax?: number;
+  total_travellers?: number;
   booking_status: string;
   payment_status?: string;
+  supplier_payment_summary?: { payment_status?: string } | null;
   supplier_acceptance_status?: string;
   cancellation_source?: string | null;
   amount_pending?: string | number;
@@ -63,7 +64,12 @@ function supplierBookingStatus(booking: Booking) {
   if (booking.booking_status === "cancelled") {
     return booking.cancellation_source === "supplier" ? "Cancelled by Supplier" : "Cancelled by Tourvaa";
   }
-  return bookingStatusLabel(booking.booking_status, "supplier");
+  const status = (booking.booking_status || "").toLowerCase();
+  if (["confirmed", "ready_to_travel", "upcoming", "postponed", "supplier_accepted"].includes(status)) return "Confirmed";
+  if (status === "ongoing") return "Ongoing";
+  if (status === "completed") return "Completed";
+  if (status === "declined") return "Declined";
+  return status ? status.replaceAll("_", " ") : "-";
 }
 
 function statusColors(s: string) {
@@ -172,9 +178,12 @@ export default function SupplierBookingsPage() {
     { key: "booking_code", header: "Booking", className: "font-mono text-xs text-dash-muted", render: (b) => b.booking_code },
     { key: "tour", header: "Tour", className: "max-w-[200px]", render: (b) => <p className="truncate font-semibold text-dash-text">{b.tour_name ?? b.tour_title ?? "-"}</p> },
     { key: "travel_date", header: "Travel Date", className: "whitespace-nowrap text-dash-muted", render: (b) => b.tour_date ?? b.travel_date ?? "-" },
-    { key: "travellers", header: "Travellers", className: "text-center text-dash-muted", render: (b) => b.num_travellers ?? b.total_pax ?? "-" },
+    { key: "travellers", header: "Travellers", className: "text-center text-dash-muted", render: (b) => b.total_travellers ?? b.num_travellers ?? b.total_pax ?? "-" },
     { key: "status", header: "Booking Status", render: (b) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(b.booking_status)}`}>{supplierBookingStatus(b)}</span> },
-    { key: "payment", header: "Supplier Payment Status", render: (b) => b.payment_status ? <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(b.payment_status)}`}>{b.payment_status}</span> : <span className="text-xs text-dash-subtle">-</span> },
+    { key: "payment", header: "Supplier Payment Status", render: (b) => {
+      const status = b.supplier_payment_summary?.payment_status;
+      return status ? <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(status)}`}>{status.replaceAll("_", " ")}</span> : <span className="text-xs text-dash-subtle">-</span>;
+    } },
     {
       key: "due_date",
       header: "Due Date",

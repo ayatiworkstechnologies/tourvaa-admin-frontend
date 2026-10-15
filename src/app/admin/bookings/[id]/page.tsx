@@ -374,7 +374,6 @@ export default function BookingDetailPage() {
   const [showMsgModal, setShowMsgModal] = useState(false);
   const [commMessage, setCommMessage] = useState("");
   const [commSubject, setCommSubject] = useState("");
-  const [commVisibility, setCommVisibility] = useState<"internal" | "customer" | "supplier" | "agent" | "all">("internal");
   const [sendingComm, setSendingComm] = useState(false);
 
   const [fetchingLink, setFetchingLink] = useState(false);
@@ -499,14 +498,15 @@ export default function BookingDetailPage() {
       await api.post(`/bookings/${params.id}/communications`, {
         subject: commSubject || "Admin Note",
         message: commMessage,
-        visibility: commVisibility,
+        // Partner replies belong to their Portal Messages thread. This legacy
+        // endpoint is retained only for internal booking notes.
+        visibility: "internal",
         message_type: "admin_message",
       });
-      setActionMsg(commVisibility === "internal" ? "Internal note logged successfully" : `Communication sent to ${commVisibility === "all" ? "all booking parties" : `the ${commVisibility}`} successfully`);
+      setActionMsg("Internal note logged successfully");
       setShowMsgModal(false);
       setCommMessage("");
       setCommSubject("");
-      setCommVisibility("internal");
       await fetchBooking();
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
@@ -543,6 +543,14 @@ export default function BookingDetailPage() {
   const extensionItems = booking?.extensions || [];
   const travellers = booking?.travellers || [];
   const communications = booking?.communications || [];
+  // Portal conversations are rendered above through BookingConversation.  Keep
+  // this legacy collection for administrator-only notes, and hide historical
+  // portal-message mirrors that may have been created before that duplication
+  // was removed from the API service.
+  const internalCommunications = communications.filter(
+    (communication) =>
+      communication.visibility === "internal" && communication.message_type !== "portal_message",
+  );
 
   const hasFinancialBreakdown = booking?.final_amount != null;
   const latestPayment = [...(booking?.payments || [])].sort((a, b) => b.id - a.id)[0];
@@ -931,7 +939,7 @@ export default function BookingDetailPage() {
                 { id: "overview", label: "Overview & Itinerary", icon: Compass },
                 { id: "financials", label: "Financials & Accounting", icon: CreditCard },
                 { id: "operations", label: "Audit & Status History", icon: Clock },
-                { id: "communications", label: "Notes & Messages", icon: MessageSquare, count: communications.length },
+                { id: "communications", label: "Notes & Messages", icon: MessageSquare },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -948,11 +956,6 @@ export default function BookingDetailPage() {
                   >
                     <Icon size={16} />
                     <span>{tab.label}</span>
-                    {tab.count !== undefined && tab.count > 0 && (
-                      <span className="rounded-full bg-dash-bg border border-dash-border-soft px-2 py-0.5 text-xs font-bold text-dash-muted">
-                        {tab.count}
-                      </span>
-                    )}
                   </button>
                 );
               })}
@@ -1482,6 +1485,43 @@ export default function BookingDetailPage() {
                 className="relative z-10 isolate overflow-hidden"
               >
                 <AdminBookingConversationHistory bookingId={booking.id} />
+                <section className="mt-5 border-t border-dash-border-soft pt-5">
+                  <div className="mb-3 flex items-start gap-2">
+                    <MessageSquare className="mt-0.5 h-4 w-4 text-dash-accent" />
+                    <div>
+                      <h3 className="text-sm font-semibold text-dash-text">Internal Communications</h3>
+                      <p className="text-xs text-dash-muted">Administrator-only notes for this booking</p>
+                    </div>
+                  </div>
+                  {internalCommunications.length ? (
+                    <div className="space-y-3">
+                      {internalCommunications.map((communication) => (
+                        <div
+                          key={communication.id}
+                          className="rounded-xl border border-dash-border-soft bg-dash-bg/40 px-4 py-3"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-dash-text">
+                              {communication.subject || "Internal note"}
+                            </p>
+                            <span className="text-xs text-dash-muted">
+                              {communication.created_at
+                                ? new Date(communication.created_at).toLocaleString()
+                                : "-"}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm text-dash-muted whitespace-pre-wrap">
+                            {communication.message}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="rounded-xl border border-dashed border-dash-border-soft bg-dash-bg/30 px-4 py-5 text-center text-sm text-dash-muted">
+                      No internal communications yet.
+                    </p>
+                  )}
+                </section>
               </DetailPanel>
 
               {/* Notes Grid */}
@@ -1715,7 +1755,7 @@ export default function BookingDetailPage() {
                     <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--portal-soft,#EDF2FA)] text-dash-brand">
                       <MessageSquare size={16} />
                     </span>
-                    <h3 className="text-base font-bold text-dash-text">Log Note or Communication</h3>
+                    <h3 className="text-base font-bold text-dash-text">Add Internal Note</h3>
                   </div>
                   <button
                     type="button"
@@ -1727,25 +1767,9 @@ export default function BookingDetailPage() {
                 </div>
 
                 <form onSubmit={sendCommunication} className="mt-4 space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-dash-muted mb-1.5">
-                      Send to
-                    </label>
-                    <select
-                      value={commVisibility}
-                      onChange={(e) => setCommVisibility(e.target.value as typeof commVisibility)}
-                      className="w-full rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
-                    >
-                      <option value="internal">Internal note (Admin only)</option>
-                      <option value="customer">Customer (send email)</option>
-                      <option value="supplier">Supplier (send email)</option>
-                      <option value="agent">Agent (send email)</option>
-                      <option value="all">All booking parties (send email)</option>
-                    </select>
-                    <p className="mt-1.5 text-xs text-dash-muted">
-                      {commVisibility === "internal" ? "This note is visible only in the Admin Portal." : "This communication is emailed to the selected booking recipient and recorded below."}
-                    </p>
-                  </div>
+                  <p className="rounded-xl border border-dash-border-soft bg-dash-bg px-3.5 py-3 text-xs text-dash-muted">
+                    This note is visible only in the Admin Portal. Reply to a Supplier, Agent, or Customer from their dedicated Portal Messages column.
+                  </p>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-dash-muted mb-1.5">
                       Subject
