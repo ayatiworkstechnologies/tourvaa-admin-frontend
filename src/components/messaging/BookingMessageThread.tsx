@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuMail as Mail, LuSend as Send, LuTrash2 as Trash2, LuWifiOff as WifiOff } from "react-icons/lu";
+import { LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuMail as Mail, LuSend as Send, LuTrash2 as Trash2, LuWifi as Wifi, LuWifiOff as WifiOff } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
 import PresenceBadge from "@/components/messaging/PresenceBadge";
 
@@ -245,11 +245,15 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
         <div className="flex items-center justify-between gap-3">
           <p className="font-bold text-dash-text">Message Tourvaa Support</p>
           <div className="flex items-center gap-2">
-            {!isOnline && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700"><WifiOff size={13} /> You are offline</span>}
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold ${isOnline ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
+              {isOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
+              {isOnline ? "Online" : "Offline"}
+            </span>
             <PresenceBadge online={thread?.admin_online ?? false} subject="Tourvaa Admin" />
           </div>
         </div>
         <p className="mt-0.5 text-xs text-dash-subtle">Ask about this booking directly. Drafts are saved on this device.</p>
+        {!isOnline && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-900">Messages written now are saved on this device and queued until you reconnect.</p>}
         {adminTyping && <p className="mt-1 text-xs font-medium text-dash-brand">Tourvaa Admin is typing…</p>}
       </div>
 
@@ -331,9 +335,10 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
         <button
           type="submit"
           disabled={sending || !draft.trim()}
-          className="flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60"
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition active:translate-y-px disabled:opacity-60 ${isOnline ? "bg-dash-brand hover:bg-dash-brand-hover" : "bg-amber-600 hover:bg-amber-700"}`}
         >
           {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+          <span className="sr-only">{isOnline ? "Send message" : "Queue message"}</span>
         </button>
       </form>
     </div>
