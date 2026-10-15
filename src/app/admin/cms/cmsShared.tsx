@@ -2276,6 +2276,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
 
   const description = TAB_DESCRIPTIONS[tab.key] ?? "Manage this website content section.";
   const visibleFieldCount = tab.formFields.length;
+  const stackHeaderActions = tab.key === "country-pages";
 
   return (
     <div className="space-y-5">
@@ -2291,7 +2292,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
             <p className="mt-1 text-sm text-dash-muted">{description}</p>
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className={`flex shrink-0 gap-2 ${stackHeaderActions ? "flex-col items-stretch" : "flex-wrap items-center"}`}>
             {requiresExistingDiscount && (
               <Link
                 href="/admin/discounts"
@@ -2305,14 +2306,14 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
               type="button"
               onClick={() => void fetchItems()}
               disabled={loading}
-              className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg disabled:opacity-60"
+              className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg disabled:opacity-60 ${stackHeaderActions ? "w-full justify-center" : ""}`}
             >
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh
             </button>
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-xl bg-[#0284C7] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0369A1] transition shadow-xs"
+              className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-[#0284C7] px-4 py-2.5 text-sm font-bold text-white shadow-xs transition hover:bg-[#0369A1] ${stackHeaderActions ? "w-full justify-center" : ""}`}
             >
               <Plus size={15} /> Add {tab.label}
             </button>
