@@ -251,7 +251,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         } else {
           return;
         }
-        setPaymentBanner({ type: "success", message: `${BOOKING_AWAITING_CONFIRMATION_LABEL}. Your customer's booking and payment have been successfully submitted. Please wait for Tourvaa confirmation. We will notify you once the booking is confirmed.` });
+        setPaymentBanner({ type: "success", message: "Payment authorized — it will be charged only after supplier acceptance. The hold is released within four days if the supplier does not accept." });
         setRefreshKey((value) => value + 1);
       } catch {
         setPaymentBanner({ type: "error", message: "Payment return could not be confirmed. Please retry or contact support before paying again." });

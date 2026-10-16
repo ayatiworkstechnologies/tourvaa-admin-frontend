@@ -10,7 +10,8 @@ export type MessagingSocketEvent =
   | { type: "booking_message_deleted"; conversation_id: number; message: BookingMessage }
   | { type: "typing"; scope: "support" | "booking"; conversation_id: number; sender_role: string; recipient_role?: string; is_typing: boolean }
   | { type: "participant_presence"; user_id: number; online: boolean }
-  | { type: "admin_presence"; online: boolean };
+  | { type: "admin_presence"; online: boolean }
+  | { type: "new_notification"; notification_id: number };
 
 const INITIAL_RETRY_MS = 2000;
 const MAX_RETRY_MS = 30000;
@@ -97,7 +98,8 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
             data.type === "booking_message_deleted" ||
             data.type === "typing" ||
             data.type === "participant_presence" ||
-            data.type === "admin_presence"
+            data.type === "admin_presence" ||
+            data.type === "new_notification"
           ) {
             onMessageRef.current(data);
           }

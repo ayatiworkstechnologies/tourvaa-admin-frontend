@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { API_DATA_REFRESH_EVENT, API_DATA_UPDATED_EVENT } from "@/lib/api/events";
 import { requestNotificationRefresh } from "@/lib/notifications/events";
+import { useMessagingSocket, type MessagingSocketEvent } from "@/hooks/useMessagingSocket";
 
 /**
  * Announces successful writes to the live portal without navigating or
@@ -11,6 +12,13 @@ import { requestNotificationRefresh } from "@/lib/notifications/events";
  * Notification badges are shared portal chrome, so refresh them centrally.
  */
 export default function PortalDataRefresh() {
+  useMessagingSocket((event: MessagingSocketEvent) => {
+    if (event.type === "new_notification" || event.type === "new_message" || event.type === "new_booking_message") {
+      requestNotificationRefresh();
+      window.dispatchEvent(new CustomEvent(API_DATA_UPDATED_EVENT));
+    }
+  });
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const refresh = () => {

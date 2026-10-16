@@ -12,7 +12,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { formatCurrency } from "@/lib/utils/currency";
 import { StripeBadge, PayPalLogo } from "@/components/common/PaymentLogos";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
-import { bookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_RECEIVED_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE } from "@/lib/constants/bookingStatus";
+import { bookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE } from "@/lib/constants/bookingStatus";
 import Loader from "@/components/ui/Loader";
 
 type Traveller = {
@@ -416,13 +416,13 @@ export default function CustomerBookingDetailPage() {
 
     if (payment === "success") {
       const sessionId = searchParams.get("session_id");
-      setPaymentBanner({ type: "info", msg: "Confirming payment..." });
+      setPaymentBanner({ type: "info", msg: "Authorizing payment hold..." });
       api.post("/payments/stripe/confirm-return", {
         booking_id: Number(params.id),
         session_id: sessionId || undefined,
       })
         .then(() => {
-          setPaymentBanner({ type: "success", msg: BOOKING_PAYMENT_RECEIVED_MESSAGE });
+          setPaymentBanner({ type: "success", msg: "Payment authorized. It will be charged only after supplier acceptance; otherwise the hold is released within four days." });
           void load();
         })
         .catch(() => {
@@ -442,7 +442,7 @@ export default function CustomerBookingDetailPage() {
         sessionStorage.removeItem(paypalKey);
       });
     } else if (payment === "paypal_approved" && token) {
-      // Capture the PayPal order
+      // Authorize the PayPal order; supplier acceptance captures the hold.
       const pidKey = `paypal_pid_${params.id}`;
       const savedPid = sessionStorage.getItem(pidKey);
       if (savedPid) {
@@ -450,11 +450,11 @@ export default function CustomerBookingDetailPage() {
         api.post("/payments/paypal/capture", { order_id: token, payment_id: parseInt(savedPid) })
           .then(() => {
             sessionStorage.removeItem(pidKey);
-            setPaymentBanner({ type: "success", msg: BOOKING_PAYMENT_RECEIVED_MESSAGE });
+            setPaymentBanner({ type: "success", msg: "Payment authorized. It will be charged only after supplier acceptance; otherwise the hold is released within four days." });
             void load();
           })
           .catch(() => {
-            setPaymentBanner({ type: "error", msg: "PayPal capture failed. Please contact support." });
+            setPaymentBanner({ type: "error", msg: "PayPal authorization failed. Please contact support." });
           })
           .finally(() => setCapturingPayPal(false));
       } else {

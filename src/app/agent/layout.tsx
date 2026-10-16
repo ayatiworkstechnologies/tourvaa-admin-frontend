@@ -23,7 +23,7 @@ const NAV = [
   { href: "/agent/bookings", icon: CalendarCheck, label: "Bookings", section: "Sales Workspace" },
   { href: "/agent/customers", icon: Users, label: "My Customers", section: "Sales Workspace" },
   { href: "/agent/invoices", icon: ReceiptText, label: "Invoices", section: "Finance" },
-  { href: "/agent/payouts", icon: CircleDollarSign, label: "Payouts", section: "Finance" },
+  { href: "/agent/payouts", icon: CircleDollarSign, label: "Earnings", section: "Finance" },
   { href: "/agent/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
   { href: "/agent/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
@@ -37,7 +37,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/agent/bookings": "Bookings",
   "/agent/customers": "My Customers",
   "/agent/invoices": "Invoices",
-  "/agent/payouts": "Payouts",
+  "/agent/payouts": "Earnings",
   "/agent/messages": "Messages",
   "/agent/profile": "My Profile",
 };

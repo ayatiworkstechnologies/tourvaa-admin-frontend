@@ -1,6 +1,6 @@
-// Affiliate is intentionally hidden, not removed. Keep the implementation and
-// data intact so the programme can be restored without a migration.
-export const AFFILIATE_ENABLED = false;
+// The affiliate programme is live. This flag controls the public portal,
+// referral tracking, and affiliate-specific administration surfaces.
+export const AFFILIATE_ENABLED = true;
 
 export function isAffiliatePath(pathname: string) {
   return (

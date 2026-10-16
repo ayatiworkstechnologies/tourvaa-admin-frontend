@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuMail as Mail, LuSend as Send, LuTrash2 as Trash2, LuWifi as Wifi, LuWifiOff as WifiOff } from "react-icons/lu";
+import { LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuMail as Mail, LuSend as Send, LuTrash2 as Trash2, LuWifiOff as WifiOff } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
 import PresenceBadge from "@/components/messaging/PresenceBadge";
 
@@ -245,10 +245,7 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
         <div className="flex items-center justify-between gap-3">
           <p className="font-bold text-dash-text">Message Tourvaa Support</p>
           <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold ${isOnline ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
-              {isOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
-              {isOnline ? "Online" : "Offline"}
-            </span>
+            {!isOnline && <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-800"><WifiOff size={13} />Device offline</span>}
             <PresenceBadge online={thread?.admin_online ?? false} subject="Tourvaa Admin" />
           </div>
         </div>

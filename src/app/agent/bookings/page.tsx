@@ -18,6 +18,7 @@ type Booking = {
   payment_status: string;
   payment_due_date?: string | null;
   payment_type?: string;
+  agent_payment_method?: string | null;
   amount_paid?: string | number;
   amount_pending?: string | number;
   final_amount?: string | number;
@@ -28,7 +29,7 @@ type Booking = {
 // supplier-allocation states are operational detail and do not belong in the
 // Agent's booking filter.
 const AGENT_BOOKING_FILTERS = [
-  { value: "all", label: "All" },
+  { value: "", label: "All Booking Statuses" },
   { value: "pending_payment", label: "Pending Payment" },
   { value: "pending_credit_approval,credit_approval_pending,pending_supplier_assignment,payment_authorized,pending_supplier_acceptance,supplier_accepted,supplier_reassignment_required", label: "Booking Request Received" },
   { value: "confirmed", label: "Booking Confirmed" },
@@ -36,6 +37,16 @@ const AGENT_BOOKING_FILTERS = [
   { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
   { value: "declined", label: "Declined" },
+];
+
+const AGENT_PAYMENT_FILTERS = [
+  { value: "", label: "All Payment Statuses" },
+  { value: "pending", label: "Pending Payment" },
+  { value: "partial", label: "Deposit Paid" },
+  { value: "paid", label: "Fully Paid" },
+  { value: "failed", label: "Payment Failed" },
+  { value: "refunded", label: "Refunded" },
+  { value: "voided", label: "Voided" },
 ];
 
 function agentBookingStatusLabel(status?: string) {
@@ -48,6 +59,20 @@ function agentBookingStatusLabel(status?: string) {
   if (value === "cancelled") return "Cancelled";
   if (value === "declined") return "Declined";
   return value ? value.replaceAll("_", " ") : "-";
+}
+
+function agentPaymentStatusLabel(status?: string) {
+  const value = (status || "").toLowerCase();
+  if (value === "partial") return "Deposit Paid";
+  if (value === "paid") return "Fully Paid";
+  return value ? value.replaceAll("_", " ") : "-";
+}
+
+function agentBookingMethodLabel(booking: Booking) {
+  if (["pay_later", "credit", "bank_transfer"].includes((booking.agent_payment_method || "").toLowerCase())) return "Reserved";
+  if ((booking.payment_type || "").toLowerCase() === "deposit") return "Deposit";
+  if (["full", "full_payment"].includes((booking.payment_type || "").toLowerCase())) return "Fully Paid";
+  return "-";
 }
 
 function dateText(value?: string | null) {
@@ -79,7 +104,8 @@ export default function AgentBookingsPage() {
     value || value === 0 ? format(value, currency) : "-";
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
@@ -94,7 +120,8 @@ export default function AgentBookingsPage() {
       setError("");
       try {
         const params: Record<string, unknown> = { limit, page };
-        if (statusFilter !== "all") params.booking_status = statusFilter;
+        if (statusFilter) params.booking_status = statusFilter;
+        if (paymentFilter) params.payment_status = paymentFilter;
         const res = await api.get("/bookings", { params });
         if (!active) return;
         setBookings(res.data?.items ?? res.data?.data ?? []);
@@ -111,12 +138,17 @@ export default function AgentBookingsPage() {
     }
     load();
     return () => { active = false; };
-  }, [page, statusFilter, retryKey]);
+  }, [page, statusFilter, paymentFilter, retryKey]);
 
   const totalPages = Math.ceil(total / limit) || 1;
 
   function handleStatus(s: string) {
     setStatusFilter(s);
+    setPage(1);
+  }
+
+  function handlePaymentStatus(status: string) {
+    setPaymentFilter(status);
     setPage(1);
   }
 
@@ -140,7 +172,8 @@ export default function AgentBookingsPage() {
     { key: "tour", header: "Tour", render: (b) => b.tour_name ?? "-", className: "hidden max-w-[180px] truncate text-dash-muted md:table-cell" },
     { key: "date", header: "Date", render: (b) => dateText(b.tour_date), className: "hidden text-dash-muted lg:table-cell" },
     { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{agentBookingStatusLabel(b.booking_status)}</Pill> },
-    { key: "payment", header: "Booking Payment Status", render: (b) => <Pill status={b.payment_status}>{b.payment_status.replaceAll("_", " ")}</Pill>, className: "hidden xl:table-cell" },
+    { key: "payment", header: "Payment Status", render: (b) => <Pill status={b.payment_status}>{agentPaymentStatusLabel(b.payment_status)}</Pill>, className: "hidden xl:table-cell" },
+    { key: "payment_method", header: "Booking Method", render: (b) => agentBookingMethodLabel(b), className: "hidden whitespace-nowrap text-dash-muted xl:table-cell" },
     { key: "paid", header: "Paid", render: (b) => money(b.amount_paid, b.currency), className: "hidden text-right text-dash-muted xl:table-cell" },
     { key: "balance_due", header: "Balance Due", render: (b) => (Number(b.amount_pending || 0) > 0 ? money(b.amount_pending, b.currency) : <span className="text-emerald-700">Paid in full</span>), className: "hidden text-right font-semibold text-amber-700 xl:table-cell" },
     { key: "due_date", header: "Due Date", render: (b) => dateText(b.payment_due_date), className: "hidden text-dash-muted lg:table-cell" },
@@ -165,16 +198,23 @@ export default function AgentBookingsPage() {
       <div className="flex flex-col gap-3 border-b border-[#E7EDF6] p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Filter size={18} className="text-dash-subtle" />
-          <label className="sr-only" htmlFor="agent-booking-status-filter">Booking status</label>
+          <label className="sr-only" htmlFor="agent-booking-status-filter">Booking Status</label>
           <select
             id="agent-booking-status-filter"
             value={statusFilter}
             onChange={(event) => handleStatus(event.target.value)}
             className="rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-blue-50"
           >
-            {AGENT_BOOKING_FILTERS.map(({ value, label }) => (
-              <option key={value} value={value}>{value === "all" ? "All Statuses" : label}</option>
-            ))}
+            {AGENT_BOOKING_FILTERS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+          </select>
+          <label className="sr-only" htmlFor="agent-payment-status-filter">Payment Status</label>
+          <select
+            id="agent-payment-status-filter"
+            value={paymentFilter}
+            onChange={(event) => handlePaymentStatus(event.target.value)}
+            className="rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-blue-50"
+          >
+            {AGENT_PAYMENT_FILTERS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
           </select>
         </div>
         {total > 0 && (

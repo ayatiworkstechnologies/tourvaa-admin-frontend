@@ -131,7 +131,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/agent/bookings/[id]": { title: "Agent Booking Details", description: "Review travellers, pricing, payment, supplier acceptance, and booking execution.", index: false },
   "/agent/customers": { title: "Agent Customers", description: "Create and manage customer profiles used for agency tour bookings.", index: false },
   "/agent/invoices": { title: "Agent Invoices", description: "Review and download invoices for bookings created by your agency.", index: false },
-  "/agent/payouts": { title: "Agent Payouts", description: "Review commission payout history and request eligible agent earnings.", index: false },
+  "/agent/payouts": { title: "Agent Earnings", description: "Review commission earnings for each tour booking.", index: false },
   "/agent/messages": { title: "Agent Messages", description: "View agency support conversations and contact the Tourvaa team.", index: false },
   "/agent/profile": { title: "Agent Profile & Verification", description: "Manage agency details, security, required documents, and verification status.", index: false },
 

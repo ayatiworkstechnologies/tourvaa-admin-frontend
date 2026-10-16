@@ -50,6 +50,8 @@ type Booking = {
   customer_name?: string;
   tour_name?: string;
   booking_status: string;
+  payment_status?: string;
+  agent_payment_method?: string | null;
   final_amount?: string | number;
   currency?: string;
 };
@@ -91,6 +93,14 @@ function statusColors(s: string) {
 function humanize(value?: string) {
   if (!value) return "Under review";
   return value.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function paymentMethodLabel(method?: string | null) {
+  const normalized = (method || "").toLowerCase();
+  if (normalized === "deposit") return "Deposit";
+  if (["full", "full_payment", "fully_paid"].includes(normalized)) return "Fully paid";
+  if (["reserve", "reserved", "booking_reserved"].includes(normalized)) return "Reserved";
+  return method ? humanize(method) : "Payment method pending";
 }
 
 export default function AgentDashboardPage() {
@@ -670,10 +680,16 @@ export default function AgentDashboardPage() {
                         <div>
                           <p className="font-semibold text-dash-text">{b.booking_code}</p>
                           <p className="text-xs text-dash-muted">{b.customer_name ?? b.tour_name ?? "-"}</p>
+                          <p className="mt-1 text-xs text-dash-muted">
+                            {paymentMethodLabel(b.agent_payment_method)} · Payment {humanize(b.payment_status || "pending")}
+                          </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusColors(b.booking_status)}`}>
                             {bookingStatusLabel(b.booking_status, "agent")}
+                          </span>
+                          <span className={`hidden rounded-full px-2.5 py-1 text-xs font-bold sm:inline-flex ${statusColors(b.payment_status || "pending")}`}>
+                            {humanize(b.payment_status || "pending")}
                           </span>
                           <Link href={`/agent/bookings/${b.id}`} className="text-xs font-bold text-dash-brand hover:underline">
                             View

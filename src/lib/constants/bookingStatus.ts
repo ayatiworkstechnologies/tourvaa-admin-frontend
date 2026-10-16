@@ -57,3 +57,6 @@ export const BOOKING_PAYMENT_REQUIRED_MESSAGE =
 
 export const BOOKING_PAYMENT_RECEIVED_MESSAGE =
   "Your booking and payment have been successfully submitted. Please wait for Tourvaa to confirm your booking. We will notify you once it is confirmed.";
+
+export const BOOKING_PAYMENT_AUTHORIZED_MESSAGE =
+  "Your payment has been authorized and is not charged yet. We will capture it only after the supplier accepts your tour; otherwise the hold is released within four days.";

@@ -40,9 +40,17 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
   const accept = isVideoKind ? VIDEO_ACCEPT : IMAGE_AND_PDF_ACCEPT;
   const formatLabel = isVideoKind ? VIDEO_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
   const maxSizeLabel = isVideoKind ? "50MB" : "10MB";
+  const maxBytes = (isVideoKind ? 50 : 10) * 1024 * 1024;
+  const guidance = isVideoKind
+    ? "Recommended 16:9 (1920×1080); MP4, WebM or MOV; maximum 50MB."
+    : "Images: recommended 16:9 (minimum 1200×675); images/PDF maximum 10MB.";
 
   const upload = async (file: File | null) => {
     if (!file) return;
+    if (file.size > maxBytes) {
+      setError(`${isVideoKind ? "Video" : "File"} must be ${maxSizeLabel} or smaller.`);
+      return;
+    }
     setUploading(true);
     setError("");
     try {
@@ -116,6 +124,7 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
               </span>
               <span className="text-xs font-bold text-dash-body">Click to upload or drag & drop</span>
               <span className="text-[11px] text-dash-subtle">{formatLabel} - up to {maxSizeLabel}</span>
+              <span className="text-[11px] leading-4 text-dash-subtle">{guidance}</span>
             </>
           )}
           <input
