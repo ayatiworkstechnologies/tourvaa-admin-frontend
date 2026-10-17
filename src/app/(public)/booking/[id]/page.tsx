@@ -456,13 +456,13 @@ export default function DynamicTourBookingPage() {
   const [agentPaymentMethod, setAgentPaymentMethod] = useState<AgentPaymentMethod>(initialAgentAction === "reserve" ? "pay_later" : "card");
 
   const [gateway, setGateway] = useState<"stripe" | "paypal">("stripe");
-  const [gateways, setGateways] = useState<{ stripe_test: boolean; paypal_test: boolean } | null>(null);
+  const [gateways, setGateways] = useState<{ stripe: boolean; paypal: boolean; stripe_test: boolean; paypal_test: boolean } | null>(null);
   const [pendingBooking, setPendingBooking] = useState<{ id: number; amount_pending: string; currency: string; selected_payment_amount?: string } | null>(null);
   useEffect(() => {
     api.get("/payments/gateways/status").then(({ data }) => {
       setGateways(data.data);
-      if (!data.data.stripe_test && data.data.paypal_test) setGateway("paypal");
-    }).catch(() => setGateways({ stripe_test: false, paypal_test: false }));
+      if (!data.data.stripe && data.data.paypal) setGateway("paypal");
+    }).catch(() => setGateways({ stripe: false, paypal: false, stripe_test: false, paypal_test: false }));
   }, []);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [subscribeNewsletter, setSubscribeNewsletter] = useState(false);
@@ -1193,8 +1193,8 @@ export default function DynamicTourBookingPage() {
     // Agent Reserve Now is an invoice/pay-later flow; only the Pay in Full
     // Today action uses Stripe or PayPal.
     const onlinePayment = !isAgent || agentPaymentMethod === "card";
-    if (onlinePayment && !gateways?.[`${gateway}_test`]) {
-      setPaymentError("Enable this provider with test credentials in Payment Settings first.");
+    if (onlinePayment && !gateways?.[gateway]) {
+      setPaymentError("The selected payment provider is unavailable. Please choose another payment method.");
       return;
     }
     if (pendingBooking) {
@@ -1452,12 +1452,12 @@ export default function DynamicTourBookingPage() {
                 <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-slate-600">
                   <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
                     <CheckCircle size={13} className="text-emerald-600" />
-                    Instant Confirmation
+                    Subject to confirmation
                   </span>
                   <span className="text-slate-300">•</span>
                   <span className="inline-flex items-center gap-1 text-slate-600 font-medium">
                     <ShieldCheck size={13} className="text-pub-secondary" />
-                    100% Guaranteed Departure
+                    Supplier acceptance required
                   </span>
                 </div>
               </div>
@@ -2456,7 +2456,7 @@ export default function DynamicTourBookingPage() {
                         </div>
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 border border-amber-200/80 shadow-2xs">
                           <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                          Test mode
+                          {gateways?.[gateway] ? (gateways[`${gateway}_test`] ? "Test mode" : "Live mode") : "Unavailable"}
                         </span>
                       </div>
 
@@ -2464,7 +2464,7 @@ export default function DynamicTourBookingPage() {
                         {/* Option 1: Stripe (Credit/Debit Card) */}
                         <div
                           onClick={() => {
-                            if (!paymentSubmitting && gateways?.stripe_test) {
+                            if (!paymentSubmitting && gateways?.stripe) {
                               setGateway("stripe");
                             }
                           }}
@@ -2472,7 +2472,7 @@ export default function DynamicTourBookingPage() {
                             gateway === "stripe"
                               ? "border-[#635BFF] bg-white shadow-sm ring-4 ring-[#635BFF]/10"
                               : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-2xs"
-                          } ${!gateways?.stripe_test || paymentSubmitting ? "opacity-60 cursor-not-allowed" : ""}`}
+                          } ${!gateways?.stripe || paymentSubmitting ? "opacity-60 cursor-not-allowed" : ""}`}
                         >
                           <div className="flex items-start sm:items-center gap-3.5">
                             {/* Custom Radio */}
@@ -2511,10 +2511,10 @@ export default function DynamicTourBookingPage() {
                             <div className="pl-1 border-l border-slate-200">
                               {gateways === null ? (
                                 <span className="text-[11px] text-slate-400">Loading...</span>
-                              ) : gateways.stripe_test ? (
+                              ) : gateways.stripe ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
                                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                  Sandbox
+                                  {gateways.stripe_test ? "Test mode" : "Live"}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
@@ -2528,7 +2528,7 @@ export default function DynamicTourBookingPage() {
                         {/* Option 2: PayPal */}
                         <div
                           onClick={() => {
-                            if (!paymentSubmitting && gateways?.paypal_test) {
+                            if (!paymentSubmitting && gateways?.paypal) {
                               setGateway("paypal");
                             }
                           }}
@@ -2536,7 +2536,7 @@ export default function DynamicTourBookingPage() {
                             gateway === "paypal"
                               ? "border-[#0070BA] bg-white shadow-sm ring-4 ring-[#0070BA]/10"
                               : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-2xs"
-                          } ${!gateways?.paypal_test || paymentSubmitting ? "opacity-60 cursor-not-allowed" : ""}`}
+                          } ${!gateways?.paypal || paymentSubmitting ? "opacity-60 cursor-not-allowed" : ""}`}
                         >
                           <div className="flex items-start sm:items-center gap-3.5">
                             {/* Custom Radio */}
@@ -2567,10 +2567,10 @@ export default function DynamicTourBookingPage() {
                             <div className="text-right">
                               {gateways === null ? (
                                 <span className="text-[11px] text-slate-400">Loading...</span>
-                              ) : gateways.paypal_test ? (
+                              ) : gateways.paypal ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
                                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                  Sandbox
+                                  {gateways.paypal_test ? "Sandbox" : "Live"}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
@@ -2593,7 +2593,7 @@ export default function DynamicTourBookingPage() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-xs text-slate-500">
                         <p className="flex items-center gap-1.5">
                           <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
-                          <span>Test mode gateway &bull; No real charge will be applied to your card.</span>
+                          <span>{!gateways?.[gateway] ? "This payment method is currently unavailable." : gateways[`${gateway}_test`] ? "Test mode gateway ? No real charge will be applied." : "You will continue to the selected provider to authorize payment."}</span>
                         </p>
                         {pendingBooking && (
                           <Link
@@ -2696,7 +2696,7 @@ export default function DynamicTourBookingPage() {
                 </h3>
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                   <BadgeCheck size={12} />
-                  Instant Confirmation
+                  Subject to confirmation
                 </span>
               </div>
 
