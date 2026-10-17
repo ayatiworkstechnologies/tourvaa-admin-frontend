@@ -2436,11 +2436,11 @@ export default function DynamicTourBookingPage() {
                           <div className="flex items-center justify-between">
                             <span className="block text-sm font-black text-slate-900">Pay in Full Today</span>
                             <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                              Instant Confirmation
+                              Full payment
                             </span>
                           </div>
                           <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
-                            Pay in full today and confirm your booking.
+                            Pay in full today. Your booking remains subject to supplier acceptance and Tourvaa confirmation.
                           </p>
                         </button>
                       </div>
@@ -2581,6 +2581,13 @@ export default function DynamicTourBookingPage() {
                           </div>
                         </div>
                       </div>
+
+                      {gateway === "stripe" && (
+                        <p className="text-xs leading-relaxed text-slate-500">
+                          By providing your card information at secure checkout, you authorize payment of the amount shown for this booking, subject to Tourvaa&apos;s{" "}
+                          <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 underline hover:text-blue-700">Terms &amp; Conditions</Link>.
+                        </p>
+                      )}
 
                       {/* Helper notice */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-xs text-slate-500">
