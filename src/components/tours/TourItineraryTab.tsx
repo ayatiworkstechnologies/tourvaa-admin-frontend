@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import Loader from "@/components/ui/Loader";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
-import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
+import { sanitizeNumber } from "@/lib/utils/numberInput";
 
 const empty = (): ItineraryDay => ({
   day_number: 1, day_title: "", location_name: "",
@@ -179,6 +179,8 @@ function ItineraryLongDescriptionEditor({
         <div className="space-y-2">
           {/* Main Textarea */}
           <textarea
+            id="long_description"
+            aria-label="Detailed day narrative"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             rows={8}
@@ -274,19 +276,12 @@ Each formatted point automatically generates an individual numbered milestone ca
   );
 }
 
-const ITINERARY_FIELDS: { key: string; label: string; type: "text" | "number" | "time"; required?: boolean; hint?: string; max?: number }[] = [
-  { key: "day_number", label: "Day number", type: "number", required: true, hint: "Which day of the trip this is (1 = first day)." },
-  { key: "day_title", label: "Day title", type: "text", required: true, hint: "A short headline, e.g. Arrival and city walk.", max: 255 },
-  { key: "location_name", label: "Location", type: "text", hint: "Where the group spends the day.", max: 255 },
-  { key: "accommodation", label: "Accommodation", type: "text", hint: "Where they stay that night.", max: 255 },
-  { key: "start_time", label: "Start time", type: "time", hint: "Optional. 24-hour time." },
-  { key: "end_time", label: "End time", type: "time", hint: "Optional. Must be after the start time." },
-  { key: "travel_distance", label: "Travel distance", type: "text", hint: "e.g. 120 km." },
-  { key: "travel_duration", label: "Travel duration", type: "text", hint: "e.g. 2 hours." },
-  { key: "transport_type", label: "Transport type", type: "text", hint: "e.g. Private coach." },
-  { key: "meals_included", label: "Meals included", type: "text", hint: "e.g. Breakfast, Dinner.", max: 150 },
-  { key: "display_order", label: "Display order", type: "number", hint: "Lower numbers show first." },
-];
+const ITINERARY_FIELDS = [
+  { key: "day_title", label: "Day title", required: true, max: 255 },
+  { key: "location_name", label: "Location", required: true, max: 255 },
+  { key: "accommodation", label: "Accommodation", required: false, max: 255 },
+  { key: "meals_included", label: "Meals included", required: false, max: 150 },
+] as const;
 
 export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: string; numberOfDays?: number | null }) {
   const toast = useToast();
@@ -324,10 +319,13 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
       toast.error(`This tour is set to ${duration} day(s) in Basic Details -- remove a day there before adding another.`);
       return;
     }
-    const found = validateItineraryDay(editing, {
+    const found = validateItineraryDay({ ...editing, start_time: undefined, end_time: undefined }, {
       tourDays: duration ?? undefined,
       existingDayNumbers: items.filter((i) => i.id !== editing.id).map((i) => Number(i.day_number)),
     });
+    if (!editing.location_name?.trim()) found.location_name = "Enter the location.";
+    if (!editing.short_description?.trim()) found.short_description = "Enter a short description.";
+    if (!editing.long_description?.trim()) found.long_description = "Enter the detailed day narrative.";
     setErrors(found);
     if (Object.keys(found).length > 0) {
       focusField(Object.keys(found)[0]);
@@ -335,7 +333,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
     }
     setSaving(true);
     try {
-      const payload = { ...editing, day_number: sanitizeNumber(editing.day_number, 1), display_order: sanitizeNumber(editing.display_order) };
+      const payload = { ...editing, day_number: sanitizeNumber(editing.day_number, 1), display_order: sanitizeNumber(editing.display_order), image_alt_text: editing.image && !editing.image_alt_text?.trim() ? [editing.day_title, editing.location_name].filter(Boolean).join(" - ") : editing.image_alt_text };
       if (editing.id) {
         const updated = await updateItinerary(tourId, editing.id, payload);
         const resolved = (updated && updated.id) ? updated : { ...payload, id: editing.id };
@@ -396,7 +394,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
         </div>
         <button
           type="button"
-          onClick={() => setEditing({ ...empty(), day_number: items.length + 1, display_order: items.length })}
+          onClick={() => { const used = new Set(items.map((item) => Number(item.day_number))); let day = 1; while (used.has(day)) day++; setEditing({ ...empty(), day_number: day, display_order: day }); }}
           disabled={atLimit}
           title={atLimit ? `This tour is set to ${duration} day(s) in Basic Details -- update that before adding another day.` : undefined}
           className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:from-blue-700 hover:to-indigo-700 hover:-translate-y-0.5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
@@ -464,50 +462,33 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
           </div>
           <ErrorSummary errors={errors} />
           <div className="grid gap-4 md:grid-cols-2">
-            {ITINERARY_FIELDS.map(({ key, label, type, required, hint, max }) => (
-              <FormField
-                key={key}
-                name={key}
-                label={label}
-                required={required}
-                error={errors[key]}
-                hint={key === "day_number" && duration != null ? `${hint} This tour runs ${duration} day${duration === 1 ? "" : "s"}.` : hint}
-                counter={max ? { value: String((editing as unknown as Record<string, unknown>)[key] ?? "").length, max } : undefined}
-              >
-                <input
-                  id={key}
-                  name={key}
-                  type={type}
-                  min={key === "day_number" ? 1 : undefined}
-                  max={key === "day_number" && duration != null ? duration : undefined}
-                  value={type === "number" ? numberInputValue((editing as unknown as Record<string, unknown>)[key] as number) : (((editing as unknown as Record<string, unknown>)[key] as string) ?? "")}
-                  onChange={(e) => { setEditing((prev) => prev ? { ...prev, [key]: type === "number" ? parseNumberInput(e.target.value) : e.target.value } : prev); clearError(key); }}
-                  className={fieldClass(errors[key])}
-                />
+            <div>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Day number</span>
+              <p className="rounded-xl border border-dash-border bg-slate-50 px-4 py-2.5 text-sm">{editing.day_number} (Auto)</p>
+            </div>
+            {ITINERARY_FIELDS.map(({ key, label, required, max }) => (
+              <FormField key={key} name={key} label={label} required={required} error={errors[key]}
+                counter={{ value: (editing[key] ?? "").length, max }}>
+                <input id={key} name={key} type="text" value={editing[key] ?? ""}
+                  onChange={(e) => { setEditing((prev) => prev ? { ...prev, [key]: e.target.value } : prev); clearError(key); }}
+                  className={fieldClass(errors[key])} />
               </FormField>
             ))}
-            {/* Day type - explicit flag, never inferred from the title */}
-            <label className="md:col-span-2">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Day type</span>
-              <select
-                value={editing.day_type ?? "standard"}
-                onChange={(e) => setEditing((prev) => prev ? { ...prev, day_type: e.target.value as "standard" | "free_day" } : prev)}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
-              >
-                <option value="standard">Standard day</option>
-                <option value="free_day">Free day / day at leisure</option>
+            <label>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
+              <select value={editing.status} onChange={(e) => setEditing((prev) => prev ? { ...prev, status: e.target.value } : prev)}
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand">
+                <option value="active">Active</option><option value="inactive">Inactive</option>
               </select>
-              <span className="mt-1 block text-xs text-dash-subtle">
-                Free days can show optional &quot;things to do&quot; suggestions from our travel partner (Viator) on the tour page. They are not part of this tour&apos;s price or booking.
-              </span>
             </label>
 
             {/* Short description */}
             <label className="md:col-span-2">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Short description</span>
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Short description *</span>
               <textarea
+                id="short_description"
                 value={editing.short_description ?? ""}
-                onChange={(e) => setEditing((prev) => prev ? { ...prev, short_description: e.target.value } : prev)}
+                onChange={(e) => { setEditing((prev) => prev ? { ...prev, short_description: e.target.value } : prev); clearError("short_description"); }}
                 rows={2}
                 placeholder="Brief summary or hook for this day's itinerary..."
                 className="w-full min-h-[68px] resize-y rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
@@ -515,10 +496,12 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
             </label>
 
             {/* Long description with integrated formatting toolbar and preview */}
+            <div className="md:col-span-2">
             <ItineraryLongDescriptionEditor
               value={editing.long_description ?? ""}
-              onChange={(val) => setEditing((prev) => prev ? { ...prev, long_description: val } : prev)}
+              onChange={(val) => { setEditing((prev) => prev ? { ...prev, long_description: val } : prev); clearError("long_description"); }}
             />
+            </div>
 
             {/* Activities */}
             <label className="md:col-span-2">
@@ -529,18 +512,6 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
                 rows={3}
                 placeholder="Included activities, entrance tickets, and guided tours..."
                 className="w-full min-h-[76px] resize-y rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
-              />
-            </label>
-
-            {/* Optional activities */}
-            <label className="md:col-span-2">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Optional activities</span>
-              <textarea
-                value={editing.optional_activities ?? ""}
-                onChange={(e) => setEditing((prev) => prev ? { ...prev, optional_activities: e.target.value } : prev)}
-                rows={2}
-                placeholder="Optional add-ons available for purchase or during free time..."
-                className="w-full min-h-[68px] resize-y rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
               />
             </label>
 
@@ -557,67 +528,44 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
             </label>
             <div className="md:col-span-2">
               <AdminAssetUpload
-                label="Day image (cover)"
+                label="Day image"
                 value={editing.image ?? ""}
-                onChange={(value) => setEditing((prev) => (prev ? { ...prev, image: value } : prev))}
+                onChange={(value) => setEditing((prev) => (prev ? { ...prev, image: value, image_alt_text: value && !prev.image_alt_text?.trim() ? [prev.day_title, prev.location_name].filter(Boolean).join(" - ") : prev.image_alt_text } : prev))}
               />
             </div>
+            <details open={Boolean(errors.image_alt_text) || undefined} className="md:col-span-2 rounded-xl border border-dash-border p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-dash-text">Advanced options</summary>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {([ ["travel_distance", "Travel distance"], ["travel_duration", "Travel duration"] ] as const).map(([key, label]) => (
+                  <FormField key={key} name={key} label={label} error={errors[key]}>
+                    <input id={key} type="text" value={editing[key] ?? ""} onChange={(e) => { setEditing((prev) => prev ? { ...prev, [key]: e.target.value } : prev); clearError(key); }} className={fieldClass(errors[key])} />
+                  </FormField>
+                ))}
+            {/* Optional activities */}
+            <label className="md:col-span-2">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Optional activities</span>
+              <textarea
+                value={editing.optional_activities ?? ""}
+                onChange={(e) => setEditing((prev) => prev ? { ...prev, optional_activities: e.target.value } : prev)}
+                rows={2}
+                placeholder="Optional add-ons available for purchase or during free time..."
+                className="w-full min-h-[68px] resize-y rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
+              />
+            </label>
+
             <label className="md:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Day image alt text</span>
               <input
+                id="image_alt_text"
                 type="text"
                 value={editing.image_alt_text ?? ""}
-                onChange={(e) => setEditing((prev) => (prev ? { ...prev, image_alt_text: e.target.value } : prev))}
+                onChange={(e) => { setEditing((prev) => (prev ? { ...prev, image_alt_text: e.target.value } : prev)); clearError("image_alt_text"); }}
                 placeholder="Describe the day image for accessibility and SEO..."
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none transition focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
               />
             </label>
-            <div className="md:col-span-2 space-y-3">
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Day image carousel (additional images)</span>
-              {(editing.images ?? []).map((src, index) => (
-                <div key={index} className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <AdminAssetUpload
-                      label={`Image ${index + 1}`}
-                      value={src}
-                      onChange={(value) => setEditing((prev) => {
-                        if (!prev) return prev;
-                        const images = [...(prev.images ?? [])];
-                        images[index] = value;
-                        return { ...prev, images };
-                      })}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setEditing((prev) => prev ? { ...prev, images: (prev.images ?? []).filter((_, i) => i !== index) } : prev)}
-                    aria-label={`Remove image ${index + 1}`}
-                    title="Remove image"
-                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#FFCDD2] text-red-500 hover:bg-[#FFF0F0]"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setEditing((prev) => prev ? { ...prev, images: [...(prev.images ?? []), ""] } : prev)}
-                className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold hover:bg-[#F2F4F7]"
-              >
-                <Plus size={14} /> Add carousel image
-              </button>
-            </div>
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Status</span>
-              <select
-                value={editing.status}
-                onChange={(e) => setEditing((prev) => prev ? { ...prev, status: e.target.value } : prev)}
-                className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </label>
+              </div>
+            </details>
           </div>
           <div className="mt-6 flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
