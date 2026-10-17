@@ -589,7 +589,7 @@ export default function CustomerProfilePage() {
                 type="file"
                 ref={fileInputRef}
                 onChange={handleImageUpload}
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/avif"
                 className="hidden"
               />
 
@@ -602,6 +602,7 @@ export default function CustomerProfilePage() {
                 >
                   {uploadingImage ? "Uploading..." : profileImage ? "Change Photo" : "Upload Photo"}
                 </button>
+                <p className="text-xs text-slate-500">JPG, PNG, WEBP or AVIF. Maximum 2 MB. Recommended: square image, 400 ? 400 px.</p>
                 {Boolean(profileImage) && (
                   <button
                     type="button"

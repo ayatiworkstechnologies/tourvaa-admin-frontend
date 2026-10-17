@@ -1720,7 +1720,7 @@ export default function SupplierDetailPage() {
                               {/* Document Links */}
                               {(vehicle.fitness_certificate ||
                                 vehicle.insurance_document ||
-                                vehicle.vehicle_photos) && (
+                                (Array.isArray(vehicle.vehicle_photos) ? vehicle.vehicle_photos.length > 0 : !!vehicle.vehicle_photos)) && (
                                 <div className="mt-3 flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
                                   {vehicle.fitness_certificate && (
                                     <a
@@ -1742,16 +1742,19 @@ export default function SupplierDetailPage() {
                                       <Eye size={12} /> Insurance
                                     </a>
                                   )}
-                                  {vehicle.vehicle_photos && (
+                                  {(Array.isArray(vehicle.vehicle_photos) ? vehicle.vehicle_photos : vehicle.vehicle_photos ? [vehicle.vehicle_photos] : []).filter(Boolean).map((photo, photoIndex) => (
                                     <a
-                                      href={Array.isArray(vehicle.vehicle_photos) ? String(vehicle.vehicle_photos[0]) : String(vehicle.vehicle_photos)}
+                                      key={`${photo}-${photoIndex}`}
+                                      href={photo}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="inline-flex items-center gap-1 rounded-lg border border-dash-border px-2.5 py-1 text-[11px] font-bold text-dash-brand hover:bg-[#E7F5FF]"
                                     >
-                                      <Eye size={12} /> Photos
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img src={photo} alt="" className="h-12 w-16 rounded object-cover" />
+                                      Photo {photoIndex + 1}
                                     </a>
-                                  )}
+                                  ))}
                                 </div>
                               )}
                             </div>

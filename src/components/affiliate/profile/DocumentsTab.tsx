@@ -183,6 +183,7 @@ export default function DocumentsTab() {
                     </button>
                   </div>
                 </div>
+                <p className="mt-3 text-xs text-dash-muted">PDF, JPG, PNG, WEBP, AVIF, DOC or DOCX. Maximum 10 MB per file.</p>
                 {doc?.rejection_reason && (
                   <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-700">
                     Note: {doc.rejection_reason}

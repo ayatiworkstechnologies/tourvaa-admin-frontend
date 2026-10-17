@@ -313,6 +313,7 @@ export default function VehiclesTab() {
                         <p className="text-xs font-bold uppercase text-dash-muted">Vehicle Photos</p>
                         <p className="text-xs text-dash-muted">{v.vehicle_photos.length} / {MAX_VEHICLE_PHOTOS}</p>
                       </div>
+                      <p className="mb-2 text-xs text-dash-muted">JPG, PNG, WEBP or AVIF. Recommended: under 10 MB each, 1200 x 675 px or larger.</p>
                       {v.vehicle_photos.length > 0 && (
                         <div className="mb-2 flex flex-wrap gap-2">
                           {v.vehicle_photos.map((url, i) => (
@@ -451,6 +452,7 @@ function DocUploadCard({
   return (
     <div className="rounded-xl border border-dash-border bg-white p-4">
       <p className="mb-2 text-xs font-bold uppercase text-dash-muted">{label}</p>
+      <p className="mb-2 text-xs text-dash-muted">PDF, JPG, PNG, WEBP or AVIF. Recommended: under 10 MB per file; no application size limit is set.</p>
       {currentUrl ? (
         <div className="mb-2 flex items-center gap-2">
           <CheckCircle2 size={14} className="text-emerald-500" />

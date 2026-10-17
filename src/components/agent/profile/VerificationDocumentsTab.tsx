@@ -193,7 +193,8 @@ export default function VerificationDocumentsTab() {
                           <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ring-1 ring-inset ${statusClass(document.status)}`}>{document.status}</span>
                           <p className="truncate text-xs text-slate-500">{document.document_name}</p>
                         </div>
-                      ) : <p className="mt-1 text-xs text-slate-500">PDF or {IMAGE_FORMAT_LABEL} · maximum 10 MB</p>}
+                      ) : null}
+                      <p className="mt-1 text-xs text-slate-500">PDF or {IMAGE_FORMAT_LABEL}. Maximum 10 MB per file.</p>
                     </div>
                   </div>
                 </div>

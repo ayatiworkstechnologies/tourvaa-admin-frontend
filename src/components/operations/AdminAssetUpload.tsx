@@ -42,8 +42,8 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
   const maxSizeLabel = isVideoKind ? "50MB" : "10MB";
   const maxBytes = (isVideoKind ? 50 : 10) * 1024 * 1024;
   const guidance = isVideoKind
-    ? "Recommended 16:9 (1920×1080); MP4, WebM or MOV; maximum 50MB."
-    : "Images: recommended 16:9 (minimum 1200×675); images/PDF maximum 10MB.";
+    ? "Recommended: 1920 x 1080 px (16:9). MP4 or WebM, maximum 50 MB."
+    : "Landscape images: recommended 1200 x 675 px (16:9). Images/PDF maximum 10 MB.";
 
   const upload = async (file: File | null) => {
     if (!file) return;
@@ -58,11 +58,17 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
       form.append("file", file);
       const response = await api.post("/uploads/admin-asset", form, {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: isVideoKind ? 180_000 : 30_000,
       });
       onChange(response.data.data.url);
     } catch (uploadError: unknown) {
       const detail = (uploadError as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : `Upload failed. Try ${formatLabel} under ${maxSizeLabel}.`);
+      const status = (uploadError as { response?: { status?: number }; code?: string })?.response?.status;
+      const code = (uploadError as { code?: string })?.code;
+      setError(typeof detail === "string" ? detail : status === 413
+        ? "Upload exceeds the server's allowed file size. Contact the site administrator."
+        : code === "ECONNABORTED" ? "Upload timed out. Check your connection and try again."
+        : `Upload failed. Try ${formatLabel} under ${maxSizeLabel}.`);
     } finally {
       setUploading(false);
     }
@@ -137,6 +143,7 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
         </label>
       )}
 
+      {value && <p className="mt-2 text-xs text-dash-subtle">{guidance}</p>}
       {error && <p className="mt-1.5 text-xs font-semibold text-red-600">{error}</p>}
     </div>
   );
