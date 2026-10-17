@@ -384,6 +384,7 @@ export const TABS: TabConfig[] = [
       { key: "tour_code", header: "Code" },
       { key: "deal_label", header: "Deal Label" },
       { key: "sort_order", header: "Sort" },
+      { key: "is_active", header: "Active" },
     ],
     formFields: [
       { key: "tour_id", label: "Tour", type: "select", required: true },
@@ -1351,7 +1352,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
 // Editor for a single key/JSON homepage content block (About Tourvaa, the
 // blog teaser banner, etc) - unlike CmsTabPanel this isn't a list of rows,
 // just one form that GETs/PUTs /cms/content-blocks/{blockKey}.
-export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
+export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConfig; onChanged?: () => void }) {
   const toast = useToast();
   const [values, setValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -1400,6 +1401,7 @@ export function ContentBlockPanel({ tab }: { tab: ContentBlockTabConfig }) {
       const latest = await api.get(`/cms/content-blocks/${tab.blockKey}`).then((r) => (r.data?.data?.data ?? {}) as Record<string, unknown>).catch(() => ({}));
       await api.put(`/cms/content-blocks/${tab.blockKey}`, { data: { ...latest, ...data } });
       toast.success(`${tab.label} updated.`);
+      onChanged?.();
     } catch {
       toast.error(`Could not save ${tab.label}.`);
     } finally {
@@ -1995,7 +1997,7 @@ function TourPickerSelect({
 }
 
 // ---- CmsTabPanel ---------------------------------------------------------
-export function CmsTabPanel({ tab }: { tab: TabConfig }) {
+export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: () => void }) {
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<CmsItem[]>([]);
@@ -2169,6 +2171,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
       }
       closeForm();
       void fetchItems();
+      onChanged?.();
     } catch (error: unknown) {
       const message = typeof error === "object" && error !== null && "response" in error
         ? String((error as { response?: { data?: { message?: string; detail?: string } } }).response?.data?.message ?? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? `Could not save ${tab.label}.`)
@@ -2186,6 +2189,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
       await api.delete(`${tab.endpoint}/${id}`);
       toast.success("Item deleted.");
       setItems(prev => prev.filter(x => x.id !== id));
+      onChanged?.();
     } catch {
       toast.error("Could not delete item.");
     } finally {
@@ -2204,6 +2208,7 @@ export function CmsTabPanel({ tab }: { tab: TabConfig }) {
         is_active: nextState,
       });
       toast.success(`${getStringValue(item, "title") || tab.label} is now ${nextState ? "Active" : "Inactive"}.`);
+      onChanged?.();
     } catch {
       setItems((prev) =>
         prev.map((x) => (x.id === item.id ? { ...x, is_active: item.is_active } : x))

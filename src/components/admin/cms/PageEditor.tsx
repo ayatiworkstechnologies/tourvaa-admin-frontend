@@ -287,7 +287,7 @@ export default function PageEditor({
 
             {current?.render
               ? current.render()
-              : (current?.tabs ?? []).map((tab) => <CmsSectionContent key={tab} activeTab={tab} />)}
+              : (current?.tabs ?? []).map((tab) => <CmsSectionContent key={tab} activeTab={tab} onChanged={handleRefresh} />)}
           </div>
         )}
 

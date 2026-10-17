@@ -17,7 +17,7 @@ import CountryDestinationInfoPanel from "@/components/admin/cms/CountryDestinati
 
 // The editor for one CMS section key. Shared by /admin/cms/[section] and the
 // Home Page builder (/admin/cms/home), which embeds it next to a live preview.
-export default function CmsSectionContent({ activeTab, withExtras = true }: { activeTab: string; withExtras?: boolean }) {
+export default function CmsSectionContent({ activeTab, withExtras = true, onChanged }: { activeTab: string; withExtras?: boolean; onChanged?: () => void }) {
   const currentListTab = TABS.find((t) => t.key === activeTab);
   const currentBlockTab = CONTENT_BLOCK_TABS.find((t) => t.key === activeTab);
   const isFooterTab = activeTab === FOOTER_TAB.key;
@@ -27,22 +27,22 @@ export default function CmsSectionContent({ activeTab, withExtras = true }: { ac
     <div className="space-y-5">
       {currentListTab ? (
         <div className="space-y-5">
-          <CmsTabPanel key={currentListTab.key} tab={currentListTab} />
+          <CmsTabPanel key={currentListTab.key} tab={currentListTab} onChanged={onChanged} />
           {withExtras && currentListTab.key === "banners" && (
-            <ContentBlockPanel key={HERO_EXTRAS_BLOCK.key} tab={HERO_EXTRAS_BLOCK} />
+            <ContentBlockPanel key={HERO_EXTRAS_BLOCK.key} tab={HERO_EXTRAS_BLOCK} onChanged={onChanged} />
           )}
           {withExtras && currentListTab.key === "tours-on-deals" && (
-            <ContentBlockPanel key={TOP_DEALS_VISIBILITY_BLOCK.key} tab={TOP_DEALS_VISIBILITY_BLOCK} />
+            <ContentBlockPanel key={TOP_DEALS_VISIBILITY_BLOCK.key} tab={TOP_DEALS_VISIBILITY_BLOCK} onChanged={onChanged} />
           )}
           {withExtras && currentListTab.key === "popular-tours" && (
-            <ContentBlockPanel key={TRENDING_VISIBILITY_BLOCK.key} tab={TRENDING_VISIBILITY_BLOCK} />
+            <ContentBlockPanel key={TRENDING_VISIBILITY_BLOCK.key} tab={TRENDING_VISIBILITY_BLOCK} onChanged={onChanged} />
           )}
           {withExtras && currentListTab.key === "favourite-countries" && (
-            <ContentBlockPanel key={FAVOURITE_COUNTRIES_HEADING_BLOCK.key} tab={FAVOURITE_COUNTRIES_HEADING_BLOCK} />
+            <ContentBlockPanel key={FAVOURITE_COUNTRIES_HEADING_BLOCK.key} tab={FAVOURITE_COUNTRIES_HEADING_BLOCK} onChanged={onChanged} />
           )}
         </div>
       ) : currentBlockTab ? (
-        <ContentBlockPanel key={currentBlockTab.key} tab={currentBlockTab} />
+        <ContentBlockPanel key={currentBlockTab.key} tab={currentBlockTab} onChanged={onChanged} />
       ) : isFooterTab ? (
         <FooterPanel />
       ) : isCountryGuideTab ? (
