@@ -15,6 +15,7 @@ import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
 import CommissionCheckFailed from "@/components/common/CommissionCheckFailed";
 import Loader from "@/components/ui/Loader";
 import PortalDataRefresh from "@/components/common/PortalDataRefresh";
+import PartnerPolicyFooter from "@/components/portal/PartnerPolicyFooter";
 
 const NAV = [
   { href: "/supplier/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -27,6 +28,8 @@ const NAV = [
   { href: "/supplier/reports", icon: ChartColumn, label: "Reports", section: "Operations" },
   { href: "/supplier/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
   { href: "/supplier/notifications", icon: Bell, label: "Notifications", section: "Communication" },
+  { href: "/supplier-terms", icon: FileCheck, label: "Terms & Conditions", section: "Policies" },
+  { href: "/supplier-privacy", icon: FileCheck, label: "Privacy Policy", section: "Policies" },
   { href: "/supplier/profile?tab=documents", icon: FileCheck, label: "Documents", placement: "bottom" as const },
   { href: "/supplier/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
@@ -190,6 +193,7 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
           theme="emerald"
         />
         <main id="main-content" tabIndex={-1} className="min-w-0 flex-1">{children}</main>
+        <PartnerPolicyFooter portal="supplier" />
       </div>
       {approvalNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true" aria-labelledby="supplier-approval-title">

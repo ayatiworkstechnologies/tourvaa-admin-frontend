@@ -321,17 +321,18 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
               </ul>
             </nav>
           ))}
-          <nav aria-label="Partner legal policies" className="min-w-0">
+          {(contentBlockKey === "agent_portal_footer" || contentBlockKey === "supplier_portal_footer") && <nav aria-label="Partner legal policies" className="min-w-0">
             <h3 className="mb-4 text-lg font-bold text-white sm:text-xl">Partner policies</h3>
             <ul className="space-y-3 text-xs text-slate-300 sm:text-sm">
-              {[
+              {(contentBlockKey === "agent_portal_footer" ? [
                 ["Agent & Affiliate Terms & Conditions", "/partner-terms"],
                 ["Agent & Affiliate Privacy Policy", "/partner-privacy"],
+              ] : [
                 ["Supplier Terms & Conditions", "/supplier-terms"],
                 ["Supplier Privacy Policy", "/supplier-privacy"],
-              ].map(([label, href]) => <li key={href}><Link className="hover:text-white hover:underline" href={href}>{label}</Link></li>)}
+              ]).map(([label, href]) => <li key={href}><Link className="hover:text-white hover:underline" href={href}>{label}</Link></li>)}
             </ul>
-          </nav>
+          </nav>}
           </div>
 
           {/* Fixed right column: CMS menu additions cannot move this block. */}

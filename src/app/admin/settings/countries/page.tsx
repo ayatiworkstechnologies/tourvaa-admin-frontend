@@ -8,6 +8,7 @@ import ActionModal from "@/components/operations/ActionModal";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
 import { invalidateGeoCountries, invalidateGeoStates, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import { invalidateCurrencyList } from "@/lib/utils/currency";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
@@ -38,12 +39,15 @@ type TabProps = {
   extraParams?: Record<string, string>;
   canCreate: boolean;
   canEdit: boolean;
+  canDisableAll?: boolean;
   onFormChange?: (form: Record<string, string | number>) => void;
   preparePayload?: (form: Record<string, string | number>) => Record<string, string | number | null>;
 };
 
-function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, canEdit, onFormChange, preparePayload }: TabProps) {
+function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, canEdit, canDisableAll, onFormChange, preparePayload }: TabProps) {
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
+  const [bulkSaving, setBulkSaving] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -130,6 +134,23 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
     }
   }
 
+  async function disableAllCountries() {
+    const scope = search.trim() ? `all countries matching "${search.trim()}" across every page` : "all countries across every page";
+    if (!(await confirm({ title: "Disable countries", message: `Disable ${scope}? Disabled countries are hidden from public country selections.`, confirmLabel: "Disable countries", danger: true }))) return;
+    setBulkSaving(true);
+    try {
+      const response = await api.patch("/countries/bulk-disable", null, { params: { search: search.trim() } });
+      invalidateGeoCountries();
+      toast.success(`${response.data?.updated ?? 0} countries disabled`);
+      setPage(1);
+      await load();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) || "Could not disable countries");
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
   const allColumns: DataTableColumn<Row>[] = [
     {
       key: "no",
@@ -184,12 +205,20 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
           placeholder={`Search ${title.toLowerCase()}…`}
           className="w-72 rounded-xl border border-dash-border bg-white px-3 py-2 text-sm outline-none focus:border-dash-brand"
         />
+        <div className="flex flex-wrap items-center gap-2">
+        {canDisableAll && (
+          <button type="button" onClick={() => void disableAllCountries()} disabled={loading || bulkSaving || total === 0}
+            className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
+            {bulkSaving ? "Disabling..." : search.trim() ? "Disable all matching countries" : "Disable all countries"}
+          </button>
+        )}
         {canCreate && (
           <button type="button" onClick={openAdd}
             className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white hover:bg-dash-brand-dark">
             <Plus size={15} /> Add {singular(title)}
           </button>
         )}
+        </div>
       </div>
 
       <DataTable
@@ -248,18 +277,20 @@ function CrudTab({ title, endpoint, fields, columns, extraParams, canCreate, can
           ))}
         </div>
       </ActionModal>
+      {dialog}
     </div>
   );
 }
 
 // countries tab
-function CountriesTab({ canCreate, canEdit }: { canCreate: boolean; canEdit: boolean }) {
+function CountriesTab({ canCreate, canEdit, canDisableAll }: { canCreate: boolean; canEdit: boolean; canDisableAll: boolean }) {
   return (
     <CrudTab
       title="Countries"
       endpoint="/countries"
       canCreate={canCreate}
       canEdit={canEdit}
+      canDisableAll={canDisableAll}
       fields={[
         { name: "country_name", label: "Country name" },
         { name: "country_code", label: "ISO2 code" },
@@ -434,6 +465,7 @@ function CountriesPageContent() {
 
   const canCreateCountries = hasPermission("countries.create");
   const canEditCountries = hasPermission("countries.edit");
+  const canDisableCountries = hasPermission("countries.disable") || canEditCountries;
   const canCreateCities = hasPermission("cities.create");
   const canEditCities = hasPermission("cities.edit");
   const canViewCurrencies = hasPermission("currencies.view");
@@ -465,7 +497,7 @@ function CountriesPageContent() {
         </div>
 
         {/* Tab content */}
-        {activeTab === "countries" && <CountriesTab canCreate={canCreateCountries} canEdit={canEditCountries} />}
+        {activeTab === "countries" && <CountriesTab canCreate={canCreateCountries} canEdit={canEditCountries} canDisableAll={canDisableCountries} />}
         {activeTab === "states" && <StatesTab canCreate={canCreateCountries} canEdit={canEditCountries} />}
         {activeTab === "cities" && <CitiesTab canCreate={canCreateCities} canEdit={canEditCities} />}
         {activeTab === "currencies" && canViewCurrencies && <CurrenciesTab canCreate={canCreateCurrencies} canEdit={canEditCurrencies} />}

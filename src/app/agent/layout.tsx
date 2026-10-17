@@ -16,6 +16,7 @@ import CommissionConsentModal from "@/components/portal/CommissionConsentModal";
 import CommissionCheckFailed from "@/components/common/CommissionCheckFailed";
 import Loader from "@/components/ui/Loader";
 import PortalDataRefresh from "@/components/common/PortalDataRefresh";
+import PartnerPolicyFooter from "@/components/portal/PartnerPolicyFooter";
 
 const NAV = [
   { href: "/agent/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -25,6 +26,8 @@ const NAV = [
   { href: "/agent/invoices", icon: ReceiptText, label: "Invoices", section: "Finance" },
   { href: "/agent/payouts", icon: CircleDollarSign, label: "Earnings", section: "Finance" },
   { href: "/agent/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
+  { href: "/partner-terms", icon: ReceiptText, label: "Terms & Conditions", section: "Policies" },
+  { href: "/partner-privacy", icon: ReceiptText, label: "Privacy Policy", section: "Policies" },
   { href: "/agent/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
 
@@ -136,7 +139,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   // Supplier-style workspace shell. Agents deliberately have no Vehicles tab.
   const navItems = NAV
     .filter((item) => !("permissions" in item) || !item.permissions || item.permissions.some((permission) => hasPermission(permission)))
-    .map((item) => ({ ...item, locked: !isApproved && !UNLOCKED_WHILE_PENDING.includes(item.href) }));
+    .map((item) => ({ ...item, locked: !isApproved && item.href.startsWith("/agent/") && !UNLOCKED_WHILE_PENDING.includes(item.href) }));
   const pageTitle = getTitle(pathname);
 
   return (
@@ -177,6 +180,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
               theme="sky"
             />
             <main id="main-content" tabIndex={-1} className="min-w-0 flex-1">{children}</main>
+            <PartnerPolicyFooter portal="agent" />
           </div>
           {approvalNotice && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4" role="dialog" aria-modal="true" aria-labelledby="agent-approval-title">
