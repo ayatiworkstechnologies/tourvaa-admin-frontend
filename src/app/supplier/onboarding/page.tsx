@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { LuBriefcase as Briefcase, LuCheck as Check, LuCircleCheckBig as CheckCircle2, LuFileText as FileText, LuPercent as Percent, LuPartyPopper as PartyPopper } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { SupplierPageShell } from "@/components/supplier/SupplierPage";
@@ -27,6 +28,7 @@ export default function SupplierOnboardingPage() {
   const [platformMinRate, setPlatformMinRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [finishing, setFinishing] = useState(false);
+  const [acceptedSupplierPolicies, setAcceptedSupplierPolicies] = useState(false);
 
   useEffect(() => {
     Promise.allSettled([
@@ -123,6 +125,10 @@ export default function SupplierOnboardingPage() {
                     : `You accepted Tourvaa's commission rate of ${effectiveRate ?? "-"}% when you first logged in.`}
                 </span>
               </div>
+              <label className="mt-4 flex items-start gap-3 rounded-xl border border-[#DCEBE2] bg-[#F5FAF7] p-4 text-sm text-[#123024]">
+                <input type="checkbox" checked={acceptedSupplierPolicies} onChange={(event) => setAcceptedSupplierPolicies(event.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#16833A]" />
+                <span>I agree to the <Link href="/supplier-terms" target="_blank" rel="noopener noreferrer" className="font-bold text-[#117331] underline">Supplier Terms &amp; Conditions</Link> and <Link href="/supplier-privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-[#117331] underline">Supplier Privacy Policy</Link>.</span>
+              </label>
             </div>
           )}
 
@@ -156,7 +162,7 @@ export default function SupplierOnboardingPage() {
           <div className="mt-6 flex justify-between gap-3">
             <button type="button" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0} className="rounded-xl border border-[#DCEBE2] px-4 py-2.5 text-sm font-bold text-[#365A45] disabled:opacity-40">Back</button>
             {step < STEPS.length - 1 ? (
-              <button type="button" onClick={() => setStep((s) => s + 1)} className="rounded-xl bg-[#16833A] px-5 py-2.5 text-sm font-black text-white hover:bg-[#117331] disabled:cursor-not-allowed disabled:opacity-40">Continue</button>
+              <button type="button" onClick={() => setStep((s) => s + 1)} disabled={step === 2 && !acceptedSupplierPolicies} className="rounded-xl bg-[#16833A] px-5 py-2.5 text-sm font-black text-white hover:bg-[#117331] disabled:cursor-not-allowed disabled:opacity-40">Continue</button>
             ) : (
               <button type="button" onClick={() => void finish()} disabled={finishing} className="rounded-xl bg-[#16833A] px-5 py-2.5 text-sm font-black text-white hover:bg-[#117331] disabled:opacity-60">{finishing ? "Finishing..." : "Go to dashboard"}</button>
             )}
