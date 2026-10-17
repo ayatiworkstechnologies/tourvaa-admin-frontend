@@ -4,8 +4,6 @@ import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/to
 import { validateItineraryDay, type FieldErrors } from "@/lib/tours/tourValidation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  LuArrowDown as ArrowDown,
-  LuArrowUp as ArrowUp,
   LuCircleAlert as AlertCircle,
   LuPlus as Plus,
   LuPencil as Pencil,
@@ -18,7 +16,7 @@ import {
   LuMapPin as MapPin,
 } from "react-icons/lu";
 import {
-  getItineraries, createItinerary, updateItinerary, deleteItinerary, reorderItineraries, ItineraryDay,
+  getItineraries, createItinerary, updateItinerary, deleteItinerary, ItineraryDay,
 } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
@@ -333,7 +331,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
     }
     setSaving(true);
     try {
-      const payload = { ...editing, day_number: sanitizeNumber(editing.day_number, 1), display_order: sanitizeNumber(editing.display_order), image_alt_text: editing.image && !editing.image_alt_text?.trim() ? [editing.day_title, editing.location_name].filter(Boolean).join(" - ") : editing.image_alt_text };
+      const payload = { ...editing, day_number: sanitizeNumber(editing.day_number, 1), display_order: sanitizeNumber(editing.display_order), image_alt_text: editing.image && !editing.image_alt_text?.trim() ? [editing.day_title, editing.location_name].filter(Boolean).join(" - ").slice(0, 180) : editing.image_alt_text };
       if (editing.id) {
         const updated = await updateItinerary(tourId, editing.id, payload);
         const resolved = (updated && updated.id) ? updated : { ...payload, id: editing.id };
@@ -362,20 +360,6 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
       toast.success("Deleted.");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
-    }
-  };
-
-  const move = async (index: number, direction: -1 | 1) => {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= items.length) return;
-    const reordered = [...items];
-    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
-    setItems(reordered);
-    try {
-      await reorderItineraries(tourId, reordered.map((item) => item.id!));
-    } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error));
-      void load();
     }
   };
 
@@ -418,7 +402,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
         </div>
       )}
 
-      {items.map((item, index) => (
+      {items.map((item) => (
         <div key={item.id} className="rounded-2xl border border-dash-border-soft bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
           <div className="flex items-start justify-between">
             <div>
@@ -432,8 +416,6 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
               {item.location_name && <p className="text-sm text-dash-subtle">{item.location_name}</p>}
             </div>
             <div className="flex gap-2">
-              <button type="button" onClick={() => void move(index, -1)} disabled={index === 0} aria-label="Move day up" title="Move up" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-dash-border hover:bg-[#F2F4F7] disabled:opacity-30"><ArrowUp size={14} /></button>
-              <button type="button" onClick={() => void move(index, 1)} disabled={index === items.length - 1} aria-label="Move day down" title="Move down" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-dash-border hover:bg-[#F2F4F7] disabled:opacity-30"><ArrowDown size={14} /></button>
               <button type="button" onClick={() => setEditing({ ...item })} aria-label={`Edit day ${item.day_number}`} title="Edit" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-dash-border hover:bg-[#F2F4F7]"><Pencil size={14} /></button>
               <button type="button" onClick={() => remove(item.id!)} aria-label={`Delete day ${item.day_number}`} title="Delete" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[#FFCDD2] text-red-500 hover:bg-[#FFF0F0]"><Trash2 size={14} /></button>
             </div>
@@ -483,7 +465,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
             </label>
 
             {/* Short description */}
-            <label className="md:col-span-2">
+            <label data-field="short_description" className="md:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Short description *</span>
               <textarea
                 id="short_description"
@@ -496,7 +478,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
             </label>
 
             {/* Long description with integrated formatting toolbar and preview */}
-            <div className="md:col-span-2">
+            <div data-field="long_description" className="md:col-span-2">
             <ItineraryLongDescriptionEditor
               value={editing.long_description ?? ""}
               onChange={(val) => { setEditing((prev) => prev ? { ...prev, long_description: val } : prev); clearError("long_description"); }}
@@ -530,7 +512,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
               <AdminAssetUpload
                 label="Day image"
                 value={editing.image ?? ""}
-                onChange={(value) => setEditing((prev) => (prev ? { ...prev, image: value, image_alt_text: value && !prev.image_alt_text?.trim() ? [prev.day_title, prev.location_name].filter(Boolean).join(" - ") : prev.image_alt_text } : prev))}
+                onChange={(value) => setEditing((prev) => (prev ? { ...prev, image: value, image_alt_text: value && !prev.image_alt_text?.trim() ? [prev.day_title, prev.location_name].filter(Boolean).join(" - ").slice(0, 180) : prev.image_alt_text } : prev))}
               />
             </div>
             <details open={Boolean(errors.image_alt_text) || undefined} className="md:col-span-2 rounded-xl border border-dash-border p-4">
@@ -553,7 +535,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
               />
             </label>
 
-            <label className="md:col-span-2">
+            <label data-field="image_alt_text" className="md:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Day image alt text</span>
               <input
                 id="image_alt_text"

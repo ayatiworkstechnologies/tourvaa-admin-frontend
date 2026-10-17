@@ -244,7 +244,7 @@ export default function TopDealsSection({
 
     async function loadDeals() {
       try {
-        const dealTourResult = await fetchToursOnDeals();
+        const dealTourResult = await fetchToursOnDeals().catch(() => []);
         if (!active) return;
 
         if (dealTourResult && dealTourResult.length > 0) {
@@ -339,7 +339,7 @@ export default function TopDealsSection({
       ];
     }
 
-    return ["Top deals", "China deals", "Turkey deals", "Italy deals"];
+    return ["Top deals"];
   }, [tours]);
 
   useEffect(() => {
@@ -373,7 +373,7 @@ export default function TopDealsSection({
     enabled: !loading && displayTours.length > 1,
   });
 
-  if (!sectionEnabled || (!loading && displayTours.length === 0)) return null;
+  if (!sectionEnabled) return null;
 
   const move = (direction: number) => {
     notifyInteraction();
@@ -501,7 +501,7 @@ export default function TopDealsSection({
             ))
           ) : (
             <EmptyCollection
-              message="No deals found for this destination."
+              message="No deals are available right now."
               href="/tours?sort=price_asc"
               linkLabel="Browse all deals"
             />
