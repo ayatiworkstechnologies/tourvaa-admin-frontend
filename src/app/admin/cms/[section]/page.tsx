@@ -16,6 +16,7 @@ import SupplierPortalPageEditor from "@/components/admin/cms/SupplierPortalPageE
 import AgentPortalPageEditor from "@/components/admin/cms/AgentPortalPageEditor";
 import AffiliatePortalPageEditor from "@/components/admin/cms/AffiliatePortalPageEditor";
 import ToursListingPageEditor from "@/components/admin/cms/ToursListingPageEditor";
+import PartnerLegalPageEditor from "@/components/admin/cms/PartnerLegalPageEditor";
 import PageSeoEditor from "@/components/admin/cms/PageSeoEditor";
 
 // Sections rendered by their own dedicated "sections + live preview" editor
@@ -27,6 +28,10 @@ const PAGE_EDITORS: Record<string, React.ComponentType> = {
   about: AboutPageEditor,
   contact: ContactPageEditor,
   terms: TermsPageEditor,
+  "partner-terms": () => <PartnerLegalPageEditor page="partner-terms" />,
+  "partner-privacy": () => <PartnerLegalPageEditor page="partner-privacy" />,
+  "supplier-terms": () => <PartnerLegalPageEditor page="supplier-terms" />,
+  "supplier-privacy": () => <PartnerLegalPageEditor page="supplier-privacy" />,
   "privacy-policy": PrivacyPolicyPageEditor,
   "cookie-policy": CookiePolicyPageEditor,
   "travel-advice": TravelAdvicePageEditor,

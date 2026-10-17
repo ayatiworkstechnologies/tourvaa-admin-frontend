@@ -1048,6 +1048,20 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
     ],
   })),
 
+  ...(["partner-terms", "partner-privacy", "supplier-terms", "supplier-privacy"] as const).flatMap((page) => [
+    { key: `${page}-hero`, label: "Page Header", blockKey: `${page.replaceAll("-", "_")}_hero`, fields: [
+      { key: "title", label: "Page Title", type: "text" as const },
+      { key: "subtitle", label: "Subtitle", type: "textarea" as const },
+      { key: "intro", label: "Intro", type: "textarea" as const },
+    ] },
+    { key: `${page}-sections`, label: "Clauses / Sections", blockKey: `${page.replaceAll("-", "_")}_sections`, fields: [
+      { key: "items", label: "Numbered Sections", type: "records" as const, hint: "Add approved policy text here. Until sections are added, the existing general policy is shown.", subfields: [
+        { key: "title", label: "Section Title", type: "text" as const },
+        { key: "body", label: "Body (one paragraph per line)", type: "textarea" as const },
+      ] },
+    ] },
+  ]),
+
   // ---- Travel Advice page (see TravelAdvicePageEditor) ---------------------
   {
     key: "travel-advice-hero",
@@ -1299,6 +1313,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
     label: "Why Join Perks",
     blockKey: "affiliate_portal_perks",
     fields: [
+      { key: "heading", label: "Section Heading", type: "text" },
       {
         key: "items",
         label: "Perk Cards",
@@ -1316,6 +1331,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
     label: "Ideal For",
     blockKey: "affiliate_portal_ideal_for",
     fields: [
+      { key: "heading", label: "Section Heading", type: "text" },
       { key: "items", label: "List Items", type: "list", hint: "Leave empty to use the built-in list." },
     ],
   },
@@ -2512,11 +2528,16 @@ export const ALL_TABS: { key: string; label: string }[] = [
   { key: "about", label: "About Us" },
   { key: "contact", label: "Contact Us" },
   { key: "terms", label: "Terms & Conditions" },
+  { key: "partner-terms", label: "Agent & Affiliate Terms" },
+  { key: "partner-privacy", label: "Agent & Affiliate Privacy" },
+  { key: "supplier-terms", label: "Supplier Terms" },
+  { key: "supplier-privacy", label: "Supplier Privacy" },
   { key: "privacy-policy", label: "Privacy Policy" },
   { key: "cookie-policy", label: "Cookie Policy" },
   { key: "travel-advice", label: "Travel Advice" },
   { key: "supplier-portal", label: "Supplier Portal" },
   { key: "agent-portal", label: "Agent Portal" },
+  { key: "affiliate-portal", label: "Affiliate Portal" },
   { key: "supplier-contact", label: "Supplier Contact" },
   { key: "agent-contact", label: "Agent Contact" },
   ...TABS.map((t) => ({ key: t.key, label: t.label })),
@@ -2565,13 +2586,13 @@ export const CMS_DASHBOARD_GROUPS: CmsDashboardGroup[] = [
     key: "content",
     label: "Content & Pages",
     description: "Standalone pages (About Us, Contact Us, legal pages, Travel Advice, and one-off pages), plus testimonials and FAQs.",
-    tabs: ["cms-pages", "about", "contact", "terms", "privacy-policy", "cookie-policy", "travel-advice", "customer-reviews", "help-centre"],
+    tabs: ["cms-pages", "about", "contact", "terms", "privacy-policy", "partner-terms", "partner-privacy", "supplier-terms", "supplier-privacy", "cookie-policy", "travel-advice", "customer-reviews", "help-centre"],
   },
   {
     key: "portals",
     label: "Partner Portal Pages",
-    description: "The public landing pages and contact pages for suppliers and travel agents - hero, features, steps, documents, FAQs and CTA. Interactive calculators stay code-driven.",
-    tabs: ["supplier-portal", "agent-portal", "supplier-contact", "agent-contact"],
+    description: "The public landing pages and contact pages for suppliers, travel agents and affiliates. Interactive calculators stay code-driven.",
+    tabs: ["supplier-portal", "agent-portal", "affiliate-portal", "supplier-contact", "agent-contact"],
   },
   {
     key: "site",

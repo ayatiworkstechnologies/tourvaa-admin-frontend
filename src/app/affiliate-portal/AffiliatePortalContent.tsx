@@ -53,8 +53,8 @@ const PERK_ICONS = DEFAULT_PERKS.map((p) => p.icon);
 type StatItem = { title?: string; detail?: string };
 type StatsBlock = { items?: StatItem[] };
 type PerkItem = { title?: string; description?: string };
-type PerksBlock = { items?: PerkItem[] };
-type IdealForBlock = { items?: string[] };
+type PerksBlock = { heading?: string; items?: PerkItem[] };
+type IdealForBlock = { heading?: string; items?: string[] };
 
 export default function AffiliatePortalContent() {
   const hero = useContentBlock("affiliate_portal_hero", DEFAULT_HERO);
@@ -77,14 +77,14 @@ export default function AffiliatePortalContent() {
 
   return (
     <main className="overflow-hidden bg-white text-slate-900">
-      <section id="overview" className="relative isolate overflow-hidden bg-purple-950 text-white">
+      <section id="overview" className="relative isolate overflow-hidden bg-[#24143b] text-white">
         <div className="pointer-events-none absolute -right-16 -top-24 h-96 w-96 rounded-full bg-purple-400/15 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 bottom-0 h-72 w-72 rounded-full bg-fuchsia-400/10 blur-3xl" />
-        <div className="relative mx-auto max-w-6xl px-5 py-24 sm:px-8">
+        <div className="relative mx-auto max-w-6xl px-5 pb-28 pt-20 sm:px-8 sm:pb-32 sm:pt-24">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold backdrop-blur">
             <Megaphone size={14} /> Tourvaa Affiliate Programme
           </span>
-          <h1 className="mt-7 max-w-2xl text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">
+          <h1 className="mt-7 max-w-3xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
             {hero.heading || DEFAULT_HERO.heading}
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-white/70 sm:text-lg">
@@ -118,10 +118,10 @@ export default function AffiliatePortalContent() {
         </div>
       </div>
 
-      <section className="relative z-10 mx-auto -mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="grid overflow-hidden rounded-3xl border border-purple-100 bg-white shadow-[0_25px_70px_-35px_rgba(88,28,135,.35)] sm:grid-cols-3">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pt-8 sm:px-6">
+        <div className="grid overflow-hidden rounded-2xl border border-purple-100 bg-purple-50/50 sm:grid-cols-3">
           {stats.map(([title, detail], index) => (
-            <div key={index} className={`p-6 text-center ${index ? "border-t border-purple-100 sm:border-l sm:border-t-0" : ""}`}>
+            <div key={index} className={`px-7 py-6 text-left ${index ? "border-t border-purple-100 sm:border-l sm:border-t-0" : ""}`}>
               <p className="text-lg font-black text-slate-950">{title}</p>
               <p className="mt-1 text-xs font-semibold text-purple-700">{detail}</p>
             </div>
@@ -130,15 +130,15 @@ export default function AffiliatePortalContent() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="max-w-2xl">
           <p className="text-xs font-black uppercase tracking-[.16em] text-purple-700">Why join</p>
-          <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Why join as an affiliate?</h2>
+          <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{perksBlock.heading || "Why join as an affiliate?"}</h2>
         </div>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2">
           {perks.map(({ icon: Icon, title, description }, index) => (
-            <div key={index} className="group rounded-3xl border border-slate-100 bg-slate-50/60 p-7 transition hover:border-purple-200 hover:bg-white hover:shadow-[0_24px_55px_-30px_rgba(88,28,135,.4)]">
+            <div key={index} className="group border-t border-purple-100 py-6">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 text-purple-700"><Icon size={20} /></span>
-              <h3 className="mt-4 text-sm font-black text-slate-950">{title}</h3>
+              <h3 className="mt-4 text-lg font-bold text-slate-950">{title}</h3>
               <p className="mt-1.5 text-sm leading-6 text-slate-500">{description}</p>
             </div>
           ))}
@@ -147,11 +147,11 @@ export default function AffiliatePortalContent() {
 
       <section className="bg-purple-50/50 py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
+          <div className="max-w-2xl">
             <p className="text-xs font-black uppercase tracking-[.16em] text-purple-700">Ideal for</p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Built for creators and publishers</h2>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{idealForBlock.heading || "Built for creators and publishers"}</h2>
           </div>
-          <div className="mt-10 rounded-3xl border border-purple-100 bg-white p-7 shadow-[0_10px_30px_-25px_rgba(88,28,135,.5)]">
+          <div className="mt-10 rounded-2xl border border-purple-100 bg-white p-7 sm:p-10">
             <ul className="space-y-4">
               {idealFor.map((item, index) => (
                 <li key={index} className="flex items-center gap-3 text-sm text-slate-600">
@@ -166,7 +166,7 @@ export default function AffiliatePortalContent() {
 
       <section className="relative mx-auto max-w-6xl overflow-hidden px-4 py-20 text-center sm:px-6">
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-200/60 blur-3xl" />
-        <div className="relative rounded-[2rem] border border-purple-100 bg-white/80 px-6 py-14 shadow-[0_30px_80px_-50px_rgba(88,28,135,.5)] backdrop-blur-sm">
+        <div className="relative rounded-2xl border border-purple-100 bg-purple-50 px-6 py-14 sm:py-16">
           <Sparkles className="mx-auto mb-4 text-purple-600" size={24} />
           <h2 className="text-3xl font-black tracking-tight text-slate-950">{cta.heading || DEFAULT_CTA.heading}</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">

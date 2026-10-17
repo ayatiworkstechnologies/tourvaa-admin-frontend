@@ -41,6 +41,7 @@ export default function LegalPageLayout({
   intro,
   sections,
   lastUpdated = "September 2026",
+  showMetadata = true,
 }: {
   eyebrow?: string;
   title: string;
@@ -48,6 +49,7 @@ export default function LegalPageLayout({
   intro?: ReactNode;
   sections: LegalSection[];
   lastUpdated?: string;
+  showMetadata?: boolean;
 }) {
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "");
   const [searchQuery, setSearchQuery] = useState("");
@@ -148,7 +150,7 @@ export default function LegalPageLayout({
               </p>
 
               {/* Metadata Badges */}
-              <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+              {showMetadata && <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-slate-500">
                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-700">
                   <FileText size={13} className="text-slate-500" />
                   <span>Last Updated: {lastUpdated}</span>
@@ -161,7 +163,7 @@ export default function LegalPageLayout({
                 <span className="text-slate-500 hidden sm:inline">
                   Globally Enforced Standard
                 </span>
-              </div>
+              </div>}
             </div>
 
             {/* Action Bar (Print / Copy) */}

@@ -28,9 +28,15 @@ type Vehicle = {
 
 const MAX_VEHICLE_PHOTOS = 6;
 
-const VEHICLE_TYPES = [
-  "sedan", "suv", "van", "minibus", "bus", "luxury", "4wd", "yacht", "speedboat", "other",
+const VEHICLE_TYPE_GROUPS = [
+  { label: "Cars and SUVs", types: ["sedan", "hatchback", "suv", "4wd", "coupe", "convertible", "station_wagon", "luxury", "limousine", "pickup"] },
+  { label: "Vans and buses", types: ["van", "minivan", "minibus", "bus", "coach", "shuttle_bus", "campervan", "motorhome"] },
+  { label: "Motorcycles and adventure vehicles", types: ["motorcycle", "scooter", "atv", "buggy", "bicycle", "electric_bicycle", "golf_cart", "tuk_tuk"] },
+  { label: "Boats and watercraft", types: ["boat", "speedboat", "yacht", "catamaran", "ferry", "sailboat", "jet_ski", "cruise_ship", "houseboat", "kayak", "canoe"] },
+  { label: "Aircraft", types: ["airplane", "helicopter", "seaplane", "hot_air_balloon"] },
+  { label: "Other", types: ["other"] },
 ];
+const VEHICLE_TYPES = VEHICLE_TYPE_GROUPS.flatMap(group => group.types);
 
 const emptyForm = {
   make: "",
@@ -383,8 +389,15 @@ function VehicleForm({
           <select value={form.vehicle_type} onChange={e => set("vehicle_type", e.target.value)}
             className="w-full rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-emerald-500">
             <option value="">Select type</option>
-            {VEHICLE_TYPES.map(t => (
-              <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("wd", "WD")}</option>
+            {form.vehicle_type && !VEHICLE_TYPES.includes(form.vehicle_type) && (
+              <option value={form.vehicle_type}>{form.vehicle_type}</option>
+            )}
+            {VEHICLE_TYPE_GROUPS.map(group => (
+              <optgroup key={group.label} label={group.label}>
+                {group.types.map(t => (
+                  <option key={t} value={t}>{t === "suv" ? "SUV" : t === "4wd" ? "4WD" : t === "atv" ? "ATV" : t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>
