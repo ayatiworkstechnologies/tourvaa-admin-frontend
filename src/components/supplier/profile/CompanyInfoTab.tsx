@@ -10,7 +10,7 @@ import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import CurrencySelect from "@/components/ui/CurrencySelect";
-import { combinePhone, validateMobile, mobileHelp, validatePassword, passwordHelp } from "@/lib/utils/validators";
+import { combinePhone, digitsOnly, validateMobile, mobileHelp, validatePassword, passwordHelp } from "@/lib/utils/validators";
 import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 
@@ -150,6 +150,11 @@ export default function CompanyInfoTab() {
       toast.error("Complete the required business details and primary contact fields.");
       return;
     }
+    const contactPhone = form.contact_phone.trim().startsWith("+") ? `+${digitsOnly(form.contact_phone)}` : form.contact_phone.trim();
+    if (!validateMobile(contactPhone, true)) {
+      toast.error("Enter the primary contact phone with its country code, for example +919876543210.");
+      return;
+    }
     setSaving(true);
     try {
       await Promise.all([
@@ -169,7 +174,7 @@ export default function CompanyInfoTab() {
           contact: (form.contact_first_name || form.contact_last_name || form.contact_designation || form.contact_email || form.contact_phone) ? {
             contact_name: form.contact_name || null, first_name: form.contact_first_name || null, last_name: form.contact_last_name || null, designation: form.contact_designation || null,
             email: form.contact_email || null,
-            phone: form.contact_phone || null, preferred_contact_method: form.contact_method || null,
+            phone: contactPhone, preferred_contact_method: form.contact_method || null,
           } : undefined,
           business_info: {
             trading_name: form.trading_name, business_email: form.business_email, website_url: form.website_url,
