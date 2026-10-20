@@ -315,6 +315,23 @@ export default function TourPricingTab({
   // The markup actually applied to a slab.
   const effectiveMarkup = (slab: PricingSlab) => (slab.admin_markup_value ?? inheritedMarkup);
   const afterSupplierDiscount = (price: number | null | undefined) => money(Number(price ?? 0) * (1 - Number(supplierDiscountPercent ?? 0) / 100));
+  // The slab modal must preview the exact same pricing pipeline as the
+  // published table: supplier offer -> supplier commission -> markup ->
+  // Tourvaa offer. Previously the modal added markup to the undiscounted
+  // supplier list price, so a saved row could show (for example) 4.05 AUD
+  // while its editor incorrectly previewed 4.50 AUD.
+  const editingFinancials = editing ? {
+    adult: markupFinancials(
+      sanitizeNumber(editing.adult_price), Number(supplierDiscountPercent ?? 0),
+      Number(editing.commission_percentage ?? resolvedFloor), Number(effectiveMarkup(editing)),
+      Number(tourvaaDiscountPercent ?? 0),
+    ),
+    child: markupFinancials(
+      sanitizeNumber(editing.child_price), Number(supplierDiscountPercent ?? 0),
+      Number(editing.commission_percentage ?? resolvedFloor), Number(effectiveMarkup(editing)),
+      Number(tourvaaDiscountPercent ?? 0),
+    ),
+  } : null;
   const isScheduled = (start: string | null) => Boolean(start && new Date(start) > new Date());
   const supplierDiscountScheduled = isScheduled(supplierDiscountStart);
   const tourvaaDiscountScheduled = isScheduled(tourvaaDiscountStart);
@@ -879,14 +896,14 @@ export default function TourPricingTab({
               <div>
                 <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">You will receive (adult)</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
-                  {fmt(sanitizeNumber(editing.adult_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
+                  {fmt(editingFinancials!.adult.supplierPayout, editing.currency)}
                 </p>
               </div>
               {!isSupplier && (
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Storefront price (adult)</p>
                   <p className="mt-1 text-xl font-black text-blue-700">
-                    {fmt(withMarkup(sanitizeNumber(editing.adult_price), effectiveMarkup(editing)), editing.currency)}
+                    {fmt(editingFinancials!.adult.customerPrice, editing.currency)}
                   </p>
                 </div>
               )}
@@ -894,14 +911,14 @@ export default function TourPricingTab({
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">Storefront price (child)</p>
                   <p className="mt-1 text-xl font-black text-blue-700">
-                    {fmt(withMarkup(sanitizeNumber(editing.child_price), effectiveMarkup(editing)), editing.currency)}
+                    {fmt(editingFinancials!.child.customerPrice, editing.currency)}
                   </p>
                 </div>
               )}
               <div>
                 <p className="text-[10px] font-black uppercase tracking-wide text-dash-subtle">You will receive (child)</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
-                  {fmt(sanitizeNumber(editing.child_price) * (1 - (editing.commission_percentage ?? resolvedFloor) / 100), editing.currency)}
+                  {fmt(editingFinancials!.child.supplierPayout, editing.currency)}
                 </p>
               </div>
             </div>
