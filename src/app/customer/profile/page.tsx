@@ -9,7 +9,10 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import CustomerAvatar from "@/components/customer/CustomerAvatar";
-import { passwordHelp, validateEmail, validateMobile, validatePassword } from "@/lib/utils/validators";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import { combinePhone, passwordHelp, validateEmail, validateMobile, validatePassword } from "@/lib/utils/validators";
+import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import type { CountryCode } from "libphonenumber-js/min";
 
 const AIRLINES = [
   "American Airlines",
@@ -44,6 +47,16 @@ const NATIONALITIES = [
 
 const GENDERS = ["Female", "Male", "Other", "Prefer not to say"];
 
+function splitStoredPhone(value?: string) {
+  if (!value) return { countryIso: "IN" as CountryCode, number: "" };
+  const countryIso = isoForDialCode(value);
+  const dialCode = dialCodeForIso(countryIso);
+  return {
+    countryIso,
+    number: value.startsWith(dialCode) ? value.slice(dialCode.length) : value.replace(/^\+/, ""),
+  };
+}
+
 export default function CustomerProfilePage() {
   const router = useRouter();
   const toast = useToast();
@@ -58,7 +71,8 @@ export default function CustomerProfilePage() {
   const [firstName, setFirstName] = useState(initialFirst);
   const [lastName, setLastName] = useState(initialLast);
   const [email, setEmail] = useState(user?.email || "");
-  const [phone, setPhone] = useState(user?.phone || "");
+  const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>(() => splitStoredPhone(user?.phone).countryIso);
+  const [phoneNumber, setPhoneNumber] = useState(() => splitStoredPhone(user?.phone).number);
   const [dob, setDob] = useState("");
   const [nationality, setNationality] = useState("");
   const [gender, setGender] = useState("");
@@ -73,7 +87,8 @@ export default function CustomerProfilePage() {
   // Emergency Contact
   const [emergencyName, setEmergencyName] = useState("");
   const [emergencyRelation, setEmergencyRelation] = useState("");
-  const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [emergencyPhoneCountryIso, setEmergencyPhoneCountryIso] = useState<CountryCode>("IN");
+  const [emergencyPhoneNumber, setEmergencyPhoneNumber] = useState("");
   const [emergencyEmail, setEmergencyEmail] = useState("");
 
   // Profile Image
@@ -86,6 +101,11 @@ export default function CustomerProfilePage() {
     new_password: "",
     confirm_password: "",
   });
+
+  const phone = phoneNumber ? combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber) : "";
+  const emergencyPhone = emergencyPhoneNumber
+    ? combinePhone(dialCodeForIso(emergencyPhoneCountryIso), emergencyPhoneNumber)
+    : "";
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -103,7 +123,11 @@ export default function CustomerProfilePage() {
           }
 
           if (d.email) setEmail(d.email);
-          if (d.phone) setPhone(d.phone);
+          if (d.phone) {
+            const parsedPhone = splitStoredPhone(d.phone);
+            setPhoneCountryIso(parsedPhone.countryIso);
+            setPhoneNumber(parsedPhone.number);
+          }
           if (d.profile_image) setProfileImage(d.profile_image);
           if (d.address || d.address_line_1)
             setAddress(d.address || d.address_line_1);
@@ -117,7 +141,11 @@ export default function CustomerProfilePage() {
           if (d.preferred_airline) setPreferredAirline(d.preferred_airline);
           if (d.emergency_name || d.emergency_contact_name) setEmergencyName(d.emergency_name || d.emergency_contact_name);
           if (d.emergency_relation || d.emergency_contact_relationship) setEmergencyRelation(d.emergency_relation || d.emergency_contact_relationship);
-          if (d.emergency_phone || d.emergency_contact_phone) setEmergencyPhone(d.emergency_phone || d.emergency_contact_phone);
+          if (d.emergency_phone || d.emergency_contact_phone) {
+            const parsedEmergencyPhone = splitStoredPhone(d.emergency_phone || d.emergency_contact_phone);
+            setEmergencyPhoneCountryIso(parsedEmergencyPhone.countryIso);
+            setEmergencyPhoneNumber(parsedEmergencyPhone.number);
+          }
           if (d.emergency_email || d.emergency_contact_email) setEmergencyEmail(d.emergency_email || d.emergency_contact_email);
         }
       } catch {
@@ -346,18 +374,15 @@ export default function CustomerProfilePage() {
 
                 {/* Phone Number & Date of Birth */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Phone Number
-                    </label>
-                    <input
-                      type="text"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="e.g. +1 (555) 743-2190"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
-                    />
-                  </div>
+                  <CountryPhoneInput
+                    countryIso={phoneCountryIso}
+                    number={phoneNumber}
+                    onCountryChange={setPhoneCountryIso}
+                    onNumberChange={setPhoneNumber}
+                    countryLabel="Mobile country"
+                    label="Phone Number"
+                    helpText="Select country code, then enter the local mobile number."
+                  />
                   <div>
                     <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                       Date of Birth
@@ -536,18 +561,15 @@ export default function CustomerProfilePage() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Contact Phone
-                    </label>
-                    <input
-                      type="text"
-                      value={emergencyPhone}
-                      onChange={(e) => setEmergencyPhone(e.target.value)}
-                      placeholder="e.g. +1 (555) 901-3382"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
-                    />
-                  </div>
+                  <CountryPhoneInput
+                    countryIso={emergencyPhoneCountryIso}
+                    number={emergencyPhoneNumber}
+                    onCountryChange={setEmergencyPhoneCountryIso}
+                    onNumberChange={setEmergencyPhoneNumber}
+                    countryLabel="Emergency contact country"
+                    label="Contact Phone"
+                    helpText="Select country code, then enter the local mobile number."
+                  />
                   <div>
                     <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                       Contact Email

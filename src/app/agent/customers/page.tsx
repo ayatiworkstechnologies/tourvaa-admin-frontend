@@ -5,7 +5,10 @@ import { LuCircleAlert as AlertCircle, LuRefreshCw as RefreshCw, LuSearch as Sea
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/useToast";
-import { combinePhone } from "@/lib/utils/validators";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import { combinePhone, validateMobile } from "@/lib/utils/validators";
+import { dialCodeForIso } from "@/lib/utils/phoneCountries";
+import type { CountryCode } from "libphonenumber-js/min";
 import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 
@@ -48,7 +51,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 const BLANK = {
-  first_name: "", last_name: "", email: "", phone: "", phone_country_code: "+91",
+  first_name: "", last_name: "", email: "", phone: "",
   country_id: "", state_id: "", city_id: "", postal_code: "", address_line_1: "", address_line_2: "",
 };
 
@@ -61,6 +64,7 @@ export default function AgentCustomersPage() {
   const [total, setTotal] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(BLANK);
+  const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>("IN");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [retryKey, setRetryKey] = useState(0);
@@ -123,10 +127,14 @@ export default function AgentCustomersPage() {
   async function createCustomer(e: React.FormEvent) {
     e.preventDefault();
     if (!form.first_name.trim() || !form.email.trim()) return;
+    const phone = form.phone ? combinePhone(dialCodeForIso(phoneCountryIso), form.phone) : "";
+    if (phone && !validateMobile(phone)) {
+      toast.error("Enter a valid customer mobile number with the selected country code.");
+      return;
+    }
     setSaving(true);
     try {
       const fullName = `${form.first_name} ${form.last_name}`.trim();
-      const phone = form.phone ? combinePhone(form.phone_country_code || "+91", form.phone) : "";
       const selectedCountry = countries.find((c) => String(c.id) === form.country_id);
       const selectedState = states.find((s) => String(s.id) === form.state_id);
       const selectedCity = cities.find((c) => String(c.id) === form.city_id);
@@ -148,6 +156,7 @@ export default function AgentCustomersPage() {
       toast.success("Customer created successfully.");
       setShowModal(false);
       setForm(BLANK);
+      setPhoneCountryIso("IN");
       setPage(1);
       setRetryKey((k) => k + 1);
     } catch {
@@ -201,7 +210,7 @@ export default function AgentCustomersPage() {
           <span className="rounded-full bg-blue-50 px-3 py-2 text-[11px] font-black text-blue-700">{total} customer{total === 1 ? "" : "s"}</span>
           <button
             type="button"
-            onClick={() => { setForm(BLANK); setShowModal(true); }}
+            onClick={() => { setForm(BLANK); setPhoneCountryIso("IN"); setShowModal(true); }}
             className="flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-xs font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#1D4ED8]"
           >
             <UserPlus size={16} strokeWidth={2.5} /> New Customer
@@ -273,18 +282,15 @@ export default function AgentCustomersPage() {
                 <input required type="email" value={form.email} onChange={field("email")} placeholder="jane.smith@example.com"
                   className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
               </div>
-              <div className="flex gap-3">
-                <div className="flex flex-col gap-1.5 w-24">
-                  <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Code</label>
-                  <input value={form.phone_country_code} onChange={field("phone_country_code")} placeholder="+1"
-                    className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
-                </div>
-                <div className="flex flex-col gap-1.5 flex-1">
-                  <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Phone</label>
-                  <input value={form.phone} onChange={field("phone")} placeholder="e.g. 555 019 2834"
-                    className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand" />
-                </div>
-              </div>
+              <CountryPhoneInput
+                countryIso={phoneCountryIso}
+                number={form.phone}
+                onCountryChange={setPhoneCountryIso}
+                onNumberChange={(phone) => setForm((current) => ({ ...current, phone }))}
+                countryLabel="Customer mobile country"
+                label="Customer phone"
+                helpText="Select country code, then enter the local mobile number."
+              />
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Country</label>

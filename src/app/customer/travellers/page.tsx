@@ -6,6 +6,10 @@ import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
 import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
 import Loader from "@/components/ui/Loader";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import { combinePhone, validateMobile } from "@/lib/utils/validators";
+import { dialCodeForIso } from "@/lib/utils/phoneCountries";
+import type { CountryCode } from "libphonenumber-js/min";
 
 type Traveller = {
   id: number;
@@ -36,6 +40,8 @@ export default function CustomerTravellersPage() {
   const toast = useToast();
   const [rows, setRows] = useState<Traveller[]>([]);
   const [form, setForm] = useState(emptyForm);
+  const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>("IN");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -57,10 +63,17 @@ export default function CustomerTravellersPage() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!form.traveller_name.trim()) return;
+    const phone = phoneNumber ? combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber) : "";
+    if (phone && !validateMobile(phone)) {
+      toast.error("Enter a valid traveller mobile number with the selected country code.");
+      return;
+    }
     setSaving(true);
     try {
-      await api.post("/customer/travellers", { ...form, age: form.age ? Number(form.age) : null });
+      await api.post("/customer/travellers", { ...form, phone, age: form.age ? Number(form.age) : null });
       setForm(emptyForm);
+      setPhoneCountryIso("IN");
+      setPhoneNumber("");
       toast.success("Traveller saved.");
       await load();
     } catch {
@@ -108,7 +121,15 @@ export default function CustomerTravellersPage() {
               <input value={form.age} onChange={(e) => setForm((f) => ({ ...f, age: e.target.value.replace(/\D/g, "") }))} placeholder="Age (e.g. 28)" className="customer-input" />
             </div>
             <input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="Email address (e.g. alex.smith@example.com)" className="customer-input w-full" />
-            <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="Mobile number (e.g. +1 555 234 5678)" className="customer-input w-full" />
+            <CountryPhoneInput
+              countryIso={phoneCountryIso}
+              number={phoneNumber}
+              onCountryChange={setPhoneCountryIso}
+              onNumberChange={setPhoneNumber}
+              countryLabel="Traveller mobile country"
+              label="Traveller mobile number"
+              helpText="Select country code, then enter the local mobile number."
+            />
             <input value={form.passport_number} onChange={(e) => setForm((f) => ({ ...f, passport_number: e.target.value }))} placeholder="Passport number (e.g. A12345678)" className="customer-input w-full" />
             <textarea value={form.special_notes} onChange={(e) => setForm((f) => ({ ...f, special_notes: e.target.value }))} placeholder="Special requests, dietary preferences, or accessibility needs (optional)" rows={3} className="customer-input w-full resize-none" />
             <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0868E8] px-4 py-3 text-sm font-bold text-white shadow-md shadow-blue-100 hover:bg-[#075AC9] disabled:opacity-60">

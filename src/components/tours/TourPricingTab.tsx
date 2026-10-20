@@ -477,7 +477,7 @@ export default function TourPricingTab({
                 Supplier Price to Tourvaa
               </th>
               <th rowSpan={2} className="px-4 py-3 text-center align-middle">Markup / Commission</th>
-              <th colSpan={2} className="border-x border-dash-border-soft px-4 py-2 text-center text-dash-brand">
+              <th colSpan={2} title="Profit includes markup and supplier commission" className="border-x border-dash-border-soft px-4 py-2 text-center text-dash-brand">
                 Tourvaa Profit
               </th>
               <th colSpan={2} className="border-r border-dash-border-soft px-4 py-2 text-center text-emerald-800">
