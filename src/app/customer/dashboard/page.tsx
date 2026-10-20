@@ -52,6 +52,7 @@ type Booking = {
   tour_date?: string | null;
   booking_status: string;
   final_amount?: string | number;
+  amount_paid?: string | number;
   amount_pending?: string | number;
   authorized_amount?: string | number;
   payment_status?: string;
