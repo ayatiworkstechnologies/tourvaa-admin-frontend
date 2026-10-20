@@ -148,7 +148,7 @@ export default function CompanyInfoTab() {
 
   const set = (k: keyof CompanyForm, v: string) => setForm(f => ({ ...f, [k]: v }));
 
-  async function saveCompany(e: React.FormEvent) {
+  async function saveCompany(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
     const phone = combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber);
@@ -211,7 +211,7 @@ export default function CompanyInfoTab() {
   const [showNew, setShowNew] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
 
-  async function savePassword(e: React.FormEvent) {
+  async function savePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
     if (pwForm.current_password === pwForm.new_password) {

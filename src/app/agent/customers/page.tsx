@@ -124,7 +124,7 @@ export default function AgentCustomersPage() {
       setForm((f) => ({ ...f, [key]: e.target.value }));
   }
 
-  async function createCustomer(e: React.FormEvent) {
+  async function createCustomer(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
     if (!form.first_name.trim() || !form.email.trim()) return;

@@ -316,7 +316,7 @@ function NotifyModal({
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
     if (!message.trim()) return;

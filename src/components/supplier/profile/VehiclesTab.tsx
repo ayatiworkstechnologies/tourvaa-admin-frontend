@@ -120,7 +120,7 @@ export default function VehiclesTab() {
     setForm(emptyForm);
   }
 
-  async function saveVehicle(e: React.FormEvent) {
+  async function saveVehicle(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
     if (!form.make.trim()) { toast.error("Make is required."); return; }

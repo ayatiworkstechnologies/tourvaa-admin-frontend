@@ -156,7 +156,7 @@ export default function AgencyDetailsTab() {
 
   const set = (k: keyof AgencyForm, v: string) => setForm(f => ({ ...f, [k]: v }));
 
-  async function saveAgency(e: React.FormEvent) {
+  async function saveAgency(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
     const phone = combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber);
@@ -215,7 +215,7 @@ export default function AgencyDetailsTab() {
   const [showNew, setShowNew] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
 
-  async function savePassword(e: React.FormEvent) {
+  async function savePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
     if (pwForm.current_password === pwForm.new_password) {
