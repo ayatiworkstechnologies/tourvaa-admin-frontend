@@ -363,7 +363,7 @@ function VehicleForm({
 }: {
   form: FormFields;
   set: (k: keyof FormFields, v: string) => void;
-  onSave: (e: React.FormEvent) => void;
+  onSave: React.FormEventHandler<HTMLFormElement>;
   onCancel: () => void;
   saving: boolean;
   isNew: boolean;
