@@ -193,7 +193,7 @@ export default function BlogsListClient({ initialPosts }: BlogsListClientProps) 
     setSubscribing(true);
     try {
       await subscribeNewsletter(email.trim());
-      setMessage("Thank you — inspiring travel stories are on their way!");
+      setMessage("Thank you - inspiring travel stories are on their way!");
       setEmail("");
     } catch (err: unknown) {
       setMessage(getApiErrorMessage(err));
@@ -237,7 +237,7 @@ export default function BlogsListClient({ initialPosts }: BlogsListClientProps) 
                 Inspiring Travel Stories, Guides &amp; Expert Tips
               </h1>
               <p className="mx-auto mt-3 max-w-2xl text-xs sm:text-base font-medium text-white/90 leading-relaxed drop-shadow-sm">
-                From curated itineraries and visa tips to packing checklists and cultural secrets—explore the world with confidence.
+                From curated itineraries and visa tips to packing checklists and cultural secrets-explore the world with confidence.
               </p>
 
               {/* ── Search & Filter Bar (Home Page Filter Bar Style) ── */}

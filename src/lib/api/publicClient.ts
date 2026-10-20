@@ -31,7 +31,7 @@ cmsApi.interceptors.request.use((config) => {
   return config;
 });
 
-// Same cache-busting for public tour/category data — ensures admin changes
+// Same cache-busting for public tour/category data - ensures admin changes
 // to tour prices, availability and descriptions show immediately.
 publicApi.interceptors.request.use((config) => {
   const method = (config.method || "get").toLowerCase();

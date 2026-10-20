@@ -10,7 +10,7 @@ const config: PortalAuthConfig = {
   heroImage: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=80",
   heroBadge: "Supplier Portal",
   heroTitle: "List. Connect. Earn.",
-  heroSubtitle: "Manage your tours, track bookings and receive payouts — all from one powerful dashboard.",
+  heroSubtitle: "Manage your tours, track bookings and receive payouts - all from one powerful dashboard.",
   heroBullets: [
     "List unlimited tours and experiences",
     "Real-time booking & availability control",

@@ -3,7 +3,7 @@ import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 
 describe("portal-aware booking status labels", () => {
   it("keeps a received request distinct from supplier confirmation", () => {
-    expect(bookingStatusLabel("pending_supplier_acceptance", "customer")).toBe("Booking Successful — Awaiting Tourvaa Confirmation");
+    expect(bookingStatusLabel("pending_supplier_acceptance", "customer")).toBe("Booking Successful - Awaiting Tourvaa Confirmation");
     expect(bookingStatusLabel("pending_supplier_acceptance", "supplier")).toBe("Awaiting Your Decision");
     expect(bookingStatusLabel("pending_supplier_acceptance", "admin")).toBe("Awaiting Supplier Acceptance");
     expect(bookingStatusLabel("confirmed", "customer")).toBe("Booking Confirmed");

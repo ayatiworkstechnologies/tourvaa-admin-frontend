@@ -136,7 +136,7 @@ export default function BlogContentEditor({
     }, 1200);
   };
 
-  // Predefined Travel Snippet Templates (Clean Plain Text — NO HTML!)
+  // Predefined Travel Snippet Templates (Clean Plain Text - NO HTML!)
   const insertSnippet = (type: "tip" | "highlights" | "checklist") => {
     switch (type) {
       case "tip":
@@ -276,7 +276,7 @@ export default function BlogContentEditor({
           </button>
         </div>
 
-        {/* View Mode Switcher (Clean & Simple — No HTML code tab) */}
+        {/* View Mode Switcher (Clean & Simple - No HTML code tab) */}
         <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-0.5 shadow-2xs">
           <button
             type="button"
@@ -317,7 +317,7 @@ export default function BlogContentEditor({
         </div>
       </div>
 
-      {/* ── Quick Travel Block Snippets Ribbon (100% Plain Text — Zero HTML) ── */}
+      {/* ── Quick Travel Block Snippets Ribbon (100% Plain Text - Zero HTML) ── */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/50 px-4 py-2 text-xs">
         <span className="flex items-center gap-1 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
           <Sparkles size={12} className="text-amber-500" />
@@ -407,7 +407,7 @@ export default function BlogContentEditor({
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/70 px-4 py-2.5 text-xs text-slate-500">
         <div className="flex items-center gap-2 text-[11px] text-slate-600">
           <span className="font-bold text-sky-700">✍️ Human Text Mode:</span>
-          <span>Write naturally. Headings (##), bullet points (•), travel tips (💡) and bold (**) format automatically — zero HTML required.</span>
+          <span>Write naturally. Headings (##), bullet points (•), travel tips (💡) and bold (**) format automatically - zero HTML required.</span>
         </div>
         <div className="flex items-center gap-4 shrink-0 font-medium">
           <span>
@@ -518,7 +518,7 @@ export default function BlogContentEditor({
         </div>
       )}
 
-      {/* ── FAQ Modal (Adds Directly to Structured FAQ List — Zero HTML in content!) ── */}
+      {/* ── FAQ Modal (Adds Directly to Structured FAQ List - Zero HTML in content!) ── */}
       {showFaqModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs">
           <form

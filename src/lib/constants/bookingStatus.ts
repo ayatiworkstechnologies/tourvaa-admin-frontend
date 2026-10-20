@@ -2,7 +2,7 @@ const CONFIRMED_STATUSES = new Set(["confirmed", "ready_to_travel", "upcoming", 
 
 export type BookingPortal = "customer" | "agent" | "supplier" | "admin";
 
-export const BOOKING_AWAITING_CONFIRMATION_LABEL = "Booking Successful — Awaiting Tourvaa Confirmation";
+export const BOOKING_AWAITING_CONFIRMATION_LABEL = "Booking Successful - Awaiting Tourvaa Confirmation";
 
 /**
  * A booking state is operational data, not customer-facing copy. Keep one

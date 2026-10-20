@@ -27,7 +27,7 @@ const DEFAULT_HERO = {
   badge_note: "Updated Weekly",
   heading: "Essential Travel Advice & Guides",
   subtitle:
-    "Everything you need to know before you embark — from border entry protocols and seasonal packing checklists to local currency tips, curated by our global tour leaders.",
+    "Everything you need to know before you embark - from border entry protocols and seasonal packing checklists to local currency tips, curated by our global tour leaders.",
   background_image:
     "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",
 };
@@ -182,7 +182,7 @@ export default function TravelAdvicePage() {
     setSubscribing(true);
     try {
       await subscribeNewsletter(email.trim());
-      setMessage("Thank you — curated expedition advice is heading to your inbox!");
+      setMessage("Thank you - curated expedition advice is heading to your inbox!");
       setEmail("");
     } catch (err: unknown) {
       setMessage(getApiErrorMessage(err));

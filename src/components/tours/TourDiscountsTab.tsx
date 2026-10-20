@@ -484,7 +484,7 @@ export default function TourDiscountsTab({ tourId, role = "admin" }: { tourId: s
         action={addButton}
       >
         {(() => {
-          // Suppliers must only see their own discounts — Tourvaa-funded offers are hidden.
+          // Suppliers must only see their own discounts - Tourvaa-funded offers are hidden.
           const visibleItems = isSupplier
             ? items.filter((d) => !isTourvaaOwnedDiscount(d))
             : items;

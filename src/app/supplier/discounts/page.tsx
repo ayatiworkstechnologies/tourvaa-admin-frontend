@@ -873,7 +873,7 @@ export default function SupplierDiscountsPage() {
                                 <span className="text-[11px] text-[#71867A]">
                                   {entry.created_at
                                     ? new Date(entry.created_at).toLocaleString()
-                                    : "—"}
+                                    : "-"}
                                 </span>
                               </div>
 

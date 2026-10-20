@@ -246,7 +246,7 @@ export default function PaymentSettingsSection() {
           </fieldset>
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Active PayPal environment</span><select value={paypalMode} onChange={(e) => setPaypalMode(e.target.value === "live" ? "live" : "sandbox")} className={inputClass}><option value="sandbox">Sandbox — safe testing</option><option value="live">Live — real customer payments</option></select></label>
+          <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Active PayPal environment</span><select value={paypalMode} onChange={(e) => setPaypalMode(e.target.value === "live" ? "live" : "sandbox")} className={inputClass}><option value="sandbox">Sandbox - safe testing</option><option value="live">Live - real customer payments</option></select></label>
           <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Webhook ID</span><input value={paypalWebhookId} onChange={(e) => setPaypalWebhookId(e.target.value)} className={inputClass} /></label>
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-dash-border pt-4">

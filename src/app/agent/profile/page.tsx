@@ -72,7 +72,7 @@ export default function AgentProfilePage() {
       <div className="mt-4 w-full rounded-2xl border border-[#DFE7F2] bg-white p-5 shadow-[0_10px_32px_-27px_rgba(28,73,135,.75)] sm:p-6">
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-slate-700">
           <BadgeCheck size={19} className="mt-0.5 shrink-0 text-blue-700" />
-          <p><span className="font-black text-slate-900">{TABS.find((tab) => tab.id === activeTab)?.label}</span><span className="hidden sm:inline"> — {TABS.find((tab) => tab.id === activeTab)?.description}</span></p>
+          <p><span className="font-black text-slate-900">{TABS.find((tab) => tab.id === activeTab)?.label}</span><span className="hidden sm:inline"> - {TABS.find((tab) => tab.id === activeTab)?.description}</span></p>
         </div>
         {/* All tabs stay mounted (hidden via CSS, not unmounted) so
             in-progress form edits on inactive tabs survive switching. */}

@@ -116,8 +116,8 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
       };
       if (editingId) {
         // Re-fetch after the mutation (rather than trusting the local
-        // append/replace) so the stored record — including any
-        // server-side recalculation from maybe_resubmit_for_review — is
+        // append/replace) so the stored record - including any
+        // server-side recalculation from maybe_resubmit_for_review - is
         // what the UI reflects, and it survives a refresh identically.
         await api.put(`/refund-rules/${editingId}`, body);
         toast.success("Cancellation rule updated.");
@@ -168,7 +168,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
 
       {rules.length === 0 && !showForm && (
         <div className="rounded-xl border border-dashed border-dash-border p-6 text-center text-sm text-dash-subtle">
-          <p>No tour-specific cancellation rules yet — the platform&apos;s default policy applies for now.</p>
+          <p>No tour-specific cancellation rules yet - the platform&apos;s default policy applies for now.</p>
           {defaultRules.length > 0 && (
             <>
               <div className="mx-auto mt-4 max-w-md space-y-1 text-left text-xs">
@@ -209,7 +209,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
                     {rule.days_before_tour_min} – {rule.days_before_tour_max ?? "∞"} days
                   </td>
                   <td className="px-4 py-2.5 font-bold text-dash-brand-hover">{rule.refund_percentage}%</td>
-                  <td className="px-4 py-2.5 text-dash-subtle">{rule.description || "—"}</td>
+                  <td className="px-4 py-2.5 text-dash-subtle">{rule.description || "-"}</td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="flex justify-end gap-2">
                       <button type="button" onClick={() => startEdit(rule)} className="rounded-lg border border-dash-border p-1.5 text-dash-subtle hover:bg-[#F7F9FC]">

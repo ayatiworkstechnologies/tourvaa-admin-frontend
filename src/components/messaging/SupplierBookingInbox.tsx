@@ -216,7 +216,7 @@ export default function SupplierBookingInbox() {
             <div className="flex items-start justify-between gap-3 border-b border-dash-border-soft px-5 py-3">
               <div className="min-w-0">
                 <p className="font-bold text-dash-text">Tourvaa Admin</p>
-                <p className="truncate text-xs text-dash-subtle">{thread?.booking_code ? `Booking ${thread.booking_code}` : ""}{thread?.tour_name ? ` — ${thread.tour_name}` : ""}</p>
+                <p className="truncate text-xs text-dash-subtle">{thread?.booking_code ? `Booking ${thread.booking_code}` : ""}{thread?.tour_name ? ` - ${thread.tour_name}` : ""}</p>
               </div>
               <PresenceBadge online={thread?.admin_online ?? false} subject="Tourvaa Admin" />
             </div>

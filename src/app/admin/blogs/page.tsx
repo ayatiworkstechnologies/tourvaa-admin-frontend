@@ -235,7 +235,7 @@ export default function AdminBlogsPage() {
               day: "numeric",
               year: "numeric",
             })
-          : "—",
+          : "-",
     },
     {
       key: "actions",
