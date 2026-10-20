@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN apk add --no-cache libc6-compat
@@ -49,7 +49,7 @@ RUN if [ "$BUILD_ENV" = "production" ]; then \
     fi
 RUN --mount=type=cache,target=/app/.next/cache npm run build
 
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
