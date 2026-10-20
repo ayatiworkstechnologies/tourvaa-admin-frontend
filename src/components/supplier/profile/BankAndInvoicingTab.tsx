@@ -6,6 +6,7 @@ import axios from "axios";
 import api from "@/lib/api/client";
 import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
+import { digitsOnly, validateMobile } from "@/lib/utils/validators";
 
 type Form = {
   contact_name: string; email: string; phone: string;
@@ -76,12 +77,17 @@ export default function BankAndInvoicingTab() {
       toast.error("Complete the required accounts and billing details.");
       return;
     }
+    const phone = form.phone.trim().startsWith("+") ? `+${digitsOnly(form.phone)}` : form.phone.trim();
+    if (!validateMobile(phone, true)) {
+      toast.error("Enter the accounts phone with its country code, for example +919876543210.");
+      return;
+    }
     if (!bankLocked && (!form.preferred_payment_method || !form.account_name || !form.account_number || !form.bank_name || !form.bank_branch || !form.bank_country_id)) {
       toast.error("Complete all required bank details before saving.");
       return;
     }
     const invoicing: Record<string, string | number | null> = {
-      contact_name: form.contact_name, email: form.email, phone: form.phone,
+      contact_name: form.contact_name, email: form.email, phone,
       billing_address: form.billing_address, billing_city: form.billing_city,
       billing_state: form.billing_state, billing_postal_code: form.billing_postal_code,
       country_id: Number(form.country_id),

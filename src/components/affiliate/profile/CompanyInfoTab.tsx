@@ -6,7 +6,7 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { useGeoCities, useGeoCountries } from "@/hooks/useGeo";
-import { validatePassword, passwordHelp } from "@/lib/utils/validators";
+import { digitsOnly, passwordHelp, validateMobile, validatePassword } from "@/lib/utils/validators";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type ProfileForm = {
@@ -120,6 +120,11 @@ export default function CompanyInfoTab() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    const invoicePhone = invoicing.phone.trim().startsWith("+") ? `+${digitsOnly(invoicing.phone)}` : invoicing.phone.trim();
+    if (invoicePhone && !validateMobile(invoicePhone)) {
+      toast.error("Enter the accounts phone with its country code, for example +919876543210.");
+      return;
+    }
     setSaving(true);
     try {
       await api.patch("/affiliates/me", {
@@ -138,7 +143,7 @@ export default function CompanyInfoTab() {
         invoicing: {
           contact_name: invoicing.contact_name,
           email: invoicing.email,
-          phone: invoicing.phone,
+          phone: invoicePhone,
           country_id: parseInt(invoicing.country_id) || null,
           tax_number: invoicing.tax_number,
           billing_address: invoicing.billing_address,
