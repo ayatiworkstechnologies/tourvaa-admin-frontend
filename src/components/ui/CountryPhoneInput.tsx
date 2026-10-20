@@ -23,15 +23,9 @@ type CountryPhoneInputProps = {
   placeholder?: string;
 };
 
-/** The one country + phone number pair of fields used everywhere a phone
- * number is collected (login/registration/profile forms) - rendered as two
- * separate, separately-labeled fields (Country, then Mobile Number) rather
- * than one fused control, so each reads as its own form field. Selecting a
- * country from the searchable dropdown (flag + name + dial code, via
- * libphonenumber-js + the existing FlagIcon component) fills the dial-code
- * prefix shown on the Mobile Number field below it, which also gets live
- * as-you-type formatting and an inline valid/invalid indicator once enough
- * digits are entered. */
+/** Shared country-code and mobile-number control. The left selector opens a
+ * searchable country list; the right input accepts only the local number.
+ * Together they submit a validated international E.164 number. */
 export default function CountryPhoneInput({
   countryIso,
   number,
@@ -83,31 +77,38 @@ export default function CountryPhoneInput({
 
   const isValid = countryIso && number.length >= 4 ? validatePhoneForCountry(countryIso, number) : null;
   const formatted = countryIso ? formatAsYouType(countryIso, number) : number;
+  const validationMessage = errorMessage || (
+    isValid === false ? "Enter a valid mobile number for the selected country." : ""
+  );
 
   return (
     <div className={className}>
-      {/* Field 1: Country */}
-      <div className="mb-4">
-        <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{countryLabel}</span>
-        <div ref={containerRef} className="relative">
+      <label className="block">
+        <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
+        <div
+          ref={containerRef}
+          className={`relative flex overflow-visible rounded-xl border bg-white transition-shadow focus-within:ring-4 ${
+            validationMessage
+              ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-100"
+              : "border-dash-border focus-within:border-dash-brand focus-within:ring-sky-100"
+          }`}
+        >
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-haspopup="listbox"
             aria-expanded={open}
-            className={`flex w-full items-center gap-2 rounded-xl border bg-white px-3.5 py-2.5 text-left text-sm font-semibold text-dash-text outline-none transition focus:ring-4 ${
-              errorMessage && !selected
-                ? "border-red-400 focus:border-red-400 focus:ring-red-100"
-                : "border-dash-border focus:border-dash-brand focus:ring-sky-100"
-            }`}
+            aria-label={countryLabel}
+            title={selected ? `${selected.name} (${selected.dialCode})` : countryLabel}
+            className="flex shrink-0 items-center gap-1.5 border-r border-dash-border bg-dash-bg px-3 py-2.5 text-sm font-semibold text-dash-text outline-none transition hover:bg-slate-100 focus:bg-slate-100"
           >
             {selected ? (
               <span className="h-3.5 w-5 shrink-0 overflow-hidden rounded-[2px]">
                 <FlagIcon countryCode={selected.iso} />
               </span>
             ) : null}
-            <span className={`flex-1 truncate ${selected ? "" : "font-normal text-dash-subtle"}`}>
-              {selected ? `${selected.name} (${selected.dialCode})` : "Select country"}
+            <span className={selected ? "" : "font-normal text-dash-subtle"}>
+              {selected ? selected.dialCode : "Code"}
             </span>
             <ChevronDown size={14} className={`shrink-0 text-dash-subtle transition-transform ${open ? "rotate-180" : ""}`} />
           </button>
@@ -115,7 +116,7 @@ export default function CountryPhoneInput({
           {open && (
             <div
               role="listbox"
-              className="absolute left-0 top-[calc(100%+6px)] z-50 max-h-72 w-full min-w-[280px] origin-top overflow-hidden rounded-xl border border-dash-border bg-white shadow-xl transition duration-150 ease-out"
+              className="absolute left-0 top-[calc(100%+6px)] z-50 max-h-72 min-w-[280px] origin-top overflow-hidden rounded-xl border border-dash-border bg-white shadow-xl transition duration-150 ease-out"
             >
               <div className="flex items-center gap-2 border-b border-dash-border px-3 py-2">
                 <Search size={14} className="shrink-0 text-dash-subtle" />
@@ -158,23 +159,6 @@ export default function CountryPhoneInput({
               </ul>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Field 2: Mobile Number */}
-      <label className="block">
-        <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
-        <div
-          className={`relative flex overflow-hidden rounded-xl border bg-white transition-shadow focus-within:ring-4 ${
-            errorMessage
-              ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-100"
-              : "border-dash-border focus-within:border-dash-brand focus-within:ring-sky-100"
-          }`}
-        >
-          <span className="flex shrink-0 items-center border-r border-dash-border bg-dash-bg px-3 py-2.5 text-sm font-semibold text-dash-text">
-            {selected ? selected.dialCode : "+--"}
-          </span>
-
           <input
             type="tel"
             inputMode="numeric"
@@ -185,8 +169,8 @@ export default function CountryPhoneInput({
             required={required}
             disabled={!selected}
             autoComplete="tel-national"
-            aria-invalid={Boolean(errorMessage)}
-            aria-describedby={errorMessage ? "phone-error" : undefined}
+            aria-invalid={Boolean(validationMessage)}
+            aria-describedby={validationMessage ? "phone-error" : undefined}
           />
 
           {isValid !== null && (
@@ -195,8 +179,8 @@ export default function CountryPhoneInput({
             </span>
           )}
         </div>
-        {errorMessage ? (
-          <p id="phone-error" className="mt-1 text-xs text-red-600">{errorMessage}</p>
+        {validationMessage ? (
+          <p id="phone-error" className="mt-1 text-xs text-red-600">{validationMessage}</p>
         ) : (
           helpText && <p className="mt-1 text-xs text-dash-subtle">{helpText}</p>
         )}
