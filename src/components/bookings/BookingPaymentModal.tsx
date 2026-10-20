@@ -17,7 +17,7 @@ type DepositConfig = {
 
 export default function BookingPaymentModal({
   bookingId, outstandingAmount, totalAmount, amountPaid, preferredPaymentType, depositConfig,
-  currency, returnPath, onClose, onSuccess, allowPartialPayment = true,
+  currency, onClose, onSuccess, allowPartialPayment = true,
 }: {
   bookingId: number;
   outstandingAmount: number;
@@ -26,7 +26,6 @@ export default function BookingPaymentModal({
   preferredPaymentType?: "partial" | "full";
   depositConfig?: DepositConfig;
   currency: string;
-  returnPath: string;
   onClose: () => void;
   onSuccess: () => void;
   /** Agents settle a gateway payment in full; deposits are customer-only. */
@@ -123,8 +122,8 @@ export default function BookingPaymentModal({
         booking_id: bookingId, amount: paymentAmount, currency,
         payment_type: paymentType,
         idempotency_key: paymentIdempotencyKey("stripe"),
-        success_url: `${origin}${returnPath}?payment=stripe_success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}${returnPath}?payment=cancelled`,
+        success_url: `${origin}/agent/payments/success?booking_id=${bookingId}&provider=stripe&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/agent/payments/failed?booking_id=${bookingId}&provider=stripe`,
       });
       const checkoutUrl = response.data?.data?.checkout_url;
       if (!checkoutUrl) throw new Error("No checkout URL returned");
@@ -149,8 +148,8 @@ export default function BookingPaymentModal({
         booking_id: bookingId, amount: paymentAmount, currency,
         payment_type: paymentType,
         idempotency_key: paymentIdempotencyKey("paypal"),
-        return_url: `${origin}${returnPath}?payment=paypal_approved`,
-        cancel_url: `${origin}${returnPath}?payment=cancelled`,
+        return_url: `${origin}/agent/payments/success?booking_id=${bookingId}&provider=paypal`,
+        cancel_url: `${origin}/agent/payments/failed?booking_id=${bookingId}&provider=paypal`,
       });
       const { approve_url: approveUrl, payment_id: paymentId } = response.data?.data ?? {};
       if (!approveUrl) throw new Error("No PayPal approval URL returned");

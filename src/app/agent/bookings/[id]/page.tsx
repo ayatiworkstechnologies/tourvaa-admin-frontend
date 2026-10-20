@@ -567,7 +567,6 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           depositConfig={booking.deposit_config}
           allowPartialPayment={false}
           currency={booking.currency || "USD"}
-          returnPath={`/agent/bookings/${booking.id}`}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
             setPaymentBanner({ type: "success", message: `${BOOKING_AWAITING_CONFIRMATION_LABEL}. Your customer's booking and payment have been successfully submitted. Please wait for Tourvaa confirmation. We will notify you once the booking is confirmed.` });

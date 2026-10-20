@@ -1158,7 +1158,15 @@ export default function DynamicTourBookingPage() {
     }
     const paymentBooking = { ...booking, selected_payment_amount: selectedPaymentAmount };
     setPendingBooking(paymentBooking);
-    const base = `${window.location.origin}/${isAgent ? "agent" : "customer"}/bookings/${booking.id}`;
+    const origin = window.location.origin;
+    // Customer checkout must return to the dedicated receipt screen. The old
+    // public flow returned to the booking detail with a transient banner,
+    // which meant a completed ₹100 authorization looked like nothing had
+    // happened and never displayed its provider/reference details.
+    const customerResult = (result: "success" | "failed", provider: "stripe" | "paypal") =>
+      `${origin}/customer/payments/${result}?booking_id=${booking.id}&provider=${provider}`;
+    const agentResult = (result: "success" | "failed", provider: "stripe" | "paypal") =>
+      `${origin}/agent/payments/${result}?booking_id=${booking.id}&provider=${provider}`;
     const testOnly = gateway === "stripe" ? Boolean(gateways?.stripe_test) : Boolean(gateways?.paypal_test);
     const amount = selectedPaymentAmount ?? booking.amount_pending;
     // Stable per booking/gateway/amount so a retry or double-click reuses the same
@@ -1172,14 +1180,19 @@ export default function DynamicTourBookingPage() {
     const idempotency_key = paymentIdempotencyKeys.current[paymentKey];
     if (gateway === "stripe") {
       const { data } = await api.post("/payments/stripe/create-session", {
-        ...common, idempotency_key, success_url: `${base}?payment=${isAgent ? "stripe_success" : "success"}&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${base}?payment=cancelled`,
+        ...common, idempotency_key,
+        success_url: isAgent
+          ? `${agentResult("success", "stripe")}&session_id={CHECKOUT_SESSION_ID}`
+          : `${customerResult("success", "stripe")}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: isAgent ? agentResult("failed", "stripe") : customerResult("failed", "stripe"),
       });
       if (!data.data?.checkout_url) throw new Error("Stripe checkout URL is missing.");
       window.location.assign(data.data.checkout_url);
     } else {
       const { data } = await api.post("/payments/paypal/create-order", {
-        ...common, idempotency_key, return_url: `${base}?payment=paypal_approved`, cancel_url: `${base}?payment=cancelled`,
+        ...common, idempotency_key,
+        return_url: isAgent ? agentResult("success", "paypal") : customerResult("success", "paypal"),
+        cancel_url: isAgent ? agentResult("failed", "paypal") : customerResult("failed", "paypal"),
       });
       if (!data.data?.approve_url) throw new Error("PayPal approval URL is missing.");
       sessionStorage.setItem(`paypal_pid_${paymentBooking.id}`, String(data.data.payment_id));

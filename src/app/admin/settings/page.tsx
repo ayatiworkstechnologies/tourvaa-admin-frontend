@@ -491,7 +491,7 @@ export default function SettingsPage() {
         {activeGroup === "smtp" && (
           <section className="rounded-2xl border border-dash-border bg-white p-6">
             <h3 className="mb-1 text-lg font-bold text-dash-text">Email / SMTP</h3>
-            <p className="mb-5 text-sm text-dash-muted">Mail server used to send password resets, approvals, and notifications.</p>
+            <p className="mb-5 text-sm text-dash-muted">Mail server used for password resets, approvals, and all booking lifecycle notifications. Use the test option below after saving changes.</p>
             <SmtpSettingsSection />
           </section>
         )}

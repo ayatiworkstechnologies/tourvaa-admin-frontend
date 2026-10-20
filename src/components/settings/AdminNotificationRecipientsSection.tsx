@@ -73,7 +73,7 @@ export default function AdminNotificationRecipientsSection() {
   return (
     <form onSubmit={save} className="rounded-2xl border border-dash-border bg-white p-6">
       <h3 className="mb-1 text-lg font-bold text-dash-text">Admin Notification Recipients</h3>
-      <p className="mb-5 text-sm text-dash-muted">Optional comma-separated addresses for Tourvaa operational booking, payment, cancellation and refund alerts.</p>
+      <p className="mb-5 text-sm text-dash-muted">Optional comma-separated operational mailboxes. They receive booking lifecycle alerts: payment secured, supplier assignment and decisions, confirmation, reschedules, cancellations, tour updates, and payment expiry. Each address is delivered separately.</p>
       {message && <p className="mb-4 rounded-xl bg-sky-50 px-4 py-3 text-sm text-dash-brand-hover">{message}</p>}
       <div className="grid gap-4 md:grid-cols-3">
         <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Admin To</span><input type="text" value={adminTo} onChange={(event) => setAdminTo(event.target.value)} placeholder="ops@example.com" className={inputClass} /></label>
