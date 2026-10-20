@@ -11,19 +11,31 @@ export type BookingStatusHistoryItem = {
 export type BookingTraveller = {
   id?: number;
   full_name: string;
+  date_of_birth?: string | null;
   age?: number | null;
   traveller_type?: string;
+  gender?: string | null;
+  nationality?: string | null;
   passport_number?: string | null;
+  passport_expiry_date?: string | null;
+  email?: string | null;
   phone?: string | null;
+  is_primary_contact?: boolean;
+  special_requirements?: string | null;
+  pickup_location?: string | null;
+  emergency_contact?: string | null;
 };
 
 export type Booking = {
   id: number;
   booking_code: string;
-  customer_id: number;
+  customer_id: number | null;
   customer_name?: string | null;
   customer_email?: string | null;
   customer_phone?: string | null;
+  /** Lead traveller contact, used when an agent booking has no customer account. */
+  contact_name?: string | null;
+  contact_email?: string | null;
   contact_phone?: string | null;
   tour_id?: number | null;
   tour_calendar_id?: number | null;

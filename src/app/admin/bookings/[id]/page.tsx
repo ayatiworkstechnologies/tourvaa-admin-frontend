@@ -228,6 +228,13 @@ function initials(name: string) {
   return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
 }
 
+function formatTravellerDate(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
 // Visual Stepper for the booking execution workflow styled in Admin Theme
 function BookingJourneyStepper({ status }: { status: string }) {
   const steps = [
@@ -562,6 +569,13 @@ export default function BookingDetailPage() {
   const totalAmountNum = Number(booking?.final_amount ?? 0);
   const paidAmountNum = Number(booking?.amount_paid ?? 0);
   const percentPaid = totalAmountNum > 0 ? Math.min(100, Math.round((paidAmountNum / totalAmountNum) * 100)) : 0;
+  // Agent-created bookings do not always have a customer portal account. In
+  // that case, the booking's primary traveller is the lead contact.
+  const customerDisplayName =
+    booking?.customer_name?.trim() ||
+    booking?.contact_name?.trim() ||
+    (booking?.customer_id ? `Customer #${booking.customer_id}` : "Agent booking contact");
+  const customerDisplayEmail = booking?.customer_email?.trim() || booking?.contact_email?.trim() || null;
 
   // Format booking creation date
   const createdDateFormatted = useMemo(() => {
@@ -657,7 +671,7 @@ export default function BookingDetailPage() {
                 {/* Left Info Column */}
                 <div className="flex items-start gap-5">
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-dash-brand to-dash-brand-dark text-xl font-black text-white shadow-[0_4px_12px_rgb(29,58,109,0.25)]">
-                    {initials(booking.customer_name || booking.booking_code)}
+                    {initials(customerDisplayName || booking.booking_code)}
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2.5">
@@ -681,12 +695,12 @@ export default function BookingDetailPage() {
                     <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-dash-muted">
                       <span className="inline-flex items-center gap-1.5 font-medium">
                         <Users size={14} className="text-dash-subtle" />
-                        {booking.customer_name || `Customer #${booking.customer_id}`}
+                        {customerDisplayName}
                       </span>
-                      {booking.customer_email && (
+                      {customerDisplayEmail && (
                         <span className="inline-flex items-center gap-1.5 font-medium">
                           <Mail size={14} className="text-dash-subtle" />
-                          {booking.customer_email}
+                          {customerDisplayEmail}
                         </span>
                       )}
                       {booking.country && (
@@ -1084,14 +1098,35 @@ export default function BookingDetailPage() {
                             <p className="text-sm font-bold text-dash-text truncate" title={t.full_name}>
                               {t.full_name}
                             </p>
+                            {t.is_primary_contact && (
+                              <span className="mt-1 inline-block rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                                Primary contact
+                              </span>
+                            )}
                             <p className="text-xs text-dash-muted font-medium">
                               {t.traveller_type ? t.traveller_type.charAt(0).toUpperCase() + t.traveller_type.slice(1) : "Traveller"}
                               {t.age !== undefined && t.age !== null ? ` · ${t.age} yrs` : ""}
                             </p>
+                            {(t.date_of_birth || t.nationality) && (
+                              <p className="mt-1 text-[11px] text-dash-subtle">
+                                {t.date_of_birth ? `DOB: ${formatTravellerDate(t.date_of_birth)}` : ""}
+                                {t.date_of_birth && t.nationality ? " · " : ""}
+                                {t.nationality || ""}
+                              </p>
+                            )}
                             {t.passport_number && (
                               <p className="mt-1 text-[11px] font-mono text-dash-subtle">
                                 Pass: {t.passport_number}
+                                {t.passport_expiry_date ? ` · Expires ${formatTravellerDate(t.passport_expiry_date)}` : ""}
                               </p>
+                            )}
+                            {(t.email || t.phone) && (
+                              <p className="mt-1 truncate text-[11px] text-dash-subtle" title={[t.email, t.phone].filter(Boolean).join(" · ")}>
+                                {[t.email, t.phone].filter(Boolean).join(" · ")}
+                              </p>
+                            )}
+                            {t.special_requirements && (
+                              <p className="mt-1 text-[11px] font-medium text-amber-700">Note: {t.special_requirements}</p>
                             )}
                           </div>
                         </div>
@@ -1127,8 +1162,8 @@ export default function BookingDetailPage() {
                 {/* Lead Customer Contact Card */}
                 <DetailPanel title="Customer" icon={<User size={18} />}>
                   <div className="space-y-3">
-                    <DetailField label="Name" value={booking.customer_name || `Customer #${booking.customer_id}`} />
-                    <DetailField label="Email" value={booking.customer_email} />
+                    <DetailField label="Name" value={customerDisplayName} />
+                    <DetailField label="Email" value={customerDisplayEmail} />
                     <DetailField label="Phone" value={booking.customer_phone ?? booking.contact_phone} />
                     {booking.customer_id && (
                       <div className="pt-1">
