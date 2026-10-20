@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { LuCheckCircle2 as CheckCircle, LuMessageSquareText as MessageSquare, LuStar as Star } from "react-icons/lu";
+import { LuCircleCheck as CheckCircle, LuMessageSquareText as MessageSquare, LuStar as Star } from "react-icons/lu";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 
