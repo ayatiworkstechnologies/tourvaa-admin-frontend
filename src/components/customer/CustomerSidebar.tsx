@@ -10,6 +10,7 @@ import {
   LuHeadphones as Headphones,
   LuLock as Lock,
   LuLogOut as LogOut,
+  LuStar as Star,
   LuShieldCheck as ShieldCheck,
   LuTicket as Ticket,
   LuUserRound as UserRound,
@@ -45,6 +46,7 @@ const customerNavigation: PortalNavItem[] = [
   { label: "My Bookings", href: "/customer/bookings", icon: Ticket },
   { label: "Payments", href: "/customer/payments", icon: CreditCard },
   { label: "Wishlist", href: "/customer/wishlist", icon: Heart },
+  { label: "Reviews", href: "/customer/reviews", icon: Star },
   { label: "Support", href: "/customer/support", icon: Headphones },
 ];
 

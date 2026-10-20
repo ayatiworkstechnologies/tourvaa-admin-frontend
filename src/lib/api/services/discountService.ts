@@ -54,6 +54,26 @@ export type GlobalDiscountHistoryEntry = {
   created_at: string;
 };
 
+export type GlobalDiscountUsageEntry = {
+  id: number;
+  booking_id: number;
+  booking_code?: string | null;
+  booking_source?: string | null;
+  customer_name?: string | null;
+  agent_name?: string | null;
+  discount_amount: number | string;
+  currency: string;
+  applied_at: string;
+  booking_status?: string | null;
+};
+
+export type GlobalDiscountUsage = {
+  items: GlobalDiscountUsageEntry[];
+  tracked_count: number;
+  used_count: number;
+  unattributed_historical_count: number;
+};
+
 // Edit replaces every field (including scope/status -- setting status back
 // to "active" reactivates an inactive discount). Delete is a soft-deactivate
 // (status -> inactive) rather than a real row delete, so a discount that
@@ -76,5 +96,10 @@ export async function amendGlobalDiscount(id: number, payload: GlobalDiscountAme
 
 export async function getGlobalDiscountHistory(id: number): Promise<GlobalDiscountHistoryEntry[]> {
   const response = await api.get<{ data: GlobalDiscountHistoryEntry[] }>(`/discounts/${id}/history`);
+  return response.data.data;
+}
+
+export async function getGlobalDiscountUsage(id: number): Promise<GlobalDiscountUsage> {
+  const response = await api.get<{ data: GlobalDiscountUsage }>(`/discounts/${id}/usage`);
   return response.data.data;
 }

@@ -12,13 +12,16 @@ import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useAuthContext } from "@/providers/AuthProvider";
+import { formatCurrency } from "@/lib/utils/currency";
 import {
   createGlobalDiscount,
   updateGlobalDiscount,
   deactivateGlobalDiscount,
   GlobalDiscount,
   GlobalDiscountHistoryEntry,
+  GlobalDiscountUsage,
   getGlobalDiscountHistory,
+  getGlobalDiscountUsage,
   listAllDiscounts,
 } from "@/lib/api/services/discountService";
 
@@ -80,6 +83,7 @@ export default function DiscountsPage() {
   const [saving, setSaving] = useState(false);
   const [historyFor, setHistoryFor] = useState<GlobalDiscount | null>(null);
   const [history, setHistory] = useState<GlobalDiscountHistoryEntry[]>([]);
+  const [usage, setUsage] = useState<GlobalDiscountUsage | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const load = useCallback(async () => {
@@ -172,7 +176,12 @@ export default function DiscountsPage() {
     setHistoryFor(item);
     setHistoryLoading(true);
     try {
-      setHistory(await getGlobalDiscountHistory(item.id!));
+      const [historyRows, usageRows] = await Promise.all([
+        getGlobalDiscountHistory(item.id!),
+        getGlobalDiscountUsage(item.id!),
+      ]);
+      setHistory(historyRows);
+      setUsage(usageRows);
     } catch {
       toast.error("Failed to load discount history.");
     } finally {
@@ -501,29 +510,60 @@ export default function DiscountsPage() {
             <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
               <div className="flex items-center justify-between">
                 <h3 className="flex items-center gap-2 font-bold text-dash-text"><History size={16} /> Discount history -- {historyFor.discount_name}</h3>
-                <button type="button" aria-label="Close" onClick={() => setHistoryFor(null)}><X size={18} /></button>
+                <button type="button" aria-label="Close" onClick={() => { setHistoryFor(null); setUsage(null); }}><X size={18} /></button>
               </div>
               <div className="mt-4 max-h-[60vh] overflow-y-auto">
                 {historyLoading ? (
                   <Loader label="Loading history..." />
-                ) : history.length === 0 ? (
-                  <p className="text-sm text-dash-subtle">No history yet.</p>
                 ) : (
                   <div className="space-y-3">
-                    {history.map((v) => (
-                      <div key={v.id} className="rounded-xl border border-dash-border p-4">
-                        <div className="flex items-center justify-between">
-                          <span className="inline-flex items-center rounded-full bg-dash-bg px-2.5 py-1 text-xs font-black text-dash-body">v{v.version_number} -- {v.change_type.replace(/_/g, " ")}</span>
-                          <span className="text-xs text-dash-subtle">{v.created_at?.slice(0, 10)}{v.changed_by_name ? ` by ${v.changed_by_name}` : ""}</span>
-                        </div>
-                        <p className="mt-2 text-sm text-dash-body">
-                          {v.discount_value}{v.discount_type === "percentage" ? "%" : ""} off
-                          {v.end_date ? ` -- valid until ${v.end_date.slice(0, 10)}` : ""}
-                        </p>
-                        {v.reason && <p className="mt-1 text-xs text-dash-subtle">&quot;{v.reason}&quot;</p>}
+                    <section>
+                      <div className="mb-2 flex items-center justify-between">
+                        <h4 className="text-sm font-black text-dash-text">Usage ({usage?.used_count ?? historyFor.used_count ?? 0})</h4>
+                        {usage && <span className="text-xs text-dash-subtle">{usage.tracked_count} booking{usage.tracked_count === 1 ? "" : "s"} tracked</span>}
                       </div>
-                    ))}
-                  </div>
+                      {usage?.unattributed_historical_count ? (
+                        <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                          {usage.unattributed_historical_count} earlier use{usage.unattributed_historical_count === 1 ? "" : "s"} cannot be linked to a booking because tracking began after those redemptions.
+                        </p>
+                      ) : null}
+                      {!usage?.items.length ? (
+                        <p className="text-sm text-dash-subtle">No individually tracked bookings yet.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {usage.items.map((entry) => (
+                            <div key={entry.id} className="rounded-xl border border-dash-border p-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="font-bold text-dash-text">{entry.booking_code || `Booking #${entry.booking_id}`}</span>
+                                <span className="text-sm font-bold text-emerald-700">{formatCurrency(entry.discount_amount, entry.currency)} saved</span>
+                              </div>
+                              <p className="mt-1 text-xs text-dash-subtle">
+                                {entry.booking_source === "agent" && entry.agent_name ? `Agent: ${entry.agent_name}` : "Customer booking"}
+                                {entry.customer_name ? ` - Traveller: ${entry.customer_name}` : ""}
+                                {entry.applied_at ? ` - ${entry.applied_at.slice(0, 10)}` : ""}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                    <section className="border-t border-dash-border pt-4">
+                      <h4 className="mb-2 text-sm font-black text-dash-text">Change log</h4>
+                      {history.length === 0 ? <p className="text-sm text-dash-subtle">No configuration changes yet.</p> : history.map((v) => (
+                        <div key={v.id} className="mb-3 rounded-xl border border-dash-border p-4">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center rounded-full bg-dash-bg px-2.5 py-1 text-xs font-black text-dash-body">v{v.version_number} -- {v.change_type.replace(/_/g, " ")}</span>
+                            <span className="text-xs text-dash-subtle">{v.created_at?.slice(0, 10)}{v.changed_by_name ? ` by ${v.changed_by_name}` : ""}</span>
+                          </div>
+                          <p className="mt-2 text-sm text-dash-body">
+                            {v.discount_value}{v.discount_type === "percentage" ? "%" : ""} off
+                            {v.end_date ? ` -- valid until ${v.end_date.slice(0, 10)}` : ""}
+                          </p>
+                          {v.reason && <p className="mt-1 text-xs text-dash-subtle">&quot;{v.reason}&quot;</p>}
+                        </div>
+                      ))}
+                    </section>
+                      </div>
                 )}
               </div>
             </div>

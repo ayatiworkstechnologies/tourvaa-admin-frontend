@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuBell as Bell, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCompass as Compass, LuFileCheck2 as FileCheck, LuHandCoins as HandCoins, LuLayoutDashboard as LayoutDashboard, LuMessageSquare as MessageSquare, LuPercent as Percent, LuPlus as Plus, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
+import { LuBell as Bell, LuCalendarCheck as CalendarCheck, LuChartColumn as ChartColumn, LuCompass as Compass, LuFileCheck2 as FileCheck, LuHandCoins as HandCoins, LuLayoutDashboard as LayoutDashboard, LuMessageSquare as MessageSquare, LuPercent as Percent, LuPlus as Plus, LuStar as Star, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
@@ -26,6 +26,7 @@ const NAV = [
   { href: "/supplier/earnings", icon: Wallet, label: "Earnings", section: "Operations" },
   { href: "/supplier/payouts", icon: HandCoins, label: "Payouts", section: "Operations" },
   { href: "/supplier/reports", icon: ChartColumn, label: "Reports", section: "Operations" },
+  { href: "/supplier/reviews", icon: Star, label: "Reviews", section: "Operations" },
   { href: "/supplier/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
   { href: "/supplier/notifications", icon: Bell, label: "Notifications", section: "Communication" },
   { href: "/supplier-terms", icon: FileCheck, label: "Terms & Conditions", section: "Policies" },
@@ -43,6 +44,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/supplier/earnings": "Earnings",
   "/supplier/payouts": "Payouts",
   "/supplier/reports": "Reports",
+  "/supplier/reviews": "Reviews",
   "/supplier/messages": "Messages",
   "/supplier/notifications": "Notifications",
   "/supplier/profile": "My Profile",

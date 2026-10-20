@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuCompass as Compass, LuLayoutDashboard as LayoutDashboard, LuMessageSquare as MessageSquare, LuReceiptText as ReceiptText, LuUser as User, LuUsers as Users } from "react-icons/lu";
+import { LuCalendarCheck as CalendarCheck, LuCircleDollarSign as CircleDollarSign, LuCompass as Compass, LuLayoutDashboard as LayoutDashboard, LuMessageSquare as MessageSquare, LuReceiptText as ReceiptText, LuStar as Star, LuUser as User, LuUsers as Users } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
@@ -23,6 +23,7 @@ const NAV = [
   { href: "/agent/tours", icon: Compass, label: "Browse Tours", section: "Sales Workspace", permissions: ["tours.view", "view-tours"] },
   { href: "/agent/bookings", icon: CalendarCheck, label: "Bookings", section: "Sales Workspace" },
   { href: "/agent/customers", icon: Users, label: "My Customers", section: "Sales Workspace" },
+  { href: "/agent/reviews", icon: Star, label: "Reviews", section: "Sales Workspace" },
   { href: "/agent/invoices", icon: ReceiptText, label: "Invoices", section: "Finance" },
   { href: "/agent/payouts", icon: CircleDollarSign, label: "Earnings", section: "Finance" },
   { href: "/agent/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
@@ -39,6 +40,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/agent/tours": "Browse Tours",
   "/agent/bookings": "Bookings",
   "/agent/customers": "My Customers",
+  "/agent/reviews": "Reviews",
   "/agent/invoices": "Invoices",
   "/agent/payouts": "Earnings",
   "/agent/messages": "Messages",
