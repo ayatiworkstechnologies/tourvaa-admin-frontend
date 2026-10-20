@@ -37,7 +37,7 @@ function withMarkup(price: number | null | undefined, markupPercent: number | nu
 const money = (value: number) => Math.round(value * 100) / 100;
 
 /** Mirrors the Admin publishable-price view: supplier offer -> supplier
- * commission -> markup -> Tourvaa offer. The customer offer still applies to
+ * commission -> markup on the supplier payout -> Tourvaa offer. The customer offer still applies to
  * the storefront price, while its displayed profit deduction is the same
  * percentage of Tourvaa's gross profit (the agreed commercial rule). */
 function markupFinancials(
@@ -50,9 +50,9 @@ function markupFinancials(
   // 900 with a 10% supplier offer and 10% commission is 900 -> 810 -> 729.
   const supplierPriceToTourvaa = money(supplierListPrice * (1 - supplierDiscountPercent / 100));
   const supplierPayout = money(supplierPriceToTourvaa * (1 - supplierCommissionPercent / 100));
-  const storefrontPrice = withMarkup(supplierPriceToTourvaa, markupPercent);
+  const storefrontPrice = withMarkup(supplierPayout, markupPercent);
   const customerPrice = money(storefrontPrice * (1 - tourvaaDiscountPercent / 100));
-  const markupAmount = money(storefrontPrice - supplierPriceToTourvaa);
+  const markupAmount = money(storefrontPrice - supplierPayout);
   const commissionAmount = money(supplierPriceToTourvaa - supplierPayout);
   const grossProfit = money(markupAmount + commissionAmount);
   // Do not subtract the customer-price reduction from the profit column.
@@ -801,7 +801,7 @@ export default function TourPricingTab({
             <strong className="text-dash-body">Note:</strong>{" "}
             {isSupplier
               ? "Adult/child price is the price supplied to Tourvaa. Tourvaa commission is deducted to calculate what you receive; an active discount is shown as a crossed-out original and its discounted price."
-              : "Tourvaa commission is deducted from the adult/child price to calculate what the supplier receives. An active discount is shown against both amounts; the storefront price below adds Tourvaa's markup."}
+              : "Supplier offer and Tourvaa commission are deducted first. The storefront price then adds Tourvaa's markup to the supplier payout."}
           </span>
         </p>
       </SectionCard>
