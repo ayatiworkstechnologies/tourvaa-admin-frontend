@@ -36,10 +36,9 @@ function withMarkup(price: number | null | undefined, markupPercent: number | nu
 
 const money = (value: number) => Math.round(value * 100) / 100;
 
-/** Mirrors the Admin publishable-price view: supplier offer -> supplier
- * commission -> markup on the supplier payout -> Tourvaa offer. The customer offer still applies to
- * the storefront price, while its displayed profit deduction is the same
- * percentage of Tourvaa's gross profit (the agreed commercial rule). */
+/** Mirrors the published-price rule: the customer pays the original supplier
+ * rate plus Tourvaa markup. Supplier offers and commission change settlement
+ * only, while a Tourvaa offer can reduce the customer-facing price. */
 function markupFinancials(
   supplierListPrice: number,
   supplierDiscountPercent: number,
@@ -50,11 +49,11 @@ function markupFinancials(
   // 900 with a 10% supplier offer and 10% commission is 900 -> 810 -> 729.
   const supplierPriceToTourvaa = money(supplierListPrice * (1 - supplierDiscountPercent / 100));
   const supplierPayout = money(supplierPriceToTourvaa * (1 - supplierCommissionPercent / 100));
-  const storefrontPrice = withMarkup(supplierPayout, markupPercent);
+  const storefrontPrice = withMarkup(supplierListPrice, markupPercent);
   const customerPrice = money(storefrontPrice * (1 - tourvaaDiscountPercent / 100));
-  const markupAmount = money(storefrontPrice - supplierPayout);
+  const markupAmount = money(storefrontPrice - supplierListPrice);
   const commissionAmount = money(supplierPriceToTourvaa - supplierPayout);
-  const grossProfit = money(markupAmount + commissionAmount);
+  const grossProfit = money(storefrontPrice - supplierPayout);
   // Do not subtract the customer-price reduction from the profit column.
   // Example: $243 gross profit with a 15% Tourvaa offer deducts $36.45,
   // leaving $206.55. The storefront price remains discounted separately.
@@ -315,11 +314,8 @@ export default function TourPricingTab({
   // The markup actually applied to a slab.
   const effectiveMarkup = (slab: PricingSlab) => (slab.admin_markup_value ?? inheritedMarkup);
   const afterSupplierDiscount = (price: number | null | undefined) => money(Number(price ?? 0) * (1 - Number(supplierDiscountPercent ?? 0) / 100));
-  // The slab modal must preview the exact same pricing pipeline as the
-  // published table: supplier offer -> supplier commission -> markup ->
-  // Tourvaa offer. Previously the modal added markup to the undiscounted
-  // supplier list price, so a saved row could show (for example) 4.05 AUD
-  // while its editor incorrectly previewed 4.50 AUD.
+  // The slab modal previews the exact published-price rule: customer price
+  // is the original supplier rate plus the effective markup.
   const editingFinancials = editing ? {
     adult: markupFinancials(
       sanitizeNumber(editing.adult_price), Number(supplierDiscountPercent ?? 0),
@@ -437,7 +433,7 @@ export default function TourPricingTab({
       icon={Percent}
       iconTone="brand"
       title="Publishable Price"
-      description="Supplier discount is applied first, then supplier commission, TourVaa markup, and any TourVaa storefront discount. Profit includes markup and supplier commission, less the TourVaa-funded storefront discount."
+      description="Customer price is the supplier rate plus Tourvaa markup. Supplier discounts and commission affect supplier settlement only; Tourvaa storefront discounts are applied after the customer price is calculated."
     >
       {/* Tour-level markup */}
       <div className="mb-4 rounded-xl border border-dash-border bg-dash-bg px-4 py-3">
@@ -506,8 +502,8 @@ export default function TourPricingTab({
               const commissionPercent = Number(r.commission_percentage ?? 0);
               const adultFinancials = markupFinancials(adultOrig, Number(supplierDiscountPercent ?? 0), commissionPercent, Number(mkp), Number(tourvaaDiscountPercent ?? 0));
               const childFinancials = markupFinancials(childOrig, Number(supplierDiscountPercent ?? 0), commissionPercent, Number(mkp), Number(tourvaaDiscountPercent ?? 0));
-              const { supplierPriceToTourvaa: adultToTourvaa, supplierPayout: adultSupplierPayout, storefrontPrice: adultStorefront, customerPrice: adultFinal, markupAmount: adultMarkupAmount, commissionAmount: adultCommissionAmount, tourvaaDiscountAmount: adultTourvaaDiscountAmount, netProfit: adultProfit } = adultFinancials;
-              const { supplierPriceToTourvaa: childToTourvaa, supplierPayout: childSupplierPayout, storefrontPrice: childStorefront, customerPrice: childFinal, markupAmount: childMarkupAmount, commissionAmount: childCommissionAmount, tourvaaDiscountAmount: childTourvaaDiscountAmount, netProfit: childProfit } = childFinancials;
+              const { supplierPriceToTourvaa: adultToTourvaa, supplierPayout: adultSupplierPayout, storefrontPrice: adultStorefront, customerPrice: adultFinal, grossProfit: adultGrossProfit, tourvaaDiscountAmount: adultTourvaaDiscountAmount, netProfit: adultProfit } = adultFinancials;
+              const { supplierPriceToTourvaa: childToTourvaa, supplierPayout: childSupplierPayout, storefrontPrice: childStorefront, customerPrice: childFinal, grossProfit: childGrossProfit, tourvaaDiscountAmount: childTourvaaDiscountAmount, netProfit: childProfit } = childFinancials;
               return (
                 <tr key={r.id ?? idx} className="transition-colors hover:bg-dash-bg/40">
                   <td className="px-4 py-3.5 align-middle">
@@ -575,14 +571,14 @@ export default function TourPricingTab({
                   <td className="border-l border-dash-border-soft/60 px-4 py-3.5 align-middle">
                     <div className="flex flex-col">
                       <span className={`text-sm font-black ${adultProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>{fmt(adultProfit, r.currency)}</span>
-                      <span className="text-[10px] font-semibold text-dash-subtle">Markup {fmt(adultMarkupAmount, r.currency)} + commission {fmt(adultCommissionAmount, r.currency)}{tourvaaDiscountPercent ? ` − discount ${fmt(adultTourvaaDiscountAmount, r.currency)}` : ""}</span>
+                      <span className="text-[10px] font-semibold text-dash-subtle">Customer price less supplier payout {fmt(adultGrossProfit, r.currency)}{tourvaaDiscountPercent ? ` − discount ${fmt(adultTourvaaDiscountAmount, r.currency)}` : ""}</span>
                     </div>
                   </td>
                   {/* Tourvaa Profit - Child */}
                   <td className="border-r border-dash-border-soft/60 px-4 py-3.5 align-middle">
                     <div className="flex flex-col">
                       <span className={`text-sm font-black ${childProfit < 0 ? "text-rose-600" : "text-dash-brand"}`}>{fmt(childProfit, r.currency)}</span>
-                      <span className="text-[10px] font-semibold text-dash-subtle">Markup {fmt(childMarkupAmount, r.currency)} + commission {fmt(childCommissionAmount, r.currency)}{tourvaaDiscountPercent ? ` − discount ${fmt(childTourvaaDiscountAmount, r.currency)}` : ""}</span>
+                      <span className="text-[10px] font-semibold text-dash-subtle">Customer price less supplier payout {fmt(childGrossProfit, r.currency)}{tourvaaDiscountPercent ? ` − discount ${fmt(childTourvaaDiscountAmount, r.currency)}` : ""}</span>
                     </div>
                   </td>
                   {/* Adult Customer Price (Storefront) */}

@@ -186,7 +186,7 @@ const currencyDisplayOverrides: Record<string, { label: string; helper: string }
 
 const commissionSettingKeys: { key: string; label: string; description: string }[] = [
   { key: "supplier_commission_percentage", label: "Tourvaa Tour Commission (Minimum)", description: "Tourvaa's own platform commission on every tour booking, deducted from the supplier's price. This is the floor - suppliers may agree to a higher rate, but it can never go lower." },
-  { key: "default_admin_markup_percentage", label: "Default Tourvaa Markup", description: "Added after supplier commission is deducted, giving the storefront price customers pay. Pre-filled on every new pricing slab (admins can change it per slab). Suppliers never see it. 0 = storefront price equals the supplier payout." },
+    { key: "default_admin_markup_percentage", label: "Default Tourvaa Markup", description: "Added to the published supplier rate, giving the storefront price customers pay. Supplier commission is deducted separately for settlement. Pre-filled on every new pricing slab (admins can change it per slab). Suppliers never see it." },
 ];
 const commissionSettingKeySet = new Set(commissionSettingKeys.map((c) => c.key));
 
