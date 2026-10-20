@@ -34,7 +34,7 @@ const HELPFUL_LINKS = [
 ];
 
 /**
- * Standalone 404 content — NO PublicLayout wrapper here.
+ * Standalone 404 content - NO PublicLayout wrapper here.
  * Consumed by two entry-points:
  *   1. src/app/not-found.tsx          → root 404, adds its own PublicLayout
  *   2. src/app/(public)/not-found.tsx → inside (public)/layout.tsx which already provides PublicLayout

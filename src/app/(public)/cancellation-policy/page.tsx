@@ -18,7 +18,7 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          The following cancellation schedule applies to most Tourvaa bookings. Individual tours may have custom or more restrictive operator policies — always verify the exact policy displayed on your specific tour detail page and booking voucher before confirming.
+          The following cancellation schedule applies to most Tourvaa bookings. Individual tours may have custom or more restrictive operator policies - always verify the exact policy displayed on your specific tour detail page and booking voucher before confirming.
         </p>
 
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">

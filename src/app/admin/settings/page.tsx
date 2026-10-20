@@ -159,7 +159,7 @@ function TimezoneSelect({ value, onChange }: { value: string; onChange: (value: 
       >
         <option value="" disabled>Select timezone</option>
         {!known && value && <option value={value}>{value}</option>}
-        {TIMEZONE_OPTIONS.map(([zone, label]) => <option key={zone} value={zone}>{label} — {zone}</option>)}
+        {TIMEZONE_OPTIONS.map(([zone, label]) => <option key={zone} value={zone}>{label} - {zone}</option>)}
       </select>
       <p className="mt-2 text-xs text-dash-subtle">Current platform time: <span className="font-semibold text-dash-muted">{preview}</span></p>
     </>
@@ -1296,7 +1296,7 @@ export default function SettingsPage() {
                           className="w-full cursor-not-allowed rounded-xl border border-dash-border bg-dash-bg px-4 py-2.5 text-sm text-dash-muted outline-none"
                         />
                         <p className="mt-2 text-xs text-dash-subtle">
-                          Fixed system value — money is always rounded to 2 decimal places using standard rounding. Not configurable.
+                          Fixed system value - money is always rounded to 2 decimal places using standard rounding. Not configurable.
                         </p>
                       </>
                     ) : imageSettingKeys.has(setting.key) ? (

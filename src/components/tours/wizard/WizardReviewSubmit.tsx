@@ -146,7 +146,7 @@ export function WizardReviewSubmit({
 
         {isSupplier && isLiveTour && hasPendingReview && (
           <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-            <AlertTriangle size={16} /> Your latest edits are already staged for admin review — no separate submit step is needed.
+            <AlertTriangle size={16} /> Your latest edits are already staged for admin review - no separate submit step is needed.
           </div>
         )}
 

@@ -449,7 +449,7 @@ export default function AboutPage() {
                   &ldquo;{story.quote_text || DEFAULT_STORY.quote_text}&rdquo;
                 </p>
                 <p className="mt-2 text-xs font-bold text-pub-secondary">
-                  — {story.quote_author || DEFAULT_STORY.quote_author}
+                  - {story.quote_author || DEFAULT_STORY.quote_author}
                 </p>
               </div>
             </div>

@@ -244,11 +244,11 @@ export default function ComparePage() {
   const [budgetFilter, setBudgetFilter] = useState("Any Budget");
   const [levelFilter, setLevelFilter] = useState("Any Level");
 
-  // Full tour detail payloads are heavy (itineraries, gallery, reviews...) — cache them
+  // Full tour detail payloads are heavy (itineraries, gallery, reviews...) - cache them
   // across every fetch site on this page so the same tour is never re-fetched twice.
   const detailCacheRef = useRef<Record<number, PublicTourDetail | null>>({});
 
-  // Lightweight dedicated endpoint for the destination dropdown — avoids pulling full
+  // Lightweight dedicated endpoint for the destination dropdown - avoids pulling full
   // tour payloads just to read country names.
   useEffect(() => {
     fetchPublicCountries()
@@ -375,7 +375,7 @@ export default function ComparePage() {
 
       if (levelFilter !== "Any Level") {
         // Difficulty isn't in the list payload, so probe tour details in small batches
-        // and stop as soon as we have enough matches — avoids fetching every candidate's
+        // and stop as soon as we have enough matches - avoids fetching every candidate's
         // full (heavy) detail payload up front.
         const matched: PublicTour[] = [];
         const batchSize = MAX_COMPARE_ITEMS;

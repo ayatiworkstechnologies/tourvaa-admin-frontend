@@ -35,7 +35,7 @@ const empty = (): ItineraryDay => ({
 
 function parseStopTitles(text: string): string[] {
   if (!text) return [];
-  const matches = [...text.matchAll(/(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][A-Za-z0-9\s&'/–—\-]+:)\s*/g)];
+  const matches = [...text.matchAll(/(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][A-Za-z0-9\s&'/–-\-]+:)\s*/g)];
   return matches.map((m) => m[1].replace(/:$/, "").trim());
 }
 
@@ -73,7 +73,7 @@ function ItineraryLongDescriptionEditor({
   const handleFormatSpacing = () => {
     if (!value) return;
     const formatted = value
-      .replace(/(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][A-Za-z0-9\s&'/–—\-]+:)/g, "\n\n$1")
+      .replace(/(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][A-Za-z0-9\s&'/–-\-]+:)/g, "\n\n$1")
       .trim();
     onChange(formatted);
   };

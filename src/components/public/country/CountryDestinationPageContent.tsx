@@ -54,7 +54,7 @@ export default function CountryDestinationPageContent({
         />
       )}
 
-      {/* ── 3. Why Visit {Country} — Core Reason Pillars ── */}
+      {/* ── 3. Why Visit {Country} - Core Reason Pillars ── */}
       {visible("why_visit") && <CountryWhyVisitSection info={info} />}
 
       {/* ── 4. Destination Overview & Detailed Narrative ── */}
