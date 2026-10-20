@@ -6,7 +6,10 @@ import axios from "axios";
 import api from "@/lib/api/client";
 import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
-import { digitsOnly, validateMobile } from "@/lib/utils/validators";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import { combinePhone, validateMobile } from "@/lib/utils/validators";
+import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import type { CountryCode } from "libphonenumber-js/min";
 
 type Form = {
   contact_name: string; email: string; phone: string;
@@ -36,12 +39,20 @@ export default function BankAndInvoicingTab() {
   const [saving, setSaving] = useState(false);
   const [bankLocked, setBankLocked] = useState(false);
   const [primary, setPrimary] = useState({ name: "", email: "", phone: "" });
+  const [accountsPhoneCountryIso, setAccountsPhoneCountryIso] = useState<CountryCode>("IN");
+  const [accountsPhoneNumber, setAccountsPhoneNumber] = useState("");
 
   useEffect(() => {
     api.get("/suppliers/me").then((response) => {
       const supplier = response.data?.data ?? response.data ?? {};
       const invoice = supplier.invoicing ?? {};
       const primaryContact = supplier.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary) ?? supplier.contacts?.[0] ?? {};
+      if (invoice.phone) {
+        const iso = isoForDialCode(invoice.phone);
+        const dial = dialCodeForIso(iso);
+        setAccountsPhoneCountryIso(iso);
+        setAccountsPhoneNumber(invoice.phone.startsWith(dial) ? invoice.phone.slice(dial.length) : invoice.phone.replace(/^\+/, ""));
+      }
       setPrimary({
         name: primaryContact.contact_name || [primaryContact.first_name, primaryContact.last_name].filter(Boolean).join(" "),
         email: primaryContact.email || "",
@@ -60,7 +71,13 @@ export default function BankAndInvoicingTab() {
   }, [toast]);
 
   const set = (key: keyof Form, value: string) => setForm((previous) => ({ ...previous, [key]: value }));
-  const copyPrimary = () => setForm((previous) => ({ ...previous, contact_name: primary.name, email: primary.email, phone: primary.phone }));
+  const copyPrimary = () => {
+    const iso = isoForDialCode(primary.phone);
+    const dial = dialCodeForIso(iso);
+    setAccountsPhoneCountryIso(iso);
+    setAccountsPhoneNumber(primary.phone.startsWith(dial) ? primary.phone.slice(dial.length) : primary.phone.replace(/^\+/, ""));
+    setForm((previous) => ({ ...previous, contact_name: primary.name, email: primary.email, phone: primary.phone }));
+  };
 
   async function requestBankDetailEdit() {
     try {
@@ -73,11 +90,11 @@ export default function BankAndInvoicingTab() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!form.contact_name || !form.email || !form.phone || !form.billing_address || !form.billing_city || !form.country_id) {
+    if (!form.contact_name || !form.email || !accountsPhoneNumber || !form.billing_address || !form.billing_city || !form.country_id) {
       toast.error("Complete the required accounts and billing details.");
       return;
     }
-    const phone = form.phone.trim().startsWith("+") ? `+${digitsOnly(form.phone)}` : form.phone.trim();
+    const phone = combinePhone(dialCodeForIso(accountsPhoneCountryIso), accountsPhoneNumber);
     if (!validateMobile(phone, true)) {
       toast.error("Enter the accounts phone with its country code, for example +919876543210.");
       return;
@@ -131,7 +148,7 @@ export default function BankAndInvoicingTab() {
       </div>
     </section>
 
-    <section className="rounded-2xl border border-dash-border bg-white p-5 shadow-sm"><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-lg font-bold text-dash-text">Invoicing & Accounts Details</h3><p className="mt-1 text-sm text-dash-subtle">All invoices will be emailed to this accounts contact.</p></div><button type="button" onClick={copyPrimary} className="rounded-xl border border-emerald-200 px-3 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50">Use Primary Contact</button></div><div className="grid gap-4 md:grid-cols-3"><label><Label>Accounts / Finance Contact Name <b className="text-red-500">*</b></Label><input required value={form.contact_name} onChange={(e) => set("contact_name", e.target.value)} className={fieldClass} /></label><label><Label>Accounts Email Address <b className="text-red-500">*</b></Label><input required type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={fieldClass} /></label><label><Label>Accounts Phone Number <b className="text-red-500">*</b></Label><input required value={form.phone} onChange={(e) => set("phone", e.target.value)} className={fieldClass} /></label></div></section>
+    <section className="rounded-2xl border border-dash-border bg-white p-5 shadow-sm"><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-lg font-bold text-dash-text">Invoicing & Accounts Details</h3><p className="mt-1 text-sm text-dash-subtle">All invoices will be emailed to this accounts contact.</p></div><button type="button" onClick={copyPrimary} className="rounded-xl border border-emerald-200 px-3 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50">Use Primary Contact</button></div><div className="grid gap-4 md:grid-cols-2"><label><Label>Accounts / Finance Contact Name <b className="text-red-500">*</b></Label><input required value={form.contact_name} onChange={(e) => set("contact_name", e.target.value)} className={fieldClass} /></label><label><Label>Accounts Email Address <b className="text-red-500">*</b></Label><input required type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={fieldClass} /></label><CountryPhoneInput className="md:col-span-2" countryIso={accountsPhoneCountryIso} number={accountsPhoneNumber} onCountryChange={setAccountsPhoneCountryIso} onNumberChange={setAccountsPhoneNumber} countryLabel="Accounts contact country" label="Accounts Phone Number *" required helpText="Select country code, then enter the local mobile number." /></div></section>
 
     <section className="rounded-2xl border border-dash-border bg-white p-5 shadow-sm"><div className="mb-4"><h3 className="text-lg font-bold text-dash-text">Business Billing Address</h3><p className="mt-1 text-sm text-dash-subtle">The address that appears on invoices and billing records.</p></div><div className="grid gap-4 md:grid-cols-2"><label className="md:col-span-2"><Label>Billing / Invoice Address <b className="text-red-500">*</b></Label><input required value={form.billing_address} onChange={(e) => set("billing_address", e.target.value)} className={fieldClass} /></label><label><Label>City <b className="text-red-500">*</b></Label><input required value={form.billing_city} onChange={(e) => set("billing_city", e.target.value)} className={fieldClass} /></label><label><Label>Country <b className="text-red-500">*</b></Label><select required value={form.country_id} onChange={(e) => set("country_id", e.target.value)} className={fieldClass}><option value="">Select country</option>{countries.map((country) => <option key={country.id} value={country.id}>{country.name}</option>)}</select></label><label><Label>State / Province / Region <span className="normal-case font-normal">(conditional)</span></Label><input value={form.billing_state} onChange={(e) => set("billing_state", e.target.value)} className={fieldClass} /></label><label><Label>Postcode / ZIP Code <span className="normal-case font-normal">(conditional)</span></Label><input value={form.billing_postal_code} onChange={(e) => set("billing_postal_code", e.target.value)} className={fieldClass} /></label></div></section>
     <div className="flex justify-end"><button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60">{saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Save Details</button></div>

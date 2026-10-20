@@ -120,6 +120,11 @@ export default function CompanyInfoTab() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    const profilePhone = form.phone.trim().startsWith("+") ? `+${digitsOnly(form.phone)}` : form.phone.trim();
+    if (profilePhone && !validateMobile(profilePhone)) {
+      toast.error("Enter your phone with its country code, for example +919876543210.");
+      return;
+    }
     const invoicePhone = invoicing.phone.trim().startsWith("+") ? `+${digitsOnly(invoicing.phone)}` : invoicing.phone.trim();
     if (invoicePhone && !validateMobile(invoicePhone)) {
       toast.error("Enter the accounts phone with its country code, for example +919876543210.");
@@ -129,7 +134,7 @@ export default function CompanyInfoTab() {
     try {
       await api.patch("/affiliates/me", {
         name: form.name,
-        phone: form.phone,
+        phone: profilePhone,
         website_url: form.website_url,
         country_id: parseInt(form.country_id) || null,
         city_id: parseInt(form.city_id) || null,
