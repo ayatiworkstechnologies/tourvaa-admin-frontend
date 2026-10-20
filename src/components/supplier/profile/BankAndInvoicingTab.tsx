@@ -90,6 +90,7 @@ export default function BankAndInvoicingTab() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (!event.currentTarget.reportValidity()) return;
     if (!form.contact_name || !form.email || !accountsPhoneNumber || !form.billing_address || !form.billing_city || !form.country_id) {
       toast.error("Complete the required accounts and billing details.");
       return;

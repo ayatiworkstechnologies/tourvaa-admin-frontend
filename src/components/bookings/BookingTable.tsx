@@ -87,8 +87,11 @@ export default function BookingTable({
       className: "min-w-[190px]",
       render: (booking) => {
         const name =
-          booking.customer_name || `Customer #${booking.customer_id}`;
-        const initials = getInitials(booking.customer_name);
+          booking.customer_name?.trim() ||
+          booking.contact_name?.trim() ||
+          (booking.customer_id ? `Customer #${booking.customer_id}` : "Agent booking contact");
+        const email = booking.customer_email?.trim() || booking.contact_email?.trim();
+        const initials = getInitials(name);
         return (
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700 border border-slate-200/80 shadow-2xs">
@@ -98,9 +101,9 @@ export default function BookingTable({
               <p className="font-semibold text-slate-900 text-sm truncate">
                 {name}
               </p>
-              {booking.customer_email && (
+              {email && (
                 <p className="text-xs text-slate-500 truncate max-w-[180px]">
-                  {booking.customer_email}
+                  {email}
                 </p>
               )}
             </div>

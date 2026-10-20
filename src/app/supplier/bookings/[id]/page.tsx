@@ -318,6 +318,7 @@ function NotifyModal({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     if (!message.trim()) return;
     setSending(true);
     try {

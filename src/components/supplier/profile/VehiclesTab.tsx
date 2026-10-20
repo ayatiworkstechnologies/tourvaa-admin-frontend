@@ -122,6 +122,7 @@ export default function VehiclesTab() {
 
   async function saveVehicle(e: React.FormEvent) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     if (!form.make.trim()) { toast.error("Make is required."); return; }
     setSaving(true);
     const payload = {

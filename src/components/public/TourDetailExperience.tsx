@@ -1825,9 +1825,8 @@ export default function TourDetailExperience({
 
           {tour.brochure_pdf && (
             <a
-              href={mediaUrl(tour.brochure_pdf)}
-              target="_blank"
-              rel="noreferrer"
+              href={`/api/public/tours/${tour.id}/brochure`}
+              download
               className="mt-6 flex max-w-4xl items-center gap-3 rounded-2xl border border-blue-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 sm:px-5"
             >
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#173f70] shadow-sm"><Download size={16} /></span>

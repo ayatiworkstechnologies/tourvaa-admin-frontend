@@ -150,6 +150,7 @@ export default function CompanyInfoTab() {
 
   async function saveCompany(e: React.FormEvent) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     const phone = combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber);
     if (!validateMobile(phone, true)) {
       toast.error(mobileHelp);
@@ -212,6 +213,7 @@ export default function CompanyInfoTab() {
 
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     if (pwForm.current_password === pwForm.new_password) {
       toast.error("New password must be different from current password.");
       return;

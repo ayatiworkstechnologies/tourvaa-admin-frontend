@@ -37,6 +37,9 @@ type Booking = {
   customer_name?: string;
   customer_email?: string;
   customer_phone?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
   customer?: { id: number; name?: string; email?: string; phone?: string };
   tour_name?: string;
   tour_date?: string | null;
@@ -437,9 +440,9 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
           <div className="order-3 rounded-2xl border border-[#DCEBE2] bg-white p-4 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)]">
             <h2 className="flex items-center gap-2 text-base font-black text-[#123024]"><User size={16} className="text-[#16833A]" /> Customer</h2>
             <div className="mt-4">
-              <InfoRow label="Name" value={booking.customer_name ?? booking.customer?.name} />
-              <InfoRow label="Email" value={booking.customer_email ?? booking.customer?.email} />
-              <InfoRow label="Phone" value={booking.customer_phone ?? booking.customer?.phone} />
+              <InfoRow label="Name" value={booking.customer_name || booking.customer?.name || booking.contact_name} />
+              <InfoRow label="Email" value={booking.customer_email || booking.customer?.email || booking.contact_email} />
+              <InfoRow label="Phone" value={booking.customer_phone || booking.customer?.phone || booking.contact_phone} />
             </div>
           </div>
 

@@ -149,6 +149,7 @@ export default function AgentBankAndInvoicingTab() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (!event.currentTarget.reportValidity()) return;
     if (!form.contact_name || !form.email || !financePhoneNumber || !form.billing_address || !form.billing_city || !form.country_id) {
       toast.error("Complete the required accounts and billing details.");
       return;
@@ -339,6 +340,7 @@ export default function AgentBankAndInvoicingTab() {
           <label className="block">
             <Label>Preferred Payment Method (Bank Transfer / PayPal) *</Label>
             <select
+              required
               disabled={bankLocked}
               value={form.preferred_payment_method}
               onChange={(e) => set("preferred_payment_method", e.target.value)}
@@ -352,6 +354,7 @@ export default function AgentBankAndInvoicingTab() {
           <label className="block">
             <Label>Account Holder Name *</Label>
             <input
+              required
               disabled={bankLocked}
               value={form.account_name}
               onChange={(e) => set("account_name", e.target.value)}
@@ -362,6 +365,7 @@ export default function AgentBankAndInvoicingTab() {
           <label className="block">
             <Label>Bank Name *</Label>
             <input
+              required
               disabled={bankLocked}
               value={form.bank_name}
               onChange={(e) => set("bank_name", e.target.value)}
@@ -390,6 +394,7 @@ export default function AgentBankAndInvoicingTab() {
           <label className="block">
             <Label>Account Number / IBAN *</Label>
             <input
+              required
               disabled={bankLocked}
               value={form.account_number}
               onChange={(e) => set("account_number", e.target.value)}

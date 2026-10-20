@@ -9,9 +9,10 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import CustomerAvatar from "@/components/customer/CustomerAvatar";
+import DatePicker from "@/components/ui/DatePicker";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import { combinePhone, passwordHelp, validateEmail, validateMobile, validatePassword } from "@/lib/utils/validators";
-import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import { dialCodeForIso, isoForDialCode, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 
 const AIRLINES = [
@@ -46,6 +47,8 @@ const NATIONALITIES = [
 ];
 
 const GENDERS = ["Female", "Male", "Other", "Prefer not to say"];
+const todayIso = new Date().toISOString().slice(0, 10);
+const earliestBirthDate = `${new Date().getFullYear() - 120}-01-01`;
 
 function splitStoredPhone(value?: string) {
   if (!value) return { countryIso: "IN" as CountryCode, number: "" };
@@ -206,12 +209,12 @@ export default function CustomerProfilePage() {
       toast.error("Enter your first and last name.");
       return;
     }
-    if (phone.trim() && !validateMobile(phone)) {
-      toast.error("Enter a valid mobile number in international format.");
+    if (!phoneNumber || !validatePhoneForCountry(phoneCountryIso, phoneNumber) || !validateMobile(phone)) {
+      toast.error("Select the correct country code and enter a valid mobile number.");
       return;
     }
-    if (emergencyPhone.trim() && !validateMobile(emergencyPhone)) {
-      toast.error("Enter a valid emergency mobile number in international format.");
+    if (emergencyPhoneNumber && (!validatePhoneForCountry(emergencyPhoneCountryIso, emergencyPhoneNumber) || !validateMobile(emergencyPhone))) {
+      toast.error("Select the correct country code and enter a valid emergency mobile number.");
       return;
     }
     if (emergencyEmail.trim() && !validateEmail(emergencyEmail)) {
@@ -383,18 +386,15 @@ export default function CustomerProfilePage() {
                     label="Phone Number"
                     helpText="Select country code, then enter the local mobile number."
                   />
-                  <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Date of Birth
-                    </label>
-                    <input
-                      type="text"
-                      value={dob}
-                      onChange={(e) => setDob(e.target.value)}
-                      placeholder="e.g. 14 Nov 1994"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
-                    />
-                  </div>
+                  <DatePicker
+                    value={dob}
+                    onChange={setDob}
+                    minDate={earliestBirthDate}
+                    maxDate={todayIso}
+                    label="Date of Birth"
+                    placeholder="Select date of birth"
+                    clearable
+                  />
                 </div>
 
                 {/* Nationality & Gender */}

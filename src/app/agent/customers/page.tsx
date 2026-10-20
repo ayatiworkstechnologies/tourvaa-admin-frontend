@@ -126,6 +126,7 @@ export default function AgentCustomersPage() {
 
   async function createCustomer(e: React.FormEvent) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     if (!form.first_name.trim() || !form.email.trim()) return;
     const phone = form.phone ? combinePhone(dialCodeForIso(phoneCountryIso), form.phone) : "";
     if (phone && !validateMobile(phone)) {

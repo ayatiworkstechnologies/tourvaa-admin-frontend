@@ -158,6 +158,7 @@ export default function AgencyDetailsTab() {
 
   async function saveAgency(e: React.FormEvent) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     const phone = combinePhone(dialCodeForIso(phoneCountryIso), phoneNumber);
     if (!validateMobile(phone, true)) { toast.error(mobileHelp); return; }
     if (!form.agent_type || !form.address || !form.country_id || !form.business_registration_number || !form.iata_registration_number || !form.gst_tax_number || !form.primary_contact_first_name || !form.primary_contact_last_name || !form.primary_contact_designation || !form.primary_contact_email || !primaryPhoneNumber || !form.primary_contact_method) {
@@ -216,6 +217,7 @@ export default function AgencyDetailsTab() {
 
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     if (pwForm.current_password === pwForm.new_password) {
       toast.error("New password must be different from current password.");
       return;
