@@ -468,7 +468,7 @@ export default function SupplierBookingDetailPage() {
     try {
       if (type === "confirm") {
         await api.post(`/supplier/bookings/${bookingId}/accept`, {});
-        toast.success("Booking accepted. The customer has been notified.");
+        toast.success("Booking accepted. Tourvaa will complete the final confirmation.");
       } else if (type === "decline") {
         await api.post(`/supplier/bookings/${bookingId}/decline`, { reason: payload?.reason });
         toast.success("Booking declined and the payment hold has been released.");

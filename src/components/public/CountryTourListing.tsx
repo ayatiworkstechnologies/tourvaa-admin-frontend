@@ -413,6 +413,8 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     }
     if (selectedDepartureMonth) params.departure_month = selectedDepartureMonth;
     if (availableOnly) params.available_only = true;
+    if (selectedDestination) params.destination = selectedDestination;
+    if (selectedRating) params.min_rating = selectedRating;
 
     fetchPublicTours(params)
       .then((result) => {
@@ -493,7 +495,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     return () => {
       active = false;
     };
-  }, [countryName, countrySlug, queryCountry, querySearch, queryCategory, selectedSubcategory, selectedDuration, selectedBudget, budgetOptions, selectedDepartureMonth, availableOnly, sortOrder, page, format, isIndia, retryKey, searchParams]);
+  }, [countryName, countrySlug, queryCountry, querySearch, queryCategory, selectedSubcategory, selectedDuration, selectedBudget, selectedDestination, selectedRating, budgetOptions, selectedDepartureMonth, availableOnly, sortOrder, page, format, isIndia, retryKey, searchParams]);
 
   // Destination and hero headings
   const destinationTitle = countryName || (isIndia ? "India" : hasSpecificCountry ? "Destination" : "World Tours");
@@ -606,25 +608,9 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Duration/Budget/Departure Month/Category are already applied server-side
-  // (see the fetch effect above) -- what's left here only narrows the
-  // current page's real fields: country/city name and rating_average.
-  const filteredTours = useMemo(() => {
-    return tours.filter((tour) => {
-      if (selectedDestination) {
-        const query = selectedDestination.toLowerCase();
-        const matchesLoc = tour.location.toLowerCase().includes(query);
-        const matchesCity = tour.cities.toLowerCase().includes(query);
-        if (!matchesLoc && !matchesCity) return false;
-      }
-
-      if (selectedRating) {
-        if (!tour.rating || tour.rating < Number(selectedRating)) return false;
-      }
-
-      return true;
-    });
-  }, [tours, selectedDestination, selectedRating]);
+  // All listing filters, including destination and rating, are applied by
+  // the API before its total and pagination are calculated.
+  const filteredTours = tours;
 
   // Dynamic titles and descriptions - an active admin-authored CountryPage
   // (see admin/cms > Country Pages) overrides these on a per-field basis;

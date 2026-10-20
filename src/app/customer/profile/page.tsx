@@ -9,7 +9,7 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import CustomerAvatar from "@/components/customer/CustomerAvatar";
-import { passwordHelp, validatePassword } from "@/lib/utils/validators";
+import { passwordHelp, validateEmail, validateMobile, validatePassword } from "@/lib/utils/validators";
 
 const AIRLINES = [
   "American Airlines",
@@ -174,6 +174,22 @@ export default function CustomerProfilePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firstName.trim() || !lastName.trim()) {
+      toast.error("Enter your first and last name.");
+      return;
+    }
+    if (phone.trim() && !validateMobile(phone)) {
+      toast.error("Enter a valid mobile number in international format.");
+      return;
+    }
+    if (emergencyPhone.trim() && !validateMobile(emergencyPhone)) {
+      toast.error("Enter a valid emergency mobile number in international format.");
+      return;
+    }
+    if (emergencyEmail.trim() && !validateEmail(emergencyEmail)) {
+      toast.error("Enter a valid emergency email address.");
+      return;
+    }
     setSaving(true);
 
     try {
@@ -215,8 +231,7 @@ export default function CustomerProfilePage() {
             "Could not save profile.",
         );
       } else {
-        toast.success("Profile updated successfully.");
-        router.push("/customer/dashboard");
+        toast.error("Could not save profile.");
       }
     } finally {
       setSaving(false);

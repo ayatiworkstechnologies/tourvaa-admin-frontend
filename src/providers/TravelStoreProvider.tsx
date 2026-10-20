@@ -112,19 +112,29 @@ export function TravelStoreProvider({ children }: { children: React.ReactNode })
     // A guest wishlist may have been built up before logging in - merge it
     // into the account once, then it's the server copy from here on.
     const local = readLocalWishlist();
+    // Keep any item whose individual merge request failed.  Clearing the
+    // guest store after Promise.all previously made a transient failure lose
+    // that item permanently when the following GET succeeded.
     const merge = local.length
-      ? Promise.all(local.map((item) => api.post(`/wishlist/${item.id}`).catch(() => null)))
-      : Promise.resolve(null);
+      ? Promise.allSettled(local.map((item) => api.post(`/wishlist/${item.id}`)))
+      : Promise.resolve([]);
 
     merge
-      .then(() => api.get<WishlistResponse>("/wishlist"))
-      .then((response) => {
+      .then((results) => api.get<WishlistResponse>("/wishlist").then((response) => ({ response, results })))
+      .then(({ response, results }) => {
         if (!active) return;
         setWishlist(response.data.items ?? response.data.data ?? []);
-        writeLocalWishlist([]);
+        const failedIds = new Set(
+          results.flatMap((result, index) => result.status === "rejected" && local[index]
+            ? [local[index].id]
+            : []),
+        );
+        writeLocalWishlist(local.filter((item) => failedIds.has(item.id)));
       })
       .catch(() => {
-        if (active) setWishlist([]);
+        // The remote list was unavailable; preserve the guest copy in both
+        // storage and UI so a later authenticated render can retry the merge.
+        if (active) setWishlist(local);
       })
       .finally(() => {
         if (active) setHydrated(true);

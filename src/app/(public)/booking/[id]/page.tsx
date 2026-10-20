@@ -1890,19 +1890,33 @@ export default function DynamicTourBookingPage() {
                       <div className="mt-4 space-y-3">
                         {availableAccommodationExtras.map((extra) => {
                           const checked = selectedAccommodationExtraIds.includes(extra.id);
+                          const imageSrc = mediaUrl(extra.image);
                           return (
                             <div
                               key={extra.id}
                               onClick={() => toggleAccommodationExtra(extra.id)}
-                              className={`flex items-center justify-between gap-3.5 rounded-xl border p-4 cursor-pointer transition ${
+                              className={`flex items-center justify-between gap-3.5 rounded-xl border p-3.5 sm:p-4 cursor-pointer transition ${
                                 checked ? "border-pub-primary bg-blue-50/10 shadow-2xs" : "border-slate-200 hover:border-slate-300"
                               }`}
                             >
-                              <div className="flex items-start gap-3.5">
+                              <div className="flex min-w-0 items-center gap-3.5">
+                                <div className="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:h-[72px] sm:w-24">
+                                  {imageSrc ? (
+                                    <img
+                                      src={imageSrc}
+                                      alt={extra.name}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-slate-400" aria-label="Accommodation image unavailable">
+                                      <Bed size={22} aria-hidden="true" />
+                                    </div>
+                                  )}
+                                </div>
                                 <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? "border-pub-primary bg-pub-primary text-white" : "border-slate-300 bg-white"}`}>
                                   {checked && <Check size={13} className="stroke-[3]" />}
                                 </span>
-                                <div>
+                                <div className="min-w-0">
                                   <p className="text-xs sm:text-sm font-bold text-slate-900">{extra.name}</p>
                                   {extra.description && (
                                     <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 max-w-md leading-relaxed">

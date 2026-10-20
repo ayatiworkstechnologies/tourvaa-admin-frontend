@@ -27,6 +27,7 @@ import {
 } from "react-icons/lu";
 import publicApi, { fetchContentBlock } from "@/lib/api/publicClient";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import { validateEmail, validateMobile } from "@/lib/utils/validators";
 import OfficesWorldMap, {
   OFFICES,
 } from "@/components/public/contact/OfficesWorldMap";
@@ -270,13 +271,27 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
 
   const submitInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
+    const email = form.email.trim();
+    const phone = form.phone.trim().replace(/[\s()\-]/g, "");
+    if (!form.name.trim() || !form.message.trim()) {
+      setError("Enter your name and message.");
+      return;
+    }
+    if (!validateEmail(email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (phone && !validateMobile(phone)) {
+      setError("Enter a valid mobile number in international format, for example +919876543210.");
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
       await publicApi.post("/contact", {
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
+        name: form.name.trim(),
+        email,
+        phone,
         audience: isSupplierInquiry ? "supplier" : isAgentInquiry ? "agent" : "public",
         enquiry_type: form.subject || "General Inquiry",
         subject: form.subject || "General Inquiry",
