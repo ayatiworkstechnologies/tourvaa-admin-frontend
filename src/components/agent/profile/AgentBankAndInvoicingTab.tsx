@@ -6,7 +6,10 @@ import axios from "axios";
 import api from "@/lib/api/client";
 import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
-import { digitsOnly, validateMobile } from "@/lib/utils/validators";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import { combinePhone, validateMobile } from "@/lib/utils/validators";
+import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import type { CountryCode } from "libphonenumber-js/min";
 
 type InvoicingForm = {
   contact_name: string;
@@ -65,6 +68,20 @@ export default function AgentBankAndInvoicingTab() {
   const [saving, setSaving] = useState(false);
   const [bankLocked, setBankLocked] = useState(false);
   const [primary, setPrimary] = useState({ name: "", email: "", phone: "" });
+  const [financePhoneCountryIso, setFinancePhoneCountryIso] = useState<CountryCode>("IN");
+  const [financePhoneNumber, setFinancePhoneNumber] = useState("");
+
+  const setFinancePhoneFromStoredValue = (value: string) => {
+    if (!value) {
+      setFinancePhoneCountryIso("IN");
+      setFinancePhoneNumber("");
+      return;
+    }
+    const countryIso = isoForDialCode(value);
+    const dialCode = dialCodeForIso(countryIso);
+    setFinancePhoneCountryIso(countryIso);
+    setFinancePhoneNumber(value.startsWith(dialCode) ? value.slice(dialCode.length) : value.replace(/^\+/, ""));
+  };
 
   useEffect(() => {
     api
@@ -102,6 +119,7 @@ export default function AgentBankAndInvoicingTab() {
           billing_postal_code: invoice.billing_postal_code || "",
           country_id: String(invoice.country_id || agent.country_id || ""),
         });
+        setFinancePhoneFromStoredValue(invoice.phone || "");
         setBankLocked(Boolean(invoice.bank_details_locked) && !invoice.bank_edit_unlocked);
       })
       .catch((error) => toast.error(errorMessage(error)));
@@ -110,13 +128,15 @@ export default function AgentBankAndInvoicingTab() {
   const set = (key: keyof InvoicingForm, value: string) =>
     setForm((previous) => ({ ...previous, [key]: value }));
 
-  const copyPrimary = () =>
+  const copyPrimary = () => {
     setForm((previous) => ({
       ...previous,
       contact_name: primary.name,
       email: primary.email,
       phone: primary.phone,
     }));
+    setFinancePhoneFromStoredValue(primary.phone);
+  };
 
   async function requestBankDetailEdit() {
     try {
@@ -129,11 +149,11 @@ export default function AgentBankAndInvoicingTab() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!form.contact_name || !form.email || !form.phone || !form.billing_address || !form.billing_city || !form.country_id) {
+    if (!form.contact_name || !form.email || !financePhoneNumber || !form.billing_address || !form.billing_city || !form.country_id) {
       toast.error("Complete the required accounts and billing details.");
       return;
     }
-    const phone = form.phone.trim().startsWith("+") ? `+${digitsOnly(form.phone)}` : form.phone.trim();
+    const phone = combinePhone(dialCodeForIso(financePhoneCountryIso), financePhoneNumber);
     if (!validateMobile(phone, true)) {
       toast.error("Enter the accounts phone with its country code, for example +919876543210.");
       return;
@@ -185,6 +205,7 @@ export default function AgentBankAndInvoicingTab() {
           account_number: saved.account_number || previous.account_number,
           iban: saved.iban || previous.iban,
           swift_code: saved.swift_code || previous.swift_code,
+          phone: saved.phone || phone,
         }));
         setBankLocked(Boolean(saved.bank_details_locked));
       }
@@ -241,16 +262,16 @@ export default function AgentBankAndInvoicingTab() {
               className={fieldClass}
             />
           </label>
-          <label className="block">
-            <Label>Finance Phone *</Label>
-            <input
-              required
-              value={form.phone}
-              onChange={(e) => set("phone", e.target.value)}
-              placeholder="+1 234 567 8900"
-              className={fieldClass}
-            />
-          </label>
+          <CountryPhoneInput
+            countryIso={financePhoneCountryIso}
+            number={financePhoneNumber}
+            onCountryChange={setFinancePhoneCountryIso}
+            onNumberChange={setFinancePhoneNumber}
+            countryLabel="Finance contact country"
+            label="Finance Phone *"
+            required
+            helpText="Select country code, then enter the local mobile number."
+          />
           <label className="block">
             <Label>Country *</Label>
             <select
