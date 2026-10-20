@@ -366,6 +366,7 @@ export default function AffiliateDetailPage() {
               <ArrowLeft size={16} /> Back to affiliates
             </Link>
             <div className="flex flex-wrap gap-2">
+              {hasPermission("affiliates.approve") && Boolean((record.invoicing as { bank_edit_request_pending?: boolean } | null)?.bank_edit_request_pending) && <button onClick={() => void run(() => api.post(`/affiliates/${id}/bank-details/unlock`), "Bank details enabled for one update.")} className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-800 hover:bg-amber-100">Enable bank edit</button>}
               {canApprove && <button onClick={() => void run(() => approveReviewRecord("affiliates", id), "Affiliate approved.")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"><CheckCircle2 size={16} /> Approve</button>}
               {canReject && <button onClick={() => setModal("reject")} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700"><XCircle size={16} /> Reject</button>}
               {canCommercial && <button onClick={() => setModal("api")} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg"><LinkIcon size={16} /> API Link</button>}

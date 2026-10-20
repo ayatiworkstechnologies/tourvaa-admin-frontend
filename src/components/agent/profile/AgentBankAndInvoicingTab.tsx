@@ -101,7 +101,7 @@ export default function AgentBankAndInvoicingTab() {
           billing_postal_code: invoice.billing_postal_code || "",
           country_id: String(invoice.country_id || agent.country_id || ""),
         });
-        setBankLocked(Boolean(invoice.bank_details_locked));
+        setBankLocked(Boolean(invoice.bank_details_locked) && !invoice.bank_edit_unlocked);
       })
       .catch((error) => toast.error(errorMessage(error)));
   }, [toast]);
@@ -116,6 +116,15 @@ export default function AgentBankAndInvoicingTab() {
       email: primary.email,
       phone: primary.phone,
     }));
+
+  async function requestBankDetailEdit() {
+    try {
+      await api.post("/agents/me/bank-details/edit-request");
+      toast.success("Request sent. Tourvaa will review your bank-detail edit request.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -294,7 +303,8 @@ export default function AgentBankAndInvoicingTab() {
 
         {bankLocked && (
           <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
-            Bank account, IBAN, and SWIFT/BIC values are masked after saving. To update banking details, please contact Tourvaa support.
+            Bank account, IBAN, and SWIFT/BIC values are masked after saving. Request a one-time edit and Tourvaa will review it.
+            <button type="button" onClick={requestBankDetailEdit} className="ml-2 font-black underline underline-offset-2">Request edit</button>
           </p>
         )}
 

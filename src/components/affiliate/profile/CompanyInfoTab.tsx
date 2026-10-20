@@ -81,7 +81,7 @@ export default function CompanyInfoTab() {
         });
       }
       if (d.invoicing) {
-        setBankLocked(Boolean(d.invoicing.bank_details_locked));
+        setBankLocked(Boolean(d.invoicing.bank_details_locked) && !d.invoicing.bank_edit_unlocked);
         setInvoicing({
           contact_name: d.invoicing.contact_name || "",
           email: d.invoicing.email || "",
@@ -108,6 +108,15 @@ export default function CompanyInfoTab() {
   const set = (k: keyof ProfileForm, v: string) => setForm(f => ({ ...f, [k]: v }));
   const setM = (k: keyof MarketingForm, v: string) => setMarketing(f => ({ ...f, [k]: v }));
   const setI = (k: keyof InvoicingForm, v: string) => setInvoicing(f => ({ ...f, [k]: v }));
+
+  async function requestBankDetailEdit() {
+    try {
+      await api.post("/affiliates/me/bank-details/edit-request");
+      toast.success("Request sent. Tourvaa will review your bank-detail edit request.");
+    } catch {
+      toast.error("Could not submit the bank-detail edit request.");
+    }
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -298,7 +307,7 @@ export default function CompanyInfoTab() {
 
         {/* invoicing */}
         <form onSubmit={save} className="rounded-2xl border border-dash-border bg-white p-6 shadow-sm">
-          <h3 className="mb-5 text-lg font-bold text-dash-text">Invoicing Details</h3>
+          <div className="mb-5 flex items-center justify-between gap-3"><h3 className="text-lg font-bold text-dash-text">Invoicing Details</h3>{bankLocked && <button type="button" onClick={requestBankDetailEdit} className="text-sm font-bold text-purple-700 underline underline-offset-2">Request bank-detail edit</button>}</div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Contact Name</span>

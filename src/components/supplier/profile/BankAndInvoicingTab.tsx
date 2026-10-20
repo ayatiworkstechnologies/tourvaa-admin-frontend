@@ -54,12 +54,21 @@ export default function BankAndInvoicingTab() {
         billing_address: invoice.billing_address || "", billing_city: invoice.billing_city || "", billing_state: invoice.billing_state || "",
         billing_postal_code: invoice.billing_postal_code || "", country_id: String(invoice.country_id || supplier.country_id || ""),
       });
-      setBankLocked(Boolean(invoice.bank_details_locked));
+      setBankLocked(Boolean(invoice.bank_details_locked) && !invoice.bank_edit_unlocked);
     }).catch((error) => toast.error(errorMessage(error)));
   }, [toast]);
 
   const set = (key: keyof Form, value: string) => setForm((previous) => ({ ...previous, [key]: value }));
   const copyPrimary = () => setForm((previous) => ({ ...previous, contact_name: primary.name, email: primary.email, phone: primary.phone }));
+
+  async function requestBankDetailEdit() {
+    try {
+      await api.post("/suppliers/me/bank-details/edit-request");
+      toast.success("Request sent. Tourvaa will review your bank-detail edit request.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -103,7 +112,7 @@ export default function BankAndInvoicingTab() {
   return <form onSubmit={submit} className="mx-auto max-w-5xl space-y-6">
     <section className="rounded-2xl border border-dash-border bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-start justify-between gap-3"><div><h3 className="text-lg font-bold text-dash-text">Bank Details</h3><p className="mt-1 text-sm text-dash-subtle">Your payment destination. Bank details are locked after the first save.</p></div>{bankLocked && <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700"><LockKeyhole size={13} /> Locked</span>}</div>
-      {bankLocked && <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">Bank details have been saved. Account and IBAN values are masked, and changes must be requested through Tourvaa support.</p>}
+      {bankLocked && <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">Bank details have been saved and masked. <button type="button" onClick={requestBankDetailEdit} className="font-bold underline underline-offset-2">Request a one-time edit</button> for Tourvaa approval.</p>}
       <div className="grid gap-4 md:grid-cols-2">
         <label><Label>Preferred Payment Method <b className="text-red-500">*</b></Label><select required disabled={bankLocked} value={form.preferred_payment_method} onChange={(e) => set("preferred_payment_method", e.target.value)} className={fieldClass}><option value="">Select payment method</option><option value="bank_transfer">Bank Transfer</option><option value="paypal">PayPal</option></select></label>
         <label><Label>Bank Account Name <b className="text-red-500">*</b></Label><input required disabled={bankLocked} value={form.account_name} onChange={(e) => set("account_name", e.target.value)} className={fieldClass} /></label>

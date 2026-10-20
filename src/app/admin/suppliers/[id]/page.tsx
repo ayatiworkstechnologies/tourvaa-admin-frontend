@@ -555,6 +555,15 @@ export default function SupplierDetailPage() {
                 </button>
               )}
 
+              {hasPermission("suppliers.approve") && Boolean((record.invoicing as { bank_edit_request_pending?: boolean } | null)?.bank_edit_request_pending) && (
+                <button
+                  onClick={() => void run(() => api.post(`/suppliers/${id}/bank-details/unlock`), "Bank details enabled for one update.")}
+                  className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 shadow-xs hover:bg-amber-100 transition"
+                >
+                  Enable bank edit
+                </button>
+              )}
+
               {canApprove && (
                 <button
                   onClick={() => setModal("accept")}
