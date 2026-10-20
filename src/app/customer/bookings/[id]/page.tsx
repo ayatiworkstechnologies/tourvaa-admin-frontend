@@ -40,6 +40,8 @@ type PaymentReference = {
   transaction_id?: string | null;
   gateway_payment_id?: string | null;
   payment_status?: string | null;
+  authorized_amount?: string | number | null;
+  captured_amount?: string | number | null;
 };
 
 type Booking = {
@@ -499,6 +501,11 @@ export default function CustomerBookingDetailPage() {
   }
 
   const amountPaid = Number(booking?.amount_paid ?? 0);
+  const authorizedAmount = (booking?.payments ?? []).reduce((total, payment) => (
+    (payment.payment_status || "").toLowerCase() === "authorized"
+      ? total + Math.max(0, Number(payment.authorized_amount ?? 0) - Number(payment.captured_amount ?? 0))
+      : total
+  ), 0);
   const isUnpaidBooking = Boolean(
     booking &&
       booking.booking_status === "pending_payment" &&
@@ -513,10 +520,17 @@ export default function CustomerBookingDetailPage() {
   const canCancel = booking && amountPaid > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
   const freeCancellationEligible = booking?.cancellation_eligibility?.is_free_cancellation_eligible === true;
   const pendingAmount = Number(booking?.amount_pending ?? 0);
-  const canPay = booking && pendingAmount > 0 && !["cancelled", "declined", "completed", "cancellation_requested", "postponed"].includes(booking.booking_status);
+  // Gateway-authorized money is not captured/paid yet, but it already covers
+  // the corresponding balance. Never invite a customer to authorize the same
+  // amount twice while Tourvaa awaits supplier/admin confirmation.
+  const payableAmount = Math.max(0, pendingAmount - authorizedAmount);
+  const paymentCoveredByAuthorization = pendingAmount > 0 && payableAmount <= 0 && authorizedAmount > 0;
+  const canPay = booking && payableAmount > 0 && !["cancelled", "declined", "completed", "cancellation_requested", "postponed"].includes(booking.booking_status);
   const canReview = booking && booking.booking_status === "completed" && !booking.has_review && !reviewSubmitted;
   const nextStep = canPay
-    ? `Complete the outstanding balance of ${format(pendingAmount, booking?.currency)} to keep this booking moving.`
+    ? `Complete the outstanding balance of ${format(payableAmount, booking?.currency)} to keep this booking moving.`
+    : paymentCoveredByAuthorization
+      ? "Your payment authorization covers this booking. Tourvaa will capture it only after the booking is accepted."
     : isBookingRequestReceived
       ? "Your payment is recorded. Tourvaa will send the next booking update here and by email."
       : booking?.booking_status === "confirmed"
@@ -627,7 +641,9 @@ export default function CustomerBookingDetailPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
                     <StatusIcon status={booking.booking_status} />
-                    {isUnpaidBooking
+                    {paymentCoveredByAuthorization
+                      ? `Payment Authorized - ${format(authorizedAmount, booking.currency)} held securely`
+                      : isUnpaidBooking
                       ? "Payment Required"
                       : customerBookingStatus(booking.booking_status)}
                   </span>
@@ -659,7 +675,7 @@ export default function CustomerBookingDetailPage() {
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B1527] px-4 py-3 text-xs font-bold text-white shadow-xs transition hover:bg-[#15233C] sm:w-auto sm:py-2.5"
                   >
                     <CreditCard size={15} />
-                    Pay Now ({format(pendingAmount, booking.currency)})
+                    Pay Now ({format(payableAmount, booking.currency)})
                   </button>
                 )}
                 {isUnpaidBooking && (
@@ -738,8 +754,16 @@ export default function CustomerBookingDetailPage() {
             <div className="mb-5 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-blue-900 sm:px-5 md:mb-6">
               <Clock size={18} className="mt-0.5 shrink-0" />
               <div>
-                <p className="font-bold">Booking Successful - Awaiting Tourvaa Confirmation</p>
-                <p className="mt-1 text-sm leading-6">{BOOKING_AWAITING_CONFIRMATION_MESSAGE}</p>
+                <p className="font-bold">
+                  {paymentCoveredByAuthorization
+                    ? "Payment Authorized - Awaiting Tourvaa Confirmation"
+                    : "Booking Successful - Awaiting Tourvaa Confirmation"}
+                </p>
+                <p className="mt-1 text-sm leading-6">
+                  {paymentCoveredByAuthorization
+                    ? `${format(authorizedAmount, booking.currency)} is held securely. Tourvaa will capture it only after the supplier accepts your booking.`
+                    : BOOKING_AWAITING_CONFIRMATION_MESSAGE}
+                </p>
               </div>
             </div>
           )}
@@ -820,6 +844,9 @@ export default function CustomerBookingDetailPage() {
                     {format(booking.amount_pending, booking.currency)}
                   </span>
                 } />
+                {authorizedAmount > 0 && (
+                  <Field label="Payment Authorized" value={<span className="font-bold text-blue-700">{format(authorizedAmount, booking.currency)} held securely</span>} />
+                )}
                 {pendingAmount > 0 && booking.balance_due_date && (
                   <Field label="Balance Due By" value={
                     <span className="text-amber-600">{new Date(booking.balance_due_date).toLocaleDateString()}</span>
@@ -922,7 +949,7 @@ export default function CustomerBookingDetailPage() {
       {showPayModal && booking && (
         <PayNowModal
           bookingId={booking.id}
-          amount={pendingAmount}
+          amount={payableAmount}
           totalAmount={Number(booking.final_amount ?? pendingAmount)}
           amountPaid={Number(booking.amount_paid ?? 0)}
           preferredPaymentType={booking.payment_type}
