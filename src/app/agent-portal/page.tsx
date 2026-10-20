@@ -742,7 +742,7 @@ export default function AgentPortalLandingPage() {
           <div className="mt-7 flex flex-wrap items-center justify-center gap-5 sm:gap-6 text-xs text-slate-400 font-medium">
             <span>✓ Instant B2B Net Rates</span>
             <span>✓ Dedicated Account Manager</span>
-            <span>✓ Free to Join - No Hidden Fees</span>
+            <span>✓ Free to Join — No Hidden Fees</span>
           </div>
         </div>
       </section>

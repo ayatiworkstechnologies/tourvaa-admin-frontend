@@ -84,7 +84,7 @@ export default function ToursPage() {
 
       // Fetch real supplier pricing for each tour in parallel.
       // This gives TourVaa's actual cost from the supplier (adult_price)
-      // after any supplier-funded discount - never the storefront price.
+      // after any supplier-funded discount — never the storefront price.
       if (fetchedRows.length > 0) {
         const entries = await Promise.all(
           fetchedRows.map(async (r) => {

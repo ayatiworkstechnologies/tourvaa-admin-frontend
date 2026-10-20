@@ -110,7 +110,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
     title: "Relevant Operating Licence",
     description:
       "Current licence authorising your tourism, guiding, transport, or tour-operating activities, where applicable.",
-    footer: "Optional - accepted: PDF, JPG, PNG",
+    footer: "Optional — accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
@@ -118,7 +118,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
     title: "Public Liability Insurance Certificate",
     description:
       "Evidence of active public liability cover, where required for your business or local operations.",
-    footer: "Optional - accepted: PDF, JPG, PNG",
+    footer: "Optional — accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
@@ -126,7 +126,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
     title: "Tourism Accreditation",
     description:
       "Tourism-board or recognised tourism accreditation supporting your supplier profile.",
-    footer: "Optional - accepted: PDF, JPG, PNG",
+    footer: "Optional — accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
@@ -134,7 +134,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
     title: "Industry Certification",
     description:
       "Relevant industry qualifications or professional certifications held by your business or team.",
-    footer: "Optional - accepted: PDF, JPG, PNG",
+    footer: "Optional — accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
@@ -142,7 +142,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
     title: "Safety Certification",
     description:
       "Safety, first-aid, risk-management, or other operational safety certificates.",
-    footer: "Optional - accepted: PDF, JPG, PNG",
+    footer: "Optional — accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
@@ -150,7 +150,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
     title: "Other Licences",
     description:
       "Any additional licences relevant to the experiences, activities, or transport you provide.",
-    footer: "Optional - accepted: PDF, JPG, PNG",
+    footer: "Optional — accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
@@ -158,7 +158,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
     title: "Additional Supporting Documents",
     description:
       "Extra documents that help our onboarding team validate your business more quickly.",
-    footer: "Optional - accepted: PDF, JPG, PNG",
+    footer: "Optional — accepted: PDF, JPG, PNG",
   },
 ] as const;
 

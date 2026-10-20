@@ -149,7 +149,7 @@ export default function DefaultCancellationPolicySection() {
                         {rule.days_before_tour_min} – {rule.days_before_tour_max ?? "∞"} days
                       </td>
                       <td className="px-4 py-2.5 font-bold text-dash-brand-hover">{rule.refund_percentage}%</td>
-                      <td className="px-4 py-2.5 text-dash-subtle">{rule.description || "-"}</td>
+                      <td className="px-4 py-2.5 text-dash-subtle">{rule.description || "—"}</td>
                       <td className="px-4 py-2.5 text-right">
                         <div className="flex justify-end gap-2">
                           <button type="button" onClick={() => startEdit(rule)} className="rounded-lg border border-dash-border p-1.5 text-dash-subtle hover:bg-[#F7F9FC]">

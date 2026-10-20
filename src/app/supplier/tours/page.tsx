@@ -32,7 +32,7 @@ type Tour = {
   tour_code: string;
   title: string;
   status: string;
-  /** Storefront/admin price - do NOT show to supplier. */
+  /** Storefront/admin price — do NOT show to supplier. */
   price_start_per_person: number;
   /** Supplier's own lowest adult price (their price to TourVaa, before any discount). */
   supplier_adult_price_start?: number | null;

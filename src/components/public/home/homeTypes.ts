@@ -254,7 +254,7 @@ export type ReviewItem = {
 export const CURATED_REVIEWS: ReviewItem[] = [
   {
     quote:
-      "Booked a 7-day Rajasthan tour through Tourvaa. Everything was flawless - hotels, transport, guides. I didn't have to think once.",
+      "Booked a 7-day Rajasthan tour through Tourvaa. Everything was flawless — hotels, transport, guides. I didn't have to think once.",
     name: "Priya Menon",
     city: "Kerala, India",
     tourName: "Rajasthan Heritage Tour",
@@ -355,6 +355,6 @@ export const FAQS = [
 
 export const DEFAULT_ABOUT_HEADING = "About Tourvaa";
 export const DEFAULT_ABOUT_BODY =
-  "Tourvaa is a premier travel platform dedicated to crafting extraordinary group travel experiences across the globe. We connect passionate travellers with expertly curated tours, handpicked destinations, and seamless end-to-end booking - from visa assistance to on-ground coordination. Whether it's the serene backwaters of Kerala, the alpine trails of Switzerland, or the vibrant streets of Tokyo, Tourvaa makes every journey effortless, memorable, and truly unforgettable.";
+  "Tourvaa is a premier travel platform dedicated to crafting extraordinary group travel experiences across the globe. We connect passionate travellers with expertly curated tours, handpicked destinations, and seamless end-to-end booking — from visa assistance to on-ground coordination. Whether it's the serene backwaters of Kerala, the alpine trails of Switzerland, or the vibrant streets of Tokyo, Tourvaa makes every journey effortless, memorable, and truly unforgettable.";
 
 export const DEFAULT_TRANSFER_FEATURES = ["China", "Australia", "United Kingdom", "UAE", "Singapore", "New Zealand"];

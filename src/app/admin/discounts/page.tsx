@@ -398,8 +398,8 @@ export default function DiscountsPage() {
                 <label className="md:col-span-2">
                   <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Application mode</span>
                   <select value={applicationMode} onChange={(event) => { const mode = event.target.value as "automatic" | "code"; setApplicationMode(mode); if (mode === "automatic") setEditing((p) => p ? { ...p, discount_code: null } : p); }} className={inputClass}>
-                    <option value="automatic">Automatic - applied in eligible carts</option>
-                    <option value="code">Promo code - customer must enter a code</option>
+                    <option value="automatic">Automatic — applied in eligible carts</option>
+                    <option value="code">Promo code — customer must enter a code</option>
                   </select>
                 </label>
                 {applicationMode === "code" && (

@@ -86,13 +86,13 @@ export default function CustomerTable({
       key: "phone",
       header: "Phone",
       className: "text-slate-600 font-mono text-xs whitespace-nowrap",
-      render: (customer) => customer.phone || "-",
+      render: (customer) => customer.phone || "—",
     },
     {
       key: "country",
       header: "Country",
       className: "text-slate-700 whitespace-nowrap",
-      render: (customer) => customer.country_name || customer.country || "-",
+      render: (customer) => customer.country_name || customer.country || "—",
     },
     {
       key: "status",
@@ -132,7 +132,7 @@ export default function CustomerTable({
       header: "Created",
       className: "text-slate-500 text-xs whitespace-nowrap tabular-nums",
       render: (customer) =>
-        customer.created_at ? new Date(customer.created_at).toLocaleDateString() : "-",
+        customer.created_at ? new Date(customer.created_at).toLocaleDateString() : "—",
     },
   ];
 

@@ -12,7 +12,7 @@ type CurrencyState = {
   isStale: boolean;
   rateDate?: string;
   /** True when the admin has set a site-wide currency (Settings → Booking
-   * Defaults → Currency) - every visitor sees that currency and cannot
+   * Defaults → Currency) — every visitor sees that currency and cannot
    * switch, rather than the old per-browser locale-detected preference. */
   forced: boolean;
   /** ISO2 country code (e.g. "IN") the visitor is browsing as - IP-detected

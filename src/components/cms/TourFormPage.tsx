@@ -1357,7 +1357,7 @@ export default function TourFormPage({
       {tourId && (form.status === "pending_approval" || form.status === "repricing_required" || form.pending_review_kind) && (
         <div className={`${embedded ? "" : "mt-4"} flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3`}>
           <p className="text-sm font-semibold text-amber-800">
-            This tour has a submission awaiting admin review. Saving changes now will replace that pending version with a new one and restart the review - withdraw the current submission first if you want to keep it intact.
+            This tour has a submission awaiting admin review. Saving changes now will replace that pending version with a new one and restart the review — withdraw the current submission first if you want to keep it intact.
           </p>
         </div>
       )}
@@ -1678,7 +1678,7 @@ export default function TourFormPage({
                 const handleFormatSpacing = () => {
                   if (!form.long_description) return;
                   const formatted = form.long_description
-                    .replace(/(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][A-Za-z0-9\s&'/–-\-]+:)/g, "\n\n$1")
+                    .replace(/(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][-A-Za-z0-9\s&'/\u2013\u2014]+:)/g, "\n\n$1")
                     .trim();
                   update("long_description", formatted);
                 };

@@ -454,7 +454,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
       {tour?.status && ["pending_approval", "repricing_required"].includes((tour.status ?? "").toLowerCase()) && (
         <div className="mt-4 flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3">
           <p className="text-sm font-semibold text-amber-800">
-            This tour has a submission awaiting admin review. Saving changes now will replace that pending version with a new one and restart the review - withdraw the current submission first if you want to keep it intact.
+            This tour has a submission awaiting admin review. Saving changes now will replace that pending version with a new one and restart the review — withdraw the current submission first if you want to keep it intact.
           </p>
         </div>
       )}

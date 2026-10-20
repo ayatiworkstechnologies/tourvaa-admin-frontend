@@ -208,8 +208,15 @@ function parseItineraryDetail(
   const normalized = raw.replace(/\r\n/g, "\n").trim();
   if (!normalized) return [];
 
-  const titleRegex =
-    /(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][A-Za-z0-9\s&'/–-\-]+:)\s*/g;
+  const legacyTitleRegexSource = String.raw`
+    /*
+    /(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][A-Za-z0-9\s&'/–—\-]+:)\s*/g;
+    */
+    /(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][-A-Za-z0-9\s&'/\u2013\u2014]+:)\s*/g;
+`;
+  // Keep heading parsing compatible with hyphens and typographic dashes.
+  void legacyTitleRegexSource;
+  const titleRegex = /(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][-A-Za-z0-9\s&'/\u2013\u2014]+:)\s*/g;
   const matches = [...normalized.matchAll(titleRegex)];
 
   if (matches.length > 0) {
@@ -3539,7 +3546,7 @@ export default function TourDetailExperience({
                     </p>
                   </div>
                   <strong className="text-2xl font-black text-slate-950">
-                    {totalAmount > 0 ? format(totalAmount, pricingCurrency) : "-"}
+                    {totalAmount > 0 ? format(totalAmount, pricingCurrency) : "—"}
                   </strong>
                 </div>
 

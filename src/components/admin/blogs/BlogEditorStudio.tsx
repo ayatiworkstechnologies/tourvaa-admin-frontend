@@ -416,7 +416,7 @@ export default function BlogEditorStudio({
             />
           </div>
 
-          {/* ── Article FAQs Card (Plain Text - No HTML required!) ── */}
+          {/* ── Article FAQs Card (Plain Text — No HTML required!) ── */}
           <div id="article-faqs-card" className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-4 scroll-mt-24">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">

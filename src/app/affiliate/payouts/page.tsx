@@ -152,7 +152,7 @@ export default function AffiliatePayoutsPage() {
                   <option value="">Select method</option>
                   {methods.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.method_type === "paypal" ? `PayPal - ${m.paypal_email}` : `${m.bank_name} - ${m.account_number_masked}`}
+                      {m.method_type === "paypal" ? `PayPal — ${m.paypal_email}` : `${m.bank_name} — ${m.account_number_masked}`}
                     </option>
                   ))}
                 </select>

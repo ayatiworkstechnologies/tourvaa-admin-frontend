@@ -63,7 +63,7 @@ export default function UnifiedSupplierProfilePage() {
       <div className="mt-4 w-full rounded-2xl border border-[#DCEBE2] bg-white p-5 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)] sm:p-6">
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm text-slate-700">
           <BadgeCheck size={19} className="mt-0.5 shrink-0 text-emerald-700" />
-          <p><span className="font-black text-slate-900">{TABS.find((tab) => tab.id === activeTab)?.label}</span><span className="hidden sm:inline"> - {TABS.find((tab) => tab.id === activeTab)?.description}</span></p>
+          <p><span className="font-black text-slate-900">{TABS.find((tab) => tab.id === activeTab)?.label}</span><span className="hidden sm:inline"> — {TABS.find((tab) => tab.id === activeTab)?.description}</span></p>
         </div>
         {/* Every tab stays mounted (hidden via CSS, not unmounted) so
             in-progress form edits on inactive tabs survive switching. */}

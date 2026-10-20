@@ -330,7 +330,7 @@ const NEW_ZEALAND_DEFAULT: CountryDestinationInfo = {
     rainfall_schedule:
       "Rainfall is evenly distributed throughout the year. The western coast of the South Island receives substantial rain (which feeds lush temperate rainforests and dramatic waterfalls), while the eastern plains (Canterbury, Hawke's Bay, Marlborough) enjoy sunny, dry microclimates.",
     cyclone_or_extreme_note:
-      "Weather can change quickly in alpine regions - Kiwi locals famously say you can experience 'four seasons in one day'. Layered clothing is the golden rule when exploring Fiordland and alpine passes.",
+      "Weather can change quickly in alpine regions — Kiwi locals famously say you can experience 'four seasons in one day'. Layered clothing is the golden rule when exploring Fiordland and alpine passes.",
     regional_variations: [
       {
         region: "North Island (Auckland, Northland, Rotorua)",
@@ -431,7 +431,7 @@ const NEW_ZEALAND_DEFAULT: CountryDestinationInfo = {
     health_and_vaccinations:
       "New Zealand maintains world-class healthcare and hygiene standards. Tap water is safe and delicious everywhere. The Southern Hemisphere ozone layer is thin, so high-SPF sunscreen, sunglasses, and hats are essential year-round.",
     local_customs_and_culture:
-      "Kiwis are warm, friendly, and informal. Respect Māori protocols when visiting a marae (remove shoes, wait for invitation). Protect the pristine environment under the 'Tiaki Promise' - take your litter with you and preserve nature.",
+      "Kiwis are warm, friendly, and informal. Respect Māori protocols when visiting a marae (remove shoes, wait for invitation). Protect the pristine environment under the 'Tiaki Promise' — take your litter with you and preserve nature.",
     getting_around_and_transport:
       "Tourvaa guided coach tours provide comfortable, modern transit with expert local driver-guides. Self-drivers should note that New Zealand drives on the left and alpine routes can be winding with single-lane bridges.",
     packing_essentials:
@@ -534,7 +534,7 @@ const THAILAND_DEFAULT: CountryDestinationInfo = {
     rainfall_schedule:
       "While the Andaman coast (Phuket/Krabi) experiences higher rainfall in September–October, the Gulf of Thailand (Koh Samui, Koh Phangan, Koh Tao) is sheltered during those months and experiences its primary rains later between October and December.",
     cyclone_or_extreme_note:
-      "Even during the peak of the green season, days rarely see continuous rain - showers typically arrive in brief, refreshing tropical bursts.",
+      "Even during the peak of the green season, days rarely see continuous rain — showers typically arrive in brief, refreshing tropical bursts.",
     regional_variations: [
       {
         region: "Bangkok & Central Plains",

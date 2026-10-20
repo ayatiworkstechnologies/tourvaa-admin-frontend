@@ -107,7 +107,7 @@ export default function CountryTravelInfoSection({
           </h2>
 
           <p className="mt-2.5 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed max-w-2xl mx-auto">
-            Everything you need to know before you fly - from visa requirements
+            Everything you need to know before you fly — from visa requirements
             and currency tips to health advice and local cultural customs.
           </p>
         </div>

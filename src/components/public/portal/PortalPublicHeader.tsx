@@ -46,7 +46,7 @@ const PORTALS = [
 /**
  * Portal-specific public header.
  * Wrapped with PublicSettingsProvider + TravelStoreProvider so portal layouts
- * (agent-portal, supplier-portal, affiliate-portal) don't need to supply them -
+ * (agent-portal, supplier-portal, affiliate-portal) don't need to supply them —
  * identical pattern to PortalPublicFooter.
  */
 export default function PortalPublicHeader(props: {
