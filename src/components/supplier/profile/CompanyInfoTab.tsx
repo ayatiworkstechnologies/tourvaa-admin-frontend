@@ -10,7 +10,7 @@ import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import CurrencySelect from "@/components/ui/CurrencySelect";
-import { combinePhone, digitsOnly, validateMobile, mobileHelp, validatePassword, passwordHelp } from "@/lib/utils/validators";
+import { combinePhone, validateMobile, mobileHelp, validatePassword, passwordHelp } from "@/lib/utils/validators";
 import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 
@@ -78,6 +78,8 @@ export default function CompanyInfoTab() {
   });
   const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>("IN");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [contactPhoneCountryIso, setContactPhoneCountryIso] = useState<CountryCode>("IN");
+  const [contactPhoneNumber, setContactPhoneNumber] = useState("");
   const [selectedStateId, setSelectedStateId] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -110,6 +112,13 @@ export default function CompanyInfoTab() {
           setPhoneCountryIso(iso);
           setPhoneNumber(p.phone.startsWith(dial) ? p.phone.slice(dial.length) : p.phone.replace(/^\+/, ""));
         }
+        const primaryContact = s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary) ?? s.contacts?.[0] ?? {};
+        if (primaryContact.phone) {
+          const iso = isoForDialCode(primaryContact.phone);
+          const dial = dialCodeForIso(iso);
+          setContactPhoneCountryIso(iso);
+          setContactPhoneNumber(primaryContact.phone.startsWith(dial) ? primaryContact.phone.slice(dial.length) : primaryContact.phone.replace(/^\+/, ""));
+        }
         setForm({
           profile_image: p.profile_image || "",
           supplier_name: s.supplier_name || s.name || "",
@@ -118,10 +127,10 @@ export default function CompanyInfoTab() {
           address: p.address || "",
           supplier_type: s.supplier_type || "",
           trading_name: s.business_info?.trading_name || "", business_email: s.business_info?.business_email || "", website_url: s.business_info?.website_url || "",
-          contact_name: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.contact_name || s.contacts?.[0]?.contact_name || "",
-          contact_first_name: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.first_name || s.contacts?.[0]?.first_name || "", contact_last_name: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.last_name || s.contacts?.[0]?.last_name || "", contact_designation: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.designation || s.contacts?.[0]?.designation || "",
-          contact_email: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.email || s.contacts?.[0]?.email || "",
-          contact_phone: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.phone || s.contacts?.[0]?.phone || "", contact_method: s.contacts?.find?.((contact: { is_primary?: boolean }) => contact.is_primary)?.preferred_contact_method || s.contacts?.[0]?.preferred_contact_method || "",
+          contact_name: primaryContact.contact_name || "",
+          contact_first_name: primaryContact.first_name || "", contact_last_name: primaryContact.last_name || "", contact_designation: primaryContact.designation || "",
+          contact_email: primaryContact.email || "",
+          contact_phone: primaryContact.phone || "", contact_method: primaryContact.preferred_contact_method || "",
           years_in_operation: String(
             s.business_info?.years_in_business ?? s.years_in_operation ?? "",
           ),
@@ -146,11 +155,11 @@ export default function CompanyInfoTab() {
       toast.error(mobileHelp);
       return;
     }
-    if (!form.supplier_type || !form.address || !form.country_id || !form.business_email || !form.business_registration_number || !form.gst_tax_number || !form.contact_first_name || !form.contact_last_name || !form.contact_designation || !form.contact_email || !form.contact_phone || !form.contact_method) {
+    if (!form.supplier_type || !form.address || !form.country_id || !form.business_email || !form.business_registration_number || !form.gst_tax_number || !form.contact_first_name || !form.contact_last_name || !form.contact_designation || !form.contact_email || !contactPhoneNumber || !form.contact_method) {
       toast.error("Complete the required business details and primary contact fields.");
       return;
     }
-    const contactPhone = form.contact_phone.trim().startsWith("+") ? `+${digitsOnly(form.contact_phone)}` : form.contact_phone.trim();
+    const contactPhone = combinePhone(dialCodeForIso(contactPhoneCountryIso), contactPhoneNumber);
     if (!validateMobile(contactPhone, true)) {
       toast.error("Enter the primary contact phone with its country code, for example +919876543210.");
       return;
@@ -171,7 +180,7 @@ export default function CompanyInfoTab() {
           country_id: parseInt(form.country_id) || null,
           city_id: parseInt(form.city_id) || null,
           currency: form.currency || null,
-          contact: (form.contact_first_name || form.contact_last_name || form.contact_designation || form.contact_email || form.contact_phone) ? {
+          contact: (form.contact_first_name || form.contact_last_name || form.contact_designation || form.contact_email || contactPhoneNumber) ? {
             contact_name: form.contact_name || null, first_name: form.contact_first_name || null, last_name: form.contact_last_name || null, designation: form.contact_designation || null,
             email: form.contact_email || null,
             phone: contactPhone, preferred_contact_method: form.contact_method || null,
@@ -419,11 +428,17 @@ export default function CompanyInfoTab() {
                   className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
               </label>
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Preferred Contact Method <span className="text-red-500">*</span></span><select required value={form.contact_method} onChange={e => set("contact_method", e.target.value)} className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm"><option value="">Select method</option><option value="email">Email</option><option value="phone">Phone</option><option value="whatsapp">WhatsApp</option></select></label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Phone / Mobile <span className="text-red-500">*</span></span>
-                <input required type="tel" value={form.contact_phone} onChange={e => set("contact_phone", e.target.value)} placeholder="e.g. +91 98765 43210"
-                  className="w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
-              </label>
+              <CountryPhoneInput
+                className="sm:col-span-2"
+                countryIso={contactPhoneCountryIso}
+                number={contactPhoneNumber}
+                onCountryChange={setContactPhoneCountryIso}
+                onNumberChange={setContactPhoneNumber}
+                countryLabel="Primary contact country"
+                label="Phone / Mobile *"
+                required
+                helpText="Select the country code, then enter the local mobile number."
+              />
             </div>
           </fieldset>
         </div>
