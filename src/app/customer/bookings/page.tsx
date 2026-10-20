@@ -30,6 +30,8 @@ type Booking = {
   payment_due_date?: string | null;
   amount_paid?: string | number;
   amount_pending?: string | number;
+  authorized_amount?: string | number;
+  payment_status?: string;
   currency?: string;
   rawDate?: string;
 };
@@ -51,6 +53,8 @@ type ApiBooking = {
   payment_due_date?: string | null;
   amount_paid?: string | number;
   amount_pending?: string | number;
+  authorized_amount?: string | number;
+  payment_status?: string;
 };
 
 function statusBadge(status: string) {
@@ -160,6 +164,8 @@ export default function CustomerBookingsPage() {
               payment_due_date: b.payment_due_date ?? null,
               amount_paid: b.amount_paid,
               amount_pending: b.amount_pending,
+              authorized_amount: b.authorized_amount,
+              payment_status: b.payment_status,
               currency: b.currency || "USD",
               rawDate: b.tour_date || b.created_at || "",
             };
@@ -302,7 +308,13 @@ export default function CustomerBookingsPage() {
                     <Calendar size={13} className="text-slate-400" />
                     {b.travel_dates}
                   </p>
-                  {Number(b.amount_pending || 0) > 0 ? (
+                  {(b.payment_status || "").toLowerCase() === "authorized"
+                    && Number(b.authorized_amount || 0) >= Number(b.amount_pending || 0)
+                    && Number(b.amount_pending || 0) > 0 ? (
+                    <p className="mt-1 text-[11px] font-semibold text-blue-600">
+                      Payment authorized - {money(b.authorized_amount, b.currency)} held securely
+                    </p>
+                  ) : Number(b.amount_pending || 0) > 0 ? (
                     <p className="mt-1 text-[11px] font-semibold text-amber-600">
                       Paid {money(b.amount_paid || 0, b.currency)} • Due {money(b.amount_pending || 0, b.currency)}
                       {b.payment_due_date && ` by ${new Date(b.payment_due_date).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" })}`}
@@ -326,10 +338,18 @@ export default function CustomerBookingsPage() {
               <div className="flex items-center justify-between sm:flex-col sm:items-end sm:justify-center gap-2 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100 shrink-0">
                 <div className="text-left sm:text-right">
                   <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                    TOTAL PAID
+                    {(b.payment_status || "").toLowerCase() === "authorized"
+                      && Number(b.authorized_amount || 0) >= Number(b.amount_pending || 0)
+                      && Number(b.amount_pending || 0) > 0
+                      ? "PAYMENT AUTHORIZED"
+                      : "TOTAL PAID"}
                   </p>
                   <p className="text-lg font-black text-[#0B1527] leading-tight">
-                    {money(b.total_amount, b.currency || "USD")}
+                    {(b.payment_status || "").toLowerCase() === "authorized"
+                      && Number(b.authorized_amount || 0) >= Number(b.amount_pending || 0)
+                      && Number(b.amount_pending || 0) > 0
+                      ? money(b.authorized_amount, b.currency || "USD")
+                      : money(b.total_amount, b.currency || "USD")}
                   </p>
                 </div>
                 <Link

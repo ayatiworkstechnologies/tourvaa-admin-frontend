@@ -21,6 +21,7 @@ type Booking = {
   agent_payment_method?: string | null;
   amount_paid?: string | number;
   amount_pending?: string | number;
+  authorized_amount?: string | number;
   final_amount?: string | number;
   currency?: string;
 };
@@ -175,7 +176,19 @@ export default function AgentBookingsPage() {
     { key: "payment", header: "Payment Status", render: (b) => <Pill status={b.payment_status}>{agentPaymentStatusLabel(b.payment_status)}</Pill>, className: "hidden xl:table-cell" },
     { key: "payment_method", header: "Booking Method", render: (b) => agentBookingMethodLabel(b), className: "hidden whitespace-nowrap text-dash-muted xl:table-cell" },
     { key: "paid", header: "Paid", render: (b) => money(b.amount_paid, b.currency), className: "hidden text-right text-dash-muted xl:table-cell" },
-    { key: "balance_due", header: "Balance Due", render: (b) => (Number(b.amount_pending || 0) > 0 ? money(b.amount_pending, b.currency) : <span className="text-emerald-700">Paid in full</span>), className: "hidden text-right font-semibold text-amber-700 xl:table-cell" },
+    {
+      key: "balance_due",
+      header: "Balance Due",
+      render: (b) => {
+        const pending = Number(b.amount_pending || 0);
+        const authorized = Number(b.authorized_amount || 0);
+        if ((b.payment_status || "").toLowerCase() === "authorized" && pending > 0 && authorized >= pending) {
+          return <span className="text-sky-700">Authorized {money(authorized, b.currency)}</span>;
+        }
+        return pending > 0 ? money(pending, b.currency) : <span className="text-emerald-700">Paid in full</span>;
+      },
+      className: "hidden text-right font-semibold text-amber-700 xl:table-cell",
+    },
     { key: "due_date", header: "Due Date", render: (b) => dateText(b.payment_due_date), className: "hidden text-dash-muted lg:table-cell" },
     { key: "total", header: "Total", render: (b) => money(b.final_amount, b.currency), className: "hidden text-right font-bold text-dash-text xl:table-cell" },
   ];

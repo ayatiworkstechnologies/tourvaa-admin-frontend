@@ -53,6 +53,8 @@ type Booking = {
   booking_status: string;
   final_amount?: string | number;
   amount_pending?: string | number;
+  authorized_amount?: string | number;
+  payment_status?: string;
   currency?: string;
   tour_image?: string | null;
 };
@@ -85,16 +87,10 @@ function formatStatus(status: string) {
   return <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">{label}</span>;
 }
 
-function formatPrice(amount?: number | string) {
-  if (amount == null) return "$0.00";
-  const num = typeof amount === "number" ? amount : parseFloat(String(amount)) || 0;
-  return `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
 export default function CustomerDashboardPage() {
   const { user } = useAuthContext();
   const { wishlist, toggleWishlist } = useTravelStore();
-  const { format } = useCurrency();
+  const { format, formatExact } = useCurrency();
   const toast = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -409,7 +405,27 @@ export default function CustomerDashboardPage() {
           ) : (
             <div className="space-y-3">
               {bookings.map((b) => {
-                const hasBalance = Number(b.amount_pending || 0) > 0;
+                const pendingAmount = Number(b.amount_pending || 0);
+                const paidAmount = Number(b.amount_paid || 0);
+                const authorizedAmount = Number(b.authorized_amount || 0);
+                const paymentCoveredByAuthorization = (b.payment_status || "").toLowerCase() === "authorized"
+                  && pendingAmount > 0
+                  && authorizedAmount >= pendingAmount;
+                const hasBalance = pendingAmount > 0 && !paymentCoveredByAuthorization;
+                const displayedAmount = paymentCoveredByAuthorization
+                  ? b.authorized_amount
+                  : hasBalance
+                    ? b.amount_pending
+                    : paidAmount > 0
+                      ? b.amount_paid
+                      : b.final_amount;
+                const amountLabel = paymentCoveredByAuthorization
+                  ? "Payment authorized"
+                  : hasBalance
+                    ? "Amount due"
+                    : paidAmount > 0
+                      ? "Total paid"
+                      : "Booking total";
                 return (
                   <article key={b.id} className="group overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_8px_28px_-22px_rgba(15,23,42,0.45)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_14px_34px_-22px_rgba(37,99,235,0.38)]">
                     <div className="flex flex-col gap-4 p-3 sm:flex-row sm:items-center sm:p-4">
@@ -439,8 +455,8 @@ export default function CustomerDashboardPage() {
 
                       <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-3 sm:min-w-[145px] sm:flex-col sm:items-end sm:border-l sm:border-t-0 sm:py-1 sm:pl-5 sm:pt-1">
                         <div className="sm:text-right">
-                          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">{hasBalance ? "Amount due" : "Total paid"}</p>
-                          <p className={`mt-1 text-lg font-black ${hasBalance ? "text-amber-600" : "text-slate-900"}`}>{formatPrice(hasBalance ? b.amount_pending : b.final_amount)}</p>
+                          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">{amountLabel}</p>
+                          <p className={`mt-1 text-lg font-black ${hasBalance ? "text-amber-600" : "text-slate-900"}`}>{formatExact(displayedAmount, b.currency || "USD")}</p>
                         </div>
                         <Link href={`/customer/bookings/${b.id}${hasBalance ? "?action=pay" : ""}`} className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-bold transition ${hasBalance ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "bg-blue-50 text-blue-700 hover:bg-blue-100"}`}>
                           {hasBalance ? "Pay now" : "View booking"} <ArrowRight size={12} />

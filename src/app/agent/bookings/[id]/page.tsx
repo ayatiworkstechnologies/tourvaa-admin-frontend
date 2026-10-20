@@ -51,6 +51,7 @@ type Booking = {
   final_amount?: string | number;
   amount_paid?: string | number;
   amount_pending?: string | number;
+  authorized_amount?: string | number;
   currency?: string;
   no_of_adults?: number;
   no_of_children?: number;
@@ -204,7 +205,11 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
 
   useEffect(() => {
     if (!booking || searchParams.get("pay") !== "1") return;
-    if (Number(booking.amount_pending ?? 0) > 0) {
+    const outstandingAfterAuthorization = Math.max(
+      0,
+      Number(booking.amount_pending ?? 0) - Number(booking.authorized_amount ?? 0),
+    );
+    if (outstandingAfterAuthorization > 0) {
       setPaymentBanner({ type: "info", message: `Payment Required. ${BOOKING_PAYMENT_REQUIRED_MESSAGE}` });
       setShowPayment(true);
     } else {
@@ -331,6 +336,9 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   }
 
   const travellers = booking.travellers ?? [];
+  const pendingAmount = Number(booking.amount_pending ?? 0);
+  const authorizedAmount = Number(booking.authorized_amount ?? 0);
+  const payableAmount = Math.max(0, pendingAmount - authorizedAmount);
   const bookingDisplayStatus = agentBookingStatusLabel(booking.booking_status);
   const isBookingRequestReceived = bookingDisplayStatus === BOOKING_AWAITING_CONFIRMATION_LABEL;
   const canRequestCancellation = Number(booking.amount_paid ?? 0) > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
@@ -354,7 +362,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
             <Pill status={booking.booking_status}>{bookingDisplayStatus}</Pill>
           </div>
           <div className="flex flex-wrap gap-2">
-            {Number(booking.amount_pending ?? 0) > 0 && (
+            {payableAmount > 0 && (
               <button type="button" onClick={() => setShowPayment(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-[#2563EB] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1D4ED8]">
                 <CreditCard size={15} /> Pay Now
               </button>
@@ -549,10 +557,10 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         </div>
       )}
 
-      {showPayment && Number(booking.amount_pending ?? 0) > 0 && (
+      {showPayment && payableAmount > 0 && (
         <BookingPaymentModal
           bookingId={booking.id}
-          outstandingAmount={Number(booking.amount_pending ?? 0)}
+          outstandingAmount={payableAmount}
           totalAmount={Number(booking.final_amount ?? 0)}
           amountPaid={Number(booking.amount_paid ?? 0)}
           preferredPaymentType={booking.payment_type}
