@@ -21,6 +21,8 @@ type CountryPhoneInputProps = {
   errorMessage?: string;
   className?: string;
   placeholder?: string;
+  /** Hide the country picker when country is selected by a separate field. */
+  showCountryPicker?: boolean;
 };
 
 /** Shared country-code and mobile-number control. The left selector opens a
@@ -32,12 +34,13 @@ export default function CountryPhoneInput({
   onCountryChange,
   onNumberChange,
   label = "Mobile Number",
-  countryLabel = "Country",
+  countryLabel = "Select country",
   required = false,
   helpText,
   errorMessage,
   className = "",
   placeholder = "e.g. 98765 43210",
+  showCountryPicker = true,
 }: CountryPhoneInputProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -93,25 +96,26 @@ export default function CountryPhoneInput({
               : "border-dash-border focus-within:border-dash-brand focus-within:ring-sky-100"
           }`}
         >
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-haspopup="listbox"
-            aria-expanded={open}
-            aria-label={countryLabel}
-            title={selected ? `${selected.name} (${selected.dialCode})` : countryLabel}
-            className="flex shrink-0 items-center gap-1.5 border-r border-dash-border bg-dash-bg px-3 py-2.5 text-sm font-semibold text-dash-text outline-none transition hover:bg-slate-100 focus:bg-slate-100"
-          >
-            {selected ? (
-              <span className="h-3.5 w-5 shrink-0 overflow-hidden rounded-[2px]">
-                <FlagIcon countryCode={selected.iso} />
-              </span>
-            ) : null}
-            <span className={selected ? "" : "font-normal text-dash-subtle"}>
-              {selected ? selected.dialCode : "Code"}
+          {showCountryPicker ? (
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-haspopup="listbox"
+              aria-expanded={open}
+              aria-label={countryLabel}
+              title={selected ? `${selected.name} (${selected.dialCode})` : countryLabel}
+              className="flex shrink-0 items-center gap-1.5 border-r border-dash-border bg-dash-bg px-3 py-2.5 text-sm font-semibold text-dash-text outline-none transition hover:bg-slate-100 focus:bg-slate-100"
+            >
+              {selected ? <span className="h-3.5 w-5 shrink-0 overflow-hidden rounded-[2px]"><FlagIcon countryCode={selected.iso} /></span> : null}
+              <span className={`max-w-[132px] truncate ${selected ? "" : "font-normal text-dash-subtle"}`}>{selected ? `${selected.name} ${selected.dialCode}` : "Select country"}</span>
+              <ChevronDown size={14} className={`shrink-0 text-dash-subtle transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+          ) : (
+            <span className="flex shrink-0 items-center gap-1.5 border-r border-dash-border bg-dash-bg px-3 py-2.5 text-sm font-semibold text-dash-text">
+              {selected ? <span className="h-3.5 w-5 shrink-0 overflow-hidden rounded-[2px]"><FlagIcon countryCode={selected.iso} /></span> : null}
+              <span>{selected?.dialCode || "—"}</span>
             </span>
-            <ChevronDown size={14} className={`shrink-0 text-dash-subtle transition-transform ${open ? "rotate-180" : ""}`} />
-          </button>
+          )}
 
           {open && (
             <div

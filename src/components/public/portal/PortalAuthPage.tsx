@@ -31,6 +31,7 @@ import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
 import { useAuthContext } from "@/providers/AuthProvider";
 import type { PortalTheme } from "@/components/public/portal/PortalPublicHeader";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import RegistrationCountrySelect from "@/components/ui/RegistrationCountrySelect";
 import { dialCodeForIso, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useGeoCountries } from "@/hooks/useGeo";
@@ -399,7 +400,7 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
           // territory. A country missing from the admin geo catalogue must
           // not prevent a global supplier from starting registration.
           first_name: form.first_name, email, country_id: selectedCountry?.id,
-          country_iso: phoneIso, country_code: form.country_code, mobile_number: form.mobile_number,
+          country_iso: phoneIso, country_code: dialCodeForIso(phoneIso), mobile_number: form.mobile_number,
           accepted_terms: form.accepted_terms, account_type: config.accountType, redirect: safeRedirect,
         });
         startCooldown(email, res.data.data.registration_change_token || "");
@@ -482,20 +483,23 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
         </div>
       </div>
 
-      {/* Phone */}
+      {/* Mobile */}
       <div>
+        <RegistrationCountrySelect
+          value={phoneIso}
+          onChange={(iso) => {
+            setPhoneIso(iso);
+            setForm({ ...form, country_code: dialCodeForIso(iso) });
+            void setCountry(iso);
+          }}
+        />
         <CountryPhoneInput
           label="Mobile number"
           required
           countryIso={phoneIso}
           number={form.mobile_number}
-          onCountryChange={(iso) => {
-            setPhoneIso(iso);
-            setForm({ ...form, country_code: dialCodeForIso(iso) });
-            // Same "currency follows country" default as the customer
-            // registration form - see the matching comment there.
-            void setCountry(iso);
-          }}
+          showCountryPicker={false}
+          onCountryChange={() => undefined}
           onNumberChange={(digits) => setForm({ ...form, mobile_number: digits })}
         />
       </div>

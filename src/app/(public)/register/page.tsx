@@ -17,6 +17,7 @@ import {
 import api from "@/lib/api/client";
 import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import RegistrationCountrySelect from "@/components/ui/RegistrationCountrySelect";
 import { dialCodeForIso, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useGeoCountries } from "@/hooks/useGeo";
@@ -160,7 +161,7 @@ export default function RegisterPage() {
           email,
           country_id: selectedCountry.id,
           country_iso: phoneIso,
-          country_code: form.country_code,
+          country_code: dialCodeForIso(phoneIso),
           mobile_number: form.mobile_number,
           accepted_terms: form.accepted_terms,
           account_type: ACCOUNT_TYPE,
@@ -296,21 +297,21 @@ export default function RegisterPage() {
 
               {/* Mobile */}
               <div>
+                <RegistrationCountrySelect
+                  value={phoneIso}
+                  onChange={(iso) => {
+                    setPhoneIso(iso);
+                    setForm((f) => ({ ...f, country_code: dialCodeForIso(iso) }));
+                    void setCountry(iso);
+                  }}
+                />
                 <CountryPhoneInput
                   label="Mobile number"
                   required
                   countryIso={phoneIso}
                   number={form.mobile_number}
-                  onCountryChange={(iso) => {
-                    setPhoneIso(iso);
-                    setForm((f) => ({ ...f, country_code: dialCodeForIso(iso) }));
-                    // Also default the site's browsing currency to match the
-                    // country the traveller just told us they're in - the
-                    // same "currency follows country" behavior the header's
-                    // currency selector uses, just triggered earlier in the
-                    // journey instead of waiting on IP geolocation.
-                    void setCountry(iso);
-                  }}
+                  showCountryPicker={false}
+                  onCountryChange={() => undefined}
                   onNumberChange={(digits) => setForm((f) => ({ ...f, mobile_number: digits }))}
                 />
               </div>

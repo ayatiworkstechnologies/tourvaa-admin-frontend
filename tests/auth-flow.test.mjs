@@ -55,6 +55,11 @@ const dashboardPath = read("src/lib/utils/dashboardPath.ts");
 const customRoleDashboard = read("src/app/[slug]/dashboard/page.tsx");
 const portalAuth = read("src/components/public/portal/PortalAuthPage.tsx");
 check("new non-admin roles use a role-scoped workspace", dashboardPath.includes("`/${slug}/dashboard`") && customRoleDashboard.includes('dashboard_type === "portal"') && customRoleDashboard.includes("requestedRole === actualRole") && portalAuth.includes("isCustomRoleOnSharedLogin") && portalAuth.includes("redirectTarget(roleSlug)"));
+const countryPhoneInput = read("src/components/ui/CountryPhoneInput.tsx");
+const registrationCountrySelect = read("src/components/ui/RegistrationCountrySelect.tsx");
+check("traveller and every partner portal use an explicit Country dropdown", portalAuth.includes("RegistrationCountrySelect") && register.includes("RegistrationCountrySelect") && registrationCountrySelect.includes("Select country"));
+check("registration keeps country and mobile number as separate clear fields", countryPhoneInput.includes("showCountryPicker") && portalAuth.includes("showCountryPicker={false}") && register.includes("showCountryPicker={false}"));
+check("registration submits the calling code derived from the currently selected country", portalAuth.includes("country_code: dialCodeForIso(phoneIso)") && register.includes("country_code: dialCodeForIso(phoneIso)"));
 check("explicit logout returns to the matching portal login", auth.includes('pathname.startsWith("/admin") ? "/admin/login" : "/login"') && auth.includes("const logout = useCallback(async (redirectTo?: string)"));
 
 const adminGuard = read("src/components/admin/AdminRouteGuard.tsx");
